@@ -196,6 +196,8 @@ router.get("/api/dashboard/recent-patients", async (req, res) => {
 export default router;
 
 import { createServer } from 'http';
+import { writeFileSync } from 'fs';
+import path from 'path';
 
 // Function to register routes with the express app
 export async function registerRoutes(app: any) {

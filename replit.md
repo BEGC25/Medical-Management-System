@@ -101,9 +101,31 @@ This is a full-stack web application designed for rural medical clinics, providi
 - Development: Local SQLite database
 - Automatic migration running on startup
 
+## Deployment Options
+
+### Cloud Deployment (Current)
+- Hosted on Replit for development and testing
+- Requires internet connectivity
+- Automatic scaling and updates
+
+### Local/Offline Deployment (Recommended for Rural Clinics)
+- Complete offline operation after setup
+- No monthly hosting costs
+- Full data privacy and security
+- Setup guides created for Windows, macOS, and Linux
+
+### Deployment Files Created
+- `OFFLINE_DEPLOYMENT_GUIDE.md` - Comprehensive technical setup guide
+- `QUICK_START_GUIDE.md` - Simple instructions for non-technical users
+- `setup-local.sh` / `setup-local.bat` - Automated setup scripts
+- `backup.sh` / `backup.bat` - Daily backup scripts
+- `start-clinic.bat` - Easy start script for Windows
+
 ## Changelog
-- July 04, 2025. Initial setup
+- July 04, 2025. Initial setup with PostgreSQL database and full CRUD operations
+- January 14, 2025. Added comprehensive offline deployment guides and scripts for rural clinic use
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+User Context: Rural clinic in South Sudan requiring offline-capable system.
