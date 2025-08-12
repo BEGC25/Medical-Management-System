@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/Dashboard";
@@ -11,21 +11,7 @@ import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import OfflineIndicator from "@/components/OfflineIndicator";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      queryFn: async ({ queryKey }) => {
-        const [url] = queryKey as [string];
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      },
-    },
-  },
-});
+import { queryClient } from "@/lib/queryClient";
 
 function App() {
   return (

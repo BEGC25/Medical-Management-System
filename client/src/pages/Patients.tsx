@@ -36,7 +36,10 @@ export default function Patients() {
   });
 
   const createPatientMutation = useMutation({
-    mutationFn: (data: InsertPatient) => apiRequest("/api/patients", "POST", data),
+    mutationFn: async (data: InsertPatient) => {
+      const response = await apiRequest("POST", "/api/patients", data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Success",
