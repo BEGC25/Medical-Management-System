@@ -6,6 +6,7 @@ import Patients from "@/pages/Patients";
 import Treatment from "@/pages/Treatment";
 import Laboratory from "@/pages/Laboratory";
 import XRay from "@/pages/XRay";
+import Ultrasound from "@/pages/Ultrasound";
 import Reports from "@/pages/Reports";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
@@ -28,6 +29,7 @@ function App() {
             <Route path="/treatment" component={Treatment} />
             <Route path="/laboratory" component={Laboratory} />
             <Route path="/xray" component={XRay} />
+            <Route path="/ultrasound" component={Ultrasound} />
             <Route path="/reports" component={Reports} />
             <Route component={NotFound} />
           </Switch>

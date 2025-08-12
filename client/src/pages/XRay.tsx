@@ -58,7 +58,10 @@ export default function XRay() {
   });
 
   const createXrayExamMutation = useMutation({
-    mutationFn: (data: InsertXrayExam) => apiRequest("/api/xray-exams", "POST", data),
+    mutationFn: async (data: InsertXrayExam) => {
+      const response = await apiRequest("POST", "/api/xray-exams", data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Success",
@@ -95,8 +98,10 @@ export default function XRay() {
   });
 
   const updateXrayExamMutation = useMutation({
-    mutationFn: ({ examId, data }: { examId: string; data: any }) => 
-      apiRequest(`/api/xray-exams/${examId}`, "PUT", data),
+    mutationFn: async ({ examId, data }: { examId: string; data: any }) => {
+      const response = await apiRequest("PUT", `/api/xray-exams/${examId}`, data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Success",

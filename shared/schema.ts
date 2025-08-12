@@ -75,6 +75,26 @@ export const xrayExams = pgTable("xray_exams", {
   createdAt: text("created_at").notNull(),
 });
 
+export const ultrasoundExams = pgTable("ultrasound_exams", {
+  id: serial("id").primaryKey(),
+  examId: text("exam_id").unique().notNull(),
+  patientId: text("patient_id").notNull(),
+  examType: text("exam_type").$type<"abdominal" | "pelvic" | "obstetric" | "cardiac" | "vascular" | "thyroid" | "other">().notNull(),
+  clinicalIndication: text("clinical_indication"),
+  specialInstructions: text("special_instructions"),
+  priority: text("priority").$type<"routine" | "urgent" | "emergency">().notNull(),
+  requestedDate: text("requested_date").notNull(),
+  status: text("status").$type<"pending" | "completed" | "cancelled">().notNull(),
+  imageQuality: text("image_quality").$type<"excellent" | "good" | "adequate" | "limited">(),
+  findings: text("findings"),
+  impression: text("impression"),
+  recommendations: text("recommendations"),
+  reportStatus: text("report_status").$type<"normal" | "abnormal" | "urgent">(),
+  reportDate: text("report_date"),
+  sonographer: text("sonographer"),
+  createdAt: text("created_at").notNull(),
+});
+
 // Insert schemas
 export const insertPatientSchema = createInsertSchema(patients).omit({
   id: true,
@@ -101,13 +121,22 @@ export const insertXrayExamSchema = createInsertSchema(xrayExams).omit({
   createdAt: true,
 });
 
+export const insertUltrasoundExamSchema = createInsertSchema(ultrasoundExams).omit({
+  id: true,
+  examId: true,
+  status: true,
+  createdAt: true,
+});
+
 // Types
 export type Patient = typeof patients.$inferSelect;
 export type Treatment = typeof treatments.$inferSelect;
 export type LabTest = typeof labTests.$inferSelect;
 export type XrayExam = typeof xrayExams.$inferSelect;
+export type UltrasoundExam = typeof ultrasoundExams.$inferSelect;
 
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type InsertTreatment = z.infer<typeof insertTreatmentSchema>;
 export type InsertLabTest = z.infer<typeof insertLabTestSchema>;
 export type InsertXrayExam = z.infer<typeof insertXrayExamSchema>;
+export type InsertUltrasoundExam = z.infer<typeof insertUltrasoundExamSchema>;

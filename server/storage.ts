@@ -1,7 +1,7 @@
 import { eq, like, desc, and, count, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { patients, treatments, labTests, xrayExams, type Patient, type Treatment, type LabTest, type XrayExam, type InsertPatient, type InsertTreatment, type InsertLabTest, type InsertXrayExam } from "@shared/schema";
+import { patients, treatments, labTests, xrayExams, ultrasoundExams, type Patient, type Treatment, type LabTest, type XrayExam, type UltrasoundExam, type InsertPatient, type InsertTreatment, type InsertLabTest, type InsertXrayExam, type InsertUltrasoundExam } from "@shared/schema";
 
 // Use SQLite for development to avoid connection issues
 const sqlite = new Database("clinic.db");
@@ -56,19 +56,45 @@ try {
     created_at TEXT NOT NULL
   )`);
 
+  sqlite.exec(`DROP TABLE IF EXISTS xray_exams`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS xray_exams (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     exam_id TEXT UNIQUE NOT NULL,
     patient_id TEXT NOT NULL,
-    body_part TEXT NOT NULL,
-    reason TEXT NOT NULL,
-    safety_checklist TEXT,
+    exam_type TEXT NOT NULL,
+    body_part TEXT,
+    clinical_indication TEXT,
+    special_instructions TEXT,
+    priority TEXT NOT NULL DEFAULT 'routine',
+    requested_date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
     technical_quality TEXT,
     findings TEXT,
     impression TEXT,
-    radiologist_notes TEXT,
+    recommendations TEXT,
+    report_status TEXT,
+    report_date TEXT,
+    radiologist TEXT,
+    created_at TEXT NOT NULL
+  )`);
+
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS ultrasound_exams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_id TEXT UNIQUE NOT NULL,
+    patient_id TEXT NOT NULL,
+    exam_type TEXT NOT NULL,
+    clinical_indication TEXT,
+    special_instructions TEXT,
+    priority TEXT NOT NULL DEFAULT 'routine',
+    requested_date TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
-    exam_date TEXT NOT NULL,
+    image_quality TEXT,
+    findings TEXT,
+    impression TEXT,
+    recommendations TEXT,
+    report_status TEXT,
+    report_date TEXT,
+    sonographer TEXT,
     created_at TEXT NOT NULL
   )`);
   
@@ -117,6 +143,12 @@ export interface IStorage {
   getXrayExams(status?: string): Promise<XrayExam[]>;
   getXrayExamsByPatient(patientId: string): Promise<XrayExam[]>;
   updateXrayExam(examId: string, data: Partial<XrayExam>): Promise<XrayExam>;
+
+  // Ultrasound Exams
+  createUltrasoundExam(data: InsertUltrasoundExam): Promise<UltrasoundExam>;
+  getUltrasoundExams(status?: string): Promise<UltrasoundExam[]>;
+  getUltrasoundExamsByPatient(patientId: string): Promise<UltrasoundExam[]>;
+  updateUltrasoundExam(examId: string, data: Partial<UltrasoundExam>): Promise<UltrasoundExam>;
 
   // Statistics
   getDashboardStats(): Promise<{
@@ -296,6 +328,48 @@ export class MemStorage implements IStorage {
       .returning();
     
     return xrayExam;
+  }
+
+  // Ultrasound Exams
+  async createUltrasoundExam(data: InsertUltrasoundExam): Promise<UltrasoundExam> {
+    const examId = generateId("US");
+    const createdAt = new Date().toISOString();
+    
+    const [ultrasoundExam] = await db.insert(ultrasoundExams)
+      .values({
+        ...data,
+        examId,
+        status: "pending",
+        createdAt,
+      })
+      .returning();
+    
+    return ultrasoundExam;
+  }
+
+  async getUltrasoundExams(status?: string): Promise<UltrasoundExam[]> {
+    const query = db.select().from(ultrasoundExams);
+    
+    if (status) {
+      return await query.where(eq(ultrasoundExams.status, status as any)).orderBy(desc(ultrasoundExams.requestedDate));
+    }
+    
+    return await query.orderBy(desc(ultrasoundExams.requestedDate));
+  }
+
+  async getUltrasoundExamsByPatient(patientId: string): Promise<UltrasoundExam[]> {
+    return await db.select().from(ultrasoundExams)
+      .where(eq(ultrasoundExams.patientId, patientId))
+      .orderBy(desc(ultrasoundExams.requestedDate));
+  }
+
+  async updateUltrasoundExam(examId: string, data: Partial<UltrasoundExam>): Promise<UltrasoundExam> {
+    const [ultrasoundExam] = await db.update(ultrasoundExams)
+      .set(data)
+      .where(eq(ultrasoundExams.examId, examId))
+      .returning();
+    
+    return ultrasoundExam;
   }
 
   async getDashboardStats() {

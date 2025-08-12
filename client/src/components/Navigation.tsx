@@ -5,7 +5,8 @@ import {
   Users, 
   TestTube, 
   Scan, 
-  LayoutDashboard 
+  LayoutDashboard,
+  MonitorSpeaker
 } from "lucide-react";
 
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
   { path: "/treatment", label: "Treatment", icon: Stethoscope },
   { path: "/laboratory", label: "Laboratory", icon: TestTube },
   { path: "/xray", label: "X-Ray", icon: Scan },
+  { path: "/ultrasound", label: "Ultrasound", icon: MonitorSpeaker },
   { path: "/reports", label: "Reports", icon: BarChart3 },
 ];
 

@@ -1,7 +1,7 @@
 import express from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema } from "@shared/schema";
+import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema, insertUltrasoundExamSchema } from "@shared/schema";
 
 const router = express.Router();
 
@@ -170,6 +170,49 @@ router.put("/api/xray-exams/:examId", async (req, res) => {
     res.json(xrayExam);
   } catch (error) {
     res.status(500).json({ error: "Failed to update X-ray exam" });
+  }
+});
+
+// Ultrasound Exams
+router.get("/api/ultrasound-exams", async (req, res) => {
+  try {
+    const status = req.query.status as string;
+    const ultrasoundExams = await storage.getUltrasoundExams(status);
+    res.json(ultrasoundExams);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch ultrasound exams" });
+  }
+});
+
+router.get("/api/patients/:patientId/ultrasound-exams", async (req, res) => {
+  try {
+    const ultrasoundExams = await storage.getUltrasoundExamsByPatient(req.params.patientId);
+    res.json(ultrasoundExams);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch ultrasound exams" });
+  }
+});
+
+router.post("/api/ultrasound-exams", async (req, res) => {
+  try {
+    const data = insertUltrasoundExamSchema.parse(req.body);
+    const ultrasoundExam = await storage.createUltrasoundExam(data);
+    res.status(201).json(ultrasoundExam);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid ultrasound exam data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create ultrasound exam" });
+  }
+});
+
+router.put("/api/ultrasound-exams/:examId", async (req, res) => {
+  try {
+    const data = req.body;
+    const ultrasoundExam = await storage.updateUltrasoundExam(req.params.examId, data);
+    res.json(ultrasoundExam);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update ultrasound exam" });
   }
 });
 
