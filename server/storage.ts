@@ -24,16 +24,23 @@ try {
     created_at TEXT NOT NULL
   )`);
 
+  sqlite.exec(`DROP TABLE IF EXISTS treatments`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS treatments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     patient_id TEXT NOT NULL,
     visit_date TEXT NOT NULL,
-    chief_complaint TEXT NOT NULL,
-    vital_signs TEXT,
-    examination_notes TEXT,
+    visit_type TEXT NOT NULL,
+    priority TEXT NOT NULL,
+    chief_complaint TEXT,
+    temperature REAL,
+    blood_pressure TEXT,
+    heart_rate INTEGER,
+    weight REAL,
+    examination TEXT,
     diagnosis TEXT,
     treatment_plan TEXT,
     follow_up_date TEXT,
+    follow_up_type TEXT,
     created_at TEXT NOT NULL
   )`);
 
