@@ -24,8 +24,8 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             <Activity className="text-2xl" />
             <div>
-              <h1 className="text-xl font-bold">Rural Clinic Management</h1>
-              <p className="text-blue-200 text-sm">Juba Medical Center</p>
+              <h1 className="text-xl font-bold">Bahr El Ghazal Clinic</h1>
+              <p className="text-blue-200 text-sm">Medical Management System</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">

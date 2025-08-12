@@ -1,5 +1,5 @@
 @echo off
-REM Clinic Management System - Database Backup Script for Windows
+REM Bahr El Ghazal Clinic - Database Backup Script for Windows
 REM Run this script daily to backup your clinic data
 
 REM Create backups directory if it doesn't exist

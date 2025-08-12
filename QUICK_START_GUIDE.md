@@ -1,4 +1,4 @@
-# Quick Start Guide - Local Clinic Setup
+# Quick Start Guide - Bahr El Ghazal Clinic Setup
 
 ## For Non-Technical Users
 

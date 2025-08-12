@@ -1,8 +1,8 @@
-# Rural Clinic Management System
+# Bahr El Ghazal Clinic Management System
 
 ## Overview
 
-This is a full-stack web application designed for rural medical clinics, providing comprehensive patient management, treatment tracking, laboratory testing, and X-ray examination capabilities. The system is built to work both online and offline, making it suitable for remote healthcare facilities with intermittent internet connectivity.
+This is a full-stack web application designed specifically for Bahr El Ghazal Clinic in rural South Sudan, providing comprehensive patient management, treatment tracking, laboratory testing, and X-ray examination capabilities. The system is built to work both online and offline, making it suitable for remote healthcare facilities with intermittent internet connectivity.
 
 ## System Architecture
 

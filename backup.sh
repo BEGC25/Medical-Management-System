@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Clinic Management System - Database Backup Script
+# Bahr El Ghazal Clinic - Database Backup Script
 # Run this script daily to backup your clinic data
 
 # Create backups directory if it doesn't exist

@@ -5,7 +5,7 @@ REM Clinic Management System - Local Setup Script for Windows
 REM This script helps set up the system for offline deployment
 
 echo ========================================
-echo   Clinic Management System Setup
+echo   Bahr El Ghazal Clinic Setup
 echo ========================================
 echo.
 

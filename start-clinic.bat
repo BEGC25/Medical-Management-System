@@ -1,8 +1,8 @@
 @echo off
-title Clinic Management System
+title Bahr El Ghazal Clinic System
 
 echo ========================================
-echo   Starting Clinic Management System
+echo   Starting Bahr El Ghazal Clinic System
 echo ========================================
 echo.
 

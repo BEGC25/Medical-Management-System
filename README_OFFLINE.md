@@ -1,4 +1,4 @@
-# Clinic Management System - Offline Installation Package
+# Bahr El Ghazal Clinic Management System - Offline Installation Package
 
 ## What's Included
 
