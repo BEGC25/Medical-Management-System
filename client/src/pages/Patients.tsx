@@ -11,12 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
-import { insertPatientSchema, type InsertPatient } from "@shared/schema";
+import { insertPatientSchema, type InsertPatient, type Patient } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
 export default function Patients() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -74,12 +75,70 @@ export default function Patients() {
     },
   });
 
+  const updatePatientMutation = useMutation({
+    mutationFn: async ({ patientId, data }: { patientId: string; data: Partial<InsertPatient> }) => {
+      const response = await apiRequest("PUT", `/api/patients/${patientId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Patient updated successfully",
+      });
+      form.reset();
+      setEditingPatient(null);
+      setShowRegistrationForm(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update patient",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertPatient) => {
-    createPatientMutation.mutate(data);
+    if (editingPatient) {
+      updatePatientMutation.mutate({ patientId: editingPatient.patientId, data });
+    } else {
+      createPatientMutation.mutate(data);
+    }
+  };
+
+  const handleEditPatient = (patient: Patient) => {
+    setEditingPatient(patient);
+    form.reset({
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      dateOfBirth: patient.dateOfBirth || "",
+      gender: patient.gender,
+      phoneNumber: patient.phoneNumber || "",
+      village: patient.village || "",
+      emergencyContact: patient.emergencyContact || "",
+      allergies: patient.allergies || "",
+      medicalHistory: patient.medicalHistory || "",
+    });
+    setShowRegistrationForm(true);
+  };
+
+  const handleViewPatient = (patient: Patient) => {
+    toast({
+      title: "Patient Details",
+      description: `${patient.firstName} ${patient.lastName} (${patient.patientId})`,
+    });
   };
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPatient(null);
+    setShowRegistrationForm(false);
+    form.reset();
   };
 
   return (
@@ -99,15 +158,23 @@ export default function Patients() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <PatientSearch />
+          <PatientSearch 
+            onEditPatient={handleEditPatient}
+            onViewPatient={handleViewPatient}
+          />
         </CardContent>
       </Card>
 
-      {/* Registration Form */}
+      {/* Registration/Edit Form */}
       {showRegistrationForm && (
         <Card>
           <CardHeader>
-            <CardTitle>New Patient Registration</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              {editingPatient ? `Edit Patient: ${editingPatient.firstName} ${editingPatient.lastName}` : "New Patient Registration"}
+              <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                <X className="w-4 h-4" />
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -285,16 +352,20 @@ export default function Patients() {
                 <div className="flex gap-4 pt-6 border-t">
                   <Button 
                     type="submit" 
-                    disabled={createPatientMutation.isPending}
+                    disabled={createPatientMutation.isPending || updatePatientMutation.isPending}
                     className="bg-medical-blue hover:bg-blue-700"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    {createPatientMutation.isPending ? "Registering..." : "Register Patient"}
+                    {editingPatient ? (
+                      updatePatientMutation.isPending ? "Updating..." : "Update Patient"
+                    ) : (
+                      createPatientMutation.isPending ? "Registering..." : "Register Patient"
+                    )}
                   </Button>
                   <Button 
                     type="button" 
                     variant="outline"
-                    onClick={() => setShowRegistrationForm(false)}
+                    onClick={handleCancelEdit}
                   >
                     <X className="w-4 h-4 mr-2" />
                     Cancel

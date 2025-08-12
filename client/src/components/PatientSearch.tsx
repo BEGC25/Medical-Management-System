@@ -8,10 +8,12 @@ import type { Patient } from "@shared/schema";
 
 interface PatientSearchProps {
   onSelectPatient?: (patient: Patient) => void;
+  onEditPatient?: (patient: Patient) => void;
+  onViewPatient?: (patient: Patient) => void;
   showActions?: boolean;
 }
 
-export default function PatientSearch({ onSelectPatient, showActions = true }: PatientSearchProps) {
+export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPatient, showActions = true }: PatientSearchProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
 
@@ -103,10 +105,26 @@ export default function PatientSearch({ onSelectPatient, showActions = true }: P
                       {showActions && (
                         <td className="px-4 py-3 text-sm">
                           <div className="flex gap-2">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onViewPatient?.(patient);
+                              }}
+                              title="View Patient Details"
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditPatient?.(patient);
+                              }}
+                              title="Edit Patient"
+                            >
                               <Edit className="w-4 h-4" />
                             </Button>
                           </div>
