@@ -176,10 +176,13 @@ router.put("/api/xray-exams/:examId", async (req, res) => {
 // Dashboard
 router.get("/api/dashboard/stats", async (req, res) => {
   try {
+    console.log("Dashboard stats route called");
     const stats = await storage.getDashboardStats();
+    console.log("Dashboard stats result:", stats);
     res.json(stats);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    console.error("Dashboard stats route error:", error);
+    res.status(500).json({ error: "Failed to fetch dashboard stats", details: error.message });
   }
 });
 

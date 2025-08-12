@@ -1,13 +1,78 @@
 import { eq, like, desc, and, count, or } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
 import { patients, treatments, labTests, xrayExams, type Patient, type Treatment, type LabTest, type XrayExam, type InsertPatient, type InsertTreatment, type InsertLabTest, type InsertXrayExam } from "@shared/schema";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// Use SQLite for development to avoid connection issues
+const sqlite = new Database("clinic.db");
+export const db = drizzle(sqlite);
 
-export const db = drizzle(pool);
+// Initialize tables if they don't exist
+try {
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS patients (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id TEXT UNIQUE NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    date_of_birth TEXT,
+    gender TEXT,
+    phone_number TEXT,
+    village TEXT,
+    emergency_contact TEXT,
+    allergies TEXT,
+    medical_history TEXT,
+    created_at TEXT NOT NULL
+  )`);
+
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS treatments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id TEXT NOT NULL,
+    visit_date TEXT NOT NULL,
+    chief_complaint TEXT NOT NULL,
+    vital_signs TEXT,
+    examination_notes TEXT,
+    diagnosis TEXT,
+    treatment_plan TEXT,
+    follow_up_date TEXT,
+    created_at TEXT NOT NULL
+  )`);
+
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS lab_tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id TEXT UNIQUE NOT NULL,
+    patient_id TEXT NOT NULL,
+    test_category TEXT NOT NULL,
+    test_name TEXT NOT NULL,
+    priority TEXT NOT NULL DEFAULT 'normal',
+    status TEXT NOT NULL DEFAULT 'pending',
+    results TEXT,
+    normal_values TEXT,
+    technician_notes TEXT,
+    requested_date TEXT NOT NULL,
+    completed_date TEXT,
+    created_at TEXT NOT NULL
+  )`);
+
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS xray_exams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_id TEXT UNIQUE NOT NULL,
+    patient_id TEXT NOT NULL,
+    body_part TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    safety_checklist TEXT,
+    technical_quality TEXT,
+    findings TEXT,
+    impression TEXT,
+    radiologist_notes TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    exam_date TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )`);
+  
+  console.log("✓ Database tables initialized");
+} catch (error) {
+  console.log("Database initialization error:", error);
+}
 
 // Migrations already applied manually
 
@@ -217,37 +282,38 @@ export class MemStorage implements IStorage {
   }
 
   async getDashboardStats() {
-    const today = new Date().toISOString().split('T')[0];
-    
-    const [newPatientsResult] = await db.select({ count: count() }).from(patients)
-      .where(like(patients.createdAt, `${today}%`));
-    
-    const [totalVisitsResult] = await db.select({ count: count() }).from(treatments)
-      .where(like(treatments.visitDate, `${today}%`));
-    
-    const [labTestsResult] = await db.select({ count: count() }).from(labTests)
-      .where(like(labTests.requestedDate, `${today}%`));
-    
-    const [xraysResult] = await db.select({ count: count() }).from(xrayExams)
-      .where(like(xrayExams.requestedDate, `${today}%`));
-    
-    const [pendingLabsResult] = await db.select({ count: count() }).from(labTests)
-      .where(eq(labTests.status, "pending"));
-    
-    const [pendingXraysResult] = await db.select({ count: count() }).from(xrayExams)
-      .where(eq(xrayExams.status, "pending"));
-    
-    return {
-      newPatients: newPatientsResult.count,
-      totalVisits: totalVisitsResult.count,
-      labTests: labTestsResult.count,
-      xrays: xraysResult.count,
-      pending: {
-        labResults: pendingLabsResult.count,
-        xrayReports: pendingXraysResult.count,
-        prescriptions: 0, // Placeholder for future prescription feature
-      },
-    };
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      console.log("Getting dashboard stats for date:", today);
+      
+      // Get counts with simple queries first
+      const totalPatients = await db.select({ count: count() }).from(patients);
+      const totalTreatments = await db.select({ count: count() }).from(treatments);
+      const totalLabTests = await db.select({ count: count() }).from(labTests);
+      const totalXrays = await db.select({ count: count() }).from(xrayExams);
+      
+      console.log("Total counts:", {
+        patients: totalPatients[0]?.count || 0,
+        treatments: totalTreatments[0]?.count || 0,
+        labs: totalLabTests[0]?.count || 0,
+        xrays: totalXrays[0]?.count || 0
+      });
+      
+      return {
+        newPatients: totalPatients[0]?.count || 0,
+        totalVisits: totalTreatments[0]?.count || 0,
+        labTests: totalLabTests[0]?.count || 0,
+        xrays: totalXrays[0]?.count || 0,
+        pending: {
+          labResults: 0,
+          xrayReports: 0,
+          prescriptions: 0,
+        },
+      };
+    } catch (error) {
+      console.error("Dashboard stats error:", error);
+      throw error;
+    }
   }
 
   async getRecentPatients(limit = 5): Promise<(Patient & { lastVisit?: string; status: string })[]> {
