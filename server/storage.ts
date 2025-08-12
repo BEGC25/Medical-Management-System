@@ -382,12 +382,25 @@ export class MemStorage implements IStorage {
       const totalTreatments = await db.select({ count: count() }).from(treatments);
       const totalLabTests = await db.select({ count: count() }).from(labTests);
       const totalXrays = await db.select({ count: count() }).from(xrayExams);
+      const totalUltrasounds = await db.select({ count: count() }).from(ultrasoundExams);
+      
+      // Get pending counts
+      const pendingLabTests = await db.select({ count: count() }).from(labTests)
+        .where(eq(labTests.status, "pending"));
+      const pendingXrays = await db.select({ count: count() }).from(xrayExams)
+        .where(eq(xrayExams.status, "pending"));
+      const pendingUltrasounds = await db.select({ count: count() }).from(ultrasoundExams)
+        .where(eq(ultrasoundExams.status, "pending"));
       
       console.log("Total counts:", {
         patients: totalPatients[0]?.count || 0,
         treatments: totalTreatments[0]?.count || 0,
         labs: totalLabTests[0]?.count || 0,
-        xrays: totalXrays[0]?.count || 0
+        xrays: totalXrays[0]?.count || 0,
+        ultrasounds: totalUltrasounds[0]?.count || 0,
+        pendingLabs: pendingLabTests[0]?.count || 0,
+        pendingXrays: pendingXrays[0]?.count || 0,
+        pendingUltrasounds: pendingUltrasounds[0]?.count || 0
       });
       
       return {
@@ -395,10 +408,11 @@ export class MemStorage implements IStorage {
         totalVisits: totalTreatments[0]?.count || 0,
         labTests: totalLabTests[0]?.count || 0,
         xrays: totalXrays[0]?.count || 0,
+        ultrasounds: totalUltrasounds[0]?.count || 0,
         pending: {
-          labResults: 0,
-          xrayReports: 0,
-          prescriptions: 0,
+          labResults: pendingLabTests[0]?.count || 0,
+          xrayReports: pendingXrays[0]?.count || 0,
+          ultrasoundReports: pendingUltrasounds[0]?.count || 0,
         },
       };
     } catch (error) {

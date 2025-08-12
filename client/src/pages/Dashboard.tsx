@@ -10,7 +10,8 @@ import {
   FileText,
   Users,
   BarChart3,
-  Clock
+  Clock,
+  MonitorSpeaker
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,27 +106,41 @@ export default function Dashboard() {
           <CardContent className="space-y-4">
             {stats ? (
               <>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">New Patients</span>
-                  <span className="font-semibold text-medical-blue">{stats.newPatients}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Total Visits</span>
-                  <span className="font-semibold text-health-green">{stats.totalVisits}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Lab Tests</span>
-                  <span className="font-semibold text-attention-orange">{stats.labTests}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">X-Rays</span>
-                  <span className="font-semibold text-purple-600">{stats.xrays}</span>
-                </div>
+                <Link href="/patients">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                    <span className="text-gray-600 dark:text-gray-400">New Patients</span>
+                    <span className="font-semibold text-medical-blue">{stats.newPatients}</span>
+                  </div>
+                </Link>
+                <Link href="/treatment">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                    <span className="text-gray-600 dark:text-gray-400">Total Visits</span>
+                    <span className="font-semibold text-health-green">{stats.totalVisits}</span>
+                  </div>
+                </Link>
+                <Link href="/laboratory">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                    <span className="text-gray-600 dark:text-gray-400">Lab Tests</span>
+                    <span className="font-semibold text-attention-orange">{stats.labTests}</span>
+                  </div>
+                </Link>
+                <Link href="/xray">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                    <span className="text-gray-600 dark:text-gray-400">X-Rays</span>
+                    <span className="font-semibold text-purple-600">{stats.xrays}</span>
+                  </div>
+                </Link>
+                <Link href="/ultrasound">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                    <span className="text-gray-600 dark:text-gray-400">Ultrasounds</span>
+                    <span className="font-semibold text-blue-600">{stats.ultrasounds}</span>
+                  </div>
+                </Link>
               </>
             ) : (
               <div className="space-y-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex justify-between items-center">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-2">
                     <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
                     <div className="h-4 bg-gray-200 rounded w-8 animate-pulse"></div>
                   </div>
@@ -180,33 +195,39 @@ export default function Dashboard() {
             <div className="space-y-3">
               {stats ? (
                 <>
-                  <div className="flex items-center justify-between py-2">
-                    <div className="flex items-center">
-                      <TestTube className="text-attention-orange mr-3 w-4 h-4" />
-                      <span className="text-gray-700 dark:text-gray-300">Lab Results</span>
+                  <Link href="/laboratory">
+                    <div className="flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                      <div className="flex items-center">
+                        <TestTube className="text-attention-orange mr-3 w-4 h-4" />
+                        <span className="text-gray-700 dark:text-gray-300">Lab Results</span>
+                      </div>
+                      <Badge className="bg-attention-orange text-white">
+                        {stats.pending.labResults}
+                      </Badge>
                     </div>
-                    <Badge className="bg-attention-orange text-white">
-                      {stats.pending.labResults}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between py-2">
-                    <div className="flex items-center">
-                      <Scan className="text-purple-600 mr-3 w-4 h-4" />
-                      <span className="text-gray-700 dark:text-gray-300">X-Ray Reports</span>
+                  </Link>
+                  <Link href="/xray">
+                    <div className="flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                      <div className="flex items-center">
+                        <Scan className="text-purple-600 mr-3 w-4 h-4" />
+                        <span className="text-gray-700 dark:text-gray-300">X-Ray Reports</span>
+                      </div>
+                      <Badge className="bg-purple-600 text-white">
+                        {stats.pending.xrayReports}
+                      </Badge>
                     </div>
-                    <Badge className="bg-purple-600 text-white">
-                      {stats.pending.xrayReports}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between py-2">
-                    <div className="flex items-center">
-                      <FileText className="text-health-green mr-3 w-4 h-4" />
-                      <span className="text-gray-700 dark:text-gray-300">Prescriptions</span>
+                  </Link>
+                  <Link href="/ultrasound">
+                    <div className="flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                      <div className="flex items-center">
+                        <MonitorSpeaker className="text-blue-600 mr-3 w-4 h-4" />
+                        <span className="text-gray-700 dark:text-gray-300">Ultrasound Reports</span>
+                      </div>
+                      <Badge className="bg-blue-600 text-white">
+                        {stats.pending.ultrasoundReports}
+                      </Badge>
                     </div>
-                    <Badge className="bg-health-green text-white">
-                      {stats.pending.prescriptions}
-                    </Badge>
-                  </div>
+                  </Link>
                 </>
               ) : (
                 <div className="space-y-3">
