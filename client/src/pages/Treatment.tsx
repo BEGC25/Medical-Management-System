@@ -42,7 +42,7 @@ export default function Treatment() {
   });
 
   const createTreatmentMutation = useMutation({
-    mutationFn: (data: InsertTreatment) => apiRequest("/api/treatments", "POST", data),
+    mutationFn: (data: InsertTreatment) => apiRequest("POST", "/api/treatments", data),
     onSuccess: () => {
       toast({
         title: "Success",
