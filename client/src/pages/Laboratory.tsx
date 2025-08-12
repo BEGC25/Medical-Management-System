@@ -64,7 +64,10 @@ export default function Laboratory() {
   });
 
   const createLabTestMutation = useMutation({
-    mutationFn: (data: InsertLabTest) => apiRequest("/api/lab-tests", "POST", data),
+    mutationFn: async (data: InsertLabTest) => {
+      const response = await apiRequest("POST", "/api/lab-tests", data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Success",
@@ -101,8 +104,10 @@ export default function Laboratory() {
   });
 
   const updateLabTestMutation = useMutation({
-    mutationFn: ({ testId, data }: { testId: string; data: any }) => 
-      apiRequest(`/api/lab-tests/${testId}`, "PUT", data),
+    mutationFn: async ({ testId, data }: { testId: string; data: any }) => {
+      const response = await apiRequest("PUT", `/api/lab-tests/${testId}`, data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Success",

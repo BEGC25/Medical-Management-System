@@ -37,19 +37,22 @@ try {
     created_at TEXT NOT NULL
   )`);
 
+  sqlite.exec(`DROP TABLE IF EXISTS lab_tests`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS lab_tests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     test_id TEXT UNIQUE NOT NULL,
     patient_id TEXT NOT NULL,
-    test_category TEXT NOT NULL,
-    test_name TEXT NOT NULL,
-    priority TEXT NOT NULL DEFAULT 'normal',
+    category TEXT NOT NULL,
+    tests TEXT NOT NULL,
+    clinical_info TEXT,
+    priority TEXT NOT NULL DEFAULT 'routine',
+    requested_date TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     results TEXT,
     normal_values TEXT,
-    technician_notes TEXT,
-    requested_date TEXT NOT NULL,
+    result_status TEXT,
     completed_date TEXT,
+    technician_notes TEXT,
     created_at TEXT NOT NULL
   )`);
 
