@@ -76,6 +76,14 @@ try {
 
 // Migrations already applied manually
 
+// Counter for sequential patient IDs
+let patientCounter = 0;
+
+function generatePatientId(): string {
+  patientCounter++;
+  return `GC${patientCounter}`;
+}
+
 function generateId(prefix: string): string {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substr(2, 5);
@@ -125,7 +133,13 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   async createPatient(data: InsertPatient): Promise<Patient> {
-    const patientId = generateId("PT");
+    // Initialize counter from existing patients if not set
+    if (patientCounter === 0) {
+      const allPatients = await db.select().from(patients);
+      patientCounter = allPatients.length;
+    }
+    
+    const patientId = generatePatientId();
     const now = new Date().toISOString();
     
     const insertData: any = {
@@ -328,10 +342,13 @@ export class MemStorage implements IStorage {
       const result = [];
       for (const patient of recentPatients) {
         try {
-          const [lastTreatment] = await db.select().from(treatments)
+          // Use a simpler query that works with SQLite
+          const treatmentResults = await db.select().from(treatments)
             .where(eq(treatments.patientId, patient.patientId))
-            .orderBy(desc(treatments.visitDate))
+            .orderBy(desc(treatments.createdAt))
             .limit(1);
+          
+          const lastTreatment = treatmentResults[0];
           
           result.push({
             ...patient,
