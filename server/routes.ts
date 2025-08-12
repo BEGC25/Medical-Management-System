@@ -192,7 +192,8 @@ router.get("/api/dashboard/recent-patients", async (req, res) => {
     const patients = await storage.getRecentPatients(limit);
     res.json(patients);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch recent patients" });
+    console.error("Recent patients error:", error);
+    res.status(500).json({ error: "Failed to fetch recent patients", details: error.message });
   }
 });
 

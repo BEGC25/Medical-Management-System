@@ -317,25 +317,44 @@ export class MemStorage implements IStorage {
   }
 
   async getRecentPatients(limit = 5): Promise<(Patient & { lastVisit?: string; status: string })[]> {
-    const recentPatients = await db.select().from(patients)
-      .orderBy(desc(patients.createdAt))
-      .limit(limit);
-    
-    const result = [];
-    for (const patient of recentPatients) {
-      const [lastTreatment] = await db.select().from(treatments)
-        .where(eq(treatments.patientId, patient.patientId))
-        .orderBy(desc(treatments.visitDate))
-        .limit(1);
+    try {
+      console.log("Getting recent patients, limit:", limit);
+      const recentPatients = await db.select().from(patients)
+        .orderBy(desc(patients.createdAt))
+        .limit(limit);
       
-      result.push({
-        ...patient,
-        lastVisit: lastTreatment?.visitDate,
-        status: lastTreatment ? "Treated" : "New",
-      });
+      console.log("Found patients:", recentPatients.length);
+      
+      const result = [];
+      for (const patient of recentPatients) {
+        try {
+          const [lastTreatment] = await db.select().from(treatments)
+            .where(eq(treatments.patientId, patient.patientId))
+            .orderBy(desc(treatments.visitDate))
+            .limit(1);
+          
+          result.push({
+            ...patient,
+            lastVisit: lastTreatment?.visitDate,
+            status: lastTreatment ? "Treated" : "New",
+          });
+        } catch (treatmentError) {
+          console.log("Error getting treatment for patient:", patient.patientId, treatmentError);
+          // Add patient without treatment info if treatment query fails
+          result.push({
+            ...patient,
+            lastVisit: undefined,
+            status: "New",
+          });
+        }
+      }
+      
+      console.log("Recent patients result:", result);
+      return result;
+    } catch (error) {
+      console.error("getRecentPatients error:", error);
+      throw error;
     }
-    
-    return result;
   }
 }
 
