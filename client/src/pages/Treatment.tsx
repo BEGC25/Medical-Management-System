@@ -409,7 +409,7 @@ export default function Treatment() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">No follow-up needed</SelectItem>
+                            <SelectItem value="none">No follow-up needed</SelectItem>
                             <SelectItem value="routine">Routine Follow-up</SelectItem>
                             <SelectItem value="urgent">Urgent Follow-up</SelectItem>
                             <SelectItem value="lab-results">Lab Results Review</SelectItem>
