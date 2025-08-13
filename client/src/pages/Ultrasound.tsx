@@ -344,9 +344,9 @@ export default function Ultrasound() {
           {pendingUltrasounds && pendingUltrasounds.length > 0 ? (
             <div className="space-y-4">
               {pendingUltrasounds.map((exam: UltrasoundExam) => (
-                <div key={exam.id} className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <div key={exam.id} className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                   <div className="flex justify-between items-start">
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">{exam.examId}</Badge>
                         <Badge variant={exam.priority === 'emergency' ? 'destructive' : exam.priority === 'urgent' ? 'default' : 'secondary'}>
@@ -357,16 +357,23 @@ export default function Ultrasound() {
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         Type: {exam.examType} • Requested: {exam.requestedDate}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">{exam.clinicalIndication}</p>
+                      {exam.clinicalIndication && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{exam.clinicalIndication}</p>
+                      )}
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => setSelectedUltrasoundExam(exam)}
-                      className="bg-medical-green hover:bg-green-700"
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Enter Results
-                    </Button>
+                    <div className="ml-4">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          console.log('Clicked ultrasound exam:', exam);
+                          setSelectedUltrasoundExam(exam);
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Enter Results
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
