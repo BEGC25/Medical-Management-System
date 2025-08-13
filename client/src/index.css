@@ -122,16 +122,32 @@
     padding: 0 !important;
   }
   
+  /* Hide everything by default */
+  * {
+    visibility: hidden;
+  }
+  
+  /* Show only prescription content and its children */
+  #prescription-content,
+  #prescription-content * {
+    visibility: visible;
+  }
+  
+  /* Position prescription to fill page */
+  #prescription-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
   .no-print {
     display: none !important;
   }
   
   .print-only {
     display: block !important;
-  }
-  
-  header, nav {
-    display: none !important;
   }
   
   .shadow-md, .shadow-lg {
@@ -144,18 +160,6 @@
   
   .bg-gray-50 {
     background-color: white !important;
-  }
-  
-  /* Only show prescription when printing */
-  .container {
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: 100% !important;
-  }
-  
-  /* Hide everything except prescription */
-  div:not(.print\\:fixed):not(.print\\:fixed *) {
-    display: none !important;
   }
 }
 
