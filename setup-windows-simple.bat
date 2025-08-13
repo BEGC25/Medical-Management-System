@@ -40,7 +40,7 @@ if not exist ".env" (
 
 echo.
 echo Installing dependencies...
-call npm install --production
+call npm install
 
 if %ERRORLEVEL% NEQ 0 (
     echo ❌ Failed to install dependencies
@@ -64,7 +64,7 @@ REM Create backups directory
 if not exist "backups" mkdir backups
 echo ✓ Backups directory created
 
-REM Create simple start script
+REM Create Windows-compatible start script
 (
 echo @echo off
 echo echo ========================================
@@ -76,7 +76,9 @@ echo echo Access at: http://localhost:5000
 echo echo.
 echo echo Press Ctrl+C to stop the system when done
 echo echo.
-echo call npm run dev
+echo cd /d "%%~dp0"
+echo set NODE_ENV=development
+echo npx tsx server/index.ts
 echo.
 echo echo System stopped. You can close this window.
 echo pause

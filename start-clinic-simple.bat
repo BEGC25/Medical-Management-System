@@ -9,9 +9,12 @@ echo.
 echo Press Ctrl+C to stop the system when done
 echo.
 
-REM Set environment and start the server directly
+REM Change to script directory
+cd /d "%~dp0"
+
+REM Set environment and start the server using npx
 set NODE_ENV=development
-node_modules\.bin\tsx server/index.ts
+npx tsx server/index.ts
 
 echo.
 echo System stopped. You can close this window.
