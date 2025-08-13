@@ -473,7 +473,7 @@ export default function Treatment() {
       </Card>
 
       {/* Prescription Modal */}
-      {showPrescription && selectedPatient && prescriptionData && (
+      {showPrescription && selectedPatient && (
         <div className="print:fixed print:inset-0 print:bg-white print:z-50">
         <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full">
           <CardHeader className="text-center border-b print:border-gray-300">
@@ -514,15 +514,15 @@ export default function Treatment() {
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
                 <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border min-h-[100px]">
-                  {prescriptionData?.treatmentPlan || 'No treatment plan specified'}
+                  {prescriptionData?.treatmentPlan || form.getValues("treatmentPlan") || 'No treatment plan specified'}
                 </div>
               </div>
 
-              {prescriptionData?.followUpDate && (
+              {(prescriptionData?.followUpDate || form.getValues("followUpDate")) && (
                 <div>
                   <h4 className="font-semibold text-medical-blue mb-2">Follow-up:</h4>
-                  <p className="pl-4">Next visit: {prescriptionData.followUpDate} 
-                    {prescriptionData?.followUpType && ` (${prescriptionData.followUpType})`}
+                  <p className="pl-4">Next visit: {prescriptionData?.followUpDate || form.getValues("followUpDate")} 
+                    {(prescriptionData?.followUpType || form.getValues("followUpType")) && ` (${prescriptionData?.followUpType || form.getValues("followUpType")})`}
                   </p>
                 </div>
               )}
