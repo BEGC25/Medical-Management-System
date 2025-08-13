@@ -478,10 +478,21 @@ export default function Treatment() {
               <CardTitle className="text-3xl font-bold text-medical-blue tracking-wide">
                 BAHR EL GHAZAL CLINIC
               </CardTitle>
-              <div className="flex items-center justify-center mt-2">
-                <div className="h-px bg-medical-blue flex-1 max-w-24"></div>
-                <p className="text-sm text-gray-600 mx-4 font-medium">South Sudan</p>
-                <div className="h-px bg-medical-blue flex-1 max-w-24"></div>
+              <p className="text-lg text-medical-green font-semibold italic mt-1">
+                Your Health, Our Priority
+              </p>
+              <div className="mt-3 space-y-1">
+                <p className="text-sm text-gray-600 font-medium">
+                  Phone: +211 91 762 3881 | +211 92 220 0691
+                </p>
+                <p className="text-sm text-gray-600">
+                  Email: bahr.ghazal.clinic@gmail.com
+                </p>
+              </div>
+              <div className="flex items-center justify-center mt-3">
+                <div className="h-px bg-medical-blue flex-1 max-w-32"></div>
+                <p className="text-sm text-gray-600 mx-4 font-medium">Aweil, South Sudan</p>
+                <div className="h-px bg-medical-blue flex-1 max-w-32"></div>
               </div>
             </div>
             <div className="bg-medical-green text-white py-2 px-6 inline-block rounded">
