@@ -115,45 +115,30 @@
 
 /* Print styles */
 @media print {
-  /* Page setup */
-  @page {
-    size: A4;
-    margin: 0.75in;
-  }
-  
   body {
     -webkit-print-color-adjust: exact !important;
     color-adjust: exact !important;
     margin: 0 !important;
     padding: 0 !important;
-    font-size: 12px !important;
-    line-height: 1.4 !important;
   }
   
-  /* Hide elements that shouldn't print */
-  .print\\:hidden,
-  header, 
-  nav,
   .no-print {
     display: none !important;
   }
   
-  /* Show only prescription content */
-  .prescription-container {
+  .print-only {
     display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    page-break-inside: avoid !important;
-    margin: 0 !important;
-    padding: 0 !important;
   }
   
-  /* Remove all shadows and borders */
+  header, nav {
+    display: none !important;
+  }
+  
   .shadow-md, .shadow-lg {
     box-shadow: none !important;
   }
   
-  .rounded-lg, .rounded {
+  .rounded-lg {
     border-radius: 0 !important;
   }
   
@@ -161,41 +146,16 @@
     background-color: white !important;
   }
   
-  .border-2 {
-    border: 1px solid #ddd !important;
+  /* Only show prescription when printing */
+  .container {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
   }
   
-  /* Compact spacing for print */
-  .prescription-container .p-4 {
-    padding: 0.5rem !important;
-  }
-  
-  .prescription-container .space-y-3 > * + * {
-    margin-top: 0.5rem !important;
-  }
-  
-  .prescription-container .mt-6 {
-    margin-top: 0.75rem !important;
-  }
-  
-  .prescription-container .pt-4 {
-    padding-top: 0.5rem !important;
-  }
-  
-  .prescription-container .pb-3 {
-    padding-bottom: 0.25rem !important;
-  }
-  
-  /* Prevent page breaks and extra pages */
-  .prescription-container * {
-    page-break-after: avoid !important;
-    page-break-inside: avoid !important;
-  }
-  
-  /* Ensure content fits on one page */
-  .prescription-container {
-    max-height: 9in !important;
-    overflow: hidden !important;
+  /* Hide everything except prescription */
+  div:not(.print\\:fixed):not(.print\\:fixed *) {
+    display: none !important;
   }
 }
 

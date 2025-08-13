@@ -471,28 +471,22 @@ export default function Treatment() {
 
       {/* Prescription Modal */}
       {showPrescription && selectedPatient && (
-        <div className="prescription-container">
-        <Card className="border-2 border-medical-green print:shadow-none print:border-none">
+        <div className="print:fixed print:inset-0 print:bg-white print:z-50">
+        <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full">
           <CardHeader className="text-center border-b print:border-gray-300">
             <CardTitle className="text-2xl font-bold text-medical-blue">
               BAHR EL GHAZAL CLINIC
             </CardTitle>
-            <p className="text-sm text-gray-600 mb-1">
-              Your Health, Our Priority
-            </p>
-            <p className="text-xs text-gray-500 mb-1">
-              Phone: +211 91 762 3881 | +211 92 220 0691
-            </p>
-            <p className="text-xs text-gray-500 mb-3">
-              Email: bahr.ghazal.clinic@gmail.com
+            <p className="text-sm text-gray-600">
+              Rural Healthcare Centre • South Sudan
             </p>
             <p className="text-lg font-semibold text-medical-green mt-2">
               PRESCRIPTION
             </p>
           </CardHeader>
-          <CardContent className="p-4 space-y-3 print:p-4">
+          <CardContent className="p-6 space-y-4">
             {/* Patient Information */}
-            <div className="grid grid-cols-2 gap-4 pb-3 border-b print:pb-2">
+            <div className="grid grid-cols-2 gap-4 pb-4 border-b">
               <div>
                 <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
                 <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
@@ -507,10 +501,10 @@ export default function Treatment() {
             </div>
 
             {/* Clinical Information */}
-            <div className="space-y-2 print:space-y-2">
+            <div className="space-y-3">
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
-                <div className="pl-4 whitespace-pre-line bg-gray-50 print:bg-white p-3 rounded border print:border-gray-300">
+                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
                   {form.getValues("treatmentPlan")}
                 </div>
               </div>
@@ -526,21 +520,15 @@ export default function Treatment() {
             </div>
 
             {/* Footer */}
-            <div className="mt-6 pt-4 border-t">
-              <div className="flex justify-between">
+            <div className="pt-6 border-t mt-6">
+              <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-gray-600">
                     This prescription is valid for 30 days from date of issue
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    © 2025 Bahr El Ghazal Clinic
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="border-t border-gray-400 pt-2 w-40">
+                  <div className="border-t border-gray-400 pt-2 mt-12 w-48">
                     <p className="text-sm">Doctor's Signature</p>
                   </div>
                 </div>
@@ -548,7 +536,7 @@ export default function Treatment() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 print:hidden page-break-before:avoid">
+            <div className="flex gap-3 pt-4 print:hidden">
               <Button 
                 onClick={printPrescription}
                 className="bg-medical-blue hover:bg-blue-700"
