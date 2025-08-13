@@ -45,8 +45,6 @@ export default function Treatment() {
 
   const generatePrescription = () => {
     const formData = form.getValues();
-    console.log("Form data:", formData); // Debug log
-    console.log("Treatment plan:", formData.treatmentPlan); // Specific debug
     
     if (!selectedPatient) {
       toast({
@@ -66,7 +64,6 @@ export default function Treatment() {
       return;
     }
     
-    console.log("Setting prescription data:", formData);
     setPrescriptionData(formData);
     setShowPrescription(true);
   };
@@ -527,8 +524,6 @@ export default function Treatment() {
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
                 <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border min-h-[100px]">
-                  {console.log("Prescription render - prescriptionData:", prescriptionData)}
-                  {console.log("Prescription render - current form value:", form.getValues("treatmentPlan"))}
                   {prescriptionData?.treatmentPlan || form.getValues("treatmentPlan") || 'No treatment plan specified'}
                 </div>
               </div>
