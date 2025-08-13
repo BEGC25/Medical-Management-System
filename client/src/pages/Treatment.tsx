@@ -19,7 +19,6 @@ import { addToPendingSync } from "@/lib/offline";
 export default function Treatment() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescription, setShowPrescription] = useState(false);
-  const [prescriptionData, setPrescriptionData] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -45,28 +44,14 @@ export default function Treatment() {
 
   const generatePrescription = () => {
     const formData = form.getValues();
-    
-    if (!selectedPatient) {
+    if (!selectedPatient || !formData.treatmentPlan) {
       toast({
-        title: "No Patient Selected",
-        description: "Please select a patient first.",
+        title: "Incomplete Information",
+        description: "Please fill in patient and treatment plan before generating prescription.",
         variant: "destructive",
       });
       return;
     }
-    
-    if (!formData.treatmentPlan || formData.treatmentPlan.trim() === "") {
-      toast({
-        title: "No Treatment Plan",
-        description: "Please enter a treatment plan.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Store the form data in prescription state
-    const prescriptionFormData = { ...formData };
-    setPrescriptionData(prescriptionFormData);
     setShowPrescription(true);
   };
 
@@ -492,16 +477,10 @@ export default function Treatment() {
             <CardTitle className="text-2xl font-bold text-medical-blue">
               BAHR EL GHAZAL CLINIC
             </CardTitle>
-            <p className="text-sm text-medical-green font-medium">
-              Your Health, Our Priority
+            <p className="text-sm text-gray-600">
+              Rural Healthcare Centre • South Sudan
             </p>
-            <p className="text-xs text-gray-600 mt-1">
-              Phone: +211 91 762 3881 | +211 92 220 0691
-            </p>
-            <p className="text-xs text-gray-600">
-              Email: bahr.ghazal.clinic@gmail.com
-            </p>
-            <p className="text-lg font-semibold text-medical-green mt-3">
+            <p className="text-lg font-semibold text-medical-green mt-2">
               PRESCRIPTION
             </p>
           </CardHeader>
@@ -525,16 +504,16 @@ export default function Treatment() {
             <div className="space-y-3">
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
-                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border min-h-[100px]">
-                  <p>{prescriptionData?.treatmentPlan || 'No treatment plan specified'}</p>
+                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
+                  {form.getValues("treatmentPlan")}
                 </div>
               </div>
 
-              {(prescriptionData?.followUpDate || form.getValues("followUpDate")) && (
+              {form.getValues("followUpDate") && (
                 <div>
                   <h4 className="font-semibold text-medical-blue mb-2">Follow-up:</h4>
-                  <p className="pl-4">Next visit: {prescriptionData?.followUpDate || form.getValues("followUpDate")} 
-                    {(prescriptionData?.followUpType || form.getValues("followUpType")) && ` (${prescriptionData?.followUpType || form.getValues("followUpType")})`}
+                  <p className="pl-4">Next visit: {form.getValues("followUpDate")} 
+                    {form.getValues("followUpType") && ` (${form.getValues("followUpType")})`}
                   </p>
                 </div>
               )}
