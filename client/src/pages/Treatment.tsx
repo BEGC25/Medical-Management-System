@@ -503,11 +503,6 @@ export default function Treatment() {
             {/* Clinical Information */}
             <div className="space-y-3">
               <div>
-                <h4 className="font-semibold text-medical-blue mb-2">Diagnosis:</h4>
-                <p className="pl-4">{form.getValues("diagnosis")}</p>
-              </div>
-              
-              <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
                 <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
                   {form.getValues("treatmentPlan")}
