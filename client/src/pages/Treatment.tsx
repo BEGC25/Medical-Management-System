@@ -490,9 +490,9 @@ export default function Treatment() {
               PRESCRIPTION
             </p>
           </CardHeader>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-4 space-y-3 print:p-4">
             {/* Patient Information */}
-            <div className="grid grid-cols-2 gap-4 pb-4 border-b">
+            <div className="grid grid-cols-2 gap-4 pb-3 border-b print:pb-2">
               <div>
                 <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
                 <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
@@ -507,7 +507,7 @@ export default function Treatment() {
             </div>
 
             {/* Clinical Information */}
-            <div className="space-y-3">
+            <div className="space-y-2 print:space-y-2">
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
                 <div className="pl-4 whitespace-pre-line bg-gray-50 print:bg-white p-3 rounded border print:border-gray-300">
@@ -525,23 +525,27 @@ export default function Treatment() {
               )}
             </div>
 
-            {/* Footer */}
-            <div className="pt-6 border-t mt-6">
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-sm text-gray-600">
+            {/* Footer - Fixed positioning */}
+            <div className="mt-8 pt-4 border-t print:mt-6 print:pt-3">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 mb-4">
                     This prescription is valid for 30 days from date of issue
                   </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    © 2025 Bahr El Ghazal Clinic
-                  </p>
+                  <div className="mt-8">
+                    <p className="text-xs text-gray-500">
+                      Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      © 2025 Bahr El Ghazal Clinic
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="border-t border-gray-400 pt-2 mt-12 w-48">
-                    <p className="text-sm">Doctor's Signature</p>
+                <div className="flex-1 text-right">
+                  <div className="inline-block">
+                    <div className="border-t border-gray-400 pt-2 w-48">
+                      <p className="text-sm">Doctor's Signature</p>
+                    </div>
                   </div>
                 </div>
               </div>

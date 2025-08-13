@@ -157,6 +157,39 @@
   .print\\:hidden {
     display: none !important;
   }
+  
+  /* Prescription specific print styles */
+  .prescription-container {
+    page-break-inside: avoid !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+  
+  .prescription-container .card {
+    page-break-inside: avoid !important;
+    height: auto !important;
+    max-height: 100vh !important;
+  }
+  
+  /* Ensure single page printing */
+  @page {
+    size: A4;
+    margin: 0.5in;
+  }
+  
+  .prescription-container {
+    font-size: 0.9rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .prescription-container h4 {
+    font-size: 1rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .prescription-container p {
+    margin-bottom: 0.25rem !important;
+  }
 }
 
 /* Offline indicator animation */
