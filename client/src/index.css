@@ -146,32 +146,16 @@
     background-color: white !important;
   }
   
-  /* Only show prescription when printing */
+  /* Simple print styles - only hide navigation */
   .container {
     margin: 0 !important;
     padding: 0 !important;
     max-width: 100% !important;
   }
   
-  /* Hide everything except prescription when printing */
-  body > div > div:not([class*="print:fixed"]) {
+  /* Hide only the treatment form, not the prescription */
+  .print\\:hidden {
     display: none !important;
-  }
-  
-  /* Ensure prescription content is visible */
-  .print\\:fixed,
-  .print\\:fixed * {
-    display: block !important;
-  }
-  
-  /* Make sure grid layouts work in print */
-  .grid {
-    display: grid !important;
-  }
-  
-  /* Ensure text content shows */
-  p, h1, h2, h3, h4, h5, h6, div {
-    display: block !important;
   }
 }
 
