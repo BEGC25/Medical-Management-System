@@ -13,7 +13,7 @@ Set-Location $PSScriptRoot
 
 # Check if Node.js is available
 try {
-    $nodeVersion = node --version
+    $nodeVersion = & node --version
     Write-Host "✓ Node.js version: $nodeVersion"
 } catch {
     Write-Host "❌ Node.js is not installed or not in PATH"
@@ -25,7 +25,7 @@ try {
 # Check if dependencies are installed
 if (-not (Test-Path "node_modules")) {
     Write-Host "Installing dependencies..."
-    npm install
+    & npm install
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Failed to install dependencies"
         Read-Host "Press Enter to exit"
@@ -36,7 +36,7 @@ if (-not (Test-Path "node_modules")) {
 
 # Set environment and start
 $env:NODE_ENV = "development"
-npx tsx server/index.ts
+& npx tsx server/index.ts
 
 Write-Host ""
 Write-Host "System stopped. Press Enter to close."
