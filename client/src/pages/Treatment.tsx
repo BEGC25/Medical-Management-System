@@ -45,7 +45,8 @@ export default function Treatment() {
 
   const generatePrescription = () => {
     const formData = form.getValues();
-    if (!selectedPatient || !formData.treatmentPlan) {
+    console.log("Form data:", formData); // Debug log
+    if (!selectedPatient || !formData.treatmentPlan || formData.treatmentPlan.trim() === "") {
       toast({
         title: "Incomplete Information",
         description: "Please fill in patient and treatment plan before generating prescription.",
@@ -513,15 +514,15 @@ export default function Treatment() {
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
                 <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border min-h-[100px]">
-                  {prescriptionData.treatmentPlan || 'No treatment plan specified'}
+                  {prescriptionData?.treatmentPlan || 'No treatment plan specified'}
                 </div>
               </div>
 
-              {prescriptionData.followUpDate && (
+              {prescriptionData?.followUpDate && (
                 <div>
                   <h4 className="font-semibold text-medical-blue mb-2">Follow-up:</h4>
                   <p className="pl-4">Next visit: {prescriptionData.followUpDate} 
-                    {prescriptionData.followUpType && ` (${prescriptionData.followUpType})`}
+                    {prescriptionData?.followUpType && ` (${prescriptionData.followUpType})`}
                   </p>
                 </div>
               )}
