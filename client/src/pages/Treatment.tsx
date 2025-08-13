@@ -477,8 +477,17 @@ export default function Treatment() {
             <CardTitle className="text-2xl font-bold text-medical-blue">
               BAHR EL GHAZAL CLINIC
             </CardTitle>
-            <p className="text-sm text-gray-600">
-              Rural Healthcare Centre • South Sudan
+            <p className="text-sm text-gray-600 mb-1">
+              Your Health, Our Priority
+            </p>
+            <p className="text-xs text-gray-500 mb-1">
+              Phone: +211 91 762 3881 | +211 92 220 0691
+            </p>
+            <p className="text-xs text-gray-500 mb-2">
+              Email: bahr.ghazal.clinic@gmail.com
+            </p>
+            <p className="text-xs text-gray-500 mb-3">
+              Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
             </p>
             <p className="text-lg font-semibold text-medical-green mt-2">
               PRESCRIPTION
@@ -525,6 +534,9 @@ export default function Treatment() {
                 <div>
                   <p className="text-sm text-gray-600">
                     This prescription is valid for 30 days from date of issue
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    © 2025 Bahr El Ghazal Clinic
                   </p>
                 </div>
                 <div className="text-right">
