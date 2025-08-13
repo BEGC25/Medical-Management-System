@@ -54,7 +54,7 @@ Files included in the ZIP:
 ### Complete Medical Management
 - **Patient Registration**: GC-format IDs (GC1, GC2, etc.)
 - **Treatment Records**: Visits, vital signs, diagnoses
-- **Laboratory Management**: Blood, urine, stool, microbiology tests
+- **Laboratory Management**: Blood, urine, stool, microbiology tests (including Widal for typhoid, H. pylori, Brucella)
 - **Chemistry Panel**: Automated chemistry machine integration (LFT, KFT, Lipid Profile, HbA1c, Cardiac Enzymes, etc.)
 - **Hormonal Testing**: Hormonal machine integration (Thyroid Function, Diabetes Panel, Reproductive Hormones, etc.)
 - **X-Ray System**: Complete examination documentation

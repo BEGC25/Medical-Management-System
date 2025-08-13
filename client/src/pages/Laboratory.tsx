@@ -21,12 +21,16 @@ const commonTests = {
   blood: [
     "Complete Blood Count (CBC)",
     "Blood Sugar (Random/Fasting)",
-    "Malaria Test",
+    "Malaria Test (RDT/Microscopy)",
     "HIV Test",
     "Tuberculosis Test",
     "Hepatitis B Test",
+    "Hepatitis C Test",
     "Blood Group & Rh",
-    "ESR (Erythrocyte Sedimentation Rate)"
+    "ESR (Erythrocyte Sedimentation Rate)",
+    "Typhoid Test (Rapid)",
+    "Dengue Test",
+    "Yellow Fever Test"
   ],
   urine: [
     "Urine Analysis",
@@ -46,7 +50,12 @@ const commonTests = {
     "Wound Culture",
     "Throat Culture",
     "Sputum Culture",
-    "Antibiotic Sensitivity"
+    "Antibiotic Sensitivity",
+    "Widal Test (Typhoid)",
+    "H. pylori Test",
+    "Brucella Test",
+    "Stool Culture & Sensitivity",
+    "Urine Culture & Sensitivity"
   ],
   chemistry: [
     "Liver Function Tests (LFT)",
