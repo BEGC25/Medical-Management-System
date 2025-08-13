@@ -46,14 +46,27 @@ export default function Treatment() {
   const generatePrescription = () => {
     const formData = form.getValues();
     console.log("Form data:", formData); // Debug log
-    if (!selectedPatient || !formData.treatmentPlan || formData.treatmentPlan.trim() === "") {
+    console.log("Treatment plan:", formData.treatmentPlan); // Specific debug
+    
+    if (!selectedPatient) {
       toast({
-        title: "Incomplete Information",
-        description: "Please fill in patient and treatment plan before generating prescription.",
+        title: "No Patient Selected",
+        description: "Please select a patient first.",
         variant: "destructive",
       });
       return;
     }
+    
+    if (!formData.treatmentPlan || formData.treatmentPlan.trim() === "") {
+      toast({
+        title: "No Treatment Plan",
+        description: "Please enter a treatment plan.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log("Setting prescription data:", formData);
     setPrescriptionData(formData);
     setShowPrescription(true);
   };
@@ -514,6 +527,8 @@ export default function Treatment() {
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
                 <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border min-h-[100px]">
+                  {console.log("Prescription render - prescriptionData:", prescriptionData)}
+                  {console.log("Prescription render - current form value:", form.getValues("treatmentPlan"))}
                   {prescriptionData?.treatmentPlan || form.getValues("treatmentPlan") || 'No treatment plan specified'}
                 </div>
               </div>
