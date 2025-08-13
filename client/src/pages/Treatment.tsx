@@ -44,10 +44,10 @@ export default function Treatment() {
 
   const generatePrescription = () => {
     const formData = form.getValues();
-    if (!selectedPatient || !formData.diagnosis || !formData.treatmentPlan) {
+    if (!selectedPatient || !formData.treatmentPlan) {
       toast({
         title: "Incomplete Information",
-        description: "Please fill in patient, diagnosis, and treatment plan before generating prescription.",
+        description: "Please fill in patient and treatment plan before generating prescription.",
         variant: "destructive",
       });
       return;
@@ -453,7 +453,7 @@ export default function Treatment() {
                     type="button" 
                     onClick={generatePrescription}
                     className="bg-health-green hover:bg-green-700"
-                    disabled={!selectedPatient || !form.watch("diagnosis") || !form.watch("treatmentPlan")}
+                    disabled={!selectedPatient || !form.watch("treatmentPlan")}
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     Generate Prescription
