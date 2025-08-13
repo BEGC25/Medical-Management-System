@@ -153,9 +153,15 @@
     max-width: 100% !important;
   }
   
-  /* Hide everything except prescription */
-  div:not(.print\\:fixed):not(.print\\:fixed *) {
-    display: none !important;
+  /* Show prescription content properly */
+  .print\\:fixed,
+  .print\\:fixed * {
+    display: block !important;
+  }
+  
+  /* Ensure prescription content is visible */
+  .print\\:fixed .whitespace-pre-line {
+    white-space: pre-line !important;
   }
 }
 
