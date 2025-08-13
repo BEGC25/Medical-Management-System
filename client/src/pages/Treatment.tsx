@@ -473,30 +473,23 @@ export default function Treatment() {
       {showPrescription && selectedPatient && (
         <div className="print:fixed print:inset-0 print:bg-white print:z-50">
         <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full">
-          <CardHeader className="text-center border-b print:border-gray-300">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <img 
-                src="/attached_assets/clinic_logo_1755123466075.png" 
-                alt="Bahr El Ghazal Clinic Logo" 
-                className="w-16 h-16"
-              />
-              <div>
-                <CardTitle className="text-2xl font-bold text-medical-blue">
-                  BAHR EL GHAZAL CLINIC
-                </CardTitle>
-                <p className="text-sm text-medical-green font-medium">
-                  Your Health, Our Priority
-                </p>
-              </div>
-            </div>
-            <div className="text-xs text-gray-600 space-y-1">
+          <CardHeader className="text-center border-b print:border-gray-300 pb-4">
+            <CardTitle className="text-2xl font-bold text-medical-blue mb-1">
+              BAHR EL GHAZAL CLINIC
+            </CardTitle>
+            <p className="text-sm text-medical-green font-medium mb-3">
+              Your Health, Our Priority
+            </p>
+            <div className="text-xs text-gray-600 space-y-1 mb-4">
               <p>Phone: +211 91 762 3881 | +211 92 220 0691</p>
               <p>Email: bahr.ghazal.clinic@gmail.com</p>
               <p>Aweil, South Sudan | www.bahrelghazalclinic.com</p>
             </div>
-            <p className="text-lg font-semibold text-medical-green mt-4">
-              PRESCRIPTION
-            </p>
+            <div className="border-t border-b border-gray-300 py-2">
+              <p className="text-lg font-semibold text-medical-blue">
+                PRESCRIPTION
+              </p>
+            </div>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
             {/* Patient Information */}
