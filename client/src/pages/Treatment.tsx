@@ -516,11 +516,11 @@ export default function Treatment() {
             </div>
 
             {/* Clinical Information */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
-                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
-                  {form.getValues("treatmentPlan")}
+                <h4 className="font-semibold text-medical-blue mb-3 text-lg">Rx (Treatment Plan):</h4>
+                <div className="pl-4 whitespace-pre-line bg-gray-50 p-4 rounded border-l-4 border-medical-green min-h-24">
+                  {form.getValues("treatmentPlan") || "No treatment plan specified"}
                 </div>
               </div>
 
