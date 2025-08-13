@@ -1,9 +1,9 @@
-import { serial, text, pgTable, real, integer } from "drizzle-orm/pg-core";
+import { integer, text, sqliteTable, real } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const patients = pgTable("patients", {
-  id: serial("id").primaryKey(),
+export const patients = sqliteTable("patients", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   patientId: text("patient_id").unique().notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -17,8 +17,8 @@ export const patients = pgTable("patients", {
   createdAt: text("created_at").notNull(),
 });
 
-export const treatments = pgTable("treatments", {
-  id: serial("id").primaryKey(),
+export const treatments = sqliteTable("treatments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   patientId: text("patient_id").notNull(),
   visitDate: text("visit_date").notNull(),
   visitType: text("visit_type").$type<"consultation" | "follow-up" | "emergency" | "preventive">().notNull(),
@@ -36,8 +36,8 @@ export const treatments = pgTable("treatments", {
   createdAt: text("created_at").notNull(),
 });
 
-export const labTests = pgTable("lab_tests", {
-  id: serial("id").primaryKey(),
+export const labTests = sqliteTable("lab_tests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   testId: text("test_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   category: text("category").$type<"blood" | "urine" | "stool" | "microbiology" | "other">().notNull(),
@@ -54,8 +54,8 @@ export const labTests = pgTable("lab_tests", {
   createdAt: text("created_at").notNull(),
 });
 
-export const xrayExams = pgTable("xray_exams", {
-  id: serial("id").primaryKey(),
+export const xrayExams = sqliteTable("xray_exams", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   examId: text("exam_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   examType: text("exam_type").$type<"chest" | "abdomen" | "spine" | "extremities" | "pelvis" | "skull">().notNull(),
@@ -75,8 +75,8 @@ export const xrayExams = pgTable("xray_exams", {
   createdAt: text("created_at").notNull(),
 });
 
-export const ultrasoundExams = pgTable("ultrasound_exams", {
-  id: serial("id").primaryKey(),
+export const ultrasoundExams = sqliteTable("ultrasound_exams", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   examId: text("exam_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   examType: text("exam_type").$type<"abdominal" | "pelvic" | "obstetric" | "cardiac" | "vascular" | "thyroid" | "other">().notNull(),

@@ -124,6 +124,7 @@ This is a full-stack web application designed specifically for Bahr El Ghazal Cl
 ## Changelog
 - July 04, 2025. Initial setup with PostgreSQL database and full CRUD operations
 - January 14, 2025. Added comprehensive offline deployment guides and scripts for rural clinic use
+- August 13, 2025. Converted to SQLite database for simplified Windows deployment, created simplified setup package for rural clinic deployment
 
 ## User Preferences
 

@@ -57,15 +57,8 @@ echo ✓ Dependencies installed
 echo.
 
 echo Building application...
-call npm run build
-
-if %ERRORLEVEL% NEQ 0 (
-    echo ❌ Build failed
-    pause
-    exit /b 1
-)
-
-echo ✓ Application built successfully
+REM Note: Skip build for development mode - we'll use npm run dev instead
+echo ✓ Development setup ready (skipping build for faster startup)
 
 REM Create backups directory
 if not exist "backups" mkdir backups
@@ -74,12 +67,18 @@ echo ✓ Backups directory created
 REM Create simple start script
 (
 echo @echo off
-echo echo Starting Bahr El Ghazal Clinic Management System...
+echo echo ========================================
+echo echo   Bahr El Ghazal Clinic Management System
+echo echo ========================================
 echo echo.
-echo echo Access the system at: http://localhost:5000
-echo echo Press Ctrl+C to stop the system
+echo echo Starting the clinic system...
+echo echo Access at: http://localhost:5000
+echo echo.
+echo echo Press Ctrl+C to stop the system when done
 echo echo.
 echo call npm run dev
+echo.
+echo echo System stopped. You can close this window.
 echo pause
 ) > start-clinic.bat
 
