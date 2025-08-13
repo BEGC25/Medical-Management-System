@@ -122,25 +122,40 @@
     padding: 0 !important;
   }
   
-  /* Hide navigation and other elements */
-  header, nav, .print\\:hidden {
+  .no-print {
     display: none !important;
   }
   
-  /* Remove shadows and borders for clean printing */
+  .print-only {
+    display: block !important;
+  }
+  
+  header, nav {
+    display: none !important;
+  }
+  
   .shadow-md, .shadow-lg {
     box-shadow: none !important;
   }
   
-  /* Ensure prescription content is fully visible */
-  .print\\:fixed {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: white !important;
-    z-index: 1000 !important;
+  .rounded-lg {
+    border-radius: 0 !important;
+  }
+  
+  .bg-gray-50 {
+    background-color: white !important;
+  }
+  
+  /* Only show prescription when printing */
+  .container {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  /* Hide everything except prescription */
+  div:not(.print\\:fixed):not(.print\\:fixed *) {
+    display: none !important;
   }
 }
 

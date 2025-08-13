@@ -471,28 +471,17 @@ export default function Treatment() {
 
       {/* Prescription Modal */}
       {showPrescription && selectedPatient && (
-        <div className="print:fixed print:inset-0 print:bg-white print:z-50 print:block">
-        <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full print:block">
+        <div className="print:fixed print:inset-0 print:bg-white print:z-50">
+        <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full">
           <CardHeader className="text-center border-b-2 border-medical-blue print:border-gray-300">
             <div className="mb-4">
               <CardTitle className="text-3xl font-bold text-medical-blue tracking-wide">
                 BAHR EL GHAZAL CLINIC
               </CardTitle>
-              <p className="text-lg text-medical-green font-semibold italic mt-1">
-                Your Health, Our Priority
-              </p>
-              <div className="mt-3 space-y-1">
-                <p className="text-sm text-gray-600 font-medium">
-                  Phone: +211 91 762 3881 | +211 92 220 0691
-                </p>
-                <p className="text-sm text-gray-600">
-                  Email: bahr.ghazal.clinic@gmail.com
-                </p>
-              </div>
-              <div className="flex items-center justify-center mt-3">
-                <div className="h-px bg-medical-blue flex-1 max-w-32"></div>
-                <p className="text-sm text-gray-600 mx-4 font-medium">Aweil, South Sudan</p>
-                <div className="h-px bg-medical-blue flex-1 max-w-32"></div>
+              <div className="flex items-center justify-center mt-2">
+                <div className="h-px bg-medical-blue flex-1 max-w-24"></div>
+                <p className="text-sm text-gray-600 mx-4 font-medium">South Sudan</p>
+                <div className="h-px bg-medical-blue flex-1 max-w-24"></div>
               </div>
             </div>
             <div className="bg-medical-green text-white py-2 px-6 inline-block rounded">
@@ -516,11 +505,11 @@ export default function Treatment() {
             </div>
 
             {/* Clinical Information */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <h4 className="font-semibold text-medical-blue mb-3 text-lg">Rx (Treatment Plan):</h4>
-                <div className="pl-4 whitespace-pre-line bg-gray-50 p-4 rounded border-l-4 border-medical-green min-h-24">
-                  {form.getValues("treatmentPlan") || "No treatment plan specified"}
+                <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
+                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
+                  {form.getValues("treatmentPlan")}
                 </div>
               </div>
 
