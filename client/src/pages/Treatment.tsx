@@ -64,7 +64,9 @@ export default function Treatment() {
       return;
     }
     
-    setPrescriptionData(formData);
+    // Store the form data in prescription state
+    const prescriptionFormData = { ...formData };
+    setPrescriptionData(prescriptionFormData);
     setShowPrescription(true);
   };
 
@@ -524,7 +526,7 @@ export default function Treatment() {
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
                 <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border min-h-[100px]">
-                  {prescriptionData?.treatmentPlan || form.getValues("treatmentPlan") || 'No treatment plan specified'}
+                  <p>{prescriptionData?.treatmentPlan || 'No treatment plan specified'}</p>
                 </div>
               </div>
 
