@@ -335,203 +335,159 @@ export default function Ultrasound() {
         </CardContent>
       </Card>
 
-      {/* Pending Ultrasounds */}
+      {/* Ultrasound Results & Reports */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-medical-blue dark:text-blue-400">Pending Ultrasound Examinations</CardTitle>
+          <CardTitle className="text-medical-blue dark:text-blue-400">Ultrasound Results & Reports</CardTitle>
         </CardHeader>
         <CardContent>
-          {pendingUltrasounds && pendingUltrasounds.length > 0 ? (
-            <div className="space-y-4">
-              {pendingUltrasounds.map((exam: UltrasoundExam) => (
-                <div key={exam.id} className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+          {/* Pending Ultrasounds */}
+          <div className="mb-6">
+            <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Pending Ultrasound Examinations</h3>
+            <div className="space-y-2">
+              {pendingUltrasounds?.map((exam: UltrasoundExam) => (
+                <div 
+                  key={exam.id}
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                  onClick={() => setSelectedUltrasoundExam(exam)}
+                >
                   <div className="flex justify-between items-start">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{exam.examId}</Badge>
-                        <Badge variant={exam.priority === 'emergency' ? 'destructive' : exam.priority === 'urgent' ? 'default' : 'secondary'}>
-                          {exam.priority}
-                        </Badge>
-                      </div>
-                      <p className="font-medium">Patient: {exam.patientId}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Type: {exam.examType} • Requested: {exam.requestedDate}
+                    <div>
+                      <p className="font-medium text-gray-800 dark:text-gray-200">
+                        Patient ID: {exam.patientId} - {exam.examType.charAt(0).toUpperCase() + exam.examType.slice(1)} Ultrasound
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Requested: {exam.requestedDate}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        ID: {exam.examId}
                       </p>
                       {exam.clinicalIndication && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{exam.clinicalIndication}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Indication: {exam.clinicalIndication}
+                        </p>
                       )}
                     </div>
-                    <div className="ml-4">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          console.log('Clicked ultrasound exam:', exam);
-                          setSelectedUltrasoundExam(exam);
-                        }}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <Check className="w-4 h-4 mr-1" />
-                        Enter Results
-                      </Button>
-                    </div>
+                    <Badge className="bg-attention-orange text-white">
+                      <Clock className="w-3 h-3 mr-1" />
+                      Pending
+                    </Badge>
                   </div>
                 </div>
               ))}
+              
+              {!pendingUltrasounds?.length && (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                  No pending ultrasound examinations
+                </p>
+              )}
             </div>
-          ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-8">No pending ultrasound examinations</p>
-          )}
-        </CardContent>
-      </Card>
+          </div>
 
-      {/* Results Entry Modal */}
-      {selectedUltrasoundExam && (
-        <Card className="border-2 border-medical-blue">
-          <CardHeader>
-            <CardTitle className="text-medical-blue dark:text-blue-400">
-              Enter Ultrasound Results - {selectedUltrasoundExam.examId}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...resultsForm}>
-              <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={resultsForm.control}
-                    name="imageQuality"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image Quality</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select quality" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="excellent">Excellent</SelectItem>
-                            <SelectItem value="good">Good</SelectItem>
-                            <SelectItem value="adequate">Adequate</SelectItem>
-                            <SelectItem value="limited">Limited</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={resultsForm.control}
-                    name="reportStatus"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Report Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="abnormal">Abnormal</SelectItem>
-                            <SelectItem value="urgent">Urgent</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={resultsForm.control}
-                    name="reportDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Report Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={resultsForm.control}
-                    name="sonographer"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sonographer</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Sonographer name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+          {/* Report Entry Form */}
+          {selectedUltrasoundExam && (
+            <div>
+              <h3 className="font-medium text-gray-800 mb-4 dark:text-gray-200">
+                Ultrasound Report - {selectedUltrasoundExam.examId}
+              </h3>
+              <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Image Quality
+                  </label>
+                  <Select 
+                    value={resultsForm.watch("imageQuality")}
+                    onValueChange={(value) => resultsForm.setValue("imageQuality", value as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="excellent">Excellent</SelectItem>
+                      <SelectItem value="good">Good</SelectItem>
+                      <SelectItem value="adequate">Adequate</SelectItem>
+                      <SelectItem value="limited">Limited</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Findings
+                  </label>
+                  <Textarea
+                    rows={6}
+                    placeholder="Detailed ultrasound findings..."
+                    {...resultsForm.register("findings")}
                   />
                 </div>
-
-                <FormField
-                  control={resultsForm.control}
-                  name="findings"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Findings</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Detailed ultrasound findings..."
-                          rows={4}
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={resultsForm.control}
-                  name="impression"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Impression</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Clinical impression and conclusion..."
-                          rows={3}
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={resultsForm.control}
-                  name="recommendations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Recommendations</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Follow-up recommendations..."
-                          rows={2}
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex gap-4 pt-4 border-t">
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Impression
+                  </label>
+                  <Textarea
+                    rows={3}
+                    placeholder="Clinical impression and conclusion..."
+                    {...resultsForm.register("impression")}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Recommendations
+                  </label>
+                  <Textarea
+                    rows={2}
+                    placeholder="Follow-up recommendations..."
+                    {...resultsForm.register("recommendations")}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Report Status
+                    </label>
+                    <Select 
+                      value={resultsForm.watch("reportStatus")}
+                      onValueChange={(value) => resultsForm.setValue("reportStatus", value as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="abnormal">Abnormal</SelectItem>
+                        <SelectItem value="urgent">Urgent - Immediate attention needed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Report Date
+                    </label>
+                    <Input 
+                      type="date"
+                      {...resultsForm.register("reportDate")}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Sonographer/Reporter
+                  </label>
+                  <Input
+                    placeholder="Name of reporting sonographer"
+                    {...resultsForm.register("sonographer")}
+                  />
+                </div>
+                
+                <div className="flex gap-3 pt-4">
                   <Button 
-                    type="submit" 
+                    type="submit"
                     disabled={updateUltrasoundExamMutation.isPending}
                     className="bg-medical-green hover:bg-green-700"
                   >
@@ -541,25 +497,17 @@ export default function Ultrasound() {
                   <Button 
                     type="button" 
                     variant="outline"
-                    onClick={() => setSelectedUltrasoundExam(null)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={handlePrint}
-                    className="ml-auto"
+                    onClick={() => window.print()}
                   >
                     <Printer className="w-4 h-4 mr-2" />
                     Print Report
                   </Button>
                 </div>
               </form>
-            </Form>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
