@@ -115,30 +115,45 @@
 
 /* Print styles */
 @media print {
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 0.75in;
+  }
+  
   body {
     -webkit-print-color-adjust: exact !important;
     color-adjust: exact !important;
     margin: 0 !important;
     padding: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
   }
   
+  /* Hide elements that shouldn't print */
+  .print\\:hidden,
+  header, 
+  nav,
   .no-print {
     display: none !important;
   }
   
-  .print-only {
+  /* Show only prescription content */
+  .prescription-container {
     display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
-  header, nav {
-    display: none !important;
-  }
-  
+  /* Remove all shadows and borders */
   .shadow-md, .shadow-lg {
     box-shadow: none !important;
   }
   
-  .rounded-lg {
+  .rounded-lg, .rounded {
     border-radius: 0 !important;
   }
   
@@ -146,49 +161,29 @@
     background-color: white !important;
   }
   
-  /* Simple print styles - only hide navigation */
-  .container {
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: 100% !important;
+  .border-2 {
+    border: 1px solid #ddd !important;
   }
   
-  /* Hide only the treatment form, not the prescription */
-  .print\\:hidden {
-    display: none !important;
+  /* Compact spacing for print */
+  .prescription-container .p-4 {
+    padding: 0.5rem !important;
   }
   
-  /* Prescription specific print styles */
-  .prescription-container {
-    page-break-inside: avoid !important;
-    height: auto !important;
-    max-height: none !important;
+  .prescription-container .space-y-3 > * + * {
+    margin-top: 0.5rem !important;
   }
   
-  .prescription-container .card {
-    page-break-inside: avoid !important;
-    height: auto !important;
-    max-height: 100vh !important;
+  .prescription-container .mt-8 {
+    margin-top: 1rem !important;
   }
   
-  /* Ensure single page printing */
-  @page {
-    size: A4;
-    margin: 0.5in;
+  .prescription-container .pt-4 {
+    padding-top: 0.5rem !important;
   }
   
-  .prescription-container {
-    font-size: 0.9rem !important;
-    line-height: 1.3 !important;
-  }
-  
-  .prescription-container h4 {
-    font-size: 1rem !important;
-    margin-bottom: 0.25rem !important;
-  }
-  
-  .prescription-container p {
-    margin-bottom: 0.25rem !important;
+  .prescription-container .pb-3 {
+    padding-bottom: 0.25rem !important;
   }
 }
 

@@ -525,27 +525,23 @@ export default function Treatment() {
               )}
             </div>
 
-            {/* Footer - Fixed positioning */}
-            <div className="mt-8 pt-4 border-t print:mt-6 print:pt-3">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-600 mb-4">
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t">
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-3">
                     This prescription is valid for 30 days from date of issue
                   </p>
-                  <div className="mt-8">
-                    <p className="text-xs text-gray-500">
-                      Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      © 2025 Bahr El Ghazal Clinic
-                    </p>
-                  </div>
+                  <p className="text-xs text-gray-500">
+                    Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    © 2025 Bahr El Ghazal Clinic
+                  </p>
                 </div>
-                <div className="flex-1 text-right">
-                  <div className="inline-block">
-                    <div className="border-t border-gray-400 pt-2 w-48">
-                      <p className="text-sm">Doctor's Signature</p>
-                    </div>
+                <div className="text-right">
+                  <div className="border-t border-gray-400 pt-2 w-40">
+                    <p className="text-sm">Doctor's Signature</p>
                   </div>
                 </div>
               </div>
