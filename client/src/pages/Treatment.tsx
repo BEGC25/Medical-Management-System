@@ -471,88 +471,88 @@ export default function Treatment() {
 
       {/* Prescription Modal */}
       {showPrescription && selectedPatient && (
-        <div className="print:fixed print:inset-0 print:bg-white print:z-50" id="prescription-content">
-        <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full flex flex-col print:max-h-screen">
-          <CardHeader className="text-center border-b print:border-gray-300">
-            <CardTitle className="text-2xl font-bold text-medical-blue">
-              BAHR EL GHAZAL CLINIC
-            </CardTitle>
-            <p className="text-sm text-gray-600">
-              Rural Healthcare Centre • South Sudan
-            </p>
-            <p className="text-lg font-semibold text-medical-green mt-2">
-              PRESCRIPTION
-            </p>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4 flex-grow flex flex-col">
-            {/* Patient Information */}
-            <div className="grid grid-cols-2 gap-4 pb-4 border-b">
-              <div>
-                <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
-                <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
-                <p><strong>Age:</strong> {selectedPatient.dateOfBirth ? 
-                  (new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()) : 'Not specified'} years</p>
-              </div>
-              <div>
-                <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-                <p><strong>Phone:</strong> {selectedPatient.phoneNumber || 'Not provided'}</p>
-                <p><strong>Village:</strong> {selectedPatient.village || 'Not specified'}</p>
-              </div>
-            </div>
-
-            {/* Clinical Information */}
-            <div className="space-y-3">
-              <div>
-                <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
-                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
-                  {form.getValues("treatmentPlan")}
-                </div>
-              </div>
-
-              {form.getValues("followUpDate") && (
-                <div>
-                  <h4 className="font-semibold text-medical-blue mb-2">Follow-up:</h4>
-                  <p className="pl-4">Next visit: {form.getValues("followUpDate")} 
-                    {form.getValues("followUpType") && ` (${form.getValues("followUpType")})`}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="mt-auto pt-6 border-t">
-              <div className="flex justify-between items-end">
-                <div>
+        <div>
+          <Card className="border-2 border-medical-green">
+            <CardContent className="p-6">
+              <div
+                id="prescription-print"
+                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+              >
+                {/* Header */}
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">
+                    BAHR EL GHAZAL CLINIC
+                  </h1>
                   <p className="text-sm text-gray-600">
-                    This prescription is valid for 30 days from date of issue
+                    Rural Healthcare Centre • South Sudan
+                  </p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">
+                    PRESCRIPTION
                   </p>
                 </div>
-                <div className="text-right">
-                  <div className="border-t border-gray-400 pt-2 w-48">
-                    <p className="text-sm">Doctor's Signature</p>
+
+                {/* Main Content */}
+                <div className="flex-1">
+                  {/* Patient Information */}
+                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
+                    <div>
+                      <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
+                      <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
+                      <p><strong>Age:</strong> {selectedPatient.dateOfBirth ? 
+                        (new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()) : 'Not specified'} years</p>
+                    </div>
+                    <div>
+                      <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                      <p><strong>Phone:</strong> {selectedPatient.phoneNumber || 'Not provided'}</p>
+                      <p><strong>Village:</strong> {selectedPatient.village || 'Not specified'}</p>
+                    </div>
+                  </div>
+
+                  {/* Clinical Information */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
+                      <div className="pl-4 whitespace-pre-line bg-gray-50 print:bg-white p-3 rounded border">
+                        {form.getValues("treatmentPlan")}
+                      </div>
+                    </div>
+
+                    {form.getValues("followUpDate") && (
+                      <div>
+                        <h4 className="font-semibold text-medical-blue mb-2">Follow-up:</h4>
+                        <p className="pl-4">Next visit: {form.getValues("followUpDate")} 
+                          {form.getValues("followUpType") && ` (${form.getValues("followUpType")})`}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 print:hidden">
-              <Button 
-                onClick={printPrescription}
-                className="bg-medical-blue hover:bg-blue-700"
-              >
-                <Printer className="w-4 h-4 mr-2" />
-                Print Prescription
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => setShowPrescription(false)}
-              >
-                Close
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                {/* Footer */}
+                <div className="mt-auto pt-8 border-t">
+                  <p className="text-sm italic text-gray-600">This prescription is valid for 30 days from date of issue</p>
+                  <p className="mt-6">Doctor's Signature: ____________________</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 print:hidden">
+                <Button 
+                  onClick={printPrescription}
+                  className="bg-medical-blue hover:bg-blue-700"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Prescription
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowPrescription(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
