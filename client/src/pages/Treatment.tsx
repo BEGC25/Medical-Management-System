@@ -125,7 +125,7 @@ export default function Treatment() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="print:hidden">
         <CardHeader>
           <CardTitle>Treatment Records</CardTitle>
         </CardHeader>
@@ -471,7 +471,8 @@ export default function Treatment() {
 
       {/* Prescription Modal */}
       {showPrescription && selectedPatient && (
-        <Card className="border-2 border-medical-green print:shadow-none print:border-none">
+        <div className="print:fixed print:inset-0 print:bg-white print:z-50">
+        <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full">
           <CardHeader className="text-center border-b print:border-gray-300">
             <CardTitle className="text-2xl font-bold text-medical-blue">
               BAHR EL GHAZAL CLINIC
@@ -562,6 +563,7 @@ export default function Treatment() {
             </div>
           </CardContent>
         </Card>
+        </div>
       )}
     </div>
   );
