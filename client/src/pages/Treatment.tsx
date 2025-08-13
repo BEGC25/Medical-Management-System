@@ -19,6 +19,7 @@ import { addToPendingSync } from "@/lib/offline";
 export default function Treatment() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescription, setShowPrescription] = useState(false);
+  const [prescriptionData, setPrescriptionData] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -52,6 +53,7 @@ export default function Treatment() {
       });
       return;
     }
+    setPrescriptionData(formData);
     setShowPrescription(true);
   };
 
@@ -470,7 +472,7 @@ export default function Treatment() {
       </Card>
 
       {/* Prescription Modal */}
-      {showPrescription && selectedPatient && (
+      {showPrescription && selectedPatient && prescriptionData && (
         <div className="print:fixed print:inset-0 print:bg-white print:z-50">
         <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full">
           <CardHeader className="text-center border-b print:border-gray-300">
@@ -510,16 +512,16 @@ export default function Treatment() {
             <div className="space-y-3">
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
-                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
-                  {form.getValues("treatmentPlan")}
+                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border min-h-[100px]">
+                  {prescriptionData.treatmentPlan || 'No treatment plan specified'}
                 </div>
               </div>
 
-              {form.getValues("followUpDate") && (
+              {prescriptionData.followUpDate && (
                 <div>
                   <h4 className="font-semibold text-medical-blue mb-2">Follow-up:</h4>
-                  <p className="pl-4">Next visit: {form.getValues("followUpDate")} 
-                    {form.getValues("followUpType") && ` (${form.getValues("followUpType")})`}
+                  <p className="pl-4">Next visit: {prescriptionData.followUpDate} 
+                    {prescriptionData.followUpType && ` (${prescriptionData.followUpType})`}
                   </p>
                 </div>
               )}
