@@ -483,11 +483,8 @@ export default function Treatment() {
             <p className="text-xs text-gray-500 mb-1">
               Phone: +211 91 762 3881 | +211 92 220 0691
             </p>
-            <p className="text-xs text-gray-500 mb-2">
-              Email: bahr.ghazal.clinic@gmail.com
-            </p>
             <p className="text-xs text-gray-500 mb-3">
-              Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+              Email: bahr.ghazal.clinic@gmail.com
             </p>
             <p className="text-lg font-semibold text-medical-green mt-2">
               PRESCRIPTION
@@ -513,7 +510,7 @@ export default function Treatment() {
             <div className="space-y-3">
               <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
-                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
+                <div className="pl-4 whitespace-pre-line bg-gray-50 print:bg-white p-3 rounded border print:border-gray-300">
                   {form.getValues("treatmentPlan")}
                 </div>
               </div>
@@ -536,6 +533,9 @@ export default function Treatment() {
                     This prescription is valid for 30 days from date of issue
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
+                    Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
                     © 2025 Bahr El Ghazal Clinic
                   </p>
                 </div>
