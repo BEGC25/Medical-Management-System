@@ -139,7 +139,15 @@
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Ensure single page layout */
+  @page {
+    size: A4;
+    margin: 0.5in;
   }
   
   .no-print {
