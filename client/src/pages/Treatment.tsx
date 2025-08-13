@@ -484,7 +484,7 @@ export default function Treatment() {
                     BAHR EL GHAZAL CLINIC
                   </h1>
                   <p className="text-sm text-gray-600">
-                    Rural Healthcare Centre • South Sudan
+                    Your Health, Our Priority
                   </p>
                   <p className="text-lg font-semibold text-medical-green mt-2">
                     PRESCRIPTION
