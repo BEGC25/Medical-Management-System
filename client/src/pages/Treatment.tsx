@@ -473,16 +473,20 @@ export default function Treatment() {
       {showPrescription && selectedPatient && (
         <div className="print:fixed print:inset-0 print:bg-white print:z-50">
         <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full">
-          <CardHeader className="text-center border-b print:border-gray-300">
-            <CardTitle className="text-2xl font-bold text-medical-blue">
-              BAHR EL GHAZAL CLINIC
-            </CardTitle>
-            <p className="text-sm text-gray-600">
-              Rural Healthcare Centre • South Sudan
-            </p>
-            <p className="text-lg font-semibold text-medical-green mt-2">
-              PRESCRIPTION
-            </p>
+          <CardHeader className="text-center border-b-2 border-medical-blue print:border-gray-300">
+            <div className="mb-4">
+              <CardTitle className="text-3xl font-bold text-medical-blue tracking-wide">
+                BAHR EL GHAZAL CLINIC
+              </CardTitle>
+              <div className="flex items-center justify-center mt-2">
+                <div className="h-px bg-medical-blue flex-1 max-w-24"></div>
+                <p className="text-sm text-gray-600 mx-4 font-medium">South Sudan</p>
+                <div className="h-px bg-medical-blue flex-1 max-w-24"></div>
+              </div>
+            </div>
+            <div className="bg-medical-green text-white py-2 px-6 inline-block rounded">
+              <p className="text-xl font-bold tracking-wide">PRESCRIPTION</p>
+            </div>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
             {/* Patient Information */}
@@ -520,16 +524,22 @@ export default function Treatment() {
             </div>
 
             {/* Footer */}
-            <div className="pt-6 border-t mt-6">
+            <div className="pt-8 border-t-2 border-medical-blue mt-8">
               <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-sm text-gray-600">
+                <div className="space-y-1">
+                  <p className="text-xs text-gray-500 font-medium">
                     This prescription is valid for 30 days from date of issue
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    For questions, please contact the clinic
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="border-t border-gray-400 pt-2 mt-12 w-48">
-                    <p className="text-sm">Doctor's Signature</p>
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500">Date: {new Date().toLocaleDateString()}</p>
+                    <div className="border-t-2 border-gray-800 pt-2 mt-16 w-52">
+                      <p className="text-sm font-semibold">Doctor's Signature & Stamp</p>
+                    </div>
                   </div>
                 </div>
               </div>
