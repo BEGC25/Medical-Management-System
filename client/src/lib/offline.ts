@@ -9,7 +9,7 @@ const STORAGE_KEYS = {
 
 export interface PendingSync {
   id: string;
-  type: 'patient' | 'treatment' | 'lab_test' | 'xray_exam';
+  type: 'patient' | 'treatment' | 'lab_test' | 'xray_exam' | 'ultrasound_exam';
   action: 'create' | 'update';
   data: any;
   timestamp: string;

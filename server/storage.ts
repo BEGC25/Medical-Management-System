@@ -117,7 +117,7 @@ let patientCounter = 0;
 
 function generatePatientId(): string {
   patientCounter++;
-  return `GC${patientCounter}`;
+  return `BGC${patientCounter}`;
 }
 
 function generateId(prefix: string): string {

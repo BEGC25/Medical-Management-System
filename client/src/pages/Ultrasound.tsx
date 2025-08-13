@@ -46,7 +46,7 @@ export default function Ultrasound() {
     },
   });
 
-  const { data: pendingUltrasounds } = useQuery({
+  const { data: pendingUltrasounds = [] } = useQuery({
     queryKey: ["/api/ultrasound-exams", "pending"],
   });
 
@@ -282,6 +282,7 @@ export default function Ultrasound() {
                             placeholder="Reason for ultrasound examination..."
                             rows={3}
                             {...field}
+                            value={field.value || ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -300,6 +301,7 @@ export default function Ultrasound() {
                             placeholder="Any special instructions or patient preparation..."
                             rows={2}
                             {...field}
+                            value={field.value || ""}
                           />
                         </FormControl>
                         <FormMessage />
