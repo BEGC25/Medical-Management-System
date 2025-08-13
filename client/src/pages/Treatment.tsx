@@ -471,7 +471,7 @@ export default function Treatment() {
 
       {/* Prescription Modal */}
       {showPrescription && selectedPatient && (
-        <div className="print:fixed print:inset-0 print:bg-white print:z-50">
+        <div className="print:fixed print:inset-0 print:bg-white print:z-50 print:overflow-hidden">
         <Card className="border-2 border-medical-green print:shadow-none print:border-none print:m-0 print:h-full">
           <CardHeader className="text-center border-b print:border-gray-300">
             <CardTitle className="text-2xl font-bold text-medical-blue">
