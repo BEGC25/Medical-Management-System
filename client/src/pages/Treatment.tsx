@@ -18,6 +18,7 @@ import { addToPendingSync } from "@/lib/offline";
 
 export default function Treatment() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [showPrescription, setShowPrescription] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -40,6 +41,23 @@ export default function Treatment() {
       followUpType: "",
     },
   });
+
+  const generatePrescription = () => {
+    const formData = form.getValues();
+    if (!selectedPatient || !formData.diagnosis || !formData.treatmentPlan) {
+      toast({
+        title: "Incomplete Information",
+        description: "Please fill in patient, diagnosis, and treatment plan before generating prescription.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowPrescription(true);
+  };
+
+  const printPrescription = () => {
+    window.print();
+  };
 
   const createTreatmentMutation = useMutation({
     mutationFn: (data: InsertTreatment) => apiRequest("POST", "/api/treatments", data),
@@ -431,7 +449,12 @@ export default function Treatment() {
                     <Save className="w-4 h-4 mr-2" />
                     {createTreatmentMutation.isPending ? "Saving..." : "Save Treatment Record"}
                   </Button>
-                  <Button type="button" className="bg-health-green hover:bg-green-700">
+                  <Button 
+                    type="button" 
+                    onClick={generatePrescription}
+                    className="bg-health-green hover:bg-green-700"
+                    disabled={!selectedPatient || !form.watch("diagnosis") || !form.watch("treatmentPlan")}
+                  >
                     <FileText className="w-4 h-4 mr-2" />
                     Generate Prescription
                   </Button>
@@ -445,6 +468,101 @@ export default function Treatment() {
           )}
         </CardContent>
       </Card>
+
+      {/* Prescription Modal */}
+      {showPrescription && selectedPatient && (
+        <Card className="border-2 border-medical-green print:shadow-none print:border-none">
+          <CardHeader className="text-center border-b print:border-gray-300">
+            <CardTitle className="text-2xl font-bold text-medical-blue">
+              BAHR EL GHAZAL CLINIC
+            </CardTitle>
+            <p className="text-sm text-gray-600">
+              Rural Healthcare Centre • South Sudan
+            </p>
+            <p className="text-lg font-semibold text-medical-green mt-2">
+              PRESCRIPTION
+            </p>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            {/* Patient Information */}
+            <div className="grid grid-cols-2 gap-4 pb-4 border-b">
+              <div>
+                <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
+                <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
+                <p><strong>Age:</strong> {selectedPatient.dateOfBirth ? 
+                  (new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()) : 'Not specified'} years</p>
+              </div>
+              <div>
+                <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                <p><strong>Phone:</strong> {selectedPatient.phoneNumber || 'Not provided'}</p>
+                <p><strong>Village:</strong> {selectedPatient.village || 'Not specified'}</p>
+              </div>
+            </div>
+
+            {/* Clinical Information */}
+            <div className="space-y-3">
+              <div>
+                <h4 className="font-semibold text-medical-blue mb-2">Chief Complaint:</h4>
+                <p className="pl-4">{form.getValues("chiefComplaint") || "Not specified"}</p>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-medical-blue mb-2">Diagnosis:</h4>
+                <p className="pl-4">{form.getValues("diagnosis")}</p>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-medical-blue mb-2">Rx (Treatment Plan):</h4>
+                <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
+                  {form.getValues("treatmentPlan")}
+                </div>
+              </div>
+
+              {form.getValues("followUpDate") && (
+                <div>
+                  <h4 className="font-semibold text-medical-blue mb-2">Follow-up:</h4>
+                  <p className="pl-4">Next visit: {form.getValues("followUpDate")} 
+                    {form.getValues("followUpType") && ` (${form.getValues("followUpType")})`}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-6 border-t mt-6">
+              <div className="flex justify-between items-end">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    This prescription is valid for 30 days from date of issue
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="border-t border-gray-400 pt-2 mt-12 w-48">
+                    <p className="text-sm">Doctor's Signature</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 print:hidden">
+              <Button 
+                onClick={printPrescription}
+                className="bg-medical-blue hover:bg-blue-700"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Print Prescription
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setShowPrescription(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
