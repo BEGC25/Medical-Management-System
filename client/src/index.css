@@ -174,8 +174,8 @@
     margin-top: 0.5rem !important;
   }
   
-  .prescription-container .mt-8 {
-    margin-top: 1rem !important;
+  .prescription-container .mt-6 {
+    margin-top: 0.75rem !important;
   }
   
   .prescription-container .pt-4 {
@@ -184,6 +184,18 @@
   
   .prescription-container .pb-3 {
     padding-bottom: 0.25rem !important;
+  }
+  
+  /* Prevent page breaks and extra pages */
+  .prescription-container * {
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Ensure content fits on one page */
+  .prescription-container {
+    max-height: 9in !important;
+    overflow: hidden !important;
   }
 }
 

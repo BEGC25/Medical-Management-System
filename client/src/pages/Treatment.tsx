@@ -548,7 +548,7 @@ export default function Treatment() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 print:hidden">
+            <div className="flex gap-3 pt-4 print:hidden page-break-before:avoid">
               <Button 
                 onClick={printPrescription}
                 className="bg-medical-blue hover:bg-blue-700"
