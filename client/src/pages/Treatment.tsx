@@ -503,11 +503,6 @@ export default function Treatment() {
             {/* Clinical Information */}
             <div className="space-y-3">
               <div>
-                <h4 className="font-semibold text-medical-blue mb-2">Chief Complaint:</h4>
-                <p className="pl-4">{form.getValues("chiefComplaint") || "Not specified"}</p>
-              </div>
-              
-              <div>
                 <h4 className="font-semibold text-medical-blue mb-2">Diagnosis:</h4>
                 <p className="pl-4">{form.getValues("diagnosis")}</p>
               </div>
