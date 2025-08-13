@@ -41,7 +41,9 @@ This is a full-stack web application designed specifically for Bahr El Ghazal Cl
 - Follow-up scheduling
 
 ### Laboratory System
-- Lab test ordering with multiple categories (blood, urine, stool, microbiology)
+- Lab test ordering with multiple categories (blood, urine, stool, microbiology, chemistry, hormonal)
+- Chemistry machine integration: LFT, KFT, Lipid Profile, HbA1c, Cardiac Enzymes, Electrolyte Panel
+- Hormonal machine integration: Thyroid Function, Diabetes Panel, Reproductive Hormones, Adrenal Function
 - Priority-based test management
 - Results recording and normal value reference
 - Status tracking (pending, completed, cancelled)

@@ -40,7 +40,7 @@ export const labTests = sqliteTable("lab_tests", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   testId: text("test_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
-  category: text("category").$type<"blood" | "urine" | "stool" | "microbiology" | "other">().notNull(),
+  category: text("category").$type<"blood" | "urine" | "stool" | "microbiology" | "chemistry" | "hormonal" | "other">().notNull(),
   tests: text("tests").notNull(), // JSON array of test names
   clinicalInfo: text("clinical_info"),
   priority: text("priority").$type<"routine" | "urgent" | "stat">().notNull(),

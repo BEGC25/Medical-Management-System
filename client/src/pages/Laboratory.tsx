@@ -17,23 +17,72 @@ import { insertLabTestSchema, type InsertLabTest, type Patient, type LabTest } f
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
-const commonTests = [
-  "Complete Blood Count (CBC)",
-  "Blood Sugar (Random/Fasting)",
-  "Malaria Test",
-  "HIV Test",
-  "Tuberculosis Test",
-  "Urine Analysis",
-  "Hepatitis B Test",
-  "Pregnancy Test",
-  "Blood Group & Rh",
-  "ESR (Erythrocyte Sedimentation Rate)"
-];
+const commonTests = {
+  blood: [
+    "Complete Blood Count (CBC)",
+    "Blood Sugar (Random/Fasting)",
+    "Malaria Test",
+    "HIV Test",
+    "Tuberculosis Test",
+    "Hepatitis B Test",
+    "Blood Group & Rh",
+    "ESR (Erythrocyte Sedimentation Rate)"
+  ],
+  urine: [
+    "Urine Analysis",
+    "Urine Culture",
+    "24-Hour Urine Collection",
+    "Urine Protein",
+    "Urine Glucose"
+  ],
+  stool: [
+    "Stool Analysis",
+    "Stool Culture",
+    "Ova and Parasites",
+    "Occult Blood Test"
+  ],
+  microbiology: [
+    "Blood Culture",
+    "Wound Culture",
+    "Throat Culture",
+    "Sputum Culture",
+    "Antibiotic Sensitivity"
+  ],
+  chemistry: [
+    "Liver Function Tests (LFT)",
+    "Kidney Function Tests (KFT)",
+    "Lipid Profile",
+    "Electrolyte Panel",
+    "Cardiac Enzymes",
+    "HbA1c (Glycated Hemoglobin)",
+    "Total Protein & Albumin",
+    "Bilirubin (Total & Direct)",
+    "Creatinine & BUN",
+    "Uric Acid"
+  ],
+  hormonal: [
+    "Thyroid Function (TSH, T3, T4)",
+    "Diabetes Panel (Insulin, C-peptide)",
+    "Pregnancy Hormones (hCG, Progesterone)",
+    "Reproductive Hormones (LH, FSH)",
+    "Adrenal Function (Cortisol)",
+    "Growth Hormone",
+    "Prolactin",
+    "Testosterone",
+    "Estradiol",
+    "Parathyroid Hormone (PTH)"
+  ],
+  other: [
+    "Custom Test",
+    "Special Request"
+  ]
+};
 
 export default function Laboratory() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [selectedLabTest, setSelectedLabTest] = useState<LabTest | null>(null);
+  const [currentCategory, setCurrentCategory] = useState<keyof typeof commonTests>("blood");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -234,7 +283,11 @@ export default function Laboratory() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Test Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      setCurrentCategory(value as keyof typeof commonTests);
+                      setSelectedTests([]); // Clear selected tests when category changes
+                    }} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -245,6 +298,8 @@ export default function Laboratory() {
                         <SelectItem value="urine">Urine Tests</SelectItem>
                         <SelectItem value="stool">Stool Tests</SelectItem>
                         <SelectItem value="microbiology">Microbiology</SelectItem>
+                        <SelectItem value="chemistry">Chemistry Panel</SelectItem>
+                        <SelectItem value="hormonal">Hormonal Tests</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -256,7 +311,7 @@ export default function Laboratory() {
               <div>
                 <FormLabel>Specific Tests</FormLabel>
                 <div className="space-y-2 mt-2">
-                  {commonTests.map((test) => (
+                  {commonTests[currentCategory].map((test) => (
                     <label key={test} className="flex items-center space-x-2">
                       <Checkbox
                         checked={selectedTests.includes(test)}

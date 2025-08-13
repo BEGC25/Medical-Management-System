@@ -55,6 +55,8 @@ Files included in the ZIP:
 - **Patient Registration**: GC-format IDs (GC1, GC2, etc.)
 - **Treatment Records**: Visits, vital signs, diagnoses
 - **Laboratory Management**: Blood, urine, stool, microbiology tests
+- **Chemistry Panel**: Automated chemistry machine integration (LFT, KFT, Lipid Profile, HbA1c, Cardiac Enzymes, etc.)
+- **Hormonal Testing**: Hormonal machine integration (Thyroid Function, Diabetes Panel, Reproductive Hormones, etc.)
 - **X-Ray System**: Complete examination documentation
 - **Ultrasound Module**: Findings and impressions
 - **Reports & Statistics**: Daily summaries and patient tracking

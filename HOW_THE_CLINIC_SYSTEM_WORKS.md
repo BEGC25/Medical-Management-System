@@ -73,6 +73,8 @@ This is normal system activity and shows the system is working properly.
 ### Medical Records
 - **Treatments**: Record visits, vital signs, diagnoses
 - **Laboratory**: Order blood, urine, stool, microbiology tests
+- **Chemistry Panel**: Automated chemistry machine tests (LFT, KFT, Lipid Profile, HbA1c, etc.)
+- **Hormonal Tests**: Hormonal machine tests (Thyroid, Diabetes, Reproductive hormones, etc.)
 - **X-Ray**: Document examinations with safety checklists
 - **Ultrasound**: Complete examination records
 
