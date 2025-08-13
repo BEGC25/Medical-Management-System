@@ -54,6 +54,12 @@ This is a full-stack web application designed specifically for Bahr El Ghazal Cl
 - Technical quality assessment
 - Findings and impression documentation
 
+### Ultrasound Module (ECube 8)
+- Advanced ultrasound capabilities: cardiac echo, vascular Doppler, obstetric monitoring
+- Specialized examinations: renal, hepatobiliary, gynecological, urological, pediatric
+- High-resolution imaging: breast, scrotal, thyroid, musculoskeletal, carotid Doppler
+- Quality assessment and comprehensive reporting system
+
 ### Dashboard & Reporting
 - Statistical overview of clinic operations
 - Recent patient activity tracking

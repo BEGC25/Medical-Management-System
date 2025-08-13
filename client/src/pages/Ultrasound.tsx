@@ -212,10 +212,19 @@ export default function Ultrasound() {
                             <SelectContent>
                               <SelectItem value="abdominal">Abdominal</SelectItem>
                               <SelectItem value="pelvic">Pelvic</SelectItem>
-                              <SelectItem value="obstetric">Obstetric</SelectItem>
-                              <SelectItem value="cardiac">Cardiac</SelectItem>
-                              <SelectItem value="vascular">Vascular</SelectItem>
+                              <SelectItem value="obstetric">Obstetric/Pregnancy</SelectItem>
+                              <SelectItem value="cardiac">Cardiac/Echo</SelectItem>
+                              <SelectItem value="vascular">Vascular/Doppler</SelectItem>
                               <SelectItem value="thyroid">Thyroid</SelectItem>
+                              <SelectItem value="renal">Renal/Kidney</SelectItem>
+                              <SelectItem value="hepatobiliary">Liver/Gallbladder</SelectItem>
+                              <SelectItem value="gynecological">Gynecological</SelectItem>
+                              <SelectItem value="urological">Urological/Bladder</SelectItem>
+                              <SelectItem value="pediatric">Pediatric</SelectItem>
+                              <SelectItem value="musculoskeletal">Musculoskeletal</SelectItem>
+                              <SelectItem value="breast">Breast</SelectItem>
+                              <SelectItem value="scrotal">Scrotal/Testicular</SelectItem>
+                              <SelectItem value="carotid">Carotid Doppler</SelectItem>
                               <SelectItem value="other">Other</SelectItem>
                             </SelectContent>
                           </Select>

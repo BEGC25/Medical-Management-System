@@ -76,7 +76,7 @@ This is normal system activity and shows the system is working properly.
 - **Chemistry Panel**: Automated chemistry machine tests (LFT, KFT, Lipid Profile, HbA1c, etc.)
 - **Hormonal Tests**: Hormonal machine tests (Thyroid, Diabetes, Reproductive hormones, etc.)
 - **X-Ray**: Document examinations with safety checklists
-- **Ultrasound**: Complete examination records
+- **Ultrasound**: Complete examination records with ECube 8 capabilities (cardiac, vascular Doppler, obstetric, abdominal, etc.)
 
 ### Reports & Statistics
 - **Dashboard**: Daily statistics and recent activity

@@ -79,7 +79,7 @@ export const ultrasoundExams = sqliteTable("ultrasound_exams", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   examId: text("exam_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
-  examType: text("exam_type").$type<"abdominal" | "pelvic" | "obstetric" | "cardiac" | "vascular" | "thyroid" | "other">().notNull(),
+  examType: text("exam_type").$type<"abdominal" | "pelvic" | "obstetric" | "cardiac" | "vascular" | "thyroid" | "renal" | "hepatobiliary" | "gynecological" | "urological" | "pediatric" | "musculoskeletal" | "breast" | "scrotal" | "carotid" | "other">().notNull(),
   clinicalIndication: text("clinical_indication"),
   specialInstructions: text("special_instructions"),
   priority: text("priority").$type<"routine" | "urgent" | "emergency">().notNull(),

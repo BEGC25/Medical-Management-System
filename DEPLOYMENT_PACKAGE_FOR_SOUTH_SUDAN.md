@@ -58,7 +58,7 @@ Files included in the ZIP:
 - **Chemistry Panel**: Automated chemistry machine integration (LFT, KFT, Lipid Profile, HbA1c, Cardiac Enzymes, etc.)
 - **Hormonal Testing**: Hormonal machine integration (Thyroid Function, Diabetes Panel, Reproductive Hormones, etc.)
 - **X-Ray System**: Complete examination documentation
-- **Ultrasound Module**: Findings and impressions
+- **Ultrasound Module**: Advanced ECube 8 integration (cardiac echo, vascular Doppler, obstetric, renal, hepatobiliary, etc.)
 - **Reports & Statistics**: Daily summaries and patient tracking
 
 ### Security & Privacy
