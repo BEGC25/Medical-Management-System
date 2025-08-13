@@ -47,7 +47,8 @@ export default function Ultrasound() {
   });
 
   const { data: pendingUltrasounds = [] } = useQuery({
-    queryKey: ["/api/ultrasound-exams", "pending"],
+    queryKey: ["/api/ultrasound-exams"],
+    select: (data: UltrasoundExam[]) => data.filter(exam => exam.status === 'pending'),
   });
 
   const createUltrasoundExamMutation = useMutation({
@@ -475,6 +476,7 @@ export default function Ultrasound() {
                           placeholder="Detailed ultrasound findings..."
                           rows={4}
                           {...field}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -493,6 +495,7 @@ export default function Ultrasound() {
                           placeholder="Clinical impression and conclusion..."
                           rows={3}
                           {...field}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -511,6 +514,7 @@ export default function Ultrasound() {
                           placeholder="Follow-up recommendations..."
                           rows={2}
                           {...field}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
