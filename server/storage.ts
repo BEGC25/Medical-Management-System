@@ -112,18 +112,52 @@ try {
 
 // Migrations already applied manually
 
-// Counter for sequential patient IDs
+// Counters for sequential IDs
 let patientCounter = 0;
+let labCounter = 0;
+let xrayCounter = 0;
+let ultrasoundCounter = 0;
+let prescriptionCounter = 0;
 
 function generatePatientId(): string {
   patientCounter++;
   return `BGC${patientCounter}`;
 }
 
-function generateId(prefix: string): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substr(2, 5);
-  return `${prefix}${timestamp}${random}`.toUpperCase();
+async function generateLabId(): Promise<string> {
+  if (labCounter === 0) {
+    const allLabs = await db.select().from(labTests);
+    labCounter = allLabs.length;
+  }
+  labCounter++;
+  return `BGC-LAB${labCounter}`;
+}
+
+async function generateXrayId(): Promise<string> {
+  if (xrayCounter === 0) {
+    const allXrays = await db.select().from(xrayExams);
+    xrayCounter = allXrays.length;
+  }
+  xrayCounter++;
+  return `BGC-XR${xrayCounter}`;
+}
+
+async function generateUltrasoundId(): Promise<string> {
+  if (ultrasoundCounter === 0) {
+    const allUltrasounds = await db.select().from(ultrasoundExams);
+    ultrasoundCounter = allUltrasounds.length;
+  }
+  ultrasoundCounter++;
+  return `BGC-US${ultrasoundCounter}`;
+}
+
+async function generatePrescriptionId(): Promise<string> {
+  if (prescriptionCounter === 0) {
+    // For future prescription table
+    prescriptionCounter = 0;
+  }
+  prescriptionCounter++;
+  return `BGC-RX${prescriptionCounter}`;
 }
 
 export interface IStorage {
@@ -163,10 +197,11 @@ export interface IStorage {
     totalVisits: number;
     labTests: number;
     xrays: number;
+    ultrasounds: number;
     pending: {
       labResults: number;
       xrayReports: number;
-      prescriptions: number;
+      ultrasoundReports: number;
     };
   }>;
 
@@ -256,7 +291,7 @@ export class MemStorage implements IStorage {
   }
 
   async createLabTest(data: InsertLabTest): Promise<LabTest> {
-    const testId = generateId("LAB");
+    const testId = await generateLabId();
     const now = new Date().toISOString();
     
     const insertData: any = {
@@ -297,7 +332,7 @@ export class MemStorage implements IStorage {
   }
 
   async createXrayExam(data: InsertXrayExam): Promise<XrayExam> {
-    const examId = generateId("XR");
+    const examId = await generateXrayId();
     const now = new Date().toISOString();
     
     const insertData: any = {
@@ -339,16 +374,18 @@ export class MemStorage implements IStorage {
 
   // Ultrasound Exams
   async createUltrasoundExam(data: InsertUltrasoundExam): Promise<UltrasoundExam> {
-    const examId = generateId("US");
+    const examId = await generateUltrasoundId();
     const createdAt = new Date().toISOString();
     
+    const insertData: any = {
+      ...data,
+      examId,
+      status: "pending",
+      createdAt,
+    };
+    
     const [ultrasoundExam] = await db.insert(ultrasoundExams)
-      .values({
-        ...data,
-        examId,
-        status: "pending",
-        createdAt,
-      })
+      .values(insertData)
       .returning();
     
     return ultrasoundExam;
