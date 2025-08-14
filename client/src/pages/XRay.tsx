@@ -16,10 +16,13 @@ import PatientSearch from "@/components/PatientSearch";
 import { insertXrayExamSchema, type InsertXrayExam, type Patient, type XrayExam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
+import "@/lab-print.css";
 
 export default function XRay() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedXrayExam, setSelectedXrayExam] = useState<XrayExam | null>(null);
+  const [showXrayRequest, setShowXrayRequest] = useState(false);
+  const [showXrayReport, setShowXrayReport] = useState(false);
   const [safetyChecklist, setSafetyChecklist] = useState({
     notPregnant: false,
     metalRemoved: false,
@@ -386,7 +389,7 @@ export default function XRay() {
                   <Send className="w-4 h-4 mr-2" />
                   {createXrayExamMutation.isPending ? "Submitting..." : "Submit Request"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => window.print()}>
+                <Button type="button" variant="outline" onClick={() => setShowXrayRequest(true)}>
                   <Printer className="w-4 h-4 mr-2" />
                   Print Request
                 </Button>
@@ -554,7 +557,7 @@ export default function XRay() {
                     <Check className="w-4 h-4 mr-2" />
                     {updateXrayExamMutation.isPending ? "Saving..." : "Save Report"}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => window.print()}>
+                  <Button type="button" variant="outline" onClick={() => setShowXrayReport(true)}>
                     <Printer className="w-4 h-4 mr-2" />
                     Print Report
                   </Button>
@@ -564,6 +567,178 @@ export default function XRay() {
           )}
         </CardContent>
       </Card>
+
+      {/* X-Ray Request Print Modal */}
+      {showXrayRequest && selectedPatient && (
+        <div>
+          <Card className="border-2 border-medical-green">
+            <CardContent className="p-6">
+              <div id="xray-request-print" className="prescription">
+                <header className="rx-header">
+                  <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
+                  <p className="text-lg italic mb-2">Your Health, Our Priority</p>
+                  <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+                  <h2 className="text-2xl font-bold mt-6">X-RAY EXAMINATION REQUEST</h2>
+                </header>
+
+                <main className="rx-body">
+                  {/* Patient Info */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><strong>Name:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</div>
+                      <div><strong>Patient ID:</strong> {selectedPatient.patientId}</div>
+                      <div><strong>Phone:</strong> {selectedPatient.phoneNumber}</div>
+                      <div><strong>Date of Birth:</strong> {selectedPatient.dateOfBirth}</div>
+                    </div>
+                  </div>
+
+                  {/* Exam Details */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Examination Information</h3>
+                    <div className="text-sm space-y-2">
+                      <div><strong>Exam Type:</strong> {form.watch("examType")}</div>
+                      <div><strong>Body Part:</strong> {form.watch("bodyPart")}</div>
+                      <div><strong>Priority:</strong> {form.watch("priority")}</div>
+                      <div><strong>Requested Date:</strong> {form.watch("requestedDate")}</div>
+                      {form.watch("clinicalIndication") && (
+                        <div><strong>Clinical Indication:</strong> {form.watch("clinicalIndication")}</div>
+                      )}
+                      {form.watch("specialInstructions") && (
+                        <div><strong>Special Instructions:</strong> {form.watch("specialInstructions")}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Safety Checklist */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Safety Checklist</h3>
+                    <div className="text-sm space-y-1">
+                      <div>☐ Not pregnant (if applicable)</div>
+                      <div>☐ Metal objects removed</div>
+                      <div>☐ Patient can cooperate with positioning</div>
+                    </div>
+                  </div>
+                </main>
+
+                <footer className="rx-footer">
+                  <div className="sig">
+                    <div className="line"></div>
+                    <span>Requesting Doctor</span>
+                  </div>
+                  <div className="valid">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</div>
+                </footer>
+              </div>
+              <div className="text-center mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.print()}
+                  className="mr-4"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Request
+                </Button>
+                <Button variant="outline" onClick={() => setShowXrayRequest(false)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* X-Ray Report Print Modal */}
+      {showXrayReport && selectedXrayExam && (
+        <div>
+          <Card className="border-2 border-medical-green">
+            <CardContent className="p-6">
+              <div id="xray-report-print" className="prescription">
+                <header className="rx-header">
+                  <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
+                  <p className="text-lg italic mb-2">Your Health, Our Priority</p>
+                  <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+                  <h2 className="text-2xl font-bold mt-6">X-RAY EXAMINATION REPORT</h2>
+                </header>
+
+                <main className="rx-body">
+                  {/* Patient and Exam Info */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><strong>Patient ID:</strong> {selectedXrayExam.patientId}</div>
+                      <div><strong>Exam ID:</strong> {selectedXrayExam.examId}</div>
+                      <div><strong>Requested Date:</strong> {selectedXrayExam.requestedDate}</div>
+                      <div><strong>Report Date:</strong> {resultsForm.watch("reportDate")}</div>
+                    </div>
+                  </div>
+
+                  {/* Exam Details */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Examination Performed</h3>
+                    <div className="text-sm space-y-2">
+                      <div><strong>Exam Type:</strong> {selectedXrayExam.examType}</div>
+                      <div><strong>Body Part:</strong> {selectedXrayExam.bodyPart}</div>
+                      <div><strong>Technical Quality:</strong> {resultsForm.watch("technicalQuality")}</div>
+                    </div>
+                  </div>
+
+                  {/* Results */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Results</h3>
+                    <div className="text-sm space-y-4">
+                      <div>
+                        <strong>Findings:</strong>
+                        <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                          {resultsForm.watch("findings")}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <strong>Impression:</strong>
+                        <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                          {resultsForm.watch("impression")}
+                        </div>
+                      </div>
+
+                      {resultsForm.watch("recommendations") && (
+                        <div>
+                          <strong>Recommendations:</strong>
+                          <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                            {resultsForm.watch("recommendations")}
+                          </div>
+                        </div>
+                      )}
+
+                      <div><strong>Report Status:</strong> {resultsForm.watch("reportStatus")}</div>
+                    </div>
+                  </div>
+                </main>
+
+                <footer className="rx-footer">
+                  <div className="sig">
+                    <div className="line"></div>
+                    <span>Radiologist: {resultsForm.watch("radiologist")}</span>
+                  </div>
+                  <div className="valid">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</div>
+                </footer>
+              </div>
+              <div className="text-center mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.print()}
+                  className="mr-4"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Report
+                </Button>
+                <Button variant="outline" onClick={() => setShowXrayReport(false)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

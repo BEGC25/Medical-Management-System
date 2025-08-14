@@ -9,7 +9,9 @@
 
 /* The printable card */
 #lab-request-print.prescription,
-#lab-report-print.prescription {
+#lab-report-print.prescription,
+#xray-request-print.prescription,
+#xray-report-print.prescription {
   width: var(--page-w);
   min-height: calc(var(--page-h) - 2 * var(--page-m));
   margin: 0 auto;
@@ -43,9 +45,13 @@
   body * { visibility: hidden; }
   #lab-request-print, #lab-request-print * { visibility: visible; }
   #lab-report-print, #lab-report-print * { visibility: visible; }
+  #xray-request-print, #xray-request-print * { visibility: visible; }
+  #xray-report-print, #xray-report-print * { visibility: visible; }
   
   #lab-request-print { position: absolute; left: 0; top: 0; width: 100%; }
   #lab-report-print { position: absolute; left: 0; top: 0; width: 100%; }
+  #xray-request-print { position: absolute; left: 0; top: 0; width: 100%; }
+  #xray-report-print { position: absolute; left: 0; top: 0; width: 100%; }
 
   /* remove shadows/borders that can cause overflow */
   .no-print { display: none !important; }
