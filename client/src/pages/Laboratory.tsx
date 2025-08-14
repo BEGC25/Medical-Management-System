@@ -586,10 +586,12 @@ export default function Laboratory() {
       {/* Lab Request Print Modal */}
       {showLabRequest && selectedPatient && (
         <div>
-          <div
-            id="lab-request-print" 
-            className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
-          >
+          <Card className="border-2 border-medical-green">
+            <CardContent className="p-6">
+              <div
+                id="lab-request-print"
+                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+              >
             {/* Header */}
             <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
               <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
@@ -632,22 +634,39 @@ export default function Laboratory() {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="mt-auto pt-8 border-t">
-              <p className="mt-6">Requesting Doctor: ____________________</p>
-              <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
-            </div>
-          </div>
+                {/* Footer */}
+                <div className="mt-auto pt-8 border-t">
+                  <p className="mt-6">Requesting Doctor: ____________________</p>
+                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+                </div>
+              </div>
+              <div className="text-center mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.print()}
+                  className="mr-4"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Request
+                </Button>
+                <Button variant="outline" onClick={() => setShowLabRequest(false)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Lab Report Print Modal */}
       {showLabReport && selectedLabTest && (
         <div>
-          <div
-            id="lab-report-print"
-            className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
-          >
+          <Card className="border-2 border-medical-green">
+            <CardContent className="p-6">
+              <div
+                id="lab-report-print"
+                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+              >
             {/* Header */}
             <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
               <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
@@ -714,12 +733,27 @@ export default function Laboratory() {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="mt-auto pt-8 border-t">
-              <p className="mt-6">Lab Technician: ____________________</p>
-              <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
-            </div>
-          </div>
+                {/* Footer */}
+                <div className="mt-auto pt-8 border-t">
+                  <p className="mt-6">Lab Technician: ____________________</p>
+                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+                </div>
+              </div>
+              <div className="text-center mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.print()}
+                  className="mr-4"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Report
+                </Button>
+                <Button variant="outline" onClick={() => setShowLabReport(false)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </>
