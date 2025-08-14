@@ -476,7 +476,7 @@ export default function Treatment() {
             <CardContent className="p-6">
               <div
                 id="prescription-print"
-                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+                className="flex flex-col min-h-[80vh] print:min-h-0 print:h-auto p-8 print:p-6"
               >
                 {/* Header */}
                 <div className="text-center border-b pb-4 mb-6">
