@@ -264,11 +264,6 @@ export default function Laboratory() {
       return;
     }
     setShowLabRequest(true);
-    setTimeout(() => {
-      const done = () => setShowLabRequest(false);
-      window.addEventListener("afterprint", done, { once: true });
-      window.print();
-    }, 50);
   };
 
   const printLabReport = () => {
@@ -277,11 +272,6 @@ export default function Laboratory() {
       return;
     }
     setShowLabReport(true);
-    setTimeout(() => {
-      const done = () => setShowLabReport(false);
-      window.addEventListener("afterprint", done, { once: true });
-      window.print();
-    }, 50);
   };
 
   return (
@@ -638,6 +628,14 @@ export default function Laboratory() {
               <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
             </div>
           </div>
+          
+          {/* Print Button */}
+          <div className="no-print mt-4 text-center">
+            <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
+              <Printer className="w-4 h-4 mr-2" />
+              Print Request
+            </Button>
+          </div>
         </div>
       )}
 
@@ -719,6 +717,14 @@ export default function Laboratory() {
               <p className="mt-6">Lab Technician: ____________________</p>
               <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
             </div>
+          </div>
+          
+          {/* Print Button */}
+          <div className="no-print mt-4 text-center">
+            <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
+              <Printer className="w-4 h-4 mr-2" />
+              Print Report
+            </Button>
           </div>
         </div>
       )}
