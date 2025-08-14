@@ -286,25 +286,26 @@ export default function Ultrasound() {
               body { margin: 0; }
               .report-container {
                 width: 210mm;
-                min-height: 297mm;
-                padding: 20mm;
+                max-height: 297mm;
+                padding: 15mm;
                 box-sizing: border-box;
                 font-family: 'Arial', sans-serif;
-                line-height: 1.6;
+                line-height: 1.4;
+                overflow: hidden;
               }
             }
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
-            .clinic-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
-            .clinic-subtitle { font-size: 14px; color: #666; margin-bottom: 10px; }
-            .report-title { font-size: 20px; font-weight: bold; color: #16a34a; margin-top: 15px; }
-            .section { margin-bottom: 25px; }
-            .section-title { font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-            .info-item { margin-bottom: 8px; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 15px; margin-bottom: 20px; }
+            .clinic-name { font-size: 22px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
+            .clinic-subtitle { font-size: 12px; color: #666; margin-bottom: 8px; }
+            .report-title { font-size: 18px; font-weight: bold; color: #16a34a; margin-top: 12px; }
+            .section { margin-bottom: 12px; }
+            .section-title { font-size: 14px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+            .info-item { margin-bottom: 6px; font-size: 13px; }
             .label { font-weight: bold; }
-            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
-            .findings-box { background: #f9fafb; padding: 15px; border-radius: 5px; white-space: pre-line; min-height: 100px; border: 1px solid #e5e7eb; }
+            .footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #666; text-align: center; }
+            .findings-box { background: #f9fafb; padding: 12px; border-radius: 5px; white-space: pre-line; min-height: 60px; border: 1px solid #e5e7eb; font-size: 12px; }
           </style>
         </head>
         <body>
@@ -320,7 +321,7 @@ export default function Ultrasound() {
               <div class="section-title">Examination Information</div>
               <div class="info-grid">
                 <div>
-                  <div class="info-item"><span class="label">Exam ID:</span> ${selectedUltrasoundExam.examId}</div>
+                  <div class="info-item"><span class="label">Ultrasound Order:</span> ${selectedUltrasoundExam.examId}</div>
                   <div class="info-item"><span class="label">Patient ID:</span> ${selectedUltrasoundExam.patientId}</div>
                   <div class="info-item"><span class="label">Examination Type:</span> ${selectedUltrasoundExam.examType?.charAt(0).toUpperCase() + selectedUltrasoundExam.examType?.slice(1)} Ultrasound</div>
                   <div class="info-item"><span class="label">Priority:</span> ${selectedUltrasoundExam.priority?.charAt(0).toUpperCase() + selectedUltrasoundExam.priority?.slice(1)}</div>
@@ -359,11 +360,11 @@ export default function Ultrasound() {
             ` : ''}
 
             <div class="section">
-              <div class="section-title">Reporting Physician</div>
+              <div class="section-title">Sonographer Name & Signature</div>
               <div class="info-item">
                 <span class="label">Sonographer:</span> ${reportData.sonographer || '_________________________'}
               </div>
-              <div style="margin-top: 30px;">
+              <div style="margin-top: 20px;">
                 <span class="label">Signature:</span> ___________________________ 
                 <span style="margin-left: 40px;"><span class="label">Date:</span> ${reportData.reportDate || currentDate}</span>
               </div>
