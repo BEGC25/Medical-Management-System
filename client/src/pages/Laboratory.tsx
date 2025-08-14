@@ -586,7 +586,10 @@ export default function Laboratory() {
       {/* Lab Request Print Modal */}
       {showLabRequest && selectedPatient && (
         <div>
-          <div id="lab-request-print" className="rx-print">
+          <div
+            id="lab-request-print"
+            className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+          >
             {/* Header */}
             <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
               <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
@@ -641,7 +644,10 @@ export default function Laboratory() {
       {/* Lab Report Print Modal */}
       {showLabReport && selectedLabTest && (
         <div>
-          <div id="lab-report-print" className="rx-print">
+          <div
+            id="lab-report-print"
+            className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+          >
             {/* Header */}
             <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
               <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>

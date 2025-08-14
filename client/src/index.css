@@ -132,13 +132,12 @@
   html, body { margin: 0; padding: 0; }
   body * { visibility: hidden; }
   
-  /* Show only prescription content and its children */
-  #prescription-print,
-  #prescription-print * {
-    visibility: visible;
-  }
-  
-  /* Position prescription to fill page */
+  /* Show only the active print section (whichever is mounted) */
+  #prescription-print, #prescription-print * { visibility: visible; }
+  #lab-request-print, #lab-request-print * { visibility: visible; }
+  #lab-report-print, #lab-report-print * { visibility: visible; }
+
+  /* Position print content to fill page exactly like prescription */
   #prescription-print {
     position: absolute !important;
     left: 0 !important;
@@ -149,48 +148,23 @@
     page-break-before: avoid !important;
   }
 
-  /* Show only the active print section (whichever is mounted) */
-  #lab-request-print, #lab-request-print * { visibility: visible; }
-  #lab-report-print, #lab-report-print * { visibility: visible; }
-
-  /* Place the page at the top-left and prevent overflow-induced extra pages */
+  /* Lab print sections positioned exactly like prescription */
   #lab-request-print,
   #lab-report-print {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    page-break-after: avoid;
-    page-break-before: avoid;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
   }
 
   /* Hide UI chrome/buttons */
   .no-print { display: none !important; }
-  
-  /* Page setup */
-  @page {
-    size: A4;
-    margin: 20mm;
-  }
-  
-  .no-print {
-    display: none !important;
-  }
-  
-  .print-only {
-    display: block !important;
-  }
-  
-  .shadow-md, .shadow-lg {
-    box-shadow: none !important;
-  }
-  
-  .rounded-lg {
-    border-radius: 0 !important;
-  }
-  
-  .bg-gray-50 {
-    background-color: white !important;
-  }
+  .shadow-md, .shadow-lg { box-shadow: none !important; }
+  .rounded-lg { border-radius: 0 !important; }
+  .bg-gray-50 { background-color: white !important; }
 }
 
 /* Offline indicator animation */
