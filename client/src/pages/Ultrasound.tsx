@@ -286,12 +286,14 @@ export default function Ultrasound() {
               body { margin: 0; }
               .report-container {
                 width: 210mm;
-                max-height: 297mm;
+                height: 297mm;
                 padding: 15mm;
+                padding-bottom: 50mm;
                 box-sizing: border-box;
                 font-family: 'Arial', sans-serif;
                 line-height: 1.4;
                 overflow: hidden;
+                position: relative;
               }
             }
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
@@ -304,7 +306,9 @@ export default function Ultrasound() {
             .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
             .info-item { margin-bottom: 6px; font-size: 13px; }
             .label { font-weight: bold; }
-            .footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #666; text-align: center; }
+            .footer { position: absolute; bottom: 15mm; left: 15mm; right: 15mm; font-size: 11px; color: #666; }
+            .signature-section { margin-bottom: 20px; text-align: left; }
+            .clinic-info { text-align: center; border-top: 1px solid #e5e7eb; padding-top: 15px; }
             .findings-box { background: #f9fafb; padding: 12px; border-radius: 5px; white-space: pre-line; min-height: 60px; border: 1px solid #e5e7eb; font-size: 12px; }
           </style>
         </head>
@@ -357,13 +361,13 @@ export default function Ultrasound() {
             ` : ''}
 
             <div class="footer">
-              <div style="margin-bottom: 20px; text-align: left;">
+              <div class="signature-section">
                 <div class="section-title">Sonographer Name & Signature</div>
                 <div style="margin-top: 15px;">
                   <span class="label">Sonographer Name & Signature:</span> ___________________________
                 </div>
               </div>
-              <div style="text-align: center; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+              <div class="clinic-info">
                 <p>Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
               </div>
             </div>
