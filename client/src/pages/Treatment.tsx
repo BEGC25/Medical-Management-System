@@ -148,7 +148,10 @@ export default function Treatment() {
   };
 
   const createTreatmentMutation = useMutation({
-    mutationFn: (data: InsertTreatment) => apiRequest("POST", "/api/treatments", data),
+    mutationFn: async (data: InsertTreatment): Promise<Treatment> => {
+      const response = await apiRequest("POST", "/api/treatments", data);
+      return response.json();
+    },
     onSuccess: (treatment: Treatment) => {
       setSavedTreatment(treatment);
       toast({
