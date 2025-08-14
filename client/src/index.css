@@ -149,10 +149,9 @@
     left: 0 !important;
     top: 0 !important;
     width: 210mm !important;
-    height: 273mm !important;  /* Exactly within 12mm margins = 297-24 */
-    overflow: hidden !important;
-    page-break-before: avoid !important;
+    height: 297mm !important;
     page-break-after: avoid !important;
+    page-break-before: avoid !important;
   }
 
   .no-print { display: none !important; }
