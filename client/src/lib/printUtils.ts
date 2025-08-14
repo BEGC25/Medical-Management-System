@@ -14,18 +14,21 @@ export function printByHtml(html: string, title = "Print") {
   const headCSS = collectHeadCSS();
   const inlineCSS = `
     <style>
-      @page { size: A4; margin: 0; }           /* no browser margins */
+      @page { size: A4; margin: 0; }
       html, body { margin: 0; padding: 0; }
-      .rx-print {
-        width: 210mm;                           /* exact A4 */
-        height: 297mm;
-        padding: 12mm;                          /* inner margins */
-        box-sizing: border-box;
-        display: flex; flex-direction: column; overflow: hidden;
+      .rx-print{
+        width:210mm; height:297mm; padding:12mm; box-sizing:border-box;
+        display:flex; flex-direction:column; overflow:hidden;
         -webkit-print-color-adjust: exact; print-color-adjust: exact;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
       }
-      .mt-auto { margin-top: auto !important; } /* footer pinned to bottom */
+      .mt-auto{ margin-top:auto !important; }
+      /* 🔧 Neutralize any hide-all rules copied from app CSS */
+      @media print {
+        *, *::before, *::after { visibility: visible !important; }
+        html, body, #page { visibility: visible !important; }
+        /* If any display:none sneaks in, undo it for our page */
+        #page, #page * { display: initial !important; }
+      }
     </style>
   `;
 

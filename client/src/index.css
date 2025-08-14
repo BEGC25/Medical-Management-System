@@ -149,21 +149,18 @@
 /* Avoid awkward breaks inside lists/sections */
 .avoid-break { break-inside: avoid; page-break-inside: avoid; }
 
-/* Print rules */
+/* Print rules - Legacy print styles (not used with isolated window printing) */
 @media print {
-  @page { size: A4; margin: var(--page-m); }
-
-  /* show ONLY the prescription */
-  body * { visibility: hidden; }
-  #prescription-print, #prescription-print * { visibility: visible; }
-  #lab-request-print, #lab-request-print * { visibility: visible; }
-  #lab-report-print, #lab-report-print * { visibility: visible; }
+  /* Only apply to pages with legacy print attribute */
+  body[data-legacy-print] * { visibility: hidden; }
+  body[data-legacy-print] #prescription-print, 
+  body[data-legacy-print] #prescription-print * { visibility: visible; }
+  body[data-legacy-print] #lab-request-print, 
+  body[data-legacy-print] #lab-request-print * { visibility: visible; }
+  body[data-legacy-print] #lab-report-print, 
+  body[data-legacy-print] #lab-report-print * { visibility: visible; }
   
-  #prescription-print { position: absolute; left: 0; top: 0; width: 100%; }
-  #lab-request-print { position: absolute; left: 0; top: 0; width: 100%; }
-  #lab-report-print { position: absolute; left: 0; top: 0; width: 100%; }
-
-  /* remove shadows/borders that can cause overflow */
+  /* Utility classes for any print context */
   .no-print { display: none !important; }
   .shadow-md, .shadow-lg { box-shadow: none !important; }
   .rounded-lg { border-radius: 0 !important; }
