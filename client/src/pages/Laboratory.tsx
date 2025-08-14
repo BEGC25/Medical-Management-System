@@ -258,6 +258,35 @@ export default function Laboratory() {
     });
   };
 
+  // Isolated window printing helper
+  const printIsolated = (html: string, title = "Print") => {
+    const w = window.open("", "_blank", "width=900,height=1200");
+    if (!w) return;
+
+    const css = `
+      <style>
+        @page { size: A4; margin: 12mm; }
+        html, body { margin: 0; padding: 0; }
+        .rx-print {
+          width: 210mm;
+          min-height: calc(297mm - 24mm); /* inside page margins */
+          padding: 10mm;
+          box-sizing: border-box;
+          display: flex; flex-direction: column;
+        }
+        .mt-auto { margin-top: auto !important; } /* pin footer to bottom */
+        /* Safety: if content is just a tad tall, gently scale to fit */
+        .fit { transform: scale(0.98); transform-origin: top left; }
+      </style>
+    `;
+
+    w.document.write(`<html><head><title>${title}</title>${css}</head><body>${html}</body></html>`);
+    w.document.close();
+
+    // Give the new window a tick to render before printing
+    setTimeout(() => { w.focus(); w.print(); w.close(); }, 200);
+  };
+
   const printLabRequest = () => {
     if (!selectedPatient || selectedTests.length === 0) {
       toast({ title: "Error", description: "Please select a patient and tests before printing", variant: "destructive" });
@@ -265,9 +294,9 @@ export default function Laboratory() {
     }
     setShowLabRequest(true);
     setTimeout(() => {
-      const done = () => setShowLabRequest(false);
-      window.addEventListener("afterprint", done, { once: true });
-      window.print();
+      const node = document.getElementById("lab-request-print");
+      if (node) printIsolated(`<div class="rx-print fit">${node.innerHTML}</div>`, "Lab Request");
+      setShowLabRequest(false);
     }, 50);
   };
 
@@ -278,9 +307,9 @@ export default function Laboratory() {
     }
     setShowLabReport(true);
     setTimeout(() => {
-      const done = () => setShowLabReport(false);
-      window.addEventListener("afterprint", done, { once: true });
-      window.print();
+      const node = document.getElementById("lab-report-print");
+      if (node) printIsolated(`<div class="rx-print fit">${node.innerHTML}</div>`, "Lab Report");
+      setShowLabReport(false);
     }, 50);
   };
 
