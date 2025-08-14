@@ -622,15 +622,19 @@ export default function Laboratory() {
                 className="rx-print"
               >
                 {/* Header */}
-                <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
-                  <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
-                  <p className="text-lg italic mb-2">Your Health, Our Priority</p>
-                  <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
-                </div>
-
-                {/* Document Title */}
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold border-b border-gray-300 inline-block pb-2">LABORATORY TEST REQUEST</h2>
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">
+                    BAHR EL GHAZAL CLINIC
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Your Health, Our Priority
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">
+                    LABORATORY TEST REQUEST
+                  </p>
                 </div>
 
                 {/* Patient Info */}
@@ -695,15 +699,19 @@ export default function Laboratory() {
                 className="rx-print"
               >
                 {/* Header */}
-                <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
-                  <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
-                  <p className="text-lg italic mb-2">Your Health, Our Priority</p>
-                  <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
-                </div>
-
-                {/* Document Title */}
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold border-b border-gray-300 inline-block pb-2">LABORATORY REPORT</h2>
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">
+                    BAHR EL GHAZAL CLINIC
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Your Health, Our Priority
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">
+                    LABORATORY REPORT
+                  </p>
                 </div>
 
                 {/* Patient and Test Info */}
