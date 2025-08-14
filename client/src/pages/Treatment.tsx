@@ -12,13 +12,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
-import { insertTreatmentSchema, type InsertTreatment, type Patient } from "@shared/schema";
+import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
 export default function Treatment() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescription, setShowPrescription] = useState(false);
+  const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -52,22 +53,108 @@ export default function Treatment() {
       });
       return;
     }
+    
+    if (!savedTreatment) {
+      toast({
+        title: "Save Treatment First",
+        description: "Please save the treatment record before generating prescription.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setShowPrescription(true);
   };
 
   const printPrescription = () => {
-    window.print();
+    // Create a new window for printing with proper title
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    const prescriptionContent = document.getElementById('prescription-print')?.innerHTML;
+    const originalTitle = document.title;
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Prescription - BGC${savedTreatment?.treatmentId || ''}</title>
+          <meta charset="utf-8">
+          <style>
+            @media print {
+              body { margin: 0; }
+              .prescription-container {
+                width: 210mm;
+                min-height: 297mm;
+                max-height: 297mm;
+                padding: 20mm;
+                box-sizing: border-box;
+                page-break-after: avoid;
+                display: flex;
+                flex-direction: column;
+              }
+              .content { flex: 1; }
+              .footer { margin-top: auto; }
+            }
+            body {
+              font-family: 'Roboto', sans-serif;
+              line-height: 1.6;
+              color: #333;
+            }
+            .text-center { text-align: center; }
+            .text-medical-blue { color: #1e40af; }
+            .text-medical-green { color: #16a34a; }
+            .text-gray-600 { color: #6b7280; }
+            .text-gray-500 { color: #9ca3af; }
+            .text-2xl { font-size: 1.5rem; font-weight: bold; }
+            .text-lg { font-size: 1.125rem; }
+            .text-sm { font-size: 0.875rem; }
+            .text-xs { font-size: 0.75rem; }
+            .font-bold { font-weight: bold; }
+            .font-semibold { font-weight: 600; }
+            .border-b { border-bottom: 1px solid #e5e7eb; }
+            .pb-4 { padding-bottom: 1rem; }
+            .mb-6 { margin-bottom: 1.5rem; }
+            .mb-4 { margin-bottom: 1rem; }
+            .mb-2 { margin-bottom: 0.5rem; }
+            .mt-2 { margin-top: 0.5rem; }
+            .mt-4 { margin-top: 1rem; }
+            .mt-6 { margin-top: 1.5rem; }
+            .pt-8 { padding-top: 2rem; }
+            .border-t { border-top: 1px solid #e5e7eb; }
+            .grid { display: grid; }
+            .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .gap-4 { gap: 1rem; }
+            .space-y-4 > * + * { margin-top: 1rem; }
+            .pl-4 { padding-left: 1rem; }
+            .p-3 { padding: 0.75rem; }
+            .whitespace-pre-line { white-space: pre-line; }
+            .rounded { border-radius: 0.25rem; }
+            .border { border: 1px solid #e5e7eb; }
+          </style>
+        </head>
+        <body>
+          <div class="prescription-container">
+            ${prescriptionContent}
+          </div>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   const createTreatmentMutation = useMutation({
     mutationFn: (data: InsertTreatment) => apiRequest("POST", "/api/treatments", data),
-    onSuccess: () => {
+    onSuccess: (treatment: Treatment) => {
+      setSavedTreatment(treatment);
       toast({
         title: "Success",
-        description: "Treatment record saved successfully",
+        description: `Treatment record saved successfully (ID: ${treatment.treatmentId})`,
       });
-      form.reset();
-      setSelectedPatient(null);
       queryClient.invalidateQueries({ queryKey: ["/api/treatments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
@@ -82,6 +169,7 @@ export default function Treatment() {
           title: "Saved Offline",
           description: "Treatment record saved locally. Will sync when online.",
         });
+        setSavedTreatment(null);
         form.reset();
         setSelectedPatient(null);
       } else {
@@ -112,10 +200,18 @@ export default function Treatment() {
 
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
+    setSavedTreatment(null);
     toast({
       title: "Patient Selected",
       description: `${patient.firstName} ${patient.lastName} (${patient.patientId})`,
     });
+  };
+
+  const handleNewTreatment = () => {
+    form.reset();
+    setSelectedPatient(null);
+    setSavedTreatment(null);
+    setShowPrescription(false);
   };
 
   const calculateAge = (dateOfBirth: string) => {
@@ -142,6 +238,11 @@ export default function Treatment() {
                   <div>
                     <h4 className="font-semibold text-gray-800 dark:text-gray-200">
                       {selectedPatient.firstName} {selectedPatient.lastName}
+                      {savedTreatment && (
+                        <Badge className="ml-2 bg-green-100 text-green-800">
+                          Saved: {savedTreatment.treatmentId}
+                        </Badge>
+                      )}
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       ID: {selectedPatient.patientId} | 
@@ -453,14 +554,18 @@ export default function Treatment() {
                     type="button" 
                     onClick={generatePrescription}
                     className="bg-health-green hover:bg-green-700"
-                    disabled={!selectedPatient || !form.watch("treatmentPlan")}
+                    disabled={!savedTreatment || !form.watch("treatmentPlan")}
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     Generate Prescription
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => window.print()}>
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print Record
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleNewTreatment}
+                    className="ml-auto"
+                  >
+                    New Treatment
                   </Button>
                 </div>
               </form>
@@ -506,6 +611,7 @@ export default function Treatment() {
                     </div>
                     <div>
                       <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                      <p><strong>Treatment ID:</strong> {savedTreatment?.treatmentId || 'Not available'}</p>
                       <p><strong>Phone:</strong> {selectedPatient.phoneNumber || 'Not provided'}</p>
                       <p><strong>Village:</strong> {selectedPatient.village || 'Not specified'}</p>
                     </div>

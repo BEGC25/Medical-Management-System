@@ -19,6 +19,7 @@ export const patients = sqliteTable("patients", {
 
 export const treatments = sqliteTable("treatments", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  treatmentId: text("treatment_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   visitDate: text("visit_date").notNull(),
   visitType: text("visit_type").$type<"consultation" | "follow-up" | "emergency" | "preventive">().notNull(),
@@ -104,6 +105,7 @@ export const insertPatientSchema = createInsertSchema(patients).omit({
 
 export const insertTreatmentSchema = createInsertSchema(treatments).omit({
   id: true,
+  treatmentId: true,
   createdAt: true,
 });
 

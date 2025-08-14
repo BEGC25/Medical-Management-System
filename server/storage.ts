@@ -27,6 +27,7 @@ try {
   sqlite.exec(`DROP TABLE IF EXISTS treatments`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS treatments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    treatment_id TEXT UNIQUE NOT NULL,
     patient_id TEXT NOT NULL,
     visit_date TEXT NOT NULL,
     visit_type TEXT NOT NULL,
@@ -114,6 +115,7 @@ try {
 
 // Counters for sequential IDs
 let patientCounter = 0;
+let treatmentCounter = 0;
 let labCounter = 0;
 let xrayCounter = 0;
 let ultrasoundCounter = 0;
@@ -122,6 +124,15 @@ let prescriptionCounter = 0;
 function generatePatientId(): string {
   patientCounter++;
   return `BGC${patientCounter}`;
+}
+
+async function generateTreatmentId(): Promise<string> {
+  if (treatmentCounter === 0) {
+    const allTreatments = await db.select().from(treatments);
+    treatmentCounter = allTreatments.length;
+  }
+  treatmentCounter++;
+  return `BGC-RX${treatmentCounter}`;
 }
 
 async function generateLabId(): Promise<string> {
@@ -266,10 +277,12 @@ export class MemStorage implements IStorage {
   }
 
   async createTreatment(data: InsertTreatment): Promise<Treatment> {
+    const treatmentId = await generateTreatmentId();
     const now = new Date().toISOString();
     
     const insertData: any = {
       ...data,
+      treatmentId,
       createdAt: now,
     };
     
