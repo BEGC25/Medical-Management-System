@@ -324,13 +324,10 @@ export default function Ultrasound() {
                   <div class="info-item"><span class="label">Ultrasound Order:</span> ${selectedUltrasoundExam.examId}</div>
                   <div class="info-item"><span class="label">Patient ID:</span> ${selectedUltrasoundExam.patientId}</div>
                   <div class="info-item"><span class="label">Examination Type:</span> ${selectedUltrasoundExam.examType?.charAt(0).toUpperCase() + selectedUltrasoundExam.examType?.slice(1)} Ultrasound</div>
-                  <div class="info-item"><span class="label">Priority:</span> ${selectedUltrasoundExam.priority?.charAt(0).toUpperCase() + selectedUltrasoundExam.priority?.slice(1)}</div>
                 </div>
                 <div>
                   <div class="info-item"><span class="label">Requested Date:</span> ${selectedUltrasoundExam.requestedDate}</div>
                   <div class="info-item"><span class="label">Report Date:</span> ${reportData.reportDate || currentDate}</div>
-                  <div class="info-item"><span class="label">Image Quality:</span> ${reportData.imageQuality?.charAt(0).toUpperCase() + reportData.imageQuality?.slice(1)}</div>
-                  <div class="info-item"><span class="label">Status:</span> ${reportData.reportStatus?.charAt(0).toUpperCase() + reportData.reportStatus?.slice(1)}</div>
                 </div>
               </div>
             </div>
@@ -359,19 +356,16 @@ export default function Ultrasound() {
             </div>
             ` : ''}
 
-            <div class="section">
-              <div class="section-title">Sonographer Name & Signature</div>
-              <div class="info-item">
-                <span class="label">Sonographer:</span> ${reportData.sonographer || '_________________________'}
-              </div>
-              <div style="margin-top: 20px;">
-                <span class="label">Signature:</span> ___________________________ 
-                <span style="margin-left: 40px;"><span class="label">Date:</span> ${reportData.reportDate || currentDate}</span>
-              </div>
-            </div>
-
             <div class="footer">
-              <p>Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+              <div style="margin-bottom: 20px; text-align: left;">
+                <div class="section-title">Sonographer Name & Signature</div>
+                <div style="margin-top: 15px;">
+                  <span class="label">Sonographer Name & Signature:</span> ___________________________
+                </div>
+              </div>
+              <div style="text-align: center; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                <p>Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+              </div>
             </div>
           </div>
         </body>
