@@ -17,7 +17,7 @@ import { insertXrayExamSchema, type InsertXrayExam, type Patient, type XrayExam 
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import ClinicHeader from "@/components/ClinicHeader";
-import { printIsolated } from "@/lib/printUtils";
+import { printById } from "@/lib/printUtils";
 
 export default function XRay() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -633,10 +633,7 @@ export default function XRay() {
               <div className="text-center mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    const node = document.getElementById("xray-request-print");
-                    if (node) printIsolated(node.innerHTML, "X-Ray Request");
-                  }}
+                  onClick={() => printById("xray-request-print", "X-Ray Request")}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />
@@ -730,10 +727,7 @@ export default function XRay() {
               <div className="text-center mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    const node = document.getElementById("xray-report-print");
-                    if (node) printIsolated(node.innerHTML, "X-Ray Report");
-                  }}
+                  onClick={() => printById("xray-report-print", "X-Ray Report")}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />

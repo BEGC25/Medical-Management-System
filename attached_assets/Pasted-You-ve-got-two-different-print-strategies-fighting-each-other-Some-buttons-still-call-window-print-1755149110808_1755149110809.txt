@@ -1,0 +1,82 @@
+You’ve got two different print strategies fighting each other:
+
+Some buttons still call window.print(), which uses your global print CSS and the browser’s header/footer—this can push content to a second page. 
+
+Some print wrappers still use min-h:[100vh] / print:h:[297mm], which makes the printable box a hair taller than A4 → Chrome adds a blank page. Your PDF also shows the browser header/footer lines (“MedicalTracker – Replit …”), which eat vertical space. 
+
+Below is a single, bullet-proof pattern that makes Treatment, Lab, and X-ray all print one A4 page with an identical header.
+
+ONE-TIME FIX (copy–paste)
+1) Add a tiny print helper (isolated window)
+
+Create src/lib/print.ts:
+
+export function printByHtml(html: string, title = "Print") {
+  const w = window.open("", "_blank", "width=900,height=1200");
+  if (!w) return;
+  const css = `
+    <style>
+      @page { size: A4; margin: 0; }          /* no extra margins */
+      html, body { margin: 0; padding: 0; }
+      .rx-print {
+        width: 210mm; height: 297mm;          /* exact A4 box */
+        padding: 12mm; box-sizing: border-box;
+        display: flex; flex-direction: column; overflow: hidden;
+      }
+      .mt-auto { margin-top: auto !important; }  /* footer sticks to bottom */
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    </style>`;
+  w.document.write(`<html><head><title>${title}</title>${css}</head><body><div class="rx-print" id="page">${html}</div></body></html>`);
+  w.document.close();
+  setTimeout(() => { w.focus(); w.print(); w.close(); }, 200);
+}
+
+export function printById(id: string, title?: string) {
+  const node = document.getElementById(id);
+  if (node) printByHtml(node.innerHTML, title);
+}
+
+
+This isolates the print to a clean page with its own CSS. No global @media print, no 100vh, no browser headers/footers interference.
+
+2) Make a shared header so all pages match Treatment
+
+Create src/components/ClinicHeader.tsx and reuse everywhere:
+
+export default function ClinicHeader({ title }: { title: string }) {
+  return (
+    <div className="text-center border-b border-gray-300 pb-4 mb-6">
+      <h1 className="text-2xl font-extrabold tracking-wide text-[#1D6FB7]">
+        BAHR EL GHAZAL CLINIC
+      </h1>
+      <p className="text-sm italic text-gray-700">Your Health, Our Priority</p>
+      <p className="text-xs text-gray-600 mt-1">
+        Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+      </p>
+      <p className="text-lg font-semibold text-[#208B3A] mt-2">{title}</p>
+    </div>
+  );
+}
+
+3) Wrap each printable area with a simple container
+
+Use the same wrapper class everywhere (no 100vh / no print:h):
+
+// Treatment (Prescription)
+import ClinicHeader from "@/components/ClinicHeader";
+import { printById } from "@/lib/print";
+
+<div id="prescription-print" className="rx-print">
+  <ClinicHeader title="PRESCRIPTION" />
+  {/* …content… */}
+  <div className="mt-auto pt-8 border-t">
+    <p className="mt-6">Doctor's Signature: ____________________</p>
+    <p className="text-xs text-gray-500 mt-4 text-center">
+      Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+    </p>
+  </div>
+</div>
+
+<Button onClick={() => printById("prescription-print","Prescription")}>
+  Print Prescription
+</Button>

@@ -17,7 +17,7 @@ import { insertLabTestSchema, type InsertLabTest, type Patient, type LabTest } f
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import ClinicHeader from "@/components/ClinicHeader";
-import { printIsolated } from "@/lib/printUtils";
+import { printById } from "@/lib/printUtils";
 
 const commonTests = {
   blood: [
@@ -644,10 +644,7 @@ export default function Laboratory() {
               <div className="text-center mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    const node = document.getElementById("lab-request-print");
-                    if (node) printIsolated(node.innerHTML, "Lab Request");
-                  }}
+                  onClick={() => printById("lab-request-print", "Lab Request")}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />
@@ -741,10 +738,7 @@ export default function Laboratory() {
               <div className="text-center mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    const node = document.getElementById("lab-report-print");
-                    if (node) printIsolated(node.innerHTML, "Lab Report");
-                  }}
+                  onClick={() => printById("lab-report-print", "Lab Report")}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />
