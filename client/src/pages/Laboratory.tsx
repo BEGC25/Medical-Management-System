@@ -264,6 +264,11 @@ export default function Laboratory() {
       return;
     }
     setShowLabRequest(true);
+    setTimeout(() => {
+      const done = () => setShowLabRequest(false);
+      window.addEventListener("afterprint", done, { once: true });
+      window.print();
+    }, 50);
   };
 
   const printLabReport = () => {
@@ -272,6 +277,11 @@ export default function Laboratory() {
       return;
     }
     setShowLabReport(true);
+    setTimeout(() => {
+      const done = () => setShowLabReport(false);
+      window.addEventListener("afterprint", done, { once: true });
+      window.print();
+    }, 50);
   };
 
   return (
@@ -580,7 +590,7 @@ export default function Laboratory() {
             <CardContent className="p-6">
               <div
                 id="lab-request-print"
-                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+                className="rx-print"
               >
                 {/* Header */}
                 <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
@@ -653,7 +663,7 @@ export default function Laboratory() {
             <CardContent className="p-6">
               <div
                 id="lab-report-print"
-                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+                className="rx-print"
               >
                 {/* Header */}
                 <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">

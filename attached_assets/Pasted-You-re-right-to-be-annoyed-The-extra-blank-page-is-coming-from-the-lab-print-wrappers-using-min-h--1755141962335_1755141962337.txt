@@ -1,0 +1,84 @@
+You’re right to be annoyed. The extra blank page is coming from the lab print wrappers using min-h-[100vh] and print:h-[297mm], which makes the printed content a few mm taller than the A4 box—Chrome then adds page 2. 
+
+Fix it exactly like Treatment with three small changes:
+
+1) Change the two lab print containers (request + report)
+
+In Laboratory.tsx, replace the classNames on both print wrappers:
+
+{/* REQUEST */}
+<div id="lab-request-print" className="rx-print">
+  ...
+</div>
+
+{/* REPORT */}
+<div id="lab-report-print" className="rx-print">
+  ...
+</div>
+
+
+(That’s replacing: flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8.) 
+
+2) Add shared print CSS (in index.css or your global CSS)
+/* Single-page A4 container used by Lab Request/Report */
+.rx-print{
+  width:210mm;
+  min-height:calc(297mm - 24mm);   /* fits inside @page 12mm top/bottom */
+  padding:10mm;
+  box-sizing:border-box;
+  display:flex;          /* footer can stick to bottom */
+  flex-direction:column;
+}
+.rx-print .mt-auto{ margin-top:auto !important; }  /* pin footer */
+
+@media print{
+  @page{ size:A4; margin:12mm; }
+  html,body{ margin:0; padding:0; }
+  body *{ visibility:hidden; }       /* hide everything... */
+
+  /* ...except the active print node (whichever is mounted) */
+  #lab-request-print, #lab-request-print *{ visibility:visible; }
+  #lab-report-print,  #lab-report-print  *{ visibility:visible; }
+
+  #lab-request-print,
+  #lab-report-print{
+    position:absolute; inset:0;
+    overflow:hidden;                /* prevent spill → page 2 */
+    page-break-before:avoid; page-break-after:avoid;
+  }
+
+  .no-print{ display:none !important; }
+}
+
+
+In Chrome’s print dialog: turn off “Headers and footers.” Those add extra height and can force a second page.
+
+3) Print handlers: mount → print → unmount
+
+Update your functions so the DOM stays mounted during print and then closes automatically:
+
+const printLabRequest = () => {
+  if (!selectedPatient || selectedTests.length === 0) {
+    toast({ title: "Error", description: "Please select a patient and tests before printing", variant: "destructive" });
+    return;
+  }
+  setShowLabRequest(true);
+  setTimeout(() => {
+    const done = () => setShowLabRequest(false);
+    window.addEventListener("afterprint", done, { once: true });
+    window.print();
+  }, 50);
+};
+
+const printLabReport = () => {
+  if (!selectedLabTest) {
+    toast({ title: "Error", description: "Please select a lab test to print the report", variant: "destructive" });
+    return;
+  }
+  setShowLabReport(true);
+  setTimeout(() => {
+    const done = () => setShowLabReport(false);
+    window.addEventListener("afterprint", done, { once: true });
+    window.print();
+  }, 50);
+};
