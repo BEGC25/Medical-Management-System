@@ -127,36 +127,14 @@
     visibility: hidden;
   }
   
-  /* Default: Show only prescription content */
+  /* Show only print content and its children */
   #prescription-print,
-  #prescription-print * {
+  #prescription-print *,
+  #lab-request-print,
+  #lab-request-print *,
+  #lab-report-print,
+  #lab-report-print * {
     visibility: visible;
-  }
-  
-  /* When printing lab request */
-  .print-lab-request #lab-request-print,
-  .print-lab-request #lab-request-print * {
-    visibility: visible;
-  }
-  
-  .print-lab-request #prescription-print,
-  .print-lab-request #prescription-print *,
-  .print-lab-request #lab-report-print,
-  .print-lab-request #lab-report-print * {
-    visibility: hidden;
-  }
-  
-  /* When printing lab report */
-  .print-lab-report #lab-report-print,
-  .print-lab-report #lab-report-print * {
-    visibility: visible;
-  }
-  
-  .print-lab-report #prescription-print,
-  .print-lab-report #prescription-print *,
-  .print-lab-report #lab-request-print,
-  .print-lab-report #lab-request-print * {
-    visibility: hidden;
   }
   
   /* Position print content to fill page */
