@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { 
   FileSpreadsheet, 
   FileText, 
@@ -50,6 +51,9 @@ interface PatientData {
 
 export default function Reports() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [lastGenerated, setLastGenerated] = useState<string | null>(null);
   const [filters, setFilters] = useState<ReportFilters>({
     reportType: "daily",
     fromDate: new Date().toISOString().split('T')[0],
@@ -84,10 +88,30 @@ export default function Reports() {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const generateReport = () => {
+  const generateReport = async () => {
     console.log("Generating report with filters:", filters);
-    // Refresh queries to get latest data
-    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    setIsGenerating(true);
+    
+    try {
+      // Refresh queries to get latest data
+      await queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/dashboard/stats"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/dashboard/recent-patients"] });
+      
+      setLastGenerated(new Date().toLocaleString());
+      toast({
+        title: "Report Generated",
+        description: `${filters.reportType.charAt(0).toUpperCase() + filters.reportType.slice(1)} report updated successfully for ${filters.fromDate} to ${filters.toDate}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const exportToExcel = () => {
@@ -310,13 +334,19 @@ export default function Reports() {
               <div className="flex items-end">
                 <Button 
                   onClick={generateReport}
+                  disabled={isGenerating}
                   className="bg-medical-blue hover:bg-blue-700 w-full"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
-                  Generate Report
+                  {isGenerating ? "Generating..." : "Generate Report"}
                 </Button>
               </div>
             </div>
+            {lastGenerated && (
+              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                Last updated: {lastGenerated}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
