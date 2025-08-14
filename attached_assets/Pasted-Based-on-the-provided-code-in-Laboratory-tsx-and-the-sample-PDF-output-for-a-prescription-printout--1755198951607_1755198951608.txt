@@ -1,0 +1,140 @@
+Based on the provided code in Laboratory.tsx and the sample PDF output for a prescription printout (which appears to use a similar print layout structure), the issue with printing two pages instead of one is likely due to a combination of factors in the print CSS handling:
+
+The browser's default print behavior includes page margins (typically ~10mm top/bottom), which reduces the usable content area on an A4 page. When combined with the fixed print:h-[297mm] on the print container, this can cause slight overflow, resulting in a blank second page.
+The entire page (including the main UI grid of cards) is being printed because there's no @media print CSS to hide non-print elements. This can push the print content to start on a new page or add extra space.
+Browser headers/footers (date, title, URL, page numbers) are enabled by default in the print dialog, which adds content like "8/14/25, 12:07 PM Prescription - BGC-RX1 about:blank 1/2" and forces pagination even if the core content fits on one page.
+The print buttons (e.g., "Print Request" and "Close") after the print div are also included, potentially contributing to overflow.
+
+The prescription component likely mirrors the lab print logic (full-page container with header, main content, and footer), leading to the same problem. Here's how to fix it step-by-step. I'll provide updated code snippets to integrate into Laboratory.tsx (and similarly for the prescription component).
+Step 1: Add Print-Specific CSS
+Add a <style> tag or import a CSS file with the following rules. This hides everything except the print content, sets zero margins for exact A4 fitting, and ensures no extra pages. Place this in the component or globally.
+tsx// Add this inside the Laboratory component or in a global stylesheet
+const printStyles = `
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    /* Hide everything except the print containers */
+    body > *:not(.print-container) {
+      display: none !important;
+    }
+    .print-container {
+      display: block !important;
+      page-break-before: avoid;
+      page-break-after: avoid;
+      page-break-inside: avoid;
+    }
+    /* Ensure the inner print div fits exactly */
+    #lab-request-print, #lab-report-print {
+      min-height: 297mm !important;
+      height: 297mm !important;
+      width: 210mm !important;
+      padding: 2rem !important; /* Your p-8 */
+      box-sizing: border-box;
+      overflow: hidden; /* Prevent any overflow */
+    }
+    /* Hide print buttons in print mode */
+    .print-buttons {
+      display: none !important;
+    }
+  }
+`;
+
+// Then, in the JSX:
+<style>{printStyles}</style>
+Step 2: Update the Print Rendering Logic
+Wrap the print modals in a container with className="print-container" to target it in CSS. Hide the buttons with className="print-buttons". Also, remove min-h-[100vh] from screen view if unnecessary, and rely on print-specific heights.
+Update the return statement in Laboratory():
+tsxreturn (
+  <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ... existing lab request and results cards ... */}
+    </div>
+
+    {/* Lab Request Print Modal */}
+    {showLabRequest && selectedPatient && (
+      <div className="print-container">
+        <Card className="border-2 border-medical-green">
+          <CardContent className="p-6">
+            <div
+              id="lab-request-print"
+              className="flex flex-col print:w-[210mm] print:h-[297mm] p-8"
+            >
+              {/* ... existing header, patient info, test details, footer ... */}
+            </div>
+            <div className="text-center mt-6 print-buttons">
+              <Button 
+                variant="outline" 
+                onClick={() => window.print()}
+                className="mr-4"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Print Request
+              </Button>
+              <Button variant="outline" onClick={() => setShowLabRequest(false)}>
+                Close
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )}
+
+    {/* Lab Report Print Modal */}
+    {showLabReport && selectedLabTest && (
+      <div className="print-container">
+        <Card className="border-2 border-medical-green">
+          <CardContent className="p-6">
+            <div
+              id="lab-report-print"
+              className="flex flex-col print:w-[210mm] print:h-[297mm] p-8"
+            >
+              {/* ... existing header, patient info, tests, results, footer ... */}
+            </div>
+            <div className="text-center mt-6 print-buttons">
+              <Button 
+                variant="outline" 
+                onClick={() => window.print()}
+                className="mr-4"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Print Report
+              </Button>
+              <Button variant="outline" onClick={() => setShowLabReport(false)}>
+                Close
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )}
+  </>
+);
+Step 3: Adjust Print Trigger Functions
+No changes needed here, but ensure the setTimeout is long enough for rendering (e.g., 100ms instead of 50ms) to avoid partial prints.
+tsxconst printLabRequest = () => {
+  if (!selectedPatient || selectedTests.length === 0) {
+    toast({ title: "Error", description: "Please select a patient and tests before printing", variant: "destructive" });
+    return;
+  }
+  setShowLabRequest(true);
+  setTimeout(() => {
+    const done = () => setShowLabRequest(false);
+    window.addEventListener("afterprint", done, { once: true });
+    window.print();
+  }, 100); // Increased slightly for render stability
+};
+
+// Similar for printLabReport
+Additional Tips
+
+Browser Headers/Footers: In the print dialog (opened by window.print()), manually uncheck "Headers and footers" (in Chrome/Edge) or equivalent in other browsers. You can't disable this programmatically, but instruct users to do so for clean prints.
+Test Content Length: If the content (e.g., long test lists or notes) exceeds the page even after fixes, add overflow: hidden; or paginate manually, but your sample PDF content is short and should fit.
+For Prescription Component: Apply the same CSS and structure updates there, as the PDF suggests identical layout (header, patient info, Rx, signature, footer).
+Testing: Use browser dev tools (Ctrl+Shift+P > "Emulate CSS print media") to preview without printing. Ensure it shows one page.
+If Overflow Persists: Reduce internal padding (e.g., p-6 instead of p-8) or make print:h-[290mm] to account for any residual rendering quirks.
