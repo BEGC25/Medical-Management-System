@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
+import ClinicHeader from "@/components/ClinicHeader";
 import { insertXrayExamSchema, type InsertXrayExam, type Patient, type XrayExam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
@@ -630,21 +631,7 @@ export default function XRay() {
               id="xray-request-print"
               className="rx-print"
             >
-                {/* Header */}
-                <div className="text-center border-b pb-4 mb-6">
-                  <h1 className="text-2xl font-bold text-medical-blue">
-                    BAHR EL GHAZAL CLINIC
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Your Health, Our Priority
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
-                  </p>
-                  <p className="text-lg font-semibold text-medical-green mt-2">
-                    X-RAY EXAMINATION REQUEST
-                  </p>
-                </div>
+                <ClinicHeader title="X-RAY EXAMINATION REQUEST" />
 
                 {/* Patient Info */}
                 <div className="mb-6">
@@ -714,21 +701,7 @@ export default function XRay() {
               id="xray-report-print"
               className="rx-print"
             >
-                {/* Header */}
-                <div className="text-center border-b pb-4 mb-6">
-                  <h1 className="text-2xl font-bold text-medical-blue">
-                    BAHR EL GHAZAL CLINIC
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Your Health, Our Priority
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
-                  </p>
-                  <p className="text-lg font-semibold text-medical-green mt-2">
-                    X-RAY EXAMINATION REPORT
-                  </p>
-                </div>
+                <ClinicHeader title="X-RAY EXAMINATION REPORT" />
 
                 {/* Patient and Exam Info */}
                 <div className="mb-6">

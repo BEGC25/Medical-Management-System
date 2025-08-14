@@ -123,6 +123,9 @@
 .rx-print .mt-auto { margin-top: auto !important; } /* pin footer to bottom */
 
 @media print {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  
   @page { size: A4; margin: 12mm; }
   html, body { margin: 0; padding: 0; }
   body * { visibility: hidden; }
