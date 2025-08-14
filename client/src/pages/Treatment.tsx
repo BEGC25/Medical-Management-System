@@ -486,6 +486,9 @@ export default function Treatment() {
                   <p className="text-sm text-gray-600">
                     Your Health, Our Priority
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
                   <p className="text-lg font-semibold text-medical-green mt-2">
                     PRESCRIPTION
                   </p>
