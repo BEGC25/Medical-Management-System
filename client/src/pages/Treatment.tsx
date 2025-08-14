@@ -557,7 +557,7 @@ export default function Treatment() {
                     type="button" 
                     onClick={generatePrescription}
                     className="bg-health-green hover:bg-green-700"
-                    disabled={!savedTreatment || !form.watch("treatmentPlan")}
+                    disabled={!selectedPatient || !form.watch("treatmentPlan")}
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     Generate Prescription
