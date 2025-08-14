@@ -573,61 +573,71 @@ export default function XRay() {
         <div>
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
-              <div id="xray-request-print" className="prescription">
-                <header className="rx-header">
-                  <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
-                  <p className="text-lg italic mb-2">Your Health, Our Priority</p>
-                  <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
-                  <h2 className="text-2xl font-bold mt-6">X-RAY EXAMINATION REQUEST</h2>
-                </header>
+              <div
+                id="xray-request-print"
+                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+              >
+                {/* Header */}
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">BAHR EL GHAZAL CLINIC</h1>
+                  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
+                  <p className="text-xs text-gray-500 mt-1">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">X-RAY EXAMINATION REQUEST</p>
+                </div>
 
-                <main className="rx-body">
-                  {/* Patient Info */}
-                  <div className="avoid-break mb-6">
-                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div><strong>Name:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</div>
-                      <div><strong>Patient ID:</strong> {selectedPatient.patientId}</div>
-                      <div><strong>Phone:</strong> {selectedPatient.phoneNumber}</div>
-                      <div><strong>Date of Birth:</strong> {selectedPatient.dateOfBirth}</div>
+                {/* Main Content */}
+                <div className="flex-1">
+                  {/* Patient Information */}
+                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
+                    <div>
+                      <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
+                      <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
+                      <p><strong>Phone:</strong> {selectedPatient.phoneNumber}</p>
+                    </div>
+                    <div>
+                      <p><strong>Date:</strong> {form.watch("requestedDate")}</p>
+                      <p><strong>Date of Birth:</strong> {selectedPatient.dateOfBirth}</p>
+                      <p><strong>Exam Type:</strong> {form.watch("examType")}</p>
                     </div>
                   </div>
 
-                  {/* Exam Details */}
-                  <div className="avoid-break mb-6">
-                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Examination Information</h3>
-                    <div className="text-sm space-y-2">
-                      <div><strong>Exam Type:</strong> {form.watch("examType")}</div>
-                      <div><strong>Body Part:</strong> {form.watch("bodyPart")}</div>
-                      <div><strong>Priority:</strong> {form.watch("priority")}</div>
-                      <div><strong>Requested Date:</strong> {form.watch("requestedDate")}</div>
+                  {/* Examination Details */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Examination Information</h3>
+                      <p><strong>Body Part:</strong> {form.watch("bodyPart")}</p>
+                      <p><strong>Priority:</strong> {form.watch("priority")}</p>
                       {form.watch("clinicalIndication") && (
-                        <div><strong>Clinical Indication:</strong> {form.watch("clinicalIndication")}</div>
+                        <p><strong>Clinical Indication:</strong> {form.watch("clinicalIndication")}</p>
                       )}
                       {form.watch("specialInstructions") && (
-                        <div><strong>Special Instructions:</strong> {form.watch("specialInstructions")}</div>
+                        <p><strong>Special Instructions:</strong> {form.watch("specialInstructions")}</p>
                       )}
                     </div>
-                  </div>
 
-                  {/* Safety Checklist */}
-                  <div className="avoid-break mb-6">
-                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Safety Checklist</h3>
-                    <div className="text-sm space-y-1">
-                      <div>☐ Not pregnant (if applicable)</div>
-                      <div>☐ Metal objects removed</div>
-                      <div>☐ Patient can cooperate with positioning</div>
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Safety Checklist</h3>
+                      <p>☐ Not pregnant (if applicable)</p>
+                      <p>☐ Metal objects removed</p>
+                      <p>☐ Patient can cooperate with positioning</p>
                     </div>
                   </div>
-                </main>
+                </div>
 
-                <footer className="rx-footer">
-                  <div className="sig">
-                    <div className="line"></div>
-                    <span>Requesting Doctor</span>
+                {/* Footer */}
+                <div className="mt-auto pt-8 border-t">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <div className="w-64 border-b border-gray-400 mb-1"></div>
+                      <p className="text-sm text-gray-600">Requesting Doctor</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">
+                        Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+                      </p>
+                    </div>
                   </div>
-                  <div className="valid">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</div>
-                </footer>
+                </div>
               </div>
               <div className="text-center mt-6">
                 <Button 
@@ -652,75 +662,86 @@ export default function XRay() {
         <div>
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
-              <div id="xray-report-print" className="prescription">
-                <header className="rx-header">
-                  <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
-                  <p className="text-lg italic mb-2">Your Health, Our Priority</p>
-                  <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
-                  <h2 className="text-2xl font-bold mt-6">X-RAY EXAMINATION REPORT</h2>
-                </header>
+              <div
+                id="xray-report-print"
+                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+              >
+                {/* Header */}
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">BAHR EL GHAZAL CLINIC</h1>
+                  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
+                  <p className="text-xs text-gray-500 mt-1">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">X-RAY EXAMINATION REPORT</p>
+                </div>
 
-                <main className="rx-body">
-                  {/* Patient and Exam Info */}
-                  <div className="avoid-break mb-6">
-                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div><strong>Patient ID:</strong> {selectedXrayExam.patientId}</div>
-                      <div><strong>Exam ID:</strong> {selectedXrayExam.examId}</div>
-                      <div><strong>Requested Date:</strong> {selectedXrayExam.requestedDate}</div>
-                      <div><strong>Report Date:</strong> {resultsForm.watch("reportDate")}</div>
+                {/* Main Content */}
+                <div className="flex-1">
+                  {/* Patient Information */}
+                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
+                    <div>
+                      <p><strong>Patient ID:</strong> {selectedXrayExam.patientId}</p>
+                      <p><strong>Exam ID:</strong> {selectedXrayExam.examId}</p>
+                      <p><strong>Exam Type:</strong> {selectedXrayExam.examType}</p>
                     </div>
-                  </div>
-
-                  {/* Exam Details */}
-                  <div className="avoid-break mb-6">
-                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Examination Performed</h3>
-                    <div className="text-sm space-y-2">
-                      <div><strong>Exam Type:</strong> {selectedXrayExam.examType}</div>
-                      <div><strong>Body Part:</strong> {selectedXrayExam.bodyPart}</div>
-                      <div><strong>Technical Quality:</strong> {resultsForm.watch("technicalQuality")}</div>
+                    <div>
+                      <p><strong>Requested Date:</strong> {selectedXrayExam.requestedDate}</p>
+                      <p><strong>Report Date:</strong> {resultsForm.watch("reportDate")}</p>
+                      <p><strong>Technical Quality:</strong> {resultsForm.watch("technicalQuality")}</p>
                     </div>
                   </div>
 
                   {/* Results */}
-                  <div className="avoid-break mb-6">
-                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Results</h3>
-                    <div className="text-sm space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Body Part Examined</h3>
+                      <p>{selectedXrayExam.bodyPart}</p>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Findings</h3>
+                      <div className="whitespace-pre-wrap">
+                        {resultsForm.watch("findings") || "No findings recorded"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2">Impression</h3>
+                      <div className="whitespace-pre-wrap">
+                        {resultsForm.watch("impression") || "No impression recorded"}
+                      </div>
+                    </div>
+
+                    {resultsForm.watch("recommendations") && (
                       <div>
-                        <strong>Findings:</strong>
-                        <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
-                          {resultsForm.watch("findings")}
+                        <h3 className="font-semibold text-gray-800 mb-2">Recommendations</h3>
+                        <div className="whitespace-pre-wrap">
+                          {resultsForm.watch("recommendations")}
                         </div>
                       </div>
-                      
-                      <div>
-                        <strong>Impression:</strong>
-                        <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
-                          {resultsForm.watch("impression")}
-                        </div>
-                      </div>
+                    )}
 
-                      {resultsForm.watch("recommendations") && (
-                        <div>
-                          <strong>Recommendations:</strong>
-                          <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
-                            {resultsForm.watch("recommendations")}
-                          </div>
-                        </div>
-                      )}
-
-                      <div><strong>Report Status:</strong> {resultsForm.watch("reportStatus")}</div>
+                    <div>
+                      <p><strong>Report Status:</strong> {resultsForm.watch("reportStatus")}</p>
                     </div>
                   </div>
-                </main>
+                </div>
 
-                <footer className="rx-footer">
-                  <div className="sig">
-                    <div className="line"></div>
-                    <span>Radiologist: {resultsForm.watch("radiologist")}</span>
+                {/* Footer */}
+                <div className="mt-auto pt-8 border-t">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <div className="w-64 border-b border-gray-400 mb-1"></div>
+                      <p className="text-sm text-gray-600">
+                        Radiologist: {resultsForm.watch("radiologist") || "Dr. [Name]"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">
+                        Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+                      </p>
+                    </div>
                   </div>
-                  <div className="valid">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</div>
-                </footer>
+                </div>
               </div>
               <div className="text-center mt-6">
                 <Button 
