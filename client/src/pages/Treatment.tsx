@@ -533,7 +533,10 @@ export default function Treatment() {
 
                 {/* Footer */}
                 <div className="mt-auto pt-8 border-t">
-                  <p className="text-sm italic text-gray-600">This prescription is valid for 30 days from date of issue</p>
+                  <div className="flex justify-between items-start mb-4">
+                    <p className="text-sm italic text-gray-600">This prescription is valid for 30 days from date of issue</p>
+                    <p className="text-xs text-gray-500">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+                  </div>
                   <p className="mt-6">Doctor's Signature: ____________________</p>
                 </div>
               </div>
