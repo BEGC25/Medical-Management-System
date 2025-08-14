@@ -16,6 +16,7 @@ import PatientSearch from "@/components/PatientSearch";
 import { insertLabTestSchema, type InsertLabTest, type Patient, type LabTest } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
+import "@/lab-print.css";
 
 const commonTests = {
   blood: [
@@ -588,28 +589,15 @@ export default function Laboratory() {
         <div>
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
-              <div
-                id="lab-request-print"
-                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
-              >
-                {/* Header */}
-                <div className="text-center border-b pb-4 mb-6">
-                  <h1 className="text-2xl font-bold text-medical-blue">
-                    BAHR EL GHAZAL CLINIC
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Your Health, Our Priority
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
-                  </p>
-                  <p className="text-lg font-semibold text-medical-green mt-2">
-                    LABORATORY TEST REQUEST
-                  </p>
-                </div>
+              <div id="lab-request-print" className="prescription">
+                <header className="rx-header">
+                  <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
+                  <p className="text-lg italic mb-2">Your Health, Our Priority</p>
+                  <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+                  <h2 className="text-2xl font-bold mt-6">LABORATORY TEST REQUEST</h2>
+                </header>
 
-                {/* Main Content */}
-                <div className="flex-1">
+                <main className="rx-body">
                   {/* Patient Info */}
                   <div className="avoid-break mb-6">
                     <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
@@ -640,13 +628,15 @@ export default function Laboratory() {
                     </div>
                   </div>
 
-                </div>
+                </main>
 
-                {/* Footer */}
-                <div className="mt-auto pt-8 border-t">
-                  <p className="mt-6">Requesting Doctor: ____________________</p>
-                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
-                </div>
+                <footer className="rx-footer">
+                  <div className="sig">
+                    <div className="line"></div>
+                    <span>Requesting Doctor</span>
+                  </div>
+                  <div className="valid">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</div>
+                </footer>
               </div>
               <div className="text-center mt-6">
                 <Button 
@@ -671,28 +661,15 @@ export default function Laboratory() {
         <div>
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
-              <div
-                id="lab-report-print"
-                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
-              >
-                {/* Header */}
-                <div className="text-center border-b pb-4 mb-6">
-                  <h1 className="text-2xl font-bold text-medical-blue">
-                    BAHR EL GHAZAL CLINIC
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Your Health, Our Priority
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
-                  </p>
-                  <p className="text-lg font-semibold text-medical-green mt-2">
-                    LABORATORY REPORT
-                  </p>
-                </div>
+              <div id="lab-report-print" className="prescription">
+                <header className="rx-header">
+                  <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
+                  <p className="text-lg italic mb-2">Your Health, Our Priority</p>
+                  <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+                  <h2 className="text-2xl font-bold mt-6">LABORATORY REPORT</h2>
+                </header>
 
-                {/* Main Content */}
-                <div className="flex-1">
+                <main className="rx-body">
                   {/* Patient and Test Info */}
                   <div className="avoid-break mb-6">
                     <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
@@ -747,13 +724,15 @@ export default function Laboratory() {
                     </div>
                   </div>
 
-                </div>
+                </main>
 
-                {/* Footer */}
-                <div className="mt-auto pt-8 border-t">
-                  <p className="mt-6">Lab Technician: ____________________</p>
-                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
-                </div>
+                <footer className="rx-footer">
+                  <div className="sig">
+                    <div className="line"></div>
+                    <span>Lab Technician</span>
+                  </div>
+                  <div className="valid">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</div>
+                </footer>
               </div>
               <div className="text-center mt-6">
                 <Button 
