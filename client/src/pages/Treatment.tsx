@@ -78,7 +78,7 @@ export default function Treatment() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Prescription - BGC${savedTreatment?.treatmentId || ''}</title>
+          <title>Prescription - ${savedTreatment?.treatmentId || 'BGC'}</title>
           <meta charset="utf-8">
           <style>
             @media print {
