@@ -1,3 +1,12 @@
+You’re seeing the header change at print time because the print window isn’t loading your app’s CSS (Tailwind). On screen it looks perfect; in the print popup it falls back to default browser styles, so the header weight/spacing/colors change.
+
+Fix it once and for all by making the print helper copy your CSS into the print window (and set a fixed A4 box). Then call this for Treatment, Lab, and X-ray.
+
+✅ Drop-in replacement for your print helper
+
+Create/replace src/lib/printUtils.ts with this:
+
+// src/lib/printUtils.ts
 function collectHeadCSS(): string {
   // Copy all <link rel="stylesheet"> and <style> from the current app into the print window
   const parts: string[] = [`<base href="${location.origin}">`]; // make relative hrefs work
@@ -50,3 +59,39 @@ export function printById(id: string, title?: string) {
   const node = document.getElementById(id);
   if (node) printByHtml(node.innerHTML, title);
 }
+
+
+Why this works
+
+It clones your real CSS (/assets/index.css with Tailwind) into the print window → the header renders exactly like the screen version.
+
+It prints inside a fixed A4 container (210×297 mm) with internal padding → no overflow, no second page.
+
+It doesn’t depend on any global @media print rules that can interfere.
+
+How to use (you already do for Treatment)
+
+You’re already calling printById("prescription-print", "Prescription") in Treatment — keep that. 
+
+Apply the same call in Laboratory and XRay:
+
+<Button onClick={() => printById("lab-request-print", "Lab Request")}>Print Request</Button>
+<Button onClick={() => printById("lab-report-print",  "Lab Report")}>Print Report</Button>
+<Button onClick={() => printById("xray-report-print", "X-ray Report")}>Print X-ray</Button>
+
+
+Make sure each printable area is wrapped like:
+
+<div id="lab-report-print" className="rx-print">
+  <ClinicHeader title="LABORATORY REPORT" />
+  {/* ...content... */}
+  <div className="mt-auto pt-8 border-t">{/* footer */}</div>
+</div>
+
+One last cleanup
+
+Remove any remaining window.print() calls on modals/buttons.
+
+Don’t use min-h-[100vh] or print:h-[297mm] on print wrappers.
+
+Keep your shared <ClinicHeader /> for Treatment/Lab/X-ray so the header is always identical.
