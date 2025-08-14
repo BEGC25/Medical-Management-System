@@ -260,36 +260,28 @@ export default function Laboratory() {
 
   const printLabRequest = () => {
     if (!selectedPatient || selectedTests.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please select a patient and tests before printing",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please select a patient and tests before printing", variant: "destructive" });
       return;
     }
     setShowLabRequest(true);
     setTimeout(() => {
+      const done = () => setShowLabRequest(false);
+      window.addEventListener("afterprint", done, { once: true });
       window.print();
-      // Hide after print dialog closes
-      setTimeout(() => setShowLabRequest(false), 500);
-    }, 100);
+    }, 50);
   };
 
   const printLabReport = () => {
     if (!selectedLabTest) {
-      toast({
-        title: "Error", 
-        description: "Please select a lab test to print the report",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please select a lab test to print the report", variant: "destructive" });
       return;
     }
     setShowLabReport(true);
     setTimeout(() => {
+      const done = () => setShowLabReport(false);
+      window.addEventListener("afterprint", done, { once: true });
       window.print();
-      // Hide after print dialog closes
-      setTimeout(() => setShowLabReport(false), 500);
-    }, 100);
+    }, 50);
   };
 
   return (
@@ -594,10 +586,7 @@ export default function Laboratory() {
       {/* Lab Request Print Modal */}
       {showLabRequest && selectedPatient && (
         <div>
-          <div
-            id="lab-request-print"
-            className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
-          >
+          <div id="lab-request-print" className="rx-print">
             {/* Header */}
             <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
               <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
@@ -652,10 +641,7 @@ export default function Laboratory() {
       {/* Lab Report Print Modal */}
       {showLabReport && selectedLabTest && (
         <div>
-          <div
-            id="lab-report-print"
-            className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
-          >
+          <div id="lab-report-print" className="rx-print">
             {/* Header */}
             <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
               <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
