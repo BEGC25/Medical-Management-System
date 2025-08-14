@@ -25,6 +25,8 @@ export default function XRay() {
     metalRemoved: false,
     canCooperate: false,
   });
+  const [showXrayRequest, setShowXrayRequest] = useState(false);
+  const [showXrayReport, setShowXrayReport] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -188,6 +190,61 @@ export default function XRay() {
       reportDate: xrayExam.reportDate || new Date().toISOString().split('T')[0],
       radiologist: xrayExam.radiologist || "",
     });
+  };
+
+  // Isolated window printing helper
+  const printIsolated = (html: string, title = "Print") => {
+    const w = window.open("", "_blank", "width=900,height=1200");
+    if (!w) return;
+
+    const css = `
+      <style>
+        @page { size: A4; margin: 12mm; }
+        html, body { margin: 0; padding: 0; }
+        .rx-print {
+          width: 210mm;
+          min-height: calc(297mm - 24mm); /* inside page margins */
+          padding: 10mm;
+          box-sizing: border-box;
+          display: flex; flex-direction: column;
+        }
+        .mt-auto { margin-top: auto !important; } /* pin footer to bottom */
+        /* Safety: if content is just a tad tall, gently scale to fit */
+        .fit { transform: scale(0.98); transform-origin: top left; }
+      </style>
+    `;
+
+    w.document.write(`<html><head><title>${title}</title>${css}</head><body>${html}</body></html>`);
+    w.document.close();
+
+    // Give the new window a tick to render before printing
+    setTimeout(() => { w.focus(); w.print(); w.close(); }, 200);
+  };
+
+  const printXrayRequest = () => {
+    if (!selectedPatient) {
+      toast({ title: "Error", description: "Please select a patient before printing", variant: "destructive" });
+      return;
+    }
+    setShowXrayRequest(true);
+    setTimeout(() => {
+      const node = document.getElementById("xray-request-print");
+      if (node) printIsolated(`<div class="rx-print fit">${node.innerHTML}</div>`, "X-Ray Request");
+      setShowXrayRequest(false);
+    }, 50);
+  };
+
+  const printXrayReport = () => {
+    if (!selectedXrayExam) {
+      toast({ title: "Error", description: "Please select an X-ray examination to print the report", variant: "destructive" });
+      return;
+    }
+    setShowXrayReport(true);
+    setTimeout(() => {
+      const node = document.getElementById("xray-report-print");
+      if (node) printIsolated(`<div class="rx-print fit">${node.innerHTML}</div>`, "X-Ray Report");
+      setShowXrayReport(false);
+    }, 50);
   };
 
   return (
@@ -386,7 +443,7 @@ export default function XRay() {
                   <Send className="w-4 h-4 mr-2" />
                   {createXrayExamMutation.isPending ? "Submitting..." : "Submit Request"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => window.print()}>
+                <Button type="button" variant="outline" onClick={printXrayRequest}>
                   <Printer className="w-4 h-4 mr-2" />
                   Print Request
                 </Button>
@@ -554,7 +611,7 @@ export default function XRay() {
                     <Check className="w-4 h-4 mr-2" />
                     {updateXrayExamMutation.isPending ? "Saving..." : "Save Report"}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => window.print()}>
+                  <Button type="button" variant="outline" onClick={printXrayReport}>
                     <Printer className="w-4 h-4 mr-2" />
                     Print Report
                   </Button>
@@ -564,6 +621,200 @@ export default function XRay() {
           )}
         </CardContent>
       </Card>
+
+      {/* X-Ray Request Print Modal */}
+      {showXrayRequest && selectedPatient && (
+        <div>
+          <Card className="border-2 border-medical-green">
+            <CardContent className="p-6">
+              <div
+                id="xray-request-print"
+                className="rx-print"
+              >
+                {/* Header */}
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">
+                    BAHR EL GHAZAL CLINIC
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Your Health, Our Priority
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">
+                    X-RAY EXAMINATION REQUEST
+                  </p>
+                </div>
+
+                {/* Patient Info */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><strong>Name:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</div>
+                    <div><strong>Patient ID:</strong> {selectedPatient.patientId}</div>
+                    <div><strong>Age:</strong> {selectedPatient.dateOfBirth ? 
+                      (new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()) : 'Not specified'} years</div>
+                    <div><strong>Gender:</strong> {selectedPatient.gender}</div>
+                    <div><strong>Phone:</strong> {selectedPatient.phoneNumber || 'Not provided'}</div>
+                    <div><strong>Village:</strong> {selectedPatient.village || 'Not specified'}</div>
+                  </div>
+                </div>
+
+                {/* Examination Details */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Examination Information</h3>
+                  <div className="text-sm space-y-2">
+                    <div><strong>Examination Type:</strong> {form.watch("examType")?.charAt(0).toUpperCase() + form.watch("examType")?.slice(1)} X-Ray</div>
+                    <div><strong>Body Part:</strong> {form.watch("bodyPart")}</div>
+                    <div><strong>Clinical Indication:</strong> {form.watch("clinicalIndication")}</div>
+                    <div><strong>Priority:</strong> {form.watch("priority")?.charAt(0).toUpperCase() + form.watch("priority")?.slice(1)}</div>
+                    <div><strong>Requested Date:</strong> {form.watch("requestedDate")}</div>
+                    {form.watch("specialInstructions") && (
+                      <div><strong>Special Instructions:</strong> {form.watch("specialInstructions")}</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Safety Checklist */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Safety Checklist</h3>
+                  <div className="text-sm space-y-1">
+                    <div>✓ Patient not pregnant (if applicable): {safetyChecklist.notPregnant ? 'Confirmed' : 'N/A'}</div>
+                    <div>✓ Metal objects removed: {safetyChecklist.metalRemoved ? 'Yes' : 'No'}</div>
+                    <div>✓ Patient can cooperate: {safetyChecklist.canCooperate ? 'Yes' : 'No'}</div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-auto pt-8 border-t">
+                  <p className="mt-6">Requesting Doctor: ____________________</p>
+                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+                </div>
+              </div>
+
+              {/* Print Button */}
+              <div className="flex gap-3 pt-4 print:hidden">
+                <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Request
+                </Button>
+                <Button variant="outline" onClick={() => setShowXrayRequest(false)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* X-Ray Report Print Modal */}
+      {showXrayReport && selectedXrayExam && (
+        <div>
+          <Card className="border-2 border-medical-green">
+            <CardContent className="p-6">
+              <div
+                id="xray-report-print"
+                className="rx-print"
+              >
+                {/* Header */}
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">
+                    BAHR EL GHAZAL CLINIC
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Your Health, Our Priority
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">
+                    X-RAY EXAMINATION REPORT
+                  </p>
+                </div>
+
+                {/* Patient and Exam Info */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><strong>Patient ID:</strong> {selectedXrayExam.patientId}</div>
+                    <div><strong>Exam ID:</strong> {selectedXrayExam.examId}</div>
+                    <div><strong>Examination Type:</strong> {selectedXrayExam.examType?.charAt(0).toUpperCase() + selectedXrayExam.examType?.slice(1)} X-Ray</div>
+                    <div><strong>Body Part:</strong> {selectedXrayExam.bodyPart}</div>
+                    <div><strong>Requested Date:</strong> {selectedXrayExam.requestedDate}</div>
+                    <div><strong>Report Date:</strong> {resultsForm.watch("reportDate")}</div>
+                  </div>
+                </div>
+
+                {/* Clinical Information */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Clinical Information</h3>
+                  <div className="text-sm space-y-2">
+                    <div><strong>Clinical Indication:</strong> {selectedXrayExam.clinicalIndication}</div>
+                    <div><strong>Technical Quality:</strong> {resultsForm.watch("technicalQuality")?.charAt(0).toUpperCase() + resultsForm.watch("technicalQuality")?.slice(1)}</div>
+                  </div>
+                </div>
+
+                {/* Findings & Report */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Radiological Report</h3>
+                  <div className="text-sm space-y-4">
+                    <div>
+                      <strong>Findings:</strong>
+                      <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                        {resultsForm.watch("findings") || "No significant findings reported."}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <strong>Impression:</strong>
+                      <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                        {resultsForm.watch("impression") || "Normal examination."}
+                      </div>
+                    </div>
+
+                    {resultsForm.watch("recommendations") && (
+                      <div>
+                        <strong>Recommendations:</strong>
+                        <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                          {resultsForm.watch("recommendations")}
+                        </div>
+                      </div>
+                    )}
+
+                    <div><strong>Report Status:</strong> {resultsForm.watch("reportStatus")?.charAt(0).toUpperCase() + resultsForm.watch("reportStatus")?.slice(1)}</div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-auto pt-8 border-t">
+                  <div className="grid grid-cols-2 gap-8">
+                    <div>
+                      <p>Radiologist: {resultsForm.watch("radiologist") || "____________________"}</p>
+                      <p className="mt-4">Signature: ____________________</p>
+                    </div>
+                    <div>
+                      <p>Date: {resultsForm.watch("reportDate")}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+                </div>
+              </div>
+
+              {/* Print Button */}
+              <div className="flex gap-3 pt-4 print:hidden">
+                <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Report
+                </Button>
+                <Button variant="outline" onClick={() => setShowXrayReport(false)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
