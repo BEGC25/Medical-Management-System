@@ -15,8 +15,6 @@ import PatientSearch from "@/components/PatientSearch";
 import { insertTreatmentSchema, type InsertTreatment, type Patient } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import ClinicHeader from "@/components/ClinicHeader";
-import { printById } from "@/lib/printUtils";
 
 export default function Treatment() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -57,7 +55,9 @@ export default function Treatment() {
     setShowPrescription(true);
   };
 
-
+  const printPrescription = () => {
+    window.print();
+  };
 
   const createTreatmentMutation = useMutation({
     mutationFn: (data: InsertTreatment) => apiRequest("POST", "/api/treatments", data),
@@ -458,15 +458,10 @@ export default function Treatment() {
                     <FileText className="w-4 h-4 mr-2" />
                     Generate Prescription
                   </Button>
-                  <Button 
-                    type="button" 
-                    onClick={() => printById("prescription-print", "Prescription")}
-                    variant="outline"
-                  >
+                  <Button type="button" variant="outline" onClick={() => window.print()}>
                     <Printer className="w-4 h-4 mr-2" />
-                    Print Prescription
+                    Print Record
                   </Button>
-
                 </div>
               </form>
             </Form>
@@ -481,10 +476,25 @@ export default function Treatment() {
             <CardContent className="p-6">
               <div
                 id="prescription-print"
-                className="rx-print"
+                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
               >
-                <ClinicHeader title="PRESCRIPTION" />
-                
+                {/* Header */}
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">
+                    BAHR EL GHAZAL CLINIC
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Your Health, Our Priority
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">
+                    PRESCRIPTION
+                  </p>
+                </div>
+
+                {/* Main Content */}
                 <div className="flex-1">
                   {/* Patient Information */}
                   <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
@@ -531,7 +541,7 @@ export default function Treatment() {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 print:hidden">
                 <Button 
-                  onClick={() => printById("prescription-print", "Prescription")}
+                  onClick={printPrescription}
                   className="bg-medical-blue hover:bg-blue-700"
                 >
                   <Printer className="w-4 h-4 mr-2" />

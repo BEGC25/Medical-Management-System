@@ -16,8 +16,6 @@ import PatientSearch from "@/components/PatientSearch";
 import { insertLabTestSchema, type InsertLabTest, type Patient, type LabTest } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import ClinicHeader from "@/components/ClinicHeader";
-import { printById } from "@/lib/printUtils";
 
 const commonTests = {
   blood: [
@@ -590,61 +588,70 @@ export default function Laboratory() {
         <div>
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
-              <div id="lab-request-print" className="rx-print">
-                <ClinicHeader title="LABORATORY TEST REQUEST" />
-                
+              <div
+                id="lab-request-print"
+                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+              >
+                {/* Header */}
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">
+                    BAHR EL GHAZAL CLINIC
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Your Health, Our Priority
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">
+                    LABORATORY TEST REQUEST
+                  </p>
+                </div>
+
+                {/* Main Content */}
                 <div className="flex-1">
-                  {/* Patient Information */}
-                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
-                    <div>
-                      <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
-                      <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
-                      <p><strong>Phone:</strong> {selectedPatient.phoneNumber || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <p><strong>Date:</strong> {form.watch("requestedDate")}</p>
-                      <p><strong>Date of Birth:</strong> {selectedPatient.dateOfBirth || 'Not specified'}</p>
-                      <p><strong>Category:</strong> {form.watch("category")}</p>
+                  {/* Patient Info */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><strong>Name:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</div>
+                      <div><strong>Patient ID:</strong> {selectedPatient.patientId}</div>
+                      <div><strong>Phone:</strong> {selectedPatient.phoneNumber}</div>
+                      <div><strong>Date of Birth:</strong> {selectedPatient.dateOfBirth}</div>
                     </div>
                   </div>
 
-                  {/* Test Information */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Test Details</h3>
-                      <p><strong>Priority:</strong> {form.watch("priority")}</p>
-                      <p><strong>Tests Requested:</strong></p>
-                      <ul className="ml-6 list-disc">
+                  {/* Test Details */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Test Information</h3>
+                    <div className="text-sm space-y-2">
+                      <div><strong>Category:</strong> {form.watch("category")}</div>
+                      <div><strong>Priority:</strong> {form.watch("priority")}</div>
+                      <div><strong>Requested Date:</strong> {form.watch("requestedDate")}</div>
+                      <div><strong>Tests Requested:</strong></div>
+                      <ul className="ml-6 list-disc avoid-break">
                         {selectedTests.map((test, index) => (
                           <li key={index}>{test}</li>
                         ))}
                       </ul>
                       {form.watch("clinicalInfo") && (
-                        <p><strong>Clinical Information:</strong> {form.watch("clinicalInfo")}</p>
+                        <div><strong>Clinical Information:</strong> {form.watch("clinicalInfo")}</div>
                       )}
                     </div>
                   </div>
+
                 </div>
 
                 {/* Footer */}
                 <div className="mt-auto pt-8 border-t">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <div className="w-64 border-b border-gray-400 mb-1"></div>
-                      <p className="text-sm text-gray-600">Requesting Doctor</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">
-                        Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
-                      </p>
-                    </div>
-                  </div>
+                  <p className="mt-6">Requesting Doctor: ____________________</p>
+                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
                 </div>
               </div>
               <div className="text-center mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => printById("lab-request-print", "Lab Request")}
+                  onClick={() => window.print()}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />
@@ -664,81 +671,94 @@ export default function Laboratory() {
         <div>
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
-              <div id="lab-report-print" className="rx-print">
-                <ClinicHeader title="LABORATORY REPORT" />
-                
+              <div
+                id="lab-report-print"
+                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+              >
+                {/* Header */}
+                <div className="text-center border-b pb-4 mb-6">
+                  <h1 className="text-2xl font-bold text-medical-blue">
+                    BAHR EL GHAZAL CLINIC
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Your Health, Our Priority
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
+                  <p className="text-lg font-semibold text-medical-green mt-2">
+                    LABORATORY REPORT
+                  </p>
+                </div>
+
+                {/* Main Content */}
                 <div className="flex-1">
-                  {/* Patient and Test Information */}
-                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
-                    <div>
-                      <p><strong>Patient ID:</strong> {selectedLabTest.patientId}</p>
-                      <p><strong>Test ID:</strong> {selectedLabTest.testId}</p>
-                      <p><strong>Category:</strong> {selectedLabTest.category}</p>
-                    </div>
-                    <div>
-                      <p><strong>Requested Date:</strong> {selectedLabTest.requestedDate}</p>
-                      <p><strong>Completed Date:</strong> {resultsForm.watch("completedDate")}</p>
-                      <p><strong>Result Status:</strong> {resultsForm.watch("resultStatus")}</p>
+                  {/* Patient and Test Info */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><strong>Patient ID:</strong> {selectedLabTest.patientId}</div>
+                      <div><strong>Test ID:</strong> {selectedLabTest.testId}</div>
+                      <div><strong>Requested Date:</strong> {selectedLabTest.requestedDate}</div>
+                      <div><strong>Completed Date:</strong> {resultsForm.watch("completedDate")}</div>
                     </div>
                   </div>
 
-                  {/* Tests and Results */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Tests Performed</h3>
-                      <ul className="ml-6 list-disc">
-                        {JSON.parse(selectedLabTest.tests || "[]").map((test: string, index: number) => (
-                          <li key={index}>{test}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Test Results</h3>
-                      <div className="whitespace-pre-wrap border border-gray-200 rounded p-3 bg-gray-50">
-                        {resultsForm.watch("results") || "No results recorded"}
-                      </div>
-                    </div>
-
-                    {resultsForm.watch("normalValues") && (
-                      <div>
-                        <h3 className="font-semibold text-gray-800 mb-2">Normal Values Reference</h3>
-                        <div className="whitespace-pre-wrap border border-gray-200 rounded p-3 bg-gray-50">
-                          {resultsForm.watch("normalValues")}
-                        </div>
-                      </div>
-                    )}
-
-                    {resultsForm.watch("technicianNotes") && (
-                      <div>
-                        <h3 className="font-semibold text-gray-800 mb-2">Technician Notes</h3>
-                        <div className="whitespace-pre-wrap border border-gray-200 rounded p-3 bg-gray-50">
-                          {resultsForm.watch("technicianNotes")}
-                        </div>
-                      </div>
-                    )}
+                  {/* Tests Performed */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Tests Performed</h3>
+                    <ul className="ml-6 list-disc text-sm avoid-break">
+                      {JSON.parse(selectedLabTest.tests || "[]").map((test: string, index: number) => (
+                        <li key={index}>{test}</li>
+                      ))}
+                    </ul>
                   </div>
+
+                  {/* Results */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Results</h3>
+                    <div className="text-sm space-y-4">
+                      <div>
+                        <strong>Test Results:</strong>
+                        <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                          {resultsForm.watch("results")}
+                        </div>
+                      </div>
+                      
+                      {resultsForm.watch("normalValues") && (
+                        <div>
+                          <strong>Normal Values Reference:</strong>
+                          <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                            {resultsForm.watch("normalValues")}
+                          </div>
+                        </div>
+                      )}
+
+                      <div><strong>Result Status:</strong> {resultsForm.watch("resultStatus")}</div>
+
+                      {resultsForm.watch("technicianNotes") && (
+                        <div>
+                          <strong>Technician Notes:</strong>
+                          <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                            {resultsForm.watch("technicianNotes")}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
 
                 {/* Footer */}
                 <div className="mt-auto pt-8 border-t">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <div className="w-64 border-b border-gray-400 mb-1"></div>
-                      <p className="text-sm text-gray-600">Lab Technician</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">
-                        Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
-                      </p>
-                    </div>
-                  </div>
+                  <p className="mt-6">Lab Technician: ____________________</p>
+                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
                 </div>
               </div>
               <div className="text-center mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => printById("lab-report-print", "Lab Report")}
+                  onClick={() => window.print()}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />

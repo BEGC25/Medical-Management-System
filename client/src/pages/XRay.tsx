@@ -16,14 +16,10 @@ import PatientSearch from "@/components/PatientSearch";
 import { insertXrayExamSchema, type InsertXrayExam, type Patient, type XrayExam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import ClinicHeader from "@/components/ClinicHeader";
-import { printById } from "@/lib/printUtils";
 
 export default function XRay() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedXrayExam, setSelectedXrayExam] = useState<XrayExam | null>(null);
-  const [showXrayRequest, setShowXrayRequest] = useState(false);
-  const [showXrayReport, setShowXrayReport] = useState(false);
   const [safetyChecklist, setSafetyChecklist] = useState({
     notPregnant: false,
     metalRemoved: false,
@@ -390,7 +386,7 @@ export default function XRay() {
                   <Send className="w-4 h-4 mr-2" />
                   {createXrayExamMutation.isPending ? "Submitting..." : "Submit Request"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowXrayRequest(true)}>
+                <Button type="button" variant="outline" onClick={() => window.print()}>
                   <Printer className="w-4 h-4 mr-2" />
                   Print Request
                 </Button>
@@ -558,7 +554,7 @@ export default function XRay() {
                     <Check className="w-4 h-4 mr-2" />
                     {updateXrayExamMutation.isPending ? "Saving..." : "Save Report"}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowXrayReport(true)}>
+                  <Button type="button" variant="outline" onClick={() => window.print()}>
                     <Printer className="w-4 h-4 mr-2" />
                     Print Report
                   </Button>
@@ -568,179 +564,6 @@ export default function XRay() {
           )}
         </CardContent>
       </Card>
-
-      {/* X-Ray Request Print Modal */}
-      {showXrayRequest && selectedPatient && (
-        <div>
-          <Card className="border-2 border-medical-green">
-            <CardContent className="p-6">
-              <div id="xray-request-print" className="rx-print">
-                <ClinicHeader title="X-RAY EXAMINATION REQUEST" />
-                
-                <div className="flex-1">
-                  {/* Patient Information */}
-                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
-                    <div>
-                      <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
-                      <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
-                      <p><strong>Phone:</strong> {selectedPatient.phoneNumber}</p>
-                    </div>
-                    <div>
-                      <p><strong>Date:</strong> {form.watch("requestedDate")}</p>
-                      <p><strong>Date of Birth:</strong> {selectedPatient.dateOfBirth}</p>
-                      <p><strong>Exam Type:</strong> {form.watch("examType")}</p>
-                    </div>
-                  </div>
-
-                  {/* Examination Details */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Examination Information</h3>
-                      <p><strong>Body Part:</strong> {form.watch("bodyPart")}</p>
-                      <p><strong>Priority:</strong> {form.watch("priority")}</p>
-                      {form.watch("clinicalIndication") && (
-                        <p><strong>Clinical Indication:</strong> {form.watch("clinicalIndication")}</p>
-                      )}
-                      {form.watch("specialInstructions") && (
-                        <p><strong>Special Instructions:</strong> {form.watch("specialInstructions")}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Safety Checklist</h3>
-                      <p>☐ Not pregnant (if applicable)</p>
-                      <p>☐ Metal objects removed</p>
-                      <p>☐ Patient can cooperate with positioning</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="mt-auto pt-8 border-t">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <div className="w-64 border-b border-gray-400 mb-1"></div>
-                      <p className="text-sm text-gray-600">Requesting Doctor</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">
-                        Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center mt-6">
-                <Button 
-                  variant="outline" 
-                  onClick={() => printById("xray-request-print", "X-Ray Request")}
-                  className="mr-4"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Request
-                </Button>
-                <Button variant="outline" onClick={() => setShowXrayRequest(false)}>
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* X-Ray Report Print Modal */}
-      {showXrayReport && selectedXrayExam && (
-        <div>
-          <Card className="border-2 border-medical-green">
-            <CardContent className="p-6">
-              <div id="xray-report-print" className="rx-print">
-                <ClinicHeader title="X-RAY EXAMINATION REPORT" />
-                
-                <div className="flex-1">
-                  {/* Patient Information */}
-                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
-                    <div>
-                      <p><strong>Patient ID:</strong> {selectedXrayExam.patientId}</p>
-                      <p><strong>Exam ID:</strong> {selectedXrayExam.examId}</p>
-                      <p><strong>Exam Type:</strong> {selectedXrayExam.examType}</p>
-                    </div>
-                    <div>
-                      <p><strong>Requested Date:</strong> {selectedXrayExam.requestedDate}</p>
-                      <p><strong>Report Date:</strong> {resultsForm.watch("reportDate")}</p>
-                      <p><strong>Technical Quality:</strong> {resultsForm.watch("technicalQuality")}</p>
-                    </div>
-                  </div>
-
-                  {/* Results */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Body Part Examined</h3>
-                      <p>{selectedXrayExam.bodyPart}</p>
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Findings</h3>
-                      <div className="whitespace-pre-wrap">
-                        {resultsForm.watch("findings") || "No findings recorded"}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Impression</h3>
-                      <div className="whitespace-pre-wrap">
-                        {resultsForm.watch("impression") || "No impression recorded"}
-                      </div>
-                    </div>
-
-                    {resultsForm.watch("recommendations") && (
-                      <div>
-                        <h3 className="font-semibold text-gray-800 mb-2">Recommendations</h3>
-                        <div className="whitespace-pre-wrap">
-                          {resultsForm.watch("recommendations")}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <p><strong>Report Status:</strong> {resultsForm.watch("reportStatus")}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="mt-auto pt-8 border-t">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <div className="w-64 border-b border-gray-400 mb-1"></div>
-                      <p className="text-sm text-gray-600">
-                        Radiologist: {resultsForm.watch("radiologist") || "Dr. [Name]"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">
-                        Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center mt-6">
-                <Button 
-                  variant="outline" 
-                  onClick={() => printById("xray-report-print", "X-Ray Report")}
-                  className="mr-4"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Report
-                </Button>
-                <Button variant="outline" onClick={() => setShowXrayReport(false)}>
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
