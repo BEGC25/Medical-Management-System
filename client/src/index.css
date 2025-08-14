@@ -127,14 +127,20 @@
     visibility: hidden;
   }
   
-  /* Show only prescription content and its children */
+  /* Show only print content and its children */
   #prescription-print,
-  #prescription-print * {
+  #prescription-print *,
+  #lab-request-print,
+  #lab-request-print *,
+  #lab-report-print,
+  #lab-report-print * {
     visibility: visible;
   }
   
-  /* Position prescription to fill page */
-  #prescription-print {
+  /* Position print content to fill page */
+  #prescription-print,
+  #lab-request-print,
+  #lab-report-print {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;

@@ -256,8 +256,167 @@ export default function Laboratory() {
     });
   };
 
+  const printLabRequest = () => {
+    if (!selectedPatient || selectedTests.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select a patient and tests before printing",
+        variant: "destructive",
+      });
+      return;
+    }
+    window.print();
+  };
+
+  const printLabReport = () => {
+    if (!selectedLabTest) {
+      toast({
+        title: "Error", 
+        description: "Please select a lab test to print the report",
+        variant: "destructive",
+      });
+      return;
+    }
+    window.print();
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <>
+      {/* Lab Request Print Content */}
+      <div id="lab-request-print" className="hidden print:block print:!visible">
+        <div className="min-h-[297mm] bg-white text-black p-8 flex flex-col font-sans" style={{ height: '297mm', width: '210mm', margin: '0 auto' }}>
+          {/* Header */}
+          <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
+            <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
+            <p className="text-lg italic mb-2">Your Health, Our Priority</p>
+            <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+          </div>
+
+          {/* Document Title */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold border-b border-gray-300 inline-block pb-2">LABORATORY TEST REQUEST</h2>
+          </div>
+
+          {/* Patient Info */}
+          {selectedPatient && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><strong>Name:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</div>
+                <div><strong>Patient ID:</strong> {selectedPatient.patientId}</div>
+                <div><strong>Phone:</strong> {selectedPatient.phoneNumber}</div>
+                <div><strong>Date of Birth:</strong> {selectedPatient.dateOfBirth}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Test Details */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Test Information</h3>
+            <div className="text-sm space-y-2">
+              <div><strong>Category:</strong> {form.watch("category")}</div>
+              <div><strong>Priority:</strong> {form.watch("priority")}</div>
+              <div><strong>Requested Date:</strong> {form.watch("requestedDate")}</div>
+              <div><strong>Tests Requested:</strong></div>
+              <ul className="ml-6 list-disc">
+                {selectedTests.map((test, index) => (
+                  <li key={index}>{test}</li>
+                ))}
+              </ul>
+              {form.watch("clinicalInfo") && (
+                <div><strong>Clinical Information:</strong> {form.watch("clinicalInfo")}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-auto pt-8 border-t">
+            <p className="mt-6">Requesting Doctor: ____________________</p>
+            <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Lab Report Print Content */}
+      {selectedLabTest && (
+        <div id="lab-report-print" className="hidden print:block print:!visible">
+          <div className="min-h-[297mm] bg-white text-black p-8 flex flex-col font-sans" style={{ height: '297mm', width: '210mm', margin: '0 auto' }}>
+            {/* Header */}
+            <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
+              <h1 className="text-3xl font-bold text-medical-blue mb-2">BAHR EL GHAZAL CLINIC</h1>
+              <p className="text-lg italic mb-2">Your Health, Our Priority</p>
+              <p className="text-sm">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+            </div>
+
+            {/* Document Title */}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold border-b border-gray-300 inline-block pb-2">LABORATORY REPORT</h2>
+            </div>
+
+            {/* Patient and Test Info */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><strong>Patient ID:</strong> {selectedLabTest.patientId}</div>
+                <div><strong>Test ID:</strong> {selectedLabTest.testId}</div>
+                <div><strong>Requested Date:</strong> {selectedLabTest.requestedDate}</div>
+                <div><strong>Completed Date:</strong> {resultsForm.watch("completedDate")}</div>
+              </div>
+            </div>
+
+            {/* Tests Performed */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Tests Performed</h3>
+              <ul className="ml-6 list-disc text-sm">
+                {JSON.parse(selectedLabTest.tests || "[]").map((test: string, index: number) => (
+                  <li key={index}>{test}</li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Results */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Results</h3>
+              <div className="text-sm space-y-4">
+                <div>
+                  <strong>Test Results:</strong>
+                  <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                    {resultsForm.watch("results")}
+                  </div>
+                </div>
+                
+                {resultsForm.watch("normalValues") && (
+                  <div>
+                    <strong>Normal Values Reference:</strong>
+                    <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                      {resultsForm.watch("normalValues")}
+                    </div>
+                  </div>
+                )}
+
+                <div><strong>Result Status:</strong> {resultsForm.watch("resultStatus")}</div>
+
+                {resultsForm.watch("technicianNotes") && (
+                  <div>
+                    <strong>Technician Notes:</strong>
+                    <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                      {resultsForm.watch("technicianNotes")}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-auto pt-8 border-t">
+              <p className="mt-6">Lab Technician: ____________________</p>
+              <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Lab Request Form */}
       <Card>
         <CardHeader>
@@ -405,7 +564,7 @@ export default function Laboratory() {
                   <Send className="w-4 h-4 mr-2" />
                   {createLabTestMutation.isPending ? "Submitting..." : "Submit Request"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => window.print()}>
+                <Button type="button" variant="outline" onClick={() => printLabRequest()}>
                   <Printer className="w-4 h-4 mr-2" />
                   Print Request
                 </Button>
@@ -541,7 +700,7 @@ export default function Laboratory() {
                     <Check className="w-4 h-4 mr-2" />
                     {updateLabTestMutation.isPending ? "Saving..." : "Save Results"}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => window.print()}>
+                  <Button type="button" variant="outline" onClick={() => printLabReport()}>
                     <Printer className="w-4 h-4 mr-2" />
                     Print Report
                   </Button>
@@ -551,6 +710,7 @@ export default function Laboratory() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
