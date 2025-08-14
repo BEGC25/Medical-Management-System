@@ -22,6 +22,114 @@ export default function Ultrasound() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const printUltrasoundRequest = () => {
+    if (!selectedPatient || !form.getValues("examType")) {
+      toast({
+        title: "Incomplete Information",
+        description: "Please select a patient and examination type before printing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const formData = form.getValues();
+    const currentDate = new Date().toLocaleDateString();
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ultrasound Request - ${selectedPatient.patientId}</title>
+          <meta charset="utf-8">
+          <style>
+            @media print {
+              body { margin: 0; }
+              .request-container {
+                width: 210mm;
+                min-height: 297mm;
+                padding: 20mm;
+                box-sizing: border-box;
+                font-family: 'Arial', sans-serif;
+                line-height: 1.6;
+              }
+            }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
+            .clinic-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
+            .clinic-subtitle { font-size: 14px; color: #666; margin-bottom: 10px; }
+            .request-title { font-size: 20px; font-weight: bold; color: #16a34a; margin-top: 15px; }
+            .section { margin-bottom: 25px; }
+            .section-title { font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .info-item { margin-bottom: 8px; }
+            .label { font-weight: bold; }
+            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="request-container">
+            <div class="header">
+              <div class="clinic-name">BAHR EL GHAZAL CLINIC</div>
+              <div class="clinic-subtitle">Your Health, Our Priority</div>
+              <div class="clinic-subtitle">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</div>
+              <div class="request-title">ULTRASOUND EXAMINATION REQUEST</div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Patient Information</div>
+              <div class="info-grid">
+                <div>
+                  <div class="info-item"><span class="label">Patient Name:</span> ${selectedPatient.firstName} ${selectedPatient.lastName}</div>
+                  <div class="info-item"><span class="label">Patient ID:</span> ${selectedPatient.patientId}</div>
+                  <div class="info-item"><span class="label">Date of Birth:</span> ${selectedPatient.dateOfBirth || 'Not provided'}</div>
+                  <div class="info-item"><span class="label">Gender:</span> ${selectedPatient.gender || 'Not specified'}</div>
+                </div>
+                <div>
+                  <div class="info-item"><span class="label">Phone:</span> ${selectedPatient.phoneNumber || 'Not provided'}</div>
+                  <div class="info-item"><span class="label">Village:</span> ${selectedPatient.village || 'Not specified'}</div>
+                  <div class="info-item"><span class="label">Request Date:</span> ${currentDate}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Examination Details</div>
+              <div class="info-item"><span class="label">Examination Type:</span> ${formData.examType?.charAt(0).toUpperCase() + formData.examType?.slice(1)} Ultrasound</div>
+              <div class="info-item"><span class="label">Priority:</span> ${formData.priority?.charAt(0).toUpperCase() + formData.priority?.slice(1)}</div>
+              <div class="info-item"><span class="label">Requested Date:</span> ${formData.requestedDate}</div>
+            </div>
+
+            ${formData.clinicalIndication ? `
+            <div class="section">
+              <div class="section-title">Clinical Indication</div>
+              <div style="background: #f9fafb; padding: 15px; border-radius: 5px; white-space: pre-line;">${formData.clinicalIndication}</div>
+            </div>
+            ` : ''}
+
+            ${formData.specialInstructions ? `
+            <div class="section">
+              <div class="section-title">Special Instructions</div>
+              <div style="background: #f9fafb; padding: 15px; border-radius: 5px; white-space: pre-line;">${formData.specialInstructions}</div>
+            </div>
+            ` : ''}
+
+            <div class="footer">
+              <p>Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
+
   const form = useForm<InsertUltrasoundExam>({
     resolver: zodResolver(insertUltrasoundExamSchema),
     defaultValues: {
@@ -151,8 +259,128 @@ export default function Ultrasound() {
     form.setValue("patientId", patient.patientId);
   };
 
-  const handlePrint = () => {
-    window.print();
+  const printUltrasoundReport = () => {
+    if (!selectedUltrasoundExam) {
+      toast({
+        title: "No Report Selected",
+        description: "Please select an ultrasound examination to print the report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const reportData = resultsForm.getValues();
+    const currentDate = new Date().toLocaleDateString();
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ultrasound Report - ${selectedUltrasoundExam.examId}</title>
+          <meta charset="utf-8">
+          <style>
+            @media print {
+              body { margin: 0; }
+              .report-container {
+                width: 210mm;
+                min-height: 297mm;
+                padding: 20mm;
+                box-sizing: border-box;
+                font-family: 'Arial', sans-serif;
+                line-height: 1.6;
+              }
+            }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
+            .clinic-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
+            .clinic-subtitle { font-size: 14px; color: #666; margin-bottom: 10px; }
+            .report-title { font-size: 20px; font-weight: bold; color: #16a34a; margin-top: 15px; }
+            .section { margin-bottom: 25px; }
+            .section-title { font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .info-item { margin-bottom: 8px; }
+            .label { font-weight: bold; }
+            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
+            .findings-box { background: #f9fafb; padding: 15px; border-radius: 5px; white-space: pre-line; min-height: 100px; border: 1px solid #e5e7eb; }
+          </style>
+        </head>
+        <body>
+          <div class="report-container">
+            <div class="header">
+              <div class="clinic-name">BAHR EL GHAZAL CLINIC</div>
+              <div class="clinic-subtitle">Your Health, Our Priority</div>
+              <div class="clinic-subtitle">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</div>
+              <div class="report-title">ULTRASOUND EXAMINATION REPORT</div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Examination Information</div>
+              <div class="info-grid">
+                <div>
+                  <div class="info-item"><span class="label">Exam ID:</span> ${selectedUltrasoundExam.examId}</div>
+                  <div class="info-item"><span class="label">Patient ID:</span> ${selectedUltrasoundExam.patientId}</div>
+                  <div class="info-item"><span class="label">Examination Type:</span> ${selectedUltrasoundExam.examType?.charAt(0).toUpperCase() + selectedUltrasoundExam.examType?.slice(1)} Ultrasound</div>
+                  <div class="info-item"><span class="label">Priority:</span> ${selectedUltrasoundExam.priority?.charAt(0).toUpperCase() + selectedUltrasoundExam.priority?.slice(1)}</div>
+                </div>
+                <div>
+                  <div class="info-item"><span class="label">Requested Date:</span> ${selectedUltrasoundExam.requestedDate}</div>
+                  <div class="info-item"><span class="label">Report Date:</span> ${reportData.reportDate || currentDate}</div>
+                  <div class="info-item"><span class="label">Image Quality:</span> ${reportData.imageQuality?.charAt(0).toUpperCase() + reportData.imageQuality?.slice(1)}</div>
+                  <div class="info-item"><span class="label">Status:</span> ${reportData.reportStatus?.charAt(0).toUpperCase() + reportData.reportStatus?.slice(1)}</div>
+                </div>
+              </div>
+            </div>
+
+            ${selectedUltrasoundExam.clinicalIndication ? `
+            <div class="section">
+              <div class="section-title">Clinical Indication</div>
+              <div class="findings-box">${selectedUltrasoundExam.clinicalIndication}</div>
+            </div>
+            ` : ''}
+
+            <div class="section">
+              <div class="section-title">Findings</div>
+              <div class="findings-box">${reportData.findings || 'No findings recorded'}</div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Impression</div>
+              <div class="findings-box">${reportData.impression || 'No impression recorded'}</div>
+            </div>
+
+            ${reportData.recommendations ? `
+            <div class="section">
+              <div class="section-title">Recommendations</div>
+              <div class="findings-box">${reportData.recommendations}</div>
+            </div>
+            ` : ''}
+
+            <div class="section">
+              <div class="section-title">Reporting Physician</div>
+              <div class="info-item">
+                <span class="label">Sonographer:</span> ${reportData.sonographer || '_________________________'}
+              </div>
+              <div style="margin-top: 30px;">
+                <span class="label">Signature:</span> ___________________________ 
+                <span style="margin-left: 40px;"><span class="label">Date:</span> ${reportData.reportDate || currentDate}</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   return (
@@ -322,7 +550,7 @@ export default function Ultrasound() {
                     <Button 
                       type="button" 
                       variant="outline"
-                      onClick={handlePrint}
+                      onClick={printUltrasoundRequest}
                     >
                       <Printer className="w-4 h-4 mr-2" />
                       Print Request
@@ -497,7 +725,7 @@ export default function Ultrasound() {
                   <Button 
                     type="button" 
                     variant="outline"
-                    onClick={() => window.print()}
+                    onClick={printUltrasoundReport}
                   >
                     <Printer className="w-4 h-4 mr-2" />
                     Print Report
