@@ -34,8 +34,8 @@ export default function Treatment() {
         margin: 0;
         padding: 0;
       }
-      /* Hide everything except the print containers */
-      body > *:not(.print-container) {
+      /* Hide everything except the print containers during printing */
+      body > div:not(.print-container) {
         display: none !important;
       }
       .print-container {
@@ -55,6 +55,10 @@ export default function Treatment() {
       }
       /* Hide print buttons in print mode */
       .print-buttons {
+        display: none !important;
+      }
+      /* Hide navigation and other UI elements */
+      nav, header, .print\\:hidden {
         display: none !important;
       }
     }
@@ -86,15 +90,6 @@ export default function Treatment() {
       toast({
         title: "Incomplete Information",
         description: "Please fill in patient and treatment plan before generating prescription.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!savedTreatment) {
-      toast({
-        title: "Save Treatment First",
-        description: "Please save the treatment record before generating prescription.",
         variant: "destructive",
       });
       return;
@@ -589,7 +584,7 @@ export default function Treatment() {
                     </div>
                     <div>
                       <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-                      <p><strong>Treatment ID:</strong> {savedTreatment?.treatmentId || 'Not available'}</p>
+                      <p><strong>Treatment ID:</strong> {savedTreatment?.treatmentId || 'Will be assigned when saved'}</p>
                       <p><strong>Phone:</strong> {selectedPatient.phoneNumber || 'Not provided'}</p>
                       <p><strong>Village:</strong> {selectedPatient.village || 'Not specified'}</p>
                     </div>
