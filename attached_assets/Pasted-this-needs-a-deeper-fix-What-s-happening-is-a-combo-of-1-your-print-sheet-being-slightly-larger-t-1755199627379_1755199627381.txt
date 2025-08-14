@@ -1,0 +1,128 @@
+this needs a deeper fix. What’s happening is a combo of (1) your print sheet being slightly larger than the printable area because of padding + borders + min-h-[100vh], and (2) the browser’s Headers & Footers adding their own margins (that “about:blank 1/2” footer is the giveaway). That pushes the layout onto page 2. I’ll give you a precise, copy-paste fix that forces a single A4 page regardless of the user’s print settings.
+
+What’s causing the second page (in your code)
+
+Both print containers use:
+min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8 — with padding + borders on a content-box, you overflow A4. Also min-h-[100vh] in print is risky. 
+ 
+
+The PDF shows Chrome’s header/footer on, hence extra margins (the “about:blank 1/2” footer): this steals vertical space. 
+
+The fix (minimal, robust)
+1) Global print CSS (safe A4 box + hide non-print UI)
+
+Add this to your global CSS (e.g., src/index.css or wherever Tailwind is imported):
+
+/* --- Global print rules --- */
+@media print {
+  /* Let the browser keep its header/footer if user doesn't turn it off,
+     so we shrink our content to a "safe" box that always fits. */
+  @page {
+    size: A4;
+    margin: 0; /* we handle margins inside the sheet */
+  }
+
+  html, body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* One-sheet container that ALWAYS fits on one page */
+  .print-sheet {
+    /* Safe printable area that survives headers/footers on most printers */
+    width: 190mm;              /* 210 - 2*10mm */
+    height: 277mm;             /* 297 - 2*10mm */
+    padding: 10mm;             /* included via box-border */
+    box-sizing: border-box;    /* CRITICAL: include padding/borders */
+    overflow: hidden;          /* prevents tiny spillovers creating page 2 */
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    margin: 0 auto;            /* center on page */
+  }
+
+  /* Hide app UI during print; show only the sheet(s) */
+  .print-hidden { display: none !important; }
+  .print-only   { display: block !important; }
+
+  /* Optional: remove card borders/shadows for print cleanliness */
+  .print-reset {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+
+If you still see a second page on some printers, change the safe area to width: 185mm; height: 270mm; — but 190×277mm is usually enough.
+
+2) Hide the live UI when printing
+
+In your Laboratory.tsx, the main grid stays mounted when you print, so it can contribute to a second page. Make it disappear during print:
+
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print-hidden">
+  {/* ...existing content... */}
+</div>
+
+
+(That’s the grid at the top of your return.) 
+
+3) Convert the print blocks into true one-sheet “print-sheet” containers
+
+Replace the class list on both print blocks:
+
+Lab Request block
+
+Find the div with id="lab-request-print" and replace its className with:
+
+<div
+  id="lab-request-print"
+  className="print-only hidden print-sheet flex flex-col print-reset"
+>
+
+
+This removes min-h-[100vh], fixed A4 width/height on the outer div, and raw p-8. Those were the main overflow culprits. 
+
+Lab Report block
+
+Do the same for id="lab-report-print":
+
+<div
+  id="lab-report-print"
+  className="print-only hidden print-sheet flex flex-col print-reset"
+>
+
+
+(Was also using min-h-[100vh] ... p-8 previously.) 
+
+Remove borders/shadows just for print
+
+On the wrapping Card, add print-reset so borders don’t consume extra mm:
+
+<Card className="border-2 border-medical-green print-reset">
+
+
+You can keep the border on screen; print will strip it.
+
+4) Trigger print only after fonts/layout are ready
+
+Replace your print triggers to wait for fonts before calling window.print() (prevents blank sheets on slower loads):
+
+const doPrint = () => {
+  const fonts = (document as any).fonts;
+  if (fonts && fonts.ready) {
+    fonts.ready.then(() => window.print());
+  } else {
+    window.requestAnimationFrame(() => window.print());
+  }
+};
+
+
+Then use doPrint() instead of window.print() inside your timeouts:
+
+setTimeout(() => {
+  const done = () => setShowLabRequest(false);
+  window.addEventListener("afterprint", done, { once: true });
+  doPrint();
+}, 50);

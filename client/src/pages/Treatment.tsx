@@ -66,85 +66,21 @@ export default function Treatment() {
     setShowPrescription(true);
   };
 
+  const doPrint = () => {
+    const fonts = (document as any).fonts;
+    if (fonts && fonts.ready) {
+      fonts.ready.then(() => window.print());
+    } else {
+      window.requestAnimationFrame(() => window.print());
+    }
+  };
+
   const printPrescription = () => {
-    // Create a new window for printing with proper title
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    
-    const prescriptionContent = document.getElementById('prescription-print')?.innerHTML;
-    const originalTitle = document.title;
-    
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Prescription - ${savedTreatment?.treatmentId || 'BGC'}</title>
-          <meta charset="utf-8">
-          <style>
-            @media print {
-              body { margin: 0; }
-              .prescription-container {
-                width: 210mm;
-                min-height: 297mm;
-                max-height: 297mm;
-                padding: 20mm;
-                box-sizing: border-box;
-                page-break-after: avoid;
-                display: flex;
-                flex-direction: column;
-              }
-              .content { flex: 1; }
-              .footer { margin-top: auto; }
-            }
-            body {
-              font-family: 'Roboto', sans-serif;
-              line-height: 1.6;
-              color: #333;
-            }
-            .text-center { text-align: center; }
-            .text-medical-blue { color: #1e40af; }
-            .text-medical-green { color: #16a34a; }
-            .text-gray-600 { color: #6b7280; }
-            .text-gray-500 { color: #9ca3af; }
-            .text-2xl { font-size: 1.5rem; font-weight: bold; }
-            .text-lg { font-size: 1.125rem; }
-            .text-sm { font-size: 0.875rem; }
-            .text-xs { font-size: 0.75rem; }
-            .font-bold { font-weight: bold; }
-            .font-semibold { font-weight: 600; }
-            .border-b { border-bottom: 1px solid #e5e7eb; }
-            .pb-4 { padding-bottom: 1rem; }
-            .mb-6 { margin-bottom: 1.5rem; }
-            .mb-4 { margin-bottom: 1rem; }
-            .mb-2 { margin-bottom: 0.5rem; }
-            .mt-2 { margin-top: 0.5rem; }
-            .mt-4 { margin-top: 1rem; }
-            .mt-6 { margin-top: 1.5rem; }
-            .pt-8 { padding-top: 2rem; }
-            .border-t { border-top: 1px solid #e5e7eb; }
-            .grid { display: grid; }
-            .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .gap-4 { gap: 1rem; }
-            .space-y-4 > * + * { margin-top: 1rem; }
-            .pl-4 { padding-left: 1rem; }
-            .p-3 { padding: 0.75rem; }
-            .whitespace-pre-line { white-space: pre-line; }
-            .rounded { border-radius: 0.25rem; }
-            .border { border: 1px solid #e5e7eb; }
-          </style>
-        </head>
-        <body>
-          <div class="prescription-container">
-            ${prescriptionContent}
-          </div>
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+    setTimeout(() => {
+      const done = () => setShowPrescription(false);
+      window.addEventListener("afterprint", done, { once: true });
+      doPrint();
+    }, 50);
   };
 
   const createTreatmentMutation = useMutation({
@@ -224,7 +160,7 @@ export default function Treatment() {
 
   return (
     <div className="space-y-6">
-      <Card className="print:hidden">
+      <Card className="print-hidden print-reset">
         <CardHeader>
           <CardTitle>Treatment Records</CardTitle>
         </CardHeader>
@@ -580,11 +516,11 @@ export default function Treatment() {
       {/* Prescription Modal */}
       {showPrescription && selectedPatient && (
         <div>
-          <Card className="border-2 border-medical-green">
-            <CardContent className="p-6">
+          <Card className="border-2 border-medical-green print-reset">
+            <CardContent className="p-6 print-hidden">
               <div
                 id="prescription-print"
-                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
+                className="print-only hidden print-sheet flex flex-col print-reset"
               >
                 {/* Header */}
                 <div className="text-center border-b pb-4 mb-6">
@@ -648,7 +584,7 @@ export default function Treatment() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 print:hidden">
+              <div className="flex gap-3 pt-4 print-hidden">
                 <Button 
                   onClick={printPrescription}
                   className="bg-medical-blue hover:bg-blue-700"
