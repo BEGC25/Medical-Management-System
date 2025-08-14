@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   FileSpreadsheet, 
   FileText, 
@@ -25,18 +25,42 @@ interface ReportFilters {
   toDate: string;
 }
 
+interface DashboardStats {
+  newPatients: number;
+  totalVisits: number;
+  labTests: number;
+  xrays: number;
+  ultrasounds: number;
+  pending: {
+    labResults: number;
+    xrayReports: number;
+    ultrasoundReports: number;
+  };
+}
+
+interface PatientData {
+  id: number;
+  patientId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: string | null;
+  status?: string;
+}
+
 export default function Reports() {
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<ReportFilters>({
     reportType: "daily",
     fromDate: new Date().toISOString().split('T')[0],
     toDate: new Date().toISOString().split('T')[0],
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 
-  const { data: recentPatients } = useQuery({
+  const { data: recentPatients } = useQuery<PatientData[]>({
     queryKey: ["/api/dashboard/recent-patients", 10],
   });
 
@@ -61,18 +85,162 @@ export default function Reports() {
   };
 
   const generateReport = () => {
-    // Logic to generate report based on filters
     console.log("Generating report with filters:", filters);
+    // Refresh queries to get latest data
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
   };
 
   const exportToExcel = () => {
-    // Logic to export data to Excel
     console.log("Exporting to Excel...");
+    
+    if (!stats || !recentPatients) {
+      alert("No data available to export");
+      return;
+    }
+
+    // Create CSV content
+    const csvContent = [
+      ['Bahr El Ghazal Clinic - Report'],
+      [`Report Type: ${filters.reportType}`],
+      [`Date Range: ${filters.fromDate} to ${filters.toDate}`],
+      [''],
+      ['Summary Statistics'],
+      ['Metric', 'Count'],
+      ['New Patients', stats.newPatients || 0],
+      ['Total Visits', stats.totalVisits || 0],
+      ['Lab Tests', stats.labTests || 0],
+      ['X-rays', stats.xrays || 0],
+      ['Ultrasounds', stats.ultrasounds || 0],
+      ['Pending Lab Results', stats.pending?.labResults || 0],
+      ['Pending X-ray Reports', stats.pending?.xrayReports || 0],
+      ['Pending Ultrasound Reports', stats.pending?.ultrasoundReports || 0],
+      [''],
+      ['Recent Patients'],
+      ['Patient ID', 'Name', 'Date of Birth', 'Gender', 'Status']
+    ];
+
+    // Add patient data
+    if (Array.isArray(recentPatients)) {
+      recentPatients.forEach(patient => {
+        csvContent.push([
+          patient.patientId || '',
+          `${patient.firstName || ''} ${patient.lastName || ''}`,
+          patient.dateOfBirth || '',
+          patient.gender || '',
+          patient.status || 'New'
+        ]);
+      });
+    }
+
+    // Convert to CSV string
+    const csvString = csvContent.map(row => row.join(',')).join('\n');
+    
+    // Create and download file
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `clinic-report-${filters.fromDate}-${filters.toDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const exportToPDF = () => {
-    // Logic to export data to PDF
     console.log("Exporting to PDF...");
+    
+    if (!stats) {
+      alert("No data available to export");
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const currentDate = new Date().toLocaleDateString();
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Clinic Report - ${filters.fromDate} to ${filters.toDate}</title>
+          <meta charset="utf-8">
+          <style>
+            @media print { body { margin: 0; } }
+            .report-container {
+              width: 210mm;
+              max-height: 297mm;
+              padding: 20mm;
+              box-sizing: border-box;
+              font-family: 'Arial', sans-serif;
+              line-height: 1.6;
+            }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 15px; margin-bottom: 20px; }
+            .clinic-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
+            .clinic-subtitle { font-size: 14px; color: #666; }
+            .report-title { font-size: 18px; font-weight: bold; margin: 20px 0 10px 0; }
+            .info-section { margin-bottom: 20px; }
+            .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+            .stat-item { background: #f9fafb; padding: 10px; border-radius: 5px; border-left: 4px solid #1e40af; }
+            .stat-label { font-size: 12px; color: #666; font-weight: bold; }
+            .stat-value { font-size: 18px; font-weight: bold; color: #1e40af; }
+            .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #666; border-top: 1px solid #e5e7eb; padding-top: 15px; }
+          </style>
+        </head>
+        <body>
+          <div class="report-container">
+            <div class="header">
+              <div class="clinic-name">Bahr El Ghazal Clinic</div>
+              <div class="clinic-subtitle">Medical Management System Report</div>
+            </div>
+            
+            <div class="info-section">
+              <div><strong>Report Type:</strong> ${filters.reportType.charAt(0).toUpperCase() + filters.reportType.slice(1)} Summary</div>
+              <div><strong>Date Range:</strong> ${filters.fromDate} to ${filters.toDate}</div>
+              <div><strong>Generated:</strong> ${currentDate}</div>
+            </div>
+
+            <div class="report-title">Summary Statistics</div>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-label">New Patients</div>
+                <div class="stat-value">${stats.newPatients || 0}</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Total Visits</div>
+                <div class="stat-value">${stats.totalVisits || 0}</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Lab Tests</div>
+                <div class="stat-value">${stats.labTests || 0}</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">X-rays</div>
+                <div class="stat-value">${stats.xrays || 0}</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Ultrasounds</div>
+                <div class="stat-value">${stats.ultrasounds || 0}</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Pending Results</div>
+                <div class="stat-value">${(stats.pending?.labResults || 0) + (stats.pending?.xrayReports || 0) + (stats.pending?.ultrasoundReports || 0)}</div>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   const handlePrint = () => {
