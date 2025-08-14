@@ -1,0 +1,72 @@
+let’s make the Lab header identical to the Treatment one and kill the extra blank page for good.
+
+Below are copy-paste fixes that match your Treatment header and ensure exactly one A4 page.
+
+1) Reuse the exact Treatment header in Lab
+
+In Laboratory.tsx, replace the header blocks inside both #lab-request-print and #lab-report-print with the same markup/classes used by Treatment:
+
+{/* Header — same as Treatment */}
+<div className="text-center border-b pb-4 mb-6">
+  <h1 className="text-2xl font-bold text-medical-blue">
+    BAHR EL GHAZAL CLINIC
+  </h1>
+  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
+  <p className="text-xs text-gray-500 mt-1">
+    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+  </p>
+  <p className="text-lg font-semibold text-medical-green mt-2">
+    {/* Change only this line per doc */}
+    LABORATORY TEST REQUEST
+  </p>
+</div>
+
+
+…and for the report header, change the last line to LABORATORY REPORT.
+
+(That’s the same structure/classes Treatment uses for PRESCRIPTION — so they’ll look identical. 
+ 
+)
+
+2) One-page print every time (isolated window CSS)
+
+You’re already using the isolated-print helper in Laboratory.tsx — great. Tweak its inline CSS so the content fits inside A4 with internal padding (no overflow → no page 2):
+
+Replace the CSS string inside printIsolated() with this:
+
+const css = `
+  <style>
+    @page { size: A4; margin: 0; }              /* browser adds no extra margins */
+    html, body { margin: 0; padding: 0; }
+    .rx-print {
+      width: 210mm;
+      height: 297mm;                            /* exact page box */
+      padding: 12mm;                            /* inner margins */
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+    .mt-auto { margin-top: auto !important; }   /* pin footer to bottom */
+    /* Safety: if content is just a tad tall, gently scale to fit one page */
+    .fit { transform: scale(0.985); transform-origin: top left; }
+  </style>
+`;
+
+
+This prevents the tiny height spill you were seeing (previous CSS used min-height and page margins that could add up to >297 mm). Your current Lab code already uses this isolated print approach; we’re just tightening it. 
+
+Tip: You don’t need any global @media print to print Lab now. The isolated window brings its own CSS and won’t be affected by the app’s layout. Your PDFs confirm the isolated print flow is working; we just ensure perfect sizing. 
+ 
+
+3) (Optional) Remove the modal’s window.print() buttons
+
+Inside both Lab modals, the footer still has:
+
+<Button onClick={() => window.print()} ...>Print ...</Button>
+
+
+Since you’re printing through printIsolated(...), these buttons aren’t needed and can trigger the old 2-page behavior. Either remove them or change them to call the same helpers:
+
+<Button onClick={printLabRequest} ...>Print Request</Button>
+...
+<Button onClick={printLabReport} ...>Print Report</Button>

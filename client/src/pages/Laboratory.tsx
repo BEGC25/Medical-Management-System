@@ -265,18 +265,19 @@ export default function Laboratory() {
 
     const css = `
       <style>
-        @page { size: A4; margin: 12mm; }
+        @page { size: A4; margin: 0; }              /* browser adds no extra margins */
         html, body { margin: 0; padding: 0; }
         .rx-print {
           width: 210mm;
-          min-height: calc(297mm - 24mm); /* inside page margins */
-          padding: 10mm;
+          height: 297mm;                            /* exact page box */
+          padding: 12mm;                            /* inner margins */
           box-sizing: border-box;
-          display: flex; flex-direction: column;
+          display: flex;
+          flex-direction: column;
         }
-        .mt-auto { margin-top: auto !important; } /* pin footer to bottom */
-        /* Safety: if content is just a tad tall, gently scale to fit */
-        .fit { transform: scale(0.98); transform-origin: top left; }
+        .mt-auto { margin-top: auto !important; }   /* pin footer to bottom */
+        /* Safety: if content is just a tad tall, gently scale to fit one page */
+        .fit { transform: scale(0.985); transform-origin: top left; }
       </style>
     `;
 
@@ -619,14 +620,12 @@ export default function Laboratory() {
               id="lab-request-print"
               className="rx-print"
             >
-                {/* Header */}
+                {/* Header — same as Treatment */}
                 <div className="text-center border-b pb-4 mb-6">
                   <h1 className="text-2xl font-bold text-medical-blue">
                     BAHR EL GHAZAL CLINIC
                   </h1>
-                  <p className="text-sm text-gray-600">
-                    Your Health, Our Priority
-                  </p>
+                  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
                   </p>
@@ -674,7 +673,7 @@ export default function Laboratory() {
 
             {/* Print Button */}
             <div className="flex gap-3 pt-4 print:hidden bg-gray-50 p-4 border-t">
-              <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
+              <Button onClick={printLabRequest} className="bg-medical-blue hover:bg-blue-700">
                 <Printer className="w-4 h-4 mr-2" />
                 Print Request
               </Button>
@@ -694,14 +693,12 @@ export default function Laboratory() {
               id="lab-report-print"
               className="rx-print"
             >
-                {/* Header */}
+                {/* Header — same as Treatment */}
                 <div className="text-center border-b pb-4 mb-6">
                   <h1 className="text-2xl font-bold text-medical-blue">
                     BAHR EL GHAZAL CLINIC
                   </h1>
-                  <p className="text-sm text-gray-600">
-                    Your Health, Our Priority
-                  </p>
+                  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
                   </p>
@@ -773,7 +770,7 @@ export default function Laboratory() {
 
             {/* Print Button */}
             <div className="flex gap-3 pt-4 print:hidden bg-gray-50 p-4 border-t">
-              <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
+              <Button onClick={printLabReport} className="bg-medical-blue hover:bg-blue-700">
                 <Printer className="w-4 h-4 mr-2" />
                 Print Report
               </Button>
