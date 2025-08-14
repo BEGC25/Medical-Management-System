@@ -113,51 +113,66 @@
   background-color: var(--success-green);
 }
 
-/* Shared one-page A4 container */
-.rx-print {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  padding: 8px;
+/* Base page sizing: exact A4 content box inside margins */
+:root {
+  --page-w: 210mm;
+  --page-h: 297mm;
+  --page-m: 12mm; /* printer-safe margins */
 }
-.rx-print .mt-auto { margin-top: auto !important; } /* pin footer to bottom */
 
+/* The printable card */
+#prescription-print.prescription,
+#lab-request-print.prescription,
+#lab-report-print.prescription {
+  width: var(--page-w);
+  min-height: calc(var(--page-h) - 2 * var(--page-m));
+  margin: 0 auto;
+  padding: 8mm 10mm;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;   /* lets footer stick to bottom */
+  gap: 6mm;
+  background: #fff;
+}
+
+/* Push footer to the bottom of the page */
+.prescription .rx-footer { margin-top: auto; }
+.prescription .rx-footer .sig {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2mm;
+}
+.prescription .rx-footer .sig .line {
+  width: 70mm; height: 0; border-bottom: 1px solid #000; margin-top: 6mm;
+}
+.prescription .valid { font-size: 10pt; margin-top: 3mm; }
+
+/* Avoid awkward breaks inside lists/sections */
+.avoid-break { break-inside: avoid; page-break-inside: avoid; }
+
+/* Print rules */
 @media print {
-  @page { size: A4; margin: 12mm; }
-  html, body { margin: 0; padding: 0; }
-  body * { visibility: hidden; }
+  @page { size: A4; margin: var(--page-m); }
 
-  /* Show ONLY whichever print node is mounted */
+  /* show ONLY the prescription */
+  body * { visibility: hidden; }
   #prescription-print, #prescription-print * { visibility: visible; }
   #lab-request-print, #lab-request-print * { visibility: visible; }
   #lab-report-print, #lab-report-print * { visibility: visible; }
+  
+  #prescription-print { position: absolute; left: 0; top: 0; width: 100%; }
+  #lab-request-print { position: absolute; left: 0; top: 0; width: 100%; }
+  #lab-report-print { position: absolute; left: 0; top: 0; width: 100%; }
 
-  /* Position prescription to fill page */
-  #prescription-print {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 210mm !important;
-    height: 297mm !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-  }
-
-  #lab-request-print,
-  #lab-report-print {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 210mm !important;
-    height: 297mm !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-  }
-
+  /* remove shadows/borders that can cause overflow */
   .no-print { display: none !important; }
   .shadow-md, .shadow-lg { box-shadow: none !important; }
   .rounded-lg { border-radius: 0 !important; }
   .bg-gray-50 { background-color: white !important; }
+}
+
+/* Screen preview helpers */
+@media screen {
+  .prescription { box-shadow: 0 0 0.5rem rgba(0,0,0,.08); }
 }
 
 /* Offline indicator animation */

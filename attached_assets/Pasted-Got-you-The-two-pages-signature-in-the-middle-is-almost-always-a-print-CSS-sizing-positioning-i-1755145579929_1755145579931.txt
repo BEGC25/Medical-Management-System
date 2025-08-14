@@ -1,0 +1,107 @@
+Got you. The “two pages + signature in the middle” is almost always a print-CSS sizing/positioning issue. Drop in the pattern below and it’ll print one A4 page with the signature/footer pinned to the bottom—no extra page.
+
+1) Markup (React/HTML)
+{/* Treatment.tsx */}
+<div id="prescription" className="prescription">
+  <header className="rx-header">
+    <h1>Bahr El Ghazal Clinic – Aweil</h1>
+    <p>Patient: {patient.name} • ID: {patient.id} • Date: {date}</p>
+  </header>
+
+  <main className="rx-body">
+    {/* meds list */}
+    <h2>Prescription</h2>
+    <ul className="avoid-break">
+      {items.map(i => (
+        <li key={i.id}>
+          {i.drug} — {i.dose} — {i.freq} — {i.days}
+        </li>
+      ))}
+    </ul>
+    {/* optional instructions etc. */}
+  </main>
+
+  <footer className="rx-footer">
+    <div className="sig">
+      <div className="line" />
+      <span>Doctor’s Signature</span>
+    </div>
+    <div className="valid">This prescription is valid for 30 days from date of issue.</div>
+  </footer>
+</div>
+
+<button className="no-print" onClick={() => window.print()}>Print Prescription</button>
+
+2) CSS (works with or without Tailwind)
+/* Base page sizing: exact A4 content box inside margins */
+:root {
+  --page-w: 210mm;
+  --page-h: 297mm;
+  --page-m: 12mm; /* printer-safe margins */
+}
+
+/* The printable card */
+#prescription.prescription {
+  width: var(--page-w);
+  min-height: calc(var(--page-h) - 2 * var(--page-m));
+  margin: 0 auto;
+  padding: 8mm 10mm;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;   /* lets footer stick to bottom */
+  gap: 6mm;
+  background: #fff;
+}
+
+/* Push footer to the bottom of the page */
+#prescription .rx-footer { margin-top: auto; }
+#prescription .rx-footer .sig {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2mm;
+}
+#prescription .rx-footer .sig .line {
+  width: 70mm; height: 0; border-bottom: 1px solid #000; margin-top: 6mm;
+}
+#prescription .valid { font-size: 10pt; margin-top: 3mm; }
+
+/* Avoid awkward breaks inside lists/sections */
+.avoid-break { break-inside: avoid; page-break-inside: avoid; }
+
+/* Print rules */
+@media print {
+  @page { size: A4; margin: var(--page-m); }
+
+  /* show ONLY the prescription */
+  body * { visibility: hidden; }
+  #prescription, #prescription * { visibility: visible; }
+  #prescription { position: absolute; left: 0; top: 0; width: 100%; }
+
+  /* remove shadows/borders that can cause overflow */
+  .no-print { display: none !important; }
+}
+
+/* (Optional) screen preview helpers */
+@media screen {
+  body { background: #f3f4f6; }
+  #prescription { box-shadow: 0 0 0.5rem rgba(0,0,0,.08); }
+}
+
+3) Common gotchas that cause 2 pages
+
+Container taller than printable area → the footer floats up mid-page.
+Fix: we constrain height with min-height: calc(297mm - 2*margin) and push footer with margin-top:auto.
+
+Browser/OS adds its own margins → content spills to a second page.
+Fix: the @page rule sets margins; when printing choose “Default” or “None” (don’t add extra margins).
+
+Absolute/fixed elements in the body.
+Fix: avoid fixed positioning for footer; flexbox is safer.
+
+4) If you’re using Tailwind
+
+You can keep utilities and add a small CSS file just for print, or use Tailwind’s print: variant:
+
+Wrap the container with id="prescription" plus classes like
+flex flex-col gap-4 bg-white
+
+Add print:hidden to buttons/menus; add a tiny CSS file only for @page and the visibility trick because Tailwind can’t emit @page.
