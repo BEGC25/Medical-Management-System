@@ -16,7 +16,8 @@ import PatientSearch from "@/components/PatientSearch";
 import { insertXrayExamSchema, type InsertXrayExam, type Patient, type XrayExam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import "@/lab-print.css";
+import ClinicHeader from "@/components/ClinicHeader";
+import { printIsolated } from "@/lib/printUtils";
 
 export default function XRay() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -573,19 +574,9 @@ export default function XRay() {
         <div>
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
-              <div
-                id="xray-request-print"
-                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
-              >
-                {/* Header */}
-                <div className="text-center border-b pb-4 mb-6">
-                  <h1 className="text-2xl font-bold text-medical-blue">BAHR EL GHAZAL CLINIC</h1>
-                  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
-                  <p className="text-xs text-gray-500 mt-1">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
-                  <p className="text-lg font-semibold text-medical-green mt-2">X-RAY EXAMINATION REQUEST</p>
-                </div>
-
-                {/* Main Content */}
+              <div id="xray-request-print" className="rx-print">
+                <ClinicHeader title="X-RAY EXAMINATION REQUEST" />
+                
                 <div className="flex-1">
                   {/* Patient Information */}
                   <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
@@ -642,7 +633,10 @@ export default function XRay() {
               <div className="text-center mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    const node = document.getElementById("xray-request-print");
+                    if (node) printIsolated(node.innerHTML, "X-Ray Request");
+                  }}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />
@@ -662,19 +656,9 @@ export default function XRay() {
         <div>
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
-              <div
-                id="xray-report-print"
-                className="flex flex-col min-h-[100vh] print:min-h-[100vh] print:w-[210mm] print:h-[297mm] p-8"
-              >
-                {/* Header */}
-                <div className="text-center border-b pb-4 mb-6">
-                  <h1 className="text-2xl font-bold text-medical-blue">BAHR EL GHAZAL CLINIC</h1>
-                  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
-                  <p className="text-xs text-gray-500 mt-1">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
-                  <p className="text-lg font-semibold text-medical-green mt-2">X-RAY EXAMINATION REPORT</p>
-                </div>
-
-                {/* Main Content */}
+              <div id="xray-report-print" className="rx-print">
+                <ClinicHeader title="X-RAY EXAMINATION REPORT" />
+                
                 <div className="flex-1">
                   {/* Patient Information */}
                   <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
@@ -746,7 +730,10 @@ export default function XRay() {
               <div className="text-center mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    const node = document.getElementById("xray-report-print");
+                    if (node) printIsolated(node.innerHTML, "X-Ray Report");
+                  }}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />
