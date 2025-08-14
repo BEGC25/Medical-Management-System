@@ -613,7 +613,8 @@ export default function Ultrasound() {
               <h3 className="font-medium text-gray-800 mb-4 dark:text-gray-200">
                 Ultrasound Report - {selectedUltrasoundExam.examId}
               </h3>
-              <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
+              <Form {...resultsForm}>
+                <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Image Quality
@@ -726,7 +727,8 @@ export default function Ultrasound() {
                     Print Report
                   </Button>
                 </div>
-              </form>
+                </form>
+              </Form>
             </div>
           )}
         </CardContent>
