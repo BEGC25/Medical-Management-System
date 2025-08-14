@@ -265,7 +265,13 @@ export default function Laboratory() {
       });
       return;
     }
+    // Add class to show only lab request
+    document.body.classList.add('print-lab-request');
     window.print();
+    // Remove class after print
+    setTimeout(() => {
+      document.body.classList.remove('print-lab-request');
+    }, 100);
   };
 
   const printLabReport = () => {
@@ -277,7 +283,13 @@ export default function Laboratory() {
       });
       return;
     }
+    // Add class to show only lab report
+    document.body.classList.add('print-lab-report');
     window.print();
+    // Remove class after print
+    setTimeout(() => {
+      document.body.classList.remove('print-lab-report');
+    }, 100);
   };
 
   return (
