@@ -624,13 +624,12 @@ export default function XRay() {
 
       {/* X-Ray Request Print Modal */}
       {showXrayRequest && selectedPatient && (
-        <div>
-          <Card className="border-2 border-medical-green">
-            <CardContent className="p-6">
-              <div
-                id="xray-request-print"
-                className="rx-print"
-              >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white max-w-4xl max-h-[90vh] overflow-auto rounded-lg shadow-xl">
+            <div
+              id="xray-request-print"
+              className="rx-print"
+            >
                 {/* Header */}
                 <div className="text-center border-b pb-4 mb-6">
                   <h1 className="text-2xl font-bold text-medical-blue">
@@ -693,30 +692,28 @@ export default function XRay() {
                 </div>
               </div>
 
-              {/* Print Button */}
-              <div className="flex gap-3 pt-4 print:hidden">
-                <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Request
-                </Button>
-                <Button variant="outline" onClick={() => setShowXrayRequest(false)}>
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Print Button */}
+            <div className="flex gap-3 pt-4 print:hidden bg-gray-50 p-4 border-t">
+              <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
+                <Printer className="w-4 h-4 mr-2" />
+                Print Request
+              </Button>
+              <Button variant="outline" onClick={() => setShowXrayRequest(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* X-Ray Report Print Modal */}
       {showXrayReport && selectedXrayExam && (
-        <div>
-          <Card className="border-2 border-medical-green">
-            <CardContent className="p-6">
-              <div
-                id="xray-report-print"
-                className="rx-print"
-              >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white max-w-4xl max-h-[90vh] overflow-auto rounded-lg shadow-xl">
+            <div
+              id="xray-report-print"
+              className="rx-print"
+            >
                 {/* Header */}
                 <div className="text-center border-b pb-4 mb-6">
                   <h1 className="text-2xl font-bold text-medical-blue">
@@ -801,18 +798,17 @@ export default function XRay() {
                 </div>
               </div>
 
-              {/* Print Button */}
-              <div className="flex gap-3 pt-4 print:hidden">
-                <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Report
-                </Button>
-                <Button variant="outline" onClick={() => setShowXrayReport(false)}>
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Print Button */}
+            <div className="flex gap-3 pt-4 print:hidden bg-gray-50 p-4 border-t">
+              <Button onClick={() => window.print()} className="bg-medical-blue hover:bg-blue-700">
+                <Printer className="w-4 h-4 mr-2" />
+                Print Report
+              </Button>
+              <Button variant="outline" onClick={() => setShowXrayReport(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
