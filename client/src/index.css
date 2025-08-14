@@ -115,12 +115,10 @@
 
 /* Shared one-page A4 container */
 .rx-print {
-  width: 210mm;
-  min-height: calc(297mm - 24mm);  /* 12mm top + 12mm bottom margins */
-  padding: 10mm;                   /* inside the A4 box */
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  padding: 8px;
 }
 .rx-print .mt-auto { margin-top: auto !important; } /* pin footer to bottom */
 
@@ -147,11 +145,14 @@
 
   #lab-request-print,
   #lab-report-print {
-    position: absolute; 
-    inset: 0;
-    overflow: hidden;                /* avoid spill causing page 2 */
-    page-break-before: avoid;
-    page-break-after: avoid;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    height: 273mm !important;  /* Exactly within 12mm margins = 297-24 */
+    overflow: hidden !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
   }
 
   .no-print { display: none !important; }
