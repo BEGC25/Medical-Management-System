@@ -4,47 +4,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
-/* --- Global print rules --- */
-@media print {
-  /* Let the browser keep its header/footer if user doesn't turn it off,
-     so we shrink our content to a "safe" box that always fits. */
-  @page {
-    size: A4;
-    margin: 0; /* we handle margins inside the sheet */
-  }
-
-  html, body {
-    width: 210mm;
-    height: 297mm;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* One-sheet container that ALWAYS fits on one page */
-  .print-sheet {
-    /* Safe printable area that survives headers/footers on most printers */
-    width: 190mm;              /* 210 - 2*10mm */
-    height: 277mm;             /* 297 - 2*10mm */
-    padding: 10mm;             /* included via box-border */
-    box-sizing: border-box;    /* CRITICAL: include padding/borders */
-    overflow: hidden;          /* prevents tiny spillovers creating page 2 */
-    page-break-inside: avoid;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    margin: 0 auto;            /* center on page */
-  }
-
-  /* Hide app UI during print; show only the sheet(s) */
-  .print-hidden { display: none !important; }
-  .print-only   { display: block !important; }
-
-  /* Optional: remove card borders/shadows for print cleanliness */
-  .print-reset {
-    border: none !important;
-    box-shadow: none !important;
-  }
-}
-
 @layer base {
   :root {
     --background: hsl(0, 0%, 100%);
