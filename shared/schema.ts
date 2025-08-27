@@ -52,6 +52,7 @@ export const labTests = sqliteTable("lab_tests", {
   resultStatus: text("result_status").$type<"normal" | "abnormal" | "critical">(),
   completedDate: text("completed_date"),
   technicianNotes: text("technician_notes"),
+  attachments: text("attachments"), // JSON array of {url: string, name: string, type: string}
   createdAt: text("created_at").notNull(),
 });
 

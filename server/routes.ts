@@ -2,6 +2,10 @@ import express from "express";
 import { z } from "zod";
 import { storage } from "./storage";
 import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema, insertUltrasoundExamSchema } from "@shared/schema";
+import {
+  ObjectStorageService,
+  ObjectNotFoundError,
+} from "./objectStorage";
 
 const router = express.Router();
 
@@ -237,6 +241,65 @@ router.get("/api/dashboard/recent-patients", async (req, res) => {
   } catch (error) {
     console.error("Recent patients error:", error);
     res.status(500).json({ error: "Failed to fetch recent patients", details: error.message });
+  }
+});
+
+// Object Storage Routes for File Uploads
+router.post("/api/objects/upload", async (req, res) => {
+  try {
+    const objectStorageService = new ObjectStorageService();
+    const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+    res.json({ uploadURL });
+  } catch (error) {
+    console.error("Error getting upload URL:", error);
+    res.status(500).json({ error: "Failed to get upload URL" });
+  }
+});
+
+router.get("/objects/:objectPath(*)", async (req, res) => {
+  try {
+    const objectStorageService = new ObjectStorageService();
+    const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+    objectStorageService.downloadObject(objectFile, res);
+  } catch (error) {
+    console.error("Error serving object:", error);
+    if (error instanceof ObjectNotFoundError) {
+      return res.sendStatus(404);
+    }
+    return res.sendStatus(500);
+  }
+});
+
+// Update lab test results with attachments
+router.put("/api/lab-tests/:testId/attachments", async (req, res) => {
+  try {
+    const { attachments } = req.body;
+    if (!Array.isArray(attachments)) {
+      return res.status(400).json({ error: "Attachments must be an array" });
+    }
+
+    const objectStorageService = new ObjectStorageService();
+    
+    // Normalize attachment URLs and set ACL policies
+    const normalizedAttachments = [];
+    for (const attachment of attachments) {
+      try {
+        const normalizedPath = objectStorageService.normalizeObjectEntityPath(attachment.url);
+        normalizedAttachments.push({
+          ...attachment,
+          url: normalizedPath
+        });
+      } catch (error) {
+        console.error("Error normalizing attachment path:", error);
+        normalizedAttachments.push(attachment);
+      }
+    }
+
+    const labTest = await storage.updateLabTestAttachments(req.params.testId, normalizedAttachments);
+    res.json(labTest);
+  } catch (error) {
+    console.error("Error updating lab test attachments:", error);
+    res.status(500).json({ error: "Failed to update lab test attachments" });
   }
 });
 

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock } from "lucide-react";
+import { Send, Printer, Check, Clock, Camera, FileImage } from "lucide-react";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -380,6 +381,7 @@ export default function Laboratory() {
                         placeholder="Symptoms, suspected diagnosis, relevant clinical information..."
                         rows={3}
                         {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -455,7 +457,7 @@ export default function Laboratory() {
           <div className="mb-6">
             <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Pending Tests</h3>
             <div className="space-y-2">
-              {pendingTests?.map((test: LabTest) => {
+              {(pendingTests || []).map((test: LabTest) => {
                 const tests = JSON.parse(test.tests || "[]");
                 return (
                   <div 
@@ -484,7 +486,7 @@ export default function Laboratory() {
                 );
               })}
               
-              {!pendingTests?.length && (
+              {!(pendingTests || []).length && (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                   No pending tests
                 </p>
@@ -498,6 +500,83 @@ export default function Laboratory() {
               <h3 className="font-medium text-gray-800 mb-4 dark:text-gray-200">
                 Enter Test Results - {selectedLabTest.testId}
               </h3>
+              
+              {/* Photo Upload Section */}
+              <div className="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Lab Printout Photos
+                </h5>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                  Upload photos of CBC, chemistry, or other machine printouts to reduce manual typing. 
+                  You can then type only the key abnormal values in the results section below.
+                </p>
+                
+                <ObjectUploader
+                  maxNumberOfFiles={5}
+                  maxFileSize={10485760}
+                  accept="image/*"
+                  onGetUploadParameters={async () => {
+                    const response = await fetch("/api/objects/upload", { method: "POST" });
+                    const data = await response.json();
+                    return { method: "PUT" as const, url: data.uploadURL };
+                  }}
+                  onComplete={async (uploadedFiles) => {
+                    const attachments = uploadedFiles.map(file => ({
+                      url: file.url,
+                      name: file.name,
+                      type: "lab_printout"
+                    }));
+                    
+                    try {
+                      await apiRequest(`/api/lab-tests/${selectedLabTest.testId}/attachments`, "PUT", { attachments });
+                      
+                      toast({
+                        title: "Success",
+                        description: "Lab printout photos uploaded successfully!"
+                      });
+                      
+                      queryClient.invalidateQueries({ queryKey: ["/api/lab-tests", "pending"] });
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: "Failed to save uploaded photos",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  buttonClassName="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Upload Lab Photos
+                </ObjectUploader>
+                
+                {/* Display existing attachments */}
+                {selectedLabTest.attachments && (
+                  <div className="mt-4">
+                    <h6 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                      Uploaded Photos:
+                    </h6>
+                    <div className="flex flex-wrap gap-2">
+                      {JSON.parse(selectedLabTest.attachments).map((attachment: any, index: number) => (
+                        <div key={index} className="flex items-center gap-2 bg-white dark:bg-gray-700 p-2 rounded border">
+                          <FileImage className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm">{attachment.name}</span>
+                          <a 
+                            href={attachment.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            View
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

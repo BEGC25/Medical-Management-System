@@ -61,6 +61,7 @@ try {
     result_status TEXT,
     completed_date TEXT,
     technician_notes TEXT,
+    attachments TEXT,
     created_at TEXT NOT NULL
   )`);
 
@@ -189,6 +190,7 @@ export interface IStorage {
   getLabTests(status?: string): Promise<LabTest[]>;
   getLabTestsByPatient(patientId: string): Promise<LabTest[]>;
   updateLabTest(testId: string, data: Partial<LabTest>): Promise<LabTest>;
+  updateLabTestAttachments(testId: string, attachments: any[]): Promise<LabTest>;
 
   // X-Ray Exams
   createXrayExam(data: InsertXrayExam): Promise<XrayExam>;
@@ -338,6 +340,16 @@ export class MemStorage implements IStorage {
   async updateLabTest(testId: string, data: Partial<LabTest>): Promise<LabTest> {
     const [labTest] = await db.update(labTests)
       .set(data)
+      .where(eq(labTests.testId, testId))
+      .returning();
+    
+    return labTest;
+  }
+
+  async updateLabTestAttachments(testId: string, attachments: any[]): Promise<LabTest> {
+    const attachmentsJson = JSON.stringify(attachments);
+    const [labTest] = await db.update(labTests)
+      .set({ attachments: attachmentsJson })
       .where(eq(labTests.testId, testId))
       .returning();
     
