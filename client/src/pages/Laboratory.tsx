@@ -457,7 +457,7 @@ export default function Laboratory() {
           <div className="mb-6">
             <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Pending Tests</h3>
             <div className="space-y-2">
-              {(pendingTests || []).map((test: LabTest) => {
+              {(pendingTests as LabTest[] || []).map((test: LabTest) => {
                 const tests = JSON.parse(test.tests || "[]");
                 return (
                   <div 
@@ -486,7 +486,7 @@ export default function Laboratory() {
                 );
               })}
               
-              {!(pendingTests || []).length && (
+              {!(pendingTests as LabTest[] || []).length && (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                   No pending tests
                 </p>
@@ -529,15 +529,26 @@ export default function Laboratory() {
                     }));
                     
                     try {
-                      await apiRequest(`/api/lab-tests/${selectedLabTest.testId}/attachments`, "PUT", { attachments });
-                      
-                      toast({
-                        title: "Success",
-                        description: "Lab printout photos uploaded successfully!"
+                      const response = await fetch(`/api/lab-tests/${selectedLabTest.testId}/attachments`, {
+                        method: "PUT",
+                        headers: {
+                          "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ attachments })
                       });
                       
-                      queryClient.invalidateQueries({ queryKey: ["/api/lab-tests", "pending"] });
+                      if (response.ok) {
+                        toast({
+                          title: "Success",
+                          description: "Lab printout photos uploaded successfully!"
+                        });
+                        
+                        queryClient.invalidateQueries({ queryKey: ["/api/lab-tests", "pending"] });
+                      } else {
+                        throw new Error("Upload failed");
+                      }
                     } catch (error) {
+                      console.error("Upload error:", error);
                       toast({
                         title: "Error",
                         description: "Failed to save uploaded photos",
