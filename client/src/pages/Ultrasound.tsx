@@ -713,11 +713,11 @@ export default function Ultrasound() {
                   />
                 </div>
                 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <Button 
                     type="submit"
                     disabled={updateUltrasoundExamMutation.isPending}
-                    className="bg-medical-green hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <Check className="w-4 h-4 mr-2" />
                     {updateUltrasoundExamMutation.isPending ? "Saving..." : "Save Report"}
