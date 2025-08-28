@@ -8,6 +8,7 @@ import Laboratory from "@/pages/Laboratory";
 import XRay from "@/pages/XRay";
 import Ultrasound from "@/pages/Ultrasound";
 import Reports from "@/pages/Reports";
+import AllResults from "@/pages/AllResults";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
@@ -31,6 +32,7 @@ function App() {
             <Route path="/xray" component={XRay} />
             <Route path="/ultrasound" component={Ultrasound} />
             <Route path="/reports" component={Reports} />
+            <Route path="/all-results" component={AllResults} />
             <Route component={NotFound} />
           </Switch>
         </main>
