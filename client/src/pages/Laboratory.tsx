@@ -1329,7 +1329,9 @@ export default function Laboratory() {
                       <div><strong>Name:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</div>
                       <div><strong>Patient ID:</strong> {selectedPatient.patientId}</div>
                       <div><strong>Phone:</strong> {selectedPatient.phoneNumber}</div>
-                      <div><strong>Date of Birth:</strong> {selectedPatient.dateOfBirth}</div>
+                      <div><strong>Age:</strong> {selectedPatient.dateOfBirth ? 
+                        `${new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} years` : 
+                        'Not provided'}</div>
                     </div>
                   </div>
 

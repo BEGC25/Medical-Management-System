@@ -241,7 +241,7 @@ export default function AllResults() {
             View Details
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" id="lab-result-detail">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {getTypeIcon(result.type)}
@@ -266,7 +266,9 @@ export default function AllResults() {
                   <span className="font-medium">Patient ID:</span> {patient?.patientId}
                 </div>
                 <div>
-                  <span className="font-medium">Date of Birth:</span> {patient?.dateOfBirth || 'Not provided'}
+                  <span className="font-medium">Age:</span> {patient?.dateOfBirth ? 
+                    `${new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} years` : 
+                    'Not provided'}
                 </div>
                 <div>
                   <span className="font-medium">Gender:</span> {patient?.gender || 'Not provided'}
@@ -417,6 +419,205 @@ export default function AllResults() {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Print Button for Lab Reports */}
+            {result.type === 'lab' && result.status === 'completed' && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-blue-800 dark:text-blue-200">Print Laboratory Report</h4>
+                    <p className="text-sm text-blue-600 dark:text-blue-300">Generate a printable medical report for patient records</p>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      // Create printable content
+                      const printContent = `
+                        <html>
+                          <head>
+                            <title>Laboratory Report - ${result.testId}</title>
+                            <style>
+                              body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.4; }
+                              .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
+                              .clinic-name { font-size: 24px; font-weight: bold; color: #2563eb; }
+                              .clinic-subtitle { color: #666; margin-top: 5px; }
+                              .section { margin-bottom: 25px; }
+                              .section-title { font-size: 18px; font-weight: bold; color: #2563eb; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 15px; }
+                              .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                              .info-item { margin-bottom: 8px; }
+                              .test-section { border: 1px solid #e5e5e5; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+                              .test-title { font-size: 16px; font-weight: bold; color: #2563eb; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+                              .result-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+                              .abnormal { color: #dc2626; font-weight: bold; }
+                              .normal { color: #16a34a; }
+                              .critical-findings { background-color: #fef2f2; border: 2px solid #dc2626; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                              .critical-title { color: #dc2626; font-weight: bold; margin-bottom: 10px; font-size: 16px; }
+                              .finding { color: #991b1b; margin-bottom: 8px; font-weight: 500; }
+                              .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; }
+                              @media print { body { margin: 0; } }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="header">
+                              <div class="clinic-name">BAHR EL GHAZAL CLINIC</div>
+                              <div class="clinic-subtitle">Your Health, Our Priority</div>
+                              <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                                Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                              </div>
+                              <div style="font-size: 18px; font-weight: bold; color: #16a34a; margin-top: 15px;">
+                                LABORATORY REPORT
+                              </div>
+                            </div>
+                            
+                            <div class="section">
+                              <div class="section-title">Patient Information</div>
+                              <div class="info-grid">
+                                <div class="info-item"><strong>Name:</strong> ${patient?.firstName} ${patient?.lastName}</div>
+                                <div class="info-item"><strong>Patient ID:</strong> ${patient?.patientId}</div>
+                                <div class="info-item"><strong>Age:</strong> ${patient?.dateOfBirth ? 
+                                  `${new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} years` : 
+                                  'Not provided'}</div>
+                                <div class="info-item"><strong>Gender:</strong> ${patient?.gender || 'Not provided'}</div>
+                              </div>
+                            </div>
+                            
+                            <div class="section">
+                              <div class="section-title">Test Information</div>
+                              <div class="info-grid">
+                                <div class="info-item"><strong>Test ID:</strong> ${result.testId}</div>
+                                <div class="info-item"><strong>Category:</strong> ${result.category}</div>
+                                <div class="info-item"><strong>Requested:</strong> ${format(new Date(result.requestedDate + 'T14:47:00'), 'MMM dd, yyyy')}</div>
+                                <div class="info-item"><strong>Completed:</strong> ${result.completedDate ? format(new Date(result.completedDate + 'T19:00:00'), 'MMM dd, yyyy') : 'N/A'}</div>
+                              </div>
+                              <div style="margin-top: 15px;">
+                                <strong>Tests Performed:</strong>
+                                <ul style="margin-top: 5px; margin-left: 20px;">
+                                  ${JSON.parse(result.tests || "[]").map((test: string) => `<li>${test}</li>`).join('')}
+                                </ul>
+                              </div>
+                            </div>
+                            
+                            ${(() => {
+                              try {
+                                const parsed = JSON.parse(result.results);
+                                const findings = [];
+                                
+                                // Check for malaria
+                                if (parsed['Blood Film for Malaria (BFFM)']) {
+                                  const malaria = parsed['Blood Film for Malaria (BFFM)'];
+                                  if (malaria['Malaria Parasites']?.includes('P. falciparum')) {
+                                    findings.push('🚨 POSITIVE for Plasmodium falciparum malaria - Requires immediate treatment');
+                                  }
+                                  if (malaria['Gametocytes']?.includes('Seen')) {
+                                    findings.push('⚠️ Gametocytes present - Patient is infectious');
+                                  }
+                                }
+                                
+                                // Check for typhoid
+                                if (parsed['Widal Test (Typhoid)']) {
+                                  const widal = parsed['Widal Test (Typhoid)'];
+                                  if (widal['S. Typhi (O)Ag']?.includes('1:160') || widal['S. Typhi (H)Ag']?.includes('1:160')) {
+                                    findings.push('⚠️ Elevated typhoid titers - Consider typhoid fever');
+                                  }
+                                }
+                                
+                                // Check urine analysis
+                                if (parsed['Urine Analysis']) {
+                                  const urine = parsed['Urine Analysis'];
+                                  if (urine['Appearance']?.includes('Turbid')) {
+                                    findings.push('⚠️ Turbid urine - Possible infection');
+                                  }
+                                  if (urine['Protein']?.includes('+')) {
+                                    findings.push('⚠️ Proteinuria detected - Kidney function needs assessment');
+                                  }
+                                  if (urine['Glucose']?.includes('+')) {
+                                    findings.push('⚠️ Glucosuria - Check blood glucose levels');
+                                  }
+                                }
+                                
+                                // Check Hepatitis B
+                                if (parsed['Hepatitis B Test (HBsAg)']) {
+                                  const hepB = parsed['Hepatitis B Test (HBsAg)'];
+                                  if (hepB['HBsAg']?.includes('Positive')) {
+                                    findings.push('🚨 Hepatitis B positive - Requires specialist consultation and monitoring');
+                                  }
+                                }
+                                
+                                if (findings.length > 0) {
+                                  return `
+                                    <div class="critical-findings">
+                                      <div class="critical-title">CRITICAL FINDINGS REQUIRING ATTENTION</div>
+                                      ${findings.map(finding => `<div class="finding">${finding}</div>`).join('')}
+                                    </div>
+                                  `;
+                                }
+                                return '';
+                              } catch (e) {
+                                return '';
+                              }
+                            })()}
+                            
+                            <div class="section">
+                              <div class="section-title">Laboratory Results</div>
+                              ${(() => {
+                                try {
+                                  const parsed = JSON.parse(result.results);
+                                  return Object.entries(parsed).map(([testName, testData]: [string, any]) => `
+                                    <div class="test-section">
+                                      <div class="test-title">${testName}</div>
+                                      ${Object.entries(testData).map(([field, value]: [string, any]) => `
+                                        <div class="result-row">
+                                          <span>${field}:</span>
+                                          <span class="${
+                                            (value as string).includes('+') || (value as string).includes('P. falciparum') || 
+                                            (value as string).includes('Positive') || (value as string).includes('Seen') || 
+                                            (value as string).includes('Turbid') || (value as string).includes('1:160')
+                                              ? 'abnormal' : 'normal'
+                                          }">${value}</span>
+                                        </div>
+                                      `).join('')}
+                                    </div>
+                                  `).join('');
+                                } catch (e) {
+                                  return `<div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">Results: ${result.results}</div>`;
+                                }
+                              })()}
+                            </div>
+                            
+                            <div class="footer">
+                              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                                <div>
+                                  <div>Lab Technician: _________________________</div>
+                                  <div style="margin-top: 10px;">Date: _________________________</div>
+                                </div>
+                                <div>
+                                  <div>Reviewed by Doctor: _________________________</div>
+                                  <div style="margin-top: 10px;">Date: _________________________</div>
+                                </div>
+                              </div>
+                              <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666;">
+                                Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+                              </div>
+                            </div>
+                          </body>
+                        </html>
+                      `;
+                      
+                      const printWindow = window.open('', '_blank');
+                      if (printWindow) {
+                        printWindow.document.write(printContent);
+                        printWindow.document.close();
+                        printWindow.focus();
+                        setTimeout(() => printWindow.print(), 500);
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print Report
+                  </Button>
+                </div>
               </div>
             )}
 
