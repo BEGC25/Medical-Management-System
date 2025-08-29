@@ -115,6 +115,7 @@ router.get("/api/lab-tests", async (req, res) => {
     const labTests = await storage.getLabTests(status);
     res.json(labTests);
   } catch (error) {
+    console.error("Error fetching lab tests:", error);
     res.status(500).json({ error: "Failed to fetch lab tests" });
   }
 });
@@ -130,10 +131,14 @@ router.get("/api/patients/:patientId/lab-tests", async (req, res) => {
 
 router.post("/api/lab-tests", async (req, res) => {
   try {
+    console.log("Creating lab test with data:", req.body);
     const data = insertLabTestSchema.parse(req.body);
+    console.log("Parsed data:", data);
     const labTest = await storage.createLabTest(data);
+    console.log("Created lab test:", labTest);
     res.status(201).json(labTest);
   } catch (error) {
+    console.error("Error creating lab test:", error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: "Invalid lab test data", details: error.errors });
     }
