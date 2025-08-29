@@ -305,6 +305,72 @@ export default function AllResults() {
                   </div>
                 </div>
 
+                {/* Clinical Summary & Interpretation */}
+                {result.status === 'completed' && result.results && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                    <h4 className="font-medium mb-2 text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Clinical Interpretation
+                    </h4>
+                    <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                      {(() => {
+                        try {
+                          const parsed = JSON.parse(result.results);
+                          const findings = [];
+                          
+                          // Check for malaria
+                          if (parsed['Blood Film for Malaria (BFFM)']) {
+                            const malaria = parsed['Blood Film for Malaria (BFFM)'];
+                            if (malaria['Malaria Parasites']?.includes('P. falciparum')) {
+                              findings.push('🚨 POSITIVE for Plasmodium falciparum malaria - Requires immediate treatment');
+                            }
+                            if (malaria['Gametocytes']?.includes('Seen')) {
+                              findings.push('⚠️ Gametocytes present - Patient is infectious');
+                            }
+                          }
+                          
+                          // Check for typhoid
+                          if (parsed['Widal Test (Typhoid)']) {
+                            const widal = parsed['Widal Test (Typhoid)'];
+                            if (widal['S. Typhi (O)Ag']?.includes('1:160') || widal['S. Typhi (H)Ag']?.includes('1:160')) {
+                              findings.push('⚠️ Elevated typhoid titers - Consider typhoid fever');
+                            }
+                          }
+                          
+                          // Check urine analysis
+                          if (parsed['Urine Analysis']) {
+                            const urine = parsed['Urine Analysis'];
+                            if (urine['Appearance']?.includes('Turbid')) {
+                              findings.push('⚠️ Turbid urine - Possible infection');
+                            }
+                            if (urine['Protein']?.includes('+')) {
+                              findings.push('⚠️ Proteinuria detected - Kidney function needs assessment');
+                            }
+                            if (urine['Glucose']?.includes('+')) {
+                              findings.push('⚠️ Glucosuria - Check blood glucose levels');
+                            }
+                          }
+                          
+                          if (findings.length === 0) {
+                            return <span className="text-green-700 dark:text-green-300">✓ No significant abnormal findings detected</span>;
+                          }
+                          
+                          return (
+                            <div className="space-y-2">
+                              <div className="font-medium text-red-700 dark:text-red-300">Critical Findings Requiring Attention:</div>
+                              {findings.map((finding, index) => (
+                                <div key={index} className="text-sm bg-white dark:bg-gray-800 p-2 rounded border-l-4 border-red-500">{finding}</div>
+                              ))}
+                            </div>
+                          );
+                        } catch (e) {
+                          return <span className="text-gray-600 dark:text-gray-400">Results available - Please review detailed findings below</span>;
+                        }
+                      })()}
+                    </div>
+                  </div>
+                )}
+
                 {/* Lab Results */}
                 {result.status === 'completed' && (
                   <div>
