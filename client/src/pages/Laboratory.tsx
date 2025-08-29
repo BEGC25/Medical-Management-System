@@ -747,8 +747,46 @@ export default function Laboratory() {
     }
     setDetailedResults(loadedDetailedResults);
     
+    // Create a readable summary from JSON results for the textarea
+    let readableSummary = "";
+    if (labTest.results) {
+      try {
+        const parsed = JSON.parse(labTest.results);
+        const summaryParts = [];
+        
+        Object.entries(parsed).forEach(([testName, testData]: [string, any]) => {
+          const abnormalFindings = [];
+          Object.entries(testData).forEach(([field, value]: [string, any]) => {
+            // Only include abnormal findings in summary
+            if (value && (
+              (value as string).includes('+') || 
+              (value as string).includes('P. falciparum') ||
+              (value as string).includes('Positive') ||
+              (value as string).includes('Seen') ||
+              (value as string).includes('Turbid') ||
+              (value as string).includes('Bloody') ||
+              (value as string).includes('1:160') ||
+              (value as string).includes('1:320') ||
+              (parseInt(value as string) > 20 && field === 'Pus Cells') ||
+              (parseInt(value as string) > 5 && field === 'RBC')
+            )) {
+              abnormalFindings.push(`${field}: ${value}`);
+            }
+          });
+          
+          if (abnormalFindings.length > 0) {
+            summaryParts.push(`${testName}: ${abnormalFindings.join(', ')}`);
+          }
+        });
+        
+        readableSummary = summaryParts.length > 0 ? summaryParts.join('\n\n') : "All results within normal limits";
+      } catch (e) {
+        readableSummary = labTest.results;
+      }
+    }
+
     resultsForm.reset({
-      results: labTest.results || "",
+      results: readableSummary,
       normalValues: labTest.normalValues || "",
       resultStatus: labTest.resultStatus || "normal",
       completedDate: labTest.completedDate || new Date().toISOString().split('T')[0],
