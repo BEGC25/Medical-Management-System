@@ -298,6 +298,11 @@ export default function XRay() {
     select: (data: XrayExam[]) => data.filter(exam => exam.status === 'pending'),
   });
 
+  const { data: completedXrays = [] } = useQuery({
+    queryKey: ["/api/xray-exams"],
+    select: (data: XrayExam[]) => data.filter(exam => exam.status === 'completed'),
+  });
+
   const createXrayExamMutation = useMutation({
     mutationFn: async (data: InsertXrayExam) => {
       const response = await apiRequest("POST", "/api/xray-exams", data);
@@ -686,11 +691,57 @@ export default function XRay() {
             </div>
           </div>
 
+          {/* Completed X-Rays - For Review and Edit */}
+          <div className="mb-6">
+            <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Completed X-Ray Reports (Click to Edit)</h3>
+            <div className="space-y-2">
+              {completedXrays?.map((xray: XrayExam) => (
+                <div 
+                  key={xray.id}
+                  className="border border-green-200 dark:border-green-700 rounded-lg p-3 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer"
+                  onClick={() => handleXrayExamSelect(xray)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-800 dark:text-gray-200">
+                        Patient ID: {xray.patientId} - {xray.examType.charAt(0).toUpperCase() + xray.examType.slice(1)} X-Ray
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Requested: {xray.requestedDate} | Completed: {xray.reportDate}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        ID: {xray.examId}
+                      </p>
+                      {xray.bodyPart && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Area: {xray.bodyPart}
+                        </p>
+                      )}
+                    </div>
+                    <Badge className="bg-green-600 text-white">
+                      <Check className="w-3 h-3 mr-1" />
+                      Completed
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+              
+              {!completedXrays?.length && (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                  No completed X-ray reports
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Report Entry Form */}
           {selectedXrayExam && (
             <div>
               <h3 className="font-medium text-gray-800 mb-4 dark:text-gray-200">
                 X-Ray Report - {selectedXrayExam.examId}
+                {selectedXrayExam.status === 'completed' && (
+                  <Badge className="ml-2 bg-blue-600 text-white">Editing Completed Report</Badge>
+                )}
               </h3>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
                 <div>
