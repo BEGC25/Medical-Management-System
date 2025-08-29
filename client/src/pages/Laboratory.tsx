@@ -524,13 +524,22 @@ export default function Laboratory() {
   const onSubmitResults = (data: any) => {
     if (!selectedLabTest) return;
     
+    // This is the FINAL save that marks the entire test as completed
     updateLabTestMutation.mutate({
       testId: selectedLabTest.testId,
       data: {
         ...data,
-        detailedResults: JSON.stringify(detailedResults),
+        results: JSON.stringify(detailedResults),
         status: "completed",
       },
+    });
+    
+    // Close the form after final save
+    setSelectedLabTest(null);
+    
+    toast({
+      title: "Test Completed",
+      description: "All results saved and test marked as completed",
     });
   };
 
@@ -547,12 +556,13 @@ export default function Laboratory() {
   const saveTestCategoryResults = (testName: string) => {
     if (!selectedLabTest) return;
     
-    // Save just this test category's results
+    // Save just this test category's results WITHOUT marking as completed
     updateLabTestMutation.mutate({
       testId: selectedLabTest.testId,
       data: {
         results: JSON.stringify(detailedResults),
-        status: "completed",
+        // Keep status as pending so user can continue entering other test results
+        status: selectedLabTest.status,
       },
     });
     
@@ -1152,10 +1162,10 @@ export default function Laboratory() {
                   <Button 
                     type="submit" 
                     disabled={updateLabTestMutation.isPending}
-                    className="bg-health-green hover:bg-green-700"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <Check className="w-4 h-4 mr-2" />
-                    {updateLabTestMutation.isPending ? "Saving..." : "Save Results"}
+                    {updateLabTestMutation.isPending ? "Saving..." : "Complete & Finalize All Results"}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => printLabReport()}>
                     <Printer className="w-4 h-4 mr-2" />
