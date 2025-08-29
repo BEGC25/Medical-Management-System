@@ -408,14 +408,12 @@ export default function Laboratory() {
     },
   });
 
-  const { data: pendingTests } = useQuery({
-    queryKey: ["/api/lab-tests", "pending"],
+  const { data: allLabTests = [] } = useQuery<LabTest[]>({
+    queryKey: ["/api/lab-tests"],
   });
 
-  const { data: completedTests = [] } = useQuery({
-    queryKey: ["/api/lab-tests"],
-    select: (data: LabTest[]) => data.filter(test => test.status === 'completed'),
-  });
+  const pendingTests = allLabTests.filter(test => test.status === 'pending');
+  const completedTests = allLabTests.filter(test => test.status === 'completed');
 
   const createLabTestMutation = useMutation({
     mutationFn: async (data: InsertLabTest) => {
@@ -463,14 +461,9 @@ export default function Laboratory() {
       return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Lab test results saved successfully",
-      });
-      resultsForm.reset();
-      setSelectedLabTest(null);
       queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      // Don't show toast or reset here for individual saves
     },
     onError: (error: any) => {
       if (!navigator.onLine) {
