@@ -747,98 +747,25 @@ export default function Laboratory() {
     }
     setDetailedResults(loadedDetailedResults);
     
-    // Create a professional clinical summary from JSON results for the textarea
+    // Create a clean technical summary of test results for lab technicians
     let readableSummary = "";
     if (labTest.results) {
       try {
         const parsed = JSON.parse(labTest.results);
-        const clinicalFindings = [];
+        const resultSummary = [];
         
-        // Check for critical infectious diseases
-        if (parsed['Blood Film for Malaria (BFFM)']) {
-          const malaria = parsed['Blood Film for Malaria (BFFM)'];
-          if (malaria['Malaria Parasites']?.includes('P. falciparum')) {
-            clinicalFindings.push("CRITICAL: Plasmodium falciparum malaria detected - immediate antimalarial therapy required");
-          }
-          if (malaria['Gametocytes']?.includes('Seen')) {
-            clinicalFindings.push("Patient infectious with malaria gametocytes - isolation precautions advised");
-          }
-        }
-        
-        // Check for bacterial infections
-        if (parsed['Widal Test (Typhoid)']) {
-          const widal = parsed['Widal Test (Typhoid)'];
-          if (widal['S. Typhi (O)Ag']?.includes('1:160') || widal['S. Typhi (H)Ag']?.includes('1:160')) {
-            clinicalFindings.push("Elevated typhoid titers detected - consider enteric fever, recommend antibiotic sensitivity testing");
-          }
-        }
-        
-        if (parsed['Brucella Test (B.A.T)']) {
-          const brucella = parsed['Brucella Test (B.A.T)'];
-          if (brucella['B. Abortus']?.includes('1:160') || brucella['B. Malitensis']?.includes('1:160')) {
-            clinicalFindings.push("CRITICAL: Brucellosis confirmed - prolonged antibiotic therapy required, contact tracing recommended");
-          }
-        }
-        
-        // Check urogenital findings
-        if (parsed['Urine Analysis']) {
-          const urine = parsed['Urine Analysis'];
-          const urineIssues = [];
+        Object.entries(parsed).forEach(([testName, testData]: [string, any]) => {
+          const results = [];
+          Object.entries(testData).forEach(([field, value]: [string, any]) => {
+            results.push(`${field}: ${value}`);
+          });
           
-          if (urine['Appearance']?.includes('Bloody')) {
-            urineIssues.push("gross hematuria");
+          if (results.length > 0) {
+            resultSummary.push(`${testName}\n${results.join(', ')}`);
           }
-          if (urine['Protein']?.includes('+++')) {
-            urineIssues.push("severe proteinuria (possible nephritis)");
-          }
-          if (urine['Glucose']?.includes('+++')) {
-            urineIssues.push("severe glucosuria (diabetes mellitus likely)");
-          }
-          if (urine['Leucocytes']?.includes('++')) {
-            urineIssues.push("significant pyuria");
-          }
-          
-          if (urineIssues.length > 0) {
-            clinicalFindings.push(`Urinalysis reveals: ${urineIssues.join(', ')} - comprehensive metabolic panel and nephrology consultation recommended`);
-          }
-        }
+        });
         
-        if (parsed['Urine Microscopy']) {
-          const microscopy = parsed['Urine Microscopy'];
-          if (microscopy['Trichomonas']?.includes('Seen')) {
-            clinicalFindings.push("Trichomonas vaginalis identified - sexually transmitted infection requiring partner treatment");
-          }
-          if (microscopy['Casts']?.includes('Cellular') || microscopy['Casts']?.includes('Granular')) {
-            clinicalFindings.push("Pathological urinary casts present - evidence of acute kidney injury or chronic kidney disease");
-          }
-        }
-        
-        // Check for parasitic infections
-        if (parsed['Stool Examination']) {
-          const stool = parsed['Stool Examination'];
-          const parasites = [];
-          
-          if (stool['Ova/Cyst']?.includes('Ascaris')) {
-            parasites.push("Ascaris lumbricoides (roundworm)");
-          }
-          if (stool['Trophozoites']?.includes('E. histolytica')) {
-            parasites.push("Entamoeba histolytica (amoebic dysentery)");
-          }
-          
-          if (parasites.length > 0) {
-            clinicalFindings.push(`Intestinal parasites detected: ${parasites.join(', ')} - antiparasitic treatment required`);
-          }
-          
-          if (stool['Appearance']?.includes('Bloody')) {
-            clinicalFindings.push("Gross blood in stool - urgent gastroenterology evaluation for inflammatory bowel disease or infection");
-          }
-        }
-        
-        if (clinicalFindings.length === 0) {
-          readableSummary = "IMPRESSION: Laboratory values within normal limits. No significant pathological findings detected. Continue routine clinical monitoring as indicated.";
-        } else {
-          readableSummary = `CLINICAL SUMMARY:\n\n${clinicalFindings.map((finding, index) => `${index + 1}. ${finding}`).join('\n\n')}\n\nRECOMMENDATION: Immediate physician review required for treatment planning and patient management.`;
-        }
+        readableSummary = resultSummary.length > 0 ? resultSummary.join('\n\n') : "No test results recorded";
       } catch (e) {
         readableSummary = labTest.results;
       }
