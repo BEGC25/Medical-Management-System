@@ -183,6 +183,53 @@ export default function AllResults() {
     }
   };
 
+  // Professional lab results formatter
+  const formatLabResults = (results: string) => {
+    if (!results) return null;
+    
+    try {
+      const parsed = JSON.parse(results);
+      
+      return (
+        <div className="space-y-4">
+          {Object.entries(parsed).map(([testName, testData]: [string, any]) => (
+            <div key={testName} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+              <h5 className="font-semibold text-lg mb-3 text-blue-700 dark:text-blue-300 border-b border-blue-200 dark:border-blue-700 pb-2">
+                {testName}
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Object.entries(testData).map(([field, value]: [string, any]) => (
+                  <div key={field} className="flex justify-between items-center py-1">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">
+                      {field}:
+                    </span>
+                    <span className={`font-mono text-right ${
+                      // Highlight abnormal values
+                      (value as string).includes('+') || (value as string).includes('P. falciparum') || 
+                      (value as string).includes('Positive') || (value as string).includes('Seen') || 
+                      (value as string).includes('Turbid') || (value as string).includes('1:160')
+                        ? 'text-red-600 dark:text-red-400 font-bold' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {value as string}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    } catch (e) {
+      // Fallback for non-JSON results
+      return (
+        <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border">
+          <pre className="whitespace-pre-wrap text-sm font-mono">{results}</pre>
+        </div>
+      );
+    }
+  };
+
   const renderResultDetails = (result: any) => {
     const patient = result.patient;
     
@@ -261,12 +308,8 @@ export default function AllResults() {
                 {/* Lab Results */}
                 {result.status === 'completed' && (
                   <div>
-                    <h4 className="font-medium mb-2">Results</h4>
-                    {result.results && (
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border-l-4 border-blue-500">
-                        <pre className="whitespace-pre-wrap text-sm">{result.results}</pre>
-                      </div>
-                    )}
+                    <h4 className="font-medium mb-4 text-lg">Laboratory Results</h4>
+                    {result.results && formatLabResults(result.results)}
                     {result.normalValues && (
                       <div className="mt-2">
                         <span className="font-medium text-sm">Normal Values:</span>
