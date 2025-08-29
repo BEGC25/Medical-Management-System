@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -374,7 +374,7 @@ const resultFields = {
   },
   "Blood Film for Malaria (BFFM)": {
     "Malaria Parasites": {
-      type: "select",
+      type: "multiselect",
       options: ["Not seen", "P. falciparum", "P. vivax", "P. malariae", "P. ovale"],
       normal: "Not seen"
     },
@@ -571,9 +571,34 @@ export default function Laboratory() {
   const { data: allLabTests = [] } = useQuery<LabTest[]>({
     queryKey: ["/api/lab-tests"],
   });
+  
+  const { data: patientsQuery = [] } = useQuery<Patient[]>({
+    queryKey: ["/api/patients"],
+  });
 
   const pendingTests = allLabTests.filter(test => test.status === 'pending');
   const completedTests = allLabTests.filter(test => test.status === 'completed');
+  
+  // Check for follow-up parameters in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientId = urlParams.get('patientId');
+    const isFollowUp = urlParams.get('followUp') === 'true';
+    
+    if (patientId && isFollowUp && patientsQuery.length > 0) {
+      const patient = patientsQuery.find((p: Patient) => p.patientId === patientId);
+      if (patient) {
+        setSelectedPatient(patient);
+        toast({
+          title: "Follow-up Test Ordering",
+          description: `Patient ${patient.firstName} ${patient.lastName} (${patientId}) has been pre-selected for follow-up testing.`,
+          duration: 5000,
+        });
+        // Clear URL parameters
+        window.history.replaceState({}, '', '/laboratory');
+      }
+    }
+  }, [patientsQuery, toast]);
 
   const createLabTestMutation = useMutation({
     mutationFn: async (data: InsertLabTest) => {
@@ -752,10 +777,10 @@ export default function Laboratory() {
     if (labTest.results) {
       try {
         const parsed = JSON.parse(labTest.results);
-        const resultSummary = [];
+        const resultSummary: string[] = [];
         
         Object.entries(parsed).forEach(([testName, testData]: [string, any]) => {
-          const results = [];
+          const results: string[] = [];
           Object.entries(testData).forEach(([field, value]: [string, any]) => {
             results.push(`${field}: ${value}`);
           });
@@ -1189,7 +1214,51 @@ export default function Laboratory() {
                                 )}
                               </label>
                               
-                              {config.type === "select" ? (
+                              {config.type === "multiselect" ? (
+                                <div className="space-y-2">
+                                  {config.options?.map((option: string) => {
+                                    const currentValue = detailedResults[orderedTest]?.[fieldName] || "";
+                                    const selectedOptions = currentValue.split(", ").filter(Boolean);
+                                    const isSelected = selectedOptions.includes(option);
+                                    
+                                    return (
+                                      <div key={option} className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id={`${orderedTest}-${fieldName}-${option}`}
+                                          checked={isSelected}
+                                          onChange={(e) => {
+                                            let newSelections;
+                                            if (e.target.checked) {
+                                              if (option === "Not seen") {
+                                                // If "Not seen" is selected, clear all other selections
+                                                newSelections = ["Not seen"];
+                                              } else {
+                                                // Remove "Not seen" if other options are selected
+                                                newSelections = selectedOptions.filter(s => s !== "Not seen");
+                                                newSelections.push(option);
+                                              }
+                                            } else {
+                                              newSelections = selectedOptions.filter(s => s !== option);
+                                              if (newSelections.length === 0) {
+                                                newSelections = ["Not seen"]; // Default back to "Not seen"
+                                              }
+                                            }
+                                            updateDetailedResult(orderedTest, fieldName, newSelections.join(", "));
+                                          }}
+                                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <label 
+                                          htmlFor={`${orderedTest}-${fieldName}-${option}`}
+                                          className={`text-sm cursor-pointer ${option === config.normal ? "text-green-600 font-medium" : ""}`}
+                                        >
+                                          {option === config.normal && "✓ "}{option}
+                                        </label>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : config.type === "select" ? (
                                 <Select
                                   value={detailedResults[orderedTest]?.[fieldName] || ""}
                                   onValueChange={(value) => updateDetailedResult(orderedTest, fieldName, value)}

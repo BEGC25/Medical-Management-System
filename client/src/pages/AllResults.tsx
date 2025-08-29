@@ -20,7 +20,8 @@ import {
   Clock,
   Download,
   Eye,
-  Printer
+  Printer,
+  Plus
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -478,6 +479,32 @@ export default function AllResults() {
                     )}
                   </div>
                 )}
+                
+                {/* Follow-up Test Ordering for Doctors */}
+                <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h5 className="font-medium text-orange-800 dark:text-orange-200 flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Order Follow-up Tests
+                      </h5>
+                      <p className="text-sm text-orange-600 dark:text-orange-300 mt-1">
+                        Based on these findings, order additional tests for this patient
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        // Navigate to Laboratory page with pre-filled patient data
+                        window.location.href = `/laboratory?patientId=${result.patientId}&followUp=true`;
+                      }}
+                      size="sm" 
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Order Tests
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
 
