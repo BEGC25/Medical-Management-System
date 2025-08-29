@@ -761,7 +761,7 @@ export default function Laboratory() {
           });
           
           if (results.length > 0) {
-            resultSummary.push(`${testName}\n${results.join(', ')}`);
+            resultSummary.push(`◆ ${testName.toUpperCase()}\n   ${results.join('\n   ')}`);
           }
         });
         
