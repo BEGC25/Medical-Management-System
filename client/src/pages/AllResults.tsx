@@ -19,7 +19,8 @@ import {
   CheckCircle,
   Clock,
   Download,
-  Eye
+  Eye,
+  Printer
 } from "lucide-react";
 import { format } from "date-fns";
 
