@@ -61,7 +61,7 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
         </div>
       )}
 
-      {shouldSearch && patients && patients.length > 0 && (
+      {(filterToday || shouldSearch) && patients && patients.length > 0 && (
         <div>
           <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Search Results</h3>
           <div className="overflow-x-auto">
@@ -140,9 +140,9 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
         </div>
       )}
 
-      {shouldSearch && patients && patients.length === 0 && (
+      {(filterToday || shouldSearch) && patients && patients.length === 0 && (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          No patients found matching your search.
+          {filterToday ? "No patients registered today." : "No patients found matching your search."}
         </div>
       )}
     </div>

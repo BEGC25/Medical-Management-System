@@ -32,6 +32,17 @@ export default function Patients() {
     }
   }, []);
 
+  // Update URL when filter changes
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (filterToday) {
+      url.searchParams.set('filter', 'today');
+    } else {
+      url.searchParams.delete('filter');
+    }
+    window.history.replaceState({}, '', url.toString());
+  }, [filterToday]);
+
   const form = useForm<InsertPatient>({
     resolver: zodResolver(insertPatientSchema),
     defaultValues: {
