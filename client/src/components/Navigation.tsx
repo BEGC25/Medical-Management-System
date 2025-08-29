@@ -34,8 +34,8 @@ export default function Navigation() {
             
             return (
               <Link key={item.path} href={item.path}>
-                <a className={`
-                  flex items-center py-4 px-2 border-b-2 font-medium whitespace-nowrap transition-colors
+                <div className={`
+                  flex items-center py-4 px-2 border-b-2 font-medium whitespace-nowrap transition-colors cursor-pointer
                   ${isActive 
                     ? 'border-medical-blue text-medical-blue' 
                     : 'border-transparent text-gray-600 hover:text-medical-blue dark:text-gray-300 dark:hover:text-blue-400'
@@ -43,7 +43,7 @@ export default function Navigation() {
                 `}>
                   <Icon className="w-4 h-4 mr-2" />
                   {item.label}
-                </a>
+                </div>
               </Link>
             );
           })}

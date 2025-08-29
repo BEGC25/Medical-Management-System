@@ -551,7 +551,7 @@ export default function Laboratory() {
     updateLabTestMutation.mutate({
       testId: selectedLabTest.testId,
       data: {
-        detailedResults: JSON.stringify(detailedResults),
+        results: JSON.stringify(detailedResults),
         status: "completed",
       },
     });
@@ -575,9 +575,9 @@ export default function Laboratory() {
     
     // Load detailed results if they exist
     let loadedDetailedResults = {};
-    if (labTest.detailedResults) {
+    if (labTest.results) {
       try {
-        loadedDetailedResults = JSON.parse(labTest.detailedResults);
+        loadedDetailedResults = JSON.parse(labTest.results);
       } catch (e) {
         console.error("Error parsing detailed results:", e);
       }
@@ -845,7 +845,7 @@ export default function Laboratory() {
                           Patient ID: {test.patientId} - {tests.join(", ")}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Requested: {test.requestedDate} | Completed: {test.reportDate}
+                          Requested: {test.requestedDate} | Completed: {test.completedDate}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           ID: {test.testId}
@@ -1002,7 +1002,7 @@ export default function Laboratory() {
                                     <SelectValue placeholder="Select value..." />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {config.options?.map((option) => (
+                                    {config.options?.map((option: string) => (
                                       <SelectItem 
                                         key={option} 
                                         value={option}

@@ -251,7 +251,7 @@ router.get("/api/dashboard/stats", async (req, res) => {
     res.json(stats);
   } catch (error) {
     console.error("Dashboard stats route error:", error);
-    res.status(500).json({ error: "Failed to fetch dashboard stats", details: error.message });
+    res.status(500).json({ error: "Failed to fetch dashboard stats", details: error instanceof Error ? error.message : "Unknown error" });
   }
 });
 
@@ -262,7 +262,7 @@ router.get("/api/dashboard/recent-patients", async (req, res) => {
     res.json(patients);
   } catch (error) {
     console.error("Recent patients error:", error);
-    res.status(500).json({ error: "Failed to fetch recent patients", details: error.message });
+    res.status(500).json({ error: "Failed to fetch recent patients", details: error instanceof Error ? error.message : "Unknown error" });
   }
 });
 
