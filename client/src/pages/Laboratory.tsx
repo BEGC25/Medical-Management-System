@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock, Camera, FileImage, Save } from "lucide-react";
+import { Send, Printer, Check, Clock, Camera, FileImage, Save, AlertCircle } from "lucide-react";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,129 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
 // Simple test categories for doctors to order
+// Professional lab results formatter
+const formatLabResults = (results: string) => {
+  if (!results) return null;
+  
+  try {
+    const parsed = JSON.parse(results);
+    
+    return (
+      <div className="space-y-4">
+        {Object.entries(parsed).map(([testName, testData]: [string, any]) => (
+          <div key={testName} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+            <h5 className="font-semibold text-lg mb-3 text-blue-700 dark:text-blue-300 border-b border-blue-200 dark:border-blue-700 pb-2">
+              {testName}
+            </h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(testData).map(([field, value]: [string, any]) => (
+                <div key={field} className="flex justify-between items-center py-1">
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">
+                    {field}:
+                  </span>
+                  <span className={`font-mono text-right ${
+                    // Highlight abnormal values
+                    (value as string).includes('+') || (value as string).includes('P. falciparum') || 
+                    (value as string).includes('Positive') || (value as string).includes('Seen') || 
+                    (value as string).includes('Turbid') || (value as string).includes('1:160') ||
+                    (value as string).includes('Bloody') || (value as string).includes('F. histolytica') ||
+                    (value as string).includes('G. lamblia')
+                      ? 'text-red-600 dark:text-red-400 font-bold' 
+                      : 'text-green-600 dark:text-green-400'
+                  }`}>
+                    {value as string}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  } catch (e) {
+    // Fallback for non-JSON results
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border">
+        <pre className="whitespace-pre-wrap text-sm font-mono">{results}</pre>
+      </div>
+    );
+  }
+};
+
+// Clinical interpretation function
+const getClinicalInterpretation = (results: string) => {
+  if (!results) return null;
+  
+  try {
+    const parsed = JSON.parse(results);
+    const findings = [];
+    
+    // Check for malaria
+    if (parsed['Blood Film for Malaria (BFFM)']) {
+      const malaria = parsed['Blood Film for Malaria (BFFM)'];
+      if (malaria['Malaria Parasites']?.includes('P. falciparum')) {
+        findings.push('🚨 POSITIVE for Plasmodium falciparum malaria - Requires immediate treatment');
+      }
+      if (malaria['Gametocytes']?.includes('Seen')) {
+        findings.push('⚠️ Gametocytes present - Patient is infectious');
+      }
+    }
+    
+    // Check for typhoid
+    if (parsed['Widal Test (Typhoid)']) {
+      const widal = parsed['Widal Test (Typhoid)'];
+      if (widal['S. Typhi (O)Ag']?.includes('1:160') || widal['S. Typhi (H)Ag']?.includes('1:160')) {
+        findings.push('⚠️ Elevated typhoid titers - Consider typhoid fever');
+      }
+    }
+    
+    // Check urine analysis
+    if (parsed['Urine Analysis']) {
+      const urine = parsed['Urine Analysis'];
+      if (urine['Appearance']?.includes('Turbid')) {
+        findings.push('⚠️ Turbid urine - Possible infection');
+      }
+      if (urine['Protein']?.includes('+')) {
+        findings.push('⚠️ Proteinuria detected - Kidney function needs assessment');
+      }
+      if (urine['Glucose']?.includes('+')) {
+        findings.push('⚠️ Glucosuria - Check blood glucose levels');
+      }
+    }
+    
+    // Check stool examination
+    if (parsed['Stool Examination']) {
+      const stool = parsed['Stool Examination'];
+      if (stool['Ova/Cyst']?.includes('F. histolytica') || stool['Trophozoites']?.includes('G. lamblia')) {
+        findings.push('⚠️ Parasites detected in stool - Requires antiparasitic treatment');
+      }
+      if (stool['Appearance']?.includes('Bloody')) {
+        findings.push('⚠️ Blood in stool - Requires further investigation');
+      }
+    }
+    
+    // Check H. Pylori
+    if (parsed['H. Pylori Test']) {
+      const hPylori = parsed['H. Pylori Test'];
+      if (hPylori['H. Pylori Antigen']?.includes('Positive')) {
+        findings.push('⚠️ H. Pylori positive - Consider treatment for gastric ulcers');
+      }
+    }
+    
+    // Check Hepatitis B
+    if (parsed['Hepatitis B Test (HBsAg)']) {
+      const hepB = parsed['Hepatitis B Test (HBsAg)'];
+      if (hepB['HBsAg']?.includes('Positive')) {
+        findings.push('🚨 Hepatitis B positive - Requires specialist consultation and monitoring');
+      }
+    }
+    
+    return findings;
+  } catch (e) {
+    return [];
+  }
+};
+
 const commonTests = {
   hematology: [
     "Blood Film for Malaria (BFFM)",
@@ -1303,9 +1426,24 @@ export default function Laboratory() {
                     </ul>
                   </div>
 
+                  {/* Clinical Interpretation */}
+                  {resultsForm.watch("results") && (() => {
+                    const findings = getClinicalInterpretation(resultsForm.watch("results"));
+                    return findings && findings.length > 0 ? (
+                      <div className="avoid-break mb-6">
+                        <h3 className="text-lg font-semibold mb-3 border-b border-red-200 pb-1 text-red-700">Critical Clinical Findings</h3>
+                        <div className="bg-red-50 border border-red-200 p-4 rounded">
+                          {findings.map((finding, index) => (
+                            <div key={index} className="text-sm text-red-800 mb-1 font-medium">{finding}</div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+
                   {/* Results */}
                   <div className="avoid-break mb-6">
-                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Results</h3>
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Laboratory Results</h3>
                     <div className="text-sm space-y-4">
                       {/* Detailed Test Results */}
                       {JSON.parse(selectedLabTest.tests || "[]").map((orderedTest: string) => {
@@ -1338,9 +1476,9 @@ export default function Laboratory() {
                       
                       {resultsForm.watch("results") && (
                         <div>
-                          <strong>Additional Summary:</strong>
-                          <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
-                            {resultsForm.watch("results")}
+                          <strong>Laboratory Results:</strong>
+                          <div className="mt-2">
+                            {formatLabResults(resultsForm.watch("results"))}
                           </div>
                         </div>
                       )}
