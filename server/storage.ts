@@ -219,6 +219,10 @@ export interface IStorage {
   }>;
 
   getRecentPatients(limit?: number): Promise<(Patient & { lastVisit?: string; status: string })[]>;
+  
+  // Today filters
+  getTodaysPatients(): Promise<Patient[]>;
+  getTodaysTreatments(): Promise<Treatment[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -532,6 +536,29 @@ export class MemStorage implements IStorage {
       console.error("getRecentPatients error:", error);
       throw error;
     }
+  }
+  // Today filter methods
+  async getTodaysPatients(): Promise<Patient[]> {
+    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+    
+    return await db.select().from(patients)
+      .where(
+        and(
+          // Check if created today
+          eq(patients.createdAt, today) // This might need adjustment based on how dates are stored
+        )
+      )
+      .orderBy(desc(patients.createdAt));
+  }
+  
+  async getTodaysTreatments(): Promise<Treatment[]> {
+    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+    
+    return await db.select().from(treatments)
+      .where(
+        eq(treatments.visitDate, today)
+      )
+      .orderBy(desc(treatments.createdAt));
   }
 }
 

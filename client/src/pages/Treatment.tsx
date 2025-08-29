@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save, FileText, Printer } from "lucide-react";
+import { Save, FileText, Printer, Filter, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,24 @@ export default function Treatment() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescription, setShowPrescription] = useState(false);
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
+  const [filterToday, setFilterToday] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Check for filter parameter in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const filter = urlParams.get('filter');
+    if (filter === 'today') {
+      setFilterToday(true);
+    }
+  }, []);
+
+  // Query for today's treatments if filtering
+  const { data: todaysTreatments } = useQuery({
+    queryKey: ["/api/treatments", "today"],
+    enabled: filterToday,
+  });
 
   const form = useForm<InsertTreatment>({
     resolver: zodResolver(insertTreatmentSchema),
@@ -224,12 +240,73 @@ export default function Treatment() {
 
   return (
     <div className="space-y-6">
-      <Card className="print:hidden">
-        <CardHeader>
-          <CardTitle>Treatment Records</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Patient Selection */}
+      {/* Today's Treatments List (when filtering) */}
+      {filterToday && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span>Today's Treatment Visits</span>
+                <Badge className="bg-blue-600 text-white">
+                  <Filter className="w-3 h-3 mr-1" />
+                  Today Only
+                </Badge>
+              </div>
+              <Button 
+                variant="outline"
+                onClick={() => setFilterToday(false)}
+              >
+                Back to New Treatment
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {todaysTreatments && todaysTreatments.length > 0 ? (
+                todaysTreatments.map((treatment: any) => (
+                  <div key={treatment.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-800 dark:text-gray-200">
+                          Patient: {treatment.patientId} | Visit: {treatment.treatmentId}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Type: {treatment.visitType} | Priority: {treatment.priority}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Chief Complaint: {treatment.chiefComplaint}
+                        </p>
+                        {treatment.diagnosis && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Diagnosis: {treatment.diagnosis}
+                          </p>
+                        )}
+                      </div>
+                      <Badge className="bg-green-600 text-white">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {treatment.visitDate}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                  No treatment visits recorded today
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Treatment Entry Form */}
+      {!filterToday && (
+        <Card className="print:hidden">
+          <CardHeader>
+            <CardTitle>Treatment Records</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Patient Selection */}
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-6">
             <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Select Patient</h3>
             
@@ -575,7 +652,8 @@ export default function Treatment() {
             </Form>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
       {/* Prescription Modal */}
       {showPrescription && selectedPatient && (

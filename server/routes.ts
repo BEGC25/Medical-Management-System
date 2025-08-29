@@ -13,8 +13,16 @@ const router = express.Router();
 router.get("/api/patients", async (req, res) => {
   try {
     const search = req.query.search as string;
-    const patients = await storage.getPatients(search);
-    res.json(patients);
+    const today = req.query.today;
+    
+    if (today === 'true' || search === 'today') {
+      // Get today's patients (registered today)
+      const patients = await storage.getTodaysPatients();
+      res.json(patients);
+    } else {
+      const patients = await storage.getPatients(search);
+      res.json(patients);
+    }
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch patients" });
   }
@@ -62,8 +70,16 @@ router.put("/api/patients/:patientId", async (req, res) => {
 router.get("/api/treatments", async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const treatments = await storage.getTreatments(limit);
-    res.json(treatments);
+    const today = req.query.today;
+    
+    if (today === 'true' || req.path.includes('today')) {
+      // Get today's treatments
+      const treatments = await storage.getTodaysTreatments();
+      res.json(treatments);
+    } else {
+      const treatments = await storage.getTreatments(limit);
+      res.json(treatments);
+    }
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch treatments" });
   }

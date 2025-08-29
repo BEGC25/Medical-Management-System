@@ -106,13 +106,13 @@ export default function Dashboard() {
           <CardContent className="space-y-4">
             {stats ? (
               <>
-                <Link href="/patients">
+                <Link href="/patients?filter=today">
                   <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
                     <span className="text-gray-600 dark:text-gray-400">New Patients</span>
                     <span className="font-semibold text-medical-blue">{stats.newPatients}</span>
                   </div>
                 </Link>
-                <Link href="/treatment">
+                <Link href="/treatment?filter=today">
                   <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
                     <span className="text-gray-600 dark:text-gray-400">Total Visits</span>
                     <span className="font-semibold text-health-green">{stats.totalVisits}</span>

@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Save, X, Printer } from "lucide-react";
+import { UserPlus, Save, X, Printer, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
 import { insertPatientSchema, type InsertPatient, type Patient } from "@shared/schema";
@@ -18,8 +19,18 @@ import { addToPendingSync } from "@/lib/offline";
 export default function Patients() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [filterToday, setFilterToday] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Check for filter parameter in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const filter = urlParams.get('filter');
+    if (filter === 'today') {
+      setFilterToday(true);
+    }
+  }, []);
 
   const form = useForm<InsertPatient>({
     resolver: zodResolver(insertPatientSchema),
@@ -147,20 +158,41 @@ export default function Patients() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            Patient Search & Registration
-            <Button 
-              onClick={() => setShowRegistrationForm(true)}
-              className="bg-health-green hover:bg-green-700"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              New Patient
-            </Button>
+            {filterToday ? (
+              <div className="flex items-center gap-2">
+                <span>Today's New Patients</span>
+                <Badge className="bg-blue-600 text-white">
+                  <Filter className="w-3 h-3 mr-1" />
+                  Today Only
+                </Badge>
+              </div>
+            ) : (
+              "Patient Search & Registration"
+            )}
+            <div className="flex gap-2">
+              {filterToday && (
+                <Button 
+                  variant="outline"
+                  onClick={() => setFilterToday(false)}
+                >
+                  Show All Patients
+                </Button>
+              )}
+              <Button 
+                onClick={() => setShowRegistrationForm(true)}
+                className="bg-health-green hover:bg-green-700"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                New Patient
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <PatientSearch 
             onEditPatient={handleEditPatient}
             onViewPatient={handleViewPatient}
+            filterToday={filterToday}
           />
         </CardContent>
       </Card>

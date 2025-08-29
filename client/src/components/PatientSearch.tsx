@@ -11,15 +11,16 @@ interface PatientSearchProps {
   onEditPatient?: (patient: Patient) => void;
   onViewPatient?: (patient: Patient) => void;
   showActions?: boolean;
+  filterToday?: boolean;
 }
 
-export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPatient, showActions = true }: PatientSearchProps) {
+export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPatient, showActions = true, filterToday = false }: PatientSearchProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [shouldSearch, setShouldSearch] = useState(false);
+  const [shouldSearch, setShouldSearch] = useState(filterToday); // Auto search if filtering today
 
   const { data: patients, isLoading } = useQuery({
-    queryKey: ["/api/patients", searchTerm],
-    enabled: shouldSearch && searchTerm.length > 0,
+    queryKey: filterToday ? ["/api/patients", "today"] : ["/api/patients", searchTerm],
+    enabled: filterToday || (shouldSearch && searchTerm.length > 0),
   });
 
   const handleSearch = () => {
