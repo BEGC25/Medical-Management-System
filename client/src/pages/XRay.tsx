@@ -293,8 +293,9 @@ export default function XRay() {
     },
   });
 
-  const { data: pendingXrays } = useQuery({
-    queryKey: ["/api/xray-exams", "pending"],
+  const { data: pendingXrays = [] } = useQuery({
+    queryKey: ["/api/xray-exams"],
+    select: (data: XrayExam[]) => data.filter(exam => exam.status === 'pending'),
   });
 
   const createXrayExamMutation = useMutation({
