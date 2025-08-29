@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock, Camera, FileImage } from "lucide-react";
+import { Send, Printer, Check, Clock, Camera, FileImage, Save } from "lucide-react";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -382,6 +382,7 @@ export default function Laboratory() {
   const [currentCategory, setCurrentCategory] = useState<keyof typeof commonTests>("hematology");
   const [showLabRequest, setShowLabRequest] = useState(false);
   const [showLabReport, setShowLabReport] = useState(false);
+  const [detailedResults, setDetailedResults] = useState<Record<string, Record<string, string>>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -527,8 +528,37 @@ export default function Laboratory() {
       testId: selectedLabTest.testId,
       data: {
         ...data,
+        detailedResults: JSON.stringify(detailedResults),
         status: "completed",
       },
+    });
+  };
+
+  const updateDetailedResult = (testName: string, fieldName: string, value: string) => {
+    setDetailedResults(prev => ({
+      ...prev,
+      [testName]: {
+        ...prev[testName],
+        [fieldName]: value
+      }
+    }));
+  };
+
+  const saveTestCategoryResults = (testName: string) => {
+    if (!selectedLabTest) return;
+    
+    // Save just this test category's results
+    updateLabTestMutation.mutate({
+      testId: selectedLabTest.testId,
+      data: {
+        detailedResults: JSON.stringify(detailedResults),
+        status: "completed",
+      },
+    });
+    
+    toast({
+      title: "Saved",
+      description: `Results for ${testName} saved successfully`,
     });
   };
 
@@ -542,6 +572,18 @@ export default function Laboratory() {
 
   const handleLabTestSelect = (labTest: LabTest) => {
     setSelectedLabTest(labTest);
+    
+    // Load detailed results if they exist
+    let loadedDetailedResults = {};
+    if (labTest.detailedResults) {
+      try {
+        loadedDetailedResults = JSON.parse(labTest.detailedResults);
+      } catch (e) {
+        console.error("Error parsing detailed results:", e);
+      }
+    }
+    setDetailedResults(loadedDetailedResults);
+    
     resultsForm.reset({
       results: labTest.results || "",
       normalValues: labTest.normalValues || "",
@@ -952,7 +994,10 @@ export default function Laboratory() {
                               </label>
                               
                               {config.type === "select" ? (
-                                <Select>
+                                <Select
+                                  value={detailedResults[orderedTest]?.[fieldName] || ""}
+                                  onValueChange={(value) => updateDetailedResult(orderedTest, fieldName, value)}
+                                >
                                   <SelectTrigger className="text-sm">
                                     <SelectValue placeholder="Select value..." />
                                   </SelectTrigger>
@@ -970,7 +1015,9 @@ export default function Laboratory() {
                                 </Select>
                               ) : (
                                 <div className="relative">
-                                  <Input 
+                                  <Input
+                                    value={detailedResults[orderedTest]?.[fieldName] || ""}
+                                    onChange={(e) => updateDetailedResult(orderedTest, fieldName, e.target.value)} 
                                     type={config.type}
                                     placeholder={config.type === "number" ? "Enter value..." : "Enter result..."}
                                     className="text-sm pr-12"
@@ -992,24 +1039,44 @@ export default function Laboratory() {
                           ))}
                         </div>
                         
-                        {/* Quick action buttons for common results */}
+                        {/* Quick action buttons and save for this test category */}
                         <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 justify-between">
+                            <div className="flex gap-2">
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  // Set all fields to normal values for this test
+                                  Object.entries(fields).forEach(([fieldName, config]) => {
+                                    if (config.normal) {
+                                      updateDetailedResult(orderedTest, fieldName, config.normal);
+                                    }
+                                  });
+                                }}
+                                className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300"
+                              >
+                                ✓ All Normal
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                className="text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300"
+                              >
+                                📋 Copy Previous
+                              </Button>
+                            </div>
                             <Button 
                               type="button" 
-                              variant="outline" 
+                              onClick={() => saveTestCategoryResults(orderedTest)}
                               size="sm"
-                              className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300"
+                              className="bg-health-green hover:bg-green-700 text-white"
+                              disabled={updateLabTestMutation.isPending}
                             >
-                              ✓ All Normal
-                            </Button>
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="sm"
-                              className="text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300"
-                            >
-                              📋 Copy Previous
+                              <Save className="w-3 h-3 mr-1" />
+                              {updateLabTestMutation.isPending ? "Saving..." : "Save"}
                             </Button>
                           </div>
                         </div>
@@ -1250,7 +1317,13 @@ export default function Laboratory() {
                                 <div key={fieldName} className="flex justify-between py-1 border-b border-gray-100">
                                   <span>{fieldName}:</span>
                                   <span className="font-medium">
-                                    {config.normal && <span className="text-green-600">{config.normal}</span>}
+                                    {detailedResults[orderedTest]?.[fieldName] || (
+                                      config.normal ? (
+                                        <span className="text-green-600">{config.normal}</span>
+                                      ) : (
+                                        <span className="text-gray-400">Not entered</span>
+                                      )
+                                    )}
                                     {config.unit && <span className="text-gray-500 ml-1">{config.unit}</span>}
                                   </span>
                                 </div>

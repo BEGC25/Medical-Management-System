@@ -48,6 +48,7 @@ export const labTests = sqliteTable("lab_tests", {
   requestedDate: text("requested_date").notNull(),
   status: text("status").$type<"pending" | "completed" | "cancelled">().notNull(),
   results: text("results"),
+  detailedResults: text("detailed_results"), // JSON object storing individual field results
   normalValues: text("normal_values"),
   resultStatus: text("result_status").$type<"normal" | "abnormal" | "critical">(),
   completedDate: text("completed_date"),
