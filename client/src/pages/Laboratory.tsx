@@ -1237,12 +1237,37 @@ export default function Laboratory() {
                   <div className="avoid-break mb-6">
                     <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Results</h3>
                     <div className="text-sm space-y-4">
-                      <div>
-                        <strong>Test Results:</strong>
-                        <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
-                          {resultsForm.watch("results")}
+                      {/* Detailed Test Results */}
+                      {JSON.parse(selectedLabTest.tests || "[]").map((orderedTest: string) => {
+                        const fields = resultFields[orderedTest as keyof typeof resultFields];
+                        if (!fields) return null;
+                        
+                        return (
+                          <div key={orderedTest} className="mb-4">
+                            <strong>{orderedTest}:</strong>
+                            <div className="mt-2 ml-4 text-sm">
+                              {Object.entries(fields).map(([fieldName, config]) => (
+                                <div key={fieldName} className="flex justify-between py-1 border-b border-gray-100">
+                                  <span>{fieldName}:</span>
+                                  <span className="font-medium">
+                                    {config.normal && <span className="text-green-600">{config.normal}</span>}
+                                    {config.unit && <span className="text-gray-500 ml-1">{config.unit}</span>}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      {resultsForm.watch("results") && (
+                        <div>
+                          <strong>Additional Summary:</strong>
+                          <div className="mt-2 p-3 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap">
+                            {resultsForm.watch("results")}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       
                       {resultsForm.watch("normalValues") && (
                         <div>
