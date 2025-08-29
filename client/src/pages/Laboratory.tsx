@@ -18,85 +18,102 @@ import { insertLabTestSchema, type InsertLabTest, type Patient, type LabTest } f
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
+// Simple test categories for doctors to order
 const commonTests = {
   hematology: [
-    "BFFM (Blood Film for Malaria)",
-    "HB (g/dl) / HB%",
-    "TWBC (Total White Blood Count)",
-    "CBC (Complete Blood Count)",
-    "RBS (Random Blood Sugar) / FBS (Fasting Blood Sugar)",
-    "ABO/Rh B. Group",
+    "Blood Film for Malaria (BFFM)",
+    "Complete Blood Count (CBC)",
+    "Hemoglobin (HB)",
+    "Total White Blood Count (TWBC)", 
+    "Blood Sugar (RBS/FBS)",
+    "Blood Group & Rh",
     "ESR (Erythrocyte Sedimentation Rate)",
-    "Rheumatoid Factor",
-    "Skin Snip For Filariasis",
-    "Wet Mount For Filariasis"
+    "Rheumatoid Factor"
   ],
   serology: [
-    "WIDAL TEST: S. Typhi (O)Ag",
-    "WIDAL TEST: S. Typhi (H)Ag",
-    "B.A.T: B. Abortus",
-    "B.A.T: B. Malitensis",
-    "VDRL",
-    "H. PYLORI",
-    "HBsAg (Hepatitis B Surface Antigen)",
-    "HCV (Hepatitis C Virus)",
-    "HCG (Human Chorionic Gonadotropin)",
-    "RCT (P24)",
-    "Gonorrhea",
-    "Chlamydia",
-    "Toxoplasma"
+    "Widal Test (Typhoid)",
+    "Brucella Test (B.A.T)",
+    "VDRL (Syphilis)",
+    "H. Pylori Test",
+    "Hepatitis B Test (HBsAg)",
+    "Hepatitis C Test (HCV)",
+    "Pregnancy Test (HCG)",
+    "HIV Test (RCT P24)"
   ],
   urine: [
-    "Urine Analysis - App (Appearance)",
-    "Urine Analysis - Protein", 
-    "Urine Analysis - Glucose",
-    "Urine Analysis - Acetone",
-    "Urine Analysis - Hb pigment",
-    "Urine Analysis - Urobilinogen",
-    "Urine Analysis - Leucocytes",
-    "Urine Analysis - Nitrite",
-    "Urine Analysis - PH",
-    "Urine Analysis - Sp.G (Specific Gravity)",
-    "Urine Analysis - Bilirubin",
-    "Urine Microscopy - Pus Cells",
-    "Urine Microscopy - RBC", 
-    "Urine Microscopy - Casts",
-    "Urine Microscopy - Crystals",
-    "Urine Microscopy - Epithelial cells",
-    "Urine Microscopy - Yeast cells",
-    "Urine Microscopy - Trichomonas",
-    "Urine Microscopy - Ova"
+    "Urine Analysis",
+    "Urine Microscopy"
   ],
   parasitology: [
-    "Stool Examination - App (Appearance)",
-    "Stool Examination - Consistency", 
-    "Stool Examination - Puss Cells",
-    "Stool Examination - RBC",
-    "Stool Examination - Ova/Cyst",
-    "Stool Examination - Trophozoites"
+    "Stool Examination"
   ],
   biochemistry: [
     "Renal Function Test (RFT)",
-    "Liver Function Test (LFT)", 
+    "Liver Function Test (LFT)",
     "Serum Cholesterol",
-    "Serum Electrolytes (Na,K,Cl)",
-    "Serum Urice Acid"
+    "Serum Electrolytes",
+    "Serum Uric Acid"
   ],
   hormones: [
-    "T3 (Triiodothyronine)",
-    "T4 (Thyroxine)", 
-    "TSH (Thyroid Stimulating Hormone)",
-    "FT3 (Free T3)",
-    "FT4 (Free T4)",
-    "LH (Luteinizing Hormone)",
-    "Progesterone",
-    "Testosterone", 
-    "FSH (Follicle Stimulating Hormone)",
-    "PSA (Prostate Specific Antigen)",
-    "Troponin I",
-    "CK-MB (Creatine Kinase)",
-    "B-HCG (Beta Human Chorionic Gonadotropin)",
-    "HbA1C (Glycated Hemoglobin)"
+    "Thyroid Function Test (T3, T4, TSH)",
+    "Diabetes Panel",
+    "Reproductive Hormones",
+    "Cardiac Enzymes"
+  ]
+};
+
+// Detailed result fields for lab technicians to fill during testing
+const resultFields = {
+  "Urine Analysis": [
+    "Appearance",
+    "Protein", 
+    "Glucose",
+    "Acetone",
+    "Hb pigment",
+    "Urobilinogen", 
+    "Leucocytes",
+    "Nitrite",
+    "PH",
+    "Specific Gravity",
+    "Bilirubin"
+  ],
+  "Urine Microscopy": [
+    "Pus Cells",
+    "RBC",
+    "Casts", 
+    "Crystals",
+    "Epithelial cells",
+    "Yeast cells",
+    "Trichomonas",
+    "Ova"
+  ],
+  "Stool Examination": [
+    "Appearance",
+    "Consistency",
+    "Puss Cells", 
+    "RBC",
+    "Ova/Cyst",
+    "Trophozoites"
+  ],
+  "Complete Blood Count (CBC)": [
+    "WBC Count",
+    "RBC Count",
+    "Hemoglobin",
+    "Hematocrit", 
+    "Platelets",
+    "Neutrophils",
+    "Lymphocytes",
+    "Monocytes"
+  ],
+  "Widal Test (Typhoid)": [
+    "S. Typhi (O)Ag",
+    "S. Typhi (H)Ag",
+    "Titer"
+  ],
+  "Brucella Test (B.A.T)": [
+    "B. Abortus",
+    "B. Malitensis",
+    "Titer"
   ]
 };
 
@@ -649,13 +666,41 @@ export default function Laboratory() {
               </div>
               
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
+                {/* Detailed Result Fields based on ordered tests */}
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Detailed Test Results
+                  </label>
+                  {JSON.parse(selectedLabTest.tests || "[]").map((orderedTest: string) => {
+                    const fields = resultFields[orderedTest as keyof typeof resultFields];
+                    if (!fields) return null;
+                    
+                    return (
+                      <div key={orderedTest} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                        <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3">{orderedTest}</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {fields.map((field) => (
+                            <div key={field} className="space-y-1">
+                              <label className="text-sm font-medium text-gray-600 dark:text-gray-400">{field}</label>
+                              <Input 
+                                placeholder="Enter value..."
+                                className="text-sm"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Test Results
+                    Overall Summary / Additional Results
                   </label>
                   <Textarea
-                    rows={6}
-                    placeholder="Enter detailed test results..."
+                    rows={4}
+                    placeholder="Enter overall summary or any additional findings not covered above..."
                     {...resultsForm.register("results")}
                   />
                 </div>
