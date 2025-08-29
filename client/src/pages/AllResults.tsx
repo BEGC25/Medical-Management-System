@@ -382,11 +382,17 @@ export default function AllResults() {
                           // Check stool examination
                           if (parsed['Stool Examination']) {
                             const stool = parsed['Stool Examination'];
-                            if (stool['Ova/Cyst']?.includes('F. histolytica') || stool['Trophozoites']?.includes('G. lamblia')) {
-                              findings.push('⚠️ Parasites detected in stool - Requires antiparasitic treatment');
+                            if (stool['Ova/Cyst']?.includes('Ascaris')) {
+                              findings.push('🚨 Ascaris worms detected - Requires immediate deworming treatment');
+                            }
+                            if (stool['Ova/Cyst']?.includes('F. histolytica') || stool['Trophozoites']?.includes('E. histolytica')) {
+                              findings.push('🚨 E. histolytica detected - Serious parasitic infection causing dysentery');
+                            }
+                            if (stool['Trophozoites']?.includes('G. lamblia')) {
+                              findings.push('⚠️ Giardia detected - Requires antiparasitic treatment');
                             }
                             if (stool['Appearance']?.includes('Bloody')) {
-                              findings.push('⚠️ Blood in stool - Requires further investigation');
+                              findings.push('🚨 Blood in stool - Serious gastrointestinal bleeding requires investigation');
                             }
                           }
 
@@ -603,14 +609,20 @@ export default function AllResults() {
                                 // Check urine microscopy
                                 if (parsed['Urine Microscopy']) {
                                   const microscopy = parsed['Urine Microscopy'];
-                                  if (microscopy['Casts']?.includes('Granular')) {
-                                    findings.push('⚠️ Granular casts present - Kidney damage or disease');
+                                  if (microscopy['Casts']?.includes('Granular') || microscopy['Casts']?.includes('Cellular')) {
+                                    findings.push('⚠️ Abnormal casts present - Kidney damage or disease');
                                   }
                                   if (microscopy['Trichomonas']?.includes('Seen')) {
                                     findings.push('🚨 Trichomonas infection - Sexually transmitted infection requires treatment');
                                   }
                                   if (microscopy['Epithelial cells']?.includes('Many')) {
                                     findings.push('⚠️ Many epithelial cells - Possible contamination or urogenital inflammation');
+                                  }
+                                  if (microscopy['Pus Cells'] && parseInt(microscopy['Pus Cells']) > 10) {
+                                    findings.push('🚨 High pus cells in urine - Severe urinary tract infection');
+                                  }
+                                  if (microscopy['RBC'] && parseInt(microscopy['RBC']) > 5) {
+                                    findings.push('🚨 Blood cells in urine - Hematuria requires investigation');
                                   }
                                 }
                                 
