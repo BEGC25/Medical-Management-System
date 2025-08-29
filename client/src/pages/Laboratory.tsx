@@ -211,6 +211,167 @@ const resultFields = {
       unit: "/μL", 
       normal: "150,000-450,000"
     }
+  },
+  "Blood Film for Malaria (BFFM)": {
+    "Malaria Parasites": {
+      type: "select",
+      options: ["Not seen", "P. falciparum", "P. vivax", "P. malariae", "P. ovale"],
+      normal: "Not seen"
+    },
+    "Parasite Density": {
+      type: "text",
+      unit: "/μL",
+      normal: "0"
+    },
+    "Gametocytes": {
+      type: "select",
+      options: ["Not seen", "Seen"],
+      normal: "Not seen"
+    }
+  },
+  "Widal Test (Typhoid)": {
+    "S. Typhi (O)Ag": {
+      type: "select",
+      options: ["Negative", "1:80", "1:160", "1:320", "1:640"],
+      normal: "Negative"
+    },
+    "S. Typhi (H)Ag": {
+      type: "select",
+      options: ["Negative", "1:80", "1:160", "1:320", "1:640"],
+      normal: "Negative"
+    },
+    "S. Paratyphi A": {
+      type: "select",
+      options: ["Negative", "1:80", "1:160", "1:320"],
+      normal: "Negative"
+    },
+    "S. Paratyphi B": {
+      type: "select",
+      options: ["Negative", "1:80", "1:160", "1:320"],
+      normal: "Negative"
+    }
+  },
+  "Brucella Test (B.A.T)": {
+    "B. Abortus": {
+      type: "select",
+      options: ["Negative", "1:80", "1:160", "1:320", "1:640"],
+      normal: "Negative"
+    },
+    "B. Malitensis": {
+      type: "select",
+      options: ["Negative", "1:80", "1:160", "1:320", "1:640"],
+      normal: "Negative"
+    }
+  },
+  "Hemoglobin (HB)": {
+    "Hemoglobin Level": {
+      type: "number",
+      unit: "g/dL",
+      normal: "14-18 (M), 12-16 (F)"
+    }
+  },
+  "Blood Sugar (RBS/FBS)": {
+    "Glucose Level": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "70-99 (Fasting), <140 (Random)"
+    }
+  },
+  "Renal Function Test (RFT)": {
+    "Urea": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "7-20"
+    },
+    "Creatinine": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "0.6-1.2 (M), 0.5-1.1 (F)"
+    },
+    "BUN": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "8-23"
+    }
+  },
+  "Liver Function Test (LFT)": {
+    "ALT (SGPT)": {
+      type: "number",
+      unit: "U/L",
+      normal: "7-56"
+    },
+    "AST (SGOT)": {
+      type: "number",
+      unit: "U/L",
+      normal: "10-40"
+    },
+    "Bilirubin Total": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "0.3-1.2"
+    },
+    "Alkaline Phosphatase": {
+      type: "number",
+      unit: "U/L",
+      normal: "44-147"
+    }
+  },
+  "Thyroid Function Test (T3, T4, TSH)": {
+    "T3": {
+      type: "number",
+      unit: "ng/mL",
+      normal: "0.8-2.0"
+    },
+    "T4": {
+      type: "number",
+      unit: "μg/dL",
+      normal: "5.1-14.1"
+    },
+    "TSH": {
+      type: "number",
+      unit: "mIU/L",
+      normal: "0.27-4.20"
+    }
+  },
+  "Diabetes Panel": {
+    "Fasting Glucose": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "70-99"
+    },
+    "HbA1c": {
+      type: "number",
+      unit: "%",
+      normal: "<5.7"
+    }
+  },
+  "H. Pylori Test": {
+    "H. Pylori Antigen": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    }
+  },
+  "Hepatitis B Test (HBsAg)": {
+    "HBsAg": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    }
+  },
+  "Hepatitis C Test (HCV)": {
+    "HCV Antibody": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    }
+  },
+  "Pregnancy Test (HCG)": {
+    "Beta HCG": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative (Non-pregnant)"
+    }
   }
 };
 
