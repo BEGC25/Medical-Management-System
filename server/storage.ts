@@ -543,10 +543,8 @@ export class MemStorage implements IStorage {
     
     return await db.select().from(patients)
       .where(
-        and(
-          // Check if created today
-          eq(patients.createdAt, today) // This might need adjustment based on how dates are stored
-        )
+        // Check if created today by comparing the date part of the timestamp
+        like(patients.createdAt, `${today}%`)
       )
       .orderBy(desc(patients.createdAt));
   }
@@ -556,7 +554,11 @@ export class MemStorage implements IStorage {
     
     return await db.select().from(treatments)
       .where(
-        eq(treatments.visitDate, today)
+        // Check if visit date is today (exact match) or created today
+        or(
+          eq(treatments.visitDate, today),
+          like(treatments.createdAt, `${today}%`)
+        )
       )
       .orderBy(desc(treatments.createdAt));
   }

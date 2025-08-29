@@ -24,6 +24,7 @@ router.get("/api/patients", async (req, res) => {
       res.json(patients);
     }
   } catch (error) {
+    console.error('Error in patients route:', error);
     res.status(500).json({ error: "Failed to fetch patients" });
   }
 });
