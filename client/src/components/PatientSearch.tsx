@@ -23,7 +23,7 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
     enabled: filterToday || (shouldSearch && searchTerm.length > 0),
     queryFn: filterToday 
       ? () => fetch('/api/patients?today=true').then(res => res.json())
-      : undefined,
+      : () => fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`).then(res => res.json()),
   });
 
   const handleSearch = () => {
