@@ -19,72 +19,84 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
 const commonTests = {
-  blood: [
-    "Complete Blood Count (CBC)",
-    "Blood Sugar (Random/Fasting)",
-    "Malaria Test (RDT/Microscopy)",
-    "HIV Test",
-    "Tuberculosis Test",
-    "Hepatitis B Test",
-    "Hepatitis C Test",
-    "Blood Group & Rh",
+  hematology: [
+    "BFFM (Blood Film for Malaria)",
+    "HB (g/dl) / HB%",
+    "TWBC (Total White Blood Count)",
+    "CBC (Complete Blood Count)",
+    "RBS (Random Blood Sugar) / FBS (Fasting Blood Sugar)",
+    "ABO/Rh B. Group",
     "ESR (Erythrocyte Sedimentation Rate)",
-    "Typhoid Test (Rapid)",
-    "Dengue Test",
-    "Yellow Fever Test"
+    "Rheumatoid Factor",
+    "Skin Snip For Filariasis",
+    "Wet Mount For Filariasis"
+  ],
+  serology: [
+    "WIDAL TEST: S. Typhi (O)Ag",
+    "WIDAL TEST: S. Typhi (H)Ag",
+    "B.A.T: B. Abortus",
+    "B.A.T: B. Malitensis",
+    "VDRL",
+    "H. PYLORI",
+    "HBsAg (Hepatitis B Surface Antigen)",
+    "HCV (Hepatitis C Virus)",
+    "HCG (Human Chorionic Gonadotropin)",
+    "RCT (P24)",
+    "Gonorrhea",
+    "Chlamydia",
+    "Toxoplasma"
   ],
   urine: [
-    "Urine Analysis",
-    "Urine Culture",
-    "24-Hour Urine Collection",
-    "Urine Protein",
-    "Urine Glucose"
+    "Urine Analysis - App (Appearance)",
+    "Urine Analysis - Protein", 
+    "Urine Analysis - Glucose",
+    "Urine Analysis - Acetone",
+    "Urine Analysis - Hb pigment",
+    "Urine Analysis - Urobilinogen",
+    "Urine Analysis - Leucocytes",
+    "Urine Analysis - Nitrite",
+    "Urine Analysis - PH",
+    "Urine Analysis - Sp.G (Specific Gravity)",
+    "Urine Analysis - Bilirubin",
+    "Urine Microscopy - Pus Cells",
+    "Urine Microscopy - RBC", 
+    "Urine Microscopy - Casts",
+    "Urine Microscopy - Crystals",
+    "Urine Microscopy - Epithelial cells",
+    "Urine Microscopy - Yeast cells",
+    "Urine Microscopy - Trichomonas",
+    "Urine Microscopy - Ova"
   ],
-  stool: [
-    "Stool Analysis",
-    "Stool Culture",
-    "Ova and Parasites",
-    "Occult Blood Test"
+  parasitology: [
+    "Stool Examination - App (Appearance)",
+    "Stool Examination - Consistency", 
+    "Stool Examination - Puss Cells",
+    "Stool Examination - RBC",
+    "Stool Examination - Ova/Cyst",
+    "Stool Examination - Trophozoites"
   ],
-  microbiology: [
-    "Blood Culture",
-    "Wound Culture",
-    "Throat Culture",
-    "Sputum Culture",
-    "Antibiotic Sensitivity",
-    "Widal Test (Typhoid)",
-    "H. pylori Test",
-    "Brucella Test",
-    "Stool Culture & Sensitivity",
-    "Urine Culture & Sensitivity"
+  biochemistry: [
+    "Renal Function Test (RFT)",
+    "Liver Function Test (LFT)", 
+    "Serum Cholesterol",
+    "Serum Electrolytes (Na,K,Cl)",
+    "Serum Urice Acid"
   ],
-  chemistry: [
-    "Liver Function Tests (LFT)",
-    "Kidney Function Tests (KFT)",
-    "Lipid Profile",
-    "Electrolyte Panel",
-    "Cardiac Enzymes",
-    "HbA1c (Glycated Hemoglobin)",
-    "Total Protein & Albumin",
-    "Bilirubin (Total & Direct)",
-    "Creatinine & BUN",
-    "Uric Acid"
-  ],
-  hormonal: [
-    "Thyroid Function (TSH, T3, T4)",
-    "Diabetes Panel (Insulin, C-peptide)",
-    "Pregnancy Hormones (hCG, Progesterone)",
-    "Reproductive Hormones (LH, FSH)",
-    "Adrenal Function (Cortisol)",
-    "Growth Hormone",
-    "Prolactin",
-    "Testosterone",
-    "Estradiol",
-    "Parathyroid Hormone (PTH)"
-  ],
-  other: [
-    "Custom Test",
-    "Special Request"
+  hormones: [
+    "T3 (Triiodothyronine)",
+    "T4 (Thyroxine)", 
+    "TSH (Thyroid Stimulating Hormone)",
+    "FT3 (Free T3)",
+    "FT4 (Free T4)",
+    "LH (Luteinizing Hormone)",
+    "Progesterone",
+    "Testosterone", 
+    "FSH (Follicle Stimulating Hormone)",
+    "PSA (Prostate Specific Antigen)",
+    "Troponin I",
+    "CK-MB (Creatine Kinase)",
+    "B-HCG (Beta Human Chorionic Gonadotropin)",
+    "HbA1C (Glycated Hemoglobin)"
   ]
 };
 
@@ -92,7 +104,7 @@ export default function Laboratory() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [selectedLabTest, setSelectedLabTest] = useState<LabTest | null>(null);
-  const [currentCategory, setCurrentCategory] = useState<keyof typeof commonTests>("blood");
+  const [currentCategory, setCurrentCategory] = useState<keyof typeof commonTests>("hematology");
   const [showLabRequest, setShowLabRequest] = useState(false);
   const [showLabReport, setShowLabReport] = useState(false);
   const { toast } = useToast();
@@ -102,7 +114,7 @@ export default function Laboratory() {
     resolver: zodResolver(insertLabTestSchema),
     defaultValues: {
       patientId: "",
-      category: "blood",
+      category: "hematology",
       tests: "",
       clinicalInfo: "",
       priority: "routine",
@@ -339,13 +351,12 @@ export default function Laboratory() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="blood">Blood Tests</SelectItem>
-                        <SelectItem value="urine">Urine Tests</SelectItem>
-                        <SelectItem value="stool">Stool Tests</SelectItem>
-                        <SelectItem value="microbiology">Microbiology</SelectItem>
-                        <SelectItem value="chemistry">Chemistry Panel</SelectItem>
-                        <SelectItem value="hormonal">Hormonal Tests</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="hematology">Hematology</SelectItem>
+                        <SelectItem value="serology">Serology</SelectItem>
+                        <SelectItem value="urine">Urine Analysis</SelectItem>
+                        <SelectItem value="parasitology">Parasitology</SelectItem>
+                        <SelectItem value="biochemistry">Biochemistry</SelectItem>
+                        <SelectItem value="hormones">Hormones</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
