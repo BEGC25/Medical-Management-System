@@ -778,6 +778,15 @@ export default function Laboratory() {
       completedDate: labTest.completedDate || new Date().toISOString().split('T')[0],
       technicianNotes: labTest.technicianNotes || "",
     });
+    
+    // Auto-resize textarea after setting the value
+    setTimeout(() => {
+      const textarea = document.querySelector('textarea[name="results"]') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.max(100, textarea.scrollHeight) + 'px';
+      }
+    }, 50);
   };
 
   const printLabRequest = () => {
@@ -1277,9 +1286,14 @@ export default function Laboratory() {
                     Overall Summary / Additional Results
                   </label>
                   <Textarea
-                    rows={4}
+                    className="min-h-[100px] resize-none overflow-hidden"
                     placeholder="Enter overall summary or any additional findings not covered above..."
                     {...resultsForm.register("results")}
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = 'auto';
+                      target.style.height = Math.max(100, target.scrollHeight) + 'px';
+                    }}
                   />
                 </div>
                 
