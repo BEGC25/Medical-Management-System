@@ -62,59 +62,156 @@ const commonTests = {
   ]
 };
 
-// Detailed result fields for lab technicians to fill during testing
+// Modern result fields with dropdown options and normal ranges
 const resultFields = {
-  "Urine Analysis": [
-    "Appearance",
-    "Protein", 
-    "Glucose",
-    "Acetone",
-    "Hb pigment",
-    "Urobilinogen", 
-    "Leucocytes",
-    "Nitrite",
-    "PH",
-    "Specific Gravity",
-    "Bilirubin"
-  ],
-  "Urine Microscopy": [
-    "Pus Cells",
-    "RBC",
-    "Casts", 
-    "Crystals",
-    "Epithelial cells",
-    "Yeast cells",
-    "Trichomonas",
-    "Ova"
-  ],
-  "Stool Examination": [
-    "Appearance",
-    "Consistency",
-    "Puss Cells", 
-    "RBC",
-    "Ova/Cyst",
-    "Trophozoites"
-  ],
-  "Complete Blood Count (CBC)": [
-    "WBC Count",
-    "RBC Count",
-    "Hemoglobin",
-    "Hematocrit", 
-    "Platelets",
-    "Neutrophils",
-    "Lymphocytes",
-    "Monocytes"
-  ],
-  "Widal Test (Typhoid)": [
-    "S. Typhi (O)Ag",
-    "S. Typhi (H)Ag",
-    "Titer"
-  ],
-  "Brucella Test (B.A.T)": [
-    "B. Abortus",
-    "B. Malitensis",
-    "Titer"
-  ]
+  "Urine Analysis": {
+    "Appearance": {
+      type: "select",
+      options: ["Clear", "Slightly Cloudy", "Cloudy", "Turbid", "Bloody"],
+      normal: "Clear"
+    },
+    "Protein": {
+      type: "select", 
+      options: ["Negative", "Trace", "+", "++", "+++", "++++"],
+      normal: "Negative"
+    },
+    "Glucose": {
+      type: "select",
+      options: ["Negative", "Trace", "+", "++", "+++", "++++"],
+      normal: "Negative"
+    },
+    "Acetone": {
+      type: "select",
+      options: ["Negative", "Trace", "+", "++", "+++"],
+      normal: "Negative"
+    },
+    "Hb pigment": {
+      type: "select",
+      options: ["Negative", "Trace", "+", "++", "+++"],
+      normal: "Negative"
+    },
+    "Leucocytes": {
+      type: "select",
+      options: ["Negative", "+", "++", "+++"],
+      normal: "Negative"
+    },
+    "Nitrite": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    },
+    "PH": {
+      type: "number",
+      range: "5.0-8.0",
+      normal: "6.0-7.5"
+    },
+    "Specific Gravity": {
+      type: "number",
+      range: "1.003-1.030",
+      normal: "1.010-1.025"
+    },
+    "Bilirubin": {
+      type: "select",
+      options: ["Negative", "+", "++", "+++"],
+      normal: "Negative"
+    }
+  },
+  "Urine Microscopy": {
+    "Pus Cells": {
+      type: "text",
+      unit: "/hpf",
+      normal: "0-5/hpf"
+    },
+    "RBC": {
+      type: "text", 
+      unit: "/hpf",
+      normal: "0-2/hpf"
+    },
+    "Casts": {
+      type: "select",
+      options: ["None seen", "Hyaline", "Granular", "Cellular", "Waxy"],
+      normal: "None seen"
+    },
+    "Crystals": {
+      type: "select",
+      options: ["None seen", "Uric acid", "Calcium oxalate", "Triple phosphate", "Amorphous"],
+      normal: "None seen"
+    },
+    "Epithelial cells": {
+      type: "select",
+      options: ["Few", "Moderate", "Many"],
+      normal: "Few"
+    },
+    "Yeast cells": {
+      type: "select",
+      options: ["None seen", "Few", "Moderate", "Many"],
+      normal: "None seen"
+    },
+    "Trichomonas": {
+      type: "select",
+      options: ["Not seen", "Seen"],
+      normal: "Not seen"
+    },
+    "Ova": {
+      type: "select",
+      options: ["None seen", "S. haematobium", "S. mansoni", "Other"],
+      normal: "None seen"
+    }
+  },
+  "Stool Examination": {
+    "Appearance": {
+      type: "select",
+      options: ["Normal", "Loose", "Watery", "Bloody", "Mucoid", "Fatty"],
+      normal: "Normal"
+    },
+    "Consistency": {
+      type: "select",
+      options: ["Formed", "Semi-formed", "Loose", "Watery"],
+      normal: "Formed"
+    },
+    "Puss Cells": {
+      type: "text",
+      unit: "/hpf",
+      normal: "0-2/hpf"
+    },
+    "RBC": {
+      type: "text",
+      unit: "/hpf", 
+      normal: "0-2/hpf"
+    },
+    "Ova/Cyst": {
+      type: "select",
+      options: ["None seen", "Ascaris", "Hookworm", "E. histolytica", "G. lamblia", "Other"],
+      normal: "None seen"
+    },
+    "Trophozoites": {
+      type: "select",
+      options: ["None seen", "E. histolytica", "G. lamblia", "Other"],
+      normal: "None seen"
+    }
+  },
+  "Complete Blood Count (CBC)": {
+    "WBC Count": {
+      type: "number",
+      unit: "/μL",
+      normal: "4,500-11,000"
+    },
+    "RBC Count": {
+      type: "number", 
+      unit: "million/μL",
+      normal: "4.5-5.5 (M), 4.0-5.0 (F)"
+    },
+    "Hemoglobin": {
+      type: "number",
+      unit: "g/dL",
+      normal: "14-18 (M), 12-16 (F)"
+    },
+    "Platelets": {
+      type: "number",
+      unit: "/μL", 
+      normal: "150,000-450,000"
+    }
+  }
 };
 
 export default function Laboratory() {
@@ -676,18 +773,84 @@ export default function Laboratory() {
                     if (!fields) return null;
                     
                     return (
-                      <div key={orderedTest} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                        <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3">{orderedTest}</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {fields.map((field) => (
-                            <div key={field} className="space-y-1">
-                              <label className="text-sm font-medium text-gray-600 dark:text-gray-400">{field}</label>
-                              <Input 
-                                placeholder="Enter value..."
-                                className="text-sm"
-                              />
+                      <div key={orderedTest} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                        <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                          {orderedTest}
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.entries(fields).map(([fieldName, config]) => (
+                            <div key={fieldName} className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                                {fieldName}
+                                {config.normal && (
+                                  <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">
+                                    Normal: {config.normal}
+                                  </span>
+                                )}
+                              </label>
+                              
+                              {config.type === "select" ? (
+                                <Select>
+                                  <SelectTrigger className="text-sm">
+                                    <SelectValue placeholder="Select value..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {config.options?.map((option) => (
+                                      <SelectItem 
+                                        key={option} 
+                                        value={option}
+                                        className={option === config.normal ? "bg-green-50 dark:bg-green-900/30" : ""}
+                                      >
+                                        {option === config.normal && "✓ "}{option}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <div className="relative">
+                                  <Input 
+                                    type={config.type}
+                                    placeholder={config.type === "number" ? "Enter value..." : "Enter result..."}
+                                    className="text-sm pr-12"
+                                  />
+                                  {config.unit && (
+                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                                      {config.unit}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {config.range && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  Range: {config.range}
+                                </p>
+                              )}
                             </div>
                           ))}
+                        </div>
+                        
+                        {/* Quick action buttons for common results */}
+                        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300"
+                            >
+                              ✓ All Normal
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              className="text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300"
+                            >
+                              📋 Copy Previous
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
