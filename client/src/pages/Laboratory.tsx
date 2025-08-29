@@ -95,17 +95,42 @@ const getClinicalInterpretation = (results: string) => {
       }
     }
     
+    // Check for Brucella
+    if (parsed['Brucella Test (B.A.T)']) {
+      const brucella = parsed['Brucella Test (B.A.T)'];
+      if (brucella['B. Abortus']?.includes('1:160') || brucella['B. Malitensis']?.includes('1:320')) {
+        findings.push('🚨 Brucella infection detected - Requires antibiotic treatment and contact tracing');
+      }
+    }
+    
     // Check urine analysis
     if (parsed['Urine Analysis']) {
       const urine = parsed['Urine Analysis'];
-      if (urine['Appearance']?.includes('Turbid')) {
-        findings.push('⚠️ Turbid urine - Possible infection');
+      if (urine['Appearance']?.includes('Turbid') || urine['Appearance']?.includes('Bloody')) {
+        findings.push('🚨 Abnormal urine appearance - Requires immediate evaluation');
       }
       if (urine['Protein']?.includes('+')) {
         findings.push('⚠️ Proteinuria detected - Kidney function needs assessment');
       }
       if (urine['Glucose']?.includes('+')) {
         findings.push('⚠️ Glucosuria - Check blood glucose levels');
+      }
+      if (urine['Leucocytes']?.includes('+')) {
+        findings.push('⚠️ Leucocytes in urine - Urinary tract infection likely');
+      }
+    }
+    
+    // Check urine microscopy
+    if (parsed['Urine Microscopy']) {
+      const microscopy = parsed['Urine Microscopy'];
+      if (microscopy['Casts']?.includes('Granular')) {
+        findings.push('⚠️ Granular casts present - Kidney damage or disease');
+      }
+      if (microscopy['Trichomonas']?.includes('Seen')) {
+        findings.push('🚨 Trichomonas infection - Sexually transmitted infection requires treatment');
+      }
+      if (microscopy['Epithelial cells']?.includes('Many')) {
+        findings.push('⚠️ Many epithelial cells - Possible contamination or urogenital inflammation');
       }
     }
     
