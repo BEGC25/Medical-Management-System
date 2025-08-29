@@ -184,7 +184,13 @@ export default function Patients() {
               {filterToday && (
                 <Button 
                   variant="outline"
-                  onClick={() => setFilterToday(false)}
+                  onClick={() => {
+                    setFilterToday(false);
+                    // Update URL to remove filter
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('filter');
+                    window.history.replaceState({}, '', url.toString());
+                  }}
                 >
                   Show All Patients
                 </Button>

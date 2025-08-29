@@ -19,8 +19,11 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
   const [shouldSearch, setShouldSearch] = useState(filterToday); // Auto search if filtering today
 
   const { data: patients, isLoading } = useQuery({
-    queryKey: filterToday ? ["/api/patients", "today"] : ["/api/patients", searchTerm],
+    queryKey: filterToday ? ["/api/patients", { today: "true" }] : ["/api/patients", searchTerm],
     enabled: filterToday || (shouldSearch && searchTerm.length > 0),
+    queryFn: filterToday 
+      ? () => fetch('/api/patients?today=true').then(res => res.json())
+      : undefined,
   });
 
   const handleSearch = () => {
@@ -73,6 +76,7 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Age</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Contact</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Gender</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Registered</th>
                   {showActions && (
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
                   )}
@@ -102,6 +106,9 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
                             {patient.gender}
                           </Badge>
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {new Date(patient.createdAt).toLocaleDateString()}
                       </td>
                       {showActions && (
                         <td className="px-4 py-3 text-sm">
