@@ -457,7 +457,7 @@ export default function Laboratory() {
                     <Select onValueChange={(value) => {
                       field.onChange(value);
                       setCurrentCategory(value as keyof typeof commonTests);
-                      setSelectedTests([]); // Clear selected tests when category changes
+                      // Keep selected tests when switching categories to allow multi-category selection
                     }} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
