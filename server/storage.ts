@@ -9,20 +9,82 @@ export const db = drizzle(sqlite);
 
 // Initialize tables if they don't exist
 try {
-  sqlite.exec(`CREATE TABLE IF NOT EXISTS patients (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    patient_id TEXT UNIQUE NOT NULL,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    date_of_birth TEXT,
-    gender TEXT,
-    phone_number TEXT,
-    village TEXT,
-    emergency_contact TEXT,
-    allergies TEXT,
-    medical_history TEXT,
-    created_at TEXT NOT NULL
-  )`);
+  // First check if we need to migrate the patients table
+  const tables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='patients'").all();
+  
+  if (tables.length > 0) {
+    // Table exists, check if it has the old date_of_birth column
+    const columns = sqlite.prepare("PRAGMA table_info(patients)").all();
+    const hasDateOfBirth = columns.some((col: any) => col.name === 'date_of_birth');
+    const hasAge = columns.some((col: any) => col.name === 'age');
+    
+    if (hasDateOfBirth && !hasAge) {
+      // Migrate: add age column and copy/transform data
+      console.log('Migrating patients table: date_of_birth -> age');
+      sqlite.exec(`ALTER TABLE patients ADD COLUMN age TEXT`);
+      
+      // Convert existing date_of_birth values to age
+      const patients = sqlite.prepare("SELECT id, date_of_birth FROM patients WHERE date_of_birth IS NOT NULL AND date_of_birth != ''").all();
+      const updateAge = sqlite.prepare("UPDATE patients SET age = ? WHERE id = ?");
+      
+      for (const patient of patients) {
+        try {
+          const birthYear = new Date(patient.date_of_birth).getFullYear();
+          const currentYear = new Date().getFullYear();
+          const calculatedAge = currentYear - birthYear;
+          updateAge.run(`${calculatedAge} years`, patient.id);
+        } catch (e) {
+          // If date parsing fails, set a default
+          updateAge.run('Age not provided', patient.id);
+        }
+      }
+      
+      // Remove the old date_of_birth column (SQLite doesn't support DROP COLUMN directly, so we recreate the table)
+      sqlite.exec(`
+        CREATE TABLE patients_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          patient_id TEXT UNIQUE NOT NULL,
+          first_name TEXT NOT NULL,
+          last_name TEXT NOT NULL,
+          age TEXT,
+          gender TEXT,
+          phone_number TEXT,
+          village TEXT,
+          emergency_contact TEXT,
+          allergies TEXT,
+          medical_history TEXT,
+          created_at TEXT NOT NULL
+        )
+      `);
+      
+      sqlite.exec(`
+        INSERT INTO patients_new (id, patient_id, first_name, last_name, age, gender, phone_number, village, emergency_contact, allergies, medical_history, created_at)
+        SELECT id, patient_id, first_name, last_name, age, gender, phone_number, village, emergency_contact, allergies, medical_history, created_at
+        FROM patients
+      `);
+      
+      sqlite.exec(`DROP TABLE patients`);
+      sqlite.exec(`ALTER TABLE patients_new RENAME TO patients`);
+      
+      console.log('Migration completed: date_of_birth -> age');
+    }
+  } else {
+    // Create new table with age column
+    sqlite.exec(`CREATE TABLE patients (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_id TEXT UNIQUE NOT NULL,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      age TEXT,
+      gender TEXT,
+      phone_number TEXT,
+      village TEXT,
+      emergency_contact TEXT,
+      allergies TEXT,
+      medical_history TEXT,
+      created_at TEXT NOT NULL
+    )`);
+  }
 
   sqlite.exec(`DROP TABLE IF EXISTS treatments`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS treatments (

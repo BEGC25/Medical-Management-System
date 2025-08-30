@@ -90,7 +90,7 @@ export default function XRay() {
                 <div>
                   <div class="info-item"><span class="label">Patient Name:</span> ${selectedPatient.firstName} ${selectedPatient.lastName}</div>
                   <div class="info-item"><span class="label">Patient ID:</span> ${selectedPatient.patientId}</div>
-                  <div class="info-item"><span class="label">Date of Birth:</span> ${selectedPatient.dateOfBirth || 'Not provided'}</div>
+                  <div class="info-item"><span class="label">Age:</span> ${selectedPatient.age || 'Not provided'}</div>
                   <div class="info-item"><span class="label">Gender:</span> ${selectedPatient.gender || 'Not specified'}</div>
                 </div>
                 <div>

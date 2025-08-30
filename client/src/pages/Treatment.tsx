@@ -233,9 +233,8 @@ export default function Treatment() {
     setShowPrescription(false);
   };
 
-  const calculateAge = (dateOfBirth: string) => {
-    if (!dateOfBirth) return 'Unknown';
-    return new Date().getFullYear() - new Date(dateOfBirth).getFullYear();
+  const getAge = (age: string) => {
+    return age || 'Unknown';
   };
 
   return (
@@ -326,7 +325,7 @@ export default function Treatment() {
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       ID: {selectedPatient.patientId} | 
-                      Age: {calculateAge(selectedPatient.dateOfBirth || '')} | 
+                      Age: {getAge(selectedPatient.age || '')} | 
                       {selectedPatient.gender && ` ${selectedPatient.gender}`}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -687,8 +686,7 @@ export default function Treatment() {
                     <div>
                       <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
                       <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
-                      <p><strong>Age:</strong> {selectedPatient.dateOfBirth ? 
-                        (new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()) : 'Not specified'} years</p>
+                      <p><strong>Age:</strong> {selectedPatient.age || 'Not specified'}</p>
                     </div>
                     <div>
                       <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>

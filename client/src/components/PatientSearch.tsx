@@ -84,9 +84,7 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {patients.map((patient: Patient) => {
-                  const age = patient.dateOfBirth 
-                    ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()
-                    : 'Unknown';
+                  const age = patient.age || 'Unknown';
                   
                   return (
                     <tr 

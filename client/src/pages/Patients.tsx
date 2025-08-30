@@ -48,7 +48,7 @@ export default function Patients() {
     defaultValues: {
       firstName: "",
       lastName: "",
-      dateOfBirth: "",
+      age: "",
       gender: undefined,
       phoneNumber: "",
       village: "",
@@ -135,7 +135,7 @@ export default function Patients() {
     form.reset({
       firstName: patient.firstName,
       lastName: patient.lastName,
-      dateOfBirth: patient.dateOfBirth || "",
+      age: patient.age || "",
       gender: patient.gender,
       phoneNumber: patient.phoneNumber || "",
       village: patient.village || "",
@@ -264,12 +264,12 @@ export default function Patients() {
                     
                     <FormField
                       control={form.control}
-                      name="dateOfBirth"
+                      name="age"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date of Birth</FormLabel>
+                          <FormLabel>Age</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <Input type="text" placeholder="e.g., 25 years, 6 months" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

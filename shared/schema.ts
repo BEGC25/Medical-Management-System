@@ -7,7 +7,7 @@ export const patients = sqliteTable("patients", {
   patientId: text("patient_id").unique().notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  dateOfBirth: text("date_of_birth"),
+  age: text("age"),
   gender: text("gender").$type<"male" | "female" | "other">(),
   phoneNumber: text("phone_number"),
   village: text("village"),
