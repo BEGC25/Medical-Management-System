@@ -322,81 +322,242 @@ export default function AllResults() {
                           const parsed = JSON.parse(result.results);
                           const findings = [];
                           
-                          // Check for malaria
+                          // Check Blood Film for Malaria
                           if (parsed['Blood Film for Malaria (BFFM)']) {
                             const malaria = parsed['Blood Film for Malaria (BFFM)'];
-                            if (malaria['Malaria Parasites']?.includes('P. falciparum')) {
-                              findings.push('🚨 POSITIVE for Plasmodium falciparum malaria - Requires immediate treatment');
+                            if (malaria['Malaria Parasites'] && !malaria['Malaria Parasites'].includes('Not seen')) {
+                              const parasites = malaria['Malaria Parasites'];
+                              if (parasites.includes('P. falciparum')) {
+                                findings.push('🚨 POSITIVE for Plasmodium falciparum malaria - Requires immediate treatment');
+                              }
+                              if (parasites.includes('P. vivax')) {
+                                findings.push('🚨 POSITIVE for Plasmodium vivax malaria - Requires treatment');
+                              }
+                              if (parasites.includes('P. malariae')) {
+                                findings.push('🚨 POSITIVE for Plasmodium malariae malaria - Requires treatment');
+                              }
+                              if (parasites.includes('P. ovale')) {
+                                findings.push('🚨 POSITIVE for Plasmodium ovale malaria - Requires treatment');
+                              }
                             }
-                            if (malaria['Gametocytes']?.includes('Seen')) {
+                            if (malaria['Gametocytes'] && malaria['Gametocytes'].includes('Seen')) {
                               findings.push('⚠️ Gametocytes present - Patient is infectious');
                             }
                           }
                           
-                          // Check for typhoid
-                          if (parsed['Widal Test (Typhoid)']) {
-                            const widal = parsed['Widal Test (Typhoid)'];
-                            if (widal['S. Typhi (O)Ag']?.includes('1:160') || widal['S. Typhi (H)Ag']?.includes('1:160')) {
-                              findings.push('⚠️ Elevated typhoid titers - Consider typhoid fever');
+                          // Check Complete Blood Count (CBC)
+                          if (parsed['Complete Blood Count (CBC)']) {
+                            const cbc = parsed['Complete Blood Count (CBC)'];
+                            if (cbc['Hemoglobin (Hb)']) {
+                              const hb = parseFloat(cbc['Hemoglobin (Hb)']);
+                              if (hb < 8.0) {
+                                findings.push('🚨 Severe anemia detected - Immediate intervention required');
+                              } else if (hb < 10.0) {
+                                findings.push('⚠️ Moderate anemia - Treatment recommended');
+                              }
+                            }
+                            if (cbc['Total WBC']) {
+                              const wbc = parseFloat(cbc['Total WBC']);
+                              if (wbc > 15000) {
+                                findings.push('🚨 Very high white blood cell count - Serious infection likely');
+                              } else if (wbc > 11000) {
+                                findings.push('⚠️ Elevated white blood cell count - Infection indicated');
+                              } else if (wbc < 4000) {
+                                findings.push('⚠️ Low white blood cell count - Immune system compromised');
+                              }
+                            }
+                            if (cbc['Platelet Count']) {
+                              const platelets = parseFloat(cbc['Platelet Count']);
+                              if (platelets < 50000) {
+                                findings.push('🚨 Critically low platelet count - Bleeding risk');
+                              } else if (platelets < 100000) {
+                                findings.push('⚠️ Low platelet count - Monitor for bleeding');
+                              }
                             }
                           }
                           
-                          // Check for Brucella
+                          // Check Widal Test
+                          if (parsed['Widal Test (Typhoid)']) {
+                            const widal = parsed['Widal Test (Typhoid)'];
+                            if (widal['S. Typhi (O)Ag']?.includes('1:160') || widal['S. Typhi (H)Ag']?.includes('1:160') ||
+                                widal['S. Typhi (O)Ag']?.includes('1:320') || widal['S. Typhi (H)Ag']?.includes('1:320')) {
+                              findings.push('⚠️ Elevated typhoid titers - Consider typhoid fever');
+                            }
+                            if (widal['S. Paratyphi A']?.includes('1:160') || widal['S. Paratyphi B']?.includes('1:160')) {
+                              findings.push('⚠️ Elevated paratyphoid titers - Consider paratyphoid infection');
+                            }
+                          }
+                          
+                          // Check Brucella Test
                           if (parsed['Brucella Test (B.A.T)']) {
                             const brucella = parsed['Brucella Test (B.A.T)'];
-                            if (brucella['B. Abortus']?.includes('1:160') || brucella['B. Malitensis']?.includes('1:320')) {
+                            if (brucella['B. Abortus']?.includes('1:160') || brucella['B. Malitensis']?.includes('1:160') ||
+                                brucella['B. Abortus']?.includes('1:320') || brucella['B. Malitensis']?.includes('1:320')) {
                               findings.push('🚨 Brucella infection detected - Requires antibiotic treatment and contact tracing');
                             }
                           }
-
-                          // Check urine analysis
-                          if (parsed['Urine Analysis']) {
-                            const urine = parsed['Urine Analysis'];
-                            if (urine['Appearance']?.includes('Turbid') || urine['Appearance']?.includes('Bloody')) {
-                              findings.push('🚨 Abnormal urine appearance - Requires immediate evaluation');
-                            }
-                            if (urine['Protein']?.includes('+')) {
-                              findings.push('⚠️ Proteinuria detected - Kidney function needs assessment');
-                            }
-                            if (urine['Glucose']?.includes('+')) {
-                              findings.push('⚠️ Glucosuria - Check blood glucose levels');
-                            }
-                            if (urine['Leucocytes']?.includes('+')) {
-                              findings.push('⚠️ Leucocytes in urine - Urinary tract infection likely');
+                          
+                          // Check VDRL (Syphilis)
+                          if (parsed['VDRL (Syphilis)']) {
+                            const vdrl = parsed['VDRL (Syphilis)'];
+                            if (vdrl['VDRL Result']?.includes('Reactive') || vdrl['VDRL Result']?.includes('Positive')) {
+                              findings.push('🚨 Syphilis positive - Requires immediate treatment and partner notification');
                             }
                           }
 
-                          // Check urine microscopy
+                          // Check Urine Analysis - COMPREHENSIVE
+                          if (parsed['Urine Analysis']) {
+                            const urine = parsed['Urine Analysis'];
+                            
+                            // Appearance
+                            if (urine['Appearance']?.includes('Bloody') || urine['Appearance']?.includes('Red')) {
+                              findings.push('🚨 Bloody urine - Requires immediate investigation');
+                            }
+                            if (urine['Appearance']?.includes('Turbid') || urine['Appearance']?.includes('Cloudy')) {
+                              findings.push('⚠️ Cloudy urine - Possible infection');
+                            }
+                            
+                            // Protein levels
+                            if (urine['Protein']?.includes('+++')) {
+                              findings.push('🚨 Severe proteinuria - Serious kidney disease suspected');
+                            } else if (urine['Protein']?.includes('++')) {
+                              findings.push('⚠️ Moderate proteinuria - Kidney function needs assessment');
+                            } else if (urine['Protein']?.includes('+')) {
+                              findings.push('⚠️ Mild proteinuria - Monitor kidney function');
+                            }
+                            
+                            // Glucose
+                            if (urine['Glucose']?.includes('+++')) {
+                              findings.push('🚨 Severe glucosuria - Diabetes likely, check blood glucose urgently');
+                            } else if (urine['Glucose']?.includes('++')) {
+                              findings.push('⚠️ Moderate glucosuria - Check blood glucose levels');
+                            } else if (urine['Glucose']?.includes('+')) {
+                              findings.push('⚠️ Mild glucosuria - Monitor blood glucose');
+                            }
+                            
+                            // Acetone (Ketones)
+                            if (urine['Acetone']?.includes('++') || urine['Acetone']?.includes('+++')) {
+                              findings.push('🚨 High ketones in urine - Diabetic ketoacidosis risk');
+                            } else if (urine['Acetone']?.includes('+')) {
+                              findings.push('⚠️ Ketones detected - Monitor for diabetes complications');
+                            }
+                            
+                            // Hemoglobin pigment
+                            if (urine['Hb pigment']?.includes('++') || urine['Hb pigment']?.includes('+++')) {
+                              findings.push('🚨 High hemoglobin in urine - Severe hemolysis or bleeding');
+                            } else if (urine['Hb pigment']?.includes('+')) {
+                              findings.push('⚠️ Hemoglobin in urine - Blood in urine detected');
+                            }
+                            
+                            // Leucocytes
+                            if (urine['Leucocytes']?.includes('++') || urine['Leucocytes']?.includes('+++')) {
+                              findings.push('⚠️ High leucocytes in urine - Urinary tract infection likely');
+                            } else if (urine['Leucocytes']?.includes('+')) {
+                              findings.push('⚠️ Leucocytes in urine - Possible UTI');
+                            }
+                            
+                            // Nitrite
+                            if (urine['Nitrite']?.includes('Positive')) {
+                              findings.push('⚠️ Nitrite positive - Bacterial infection confirmed');
+                            }
+                            
+                            // Bilirubin
+                            if (urine['Bilirubin']?.includes('+') || urine['Bilirubin']?.includes('++')) {
+                              findings.push('⚠️ Bilirubin in urine - Liver dysfunction or bile duct obstruction');
+                            }
+                          }
+
+                          // Check Urine Microscopy - COMPREHENSIVE
                           if (parsed['Urine Microscopy']) {
                             const microscopy = parsed['Urine Microscopy'];
-                            if (microscopy['Casts']?.includes('Granular')) {
-                              findings.push('⚠️ Granular casts present - Kidney damage or disease');
+                            
+                            // Casts (very important)
+                            if (microscopy['Casts']?.includes('Cellular')) {
+                              findings.push('🚨 Cellular casts - Acute kidney injury or glomerulonephritis');
                             }
+                            if (microscopy['Casts']?.includes('Granular')) {
+                              findings.push('⚠️ Granular casts - Chronic kidney disease');
+                            }
+                            if (microscopy['Casts']?.includes('Hyaline')) {
+                              findings.push('⚠️ Hyaline casts - Mild kidney stress');
+                            }
+                            
+                            // Parasites
                             if (microscopy['Trichomonas']?.includes('Seen')) {
                               findings.push('🚨 Trichomonas infection - Sexually transmitted infection requires treatment');
                             }
+                            
+                            // Cell counts
+                            if (microscopy['Pus Cells']) {
+                              const pusCells = parseInt(microscopy['Pus Cells']);
+                              if (pusCells > 20) {
+                                findings.push('🚨 Very high pus cells in urine - Severe urinary tract infection');
+                              } else if (pusCells > 10) {
+                                findings.push('🚨 High pus cells in urine - Urinary tract infection');
+                              } else if (pusCells > 5) {
+                                findings.push('⚠️ Elevated pus cells - Possible UTI');
+                              }
+                            }
+                            
+                            if (microscopy['RBC']) {
+                              const rbc = parseInt(microscopy['RBC']);
+                              if (rbc > 10) {
+                                findings.push('🚨 High red blood cells in urine - Significant hematuria');
+                              } else if (rbc > 5) {
+                                findings.push('🚨 Blood cells in urine - Hematuria requires investigation');
+                              } else if (rbc > 2) {
+                                findings.push('⚠️ Red blood cells in urine - Mild hematuria');
+                              }
+                            }
+                            
+                            // Crystals
+                            if (microscopy['Crystals']?.includes('Uric acid')) {
+                              findings.push('⚠️ Uric acid crystals - Risk of kidney stones');
+                            }
+                            if (microscopy['Crystals']?.includes('Calcium oxalate')) {
+                              findings.push('⚠️ Calcium oxalate crystals - Risk of kidney stones');
+                            }
+                            
                             if (microscopy['Epithelial cells']?.includes('Many')) {
                               findings.push('⚠️ Many epithelial cells - Possible contamination or urogenital inflammation');
                             }
                           }
-
-                          // Check stool examination
+                          
+                          // Check Stool Examination - COMPREHENSIVE
                           if (parsed['Stool Examination']) {
                             const stool = parsed['Stool Examination'];
+                            
+                            // Appearance
+                            if (stool['Appearance']?.includes('Bloody')) {
+                              findings.push('🚨 Blood in stool - Serious gastrointestinal bleeding requires investigation');
+                            }
+                            if (stool['Consistency']?.includes('Loose') || stool['Consistency']?.includes('Watery')) {
+                              findings.push('⚠️ Diarrhea present - Monitor for dehydration');
+                            }
+                            
+                            // Parasites - Ova/Cyst
                             if (stool['Ova/Cyst']?.includes('Ascaris')) {
                               findings.push('🚨 Ascaris worms detected - Requires immediate deworming treatment');
                             }
-                            if (stool['Ova/Cyst']?.includes('F. histolytica') || stool['Trophozoites']?.includes('E. histolytica')) {
+                            if (stool['Ova/Cyst']?.includes('Hookworm')) {
+                              findings.push('🚨 Hookworm infection - Requires deworming and iron supplementation');
+                            }
+                            if (stool['Ova/Cyst']?.includes('Trichuris')) {
+                              findings.push('🚨 Whipworm infection - Requires deworming treatment');
+                            }
+                            if (stool['Ova/Cyst']?.includes('S. mansoni')) {
+                              findings.push('🚨 Schistosomiasis detected - Requires specialized treatment');
+                            }
+                            
+                            // Trophozoites
+                            if (stool['Trophozoites']?.includes('E. histolytica')) {
                               findings.push('🚨 E. histolytica detected - Serious parasitic infection causing dysentery');
                             }
                             if (stool['Trophozoites']?.includes('G. lamblia')) {
                               findings.push('⚠️ Giardia detected - Requires antiparasitic treatment');
                             }
-                            if (stool['Appearance']?.includes('Bloody')) {
-                              findings.push('🚨 Blood in stool - Serious gastrointestinal bleeding requires investigation');
-                            }
                           }
-
+                          
                           // Check H. Pylori
                           if (parsed['H. Pylori Test']) {
                             const hPylori = parsed['H. Pylori Test'];
@@ -404,7 +565,7 @@ export default function AllResults() {
                               findings.push('⚠️ H. Pylori positive - Consider treatment for gastric ulcers');
                             }
                           }
-
+                          
                           // Check Hepatitis B
                           if (parsed['Hepatitis B Test (HBsAg)']) {
                             const hepB = parsed['Hepatitis B Test (HBsAg)'];
@@ -412,6 +573,76 @@ export default function AllResults() {
                               findings.push('🚨 Hepatitis B positive - Requires specialist consultation and monitoring');
                             }
                           }
+                          
+                          // Check Hepatitis C
+                          if (parsed['Hepatitis C Test (HCV)']) {
+                            const hepC = parsed['Hepatitis C Test (HCV)'];
+                            if (hepC['HCV Ab']?.includes('Positive')) {
+                              findings.push('🚨 Hepatitis C positive - Requires specialist consultation');
+                            }
+                          }
+                          
+                          // Check HIV
+                          if (parsed['HIV Test (RCT P24)']) {
+                            const hiv = parsed['HIV Test (RCT P24)'];
+                            if (hiv['HIV Result']?.includes('Positive')) {
+                              findings.push('🚨 HIV positive - Requires counseling and specialist care');
+                            }
+                          }
+                          
+                          // Check Pregnancy Test
+                          if (parsed['Pregnancy Test (HCG)']) {
+                            const pregnancy = parsed['Pregnancy Test (HCG)'];
+                            if (pregnancy['Beta HCG']?.includes('Positive')) {
+                              findings.push('✅ Pregnancy detected - Prenatal care recommended');
+                            }
+                          }
+                          
+                          // Check Blood Sugar levels
+                          if (parsed['Blood Sugar (RBS/FBS)']) {
+                            const sugar = parsed['Blood Sugar (RBS/FBS)'];
+                            if (sugar['Blood Glucose']) {
+                              const glucose = parseFloat(sugar['Blood Glucose']);
+                              if (glucose > 200) {
+                                findings.push('🚨 Very high blood glucose - Diabetes likely, immediate treatment needed');
+                              } else if (glucose > 140) {
+                                findings.push('⚠️ Elevated blood glucose - Diabetes risk, further testing needed');
+                              } else if (glucose < 70) {
+                                findings.push('🚨 Low blood glucose - Hypoglycemia, immediate treatment needed');
+                              }
+                            }
+                          }
+                          
+                          // Check Renal Function Test
+                          if (parsed['Renal Function Test (RFT)']) {
+                            const rft = parsed['Renal Function Test (RFT)'];
+                            if (rft['Urea']) {
+                              const urea = parseFloat(rft['Urea']);
+                              if (urea > 50) {
+                                findings.push('🚨 Very high urea - Severe kidney dysfunction');
+                              } else if (urea > 20) {
+                                findings.push('⚠️ Elevated urea - Kidney function impaired');
+                              }
+                            }
+                            if (rft['Creatinine']) {
+                              const creatinine = parseFloat(rft['Creatinine']);
+                              if (creatinine > 3.0) {
+                                findings.push('🚨 Very high creatinine - Severe kidney failure');
+                              } else if (creatinine > 1.5) {
+                                findings.push('⚠️ Elevated creatinine - Kidney function reduced');
+                              }
+                            }
+                            if (rft['BUN']) {
+                              const bun = parseFloat(rft['BUN']);
+                              if (bun > 30) {
+                                findings.push('🚨 Very high BUN - Severe kidney dysfunction');
+                              } else if (bun > 20) {
+                                findings.push('⚠️ Elevated BUN - Kidney function needs evaluation');
+                              }
+                            }
+                          }
+
+
                           
                           if (findings.length === 0) {
                             return <span className="text-green-700 dark:text-green-300">✓ No significant abnormal findings detected</span>;
