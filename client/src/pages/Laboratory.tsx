@@ -387,8 +387,26 @@ const commonTests = {
   ]
 };
 
+// Add Blood Sugar test results to resultFields
+const bloodSugarFields = {
+  "Blood Sugar (RBS/FBS)": {
+    "Blood Glucose": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "70-140 (fasting), <200 (random)"
+    },
+    "Test Type": {
+      type: "select",
+      options: ["Random Blood Sugar (RBS)", "Fasting Blood Sugar (FBS)", "Post-meal"],
+      normal: "N/A"
+    }
+  }
+};
+
 // Modern result fields with dropdown options and normal ranges
 const resultFields = {
+  // Blood Sugar fields
+  ...bloodSugarFields,
   "Urine Analysis": {
     "Appearance": {
       type: "select",

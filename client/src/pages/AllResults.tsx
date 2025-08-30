@@ -375,24 +375,6 @@ export default function AllResults() {
                                 findings.push('⚠️ Mild anemia (' + hbLevel + ' g/dL) - Monitor and treat underlying cause');
                               }
                             }
-                            if (cbc['Total WBC']) {
-                              const wbc = parseFloat(cbc['Total WBC']);
-                              if (wbc > 15000) {
-                                findings.push('🚨 Very high white blood cell count - Serious infection likely');
-                              } else if (wbc > 11000) {
-                                findings.push('⚠️ Elevated white blood cell count - Infection indicated');
-                              } else if (wbc < 4000) {
-                                findings.push('⚠️ Low white blood cell count - Immune system compromised');
-                              }
-                            }
-                            if (cbc['Platelet Count']) {
-                              const platelets = parseFloat(cbc['Platelet Count']);
-                              if (platelets < 50000) {
-                                findings.push('🚨 Critically low platelet count - Bleeding risk');
-                              } else if (platelets < 100000) {
-                                findings.push('⚠️ Low platelet count - Monitor for bleeding');
-                              }
-                            }
                           }
                           
                           // Check Widal Test
@@ -630,6 +612,110 @@ export default function AllResults() {
                               } else if (glucose < 70) {
                                 findings.push('🚨 Low blood glucose - Hypoglycemia, immediate treatment needed');
                               }
+                            }
+                          }
+
+                          // Check NEW TROPICAL DISEASE TESTS
+                          // Check Toxoplasma Test
+                          if (parsed['Toxoplasma Test']) {
+                            const toxo = parsed['Toxoplasma Test'];
+                            if (toxo['Toxoplasma IgM']?.includes('Positive')) {
+                              findings.push('🚨 Acute toxoplasmosis detected - Dangerous for pregnant women and immunocompromised patients');
+                            }
+                            if (toxo['Toxoplasma IgG']?.includes('Positive')) {
+                              findings.push('⚠️ Previous toxoplasmosis exposure detected - Monitor if pregnant');
+                            }
+                          }
+
+                          // Check Filariasis Tests
+                          if (parsed['Filariasis Tests']) {
+                            const filaria = parsed['Filariasis Tests'];
+                            if (filaria['Skin Snip for Onchocerca']?.includes('Microfilariae present')) {
+                              findings.push('🚨 Onchocerciasis (River blindness) detected - Requires ivermectin treatment');
+                            }
+                            if (filaria['Wet Mount for Microfilariae']?.includes('W. bancrofti') || 
+                                filaria['Wet Mount for Microfilariae']?.includes('Loa loa') ||
+                                filaria['Wet Mount for Microfilariae']?.includes('O. volvulus')) {
+                              findings.push('🚨 Lymphatic filariasis detected - Requires antihelminthic treatment');
+                            }
+                            if (filaria['Diethylcarbamazine (DEC) Test']?.includes('Positive')) {
+                              findings.push('🚨 Filariasis confirmed by DEC test - Treatment required');
+                            }
+                          }
+
+                          // Check Schistosomiasis Test
+                          if (parsed['Schistosomiasis Test']) {
+                            const schisto = parsed['Schistosomiasis Test'];
+                            if (schisto['Urine Microscopy for Ova']?.includes('S. haematobium ova present')) {
+                              findings.push('🚨 Urogenital schistosomiasis detected - Requires praziquantel treatment');
+                            }
+                            if (schisto['Stool for S. mansoni']?.includes('S. mansoni ova present')) {
+                              findings.push('🚨 Intestinal schistosomiasis detected - Requires praziquantel treatment');
+                            }
+                          }
+
+                          // Check Leishmaniasis Test
+                          if (parsed['Leishmaniasis Test']) {
+                            const leish = parsed['Leishmaniasis Test'];
+                            if (leish['Skin Scraping']?.includes('Leishmania amastigotes present')) {
+                              findings.push('🚨 Leishmaniasis detected by skin scraping - Requires specialized treatment');
+                            }
+                            if (leish['rK39 Rapid Test']?.includes('Positive')) {
+                              findings.push('🚨 Leishmaniasis confirmed by rapid test - Specialized treatment needed');
+                            }
+                          }
+
+                          // Check STI Tests
+                          if (parsed['Gonorrhea Test']) {
+                            const gonorrhea = parsed['Gonorrhea Test'];
+                            if (gonorrhea['Neisseria Gonorrhoeae']?.includes('Positive')) {
+                              findings.push('🚨 Gonorrhea detected - Requires antibiotic treatment and partner notification');
+                            }
+                          }
+
+                          if (parsed['Chlamydia Test']) {
+                            const chlamydia = parsed['Chlamydia Test'];
+                            if (chlamydia['Chlamydia Trachomatis']?.includes('Positive')) {
+                              findings.push('🚨 Chlamydia detected - Requires antibiotic treatment and partner notification');
+                            }
+                          }
+
+                          if (parsed['VDRL Test (Syphilis)']) {
+                            const vdrl = parsed['VDRL Test (Syphilis)'];
+                            if (vdrl['VDRL Result']?.includes('Reactive')) {
+                              findings.push('🚨 Syphilis positive - Requires penicillin treatment and partner notification');
+                            }
+                          }
+
+                          // Check Tuberculosis Tests
+                          if (parsed['Tuberculosis Tests']) {
+                            const tb = parsed['Tuberculosis Tests'];
+                            if (tb['AFB Smear']?.includes('+ AFB')) {
+                              findings.push('🚨 Tuberculosis detected by AFB smear - Requires immediate isolation and treatment');
+                            }
+                            if (tb['GeneXpert MTB/RIF']?.includes('MTB detected')) {
+                              findings.push('🚨 Tuberculosis confirmed by GeneXpert - Start anti-TB treatment immediately');
+                              if (tb['GeneXpert MTB/RIF']?.includes('RIF resistant')) {
+                                findings.push('🚨 Drug-resistant tuberculosis detected - Requires specialist consultation');
+                              }
+                            }
+                          }
+
+                          // Check Emergency Disease Tests
+                          if (parsed['Yellow Fever Test']) {
+                            const yf = parsed['Yellow Fever Test'];
+                            if (yf['Yellow Fever IgM']?.includes('Positive')) {
+                              findings.push('🚨 Acute yellow fever detected - Report to health authorities immediately');
+                            }
+                          }
+
+                          if (parsed['Meningitis Tests']) {
+                            const csf = parsed['Meningitis Tests'];
+                            if (csf['Bacterial Antigen'] && !csf['Bacterial Antigen'].includes('Negative')) {
+                              findings.push('🚨 Bacterial meningitis confirmed - Medical emergency requiring immediate treatment');
+                            }
+                            if (csf['CSF Protein'] && parseFloat(csf['CSF Protein']) > 100) {
+                              findings.push('🚨 Very high CSF protein - Likely bacterial meningitis');
                             }
                           }
                           
