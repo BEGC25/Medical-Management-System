@@ -173,6 +173,148 @@ const getClinicalInterpretation = (results: string) => {
       }
     }
     
+    // Check Hepatitis C
+    if (parsed['Hepatitis C Test (HCV)']) {
+      const hepC = parsed['Hepatitis C Test (HCV)'];
+      if (hepC['HCV Antibody']?.includes('Positive')) {
+        findings.push('🚨 Hepatitis C positive - Requires specialist consultation and monitoring');
+      }
+    }
+    
+    // Check STI tests
+    if (parsed['Gonorrhea Test']) {
+      const gonorrhea = parsed['Gonorrhea Test'];
+      if (gonorrhea['Neisseria Gonorrhoeae']?.includes('Positive')) {
+        findings.push('🚨 Gonorrhea detected - Requires antibiotic treatment and partner notification');
+      }
+    }
+    
+    if (parsed['Chlamydia Test']) {
+      const chlamydia = parsed['Chlamydia Test'];
+      if (chlamydia['Chlamydia Trachomatis']?.includes('Positive')) {
+        findings.push('🚨 Chlamydia detected - Requires antibiotic treatment and partner notification');
+      }
+    }
+    
+    if (parsed['VDRL Test (Syphilis)']) {
+      const vdrl = parsed['VDRL Test (Syphilis)'];
+      if (vdrl['VDRL Result']?.includes('Reactive')) {
+        findings.push('🚨 Syphilis positive - Requires penicillin treatment and partner notification');
+      }
+    }
+    
+    // Check parasitic tests
+    if (parsed['Toxoplasma Test']) {
+      const toxo = parsed['Toxoplasma Test'];
+      if (toxo['Toxoplasma IgM']?.includes('Positive')) {
+        findings.push('🚨 Acute toxoplasmosis - Dangerous for pregnant women and immunocompromised');
+      }
+      if (toxo['Toxoplasma IgG']?.includes('Positive')) {
+        findings.push('⚠️ Previous toxoplasmosis exposure - Monitor if pregnant');
+      }
+    }
+    
+    if (parsed['Filariasis Tests']) {
+      const filaria = parsed['Filariasis Tests'];
+      if (filaria['Skin Snip for Onchocerca']?.includes('Microfilariae present')) {
+        findings.push('🚨 Onchocerciasis (River blindness) detected - Requires ivermectin treatment');
+      }
+      if (filaria['Wet Mount for Microfilariae']?.includes('W. bancrofti') || 
+          filaria['Wet Mount for Microfilariae']?.includes('Loa loa')) {
+        findings.push('🚨 Lymphatic filariasis detected - Requires antihelminthic treatment');
+      }
+    }
+    
+    if (parsed['Schistosomiasis Test']) {
+      const schisto = parsed['Schistosomiasis Test'];
+      if (schisto['Urine Microscopy for Ova']?.includes('S. haematobium')) {
+        findings.push('🚨 Urogenital schistosomiasis - Requires praziquantel treatment');
+      }
+      if (schisto['Stool for S. mansoni']?.includes('S. mansoni')) {
+        findings.push('🚨 Intestinal schistosomiasis - Requires praziquantel treatment');
+      }
+    }
+    
+    if (parsed['Leishmaniasis Test']) {
+      const leish = parsed['Leishmaniasis Test'];
+      if (leish['Skin Scraping']?.includes('Leishmania amastigotes') || 
+          leish['rK39 Rapid Test']?.includes('Positive')) {
+        findings.push('🚨 Leishmaniasis detected - Requires specialized treatment');
+      }
+    }
+    
+    // Check tuberculosis
+    if (parsed['Tuberculosis Tests']) {
+      const tb = parsed['Tuberculosis Tests'];
+      if (tb['AFB Smear']?.includes('+ AFB')) {
+        findings.push('🚨 Tuberculosis detected - Requires immediate isolation and treatment');
+      }
+      if (tb['GeneXpert MTB/RIF']?.includes('MTB detected')) {
+        findings.push('🚨 Tuberculosis confirmed by GeneXpert - Start anti-TB treatment immediately');
+        if (tb['GeneXpert MTB/RIF']?.includes('RIF resistant')) {
+          findings.push('🚨 Drug-resistant TB detected - Requires specialist consultation');
+        }
+      }
+    }
+    
+    // Check hormones for critical values
+    if (parsed['Thyroid Hormones']) {
+      const thyroid = parsed['Thyroid Hormones'];
+      if (thyroid['TSH'] && (parseFloat(thyroid['TSH']) > 10 || parseFloat(thyroid['TSH']) < 0.1)) {
+        findings.push('⚠️ Severe thyroid dysfunction - Requires endocrine consultation');
+      }
+    }
+    
+    if (parsed['Reproductive Hormones']) {
+      const repro = parsed['Reproductive Hormones'];
+      if (repro['B-HCG'] && parseFloat(repro['B-HCG']) > 5) {
+        findings.push('🚨 Pregnancy confirmed - Initiate prenatal care');
+      }
+      if (repro['PSA'] && parseFloat(repro['PSA']) > 10) {
+        findings.push('⚠️ Elevated PSA - Prostate evaluation needed');
+      }
+    }
+    
+    // Check cardiac markers
+    if (parsed['Cardiac & Other Markers']) {
+      const cardiac = parsed['Cardiac & Other Markers'];
+      if (cardiac['Troponin I'] && parseFloat(cardiac['Troponin I']) > 0.04) {
+        findings.push('🚨 Elevated troponin - Myocardial infarction likely');
+      }
+      if (cardiac['CK-MB'] && parseFloat(cardiac['CK-MB']) > 6.3) {
+        findings.push('⚠️ Elevated CK-MB - Cardiac muscle damage');
+      }
+    }
+    
+    // Check meningitis
+    if (parsed['Meningitis Tests']) {
+      const csf = parsed['Meningitis Tests'];
+      if (csf['Bacterial Antigen'] && !csf['Bacterial Antigen'].includes('Negative')) {
+        findings.push('🚨 Bacterial meningitis confirmed - Medical emergency requiring immediate treatment');
+      }
+      if (csf['CSF Protein'] && parseFloat(csf['CSF Protein']) > 100) {
+        findings.push('🚨 Very high CSF protein - Likely bacterial meningitis');
+      }
+    }
+    
+    // Check viral diseases
+    if (parsed['Yellow Fever Test']) {
+      const yf = parsed['Yellow Fever Test'];
+      if (yf['Yellow Fever IgM']?.includes('Positive')) {
+        findings.push('🚨 Acute yellow fever - Report to health authorities immediately');
+      }
+    }
+    
+    // Check severe anemia/hemoglobin
+    if (parsed['Hemoglobin (HB)']) {
+      const hb = parsed['Hemoglobin (HB)'];
+      if (hb['Hemoglobin Level'] && parseFloat(hb['Hemoglobin Level']) < 7) {
+        findings.push('🚨 Severe anemia (Hb < 7 g/dL) - Requires immediate blood transfusion consideration');
+      } else if (hb['Hemoglobin Level'] && parseFloat(hb['Hemoglobin Level']) < 10) {
+        findings.push('⚠️ Moderate anemia - Iron supplementation and investigation needed');
+      }
+    }
+    
     return findings;
   } catch (e) {
     return [];
@@ -193,32 +335,55 @@ const commonTests = {
   serology: [
     "Widal Test (Typhoid)",
     "Brucella Test (B.A.T)",
-    "VDRL (Syphilis)",
-    "H. Pylori Test",
     "Hepatitis B Test (HBsAg)",
     "Hepatitis C Test (HCV)",
-    "Pregnancy Test (HCG)",
-    "HIV Test (RCT P24)"
+    "H. Pylori Test",
+    "VDRL Test (Syphilis)"
   ],
+  
+  reproductive: [
+    "Pregnancy Test (HCG)",
+    "Gonorrhea Test",
+    "Chlamydia Test",
+    "Reproductive Hormones"
+  ],
+  
+  parasitology: [
+    "Toxoplasma Test",
+    "Filariasis Tests",
+    "Schistosomiasis Test",
+    "Leishmaniasis Test"
+  ],
+  
+  hormones: [
+    "Thyroid Hormones",
+    "Reproductive Hormones", 
+    "Cardiac & Other Markers"
+  ],
+  
+  tuberculosis: [
+    "Tuberculosis Tests"
+  ],
+  
+  emergency: [
+    "Meningitis Tests",
+    "Yellow Fever Test",
+    "Typhus Test"
+  ],
+  
   urine: [
     "Urine Analysis",
     "Urine Microscopy"
   ],
-  parasitology: [
-    "Stool Examination"
-  ],
+  
   biochemistry: [
     "Renal Function Test (RFT)",
     "Liver Function Test (LFT)",
-    "Serum Cholesterol",
-    "Serum Electrolytes",
-    "Serum Uric Acid"
+    "Blood Sugar (RBS/FBS)"
   ],
-  hormones: [
-    "Thyroid Function Test (T3, T4, TSH)",
-    "Diabetes Panel",
-    "Reproductive Hormones",
-    "Cardiac Enzymes"
+  
+  stool: [
+    "Stool Examination"
   ]
 };
 
@@ -476,35 +641,7 @@ const resultFields = {
       normal: "44-147"
     }
   },
-  "Thyroid Function Test (T3, T4, TSH)": {
-    "T3": {
-      type: "number",
-      unit: "ng/mL",
-      normal: "0.8-2.0"
-    },
-    "T4": {
-      type: "number",
-      unit: "μg/dL",
-      normal: "5.1-14.1"
-    },
-    "TSH": {
-      type: "number",
-      unit: "mIU/L",
-      normal: "0.27-4.20"
-    }
-  },
-  "Diabetes Panel": {
-    "Fasting Glucose": {
-      type: "number",
-      unit: "mg/dL",
-      normal: "70-99"
-    },
-    "HbA1c": {
-      type: "number",
-      unit: "%",
-      normal: "<5.7"
-    }
-  },
+
   "H. Pylori Test": {
     "H. Pylori Antigen": {
       type: "select",
@@ -531,6 +668,237 @@ const resultFields = {
       type: "select",
       options: ["Negative", "Positive"],
       normal: "Negative (Non-pregnant)"
+    }
+  },
+  
+  // STI/Reproductive Health Tests
+  "Gonorrhea Test": {
+    "Neisseria Gonorrhoeae": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    },
+    "Sample Type": {
+      type: "select",
+      options: ["Urethral swab", "Cervical swab", "Urine", "High vaginal swab"],
+      normal: "N/A"
+    }
+  },
+  "Chlamydia Test": {
+    "Chlamydia Trachomatis": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    },
+    "Sample Type": {
+      type: "select",
+      options: ["Urethral swab", "Cervical swab", "Urine", "High vaginal swab"],
+      normal: "N/A"
+    }
+  },
+  "VDRL Test (Syphilis)": {
+    "VDRL Result": {
+      type: "select",
+      options: ["Non-reactive", "Reactive"],
+      normal: "Non-reactive"
+    },
+    "Titer": {
+      type: "select",
+      options: ["N/A", "1:2", "1:4", "1:8", "1:16", "1:32", "1:64"],
+      normal: "N/A"
+    }
+  },
+  
+  // Parasitic/Tropical Disease Tests
+  "Toxoplasma Test": {
+    "Toxoplasma IgG": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    },
+    "Toxoplasma IgM": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    }
+  },
+  "Filariasis Tests": {
+    "Skin Snip for Onchocerca": {
+      type: "select",
+      options: ["No microfilariae seen", "Microfilariae present"],
+      normal: "No microfilariae seen"
+    },
+    "Wet Mount for Microfilariae": {
+      type: "select",
+      options: ["No microfilariae seen", "W. bancrofti", "Loa loa", "O. volvulus"],
+      normal: "No microfilariae seen"
+    },
+    "Diethylcarbamazine (DEC) Test": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    }
+  },
+  "Schistosomiasis Test": {
+    "Urine Microscopy for Ova": {
+      type: "select",
+      options: ["No ova seen", "S. haematobium ova present"],
+      normal: "No ova seen"
+    },
+    "Stool for S. mansoni": {
+      type: "select",
+      options: ["No ova seen", "S. mansoni ova present"],
+      normal: "No ova seen"
+    }
+  },
+  "Leishmaniasis Test": {
+    "Skin Scraping": {
+      type: "select",
+      options: ["No parasites seen", "Leishmania amastigotes present"],
+      normal: "No parasites seen"
+    },
+    "rK39 Rapid Test": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    }
+  },
+  
+  // Improved Hormone Tests (matching clinic request paper)
+  "Thyroid Hormones": {
+    "T3": {
+      type: "number",
+      unit: "ng/mL",
+      normal: "0.8-2.0"
+    },
+    "T4": {
+      type: "number",
+      unit: "μg/dL",
+      normal: "5.1-14.1"
+    },
+    "TSH": {
+      type: "number",
+      unit: "mIU/L",
+      normal: "0.27-4.20"
+    },
+    "FT3": {
+      type: "number",
+      unit: "pg/mL",
+      normal: "2.3-4.2"
+    },
+    "FT4": {
+      type: "number",
+      unit: "ng/dL",
+      normal: "0.8-1.8"
+    }
+  },
+  "Reproductive Hormones": {
+    "LH": {
+      type: "number",
+      unit: "mIU/L",
+      normal: "1.7-8.6 (F), 1.2-8.6 (M)"
+    },
+    "FSH": {
+      type: "number",
+      unit: "mIU/L",
+      normal: "3.5-12.5 (F), 1.5-12.4 (M)"
+    },
+    "Progesterone": {
+      type: "number",
+      unit: "ng/mL",
+      normal: "0.2-25.6 (varies by cycle)"
+    },
+    "Testosterone": {
+      type: "number",
+      unit: "ng/dL",
+      normal: "300-1000 (M), 15-70 (F)"
+    },
+    "B-HCG": {
+      type: "number",
+      unit: "mIU/L",
+      normal: "<5 (Non-pregnant)"
+    }
+  },
+  "Cardiac & Other Markers": {
+    "PSA": {
+      type: "number",
+      unit: "ng/mL",
+      normal: "<4.0"
+    },
+    "Troponin I": {
+      type: "number",
+      unit: "ng/mL",
+      normal: "<0.04"
+    },
+    "CK-MB": {
+      type: "number",
+      unit: "ng/mL",
+      normal: "0.6-6.3"
+    },
+    "HbA1c": {
+      type: "number",
+      unit: "%",
+      normal: "<5.7"
+    }
+  },
+  
+  // Additional Tests for South Sudan Region
+  "Tuberculosis Tests": {
+    "AFB Smear": {
+      type: "select",
+      options: ["No AFB seen", "1+ AFB", "2+ AFB", "3+ AFB"],
+      normal: "No AFB seen"
+    },
+    "GeneXpert MTB/RIF": {
+      type: "select",
+      options: ["MTB not detected", "MTB detected (RIF sensitive)", "MTB detected (RIF resistant)"],
+      normal: "MTB not detected"
+    }
+  },
+  "Meningitis Tests": {
+    "CSF Microscopy": {
+      type: "text",
+      unit: "cells/μL",
+      normal: "<5 WBC, <5 RBC"
+    },
+    "CSF Protein": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "15-45"
+    },
+    "CSF Glucose": {
+      type: "number",
+      unit: "mg/dL",
+      normal: "50-80"
+    },
+    "Bacterial Antigen": {
+      type: "select",
+      options: ["Negative", "S. pneumoniae", "N. meningitidis", "H. influenzae"],
+      normal: "Negative"
+    }
+  },
+  "Yellow Fever Test": {
+    "Yellow Fever IgM": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    },
+    "Yellow Fever IgG": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    }
+  },
+  "Typhus Test": {
+    "Epidemic Typhus": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    },
+    "Scrub Typhus": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
     }
   }
 };
@@ -1473,9 +1841,7 @@ export default function Laboratory() {
                       <div><strong>Name:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</div>
                       <div><strong>Patient ID:</strong> {selectedPatient.patientId}</div>
                       <div><strong>Phone:</strong> {selectedPatient.phoneNumber}</div>
-                      <div><strong>Age:</strong> {selectedPatient.dateOfBirth ? 
-                        `${new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()} years` : 
-                        'Not provided'}</div>
+                      <div><strong>Age:</strong> {selectedPatient.age || 'Not provided'}</div>
                     </div>
                   </div>
 
