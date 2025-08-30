@@ -356,6 +356,25 @@ export default function AllResults() {
                                 findings.push('⚠️ Moderate anemia - Treatment recommended');
                               }
                             }
+                          }
+                          
+                          // Check Hemoglobin (HB) as standalone test
+                          if (parsed['Hemoglobin (HB)']) {
+                            const hb = parsed['Hemoglobin (HB)'];
+                            // Check multiple possible field names for hemoglobin value
+                            const hbValue = hb['Hemoglobin Level'] || hb['Hemoglobin'] || hb['Hb Level'] || hb['Hb'] || hb['Value'];
+                            if (hbValue) {
+                              const hbLevel = parseFloat(hbValue);
+                              if (hbLevel < 6.0) {
+                                findings.push('🚨 CRITICALLY LOW hemoglobin (' + hbLevel + ' g/dL) - Life-threatening anemia, requires immediate blood transfusion');
+                              } else if (hbLevel < 8.0) {
+                                findings.push('🚨 Severe anemia (' + hbLevel + ' g/dL) - Immediate intervention required');
+                              } else if (hbLevel < 10.0) {
+                                findings.push('⚠️ Moderate anemia (' + hbLevel + ' g/dL) - Treatment recommended');
+                              } else if (hbLevel < 12.0) {
+                                findings.push('⚠️ Mild anemia (' + hbLevel + ' g/dL) - Monitor and treat underlying cause');
+                              }
+                            }
                             if (cbc['Total WBC']) {
                               const wbc = parseFloat(cbc['Total WBC']);
                               if (wbc > 15000) {
@@ -383,7 +402,8 @@ export default function AllResults() {
                                 widal['S. Typhi (O)Ag']?.includes('1:320') || widal['S. Typhi (H)Ag']?.includes('1:320')) {
                               findings.push('⚠️ Elevated typhoid titers - Consider typhoid fever');
                             }
-                            if (widal['S. Paratyphi A']?.includes('1:160') || widal['S. Paratyphi B']?.includes('1:160')) {
+                            if (widal['S. Paratyphi A']?.includes('1:160') || widal['S. Paratyphi B']?.includes('1:160') ||
+                                widal['S. Paratyphi A']?.includes('1:320') || widal['S. Paratyphi B']?.includes('1:320')) {
                               findings.push('⚠️ Elevated paratyphoid titers - Consider paratyphoid infection');
                             }
                           }
