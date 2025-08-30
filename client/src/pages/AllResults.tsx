@@ -600,7 +600,38 @@ export default function AllResults() {
                             }
                           }
                           
-                          // Check Blood Sugar levels
+                          // Check Blood Sugar levels - RBS and FBS separately
+                          if (parsed['Random Blood Sugar (RBS)']) {
+                            const rbs = parsed['Random Blood Sugar (RBS)'];
+                            if (rbs['Blood Glucose']) {
+                              const glucose = parseFloat(rbs['Blood Glucose']);
+                              if (glucose > 250) {
+                                findings.push('🚨 Extremely high random blood glucose (' + glucose + ' mg/dL) - Severe diabetes, immediate treatment');
+                              } else if (glucose > 200) {
+                                findings.push('🚨 Very high random blood glucose (' + glucose + ' mg/dL) - Diabetes likely');
+                              } else if (glucose > 140) {
+                                findings.push('⚠️ Elevated random blood glucose (' + glucose + ' mg/dL) - Monitor for diabetes');
+                              } else if (glucose < 70) {
+                                findings.push('🚨 Low blood glucose (' + glucose + ' mg/dL) - Hypoglycemia, immediate treatment needed');
+                              }
+                            }
+                          }
+                          
+                          if (parsed['Fasting Blood Sugar (FBS)']) {
+                            const fbs = parsed['Fasting Blood Sugar (FBS)'];
+                            if (fbs['Blood Glucose']) {
+                              const glucose = parseFloat(fbs['Blood Glucose']);
+                              if (glucose > 140) {
+                                findings.push('🚨 High fasting blood glucose (' + glucose + ' mg/dL) - Diabetes confirmed');
+                              } else if (glucose > 110) {
+                                findings.push('⚠️ Elevated fasting blood glucose (' + glucose + ' mg/dL) - Pre-diabetes');
+                              } else if (glucose < 70) {
+                                findings.push('🚨 Low fasting blood glucose (' + glucose + ' mg/dL) - Hypoglycemia');
+                              }
+                            }
+                          }
+                          
+                          // Legacy check for combined Blood Sugar (RBS/FBS)
                           if (parsed['Blood Sugar (RBS/FBS)']) {
                             const sugar = parsed['Blood Sugar (RBS/FBS)'];
                             if (sugar['Blood Glucose']) {

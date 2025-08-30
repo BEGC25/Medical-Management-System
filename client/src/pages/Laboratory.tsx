@@ -327,7 +327,6 @@ const commonTests = {
     "Complete Blood Count (CBC)",
     "Hemoglobin (HB)",
     "Total White Blood Count (TWBC)", 
-    "Blood Sugar (RBS/FBS)",
     "Blood Group & Rh",
     "ESR (Erythrocyte Sedimentation Rate)",
     "Rheumatoid Factor"
@@ -379,7 +378,8 @@ const commonTests = {
   biochemistry: [
     "Renal Function Test (RFT)",
     "Liver Function Test (LFT)",
-    "Blood Sugar (RBS/FBS)"
+    "Random Blood Sugar (RBS)",
+    "Fasting Blood Sugar (FBS)"
   ],
   
   stool: [
@@ -387,18 +387,30 @@ const commonTests = {
   ]
 };
 
-// Add Blood Sugar test results to resultFields
+// Add separate RBS and FBS test results to resultFields
 const bloodSugarFields = {
-  "Blood Sugar (RBS/FBS)": {
+  "Random Blood Sugar (RBS)": {
     "Blood Glucose": {
       type: "number",
       unit: "mg/dL",
-      normal: "70-140 (fasting), <200 (random)"
+      normal: "<200 (random)"
     },
-    "Test Type": {
+    "Time of Test": {
+      type: "text",
+      unit: "",
+      normal: "Any time"
+    }
+  },
+  "Fasting Blood Sugar (FBS)": {
+    "Blood Glucose": {
+      type: "number", 
+      unit: "mg/dL",
+      normal: "70-110 (fasting)"
+    },
+    "Fasting Duration": {
       type: "select",
-      options: ["Random Blood Sugar (RBS)", "Fasting Blood Sugar (FBS)", "Post-meal"],
-      normal: "N/A"
+      options: ["8 hours", "10 hours", "12 hours", "14+ hours"],
+      normal: "8+ hours"
     }
   }
 };
@@ -1939,22 +1951,38 @@ export default function Laboratory() {
                   <div className="avoid-break mb-6">
                     <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Patient Information</h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div><strong>Patient ID:</strong> {selectedLabTest.patientId}</div>
+                      {(() => {
+                        const patient = patientsQuery.find((p: Patient) => p.patientId === selectedLabTest.patientId);
+                        return (
+                          <>
+                            <div><strong>Name:</strong> {patient ? `${patient.firstName} ${patient.lastName}` : 'Patient not found'}</div>
+                            <div><strong>Patient ID:</strong> {selectedLabTest.patientId}</div>
+                            <div><strong>Age:</strong> {patient?.age || 'Not provided'}</div>
+                            <div><strong>Gender:</strong> {patient?.gender || 'Not specified'}</div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  
+                  {/* Test Information */}
+                  <div className="avoid-break mb-6">
+                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Test Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div><strong>Test ID:</strong> {selectedLabTest.testId}</div>
-                      <div><strong>Requested Date:</strong> {selectedLabTest.requestedDate}</div>
-                      <div><strong>Completed Date:</strong> {resultsForm.watch("completedDate")}</div>
+                      <div><strong>Category:</strong> {selectedLabTest.category}</div>
+                      <div><strong>Requested:</strong> {selectedLabTest.requestedDate}</div>
+                      <div><strong>Completed:</strong> {resultsForm.watch("completedDate")}</div>
+                      <div className="col-span-2"><strong>Tests Performed:</strong></div>
+                      <div className="col-span-2 ml-6">
+                        {JSON.parse(selectedLabTest.tests || "[]").map((test: string, index: number) => (
+                          <div key={index}>• {test}</div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Tests Performed */}
-                  <div className="avoid-break mb-6">
-                    <h3 className="text-lg font-semibold mb-3 border-b border-gray-200 pb-1">Tests Performed</h3>
-                    <ul className="ml-6 list-disc text-sm avoid-break">
-                      {JSON.parse(selectedLabTest.tests || "[]").map((test: string, index: number) => (
-                        <li key={index}>{test}</li>
-                      ))}
-                    </ul>
-                  </div>
+
 
                   {/* Clinical Interpretation */}
                   {resultsForm.watch("results") && (() => {
