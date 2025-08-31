@@ -38,6 +38,9 @@ export default function XRay() {
       return;
     }
 
+    console.log("X-ray Print: selectedPatient data:", selectedPatient);
+    console.log("X-ray Print: Patient age:", selectedPatient.age);
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 

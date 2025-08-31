@@ -32,6 +32,9 @@ export default function Ultrasound() {
       return;
     }
 
+    console.log("Ultrasound Print: selectedPatient data:", selectedPatient);
+    console.log("Ultrasound Print: Patient age:", selectedPatient.age);
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
