@@ -108,7 +108,7 @@ export default function XRay() {
               <div class="section-title">Examination Details</div>
               <div class="info-item"><span class="label">Examination Type:</span> ${formData.examType?.charAt(0).toUpperCase() + formData.examType?.slice(1)} X-Ray</div>
               ${formData.bodyPart ? `<div class="info-item"><span class="label">Body Part/Area:</span> ${formData.bodyPart}</div>` : ''}
-              <div class="info-item"><span class="label">Priority:</span> ${formData.priority?.charAt(0).toUpperCase() + formData.priority?.slice(1)}</div>
+
               <div class="info-item"><span class="label">Requested Date:</span> ${formData.requestedDate}</div>
             </div>
 
@@ -235,8 +235,7 @@ export default function XRay() {
                 <div>
                   <div class="info-item"><span class="label">Requested Date:</span> ${selectedXrayExam.requestedDate}</div>
                   <div class="info-item"><span class="label">Report Date:</span> ${reportData.reportDate || currentDate}</div>
-                  <div class="info-item"><span class="label">Technical Quality:</span> ${reportData.technicalQuality?.charAt(0).toUpperCase() + reportData.technicalQuality?.slice(1)}</div>
-                  <div class="info-item"><span class="label">Status:</span> ${reportData.reportStatus?.charAt(0).toUpperCase() + reportData.reportStatus?.slice(1)}</div>
+
                 </div>
               </div>
             </div>
@@ -581,44 +580,19 @@ export default function XRay() {
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Priority</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="routine">Routine</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                          <SelectItem value="emergency">Emergency</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="requestedDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Requested Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="requestedDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Requested Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Safety Checklist */}
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
@@ -781,25 +755,7 @@ export default function XRay() {
                 )}
               </h3>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Technical Quality
-                  </label>
-                  <Select 
-                    value={resultsForm.watch("technicalQuality")}
-                    onValueChange={(value) => resultsForm.setValue("technicalQuality", value as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="excellent">Excellent</SelectItem>
-                      <SelectItem value="good">Good</SelectItem>
-                      <SelectItem value="adequate">Adequate</SelectItem>
-                      <SelectItem value="limited">Limited</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -834,34 +790,14 @@ export default function XRay() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Report Status
-                    </label>
-                    <Select 
-                      value={resultsForm.watch("reportStatus")}
-                      onValueChange={(value) => resultsForm.setValue("reportStatus", value as any)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="abnormal">Abnormal</SelectItem>
-                        <SelectItem value="urgent">Urgent - Immediate attention needed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Report Date
-                    </label>
-                    <Input 
-                      type="date" 
-                      {...resultsForm.register("reportDate")}
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Report Date
+                  </label>
+                  <Input 
+                    type="date" 
+                    {...resultsForm.register("reportDate")}
+                  />
                 </div>
                 
                 <div>
