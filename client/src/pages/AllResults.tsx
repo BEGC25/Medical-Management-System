@@ -1165,9 +1165,6 @@ export default function AllResults() {
                       <span className="font-medium">Body Part:</span> {result.bodyPart}
                     </div>
                     <div>
-                      <span className="font-medium">Urgency:</span> {result.urgency}
-                    </div>
-                    <div>
                       <span className="font-medium">Requested Date:</span> {format(new Date(result.requestedDate), 'MMM dd, yyyy')}
                     </div>
                     {result.clinicalIndication && (
@@ -1179,9 +1176,8 @@ export default function AllResults() {
                   </div>
                 </div>
 
-                {result.status === 'completed' && (
+                {result.status === 'completed' && result.findings && (
                   <div>
-                    <h4 className="font-medium mb-2">Results</h4>
                     {result.findings && (
                       <div className="mb-3">
                         <span className="font-medium text-sm">Findings:</span>
