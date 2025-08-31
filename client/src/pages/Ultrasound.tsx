@@ -180,7 +180,7 @@ export default function Ultrasound() {
             <div class="section">
               <div class="section-title">Examination Details</div>
               <div class="info-item"><span class="label">Examination Type:</span> ${formData.examType?.charAt(0).toUpperCase() + formData.examType?.slice(1)} Ultrasound</div>
-              <div class="info-item"><span class="label">Priority:</span> ${formData.priority?.charAt(0).toUpperCase() + formData.priority?.slice(1)}</div>
+
               <div class="info-item"><span class="label">Requested Date:</span> ${formData.requestedDate}</div>
             </div>
 
@@ -219,7 +219,7 @@ export default function Ultrasound() {
       examType: "abdominal",
       clinicalIndication: "",
       specialInstructions: "",
-      priority: "routine",
+
       requestedDate: new Date().toISOString().split('T')[0],
     },
   });
@@ -595,29 +595,6 @@ export default function Ultrasound() {
 
                     <FormField
                       control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Priority</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select priority" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="routine">Routine</SelectItem>
-                              <SelectItem value="urgent">Urgent</SelectItem>
-                              <SelectItem value="emergency">Emergency</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
                       name="requestedDate"
                       render={({ field }) => (
                         <FormItem>
@@ -797,25 +774,7 @@ export default function Ultrasound() {
               </h3>
               <Form {...resultsForm}>
                 <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Image Quality
-                  </label>
-                  <Select 
-                    value={resultsForm.watch("imageQuality")}
-                    onValueChange={(value) => resultsForm.setValue("imageQuality", value as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="excellent">Excellent</SelectItem>
-                      <SelectItem value="good">Good</SelectItem>
-                      <SelectItem value="adequate">Adequate</SelectItem>
-                      <SelectItem value="limited">Limited</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
                 
                 <div>
                   <div className="flex items-center justify-between mb-2">
