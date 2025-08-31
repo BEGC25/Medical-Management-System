@@ -651,6 +651,23 @@ const resultFields = {
       normal: "14-18 (M), 12-16 (F)"
     }
   },
+  "Blood Group & Rh": {
+    "ABO Blood Group": {
+      type: "select",
+      options: ["A", "B", "AB", "O"],
+      normal: "Any"
+    },
+    "Rh Factor": {
+      type: "select",
+      options: ["Positive", "Negative"],
+      normal: "Any"
+    },
+    "Full Blood Type": {
+      type: "select",
+      options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
+      normal: "Any"
+    }
+  },
   "Blood Sugar (RBS/FBS)": {
     "Glucose Level": {
       type: "number",
