@@ -455,7 +455,7 @@ export default function XRay() {
                   <div>
                     <p className="font-medium">{selectedPatient.firstName} {selectedPatient.lastName}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      ID: {selectedPatient.patientId} | Gender: {selectedPatient.gender || 'Unknown'}
+                      ID: {selectedPatient.patientId} | Age: {selectedPatient.age || 'Unknown'} | Gender: {selectedPatient.gender || 'Unknown'}
                     </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setSelectedPatient(null)}>

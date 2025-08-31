@@ -114,12 +114,16 @@ export default function AllResults() {
 
   // Combine all results for a unified view
   const allResults = [
-    ...labTests.map(test => ({
-      ...test,
-      type: 'lab' as const,
-      date: test.completedDate || test.requestedDate,
-      patient: patients.find(p => p.patientId === test.patientId)
-    })),
+    ...labTests.map(test => {
+      const matchedPatient = patients.find(p => p.patientId === test.patientId);
+      console.log('Lab test mapping:', { testPatientId: test.patientId, matchedPatient, allPatients: patients.map(p => ({ id: p.patientId, age: p.age })) });
+      return {
+        ...test,
+        type: 'lab' as const,
+        date: test.completedDate || test.requestedDate,
+        patient: matchedPatient
+      };
+    }),
     ...xrayExams.map(exam => ({
       ...exam,
       type: 'xray' as const,

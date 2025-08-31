@@ -419,7 +419,7 @@ export default function Ultrasound() {
                     Selected: {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
                   </p>
                   <p className="text-sm text-green-600 dark:text-green-300">
-                    {selectedPatient.gender} • {selectedPatient.village} • Phone: {selectedPatient.phoneNumber}
+                    Age: {selectedPatient.age || 'Unknown'} • {selectedPatient.gender} • {selectedPatient.village} • Phone: {selectedPatient.phoneNumber}
                   </p>
                 </div>
               )}
