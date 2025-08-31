@@ -168,7 +168,7 @@ export default function AllResults() {
       case 'xray':
         return <FileText className="h-4 w-4 text-amber-500" />;
       case 'ultrasound':
-        return <Stethoscope className="h-4 w-4 text-purple-500" />;
+        return <Stethoscope className="h-4 w-4 text-teal-500" />;
       default:
         return <FileText className="h-4 w-4 text-gray-500" />;
     }
@@ -194,11 +194,11 @@ export default function AllResults() {
         };
       case 'ultrasound':
         return {
-          border: 'border-l-4 border-l-purple-200',
+          border: 'border-l-4 border-l-teal-200',
           bg: 'bg-slate-50/50 dark:bg-slate-900/10',
-          headerBg: 'bg-purple-50/70 dark:bg-purple-950/30',
-          textColor: 'text-purple-600 dark:text-purple-400',
-          badgeColor: 'bg-purple-50 text-purple-600 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800'
+          headerBg: 'bg-teal-50/70 dark:bg-teal-950/30',
+          textColor: 'text-teal-600 dark:text-teal-400',
+          badgeColor: 'bg-teal-50 text-teal-600 border border-teal-200 dark:bg-teal-950/50 dark:text-teal-400 dark:border-teal-800'
         };
       default:
         return {
@@ -1388,11 +1388,11 @@ export default function AllResults() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Ultrasounds</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-teal-600">
                   {filteredResults.filter(r => r.type === 'ultrasound').length}
                 </p>
               </div>
-              <Stethoscope className="h-8 w-8 text-purple-400" />
+              <Stethoscope className="h-8 w-8 text-teal-400" />
             </div>
           </CardContent>
         </Card>
