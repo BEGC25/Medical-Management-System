@@ -114,16 +114,12 @@ export default function AllResults() {
 
   // Combine all results for a unified view
   const allResults = [
-    ...labTests.map(test => {
-      const matchedPatient = patients.find(p => p.patientId === test.patientId);
-      console.log('Lab test mapping:', { testPatientId: test.patientId, matchedPatient, allPatients: patients.map(p => ({ id: p.patientId, age: p.age })) });
-      return {
-        ...test,
-        type: 'lab' as const,
-        date: test.completedDate || test.requestedDate,
-        patient: matchedPatient
-      };
-    }),
+    ...labTests.map(test => ({
+      ...test,
+      type: 'lab' as const,
+      date: test.completedDate || test.requestedDate,
+      patient: patients.find(p => p.patientId === test.patientId)
+    })),
     ...xrayExams.map(exam => ({
       ...exam,
       type: 'xray' as const,
@@ -931,10 +927,10 @@ export default function AllResults() {
                             <div class="section">
                               <div class="section-title">Patient Information</div>
                               <div class="info-grid">
-                                <div class="info-item"><strong>Name:</strong> ${patient?.firstName} ${patient?.lastName}</div>
-                                <div class="info-item"><strong>Patient ID:</strong> ${patient?.patientId}</div>
-                                <div class="info-item"><strong>Age:</strong> ${patient?.age || 'Age not found'}</div>
-                                <div class="info-item"><strong>Gender:</strong> ${patient?.gender || 'Not provided'}</div>
+                                <div class="info-item"><strong>Name:</strong> ${result.patient?.firstName || patient?.firstName} ${result.patient?.lastName || patient?.lastName}</div>
+                                <div class="info-item"><strong>Patient ID:</strong> ${result.patient?.patientId || patient?.patientId}</div>
+                                <div class="info-item"><strong>Age:</strong> ${result.patient?.age || patient?.age || 'Not provided'}</div>
+                                <div class="info-item"><strong>Gender:</strong> ${result.patient?.gender || patient?.gender || 'Not provided'}</div>
                               </div>
                             </div>
                             
