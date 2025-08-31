@@ -166,11 +166,61 @@ export default function AllResults() {
       case 'lab':
         return <Microscope className="h-4 w-4 text-blue-600" />;
       case 'xray':
-        return <FileText className="h-4 w-4 text-purple-600" />;
+        return <FileText className="h-4 w-4 text-orange-600" />;
       case 'ultrasound':
-        return <Stethoscope className="h-4 w-4 text-teal-600" />;
+        return <Stethoscope className="h-4 w-4 text-purple-600" />;
       default:
         return <FileText className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getDepartmentColors = (type: string) => {
+    switch (type) {
+      case 'lab':
+        return {
+          border: 'border-l-4 border-l-blue-500',
+          bg: 'bg-blue-50 dark:bg-blue-900/10',
+          headerBg: 'bg-blue-100 dark:bg-blue-900/20',
+          textColor: 'text-blue-800 dark:text-blue-200',
+          badgeColor: 'bg-blue-600 text-white'
+        };
+      case 'xray':
+        return {
+          border: 'border-l-4 border-l-orange-500',
+          bg: 'bg-orange-50 dark:bg-orange-900/10',
+          headerBg: 'bg-orange-100 dark:bg-orange-900/20',
+          textColor: 'text-orange-800 dark:text-orange-200',
+          badgeColor: 'bg-orange-600 text-white'
+        };
+      case 'ultrasound':
+        return {
+          border: 'border-l-4 border-l-purple-500',
+          bg: 'bg-purple-50 dark:bg-purple-900/10',
+          headerBg: 'bg-purple-100 dark:bg-purple-900/20',
+          textColor: 'text-purple-800 dark:text-purple-200',
+          badgeColor: 'bg-purple-600 text-white'
+        };
+      default:
+        return {
+          border: 'border-l-4 border-l-gray-500',
+          bg: 'bg-gray-50 dark:bg-gray-900/10',
+          headerBg: 'bg-gray-100 dark:bg-gray-900/20',
+          textColor: 'text-gray-800 dark:text-gray-200',
+          badgeColor: 'bg-gray-600 text-white'
+        };
+    }
+  };
+
+  const getDepartmentName = (type: string) => {
+    switch (type) {
+      case 'lab':
+        return 'Laboratory';
+      case 'xray':
+        return 'X-Ray';
+      case 'ultrasound':
+        return 'Ultrasound';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -1325,11 +1375,11 @@ export default function AllResults() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">X-Rays</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-orange-600">
                   {filteredResults.filter(r => r.type === 'xray').length}
                 </p>
               </div>
-              <FileText className="h-8 w-8 text-purple-400" />
+              <FileText className="h-8 w-8 text-orange-400" />
             </div>
           </CardContent>
         </Card>
@@ -1338,11 +1388,11 @@ export default function AllResults() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Ultrasounds</p>
-                <p className="text-2xl font-bold text-teal-600">
+                <p className="text-2xl font-bold text-purple-600">
                   {filteredResults.filter(r => r.type === 'ultrasound').length}
                 </p>
               </div>
-              <Stethoscope className="h-8 w-8 text-teal-400" />
+              <Stethoscope className="h-8 w-8 text-purple-400" />
             </div>
           </CardContent>
         </Card>
@@ -1361,43 +1411,54 @@ export default function AllResults() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredResults.map((result, index) => (
-                <div key={`${result.type}-${result.id}`} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      {getTypeIcon(result.type)}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">
-                            {result.patient?.firstName} {result.patient?.lastName}
-                          </h3>
-                          <Badge variant="outline" className="text-xs">
-                            {result.patient?.patientId}
+              {filteredResults.map((result, index) => {
+                const departmentColors = getDepartmentColors(result.type);
+                return (
+                  <div 
+                    key={`${result.type}-${result.id}`} 
+                    className={`border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 ${departmentColors.border} ${departmentColors.bg}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-2 rounded-full ${departmentColors.headerBg}`}>
+                          {getTypeIcon(result.type)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">
+                              {result.patient?.firstName} {result.patient?.lastName}
+                            </h3>
+                            <Badge variant="outline" className="text-xs">
+                              {result.patient?.patientId}
+                            </Badge>
+                            <Badge className={`text-xs ${departmentColors.badgeColor}`}>
+                              {getDepartmentName(result.type)}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            <span className={`font-medium ${departmentColors.textColor}`}>
+                              {result.type === 'lab' && `Lab: ${(result as any).testId}`}
+                              {result.type === 'xray' && `X-Ray: ${(result as any).examId}`}
+                              {result.type === 'ultrasound' && `US: ${(result as any).examId}`}
+                            </span>
+                            <span>•</span>
+                            <span>{format(new Date(result.date), 'MMM dd, yyyy')}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(result.status)}
+                          <Badge className={`text-xs ${getStatusColor(result.status)}`}>
+                            {result.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          <span className="font-medium">
-                            {result.type === 'lab' && `Lab: ${(result as any).testId}`}
-                            {result.type === 'xray' && `X-Ray: ${(result as any).examId}`}
-                            {result.type === 'ultrasound' && `US: ${(result as any).examId}`}
-                          </span>
-                          <span>•</span>
-                          <span>{format(new Date(result.date), 'MMM dd, yyyy')}</span>
-                        </div>
+                        {renderResultDetails(result)}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        {getStatusIcon(result.status)}
-                        <Badge className={`text-xs ${getStatusColor(result.status)}`}>
-                          {result.status}
-                        </Badge>
-                      </div>
-                      {renderResultDetails(result)}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
