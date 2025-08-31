@@ -793,6 +793,23 @@ const resultFields = {
       normal: "Negative"
     }
   },
+  "Rheumatoid Factor": {
+    "RF Result": {
+      type: "select",
+      options: ["Negative", "Positive"],
+      normal: "Negative"
+    },
+    "RF Titer": {
+      type: "number",
+      unit: "IU/mL",
+      normal: "<14"
+    },
+    "RF Interpretation": {
+      type: "select", 
+      options: ["Normal", "Weakly Positive", "Moderately Positive", "Strongly Positive"],
+      normal: "Normal"
+    }
+  },
   
   // Improved Hormone Tests (matching clinic request paper)
   "Thyroid Hormones": {
