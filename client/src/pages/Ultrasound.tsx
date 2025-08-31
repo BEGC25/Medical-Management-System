@@ -16,6 +16,85 @@ import { insertUltrasoundExamSchema, type InsertUltrasoundExam, type Patient, ty
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
+// Ultrasound template system for common findings
+function getUltrasoundTemplates(examType?: string) {
+  const templates = {
+    abdominal: {
+      normal: {
+        findings: "LIVER: Normal size, echogenicity, and homogeneous texture. No focal lesions or masses identified. Portal vein patent with normal flow.\n\nGALLBLADDER: Normal wall thickness, no stones or sludge. No pericholecystic fluid.\n\nKIDNEYS: Both kidneys normal in size and echogenicity. No hydronephrosis, stones, or masses. Corticomedullary differentiation preserved.\n\nPANCREAS: Visualized portions appear normal. No focal lesions.\n\nSPLEEN: Normal size and echogenicity. No focal lesions.\n\nBLADDER: Normal wall thickness, no stones or masses.",
+        impression: "Normal abdominal ultrasound examination."
+      },
+      abnormal: {
+        findings: "LIVER: [Describe abnormality - hepatomegaly, fatty infiltration, focal lesions, etc.]\n\nGALLBLADDER: [Describe abnormality - stones, wall thickening, etc.]\n\nKIDNEYS: [Describe abnormality - hydronephrosis, stones, masses, etc.]\n\nOTHER FINDINGS: [Additional abnormal findings]",
+        impression: "[Summarize abnormal findings and clinical significance]"
+      }
+    },
+    pelvic: {
+      normal: {
+        findings: "UTERUS: Normal size, shape, and echogenicity. Endometrial thickness appropriate for menstrual phase. No masses or fibroids.\n\nOVARIES: Both ovaries normal in size and appearance. No cysts or masses identified.\n\nPOUCH OF DOUGLAS: No free fluid.\n\nBLADDER: Normal appearance when distended.",
+        impression: "Normal pelvic ultrasound examination."
+      },
+      abnormal: {
+        findings: "UTERUS: [Describe abnormality - fibroids, masses, enlarged size, etc.]\n\nOVARIES: [Describe abnormality - cysts, masses, enlarged ovaries, etc.]\n\nADDITIONAL FINDINGS: [Other abnormal findings]",
+        impression: "[Summarize abnormal pelvic findings]"
+      }
+    },
+    obstetric: {
+      normal: {
+        findings: "FETAL BIOMETRY: Consistent with gestational age\nBPD: [measurement] mm\nHC: [measurement] mm\nAC: [measurement] mm\nFL: [measurement] mm\n\nFETAL ANATOMY: Normal fetal anatomy survey. Heart rate: [rate] bpm, regular rhythm.\n\nPLACENTA: [Location] placenta, normal thickness and echogenicity. Grade [I/II/III].\n\nAMNIOTIC FLUID: Normal volume (AFI: [measurement] cm).\n\nCERVIX: [Length] mm, closed internal os.",
+        impression: "Normal obstetric ultrasound. Estimated gestational age: [weeks] weeks [days] days."
+      },
+      abnormal: {
+        findings: "FETAL ASSESSMENT: [Describe abnormalities - growth restriction, anatomical anomalies, etc.]\n\nPLACENTA: [Describe abnormality - previa, abruption, abnormal location]\n\nAMNIOTIC FLUID: [Oligohydramnios/Polyhydramnios]\n\nADDITIONAL CONCERNS: [Other findings]",
+        impression: "[Summarize obstetric findings and recommendations]"
+      }
+    },
+    cardiac: {
+      normal: {
+        findings: "LEFT VENTRICLE: Normal size and systolic function. Estimated EF: 55-60%.\n\nRIGHT VENTRICLE: Normal size and function.\n\nATRIA: Normal size bilaterally.\n\nVALVES: Mitral, tricuspid, aortic, and pulmonary valves appear structurally normal with no significant stenosis or regurgitation.\n\nPERICARDIUM: No pericardial effusion.",
+        impression: "Normal cardiac ultrasound examination."
+      },
+      abnormal: {
+        findings: "LEFT VENTRICLE: [Describe abnormality - dilated, reduced EF, wall motion abnormalities]\n\nVALVULAR ASSESSMENT: [Describe valve abnormalities - stenosis, regurgitation]\n\nOTHER FINDINGS: [Additional cardiac abnormalities]",
+        impression: "[Summarize cardiac findings and clinical significance]"
+      }
+    },
+    renal: {
+      normal: {
+        findings: "RIGHT KIDNEY: Normal size ([length] cm), shape, and echogenicity. No hydronephrosis, stones, or masses. Corticomedullary differentiation preserved.\n\nLEFT KIDNEY: Normal size ([length] cm), shape, and echogenicity. No hydronephrosis, stones, or masses. Corticomedullary differentiation preserved.\n\nBLADDER: Normal wall thickness when distended. No stones or masses.",
+        impression: "Normal renal ultrasound examination."
+      },
+      abnormal: {
+        findings: "RIGHT KIDNEY: [Describe abnormality - hydronephrosis, stones, masses, size changes]\n\nLEFT KIDNEY: [Describe abnormality]\n\nBLADDER: [Describe abnormality if present]",
+        impression: "[Summarize renal findings and clinical significance]"
+      }
+    },
+    thyroid: {
+      normal: {
+        findings: "RIGHT LOBE: Normal size and echogenicity. No focal lesions or nodules.\n\nLEFT LOBE: Normal size and echogenicity. No focal lesions or nodules.\n\nISTHMUS: Normal thickness.\n\nLYMPH NODES: No enlarged cervical lymph nodes identified.",
+        impression: "Normal thyroid ultrasound examination."
+      },
+      abnormal: {
+        findings: "RIGHT LOBE: [Describe abnormality - nodules, enlarged size, heterogeneous echogenicity]\n\nLEFT LOBE: [Describe abnormality]\n\nADDITIONAL FINDINGS: [Lymph nodes, other findings]",
+        impression: "[Summarize thyroid findings and recommendations]"
+      }
+    },
+    vascular: {
+      normal: {
+        findings: "CAROTID ARTERIES: Normal flow patterns bilaterally. No significant stenosis.\n\nVERTEBRAL ARTERIES: Patent with normal flow.\n\nJUGULAR VEINS: Normal caliber and compressibility.",
+        impression: "Normal vascular ultrasound examination."
+      },
+      abnormal: {
+        findings: "ARTERIAL ASSESSMENT: [Describe abnormality - stenosis, occlusion, abnormal flow]\n\nVENOUS ASSESSMENT: [Describe venous abnormalities - thrombosis, incompetence]",
+        impression: "[Summarize vascular findings and clinical significance]"
+      }
+    }
+  };
+
+  // Return templates based on exam type, default to abdominal
+  return templates[examType as keyof typeof templates] || templates.abdominal;
+}
+
 export default function Ultrasound() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedUltrasoundExam, setSelectedUltrasoundExam] = useState<UltrasoundExam | null>(null);
@@ -739,9 +818,43 @@ export default function Ultrasound() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Findings
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Findings
+                    </label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const examType = selectedUltrasoundExam?.examType;
+                          const templates = getUltrasoundTemplates(examType);
+                          const currentFindings = resultsForm.getValues("findings") || "";
+                          const selectedTemplate = templates.normal.findings;
+                          resultsForm.setValue("findings", currentFindings ? `${currentFindings}\n\n${selectedTemplate}` : selectedTemplate);
+                        }}
+                        className="text-xs"
+                      >
+                        Normal
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const examType = selectedUltrasoundExam?.examType;
+                          const templates = getUltrasoundTemplates(examType);
+                          const currentFindings = resultsForm.getValues("findings") || "";
+                          const selectedTemplate = templates.abnormal.findings;
+                          resultsForm.setValue("findings", currentFindings ? `${currentFindings}\n\n${selectedTemplate}` : selectedTemplate);
+                        }}
+                        className="text-xs"
+                      >
+                        Abnormal
+                      </Button>
+                    </div>
+                  </div>
                   <Textarea
                     rows={6}
                     placeholder="Detailed ultrasound findings..."
@@ -750,9 +863,43 @@ export default function Ultrasound() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Impression
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Impression
+                    </label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const examType = selectedUltrasoundExam?.examType;
+                          const templates = getUltrasoundTemplates(examType);
+                          const currentImpression = resultsForm.getValues("impression") || "";
+                          const selectedTemplate = templates.normal.impression;
+                          resultsForm.setValue("impression", currentImpression ? `${currentImpression}\n\n${selectedTemplate}` : selectedTemplate);
+                        }}
+                        className="text-xs"
+                      >
+                        Normal
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const examType = selectedUltrasoundExam?.examType;
+                          const templates = getUltrasoundTemplates(examType);
+                          const currentImpression = resultsForm.getValues("impression") || "";
+                          const selectedTemplate = templates.abnormal.impression;
+                          resultsForm.setValue("impression", currentImpression ? `${currentImpression}\n\n${selectedTemplate}` : selectedTemplate);
+                        }}
+                        className="text-xs"
+                      >
+                        Abnormal
+                      </Button>
+                    </div>
+                  </div>
                   <Textarea
                     rows={3}
                     placeholder="Clinical impression and conclusion..."
