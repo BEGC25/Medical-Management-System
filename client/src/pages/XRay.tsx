@@ -157,6 +157,10 @@ export default function XRay() {
       return;
     }
 
+    console.log("X-ray Report Print: selectedPatient data:", selectedPatient);
+    console.log("X-ray Report Print: Patient age:", selectedPatient?.age);
+    console.log("X-ray Report Print: selectedXrayExam:", selectedXrayExam);
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -205,11 +209,26 @@ export default function XRay() {
             </div>
 
             <div class="section">
+              <div class="section-title">Patient Information</div>
+              <div class="info-grid">
+                <div>
+                  <div class="info-item"><span class="label">Patient Name:</span> ${selectedPatient?.firstName} ${selectedPatient?.lastName}</div>
+                  <div class="info-item"><span class="label">Patient ID:</span> ${selectedXrayExam.patientId}</div>
+                  <div class="info-item"><span class="label">Age:</span> ${selectedPatient?.age || 'Not provided'}</div>
+                </div>
+                <div>
+                  <div class="info-item"><span class="label">Gender:</span> ${selectedPatient?.gender || 'Not specified'}</div>
+                  <div class="info-item"><span class="label">Phone:</span> ${selectedPatient?.phoneNumber || 'Not provided'}</div>
+                  <div class="info-item"><span class="label">Village:</span> ${selectedPatient?.village || 'Not specified'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
               <div class="section-title">Examination Information</div>
               <div class="info-grid">
                 <div>
                   <div class="info-item"><span class="label">Exam ID:</span> ${selectedXrayExam.examId}</div>
-                  <div class="info-item"><span class="label">Patient ID:</span> ${selectedXrayExam.patientId}</div>
                   <div class="info-item"><span class="label">Examination Type:</span> ${selectedXrayExam.examType?.charAt(0).toUpperCase() + selectedXrayExam.examType?.slice(1)} X-Ray</div>
                   <div class="info-item"><span class="label">Body Part:</span> ${selectedXrayExam.bodyPart || 'Not specified'}</div>
                 </div>

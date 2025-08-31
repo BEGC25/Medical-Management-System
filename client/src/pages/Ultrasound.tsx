@@ -277,6 +277,10 @@ export default function Ultrasound() {
       return;
     }
 
+    console.log("Ultrasound Report Print: selectedPatient data:", selectedPatient);
+    console.log("Ultrasound Report Print: Patient age:", selectedPatient?.age);
+    console.log("Ultrasound Report Print: selectedUltrasoundExam:", selectedUltrasoundExam);
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -330,11 +334,26 @@ export default function Ultrasound() {
             </div>
 
             <div class="section">
+              <div class="section-title">Patient Information</div>
+              <div class="info-grid">
+                <div>
+                  <div class="info-item"><span class="label">Patient Name:</span> ${selectedPatient?.firstName} ${selectedPatient?.lastName}</div>
+                  <div class="info-item"><span class="label">Patient ID:</span> ${selectedUltrasoundExam.patientId}</div>
+                  <div class="info-item"><span class="label">Age:</span> ${selectedPatient?.age || 'Not provided'}</div>
+                </div>
+                <div>
+                  <div class="info-item"><span class="label">Gender:</span> ${selectedPatient?.gender || 'Not specified'}</div>
+                  <div class="info-item"><span class="label">Phone:</span> ${selectedPatient?.phoneNumber || 'Not provided'}</div>
+                  <div class="info-item"><span class="label">Village:</span> ${selectedPatient?.village || 'Not specified'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
               <div class="section-title">Examination Information</div>
               <div class="info-grid">
                 <div>
                   <div class="info-item"><span class="label">Ultrasound Order:</span> ${selectedUltrasoundExam.examId}</div>
-                  <div class="info-item"><span class="label">Patient ID:</span> ${selectedUltrasoundExam.patientId}</div>
                   <div class="info-item"><span class="label">Examination Type:</span> ${selectedUltrasoundExam.examType?.charAt(0).toUpperCase() + selectedUltrasoundExam.examType?.slice(1)} Ultrasound</div>
                 </div>
                 <div>
