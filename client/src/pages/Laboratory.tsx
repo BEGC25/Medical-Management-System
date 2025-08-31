@@ -315,6 +315,32 @@ const getClinicalInterpretation = (results: string) => {
       }
     }
     
+    // Check Rheumatoid Factor
+    if (parsed['Rheumatoid Factor']) {
+      const rf = parsed['Rheumatoid Factor'];
+      const rfResult = rf['RF Result'];
+      const rfTiter = parseFloat(rf['RF Titer']) || 0;
+      const rfInterpretation = rf['RF Interpretation'];
+      
+      // Check for value inconsistencies
+      if (rfResult === 'Positive' && rfTiter < 14) {
+        findings.push('⚠️ RF Result inconsistency: Marked as Positive but titer (' + rfTiter + ' IU/mL) is below normal threshold (<14)');
+      } else if (rfResult === 'Negative' && rfTiter >= 14) {
+        findings.push('⚠️ RF Result inconsistency: Marked as Negative but titer (' + rfTiter + ' IU/mL) is elevated');
+      }
+      
+      // Proper RF interpretation based on titer value
+      if (rfTiter >= 14) {
+        if (rfTiter >= 60) {
+          findings.push('🚨 ELEVATED Rheumatoid Factor (' + rfTiter + ' IU/mL) - Strong evidence for rheumatoid arthritis or autoimmune disease');
+        } else if (rfTiter >= 30) {
+          findings.push('⚠️ ELEVATED Rheumatoid Factor (' + rfTiter + ' IU/mL) - Moderate elevation, consider autoimmune conditions');
+        } else {
+          findings.push('⚠️ ELEVATED Rheumatoid Factor (' + rfTiter + ' IU/mL) - Mild elevation, clinical correlation recommended');
+        }
+      }
+    }
+    
     return findings;
   } catch (e) {
     return [];
