@@ -268,9 +268,7 @@ export default function AllResults() {
                   <span className="font-medium">Patient ID:</span> {patient?.patientId}
                 </div>
                 <div>
-                  <span className="font-medium">Age:</span> {patient?.dateOfBirth ? 
-                    `${new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} years` : 
-                    'Not provided'}
+                  <span className="font-medium">Age:</span> {patient?.age || 'Not provided'}
                 </div>
                 <div>
                   <span className="font-medium">Gender:</span> {patient?.gender || 'Not provided'}
