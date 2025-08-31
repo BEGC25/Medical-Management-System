@@ -25,8 +25,8 @@ function getUltrasoundTemplates(examType?: string) {
         impression: "Normal abdominal ultrasound examination."
       },
       abnormal: {
-        findings: "LIVER: [Describe abnormality - hepatomegaly, fatty infiltration, focal lesions, etc.]\n\nGALLBLADDER: [Describe abnormality - stones, wall thickening, etc.]\n\nKIDNEYS: [Describe abnormality - hydronephrosis, stones, masses, etc.]\n\nOTHER FINDINGS: [Additional abnormal findings]",
-        impression: "[Summarize abnormal findings and clinical significance]"
+        findings: "LIVER: Hepatomegaly noted with span measuring ___ cm. Echogenicity appears [increased/decreased/heterogeneous]. [Multiple hyperechoic foci consistent with fatty infiltration / Hypoechoic lesion measuring ___ cm in segment ___ / Dilated intrahepatic bile ducts]\n\nGALLBLADDER: [Multiple echogenic foci with posterior shadowing consistent with gallstones / Gallbladder wall thickening measuring ___ mm / Pericholecystic fluid present / Contracted gallbladder]\n\nKIDNEYS: [Right/Left/Both] kidney shows [mild/moderate/severe] hydronephrosis. [Echogenic focus with posterior shadowing in renal pelvis consistent with stone / Cortical thinning noted / Increased cortical echogenicity / Complex cystic lesion measuring ___ cm]\n\nPANCREAS: [Dilated pancreatic duct / Hypoechoic mass in head/body/tail / Calcifications noted]\n\nSPLEEN: [Splenomegaly with span ___ cm / Hypoechoic lesions noted / Increased echogenicity]\n\nASCITES: [Minimal/Moderate/Massive] free fluid in pelvis and paracolic gutters\n\nOTHER FINDINGS: [Lymphadenopathy / Bowel wall thickening / Abdominal aortic aneurysm]",
+        impression: "Abnormal abdominal ultrasound. [Cholelithiasis with gallbladder inflammation / Hepatomegaly with fatty infiltration / Renal calculi with hydronephrosis / Splenomegaly / Ascites of unknown etiology]. Recommend [clinical correlation / CT scan / MRCP / urology referral / gastroenterology consultation]."
       }
     },
     pelvic: {
@@ -35,58 +35,58 @@ function getUltrasoundTemplates(examType?: string) {
         impression: "Normal pelvic ultrasound examination."
       },
       abnormal: {
-        findings: "UTERUS: [Describe abnormality - fibroids, masses, enlarged size, etc.]\n\nOVARIES: [Describe abnormality - cysts, masses, enlarged ovaries, etc.]\n\nADDITIONAL FINDINGS: [Other abnormal findings]",
-        impression: "[Summarize abnormal pelvic findings]"
+        findings: "UTERUS: [Enlarged uterus measuring ___ x ___ x ___ cm / Multiple intramural fibroids, largest measuring ___ cm / Thickened endometrium measuring ___ mm / Heterogeneous myometrial texture / Retroverted/anteflexed position]\n\nRIGHT OVARY: [Simple cyst measuring ___ cm / Complex cyst with internal echoes / Solid mass measuring ___ cm / Polycystic appearance with multiple follicles / Not visualized secondary to bowel gas]\n\nLEFT OVARY: [Simple cyst measuring ___ cm / Complex cyst with septations / Hemorrhagic cyst / Solid components noted / Enlarged measuring ___ x ___ cm]\n\nPOUCH OF DOUGLAS: [Free fluid present / Complex fluid collection / Debris noted]\n\nBLADDER: [Wall thickening / Echogenic focus consistent with stone / Incomplete emptying with residual volume ___ ml]\n\nCERVIX: [Nabothian cysts / Thickened appearance]",
+        impression: "Abnormal pelvic ultrasound. [Uterine fibroids / Ovarian cyst requiring follow-up / Complex adnexal mass / Endometrial thickening]. Recommend [gynecologic evaluation / pelvic MRI / tumor markers / follow-up ultrasound in ___ weeks]."
       }
     },
     obstetric: {
       normal: {
-        findings: "FETAL BIOMETRY: Consistent with gestational age\nBPD: [measurement] mm\nHC: [measurement] mm\nAC: [measurement] mm\nFL: [measurement] mm\n\nFETAL ANATOMY: Normal fetal anatomy survey. Heart rate: [rate] bpm, regular rhythm.\n\nPLACENTA: [Location] placenta, normal thickness and echogenicity. Grade [I/II/III].\n\nAMNIOTIC FLUID: Normal volume (AFI: [measurement] cm).\n\nCERVIX: [Length] mm, closed internal os.",
-        impression: "Normal obstetric ultrasound. Estimated gestational age: [weeks] weeks [days] days."
+        findings: "FETAL BIOMETRY: Consistent with gestational age\nBPD: ___ mm (___th percentile)\nHC: ___ mm (___th percentile)\nAC: ___ mm (___th percentile)\nFL: ___ mm (___th percentile)\nEstimated fetal weight: ___ grams\n\nFETAL ANATOMY: Normal fetal anatomy survey. Heart rate: ___ bpm, regular rhythm. Four-chamber heart view normal. Spine intact. Both kidneys visualized. Stomach bubble present. Bladder visualized.\n\nPLACENTA: [Anterior/Posterior/Fundal/Lateral] placenta, normal thickness and echogenicity. Grade [I/II/III]. No previa.\n\nAMNIOTIC FLUID: Normal volume (AFI: ___ cm).\n\nCERVIX: ___ mm length, closed internal os.\n\nUMBILICAL CORD: Three vessels present.",
+        impression: "Normal obstetric ultrasound. Estimated gestational age: ___ weeks ___ days. Estimated delivery date: ___."
       },
       abnormal: {
-        findings: "FETAL ASSESSMENT: [Describe abnormalities - growth restriction, anatomical anomalies, etc.]\n\nPLACENTA: [Describe abnormality - previa, abruption, abnormal location]\n\nAMNIOTIC FLUID: [Oligohydramnios/Polyhydramnios]\n\nADDITIONAL CONCERNS: [Other findings]",
-        impression: "[Summarize obstetric findings and recommendations]"
+        findings: "FETAL BIOMETRY: [Measurements below 10th percentile consistent with IUGR / Measurements above 90th percentile consistent with macrosomia / Asymmetric growth pattern]\nBPD: ___ mm (___th percentile)\nHC: ___ mm (___th percentile)\nAC: ___ mm (___th percentile)\nFL: ___ mm (___th percentile)\n\nFETAL ANATOMY: [Cardiac anomaly - VSD/ASD/hypoplastic left heart / Neural tube defect - spina bifida/anencephaly / Renal anomaly - bilateral renal agenesis/polycystic kidneys / Gastrointestinal - gastroschisis/omphalocele]\n\nPLACENTA: [Complete/Partial placenta previa covering internal os / Placental abruption with retroplacental hematoma / Low-lying placenta / Abnormally adherent placenta]\n\nAMNIOTIC FLUID: [Oligohydramnios with AFI ___ cm / Polyhydramnios with AFI ___ cm / Anhydramnios]\n\nUMBILICAL CORD: [Single umbilical artery / Cord around neck / True knot / Velamentous insertion]\n\nCERVIX: [Short cervix measuring ___ mm / Funneling present / Incompetent cervix]",
+        impression: "Abnormal obstetric ultrasound. [Intrauterine growth restriction / Fetal anomaly requiring genetic counseling / Placenta previa requiring C-section delivery / Oligohydramnios requiring close monitoring]. Recommend [maternal-fetal medicine consultation / genetic counseling / serial growth scans / hospital delivery planning]."
       }
     },
     cardiac: {
       normal: {
-        findings: "LEFT VENTRICLE: Normal size and systolic function. Estimated EF: 55-60%.\n\nRIGHT VENTRICLE: Normal size and function.\n\nATRIA: Normal size bilaterally.\n\nVALVES: Mitral, tricuspid, aortic, and pulmonary valves appear structurally normal with no significant stenosis or regurgitation.\n\nPERICARDIUM: No pericardial effusion.",
-        impression: "Normal cardiac ultrasound examination."
+        findings: "LEFT VENTRICLE: Normal size and systolic function. Estimated EF: 55-65%. No wall motion abnormalities. IVS thickness: ___ mm. LVPW thickness: ___ mm.\n\nRIGHT VENTRICLE: Normal size and function. No RV dilation.\n\nLEFT ATRIUM: Normal size. LA dimension: ___ mm.\n\nRIGHT ATRIUM: Normal size and appearance.\n\nVALVES: Mitral valve - normal leaflets, no stenosis or regurgitation. Tricuspid valve - normal appearance. Aortic valve - trileaflet, normal opening. Pulmonary valve - normal.\n\nPERICARDIUM: No pericardial effusion.\n\nAORTA: Normal root dimensions.",
+        impression: "Normal echocardiogram. Normal left ventricular size and systolic function."
       },
       abnormal: {
-        findings: "LEFT VENTRICLE: [Describe abnormality - dilated, reduced EF, wall motion abnormalities]\n\nVALVULAR ASSESSMENT: [Describe valve abnormalities - stenosis, regurgitation]\n\nOTHER FINDINGS: [Additional cardiac abnormalities]",
-        impression: "[Summarize cardiac findings and clinical significance]"
+        findings: "LEFT VENTRICLE: [Dilated with EDD ___ mm / Reduced systolic function with EF ___% / Regional wall motion abnormality in ___ territory / Hypertrophic with IVS ___ mm / Hypokinetic/akinetic segments]\n\nRIGHT VENTRICLE: [Dilated and pressure overloaded / Reduced systolic function / Hypokinetic]\n\nLEFT ATRIUM: [Dilated measuring ___ mm / Spontaneous echo contrast / Thrombus visualized]\n\nVALVULAR ASSESSMENT:\nMitral valve: [Severe stenosis with valve area ___ cm² / Severe regurgitation with regurgitant fraction ___% / Mitral valve prolapse / Rheumatic changes]\nAortic valve: [Severe stenosis with peak velocity ___ m/s / Severe regurgitation / Bicuspid valve / Calcific stenosis]\nTricuspid valve: [Severe regurgitation with RVSP ___ mmHg / Stenosis]\n\nPERICARDIUM: [Pericardial effusion - small/moderate/large/tamponade physiology / Pericardial thickening]\n\nPULMONARY HYPERTENSION: [Estimated RVSP ___ mmHg based on TR jet]",
+        impression: "Abnormal echocardiogram. [Systolic heart failure with reduced EF / Valvular heart disease - severe mitral/aortic stenosis/regurgitation / Pulmonary hypertension / Pericardial effusion]. Recommend [cardiology consultation / cardiac catheterization / surgical evaluation / medical optimization]."
       }
     },
     renal: {
       normal: {
-        findings: "RIGHT KIDNEY: Normal size ([length] cm), shape, and echogenicity. No hydronephrosis, stones, or masses. Corticomedullary differentiation preserved.\n\nLEFT KIDNEY: Normal size ([length] cm), shape, and echogenicity. No hydronephrosis, stones, or masses. Corticomedullary differentiation preserved.\n\nBLADDER: Normal wall thickness when distended. No stones or masses.",
-        impression: "Normal renal ultrasound examination."
+        findings: "RIGHT KIDNEY: Normal size (length: ___ cm), shape, and echogenicity. No hydronephrosis, stones, or masses. Corticomedullary differentiation preserved. Cortical thickness normal.\n\nLEFT KIDNEY: Normal size (length: ___ cm), shape, and echogenicity. No hydronephrosis, stones, or masses. Corticomedullary differentiation preserved. Cortical thickness normal.\n\nBLADDER: Normal wall thickness when distended. No stones or masses. Complete emptying observed. Post-void residual: ___ ml.",
+        impression: "Normal renal ultrasound examination. Bilateral kidneys normal in size and appearance."
       },
       abnormal: {
-        findings: "RIGHT KIDNEY: [Describe abnormality - hydronephrosis, stones, masses, size changes]\n\nLEFT KIDNEY: [Describe abnormality]\n\nBLADDER: [Describe abnormality if present]",
-        impression: "[Summarize renal findings and clinical significance]"
+        findings: "RIGHT KIDNEY: [Enlarged measuring ___ cm / Small kidney measuring ___ cm / Mild/moderate/severe hydronephrosis with calyceal dilatation / Echogenic focus with posterior shadowing in renal pelvis consistent with stone / Increased cortical echogenicity consistent with medical renal disease / Complex cystic lesion measuring ___ cm / Solid mass measuring ___ cm / Cortical thinning noted]\n\nLEFT KIDNEY: [Enlarged measuring ___ cm / Small kidney measuring ___ cm / Mild/moderate/severe hydronephrosis / Multiple simple cysts / Polycystic kidney disease / Absent kidney / Duplex collecting system / Scarring in upper/lower pole]\n\nBLADDER: [Wall thickening measuring ___ mm / Echogenic focus with shadowing consistent with stone / Irregular wall contour / Mass lesion measuring ___ cm / Incomplete emptying with residual ___ ml / Trabeculated appearance]\n\nURETERS: [Dilated right/left ureter / Ureteral stone with proximal dilatation]\n\nADDITIONAL FINDINGS: [Perinephric fluid collection / Retroperitoneal lymphadenopathy]",
+        impression: "Abnormal renal ultrasound. [Bilateral hydronephrosis secondary to bladder outlet obstruction / Renal calculi with obstruction / Chronic kidney disease / Renal mass requiring further evaluation / Polycystic kidney disease]. Recommend [urology referral / CT urography / cystoscopy / nephrology consultation / follow-up ultrasound in ___ weeks]."
       }
     },
     thyroid: {
       normal: {
-        findings: "RIGHT LOBE: Normal size and echogenicity. No focal lesions or nodules.\n\nLEFT LOBE: Normal size and echogenicity. No focal lesions or nodules.\n\nISTHMUS: Normal thickness.\n\nLYMPH NODES: No enlarged cervical lymph nodes identified.",
-        impression: "Normal thyroid ultrasound examination."
+        findings: "RIGHT LOBE: Normal size measuring ___ x ___ x ___ cm. Homogeneous echogenicity. No focal lesions or nodules. Normal vascularity.\n\nLEFT LOBE: Normal size measuring ___ x ___ x ___ cm. Homogeneous echogenicity. No focal lesions or nodules. Normal vascularity.\n\nISTHMUS: Normal thickness measuring ___ mm.\n\nLYMPH NODES: No enlarged cervical lymph nodes identified.",
+        impression: "Normal thyroid ultrasound examination. Both lobes normal in size and appearance."
       },
       abnormal: {
-        findings: "RIGHT LOBE: [Describe abnormality - nodules, enlarged size, heterogeneous echogenicity]\n\nLEFT LOBE: [Describe abnormality]\n\nADDITIONAL FINDINGS: [Lymph nodes, other findings]",
-        impression: "[Summarize thyroid findings and recommendations]"
+        findings: "RIGHT LOBE: [Enlarged measuring ___ x ___ x ___ cm / Heterogeneous echogenicity / Solid nodule measuring ___ cm with irregular margins / Complex cystic nodule / Multiple nodules largest measuring ___ cm / Hypoechoic nodule with microcalcifications / Increased vascularity]\n\nLEFT LOBE: [Enlarged measuring ___ x ___ x ___ cm / Heterogeneous texture / Solid hypoechoic nodule measuring ___ cm / Spongiform nodule / Colloid nodule / Decreased echogenicity consistent with thyroiditis]\n\nISTHMUS: [Thickened measuring ___ mm / Nodule present measuring ___ cm]\n\nVASCULARITY: [Increased flow in nodule / Peripheral vascularity / Central flow pattern]\n\nLYMPH NODES: [Enlarged level II/III/IV lymph nodes measuring ___ cm / Loss of fatty hilum / Increased cortical thickness]\n\nADDITIONAL FINDINGS: [Tracheal deviation / Esophageal compression]",
+        impression: "Abnormal thyroid ultrasound. [Multinodular goiter / Suspicious thyroid nodule requiring FNA / Thyroiditis / Hashimoto's thyroiditis]. Recommend [endocrinology referral / fine needle aspiration / thyroid function tests / follow-up ultrasound in ___ months]."
       }
     },
     vascular: {
       normal: {
-        findings: "CAROTID ARTERIES: Normal flow patterns bilaterally. No significant stenosis.\n\nVERTEBRAL ARTERIES: Patent with normal flow.\n\nJUGULAR VEINS: Normal caliber and compressibility.",
-        impression: "Normal vascular ultrasound examination."
+        findings: "RIGHT CAROTID ARTERY: Normal flow patterns. Peak systolic velocity: ___ cm/s. No significant stenosis (<50%). Normal wall thickness.\n\nLEFT CAROTID ARTERY: Normal flow patterns. Peak systolic velocity: ___ cm/s. No significant stenosis (<50%). Normal wall thickness.\n\nVERTEBRAL ARTERIES: Patent bilaterally with antegrade flow. Normal velocities.\n\nJUGULAR VEINS: Normal caliber and compressibility bilaterally. No thrombus.",
+        impression: "Normal carotid duplex examination. No hemodynamically significant stenosis."
       },
       abnormal: {
-        findings: "ARTERIAL ASSESSMENT: [Describe abnormality - stenosis, occlusion, abnormal flow]\n\nVENOUS ASSESSMENT: [Describe venous abnormalities - thrombosis, incompetence]",
-        impression: "[Summarize vascular findings and clinical significance]"
+        findings: "RIGHT CAROTID ARTERY: [Mild stenosis 50-69% with PSV ___ cm/s / Severe stenosis >70% with PSV >230 cm/s / Complete occlusion / Increased intimal-medial thickness / Heterogeneous plaque with ulceration]\n\nLEFT CAROTID ARTERY: [Mild stenosis 50-69% with PSV ___ cm/s / Severe stenosis >70% with PSV >230 cm/s / Moderate stenosis with turbulent flow / Calcified plaque causing acoustic shadowing]\n\nVERTEBRAL ARTERIES: [Retrograde flow suggesting subclavian steal / Stenosis at origin / Diminished flow velocities]\n\nJUGULAR VEINS: [Acute thrombosis with non-compressible vessel / Chronic thrombus with partial recanalization / Venous reflux with incompetent valves]\n\nLOWER EXTREMITY VEINS: [Deep vein thrombosis in femoral/popliteal/posterior tibial veins / Superficial thrombophlebitis / Venous insufficiency with reflux]\n\nARTERIAL DOPPLER: [Monophasic waveform suggesting proximal stenosis / Absent flow / Arteriovenous fistula]",
+        impression: "Abnormal vascular ultrasound. [Carotid stenosis requiring intervention / Deep vein thrombosis requiring anticoagulation / Arterial occlusive disease / Venous insufficiency]. Recommend [vascular surgery consultation / anticoagulation therapy / CT angiography / compression therapy]."
       }
     }
   };
