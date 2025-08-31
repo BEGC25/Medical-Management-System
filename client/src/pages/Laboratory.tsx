@@ -1871,7 +1871,7 @@ export default function Laboratory() {
                       <div><strong>Name:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</div>
                       <div><strong>Patient ID:</strong> {selectedPatient.patientId}</div>
                       <div><strong>Phone:</strong> {selectedPatient.phoneNumber}</div>
-                      <div><strong>Age:</strong> {selectedPatient.age || 'Not provided'}</div>
+                      <div><strong>Age:</strong> {selectedPatient.age || 'Age not found'}</div>
                     </div>
                   </div>
 

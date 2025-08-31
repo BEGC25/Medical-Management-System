@@ -90,7 +90,7 @@ export default function XRay() {
                 <div>
                   <div class="info-item"><span class="label">Patient Name:</span> ${selectedPatient.firstName} ${selectedPatient.lastName}</div>
                   <div class="info-item"><span class="label">Patient ID:</span> ${selectedPatient.patientId}</div>
-                  <div class="info-item"><span class="label">Age:</span> ${selectedPatient.age || 'Not provided'}</div>
+                  <div class="info-item"><span class="label">Age:</span> ${selectedPatient.age || 'Age not found'}</div>
                   <div class="info-item"><span class="label">Gender:</span> ${selectedPatient.gender || 'Not specified'}</div>
                 </div>
                 <div>
@@ -393,8 +393,8 @@ export default function XRay() {
     
     // Check safety requirements for certain patient types
     const isPregnancyRelevant = selectedPatient.gender === 'female' && 
-      selectedPatient.dateOfBirth && 
-      (new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()) >= 12;
+      selectedPatient.age && 
+      parseInt(selectedPatient.age) >= 12;
     
     if (isPregnancyRelevant && !safetyChecklist.notPregnant) {
       toast({
@@ -501,7 +501,7 @@ export default function XRay() {
                   <FormItem>
                     <FormLabel>Specific Area/Body Part</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Left ankle, Right shoulder, etc." {...field} />
+                      <Input placeholder="e.g., Left ankle, Right shoulder, etc." {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -519,6 +519,7 @@ export default function XRay() {
                         placeholder="Reason for X-ray, symptoms, suspected condition..."
                         rows={3}
                         {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -537,6 +538,7 @@ export default function XRay() {
                         placeholder="Any special positioning or techniques required..."
                         rows={2}
                         {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -590,8 +592,8 @@ export default function XRay() {
                   Safety Checklist
                 </h4>
                 <div className="space-y-2">
-                  {selectedPatient?.gender === 'female' && selectedPatient.dateOfBirth && 
-                   (new Date().getFullYear() - new Date(selectedPatient.dateOfBirth).getFullYear()) >= 12 && (
+                  {selectedPatient?.gender === 'female' && selectedPatient.age && 
+                   parseInt(selectedPatient.age) >= 12 && (
                     <label className="flex items-center">
                       <Checkbox
                         checked={safetyChecklist.notPregnant}

@@ -929,7 +929,7 @@ export default function AllResults() {
                               <div class="info-grid">
                                 <div class="info-item"><strong>Name:</strong> ${patient?.firstName} ${patient?.lastName}</div>
                                 <div class="info-item"><strong>Patient ID:</strong> ${patient?.patientId}</div>
-                                <div class="info-item"><strong>Age:</strong> ${patient?.age || 'Not provided'}</div>
+                                <div class="info-item"><strong>Age:</strong> ${patient?.age || 'Age not found'}</div>
                                 <div class="info-item"><strong>Gender:</strong> ${patient?.gender || 'Not provided'}</div>
                               </div>
                             </div>
