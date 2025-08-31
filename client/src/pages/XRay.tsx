@@ -445,7 +445,7 @@ export default function XRay() {
     });
   };
 
-  const handleXrayExamSelect = (xrayExam: XrayExam) => {
+  const handleXrayExamSelect = async (xrayExam: XrayExam) => {
     setSelectedXrayExam(xrayExam);
     resultsForm.reset({
       technicalQuality: xrayExam.technicalQuality || "good",
@@ -456,6 +456,19 @@ export default function XRay() {
       reportDate: xrayExam.reportDate || new Date().toISOString().split('T')[0],
       radiologist: xrayExam.radiologist || "",
     });
+    
+    // Load patient data for the selected exam
+    try {
+      const response = await fetch(`/api/patients`);
+      const patients = await response.json();
+      const patient = patients.find((p: Patient) => p.patientId === xrayExam.patientId);
+      if (patient) {
+        setSelectedPatient(patient);
+        console.log("Loaded patient for X-ray exam:", patient);
+      }
+    } catch (error) {
+      console.error("Failed to load patient for X-ray exam:", error);
+    }
   };
 
   return (

@@ -267,6 +267,32 @@ export default function Ultrasound() {
     form.setValue("patientId", patient.patientId);
   };
 
+  const handleUltrasoundExamSelect = async (exam: UltrasoundExam) => {
+    setSelectedUltrasoundExam(exam);
+    resultsForm.reset({
+      imageQuality: exam.imageQuality || "good",
+      findings: exam.findings || "",
+      impression: exam.impression || "",
+      recommendations: exam.recommendations || "",
+      reportStatus: exam.reportStatus || "normal",
+      reportDate: exam.reportDate || new Date().toISOString().split('T')[0],
+      sonographer: exam.sonographer || "",
+    });
+    
+    // Load patient data for the selected exam
+    try {
+      const response = await fetch(`/api/patients`);
+      const patients = await response.json();
+      const patient = patients.find((p: Patient) => p.patientId === exam.patientId);
+      if (patient) {
+        setSelectedPatient(patient);
+        console.log("Loaded patient for ultrasound exam:", patient);
+      }
+    } catch (error) {
+      console.error("Failed to load patient for ultrasound exam:", error);
+    }
+  };
+
   const printUltrasoundReport = () => {
     if (!selectedUltrasoundExam) {
       toast({
@@ -603,7 +629,7 @@ export default function Ultrasound() {
                 <div 
                   key={exam.id}
                   className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                  onClick={() => setSelectedUltrasoundExam(exam)}
+                  onClick={() => handleUltrasoundExamSelect(exam)}
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -646,7 +672,7 @@ export default function Ultrasound() {
                 <div 
                   key={exam.id}
                   className="border border-green-200 dark:border-green-700 rounded-lg p-3 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer"
-                  onClick={() => setSelectedUltrasoundExam(exam)}
+                  onClick={() => handleUltrasoundExamSelect(exam)}
                 >
                   <div className="flex justify-between items-start">
                     <div>
