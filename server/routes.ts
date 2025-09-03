@@ -242,6 +242,19 @@ router.put("/api/ultrasound-exams/:examId", async (req, res) => {
   }
 });
 
+router.delete("/api/ultrasound-exams/:examId", async (req, res) => {
+  try {
+    const success = await storage.deleteUltrasoundExam(req.params.examId);
+    if (success) {
+      res.json({ message: "Ultrasound exam deleted successfully" });
+    } else {
+      res.status(404).json({ error: "Ultrasound exam not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete ultrasound exam" });
+  }
+});
+
 // Dashboard
 router.get("/api/dashboard/stats", async (req, res) => {
   try {

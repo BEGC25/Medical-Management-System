@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock } from "lucide-react";
+import { Send, Printer, Check, Clock, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
 import { insertUltrasoundExamSchema, type InsertUltrasoundExam, type Patient, type UltrasoundExam } from "@shared/schema";
@@ -319,6 +330,28 @@ export default function Ultrasound() {
           variant: "destructive",
         });
       }
+    },
+  });
+
+  const deleteUltrasoundExamMutation = useMutation({
+    mutationFn: async (examId: string) => {
+      const response = await apiRequest("DELETE", `/api/ultrasound-exams/${examId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Ultrasound exam deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete ultrasound exam",
+        variant: "destructive",
+      });
     },
   });
 
@@ -684,11 +717,13 @@ export default function Ultrasound() {
               {pendingUltrasounds?.map((exam: UltrasoundExam) => (
                 <div 
                   key={exam.id}
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                  onClick={() => handleUltrasoundExamSelect(exam)}
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => handleUltrasoundExamSelect(exam)}
+                    >
                       <p className="font-medium text-gray-800 dark:text-gray-200">
                         Patient ID: {exam.patientId} - {exam.examType.charAt(0).toUpperCase() + exam.examType.slice(1)} Ultrasound
                       </p>
@@ -704,10 +739,42 @@ export default function Ultrasound() {
                         </p>
                       )}
                     </div>
-                    <Badge className="bg-attention-orange text-white">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Pending
-                    </Badge>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Badge className="bg-attention-orange text-white">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Pending
+                      </Badge>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Ultrasound Request</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this ultrasound request for Patient ID {exam.patientId}? 
+                              This action cannot be undone and will permanently remove the request.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteUltrasoundExamMutation.mutate(exam.examId)}
+                              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                            >
+                              {deleteUltrasoundExamMutation.isPending ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               ))}

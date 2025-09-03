@@ -507,6 +507,14 @@ export class MemStorage implements IStorage {
     return ultrasoundExam;
   }
 
+  async deleteUltrasoundExam(examId: string): Promise<boolean> {
+    const result = await db.delete(ultrasoundExams)
+      .where(eq(ultrasoundExams.examId, examId))
+      .returning();
+    
+    return result.length > 0;
+  }
+
   async getDashboardStats() {
     try {
       const today = new Date().toISOString().split('T')[0];
