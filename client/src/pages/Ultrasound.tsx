@@ -21,6 +21,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
 import { insertUltrasoundExamSchema, type InsertUltrasoundExam, type Patient, type UltrasoundExam } from "@shared/schema";
@@ -109,6 +116,8 @@ function getUltrasoundTemplates(examType?: string) {
 export default function Ultrasound() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedUltrasoundExam, setSelectedUltrasoundExam] = useState<UltrasoundExam | null>(null);
+  const [selectedUltrasoundPatient, setSelectedUltrasoundPatient] = useState<Patient | null>(null);
+  const [isResultsModalOpen, setIsResultsModalOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -307,6 +316,8 @@ export default function Ultrasound() {
       });
       resultsForm.reset();
       setSelectedUltrasoundExam(null);
+      setSelectedUltrasoundPatient(null);
+      setIsResultsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
@@ -323,6 +334,8 @@ export default function Ultrasound() {
         });
         resultsForm.reset();
         setSelectedUltrasoundExam(null);
+        setSelectedUltrasoundPatient(null);
+        setIsResultsModalOpen(false);
       } else {
         toast({
           title: "Error",
@@ -382,7 +395,6 @@ export default function Ultrasound() {
   const handleUltrasoundExamSelect = async (exam: UltrasoundExam) => {
     setSelectedUltrasoundExam(exam);
     resultsForm.reset({
-      imageQuality: exam.imageQuality || "good",
       findings: exam.findings || "",
       impression: exam.impression || "",
       recommendations: exam.recommendations || "",
@@ -397,12 +409,15 @@ export default function Ultrasound() {
       const patients = await response.json();
       const patient = patients.find((p: Patient) => p.patientId === exam.patientId);
       if (patient) {
-        setSelectedPatient(patient);
+        setSelectedUltrasoundPatient(patient);
         console.log("Loaded patient for ultrasound exam:", patient);
       }
     } catch (error) {
       console.error("Failed to load patient for ultrasound exam:", error);
     }
+    
+    // Open the modal instead of scrolling
+    setIsResultsModalOpen(true);
   };
 
   const printUltrasoundReport = () => {
@@ -830,16 +845,53 @@ export default function Ultrasound() {
             </div>
           </div>
 
-          {/* Report Entry Form */}
-          {selectedUltrasoundExam && (
-            <div>
-              <h3 className="font-medium text-gray-800 mb-4 dark:text-gray-200">
-                Ultrasound Report - {selectedUltrasoundExam.examId}
-                {selectedUltrasoundExam.status === 'completed' && (
-                  <Badge className="ml-2 bg-blue-600 text-white">Editing Completed Report</Badge>
-                )}
-              </h3>
-              <Form {...resultsForm}>
+        </CardContent>
+      </Card>
+
+      {/* Results Entry Modal Dialog */}
+      <Dialog open={isResultsModalOpen} onOpenChange={setIsResultsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-medical-blue">
+              Ultrasound Report - {selectedUltrasoundExam?.examId}
+            </DialogTitle>
+            {selectedUltrasoundExam?.status === 'completed' && (
+              <Badge className="ml-2 bg-blue-600 text-white w-fit">Editing Completed Report</Badge>
+            )}
+          </DialogHeader>
+          
+          <>
+            {/* Patient Information in Modal */}
+            {selectedUltrasoundPatient && (
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Patient Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Name:</span> {selectedUltrasoundPatient.firstName} {selectedUltrasoundPatient.lastName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Patient ID:</span> {selectedUltrasoundPatient.patientId}
+                  </div>
+                  <div>
+                    <span className="font-medium">Age:</span> {selectedUltrasoundPatient?.age || 'Not provided'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Gender:</span> {selectedUltrasoundPatient?.gender || 'Not specified'}
+                  </div>
+                  <div className="col-span-2">
+                    <span className="font-medium">Exam Type:</span> {selectedUltrasoundExam?.examType?.charAt(0).toUpperCase() + selectedUltrasoundExam?.examType?.slice(1)} Ultrasound
+                  </div>
+                  {selectedUltrasoundExam?.clinicalIndication && (
+                    <div className="col-span-2">
+                      <span className="font-medium">Clinical Indication:</span> {selectedUltrasoundExam.clinicalIndication}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {selectedUltrasoundExam && (
+            <Form {...resultsForm}>
                 <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
 
                 
@@ -1007,8 +1059,9 @@ export default function Ultrasound() {
               </Form>
             </div>
           )}
-        </CardContent>
-      </Card>
+          </>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
