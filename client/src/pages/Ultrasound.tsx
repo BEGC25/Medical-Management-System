@@ -860,41 +860,38 @@ export default function Ultrasound() {
             )}
           </DialogHeader>
           
-          <>
-            {/* Patient Information in Modal */}
-            {selectedUltrasoundPatient && (
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
-                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Patient Information</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Name:</span> {selectedUltrasoundPatient.firstName} {selectedUltrasoundPatient.lastName}
-                  </div>
-                  <div>
-                    <span className="font-medium">Patient ID:</span> {selectedUltrasoundPatient.patientId}
-                  </div>
-                  <div>
-                    <span className="font-medium">Age:</span> {selectedUltrasoundPatient?.age || 'Not provided'}
-                  </div>
-                  <div>
-                    <span className="font-medium">Gender:</span> {selectedUltrasoundPatient?.gender || 'Not specified'}
-                  </div>
-                  <div className="col-span-2">
-                    <span className="font-medium">Exam Type:</span> {selectedUltrasoundExam?.examType?.charAt(0).toUpperCase() + selectedUltrasoundExam?.examType?.slice(1)} Ultrasound
-                  </div>
-                  {selectedUltrasoundExam?.clinicalIndication && (
-                    <div className="col-span-2">
-                      <span className="font-medium">Clinical Indication:</span> {selectedUltrasoundExam.clinicalIndication}
-                    </div>
-                  )}
+          {/* Patient Information in Modal */}
+          {selectedUltrasoundPatient && (
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Patient Information</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Name:</span> {selectedUltrasoundPatient.firstName} {selectedUltrasoundPatient.lastName}
                 </div>
+                <div>
+                  <span className="font-medium">Patient ID:</span> {selectedUltrasoundPatient.patientId}
+                </div>
+                <div>
+                  <span className="font-medium">Age:</span> {selectedUltrasoundPatient?.age || 'Not provided'}
+                </div>
+                <div>
+                  <span className="font-medium">Gender:</span> {selectedUltrasoundPatient?.gender || 'Not specified'}
+                </div>
+                <div className="col-span-2">
+                  <span className="font-medium">Exam Type:</span> {selectedUltrasoundExam?.examType?.charAt(0).toUpperCase() + selectedUltrasoundExam?.examType?.slice(1)} Ultrasound
+                </div>
+                {selectedUltrasoundExam?.clinicalIndication && (
+                  <div className="col-span-2">
+                    <span className="font-medium">Clinical Indication:</span> {selectedUltrasoundExam.clinicalIndication}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
 
-            {selectedUltrasoundExam && (
+          {selectedUltrasoundExam && (
             <Form {...resultsForm}>
-                <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
-
-                
+              <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1055,11 +1052,9 @@ export default function Ultrasound() {
                     Print Report
                   </Button>
                 </div>
-                </form>
-              </Form>
-            </div>
+              </form>
+            </Form>
           )}
-          </>
         </DialogContent>
       </Dialog>
     </div>
