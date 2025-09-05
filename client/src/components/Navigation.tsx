@@ -7,7 +7,8 @@ import {
   Scan, 
   LayoutDashboard,
   MonitorSpeaker,
-  FileSearch
+  FileSearch,
+  DollarSign
 } from "lucide-react";
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { path: "/laboratory", label: "Laboratory", icon: TestTube },
   { path: "/xray", label: "X-Ray", icon: Scan },
   { path: "/ultrasound", label: "Ultrasound", icon: MonitorSpeaker },
+  { path: "/payment", label: "Payment", icon: DollarSign },
   { path: "/all-results", label: "All Results", icon: FileSearch },
   { path: "/reports", label: "Reports", icon: BarChart3 },
 ];
