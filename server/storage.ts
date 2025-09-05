@@ -1,180 +1,24 @@
 import { eq, like, desc, and, count, or } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
-import { patients, treatments, labTests, xrayExams, ultrasoundExams, type Patient, type Treatment, type LabTest, type XrayExam, type UltrasoundExam, type InsertPatient, type InsertTreatment, type InsertLabTest, type InsertXrayExam, type InsertUltrasoundExam } from "@shared/schema";
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
+import * as schema from "@shared/schema";
 
-// Use SQLite for development to avoid connection issues
-const sqlite = new Database("clinic.db");
-export const db = drizzle(sqlite);
+neonConfig.webSocketConstructor = ws;
 
-// Initialize tables if they don't exist
-try {
-  // First check if we need to migrate the patients table
-  const tables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='patients'").all();
-  
-  if (tables.length > 0) {
-    // Table exists, check if it has the old date_of_birth column
-    const columns = sqlite.prepare("PRAGMA table_info(patients)").all();
-    const hasDateOfBirth = columns.some((col: any) => col.name === 'date_of_birth');
-    const hasAge = columns.some((col: any) => col.name === 'age');
-    
-    if (hasDateOfBirth && !hasAge) {
-      // Migrate: add age column and copy/transform data
-      console.log('Migrating patients table: date_of_birth -> age');
-      sqlite.exec(`ALTER TABLE patients ADD COLUMN age TEXT`);
-      
-      // Convert existing date_of_birth values to age
-      const patients = sqlite.prepare("SELECT id, date_of_birth FROM patients WHERE date_of_birth IS NOT NULL AND date_of_birth != ''").all();
-      const updateAge = sqlite.prepare("UPDATE patients SET age = ? WHERE id = ?");
-      
-      for (const patient of patients) {
-        try {
-          const birthYear = new Date(patient.date_of_birth).getFullYear();
-          const currentYear = new Date().getFullYear();
-          const calculatedAge = currentYear - birthYear;
-          updateAge.run(`${calculatedAge} years`, patient.id);
-        } catch (e) {
-          // If date parsing fails, set a default
-          updateAge.run('Age not provided', patient.id);
-        }
-      }
-      
-      // Remove the old date_of_birth column (SQLite doesn't support DROP COLUMN directly, so we recreate the table)
-      sqlite.exec(`
-        CREATE TABLE patients_new (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          patient_id TEXT UNIQUE NOT NULL,
-          first_name TEXT NOT NULL,
-          last_name TEXT NOT NULL,
-          age TEXT,
-          gender TEXT,
-          phone_number TEXT,
-          village TEXT,
-          emergency_contact TEXT,
-          allergies TEXT,
-          medical_history TEXT,
-          created_at TEXT NOT NULL
-        )
-      `);
-      
-      sqlite.exec(`
-        INSERT INTO patients_new (id, patient_id, first_name, last_name, age, gender, phone_number, village, emergency_contact, allergies, medical_history, created_at)
-        SELECT id, patient_id, first_name, last_name, age, gender, phone_number, village, emergency_contact, allergies, medical_history, created_at
-        FROM patients
-      `);
-      
-      sqlite.exec(`DROP TABLE patients`);
-      sqlite.exec(`ALTER TABLE patients_new RENAME TO patients`);
-      
-      console.log('Migration completed: date_of_birth -> age');
-    }
-  } else {
-    // Create new table with age column
-    sqlite.exec(`CREATE TABLE patients (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      patient_id TEXT UNIQUE NOT NULL,
-      first_name TEXT NOT NULL,
-      last_name TEXT NOT NULL,
-      age TEXT,
-      gender TEXT,
-      phone_number TEXT,
-      village TEXT,
-      emergency_contact TEXT,
-      allergies TEXT,
-      medical_history TEXT,
-      created_at TEXT NOT NULL
-    )`);
-  }
-
-  sqlite.exec(`DROP TABLE IF EXISTS treatments`);
-  sqlite.exec(`CREATE TABLE IF NOT EXISTS treatments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    treatment_id TEXT UNIQUE NOT NULL,
-    patient_id TEXT NOT NULL,
-    visit_date TEXT NOT NULL,
-    visit_type TEXT NOT NULL,
-    priority TEXT NOT NULL,
-    chief_complaint TEXT,
-    temperature REAL,
-    blood_pressure TEXT,
-    heart_rate INTEGER,
-    weight REAL,
-    examination TEXT,
-    diagnosis TEXT,
-    treatment_plan TEXT,
-    follow_up_date TEXT,
-    follow_up_type TEXT,
-    created_at TEXT NOT NULL
-  )`);
-
-  sqlite.exec(`DROP TABLE IF EXISTS lab_tests`);
-  sqlite.exec(`CREATE TABLE IF NOT EXISTS lab_tests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    test_id TEXT UNIQUE NOT NULL,
-    patient_id TEXT NOT NULL,
-    category TEXT NOT NULL,
-    tests TEXT NOT NULL,
-    clinical_info TEXT,
-    priority TEXT NOT NULL DEFAULT 'routine',
-    requested_date TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    results TEXT,
-    normal_values TEXT,
-    result_status TEXT,
-    completed_date TEXT,
-    technician_notes TEXT,
-    attachments TEXT,
-    created_at TEXT NOT NULL
-  )`);
-
-  sqlite.exec(`DROP TABLE IF EXISTS xray_exams`);
-  sqlite.exec(`CREATE TABLE IF NOT EXISTS xray_exams (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    exam_id TEXT UNIQUE NOT NULL,
-    patient_id TEXT NOT NULL,
-    exam_type TEXT NOT NULL,
-    body_part TEXT,
-    clinical_indication TEXT,
-    special_instructions TEXT,
-    priority TEXT NOT NULL DEFAULT 'routine',
-    requested_date TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    technical_quality TEXT,
-    findings TEXT,
-    impression TEXT,
-    recommendations TEXT,
-    report_status TEXT,
-    report_date TEXT,
-    radiologist TEXT,
-    created_at TEXT NOT NULL
-  )`);
-
-  sqlite.exec(`CREATE TABLE IF NOT EXISTS ultrasound_exams (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    exam_id TEXT UNIQUE NOT NULL,
-    patient_id TEXT NOT NULL,
-    exam_type TEXT NOT NULL,
-    clinical_indication TEXT,
-    special_instructions TEXT,
-    priority TEXT NOT NULL DEFAULT 'routine',
-    requested_date TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    image_quality TEXT,
-    findings TEXT,
-    impression TEXT,
-    recommendations TEXT,
-    report_status TEXT,
-    report_date TEXT,
-    sonographer TEXT,
-    created_at TEXT NOT NULL
-  )`);
-  
-  console.log("✓ Database tables initialized");
-} catch (error) {
-  console.log("Database initialization error:", error);
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
 }
 
-// Migrations already applied manually
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const db = drizzle({ client: pool, schema });
+
+const { patients, treatments, labTests, xrayExams, ultrasoundExams, services, payments, paymentItems } = schema;
+
+// Tables are automatically created by Drizzle with PostgreSQL
+console.log("✓ Database connection established");
 
 // Counters for sequential IDs
 let patientCounter = 0;
@@ -183,6 +27,7 @@ let labCounter = 0;
 let xrayCounter = 0;
 let ultrasoundCounter = 0;
 let prescriptionCounter = 0;
+let paymentCounter = 0;
 
 function generatePatientId(): string {
   patientCounter++;
@@ -234,37 +79,65 @@ async function generatePrescriptionId(): Promise<string> {
   return `BGC-RX${prescriptionCounter}`;
 }
 
+async function generatePaymentId(): Promise<string> {
+  if (paymentCounter === 0) {
+    const allPayments = await db.select().from(payments);
+    paymentCounter = allPayments.length;
+  }
+  paymentCounter++;
+  return `BGC-PAY${paymentCounter}`;
+}
+
 export interface IStorage {
   // Patients
-  createPatient(data: InsertPatient): Promise<Patient>;
-  getPatients(search?: string): Promise<Patient[]>;
-  getPatientById(id: string): Promise<Patient | null>;
-  getPatientByPatientId(patientId: string): Promise<Patient | null>;
-  updatePatient(patientId: string, data: Partial<InsertPatient>): Promise<Patient>;
+  createPatient(data: schema.InsertPatient): Promise<schema.Patient>;
+  getPatients(search?: string): Promise<schema.Patient[]>;
+  getPatientById(id: string): Promise<schema.Patient | null>;
+  getPatientByPatientId(patientId: string): Promise<schema.Patient | null>;
+  updatePatient(patientId: string, data: Partial<schema.InsertPatient>): Promise<schema.Patient>;
 
   // Treatments
-  createTreatment(data: InsertTreatment): Promise<Treatment>;
-  getTreatmentsByPatient(patientId: string): Promise<Treatment[]>;
-  getTreatments(limit?: number): Promise<Treatment[]>;
+  createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment>;
+  getTreatmentsByPatient(patientId: string): Promise<schema.Treatment[]>;
+  getTreatments(limit?: number): Promise<schema.Treatment[]>;
 
   // Lab Tests
-  createLabTest(data: InsertLabTest): Promise<LabTest>;
-  getLabTests(status?: string): Promise<LabTest[]>;
-  getLabTestsByPatient(patientId: string): Promise<LabTest[]>;
-  updateLabTest(testId: string, data: Partial<LabTest>): Promise<LabTest>;
-  updateLabTestAttachments(testId: string, attachments: any[]): Promise<LabTest>;
+  createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest>;
+  getLabTests(status?: string): Promise<schema.LabTest[]>;
+  getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]>;
+  updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest>;
+  updateLabTestAttachments(testId: string, attachments: any[]): Promise<schema.LabTest>;
 
   // X-Ray Exams
-  createXrayExam(data: InsertXrayExam): Promise<XrayExam>;
-  getXrayExams(status?: string): Promise<XrayExam[]>;
-  getXrayExamsByPatient(patientId: string): Promise<XrayExam[]>;
-  updateXrayExam(examId: string, data: Partial<XrayExam>): Promise<XrayExam>;
+  createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam>;
+  getXrayExams(status?: string): Promise<schema.XrayExam[]>;
+  getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]>;
+  updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam>;
 
   // Ultrasound Exams
-  createUltrasoundExam(data: InsertUltrasoundExam): Promise<UltrasoundExam>;
-  getUltrasoundExams(status?: string): Promise<UltrasoundExam[]>;
-  getUltrasoundExamsByPatient(patientId: string): Promise<UltrasoundExam[]>;
-  updateUltrasoundExam(examId: string, data: Partial<UltrasoundExam>): Promise<UltrasoundExam>;
+  createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam>;
+  getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]>;
+  getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]>;
+  updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam>;
+
+  // Payment Services
+  getServices(): Promise<schema.Service[]>;
+  getServicesByCategory(category: string): Promise<schema.Service[]>;
+  createService(data: schema.InsertService): Promise<schema.Service>;
+  updateService(id: number, data: Partial<schema.Service>): Promise<schema.Service>;
+
+  // Payments
+  createPayment(data: schema.InsertPayment): Promise<schema.Payment>;
+  getPayments(): Promise<schema.Payment[]>;
+  getPaymentsByPatient(patientId: string): Promise<schema.Payment[]>;
+  getPaymentById(id: number): Promise<schema.Payment | null>;
+  
+  // Payment Items
+  createPaymentItem(data: schema.InsertPaymentItem): Promise<schema.PaymentItem>;
+  getPaymentItems(paymentId: string): Promise<schema.PaymentItem[]>;
+  
+  // Payment status checking
+  checkPaymentStatus(patientId: string, serviceType: 'laboratory' | 'radiology' | 'ultrasound', requestId: string): Promise<boolean>;
 
   // Statistics
   getDashboardStats(): Promise<{
@@ -280,15 +153,15 @@ export interface IStorage {
     };
   }>;
 
-  getRecentPatients(limit?: number): Promise<(Patient & { lastVisit?: string; status: string })[]>;
+  getRecentPatients(limit?: number): Promise<(schema.Patient & { lastVisit?: string; status: string })[]>;
   
   // Today filters
-  getTodaysPatients(): Promise<Patient[]>;
-  getTodaysTreatments(): Promise<Treatment[]>;
+  getTodaysPatients(): Promise<schema.Patient[]>;
+  getTodaysTreatments(): Promise<schema.Treatment[]>;
 }
 
 export class MemStorage implements IStorage {
-  async createPatient(data: InsertPatient): Promise<Patient> {
+  async createPatient(data: schema.InsertPatient): Promise<schema.Patient> {
     // Initialize counter from existing patients if not set
     if (patientCounter === 0) {
       const allPatients = await db.select().from(patients);
@@ -309,7 +182,7 @@ export class MemStorage implements IStorage {
     return patient;
   }
 
-  async getPatients(search?: string): Promise<Patient[]> {
+  async getPatients(search?: string): Promise<schema.Patient[]> {
     if (search) {
       return await db.select().from(patients)
         .where(
@@ -325,17 +198,17 @@ export class MemStorage implements IStorage {
     return await db.select().from(patients).orderBy(desc(patients.createdAt));
   }
 
-  async getPatientById(id: string): Promise<Patient | null> {
+  async getPatientById(id: string): Promise<schema.Patient | null> {
     const [patient] = await db.select().from(patients).where(eq(patients.id, parseInt(id)));
     return patient || null;
   }
 
-  async getPatientByPatientId(patientId: string): Promise<Patient | null> {
+  async getPatientByPatientId(patientId: string): Promise<schema.Patient | null> {
     const [patient] = await db.select().from(patients).where(eq(patients.patientId, patientId));
     return patient || null;
   }
 
-  async updatePatient(patientId: string, data: Partial<InsertPatient>): Promise<Patient> {
+  async updatePatient(patientId: string, data: Partial<schema.InsertPatient>): Promise<schema.Patient> {
     const [patient] = await db.update(patients)
       .set(data as any)
       .where(eq(patients.patientId, patientId))
@@ -344,7 +217,7 @@ export class MemStorage implements IStorage {
     return patient;
   }
 
-  async createTreatment(data: InsertTreatment): Promise<Treatment> {
+  async createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment> {
     const treatmentId = await generateTreatmentId();
     const now = new Date().toISOString();
     
@@ -359,19 +232,19 @@ export class MemStorage implements IStorage {
     return treatment;
   }
 
-  async getTreatmentsByPatient(patientId: string): Promise<Treatment[]> {
+  async getTreatmentsByPatient(patientId: string): Promise<schema.Treatment[]> {
     return await db.select().from(treatments)
       .where(eq(treatments.patientId, patientId))
       .orderBy(desc(treatments.visitDate));
   }
 
-  async getTreatments(limit = 50): Promise<Treatment[]> {
+  async getTreatments(limit = 50): Promise<schema.Treatment[]> {
     return await db.select().from(treatments)
       .orderBy(desc(treatments.visitDate))
       .limit(limit);
   }
 
-  async createLabTest(data: InsertLabTest): Promise<LabTest> {
+  async createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest> {
     const testId = await generateLabId();
     const now = new Date().toISOString();
     
@@ -387,7 +260,7 @@ export class MemStorage implements IStorage {
     return labTest;
   }
 
-  async getLabTests(status?: string): Promise<LabTest[]> {
+  async getLabTests(status?: string): Promise<schema.LabTest[]> {
     const query = db.select().from(labTests);
     
     if (status) {
@@ -397,13 +270,13 @@ export class MemStorage implements IStorage {
     return await query.orderBy(desc(labTests.requestedDate));
   }
 
-  async getLabTestsByPatient(patientId: string): Promise<LabTest[]> {
+  async getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]> {
     return await db.select().from(labTests)
       .where(eq(labTests.patientId, patientId))
       .orderBy(desc(labTests.requestedDate));
   }
 
-  async updateLabTest(testId: string, data: Partial<LabTest>): Promise<LabTest> {
+  async updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest> {
     const [labTest] = await db.update(labTests)
       .set(data)
       .where(eq(labTests.testId, testId))
@@ -412,7 +285,7 @@ export class MemStorage implements IStorage {
     return labTest;
   }
 
-  async updateLabTestAttachments(testId: string, attachments: any[]): Promise<LabTest> {
+  async updateLabTestAttachments(testId: string, attachments: any[]): Promise<schema.LabTest> {
     const attachmentsJson = JSON.stringify(attachments);
     const [labTest] = await db.update(labTests)
       .set({ attachments: attachmentsJson })
@@ -422,7 +295,7 @@ export class MemStorage implements IStorage {
     return labTest;
   }
 
-  async createXrayExam(data: InsertXrayExam): Promise<XrayExam> {
+  async createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam> {
     const examId = await generateXrayId();
     const now = new Date().toISOString();
     
@@ -438,7 +311,7 @@ export class MemStorage implements IStorage {
     return xrayExam;
   }
 
-  async getXrayExams(status?: string): Promise<XrayExam[]> {
+  async getXrayExams(status?: string): Promise<schema.XrayExam[]> {
     const query = db.select().from(xrayExams);
     
     if (status) {
@@ -448,13 +321,13 @@ export class MemStorage implements IStorage {
     return await query.orderBy(desc(xrayExams.requestedDate));
   }
 
-  async getXrayExamsByPatient(patientId: string): Promise<XrayExam[]> {
+  async getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]> {
     return await db.select().from(xrayExams)
       .where(eq(xrayExams.patientId, patientId))
       .orderBy(desc(xrayExams.requestedDate));
   }
 
-  async updateXrayExam(examId: string, data: Partial<XrayExam>): Promise<XrayExam> {
+  async updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam> {
     const [xrayExam] = await db.update(xrayExams)
       .set(data)
       .where(eq(xrayExams.examId, examId))
@@ -464,7 +337,7 @@ export class MemStorage implements IStorage {
   }
 
   // Ultrasound Exams
-  async createUltrasoundExam(data: InsertUltrasoundExam): Promise<UltrasoundExam> {
+  async createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam> {
     const examId = await generateUltrasoundId();
     const createdAt = new Date().toISOString();
     
@@ -482,7 +355,7 @@ export class MemStorage implements IStorage {
     return ultrasoundExam;
   }
 
-  async getUltrasoundExams(status?: string): Promise<UltrasoundExam[]> {
+  async getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]> {
     const query = db.select().from(ultrasoundExams);
     
     if (status) {
@@ -492,13 +365,13 @@ export class MemStorage implements IStorage {
     return await query.orderBy(desc(ultrasoundExams.requestedDate));
   }
 
-  async getUltrasoundExamsByPatient(patientId: string): Promise<UltrasoundExam[]> {
+  async getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]> {
     return await db.select().from(ultrasoundExams)
       .where(eq(ultrasoundExams.patientId, patientId))
       .orderBy(desc(ultrasoundExams.requestedDate));
   }
 
-  async updateUltrasoundExam(examId: string, data: Partial<UltrasoundExam>): Promise<UltrasoundExam> {
+  async updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam> {
     const [ultrasoundExam] = await db.update(ultrasoundExams)
       .set(data)
       .where(eq(ultrasoundExams.examId, examId))
@@ -564,7 +437,7 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async getRecentPatients(limit = 5): Promise<(Patient & { lastVisit?: string; status: string })[]> {
+  async getRecentPatients(limit = 5): Promise<(schema.Patient & { lastVisit?: string; status: string })[]> {
     try {
       console.log("Getting recent patients, limit:", limit);
       const recentPatients = await db.select().from(patients)
@@ -608,7 +481,7 @@ export class MemStorage implements IStorage {
     }
   }
   // Today filter methods
-  async getTodaysPatients(): Promise<Patient[]> {
+  async getTodaysPatients(): Promise<schema.Patient[]> {
     const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
     
     return await db.select().from(patients)
@@ -619,7 +492,7 @@ export class MemStorage implements IStorage {
       .orderBy(desc(patients.createdAt));
   }
   
-  async getTodaysTreatments(): Promise<Treatment[]> {
+  async getTodaysTreatments(): Promise<schema.Treatment[]> {
     const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
     
     return await db.select().from(treatments)
@@ -632,6 +505,225 @@ export class MemStorage implements IStorage {
       )
       .orderBy(desc(treatments.createdAt));
   }
+
+  // Payment Services
+  async getServices(): Promise<schema.Service[]> {
+    return await db.select().from(services).where(eq(services.isActive, true)).orderBy(services.category, services.name);
+  }
+
+  async getServicesByCategory(category: string): Promise<schema.Service[]> {
+    return await db.select().from(services)
+      .where(and(eq(services.category, category as any), eq(services.isActive, true)))
+      .orderBy(services.name);
+  }
+
+  async createService(data: schema.InsertService): Promise<schema.Service> {
+    const now = new Date().toISOString();
+    const insertData = {
+      ...data,
+      createdAt: now,
+    };
+    
+    const [service] = await db.insert(services).values([insertData]).returning();
+    return service;
+  }
+
+  async updateService(id: number, data: Partial<schema.Service>): Promise<schema.Service> {
+    const [service] = await db.update(services)
+      .set(data)
+      .where(eq(services.id, id))
+      .returning();
+    
+    return service;
+  }
+
+  // Payments
+  async createPayment(data: schema.InsertPayment): Promise<schema.Payment> {
+    const paymentId = await generatePaymentId();
+    const now = new Date().toISOString();
+    const insertData = {
+      ...data,
+      paymentId,
+      createdAt: now,
+    };
+    
+    const [payment] = await db.insert(payments).values([insertData]).returning();
+    return payment;
+  }
+
+  async getPayments(): Promise<schema.Payment[]> {
+    return await db.select().from(payments).orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentsByPatient(patientId: string): Promise<schema.Payment[]> {
+    return await db.select().from(payments)
+      .where(eq(payments.patientId, patientId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentById(id: number): Promise<schema.Payment | null> {
+    const [payment] = await db.select().from(payments).where(eq(payments.id, id));
+    return payment || null;
+  }
+
+  // Payment Items
+  async createPaymentItem(data: schema.InsertPaymentItem): Promise<schema.PaymentItem> {
+    const now = new Date().toISOString();
+    const insertData = {
+      ...data,
+      createdAt: now,
+    };
+    
+    const [paymentItem] = await db.insert(paymentItems).values([insertData]).returning();
+    return paymentItem;
+  }
+
+  async getPaymentItems(paymentId: string): Promise<schema.PaymentItem[]> {
+    return await db.select().from(paymentItems).where(eq(paymentItems.paymentId, paymentId));
+  }
+
+  // Payment status checking
+  async checkPaymentStatus(patientId: string, serviceType: 'laboratory' | 'radiology' | 'ultrasound', requestId: string): Promise<boolean> {
+    // Map service types to related types
+    const relatedTypeMap = {
+      'laboratory': 'lab_test',
+      'radiology': 'xray_exam', 
+      'ultrasound': 'ultrasound_exam'
+    };
+    
+    // Check if there's a payment item that covers this service
+    const paymentCheck = await db.select()
+      .from(paymentItems)
+      .innerJoin(payments, eq(paymentItems.paymentId, payments.paymentId))
+      .where(
+        and(
+          eq(payments.patientId, patientId),
+          eq(paymentItems.relatedType, relatedTypeMap[serviceType] as any),
+          eq(paymentItems.relatedId, requestId)
+        )
+      );
+    
+    return paymentCheck.length > 0;
+  }
+}
+
+// Initialize default services
+async function seedDefaultServices() {
+  try {
+    const existingServices = await storage.getServices();
+    if (existingServices.length === 0) {
+      console.log("Seeding default services...");
+      
+      // Consultation services
+      await storage.createService({
+        name: "General Consultation",
+        category: "consultation",
+        description: "Basic medical consultation and examination",
+        price: 50.00,
+        isActive: true,
+      });
+      
+      await storage.createService({
+        name: "Follow-up Consultation",
+        category: "consultation", 
+        description: "Follow-up visit for existing patients",
+        price: 30.00,
+        isActive: true,
+      });
+
+      // Laboratory services
+      await storage.createService({
+        name: "Complete Blood Count (CBC)",
+        category: "laboratory",
+        description: "Full blood analysis including RBC, WBC, platelets",
+        price: 25.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Urine Analysis",
+        category: "laboratory",
+        description: "Complete urine examination",
+        price: 15.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Malaria Test",
+        category: "laboratory",
+        description: "Malaria parasite detection",
+        price: 10.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Stool Examination",
+        category: "laboratory",
+        description: "Stool analysis for parasites and infections",
+        price: 15.00,
+        isActive: true,
+      });
+
+      // Radiology services
+      await storage.createService({
+        name: "Chest X-Ray",
+        category: "radiology",
+        description: "X-ray examination of chest and lungs",
+        price: 40.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Abdominal X-Ray",
+        category: "radiology",
+        description: "X-ray examination of abdomen",
+        price: 45.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Extremity X-Ray",
+        category: "radiology",
+        description: "X-ray of arms, legs, hands, or feet",
+        price: 35.00,
+        isActive: true,
+      });
+
+      // Ultrasound services
+      await storage.createService({
+        name: "Abdominal Ultrasound",
+        category: "ultrasound",
+        description: "Ultrasound examination of abdominal organs",
+        price: 60.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Pelvic Ultrasound",
+        category: "ultrasound",
+        description: "Ultrasound examination of pelvic organs",
+        price: 55.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Obstetric Ultrasound",
+        category: "ultrasound",
+        description: "Pregnancy monitoring ultrasound",
+        price: 65.00,
+        isActive: true,
+      });
+
+      console.log("✓ Default services seeded successfully");
+    }
+  } catch (error) {
+    console.log("Error seeding default services:", error);
+  }
 }
 
 export const storage = new MemStorage();
+
+// Initialize services on startup
+setTimeout(() => {
+  seedDefaultServices();
+}, 100);
