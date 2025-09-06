@@ -729,59 +729,37 @@ export default function Ultrasound() {
           <div className="mb-6">
             <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Pending Ultrasound Examinations</h3>
             <div className="space-y-2">
-              {pendingUltrasounds?.map((exam: UltrasoundExam) => {
-                const isPaid = exam.paymentStatus === 'paid';
-                const canPerformExam = isPaid;
-                
-                return (
-                  <div 
-                    key={exam.id}
-                    className={`border rounded-lg p-3 transition-colors ${
-                      isPaid 
-                        ? 'border-green-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30' 
-                        : 'border-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
-                    } ${!canPerformExam ? 'opacity-75' : ''}`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div 
-                        className={`flex-1 ${canPerformExam ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                        onClick={() => canPerformExam && handleUltrasoundExamSelect(exam)}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-gray-800 dark:text-gray-200">
-                            Patient ID: {exam.patientId} - {exam.examType.charAt(0).toUpperCase() + exam.examType.slice(1)} Ultrasound
-                          </p>
-                          <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            isPaid 
-                              ? 'bg-green-600 text-white' 
-                              : 'bg-red-600 text-white'
-                          }`}>
-                            {isPaid ? '✓ PAID' : '✗ UNPAID'}
-                          </div>
-                        </div>
+              {pendingUltrasounds?.map((exam: UltrasoundExam) => (
+                <div 
+                  key={exam.id}
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <div className="flex justify-between items-start">
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => handleUltrasoundExamSelect(exam)}
+                    >
+                      <p className="font-medium text-gray-800 dark:text-gray-200">
+                        Patient ID: {exam.patientId} - {exam.examType.charAt(0).toUpperCase() + exam.examType.slice(1)} Ultrasound
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Requested: {exam.requestedDate}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        ID: {exam.examId}
+                      </p>
+                      {exam.clinicalIndication && (
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Requested: {exam.requestedDate}
+                          Indication: {exam.clinicalIndication}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          ID: {exam.examId}
-                        </p>
-                        {exam.clinicalIndication && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Indication: {exam.clinicalIndication}
-                          </p>
-                        )}
-                        {!isPaid && (
-                          <p className="text-sm text-red-600 font-medium mt-1">
-                            ⚠️ Patient must pay at reception before ultrasound can be performed
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <Badge className={`text-white ${isPaid ? 'bg-green-600' : 'bg-attention-orange'}`}>
-                          <Clock className="w-3 h-3 mr-1" />
-                          {isPaid ? 'Ready' : 'Pending Payment'}
-                        </Badge>
-                        <AlertDialog>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Badge className="bg-attention-orange text-white">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Pending
+                      </Badge>
+                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="ghost"
@@ -810,11 +788,11 @@ export default function Ultrasound() {
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                      </AlertDialog>
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
+              ))}
               
               {!pendingUltrasounds?.length && (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
