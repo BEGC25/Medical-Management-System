@@ -663,36 +663,60 @@ export default function XRay() {
           <div className="mb-6">
             <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Pending X-Ray Examinations</h3>
             <div className="space-y-2">
-              {pendingXrays?.map((xray: XrayExam) => (
-                <div 
-                  key={xray.id}
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                  onClick={() => handleXrayExamSelect(xray)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-800 dark:text-gray-200">
-                        Patient ID: {xray.patientId} - {xray.examType.charAt(0).toUpperCase() + xray.examType.slice(1)} X-Ray
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Requested: {xray.requestedDate}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        ID: {xray.examId}
-                      </p>
-                      {xray.bodyPart && (
+              {pendingXrays?.map((xray: XrayExam) => {
+                const isPaid = xray.paymentStatus === 'paid';
+                const canPerformExam = isPaid;
+                
+                return (
+                  <div 
+                    key={xray.id}
+                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                      isPaid 
+                        ? 'border-green-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30' 
+                        : 'border-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
+                    } ${!canPerformExam ? 'opacity-75' : ''}`}
+                    onClick={() => canPerformExam && handleXrayExamSelect(xray)}
+                    style={!canPerformExam ? { cursor: 'not-allowed' } : {}}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-gray-800 dark:text-gray-200">
+                            Patient ID: {xray.patientId} - {xray.examType.charAt(0).toUpperCase() + xray.examType.slice(1)} X-Ray
+                          </p>
+                          <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            isPaid 
+                              ? 'bg-green-600 text-white' 
+                              : 'bg-red-600 text-white'
+                          }`}>
+                            {isPaid ? '✓ PAID' : '✗ UNPAID'}
+                          </div>
+                        </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Area: {xray.bodyPart}
+                          Requested: {xray.requestedDate}
                         </p>
-                      )}
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          ID: {xray.examId}
+                        </p>
+                        {xray.bodyPart && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Area: {xray.bodyPart}
+                          </p>
+                        )}
+                        {!isPaid && (
+                          <p className="text-sm text-red-600 font-medium mt-1">
+                            ⚠️ Patient must pay at reception before X-ray can be performed
+                          </p>
+                        )}
+                      </div>
+                      <Badge className={`text-white ${isPaid ? 'bg-green-600' : 'bg-attention-orange'}`}>
+                        <Clock className="w-3 h-3 mr-1" />
+                        {isPaid ? 'Ready' : 'Pending Payment'}
+                      </Badge>
                     </div>
-                    <Badge className="bg-attention-orange text-white">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Pending
-                    </Badge>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               
               {!pendingXrays?.length && (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
