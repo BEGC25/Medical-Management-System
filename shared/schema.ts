@@ -131,6 +131,19 @@ export const paymentItems = pgTable("payment_items", {
   createdAt: text("created_at").notNull(),
 });
 
+export const pharmacyOrders = pgTable("pharmacy_orders", {
+  id: serial("id").primaryKey(),
+  orderId: text("order_id").unique().notNull(),
+  patientId: text("patient_id").notNull(),
+  treatmentId: text("treatment_id"),
+  serviceId: integer("service_id").notNull(),
+  dosage: text("dosage"),
+  quantity: integer("quantity").notNull().default(1),
+  status: text("status").$type<"prescribed" | "dispensed">().notNull().default("prescribed"),
+  paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
+  createdAt: text("created_at").notNull().default(sql`now()`),
+});
+
 // Insert schemas
 export const insertPatientSchema = createInsertSchema(patients).omit({
   id: true,
@@ -184,6 +197,14 @@ export const insertPaymentItemSchema = createInsertSchema(paymentItems).omit({
   createdAt: true,
 });
 
+export const insertPharmacyOrderSchema = createInsertSchema(pharmacyOrders).omit({
+  id: true,
+  orderId: true,
+  status: true,
+  paymentStatus: true,
+  createdAt: true,
+});
+
 // Types
 export type Patient = typeof patients.$inferSelect;
 export type Treatment = typeof treatments.$inferSelect;
@@ -193,6 +214,7 @@ export type UltrasoundExam = typeof ultrasoundExams.$inferSelect;
 export type Service = typeof services.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type PaymentItem = typeof paymentItems.$inferSelect;
+export type PharmacyOrder = typeof pharmacyOrders.$inferSelect;
 
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type InsertTreatment = z.infer<typeof insertTreatmentSchema>;
@@ -202,3 +224,4 @@ export type InsertUltrasoundExam = z.infer<typeof insertUltrasoundExamSchema>;
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type InsertPaymentItem = z.infer<typeof insertPaymentItemSchema>;
+export type InsertPharmacyOrder = z.infer<typeof insertPharmacyOrderSchema>;
