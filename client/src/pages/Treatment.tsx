@@ -21,6 +21,11 @@ export default function Treatment() {
   const [showPrescription, setShowPrescription] = useState(false);
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
   const [filterToday, setFilterToday] = useState(false);
+  
+  // Patient search state for PatientSearch component
+  const [searchTerm, setSearchTerm] = useState("");
+  const [shouldSearch, setShouldSearch] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -34,7 +39,7 @@ export default function Treatment() {
   }, []);
 
   // Query for today's treatments if filtering
-  const { data: todaysTreatments } = useQuery({
+  const { data: todaysTreatments = [] } = useQuery({
     queryKey: ["/api/treatments", "today"],
     enabled: filterToday,
   });
@@ -47,10 +52,10 @@ export default function Treatment() {
       visitType: "consultation",
       priority: "routine",
       chiefComplaint: "",
-      temperature: undefined,
+      temperature: "",
       bloodPressure: "",
-      heartRate: undefined,
-      weight: undefined,
+      heartRate: "",
+      weight: "",
       examination: "",
       diagnosis: "",
       treatmentPlan: "",
@@ -310,7 +315,16 @@ export default function Treatment() {
             <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Select Patient</h3>
             
             {!selectedPatient ? (
-              <PatientSearch onSelectPatient={handlePatientSelect} showActions={false} />
+              <PatientSearch 
+                onSelectPatient={handlePatientSelect} 
+                showActions={false}
+                viewMode="all"
+                selectedDate=""
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+                shouldSearch={shouldSearch}
+                onShouldSearchChange={setShouldSearch}
+              />
             ) : (
               <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border">
                 <div className="flex items-center justify-between">
@@ -458,7 +472,7 @@ export default function Treatment() {
                               step="0.1" 
                               placeholder="36.5"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                              onChange={(e) => field.onChange(e.target.value || "")}
                             />
                           </FormControl>
                           <FormMessage />
@@ -491,7 +505,7 @@ export default function Treatment() {
                               type="number" 
                               placeholder="72"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                              onChange={(e) => field.onChange(e.target.value || "")}
                             />
                           </FormControl>
                           <FormMessage />
@@ -511,7 +525,7 @@ export default function Treatment() {
                               step="0.1" 
                               placeholder="65.0"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                              onChange={(e) => field.onChange(e.target.value || "")}
                             />
                           </FormControl>
                           <FormMessage />

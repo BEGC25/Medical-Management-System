@@ -15,10 +15,10 @@ import {
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard, category: "Overview" },
   { path: "/patients", label: "Patients", icon: Users, category: "Management" },
-  { path: "/treatment", label: "Treatment", icon: Stethoscope, category: "Clinical" },
   { path: "/laboratory", label: "Laboratory", icon: TestTube, category: "Diagnostics" },
   { path: "/xray", label: "X-Ray", icon: Scan, category: "Diagnostics" },
   { path: "/ultrasound", label: "Ultrasound", icon: MonitorSpeaker, category: "Diagnostics" },
+  { path: "/treatment", label: "Treatment", icon: Stethoscope, category: "Clinical" },
   { path: "/pharmacy", label: "Pharmacy", icon: Pill, category: "Clinical" },
   { path: "/payment", label: "Payment", icon: DollarSign, category: "Administration" },
   { path: "/all-results", label: "All Results", icon: FileSearch, category: "Reports" },
