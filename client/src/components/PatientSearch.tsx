@@ -11,7 +11,7 @@ interface PatientSearchProps {
   onEditPatient?: (patient: Patient) => void;
   onViewPatient?: (patient: Patient) => void;
   showActions?: boolean;
-  viewMode: 'today' | 'date' | 'search';
+  viewMode: 'today' | 'date' | 'search' | 'all';
   selectedDate: string;
 }
 
@@ -25,6 +25,8 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
       return { today: 'true' };
     } else if (viewMode === 'date') {
       return { date: selectedDate };
+    } else if (viewMode === 'all') {
+      return { all: 'true' };
     } else {
       return { search: searchTerm };
     }
@@ -32,12 +34,14 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
 
   const { data: patients, isLoading } = useQuery({
     queryKey: ["/api/patients", getQueryParams()],
-    enabled: viewMode === 'today' || viewMode === 'date' || (viewMode === 'search' && shouldSearch && searchTerm.length > 0),
+    enabled: viewMode === 'today' || viewMode === 'date' || viewMode === 'all' || (viewMode === 'search' && shouldSearch && searchTerm.length > 0),
     queryFn: () => {
       if (viewMode === 'today') {
         return fetch('/api/patients?today=true').then(res => res.json());
       } else if (viewMode === 'date') {
         return fetch(`/api/patients?date=${encodeURIComponent(selectedDate)}`).then(res => res.json());
+      } else if (viewMode === 'all') {
+        return fetch('/api/patients').then(res => res.json());
       } else {
         return fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`).then(res => res.json());
       }
@@ -86,11 +90,12 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
       )}
 
       {/* Show results for all view modes when data is available */}
-      {((viewMode === 'today' || viewMode === 'date' || shouldSearch) && patients && patients.length > 0) && (
+      {((viewMode === 'today' || viewMode === 'date' || viewMode === 'all' || shouldSearch) && patients && patients.length > 0) && (
         <div>
           <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">
             {viewMode === 'today' && 'Today\'s Patients'}
             {viewMode === 'date' && 'Patients for Selected Date'}
+            {viewMode === 'all' && 'All Patients'}
             {viewMode === 'search' && 'Search Results'}
           </h3>
           <div className="overflow-x-auto">
@@ -171,10 +176,11 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
         </div>
       )}
 
-      {((viewMode === 'today' || viewMode === 'date' || shouldSearch) && patients && patients.length === 0) && (
+      {((viewMode === 'today' || viewMode === 'date' || viewMode === 'all' || shouldSearch) && patients && patients.length === 0) && (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           {viewMode === 'today' && "No patients registered today."}
           {viewMode === 'date' && "No patients found for the selected date."}
+          {viewMode === 'all' && "No patients in the database yet."}
           {viewMode === 'search' && "No patients found matching your search."}
         </div>
       )}

@@ -24,7 +24,7 @@ export default function Patients() {
     const today = new Date();
     return today.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD in local timezone
   });
-  const [viewMode, setViewMode] = useState<'today' | 'date' | 'search'>('today'); // Default to today's patients
+  const [viewMode, setViewMode] = useState<'today' | 'date' | 'search' | 'all'>('today'); // Default to today's patients
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -187,6 +187,12 @@ export default function Patients() {
                   {formatDate(selectedDate)}
                 </Badge>
               )}
+              {viewMode === 'all' && (
+                <Badge className="bg-purple-600 text-white">
+                  <Users className="w-3 h-3 mr-1" />
+                  All Patients
+                </Badge>
+              )}
             </div>
             <div className="flex gap-2">
               <Button 
@@ -219,6 +225,14 @@ export default function Patients() {
                 >
                   <Calendar className="w-4 h-4" />
                   Specific Date
+                </Button>
+                <Button
+                  variant={viewMode === 'all' ? 'default' : 'outline'}
+                  onClick={() => setViewMode('all')}
+                  className="flex items-center gap-2"
+                >
+                  <Users className="w-4 h-4" />
+                  All Patients
                 </Button>
                 <Button
                   variant={viewMode === 'search' ? 'default' : 'outline'}
