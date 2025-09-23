@@ -206,59 +206,142 @@ export default function Patients() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* View Mode Navigation */}
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex gap-2">
-                <Button
-                  variant={viewMode === 'today' ? 'default' : 'outline'}
+          {/* Modern Segmented Navigation */}
+          <div className="mb-6 space-y-4">
+            {/* Primary Navigation - Responsive Segmented Control */}
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+              {/* Desktop: Horizontal segmented control */}
+              <div className="hidden sm:flex gap-1">
+                <button
                   onClick={() => setViewMode('today')}
-                  className="flex items-center gap-2"
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px] ${
+                    viewMode === 'today' 
+                      ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                  data-testid="nav-today-patients"
                 >
                   <Calendar className="w-4 h-4" />
-                  Today's Patients
-                </Button>
-                <Button
-                  variant={viewMode === 'date' ? 'default' : 'outline'}
+                  <span>Today's Patients</span>
+                </button>
+                
+                <button
                   onClick={() => setViewMode('date')}
-                  className="flex items-center gap-2"
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px] ${
+                    viewMode === 'date' 
+                      ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                  data-testid="nav-specific-date"
                 >
                   <Calendar className="w-4 h-4" />
-                  Specific Date
-                </Button>
-                <Button
-                  variant={viewMode === 'all' ? 'default' : 'outline'}
+                  <span>Specific Date</span>
+                </button>
+                
+                <button
                   onClick={() => setViewMode('all')}
-                  className="flex items-center gap-2"
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px] ${
+                    viewMode === 'all' 
+                      ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                  data-testid="nav-all-patients"
                 >
                   <Users className="w-4 h-4" />
-                  All Patients
-                </Button>
-                <Button
-                  variant={viewMode === 'search' ? 'default' : 'outline'}
+                  <span>All Patients</span>
+                </button>
+                
+                <button
                   onClick={() => setViewMode('search')}
-                  className="flex items-center gap-2"
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px] ${
+                    viewMode === 'search' 
+                      ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                  data-testid="nav-search-patients"
                 >
                   <Search className="w-4 h-4" />
-                  Search Patients
-                </Button>
+                  <span>Search</span>
+                </button>
               </div>
-              
-              {/* Date picker for specific date view */}
-              {viewMode === 'date' && (
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Select Date:
-                  </label>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-auto"
-                  />
-                </div>
-              )}
+
+              {/* Mobile: Stacked buttons */}
+              <div className="sm:hidden grid grid-cols-2 gap-1">
+                <button
+                  onClick={() => setViewMode('today')}
+                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] ${
+                    viewMode === 'today' 
+                      ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                  data-testid="nav-today-patients-mobile"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-xs">Today</span>
+                </button>
+                
+                <button
+                  onClick={() => setViewMode('date')}
+                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] ${
+                    viewMode === 'date' 
+                      ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                  data-testid="nav-specific-date-mobile"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-xs">Date</span>
+                </button>
+                
+                <button
+                  onClick={() => setViewMode('all')}
+                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] ${
+                    viewMode === 'all' 
+                      ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                  data-testid="nav-all-patients-mobile"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="text-xs">All</span>
+                </button>
+                
+                <button
+                  onClick={() => setViewMode('search')}
+                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] ${
+                    viewMode === 'search' 
+                      ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                  data-testid="nav-search-patients-mobile"
+                >
+                  <Search className="w-4 h-4" />
+                  <span className="text-xs">Search</span>
+                </button>
+              </div>
             </div>
+
+            {/* Contextual Controls - Only show when relevant */}
+            {viewMode === 'date' && (
+              <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <label className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Select Date:
+                </label>
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-auto bg-white dark:bg-gray-700 border-blue-300 dark:border-blue-600"
+                  data-testid="date-picker"
+                />
+                {!isToday(selectedDate) && (
+                  <Badge className="bg-blue-600 text-white ml-2">
+                    {formatDate(selectedDate)}
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
 
           <PatientSearch 
