@@ -1,4 +1,4 @@
-import { eq, like, desc, and, count, or } from "drizzle-orm";
+import { eq, like, desc, and, count, or, sql } from "drizzle-orm";
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
@@ -503,8 +503,8 @@ export class MemStorage implements IStorage {
   async getPatientsByDate(date: string): Promise<schema.Patient[]> {
     return await db.select().from(patients)
       .where(
-        // Check if created on specific date by comparing the date part of the timestamp
-        like(patients.createdAt, `${date}%`)
+        // Use DATE function to extract date part, avoiding timezone issues
+        sql`DATE(${patients.createdAt}) = ${date}`
       )
       .orderBy(desc(patients.createdAt));
   }

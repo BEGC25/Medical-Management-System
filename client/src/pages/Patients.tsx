@@ -19,14 +19,20 @@ import { addToPendingSync } from "@/lib/offline";
 export default function Patients() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Default to today
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Use local date to avoid timezone issues
+    const today = new Date();
+    return today.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD in local timezone
+  });
   const [viewMode, setViewMode] = useState<'today' | 'date' | 'search'>('today'); // Default to today's patients
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Format today's date for display
+  // Format date for display using local timezone to avoid UTC offset issues
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    // Parse date as local date to avoid timezone shifts
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', { 
       weekday: 'long', 
       year: 'numeric', 
@@ -36,7 +42,7 @@ export default function Patients() {
   };
 
   const isToday = (dateStr: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA');
     return dateStr === today;
   };
 
