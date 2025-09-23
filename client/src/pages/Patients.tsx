@@ -24,7 +24,28 @@ export default function Patients() {
     const today = new Date();
     return today.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD in local timezone
   });
-  const [viewMode, setViewMode] = useState<'today' | 'date' | 'search' | 'all'>('today'); // Default to today's patients
+  // Persistent mode state - remember user's preference across sessions
+  const [viewMode, setViewMode] = useState<'today' | 'date' | 'search' | 'all'>(() => {
+    try {
+      const savedMode = localStorage.getItem('patient-view-mode');
+      if (savedMode && ['today', 'date', 'search', 'all'].includes(savedMode)) {
+        return savedMode as 'today' | 'date' | 'search' | 'all';
+      }
+    } catch (error) {
+      console.warn('Failed to load saved view mode:', error);
+    }
+    return 'today'; // Default to today's patients
+  });
+
+  // Save view mode preference when it changes
+  const handleViewModeChange = (newMode: 'today' | 'date' | 'search' | 'all') => {
+    setViewMode(newMode);
+    try {
+      localStorage.setItem('patient-view-mode', newMode);
+    } catch (error) {
+      console.warn('Failed to save view mode preference:', error);
+    }
+  };
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -49,6 +70,127 @@ export default function Patients() {
 
   // Track last refresh time
   const [lastRefresh, setLastRefresh] = useState(new Date());
+
+  // Search state lifted up to enable printing of search results
+  const [searchTerm, setSearchTerm] = useState("");
+  const [shouldSearch, setShouldSearch] = useState(false);
+
+  // Print roster functionality - uses same query logic as PatientSearch
+  const handlePrintRoster = async () => {
+    try {
+      // Use the same query logic as PatientSearch component for consistency
+      let apiUrl = '/api/patients';
+      let queryParams = new URLSearchParams();
+      let viewDescription = '';
+      let patientCountText = '';
+
+      if (viewMode === 'today') {
+        queryParams.append('today', 'true');
+        viewDescription = 'Today\'s Patients';
+        patientCountText = `${todayCount}`;
+      } else if (viewMode === 'date') {
+        queryParams.append('date', selectedDate);
+        viewDescription = `Patients for ${formatDate(selectedDate)}`;
+        patientCountText = `${specificDateCount}`;
+      } else if (viewMode === 'all') {
+        viewDescription = 'All Patients';
+        patientCountText = `${allCount}`;
+      } else if (viewMode === 'search') {
+        if (!shouldSearch || !searchTerm.trim()) {
+          toast({
+            title: "No Search Results",
+            description: "Please enter a search term and perform a search before printing",
+            variant: "destructive",
+          });
+          return;
+        }
+        queryParams.append('search', searchTerm.trim());
+        viewDescription = `Search Results for "${searchTerm}"`;
+        patientCountText = 'Search results';
+      }
+
+      const fullUrl = queryParams.toString() ? `${apiUrl}?${queryParams}` : apiUrl;
+      
+      // Fetch the patient data
+      const response = await fetch(fullUrl);
+      if (!response.ok) throw new Error('Failed to fetch patient data');
+      const patients = await response.json();
+
+      // Create print content with correct data
+      const printContent = `
+        <html>
+          <head>
+            <title>Patient Roster - Bahr El Ghazal Clinic</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #ccc; padding-bottom: 15px; }
+              .info { margin-bottom: 20px; font-size: 14px; color: #666; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f5f5f5; font-weight: bold; }
+              .patient-id { font-weight: bold; color: #0066cc; }
+              @media print { body { margin: 0; } }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>Bahr El Ghazal Clinic</h2>
+              <h3>Patient Roster</h3>
+            </div>
+            <div class="info">
+              <p><strong>View:</strong> ${viewDescription}</p>
+              <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+              <p><strong>Total Patients:</strong> ${patientCountText} patients</p>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient ID</th>
+                  <th>Name</th>
+                  <th>Age</th>
+                  <th>Gender</th>
+                  <th>Phone</th>
+                  <th>Village</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${patients.map((patient: any) => `
+                  <tr>
+                    <td class="patient-id">${patient.patientId}</td>
+                    <td>${patient.firstName} ${patient.lastName}</td>
+                    <td>${patient.age}</td>
+                    <td>${patient.gender}</td>
+                    <td>${patient.phoneNumber || '-'}</td>
+                    <td>${patient.village || '-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      // Open print window with actual data
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        
+        // Wait a moment for content to load, then print
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Error generating print roster:', error);
+      toast({
+        title: "Print Error",
+        description: "Failed to generate patient roster. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Format date for display using local timezone to avoid UTC offset issues
   const formatDate = (dateStr: string) => {
@@ -235,7 +377,7 @@ export default function Patients() {
               {/* Desktop: Horizontal segmented control */}
               <div className="hidden sm:flex gap-1">
                 <button
-                  onClick={() => setViewMode('today')}
+                  onClick={() => handleViewModeChange('today')}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px] ${
                     viewMode === 'today' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
@@ -251,7 +393,7 @@ export default function Patients() {
                 </button>
                 
                 <button
-                  onClick={() => setViewMode('date')}
+                  onClick={() => handleViewModeChange('date')}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px] ${
                     viewMode === 'date' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
@@ -269,7 +411,7 @@ export default function Patients() {
                 </button>
                 
                 <button
-                  onClick={() => setViewMode('all')}
+                  onClick={() => handleViewModeChange('all')}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px] ${
                     viewMode === 'all' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
@@ -285,7 +427,7 @@ export default function Patients() {
                 </button>
                 
                 <button
-                  onClick={() => setViewMode('search')}
+                  onClick={() => handleViewModeChange('search')}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px] ${
                     viewMode === 'search' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
@@ -301,7 +443,7 @@ export default function Patients() {
               {/* Mobile: Stacked buttons with consistent count badges */}
               <div className="sm:hidden grid grid-cols-2 gap-1">
                 <button
-                  onClick={() => setViewMode('today')}
+                  onClick={() => handleViewModeChange('today')}
                   className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[44px] ${
                     viewMode === 'today' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
@@ -319,7 +461,7 @@ export default function Patients() {
                 </button>
                 
                 <button
-                  onClick={() => setViewMode('date')}
+                  onClick={() => handleViewModeChange('date')}
                   className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[44px] ${
                     viewMode === 'date' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
@@ -342,7 +484,7 @@ export default function Patients() {
                 </button>
                 
                 <button
-                  onClick={() => setViewMode('all')}
+                  onClick={() => handleViewModeChange('all')}
                   className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[44px] ${
                     viewMode === 'all' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
@@ -360,7 +502,7 @@ export default function Patients() {
                 </button>
                 
                 <button
-                  onClick={() => setViewMode('search')}
+                  onClick={() => handleViewModeChange('search')}
                   className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[44px] ${
                     viewMode === 'search' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
@@ -403,6 +545,17 @@ export default function Patients() {
                     </span>
                   </div>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePrintRoster}
+                  className="text-xs h-8"
+                  data-testid="print-roster"
+                  disabled={countsLoading}
+                >
+                  <Printer className="w-3 h-3 mr-1" />
+                  Print
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -451,6 +604,10 @@ export default function Patients() {
             onViewPatient={handleViewPatient}
             viewMode={viewMode}
             selectedDate={selectedDate}
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            shouldSearch={shouldSearch}
+            onShouldSearchChange={setShouldSearch}
           />
         </CardContent>
       </Card>

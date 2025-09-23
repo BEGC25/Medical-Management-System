@@ -13,11 +13,24 @@ interface PatientSearchProps {
   showActions?: boolean;
   viewMode: 'today' | 'date' | 'search' | 'all';
   selectedDate: string;
+  searchTerm: string;
+  onSearchTermChange: (term: string) => void;
+  shouldSearch: boolean;
+  onShouldSearchChange: (should: boolean) => void;
 }
 
-export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPatient, showActions = true, viewMode, selectedDate }: PatientSearchProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [shouldSearch, setShouldSearch] = useState(false);
+export default function PatientSearch({ 
+  onSelectPatient, 
+  onEditPatient, 
+  onViewPatient, 
+  showActions = true, 
+  viewMode, 
+  selectedDate,
+  searchTerm,
+  onSearchTermChange,
+  shouldSearch,
+  onShouldSearchChange
+}: PatientSearchProps) {
 
   // Build query based on view mode
   const getQueryParams = () => {
@@ -50,7 +63,7 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
-      setShouldSearch(true);
+      onShouldSearchChange(true);
     }
   };
 
@@ -70,7 +83,7 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
               type="text"
               placeholder="Enter patient name or ID..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => onSearchTermChange(e.target.value)}
               onKeyPress={handleKeyPress}
               className="pl-10"
             />
