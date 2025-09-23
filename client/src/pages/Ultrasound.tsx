@@ -118,6 +118,8 @@ export default function Ultrasound() {
   const [selectedUltrasoundExam, setSelectedUltrasoundExam] = useState<UltrasoundExam | null>(null);
   const [selectedUltrasoundPatient, setSelectedUltrasoundPatient] = useState<Patient | null>(null);
   const [isResultsModalOpen, setIsResultsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [shouldSearch, setShouldSearch] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -587,7 +589,15 @@ export default function Ultrasound() {
             {/* Patient Selection */}
             <div>
               <h4 className="font-medium mb-4 text-gray-800 dark:text-gray-200">Select Patient</h4>
-              <PatientSearch onSelectPatient={handlePatientSelect} />
+              <PatientSearch 
+                viewMode="all"
+                selectedDate={new Date().toISOString().split('T')[0]}
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+                shouldSearch={shouldSearch}
+                onShouldSearchChange={setShouldSearch}
+                onSelectPatient={handlePatientSelect} 
+              />
               {selectedPatient && (
                 <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                   <p className="font-medium text-green-800 dark:text-green-200">
