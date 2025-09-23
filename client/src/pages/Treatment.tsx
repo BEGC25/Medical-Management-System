@@ -447,6 +447,7 @@ export default function Treatment() {
                           placeholder="What brings the patient in today?"
                           rows={3}
                           {...field}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -472,6 +473,7 @@ export default function Treatment() {
                               step="0.1" 
                               placeholder="36.5"
                               {...field}
+                              value={field.value ?? ""}
                               onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                             />
                           </FormControl>
@@ -487,7 +489,7 @@ export default function Treatment() {
                         <FormItem>
                           <FormLabel>Blood Pressure</FormLabel>
                           <FormControl>
-                            <Input placeholder="120/80" {...field} />
+                            <Input placeholder="120/80" {...field} value={field.value ?? ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -505,6 +507,7 @@ export default function Treatment() {
                               type="number" 
                               placeholder="72"
                               {...field}
+                              value={field.value ?? ""}
                               onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
                             />
                           </FormControl>
@@ -525,6 +528,7 @@ export default function Treatment() {
                               step="0.1" 
                               placeholder="65.0"
                               {...field}
+                              value={field.value ?? ""}
                               onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                             />
                           </FormControl>
@@ -547,6 +551,7 @@ export default function Treatment() {
                           placeholder="Detailed examination findings..."
                           rows={4}
                           {...field}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -566,6 +571,7 @@ export default function Treatment() {
                           placeholder="Primary and secondary diagnoses..."
                           rows={3}
                           {...field}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -585,6 +591,7 @@ export default function Treatment() {
                           placeholder="Medications, procedures, recommendations..."
                           rows={4}
                           {...field}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -601,7 +608,7 @@ export default function Treatment() {
                       <FormItem>
                         <FormLabel>Follow-up Date</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input type="date" {...field} value={field.value ?? ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -614,7 +621,7 @@ export default function Treatment() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Next Visit Type</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="No follow-up needed" />
