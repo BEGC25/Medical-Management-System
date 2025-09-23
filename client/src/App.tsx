@@ -24,19 +24,22 @@ function App() {
         <Header />
         <Navigation />
         
-        <main className="container mx-auto px-4 py-6">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/patients" component={Patients} />
-            <Route path="/treatment" component={Treatment} />
-            <Route path="/laboratory" component={Laboratory} />
-            <Route path="/xray" component={XRay} />
-            <Route path="/ultrasound" component={Ultrasound} />
-            <Route path="/payment" component={Payment} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/all-results" component={AllResults} />
-            <Route component={NotFound} />
-          </Switch>
+        {/* Main content area with left margin for sidebar */}
+        <main className="ml-64 pt-20 min-h-screen">
+          <div className="px-6 py-8">
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/patients" component={Patients} />
+              <Route path="/treatment" component={Treatment} />
+              <Route path="/laboratory" component={Laboratory} />
+              <Route path="/xray" component={XRay} />
+              <Route path="/ultrasound" component={Ultrasound} />
+              <Route path="/payment" component={Payment} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/all-results" component={AllResults} />
+              <Route component={NotFound} />
+            </Switch>
+          </div>
         </main>
         
         <Toaster />
