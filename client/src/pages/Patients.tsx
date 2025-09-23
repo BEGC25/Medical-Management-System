@@ -109,6 +109,8 @@ export default function Patients() {
         patientCountText = 'Search results';
       }
 
+      // Add service status information to the print
+      queryParams.append('withStatus', 'true');
       const fullUrl = queryParams.toString() ? `${apiUrl}?${queryParams}` : apiUrl;
       
       // Fetch the patient data
@@ -125,10 +127,15 @@ export default function Patients() {
               body { font-family: Arial, sans-serif; margin: 20px; }
               .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #ccc; padding-bottom: 15px; }
               .info { margin-bottom: 20px; font-size: 14px; color: #666; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+              th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
               th { background-color: #f5f5f5; font-weight: bold; }
               .patient-id { font-weight: bold; color: #0066cc; }
+              .status-unpaid { color: #dc2626; font-weight: bold; }
+              .status-paid { color: #16a34a; }
+              .status-pending { color: #ca8a04; }
+              .status-completed { color: #16a34a; }
+              .status-none { color: #9ca3af; font-style: italic; }
               @media print { body { margin: 0; } }
             </style>
           </head>
@@ -151,19 +158,48 @@ export default function Patients() {
                   <th>Gender</th>
                   <th>Phone</th>
                   <th>Village</th>
+                  <th>Payment Status</th>
+                  <th>Service Status</th>
                 </tr>
               </thead>
               <tbody>
-                ${patients.map((patient: any) => `
-                  <tr>
-                    <td class="patient-id">${patient.patientId}</td>
-                    <td>${patient.firstName} ${patient.lastName}</td>
-                    <td>${patient.age}</td>
-                    <td>${patient.gender}</td>
-                    <td>${patient.phoneNumber || '-'}</td>
-                    <td>${patient.village || '-'}</td>
-                  </tr>
-                `).join('')}
+                ${patients.map((patient: any) => {
+                  const serviceStatus = patient.serviceStatus || {};
+                  const hasUnpaidServices = serviceStatus.hasUnpaidServices;
+                  const hasPendingServices = serviceStatus.hasPendingServices;
+                  const unpaidCount = serviceStatus.unpaidServices || 0;
+                  const pendingCount = serviceStatus.pendingServices || 0;
+                  const completedCount = serviceStatus.completedServices || 0;
+                  const totalServices = serviceStatus.totalServices || 0;
+                  
+                  // Payment status text
+                  const paymentStatus = hasUnpaidServices 
+                    ? `⚠️ ${unpaidCount} UNPAID` 
+                    : totalServices > 0 
+                    ? '✓ PAID' 
+                    : 'No services';
+                    
+                  // Service status text  
+                  const serviceStatusText = totalServices > 0 
+                    ? [
+                        hasPendingServices ? `⏰ ${pendingCount} pending` : '',
+                        completedCount > 0 ? `✓ ${completedCount} done` : ''
+                      ].filter(Boolean).join(', ') || 'Processing'
+                    : 'No services';
+                  
+                  return `
+                    <tr>
+                      <td class="patient-id">${patient.patientId}</td>
+                      <td>${patient.firstName} ${patient.lastName}</td>
+                      <td>${patient.age}</td>
+                      <td>${patient.gender}</td>
+                      <td>${patient.phoneNumber || '-'}</td>
+                      <td>${patient.village || '-'}</td>
+                      <td class="${hasUnpaidServices ? 'status-unpaid' : totalServices > 0 ? 'status-paid' : 'status-none'}">${paymentStatus}</td>
+                      <td class="${hasPendingServices ? 'status-pending' : completedCount > 0 ? 'status-completed' : 'status-none'}">${serviceStatusText}</td>
+                    </tr>
+                  `;
+                }).join('')}
               </tbody>
             </table>
           </body>

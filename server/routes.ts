@@ -44,18 +44,32 @@ router.get("/api/patients", async (req, res) => {
     const search = req.query.search as string;
     const today = req.query.today;
     const date = req.query.date as string;
+    const withStatus = req.query.withStatus === 'true';
     
-    if (today === 'true' || search === 'today') {
-      // Get today's patients (registered today)
-      const patients = await storage.getTodaysPatients();
-      res.json(patients);
-    } else if (date) {
-      // Get patients for specific date
-      const patients = await storage.getPatientsByDate(date);
-      res.json(patients);
+    if (withStatus) {
+      // Return patients with service status information
+      if (today === 'true' || search === 'today') {
+        const patients = await storage.getTodaysPatientsWithStatus();
+        res.json(patients);
+      } else if (date) {
+        const patients = await storage.getPatientsByDateWithStatus(date);
+        res.json(patients);
+      } else {
+        const patients = await storage.getPatientsWithStatus(search);
+        res.json(patients);
+      }
     } else {
-      const patients = await storage.getPatients(search);
-      res.json(patients);
+      // Return basic patient information (legacy)
+      if (today === 'true' || search === 'today') {
+        const patients = await storage.getTodaysPatients();
+        res.json(patients);
+      } else if (date) {
+        const patients = await storage.getPatientsByDate(date);
+        res.json(patients);
+      } else {
+        const patients = await storage.getPatients(search);
+        res.json(patients);
+      }
     }
   } catch (error) {
     console.error('Error in patients route:', error);

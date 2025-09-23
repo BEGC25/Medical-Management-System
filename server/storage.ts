@@ -166,6 +166,12 @@ export interface IStorage {
   getTodaysPatients(): Promise<schema.Patient[]>;
   getPatientsByDate(date: string): Promise<schema.Patient[]>;
   getTodaysTreatments(): Promise<schema.Treatment[]>;
+  
+  // Enhanced patient queries with service status
+  getPatientsWithStatus(search?: string): Promise<(schema.Patient & { serviceStatus: any })[]>;
+  getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]>;
+  getPatientsByDateWithStatus(date: string): Promise<(schema.Patient & { serviceStatus: any })[]>;
+  getPatientServiceStatus(patientId: string): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -668,6 +674,118 @@ export class MemStorage implements IStorage {
       .returning();
     
     return pharmacyOrder;
+  }
+
+  // Enhanced patient queries with service status information
+  async getPatientsWithStatus(search?: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
+    let baseQuery = db.select().from(patients);
+    
+    if (search) {
+      baseQuery = baseQuery.where(
+        or(
+          like(patients.firstName, `%${search}%`),
+          like(patients.lastName, `%${search}%`),
+          like(patients.patientId, `%${search}%`)
+        )
+      );
+    }
+    
+    const patientsData = await baseQuery.orderBy(desc(patients.createdAt));
+    
+    // For each patient, get their service status summary
+    const patientsWithStatus = await Promise.all(
+      patientsData.map(async (patient) => {
+        const serviceStatus = await this.getPatientServiceStatus(patient.patientId);
+        return { ...patient, serviceStatus };
+      })
+    );
+    
+    return patientsWithStatus;
+  }
+
+  async getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const patientsData = await db.select().from(patients)
+      .where(like(patients.createdAt, `${today}%`))
+      .orderBy(desc(patients.createdAt));
+    
+    const patientsWithStatus = await Promise.all(
+      patientsData.map(async (patient) => {
+        const serviceStatus = await this.getPatientServiceStatus(patient.patientId);
+        return { ...patient, serviceStatus };
+      })
+    );
+    
+    return patientsWithStatus;
+  }
+
+  async getPatientsByDateWithStatus(date: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
+    const patientsData = await db.select().from(patients)
+      .where(sql`DATE(${patients.createdAt}) = ${date}`)
+      .orderBy(desc(patients.createdAt));
+    
+    const patientsWithStatus = await Promise.all(
+      patientsData.map(async (patient) => {
+        const serviceStatus = await this.getPatientServiceStatus(patient.patientId);
+        return { ...patient, serviceStatus };
+      })
+    );
+    
+    return patientsWithStatus;
+  }
+
+  async getPatientServiceStatus(patientId: string) {
+    // Get counts of services by payment status
+    const [labTestsData, xrayExamsData, ultrasoundExamsData, pharmacyOrdersData] = await Promise.all([
+      db.select({
+        total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${labTests.paymentStatus} = 'unpaid' then 1 else 0 end)`,
+        pending: sql<number>`sum(case when ${labTests.status} = 'pending' then 1 else 0 end)`,
+        completed: sql<number>`sum(case when ${labTests.status} = 'completed' then 1 else 0 end)`,
+      })
+      .from(labTests)
+      .where(eq(labTests.patientId, patientId)),
+      
+      db.select({
+        total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${xrayExams.paymentStatus} = 'unpaid' then 1 else 0 end)`,
+        pending: sql<number>`sum(case when ${xrayExams.status} = 'pending' then 1 else 0 end)`,
+        completed: sql<number>`sum(case when ${xrayExams.status} = 'completed' then 1 else 0 end)`,
+      })
+      .from(xrayExams)
+      .where(eq(xrayExams.patientId, patientId)),
+      
+      db.select({
+        total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${ultrasoundExams.paymentStatus} = 'unpaid' then 1 else 0 end)`,
+        pending: sql<number>`sum(case when ${ultrasoundExams.status} = 'pending' then 1 else 0 end)`,
+        completed: sql<number>`sum(case when ${ultrasoundExams.status} = 'completed' then 1 else 0 end)`,
+      })
+      .from(ultrasoundExams)
+      .where(eq(ultrasoundExams.patientId, patientId)),
+      
+      db.select({
+        total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${pharmacyOrders.paymentStatus} = 'unpaid' then 1 else 0 end)`,
+        prescribed: sql<number>`sum(case when ${pharmacyOrders.status} = 'prescribed' then 1 else 0 end)`,
+        dispensed: sql<number>`sum(case when ${pharmacyOrders.status} = 'dispensed' then 1 else 0 end)`,
+      })
+      .from(pharmacyOrders)
+      .where(eq(pharmacyOrders.patientId, patientId))
+    ]);
+
+    // Sum up totals
+    const totals = {
+      totalServices: (labTestsData[0]?.total || 0) + (xrayExamsData[0]?.total || 0) + (ultrasoundExamsData[0]?.total || 0) + (pharmacyOrdersData[0]?.total || 0),
+      unpaidServices: (labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0),
+      pendingServices: (labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0),
+      completedServices: (labTestsData[0]?.completed || 0) + (xrayExamsData[0]?.completed || 0) + (ultrasoundExamsData[0]?.completed || 0) + (pharmacyOrdersData[0]?.dispensed || 0),
+      hasUnpaidServices: ((labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0)) > 0,
+      hasPendingServices: ((labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0)) > 0
+    };
+
+    return totals;
   }
 }
 
