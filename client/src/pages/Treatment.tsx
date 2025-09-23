@@ -39,7 +39,7 @@ export default function Treatment() {
   }, []);
 
   // Query for today's treatments if filtering
-  const { data: todaysTreatments = [] } = useQuery({
+  const { data: todaysTreatments = [] } = useQuery<Treatment[]>({
     queryKey: ["/api/treatments", "today"],
     enabled: filterToday,
   });
@@ -52,10 +52,10 @@ export default function Treatment() {
       visitType: "consultation",
       priority: "routine",
       chiefComplaint: "",
-      temperature: "",
+      temperature: null,
       bloodPressure: "",
-      heartRate: "",
-      weight: "",
+      heartRate: null,
+      weight: null,
       examination: "",
       diagnosis: "",
       treatmentPlan: "",
@@ -206,7 +206,7 @@ export default function Treatment() {
     },
   });
 
-  const onSubmit = (data: InsertTreatment) => {
+  const handleSubmit = form.handleSubmit((data) => {
     if (!selectedPatient) {
       toast({
         title: "Error",
@@ -220,7 +220,7 @@ export default function Treatment() {
       ...data,
       patientId: selectedPatient.patientId,
     });
-  };
+  });
 
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -365,7 +365,7 @@ export default function Treatment() {
           {/* Treatment Form */}
           {selectedPatient && (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Visit Information */}
                 <div>
                   <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
@@ -472,7 +472,7 @@ export default function Treatment() {
                               step="0.1" 
                               placeholder="36.5"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value || "")}
+                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                             />
                           </FormControl>
                           <FormMessage />
@@ -505,7 +505,7 @@ export default function Treatment() {
                               type="number" 
                               placeholder="72"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value || "")}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
                             />
                           </FormControl>
                           <FormMessage />
@@ -525,7 +525,7 @@ export default function Treatment() {
                               step="0.1" 
                               placeholder="65.0"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value || "")}
+                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                             />
                           </FormControl>
                           <FormMessage />
