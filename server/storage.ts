@@ -164,6 +164,7 @@ export interface IStorage {
   
   // Today filters
   getTodaysPatients(): Promise<schema.Patient[]>;
+  getPatientsByDate(date: string): Promise<schema.Patient[]>;
   getTodaysTreatments(): Promise<schema.Treatment[]>;
 }
 
@@ -495,6 +496,15 @@ export class MemStorage implements IStorage {
       .where(
         // Check if created today by comparing the date part of the timestamp
         like(patients.createdAt, `${today}%`)
+      )
+      .orderBy(desc(patients.createdAt));
+  }
+
+  async getPatientsByDate(date: string): Promise<schema.Patient[]> {
+    return await db.select().from(patients)
+      .where(
+        // Check if created on specific date by comparing the date part of the timestamp
+        like(patients.createdAt, `${date}%`)
       )
       .orderBy(desc(patients.createdAt));
   }

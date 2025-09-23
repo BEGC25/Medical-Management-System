@@ -11,19 +11,37 @@ interface PatientSearchProps {
   onEditPatient?: (patient: Patient) => void;
   onViewPatient?: (patient: Patient) => void;
   showActions?: boolean;
-  filterToday?: boolean;
+  viewMode: 'today' | 'date' | 'search';
+  selectedDate: string;
 }
 
-export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPatient, showActions = true, filterToday = false }: PatientSearchProps) {
+export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPatient, showActions = true, viewMode, selectedDate }: PatientSearchProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [shouldSearch, setShouldSearch] = useState(filterToday); // Auto search if filtering today
+  const [shouldSearch, setShouldSearch] = useState(false);
+
+  // Build query based on view mode
+  const getQueryParams = () => {
+    if (viewMode === 'today') {
+      return { today: 'true' };
+    } else if (viewMode === 'date') {
+      return { date: selectedDate };
+    } else {
+      return { search: searchTerm };
+    }
+  };
 
   const { data: patients, isLoading } = useQuery({
-    queryKey: filterToday ? ["/api/patients", { today: "true" }] : ["/api/patients", searchTerm],
-    enabled: filterToday || (shouldSearch && searchTerm.length > 0),
-    queryFn: filterToday 
-      ? () => fetch('/api/patients?today=true').then(res => res.json())
-      : () => fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`).then(res => res.json()),
+    queryKey: ["/api/patients", getQueryParams()],
+    enabled: viewMode === 'today' || viewMode === 'date' || (viewMode === 'search' && shouldSearch && searchTerm.length > 0),
+    queryFn: () => {
+      if (viewMode === 'today') {
+        return fetch('/api/patients?today=true').then(res => res.json());
+      } else if (viewMode === 'date') {
+        return fetch(`/api/patients?date=${encodeURIComponent(selectedDate)}`).then(res => res.json());
+      } else {
+        return fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`).then(res => res.json());
+      }
+    },
   });
 
   const handleSearch = () => {
@@ -40,23 +58,26 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Input
-            type="text"
-            placeholder="Enter patient name or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="pl-10"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+      {/* Search input - only show for search mode */}
+      {viewMode === 'search' && (
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
+            <Input
+              type="text"
+              placeholder="Enter patient name or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="pl-10"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          </div>
+          <Button onClick={handleSearch} disabled={!searchTerm.trim()}>
+            <Search className="w-4 h-4 mr-2" />
+            Search
+          </Button>
         </div>
-        <Button onClick={handleSearch} disabled={!searchTerm.trim()}>
-          <Search className="w-4 h-4 mr-2" />
-          Search
-        </Button>
-      </div>
+      )}
 
       {isLoading && (
         <div className="text-center py-4">
@@ -64,9 +85,14 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
         </div>
       )}
 
-      {(filterToday || shouldSearch) && patients && patients.length > 0 && (
+      {/* Show results for all view modes when data is available */}
+      {((viewMode === 'today' || viewMode === 'date' || shouldSearch) && patients && patients.length > 0) && (
         <div>
-          <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Search Results</h3>
+          <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">
+            {viewMode === 'today' && 'Today\'s Patients'}
+            {viewMode === 'date' && 'Patients for Selected Date'}
+            {viewMode === 'search' && 'Search Results'}
+          </h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800">
@@ -145,9 +171,11 @@ export default function PatientSearch({ onSelectPatient, onEditPatient, onViewPa
         </div>
       )}
 
-      {(filterToday || shouldSearch) && patients && patients.length === 0 && (
+      {((viewMode === 'today' || viewMode === 'date' || shouldSearch) && patients && patients.length === 0) && (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          {filterToday ? "No patients registered today." : "No patients found matching your search."}
+          {viewMode === 'today' && "No patients registered today."}
+          {viewMode === 'date' && "No patients found for the selected date."}
+          {viewMode === 'search' && "No patients found matching your search."}
         </div>
       )}
     </div>

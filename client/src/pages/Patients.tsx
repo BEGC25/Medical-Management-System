@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Save, X, Printer, Filter } from "lucide-react";
+import { UserPlus, Save, X, Printer, Filter, Calendar, Users, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,29 +19,26 @@ import { addToPendingSync } from "@/lib/offline";
 export default function Patients() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [filterToday, setFilterToday] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Default to today
+  const [viewMode, setViewMode] = useState<'today' | 'date' | 'search'>('today'); // Default to today's patients
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Check for filter parameter in URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const filter = urlParams.get('filter');
-    if (filter === 'today') {
-      setFilterToday(true);
-    }
-  }, []);
+  // Format today's date for display
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
 
-  // Update URL when filter changes
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    if (filterToday) {
-      url.searchParams.set('filter', 'today');
-    } else {
-      url.searchParams.delete('filter');
-    }
-    window.history.replaceState({}, '', url.toString());
-  }, [filterToday]);
+  const isToday = (dateStr: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    return dateStr === today;
+  };
 
   const form = useForm<InsertPatient>({
     resolver: zodResolver(insertPatientSchema),
@@ -169,32 +166,23 @@ export default function Patients() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            {filterToday ? (
-              <div className="flex items-center gap-2">
-                <span>Today's New Patients</span>
-                <Badge className="bg-blue-600 text-white">
-                  <Filter className="w-3 h-3 mr-1" />
-                  Today Only
+            <div className="flex items-center gap-3">
+              <Users className="w-5 h-5 text-medical-blue" />
+              <span>Patient Management</span>
+              {viewMode === 'today' && (
+                <Badge className="bg-green-600 text-white">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  Today's Patients
                 </Badge>
-              </div>
-            ) : (
-              "Patient Search & Registration"
-            )}
-            <div className="flex gap-2">
-              {filterToday && (
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setFilterToday(false);
-                    // Update URL to remove filter
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('filter');
-                    window.history.replaceState({}, '', url.toString());
-                  }}
-                >
-                  Show All Patients
-                </Button>
               )}
+              {viewMode === 'date' && !isToday(selectedDate) && (
+                <Badge className="bg-blue-600 text-white">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  {formatDate(selectedDate)}
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-2">
               <Button 
                 onClick={() => setShowRegistrationForm(true)}
                 className="bg-health-green hover:bg-green-700"
@@ -206,10 +194,58 @@ export default function Patients() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* View Mode Navigation */}
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex gap-2">
+                <Button
+                  variant={viewMode === 'today' ? 'default' : 'outline'}
+                  onClick={() => setViewMode('today')}
+                  className="flex items-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Today's Patients
+                </Button>
+                <Button
+                  variant={viewMode === 'date' ? 'default' : 'outline'}
+                  onClick={() => setViewMode('date')}
+                  className="flex items-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Specific Date
+                </Button>
+                <Button
+                  variant={viewMode === 'search' ? 'default' : 'outline'}
+                  onClick={() => setViewMode('search')}
+                  className="flex items-center gap-2"
+                >
+                  <Search className="w-4 h-4" />
+                  Search Patients
+                </Button>
+              </div>
+              
+              {/* Date picker for specific date view */}
+              {viewMode === 'date' && (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Select Date:
+                  </label>
+                  <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-auto"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
           <PatientSearch 
             onEditPatient={handleEditPatient}
             onViewPatient={handleViewPatient}
-            filterToday={filterToday}
+            viewMode={viewMode}
+            selectedDate={selectedDate}
           />
         </CardContent>
       </Card>

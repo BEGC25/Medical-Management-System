@@ -14,10 +14,15 @@ router.get("/api/patients", async (req, res) => {
   try {
     const search = req.query.search as string;
     const today = req.query.today;
+    const date = req.query.date as string;
     
     if (today === 'true' || search === 'today') {
       // Get today's patients (registered today)
       const patients = await storage.getTodaysPatients();
+      res.json(patients);
+    } else if (date) {
+      // Get patients for specific date
+      const patients = await storage.getPatientsByDate(date);
       res.json(patients);
     } else {
       const patients = await storage.getPatients(search);
