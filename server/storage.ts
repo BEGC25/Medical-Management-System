@@ -15,7 +15,7 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
 
-const { patients, treatments, labTests, xrayExams, ultrasoundExams, services, payments, paymentItems } = schema;
+const { patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems } = schema;
 
 // Tables are automatically created by Drizzle with PostgreSQL
 console.log("✓ Database connection established");
@@ -70,13 +70,13 @@ async function generateUltrasoundId(): Promise<string> {
   return `BGC-US${ultrasoundCounter}`;
 }
 
-async function generatePrescriptionId(): Promise<string> {
+async function generatePharmacyId(): Promise<string> {
   if (prescriptionCounter === 0) {
-    // For future prescription table
-    prescriptionCounter = 0;
+    const allOrders = await db.select().from(pharmacyOrders);
+    prescriptionCounter = allOrders.length;
   }
   prescriptionCounter++;
-  return `BGC-RX${prescriptionCounter}`;
+  return `BGC-PHARM${prescriptionCounter}`;
 }
 
 async function generatePaymentId(): Promise<string> {
@@ -119,6 +119,13 @@ export interface IStorage {
   getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]>;
   getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]>;
   updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam>;
+
+  // Pharmacy Orders
+  createPharmacyOrder(data: schema.InsertPharmacyOrder): Promise<schema.PharmacyOrder>;
+  getPharmacyOrders(status?: string): Promise<schema.PharmacyOrder[]>;
+  getPharmacyOrdersByPatient(patientId: string): Promise<schema.PharmacyOrder[]>;
+  updatePharmacyOrder(orderId: string, data: Partial<schema.PharmacyOrder>): Promise<schema.PharmacyOrder>;
+  dispensePharmacyOrder(orderId: string): Promise<schema.PharmacyOrder>;
 
   // Payment Services
   getServices(): Promise<schema.Service[]>;
@@ -604,6 +611,53 @@ export class MemStorage implements IStorage {
       );
     
     return paymentCheck.length > 0;
+  }
+
+  // Pharmacy Orders
+  async createPharmacyOrder(data: schema.InsertPharmacyOrder): Promise<schema.PharmacyOrder> {
+    const orderId = await generatePharmacyId();
+    const now = new Date().toISOString();
+    const insertData = {
+      ...data,
+      orderId,
+      createdAt: now,
+    };
+    
+    const [pharmacyOrder] = await db.insert(pharmacyOrders).values([insertData]).returning();
+    return pharmacyOrder;
+  }
+
+  async getPharmacyOrders(status?: string): Promise<schema.PharmacyOrder[]> {
+    if (status) {
+      return await db.select().from(pharmacyOrders)
+        .where(eq(pharmacyOrders.status, status as any))
+        .orderBy(desc(pharmacyOrders.createdAt));
+    }
+    return await db.select().from(pharmacyOrders).orderBy(desc(pharmacyOrders.createdAt));
+  }
+
+  async getPharmacyOrdersByPatient(patientId: string): Promise<schema.PharmacyOrder[]> {
+    return await db.select().from(pharmacyOrders)
+      .where(eq(pharmacyOrders.patientId, patientId))
+      .orderBy(desc(pharmacyOrders.createdAt));
+  }
+
+  async updatePharmacyOrder(orderId: string, data: Partial<schema.PharmacyOrder>): Promise<schema.PharmacyOrder> {
+    const [pharmacyOrder] = await db.update(pharmacyOrders)
+      .set(data)
+      .where(eq(pharmacyOrders.orderId, orderId))
+      .returning();
+    
+    return pharmacyOrder;
+  }
+
+  async dispensePharmacyOrder(orderId: string): Promise<schema.PharmacyOrder> {
+    const [pharmacyOrder] = await db.update(pharmacyOrders)
+      .set({ status: 'dispensed' })
+      .where(eq(pharmacyOrders.orderId, orderId))
+      .returning();
+    
+    return pharmacyOrder;
   }
 }
 

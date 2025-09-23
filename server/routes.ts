@@ -1,7 +1,7 @@
 import express from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema, insertUltrasoundExamSchema } from "@shared/schema";
+import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema, insertUltrasoundExamSchema, insertPharmacyOrderSchema } from "@shared/schema";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -456,6 +456,63 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
   } catch (error) {
     console.error("Error fetching unpaid orders:", error);
     res.status(500).json({ error: "Failed to fetch unpaid orders" });
+  }
+});
+
+// Pharmacy Orders
+router.get("/api/pharmacy-orders", async (req, res) => {
+  try {
+    const status = req.query.status as string;
+    const pharmacyOrders = await storage.getPharmacyOrders(status);
+    res.json(pharmacyOrders);
+  } catch (error) {
+    console.error('Error in pharmacy orders route:', error);
+    res.status(500).json({ error: "Failed to fetch pharmacy orders" });
+  }
+});
+
+router.get("/api/pharmacy-orders/:patientId", async (req, res) => {
+  try {
+    const pharmacyOrders = await storage.getPharmacyOrdersByPatient(req.params.patientId);
+    res.json(pharmacyOrders);
+  } catch (error) {
+    console.error('Error in patient pharmacy orders route:', error);
+    res.status(500).json({ error: "Failed to fetch patient pharmacy orders" });
+  }
+});
+
+router.post("/api/pharmacy-orders", async (req, res) => {
+  try {
+    const data = insertPharmacyOrderSchema.parse(req.body);
+    const pharmacyOrder = await storage.createPharmacyOrder(data);
+    res.status(201).json(pharmacyOrder);
+  } catch (error) {
+    console.error('Error creating pharmacy order:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid pharmacy order data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create pharmacy order" });
+  }
+});
+
+router.patch("/api/pharmacy-orders/:orderId", async (req, res) => {
+  try {
+    const updates = req.body;
+    const pharmacyOrder = await storage.updatePharmacyOrder(req.params.orderId, updates);
+    res.json(pharmacyOrder);
+  } catch (error) {
+    console.error('Error updating pharmacy order:', error);
+    res.status(500).json({ error: "Failed to update pharmacy order" });
+  }
+});
+
+router.patch("/api/pharmacy-orders/:orderId/dispense", async (req, res) => {
+  try {
+    const pharmacyOrder = await storage.dispensePharmacyOrder(req.params.orderId);
+    res.json(pharmacyOrder);
+  } catch (error) {
+    console.error('Error dispensing pharmacy order:', error);
+    res.status(500).json({ error: "Failed to dispense pharmacy order" });
   }
 });
 

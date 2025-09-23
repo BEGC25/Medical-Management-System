@@ -8,7 +8,8 @@ import {
   LayoutDashboard,
   MonitorSpeaker,
   FileSearch,
-  DollarSign
+  DollarSign,
+  Pill
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
   { path: "/laboratory", label: "Laboratory", icon: TestTube, category: "Diagnostics" },
   { path: "/xray", label: "X-Ray", icon: Scan, category: "Diagnostics" },
   { path: "/ultrasound", label: "Ultrasound", icon: MonitorSpeaker, category: "Diagnostics" },
+  { path: "/pharmacy", label: "Pharmacy", icon: Pill, category: "Clinical" },
   { path: "/payment", label: "Payment", icon: DollarSign, category: "Administration" },
   { path: "/all-results", label: "All Results", icon: FileSearch, category: "Reports" },
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },

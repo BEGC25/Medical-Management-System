@@ -7,6 +7,7 @@ import Treatment from "@/pages/Treatment";
 import Laboratory from "@/pages/Laboratory";
 import XRay from "@/pages/XRay";
 import Ultrasound from "@/pages/Ultrasound";
+import Pharmacy from "@/pages/Pharmacy";
 import Reports from "@/pages/Reports";
 import AllResults from "@/pages/AllResults";
 import Payment from "@/pages/Payment";
@@ -34,6 +35,7 @@ function App() {
               <Route path="/laboratory" component={Laboratory} />
               <Route path="/xray" component={XRay} />
               <Route path="/ultrasound" component={Ultrasound} />
+              <Route path="/pharmacy" component={Pharmacy} />
               <Route path="/payment" component={Payment} />
               <Route path="/reports" component={Reports} />
               <Route path="/all-results" component={AllResults} />
