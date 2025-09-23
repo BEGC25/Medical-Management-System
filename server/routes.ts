@@ -9,6 +9,35 @@ import {
 
 const router = express.Router();
 
+// Patient Counts - Efficient endpoint for getting counts without full data
+router.get("/api/patients/counts", async (req, res) => {
+  try {
+    const date = req.query.date as string;
+    
+    // Get counts efficiently without fetching full patient arrays
+    const todayPatientsArray = await storage.getTodaysPatients();
+    const allPatientsArray = await storage.getPatients();
+    const todayCount = todayPatientsArray.length;
+    const allCount = allPatientsArray.length;
+    
+    let specificDateCount = 0;
+    if (date) {
+      const datePatientsArray = await storage.getPatientsByDate(date);
+      specificDateCount = datePatientsArray.length;
+    }
+    
+    res.json({
+      today: todayCount,
+      all: allCount,
+      date: specificDateCount,
+      lastUpdated: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in patient counts route:', error);
+    res.status(500).json({ error: "Failed to fetch patient counts" });
+  }
+});
+
 // Patients
 router.get("/api/patients", async (req, res) => {
   try {

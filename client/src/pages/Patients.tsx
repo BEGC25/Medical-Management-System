@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlus, Save, X, Printer, Filter, Calendar, Users, Search } from "lucide-react";
@@ -27,6 +27,28 @@ export default function Patients() {
   const [viewMode, setViewMode] = useState<'today' | 'date' | 'search' | 'all'>('today'); // Default to today's patients
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Patient count queries using efficient counts endpoint
+  const { data: patientCounts, isLoading: countsLoading } = useQuery({
+    queryKey: ["/api/patients/counts", viewMode, selectedDate],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (viewMode === 'date') {
+        params.append('date', selectedDate);
+      }
+      return fetch(`/api/patients/counts?${params}`).then(res => res.json());
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  });
+
+  // Extract counts with fallbacks
+  const todayCount = patientCounts?.today || 0;
+  const allCount = patientCounts?.all || 0;
+  const specificDateCount = patientCounts?.date || 0;
+  const serverLastUpdated = patientCounts?.lastUpdated;
+
+  // Track last refresh time
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
   // Format date for display using local timezone to avoid UTC offset issues
   const formatDate = (dateStr: string) => {
@@ -223,6 +245,9 @@ export default function Patients() {
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Today's Patients</span>
+                  <Badge className="ml-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    {todayCount}
+                  </Badge>
                 </button>
                 
                 <button
@@ -236,6 +261,11 @@ export default function Patients() {
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Specific Date</span>
+                  {viewMode === 'date' && (
+                    <Badge className="ml-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      {specificDateCount}
+                    </Badge>
+                  )}
                 </button>
                 
                 <button
@@ -249,6 +279,9 @@ export default function Patients() {
                 >
                   <Users className="w-4 h-4" />
                   <span>All Patients</span>
+                  <Badge className="ml-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                    {allCount}
+                  </Badge>
                 </button>
                 
                 <button
@@ -265,63 +298,132 @@ export default function Patients() {
                 </button>
               </div>
 
-              {/* Mobile: Stacked buttons */}
+              {/* Mobile: Stacked buttons with consistent count badges */}
               <div className="sm:hidden grid grid-cols-2 gap-1">
                 <button
                   onClick={() => setViewMode('today')}
-                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] ${
+                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[44px] ${
                     viewMode === 'today' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                   data-testid="nav-today-patients-mobile"
                 >
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-xs">Today</span>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-xs">Today</span>
+                  </div>
+                  <Badge className="text-[10px] px-1 py-0 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    {countsLoading ? "..." : todayCount}
+                  </Badge>
                 </button>
                 
                 <button
                   onClick={() => setViewMode('date')}
-                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] ${
+                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[44px] ${
                     viewMode === 'date' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                   data-testid="nav-specific-date-mobile"
                 >
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-xs">Date</span>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-xs">Date</span>
+                  </div>
+                  {/* Show count for date view when active, otherwise show indicator */}
+                  <Badge className={`text-[10px] px-1 py-0 ${
+                    viewMode === 'date' 
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
+                    {viewMode === 'date' ? (countsLoading ? "..." : specificDateCount) : "•"}
+                  </Badge>
                 </button>
                 
                 <button
                   onClick={() => setViewMode('all')}
-                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] ${
+                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[44px] ${
                     viewMode === 'all' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                   data-testid="nav-all-patients-mobile"
                 >
-                  <Users className="w-4 h-4" />
-                  <span className="text-xs">All</span>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    <span className="text-xs">All</span>
+                  </div>
+                  <Badge className="text-[10px] px-1 py-0 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                    {countsLoading ? "..." : allCount}
+                  </Badge>
                 </button>
                 
                 <button
                   onClick={() => setViewMode('search')}
-                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] ${
+                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[44px] ${
                     viewMode === 'search' 
                       ? 'bg-white dark:bg-gray-700 text-medical-blue shadow-sm' 
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                   data-testid="nav-search-patients-mobile"
                 >
-                  <Search className="w-4 h-4" />
-                  <span className="text-xs">Search</span>
+                  <div className="flex items-center gap-1">
+                    <Search className="w-4 h-4" />
+                    <span className="text-xs">Search</span>
+                  </div>
+                  <Badge className="text-[10px] px-1 py-0 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                    •
+                  </Badge>
                 </button>
               </div>
             </div>
 
-            {/* Contextual Controls - Only show when relevant */}
+            {/* Contextual Information Bar */}
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span>System Online</span>
+                </div>
+                <div className="hidden sm:flex items-center gap-2">
+                  <span>Last Updated:</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">
+                    {lastRefresh.toLocaleTimeString()}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {viewMode !== 'search' && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">
+                      {viewMode === 'today' && `${todayCount} patients today`}
+                      {viewMode === 'date' && !isToday(selectedDate) && `${specificDateCount} patients on selected date`}
+                      {viewMode === 'all' && `${allCount} total patients`}
+                    </span>
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setLastRefresh(new Date());
+                    // Invalidate and refetch all patient-related queries
+                    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+                    queryClient.refetchQueries({ queryKey: ["/api/patients/counts"] });
+                  }}
+                  className="text-xs h-8"
+                  data-testid="refresh-data"
+                  disabled={countsLoading}
+                >
+                  <Filter className="w-3 h-3 mr-1" />
+                  {countsLoading ? "Loading..." : "Refresh"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Date Picker - Only show when relevant */}
             {viewMode === 'date' && (
               <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <Calendar className="w-4 h-4 text-blue-600" />
