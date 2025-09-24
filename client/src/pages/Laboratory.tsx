@@ -357,6 +357,8 @@ export default function Laboratory() {
   const [showLabRequest, setShowLabRequest] = useState(false);
   const [showLabReport, setShowLabReport] = useState(false);
   const [selectedLabTest, setSelectedLabTest] = useState<LabTest | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [shouldSearch, setShouldSearch] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -871,13 +873,15 @@ export default function Laboratory() {
               <PatientSearch
                 viewMode="search"
                 selectedDate=""
-                searchTerm=""
-                onSearchTermChange={() => {}}
-                shouldSearch={true}
-                onShouldSearchChange={() => {}}
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+                shouldSearch={shouldSearch}
+                onShouldSearchChange={setShouldSearch}
                 onSelectPatient={(patient) => {
                   handlePatientSelect(patient);
                   setPatientSearchOpen(false);
+                  setSearchTerm("");
+                  setShouldSearch(false);
                 }}
               />
             </CardContent>
