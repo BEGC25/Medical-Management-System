@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock, Trash2, Waves } from "lucide-react";
+import { Send, Printer, Check, Clock, Trash2, Waves, Users, DollarSign, Calendar, TrendingUp, X, Search, Filter, ChevronDown, MoreHorizontal, User, Phone, Heart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,11 @@ import PatientSearch from "@/components/PatientSearch";
 import { insertUltrasoundExamSchema, type InsertUltrasoundExam, type Patient, type UltrasoundExam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { motion } from "framer-motion";
 
 // Ultrasound template system for common findings
 function getUltrasoundTemplates(examType?: string) {
@@ -120,6 +125,7 @@ export default function Ultrasound() {
   const [isResultsModalOpen, setIsResultsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
+  const [activeMetricFilter, setActiveMetricFilter] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -258,6 +264,10 @@ export default function Ultrasound() {
     },
   });
 
+  const { data: allUltrasoundExams = [] } = useQuery({
+    queryKey: ["/api/ultrasound-exams"],
+  });
+
   const { data: pendingUltrasounds = [] } = useQuery({
     queryKey: ["/api/ultrasound-exams"],
     select: (data: UltrasoundExam[]) => data.filter(exam => exam.status === 'pending'),
@@ -267,6 +277,38 @@ export default function Ultrasound() {
     queryKey: ["/api/ultrasound-exams"],
     select: (data: UltrasoundExam[]) => data.filter(exam => exam.status === 'completed'),
   });
+
+  // Create filtered dataset based on activeMetricFilter
+  const filteredExams = useMemo(() => {
+    if (!activeMetricFilter) {
+      // No filter active, return all exams
+      return allUltrasoundExams;
+    }
+
+    switch (activeMetricFilter) {
+      case 'pending':
+        return allUltrasoundExams.filter(exam => exam.status === 'pending');
+      case 'unpaid':
+        // Assuming exams have a paymentStatus field or we need to check via patient treatment records
+        return allUltrasoundExams.filter(exam => exam.paymentStatus === 'unpaid' || !exam.paymentStatus);
+      case 'today':
+        const today = new Date().toISOString().split('T')[0];
+        return allUltrasoundExams.filter(exam => 
+          exam.requestedDate?.startsWith(today) || exam.createdAt?.startsWith(today)
+        );
+      case 'turnaround':
+        // Show exams with longer turnaround times (older than 2 days and still pending)
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        return allUltrasoundExams.filter(exam => 
+          exam.status === 'pending' && 
+          exam.createdAt && 
+          new Date(exam.createdAt) < twoDaysAgo
+        );
+      default:
+        return allUltrasoundExams;
+    }
+  }, [allUltrasoundExams, activeMetricFilter]);
 
   const createUltrasoundExamMutation = useMutation({
     mutationFn: async (data: InsertUltrasoundExam) => {
@@ -565,27 +607,371 @@ export default function Ultrasound() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-medical-blue/10 dark:bg-blue-500/10 rounded-lg">
-            <Waves className="w-6 h-6 text-medical-blue dark:text-blue-400" />
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50">
+      {/* Premium Header */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <div className="px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-medical-blue/10 dark:bg-blue-500/10 rounded-xl">
+                <Waves className="w-6 h-6 text-medical-blue dark:text-blue-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Ultrasound Department</h1>
+                <p className="text-gray-600 dark:text-gray-400">Request and manage ultrasound examinations</p>
+              </div>
+            </div>
+            <Button className="bg-medical-blue hover:bg-medical-blue/90 text-white">
+              <Send className="w-4 h-4 mr-2" />
+              New Request
+            </Button>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-medical-blue dark:text-blue-400">Ultrasound Department</h1>
-            <p className="text-gray-600 dark:text-gray-300">Request and manage ultrasound examinations</p>
+
+          {/* Summary Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card 
+                className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                  activeMetricFilter === 'pending' 
+                    ? 'ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-900/30' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+                onClick={() => setActiveMetricFilter(activeMetricFilter === 'pending' ? null : 'pending')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Pending Exams</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingUltrasounds?.length || 0}</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card 
+                className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                  activeMetricFilter === 'unpaid' 
+                    ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-900/30' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+                onClick={() => setActiveMetricFilter(activeMetricFilter === 'unpaid' ? null : 'unpaid')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <DollarSign className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Unpaid</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card 
+                className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                  activeMetricFilter === 'today' 
+                    ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+                onClick={() => setActiveMetricFilter(activeMetricFilter === 'today' ? null : 'today')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Today's Slots</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">8</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card 
+                className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                  activeMetricFilter === 'turnaround' 
+                    ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/30' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+                onClick={() => setActiveMetricFilter(activeMetricFilter === 'turnaround' ? null : 'turnaround')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Avg. Turnaround</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">24h</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="secondary" className="text-sm">
-            <Clock className="w-4 h-4 mr-1" />
-            {pendingUltrasounds?.length || 0} Pending
-          </Badge>
         </div>
       </div>
 
-      {/* Request New Ultrasound */}
-      <Card>
+      {/* Main Content with Tabs */}
+      <div className="p-6">
+        <Tabs defaultValue="requests" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <TabsList className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <TabsTrigger value="requests" className="font-medium">Requests</TabsTrigger>
+              <TabsTrigger value="exams" className="font-medium">Exams</TabsTrigger>
+              <TabsTrigger value="reports" className="font-medium">Reports</TabsTrigger>
+              <TabsTrigger value="settings" className="font-medium">Settings</TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Requests Tab Content */}
+          <TabsContent value="requests" className="space-y-6">
+            {/* Filter Bar */}
+            <Card className="border-0 shadow-sm">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex flex-wrap gap-3">
+                  <div className="flex-1 min-w-64">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input 
+                        placeholder="Search patients by name, ID, or phone..." 
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <Button variant="outline" size="default">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filters
+                  </Button>
+                  <Button variant="outline" size="default">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Date Range
+                  </Button>
+                </div>
+
+                {/* Active Filter Chips */}
+                {activeMetricFilter && (
+                  <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Active filters:</span>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-sm rounded-full border border-blue-200 dark:border-blue-800"
+                    >
+                      {activeMetricFilter === 'pending' && (
+                        <>
+                          <Clock className="w-3 h-3" />
+                          Pending Exams
+                        </>
+                      )}
+                      {activeMetricFilter === 'unpaid' && (
+                        <>
+                          <DollarSign className="w-3 h-3" />
+                          Unpaid Services
+                        </>
+                      )}
+                      {activeMetricFilter === 'today' && (
+                        <>
+                          <Calendar className="w-3 h-3" />
+                          Today's Appointments
+                        </>
+                      )}
+                      {activeMetricFilter === 'turnaround' && (
+                        <>
+                          <TrendingUp className="w-3 h-3" />
+                          Long Turnaround
+                        </>
+                      )}
+                      <button
+                        onClick={() => setActiveMetricFilter(null)}
+                        className="ml-1 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveMetricFilter(null)}
+                      className="text-sm h-8 px-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                    >
+                      Clear all
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Premium Table */}
+            <Card className="border-0 shadow-sm">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Patient Requests</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Manage ultrasound examination requests</p>
+                  </div>
+                </div>
+
+                <div className="overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-800/50">
+                      <tr>
+                        <th className="px-6 py-4 text-left">
+                          <input type="checkbox" className="rounded border-gray-300" />
+                        </th>
+                        <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">Patient</th>
+                        <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">Age</th>
+                        <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">Contact</th>
+                        <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">Payment</th>
+                        <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">Status</th>
+                        <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">Registered</th>
+                        <th className="px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-white">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {/* Use filtered exams based on activeMetricFilter */}
+                      {filteredExams?.map((exam: UltrasoundExam, index: number) => (
+                        <tr key={exam.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <input type="checkbox" className="rounded border-gray-300" />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-medical-blue/10 text-medical-blue text-sm font-medium">
+                                  {exam.patientName?.split(' ').map(n => n.charAt(0)).join('') || 'UN'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-gray-900 dark:text-white">
+                                  {exam.patientName || 'Unknown Patient'}
+                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{exam.patientId}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{exam.examType || 'Unknown'}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                              <Phone className="w-3 h-3" />
+                              {exam.phoneNumber || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <StatusBadge 
+                              variant={exam.paymentStatus === 'paid' ? 'success' : 'destructive'} 
+                              icon={exam.paymentStatus === 'paid' ? Check : DollarSign}
+                            >
+                              {exam.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
+                            </StatusBadge>
+                          </td>
+                          <td className="px-6 py-4">
+                            <StatusBadge 
+                              variant={exam.status === 'completed' ? 'success' : 'warning'} 
+                              icon={exam.status === 'completed' ? Check : Clock}
+                            >
+                              {exam.status === 'completed' ? 'Completed' : 'Pending'}
+                            </StatusBadge>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(exam.createdAt || exam.requestedDate || '').toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* Empty state when no filtered results */}
+                      {filteredExams?.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="px-6 py-12 text-center">
+                            <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                              <Waves className="w-12 h-12 mb-4 text-gray-300 dark:text-gray-600" />
+                              <p className="text-lg font-medium">No exams found</p>
+                              <p className="text-sm">
+                                {activeMetricFilter 
+                                  ? `No exams match the current filter "${activeMetricFilter}"`
+                                  : 'No ultrasound exams have been submitted yet'
+                                }
+                              </p>
+                              {activeMetricFilter && (
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => setActiveMetricFilter(null)}
+                                  className="mt-4"
+                                >
+                                  Clear filter
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Exams Tab Content */}
+          <TabsContent value="exams" className="space-y-6">
+            <Card className="border-0 shadow-sm">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Active Examinations</h3>
+                <p className="text-gray-600 dark:text-gray-400">No active examinations</p>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Reports Tab Content */}
+          <TabsContent value="reports" className="space-y-6">
+            <Card className="border-0 shadow-sm">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Generated Reports</h3>
+                <p className="text-gray-600 dark:text-gray-400">No reports available</p>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab Content */}
+          <TabsContent value="settings" className="space-y-6">
+            <Card className="border-0 shadow-sm">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Department Settings</h3>
+                <p className="text-gray-600 dark:text-gray-400">Configure ultrasound department settings</p>
+              </div>
+            </Card>
+          </TabsContent>
+
+        </Tabs>
+
+        {/* New Request Modal (Hidden for now - will be activated by button) */}
+        <Card className="hidden">
         <CardHeader>
           <CardTitle className="text-medical-blue dark:text-blue-400">New Ultrasound Request</CardTitle>
         </CardHeader>
@@ -1072,6 +1458,7 @@ export default function Ultrasound() {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

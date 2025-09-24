@@ -1,0 +1,79 @@
+1) Sharpen the information architecture
+
+Split the page into tabs (Requests • Exams • Reports • Settings). Keep “New Request” as a persistent primary CTA on the right.
+
+Add a top summary bar with metric cards: Pending Exams, Unpaid, Today’s Slots, Turnaround Time. Each card doubles as a filter.
+
+2) A real filter bar (chips + quick clear)
+
+One horizontal bar under the header: Search (name/ID/phone), Date range, Status (Paid/Unpaid), Exam status (Ordered/Pending/Done).
+
+Applied filters render as chips with ✕ to remove; include “Clear all”.
+
+3) Table that feels premium
+
+Column rethink: Patient (avatar + name + ID) • Age • Contact • Payment • Exam Status • Registered • … (kebab menu).
+
+Status chips only (no raw numbers like “1001”). E.g., Paid, Unpaid, Ordered, Pending, Done. Amounts right-aligned and formatted (“$1,001.00”).
+
+Inline sorting (Registered, Payment), sticky header, row hover, zebra optional, pagination with “Rows per page”.
+
+Bulk select (checkbox in header) for batch actions (Request exam, Mark paid, Export).
+
+Replace the crowded icons with a single … menu per row + tooltips.
+
+4) Slide-over details instead of page jumps
+
+Clicking a row opens a right-hand drawer with full patient context + contextual actions:
+
+Start/Complete Exam
+
+Record Payment
+
+Add Results / Upload
+
+Message patient
+
+Keep the table in view—fast, modern, friendly.
+
+5) Unified status system (design tokens)
+
+Build a tiny StatusBadge that accepts variant: "success|warning|destructive|info|neutral" and icon.
+
+Use tinted backgrounds (e.g., success: bg-emerald-50/ text-emerald-700/ ring-emerald-200) with rounded-full chips. Consistency = polish.
+
+6) Typography, spacing, and elevation
+
+Font: Inter or Plus Jakarta Sans.
+
+Scale: title 22–24, section 18, table 14–15, line-height ≥ 1.45.
+
+Spacing tokens on an 8px grid (8/12/16/24/32). Give cards breathing room (p-6/7), radius-xl/2xl and soft shadow (shadow-sm on cards, shadow on modals).
+
+7) Visual clarity in content
+
+Gender → icon + short label (♀/♂ with tooltip).
+
+Payment → split amount vs status: $1,001 + Unpaid chip, never “1001 Unpaid”.
+
+Services → a mini stepper: Ordered → Pending → Done (with date tooltips). Much clearer than three separate chips.
+
+8) Empty states, skeletons, and micro-interactions
+
+Friendly empty states with icon/illustration + CTA (e.g., “No pending exams — Create request”).
+
+Skeleton rows while loading.
+
+Subtle motion (Framer Motion) for drawer/menus (150–200ms, ease-out). Feels premium.
+
+9) Accessibility & resilience
+
+Touch targets ≥ 44×44px, keyboard focus rings, ARIA labels on icons, WCAG contrast on chips.
+
+Locale-aware currency & date formatting.
+
+Table virtualization if lists get large.
+
+10) Dark mode that actually delights
+
+Use Tailwind’s dark: tokens for chips/cards/shadows; keep neutrals slightly warmer in dark mode for legibility.
