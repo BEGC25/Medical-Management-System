@@ -38,7 +38,7 @@ export default function Navigation() {
   }, {} as Record<string, typeof navItems>);
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700 z-30 pt-20">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700 z-30 pt-16">
       <nav className="h-full overflow-y-auto px-4 py-6">
         <div className="space-y-8">
           {Object.entries(groupedItems).map(([category, items]) => (

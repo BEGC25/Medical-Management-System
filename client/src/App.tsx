@@ -26,8 +26,8 @@ function App() {
         <Navigation />
         
         {/* Main content area with left margin for sidebar */}
-        <main className="ml-64 pt-20 min-h-screen">
-          <div className="px-6 py-8">
+        <main className="ml-64 pt-16 min-h-screen">
+          <div className="px-6 py-6">
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/patients" component={Patients} />
