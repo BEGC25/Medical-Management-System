@@ -1,1169 +1,1066 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { useToast } from '@/hooks/use-toast';
-import { motion } from 'framer-motion';
-import {
-  TestTube,
-  Filter,
-  Calendar,
-  Search,
-  Plus,
-  Clock,
-  CheckCircle,
-  TrendingUp,
-  Activity,
-  Printer
-} from 'lucide-react';
-import PatientSearch from '@/components/PatientSearch';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import type { Patient, LabTest } from '@shared/schema';
-import { createInsertSchema } from 'drizzle-zod';
-import { labTests } from '@shared/schema';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Send, Printer, Check, Clock, Camera, FileImage, Save, AlertCircle } from "lucide-react";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import PatientSearch from "@/components/PatientSearch";
+import { insertLabTestSchema, type InsertLabTest, type Patient, type LabTest } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { addToPendingSync } from "@/lib/offline";
 
-type LabTestInsert = typeof labTests.$inferInsert;
+// Simple test categories for doctors to order
+// Professional lab results formatter
+const formatLabResults = (results: string) => {
+  if (!results) return null;
+  
+  try {
+    const parsed = JSON.parse(results);
+    
+    return (
+      <div className="space-y-4">
+        {Object.entries(parsed).map(([testName, testData]: [string, any]) => (
+          <div key={testName} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+            <h5 className="font-semibold text-lg mb-3 text-blue-700 dark:text-blue-300 border-b border-blue-200 dark:border-blue-700 pb-2">
+              {testName}
+            </h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(testData).map(([field, value]: [string, any]) => (
+                <div key={field} className="flex justify-between items-center py-1">
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">
+                    {field}:
+                  </span>
+                  <span className={`font-mono text-right ${
+                    // Highlight abnormal values
+                    (value as string).includes('+') || (value as string).includes('P. falciparum') || 
+                    (value as string).includes('Positive') || (value as string).includes('Seen') || 
+                    (value as string).includes('Turbid') || (value as string).includes('1:160') ||
+                    (value as string).includes('Bloody') || (value as string).includes('F. histolytica') ||
+                    (value as string).includes('G. lamblia')
+                      ? 'text-red-600 dark:text-red-400 font-bold' 
+                      : 'text-green-600 dark:text-green-400'
+                  }`}>
+                    {value as string}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  } catch (e) {
+    // Fallback for non-JSON results
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border">
+        <pre className="whitespace-pre-wrap text-sm font-mono">{results}</pre>
+      </div>
+    );
+  }
+};
 
-// Common test categories and tests
-const commonTests = {
-  hematology: [
+// Clinical interpretation function
+const getClinicalInterpretation = (results: string) => {
+  if (!results) return null;
+  
+  try {
+    const parsed = JSON.parse(results);
+    const findings = [];
+    
+    // Check for malaria
+    if (parsed['Blood Film for Malaria (BFFM)']) {
+      const malaria = parsed['Blood Film for Malaria (BFFM)'];
+      if (malaria['Malaria Parasites']?.includes('P. falciparum')) {
+        findings.push('🚨 POSITIVE for Plasmodium falciparum malaria - Requires immediate treatment');
+      }
+      if (malaria['Gametocytes']?.includes('Seen')) {
+        findings.push('⚠️ Gametocytes present - Patient is infectious');
+      }
+    }
+    
+    // Check for typhoid
+    if (parsed['Widal Test (Typhoid)']) {
+      const widal = parsed['Widal Test (Typhoid)'];
+      if (widal['S. Typhi (O)Ag']?.includes('1:160') || widal['S. Typhi (H)Ag']?.includes('1:160')) {
+        findings.push('⚠️ Elevated typhoid titers - Consider typhoid fever');
+      }
+    }
+    
+    // Check for Brucella
+    if (parsed['Brucella Test (B.A.T)']) {
+      const brucella = parsed['Brucella Test (B.A.T)'];
+      if (brucella['B. Abortus']?.includes('1:160') || brucella['B. Malitensis']?.includes('1:320')) {
+        findings.push('🚨 Brucella infection detected - Requires antibiotic treatment and contact tracing');
+      }
+    }
+    
+    // Check urine analysis
+    if (parsed['Urine Analysis']) {
+      const urine = parsed['Urine Analysis'];
+      if (urine['Appearance']?.includes('Turbid') || urine['Appearance']?.includes('Bloody')) {
+        findings.push('🚨 Abnormal urine appearance - Requires immediate evaluation');
+      }
+      if (urine['Protein']?.includes('+')) {
+        findings.push('⚠️ Proteinuria detected - Kidney function needs assessment');
+      }
+      if (urine['Glucose']?.includes('+')) {
+        findings.push('⚠️ Glucosuria - Check blood glucose levels');
+      }
+      if (urine['Leucocytes']?.includes('+')) {
+        findings.push('⚠️ Leucocytes in urine - Urinary tract infection likely');
+      }
+    }
+    
+    // Check urine microscopy
+    if (parsed['Urine Microscopy']) {
+      const microscopy = parsed['Urine Microscopy'];
+      if (microscopy['Casts']?.includes('Granular') || microscopy['Casts']?.includes('Cellular')) {
+        findings.push('⚠️ Abnormal casts present - Kidney damage or disease');
+      }
+      if (microscopy['Trichomonas']?.includes('Seen')) {
+        findings.push('🚨 Trichomonas infection - Sexually transmitted infection requires treatment');
+      }
+      if (microscopy['Epithelial cells']?.includes('Many')) {
+        findings.push('⚠️ Many epithelial cells - Possible contamination or urogenital inflammation');
+      }
+      if (microscopy['Pus Cells'] && parseInt(microscopy['Pus Cells']) > 10) {
+        findings.push('🚨 High pus cells in urine - Severe urinary tract infection');
+      }
+      if (microscopy['RBC'] && parseInt(microscopy['RBC']) > 5) {
+        findings.push('🚨 Blood cells in urine - Hematuria requires investigation');
+      }
+    }
+    
+    // Check stool examination
+    if (parsed['Stool Examination']) {
+      const stool = parsed['Stool Examination'];
+      if (stool['Ova/Cyst']?.includes('Ascaris')) {
+        findings.push('🚨 Ascaris worms detected - Requires immediate deworming treatment');
+      }
+      if (stool['Ova/Cyst']?.includes('F. histolytica') || stool['Trophozoites']?.includes('E. histolytica')) {
+        findings.push('🚨 E. histolytica detected - Serious parasitic infection causing dysentery');
+      }
+      if (stool['Trophozoites']?.includes('G. lamblia')) {
+        findings.push('⚠️ Giardia detected - Requires antiparasitic treatment');
+      }
+      if (stool['Appearance']?.includes('Bloody')) {
+        findings.push('🚨 Blood in stool - Serious gastrointestinal bleeding requires investigation');
+      }
+    }
+    
+    // Check H. Pylori
+    if (parsed['H. Pylori Test']) {
+      const hPylori = parsed['H. Pylori Test'];
+      if (hPylori['H. Pylori Antigen']?.includes('Positive')) {
+        findings.push('⚠️ H. Pylori positive - Consider treatment for gastric ulcers');
+      }
+    }
+    
+    // Check Hepatitis B
+    if (parsed['Hepatitis B Test (HBsAg)']) {
+      const hepB = parsed['Hepatitis B Test (HBsAg)'];
+      if (hepB['HBsAg']?.includes('Positive')) {
+        findings.push('🚨 Hepatitis B positive - Requires specialist consultation and monitoring');
+      }
+    }
+    
+    // Check Hepatitis C
+    if (parsed['Hepatitis C Test (HCV)']) {
+      const hepC = parsed['Hepatitis C Test (HCV)'];
+      if (hepC['HCV Antibody']?.includes('Positive')) {
+        findings.push('🚨 Hepatitis C positive - Requires specialist consultation and monitoring');
+      }
+    }
+    
+    // Check STI tests
+    if (parsed['Gonorrhea Test']) {
+      const gonorrhea = parsed['Gonorrhea Test'];
+      if (gonorrhea['Neisseria Gonorrhoeae']?.includes('Positive')) {
+        findings.push('🚨 Gonorrhea detected - Requires antibiotic treatment and partner notification');
+      }
+    }
+    
+    if (parsed['Chlamydia Test']) {
+      const chlamydia = parsed['Chlamydia Test'];
+      if (chlamydia['Chlamydia Trachomatis']?.includes('Positive')) {
+        findings.push('🚨 Chlamydia detected - Requires antibiotic treatment and partner notification');
+      }
+    }
+    
+    if (parsed['VDRL Test (Syphilis)']) {
+      const vdrl = parsed['VDRL Test (Syphilis)'];
+      if (vdrl['VDRL Result']?.includes('Reactive')) {
+        findings.push('🚨 Syphilis positive - Requires penicillin treatment and partner notification');
+      }
+    }
+    
+    // Check parasitic tests
+    if (parsed['Toxoplasma Test']) {
+      const toxo = parsed['Toxoplasma Test'];
+      if (toxo['Toxoplasma IgM']?.includes('Positive')) {
+        findings.push('🚨 Acute toxoplasmosis - Dangerous for pregnant women and immunocompromised');
+      }
+      if (toxo['Toxoplasma IgG']?.includes('Positive')) {
+        findings.push('⚠️ Previous toxoplasmosis exposure - Monitor if pregnant');
+      }
+    }
+    
+    if (parsed['Filariasis Tests']) {
+      const filaria = parsed['Filariasis Tests'];
+      if (filaria['Skin Snip for Onchocerca']?.includes('Microfilariae present')) {
+        findings.push('🚨 Onchocerciasis (River blindness) detected - Requires ivermectin treatment');
+      }
+      if (filaria['Wet Mount for Microfilariae']?.includes('W. bancrofti') || 
+          filaria['Wet Mount for Microfilariae']?.includes('Loa loa')) {
+        findings.push('🚨 Lymphatic filariasis detected - Requires antihelminthic treatment');
+      }
+    }
+    
+    // Check Yellow Fever
+    if (parsed['Yellow Fever Test']) {
+      const yellowFever = parsed['Yellow Fever Test'];
+      if (yellowFever['Yellow Fever IgM']?.includes('Positive')) {
+        findings.push('🚨 Acute Yellow Fever infection - Medical emergency requiring immediate isolation');
+      }
+    }
+    
+    // Check Dengue
+    if (parsed['Dengue Test']) {
+      const dengue = parsed['Dengue Test'];
+      if (dengue['Dengue IgM']?.includes('Positive') || dengue['Dengue NS1']?.includes('Positive')) {
+        findings.push('🚨 Dengue fever detected - Monitor for severe complications and bleeding');
+      }
+    }
+    
+    // Check Rheumatoid Factor
+    if (parsed['Rheumatoid Factor Test']) {
+      const rf = parsed['Rheumatoid Factor Test'];
+      if (rf['RF Level'] && parseInt(rf['RF Level']) > 20) {
+        findings.push('⚠️ Elevated Rheumatoid Factor - Consider rheumatoid arthritis or other autoimmune conditions');
+      }
+    }
+    
+    // Check blood group results
+    if (parsed['Blood Group & Rh Factor']) {
+      const bloodGroup = parsed['Blood Group & Rh Factor'];
+      if (bloodGroup['Blood Group'] && bloodGroup['Rh Factor']) {
+        const group = bloodGroup['Blood Group'];
+        const rh = bloodGroup['Rh Factor'];
+        
+        // Clinical notes for blood grouping
+        if (rh === 'Negative') {
+          findings.push('ℹ️ Rh Negative blood type - Important for pregnancy and transfusion compatibility');
+        }
+        
+        // Universal donor/recipient information
+        if (group === 'O' && rh === 'Negative') {
+          findings.push('ℹ️ Universal red blood cell donor (O-) - Can donate to all blood types');
+        }
+        if (group === 'AB' && rh === 'Positive') {
+          findings.push('ℹ️ Universal plasma recipient (AB+) - Can receive red cells from all blood types');
+        }
+      }
+    }
+    
+    if (findings.length === 0) {
+      findings.push('✅ No significant abnormalities detected in the analyzed parameters');
+    }
+    
+    return findings;
+  } catch (e) {
+    return null;
+  }
+};
+
+const testCategories = {
+  "Blood Tests": [
     "Complete Blood Count (CBC)",
-    "Hemoglobin (Hb)",
     "Hematocrit (Hct)",
-    "White Blood Cell Count (WBC)",
-    "Platelet Count",
-    "Erythrocyte Sedimentation Rate (ESR)",
-    "Blood Group & Rh Type",
-    "Cross Match",
-    "Reticulocyte Count",
-    "Peripheral Blood Smear"
+    "Hemoglobin (Hb)",
+    "Blood Group & Rh Factor"
   ],
-  serology: [
-    "Hepatitis B Surface Antigen (HBsAg)",
-    "Hepatitis C Antibody",
-    "HIV Rapid Test",
-    "Syphilis (VDRL/RPR)",
-    "Rheumatoid Factor (RF)",
-    "Antistreptolysin O (ASO)",
-    "C-Reactive Protein (CRP)",
-    "Widal Test (Typhoid)",
-    "Pregnancy Test (Beta-hCG)",
-    "Malaria Rapid Test"
-  ],
-  urine: [
-    "Urinalysis (Complete)",
+  "Urine Tests": [
+    "Urine Analysis",
     "Urine Microscopy",
-    "Urine Culture",
-    "Protein in Urine",
-    "Glucose in Urine",
-    "Ketones",
-    "Specific Gravity",
-    "pH",
-    "Nitrites",
-    "Leukocyte Esterase"
+    "Urine Culture & Sensitivity"
   ],
-  parasitology: [
-    "Stool for Ova & Parasites",
-    "Stool for Occult Blood",
-    "Malaria Blood Smear (Thick & Thin)",
-    "Schistosomiasis",
-    "Filariasis",
-    "Leishmaniasis",
-    "Trypanosomiasis"
+  "Stool Tests": [
+    "Stool Examination",
+    "Stool Culture",
+    "Stool for Occult Blood"
   ],
-  biochemistry: [
-    "Fasting Blood Sugar (FBS)",
-    "Random Blood Sugar (RBS)",
-    "Urea",
-    "Creatinine",
-    "Total Cholesterol",
-    "HDL Cholesterol",
-    "LDL Cholesterol",
-    "Triglycerides",
-    "ALT (SGPT)",
-    "AST (SGOT)",
-    "Alkaline Phosphatase",
-    "Total Bilirubin",
-    "Direct Bilirubin",
-    "Total Protein",
-    "Albumin"
+  "Microbiology Tests": [
+    "Blood Film for Malaria (BFFM)",
+    "Widal Test (Typhoid)",
+    "Brucella Test (B.A.T)",
+    "Blood Culture & Sensitivity"
   ],
-  hormones: [
-    "Thyroid Stimulating Hormone (TSH)",
-    "Free T3",
-    "Free T4",
-    "Insulin",
-    "Cortisol",
-    "Testosterone",
-    "Estradiol",
-    "Progesterone",
-    "Prolactin",
-    "Growth Hormone"
+  "Chemistry Tests": [
+    "Blood Sugar (Random/Fasting)",
+    "Liver Function Tests",
+    "Kidney Function Tests",
+    "Lipid Profile",
+    "Electrolytes (Na, K, Cl)"
+  ],
+  "Hormonal Tests": [
+    "Thyroid Function Tests (TSH, T3, T4)",
+    "Pregnancy Test (β-hCG)",
+    "Insulin Level",
+    "Cortisol Level"
+  ],
+  "STI/Reproductive Health": [
+    "VDRL Test (Syphilis)",
+    "Hepatitis B Test (HBsAg)",
+    "Hepatitis C Test (HCV)",
+    "HIV Test",
+    "Gonorrhea Test",
+    "Chlamydia Test",
+    "Pregnancy Test"
+  ],
+  "Parasitic/Tropical Disease Tests": [
+    "Toxoplasma Test",
+    "Filariasis Tests",
+    "Yellow Fever Test",
+    "Dengue Test",
+    "Schistosomiasis Test",
+    "Leishmaniasis Test",
+    "Trypanosomiasis Test"
+  ],
+  "Tuberculosis Tests": [
+    "Sputum for AFB",
+    "TB Skin Test (TST)",
+    "GeneXpert MTB/RIF",
+    "Chest X-ray for TB"
+  ],
+  "Other Tests": [
+    "H. Pylori Test",
+    "C-Reactive Protein (CRP)",
+    "Erythrocyte Sedimentation Rate (ESR)",
+    "Rheumatoid Factor Test",
+    "Coagulation Studies (PT, PTT)"
   ]
 };
 
-const TestResultsModal = ({ testName, onClose }: { testName: string; onClose: () => void }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <CardHeader>
-        <CardTitle>Test Results - {testName}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {testName === "Complete Blood Count (CBC)" && (
-          <CBCResults />
-        )}
-        {testName === "Urinalysis (Complete)" && (
-          <UrinalysisResults />
-        )}
-        <div className="pt-8 border-t">
-          <p className="mb-4">Lab Technician: ____________________</p>
-          <p className="text-xs text-gray-500 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button onClick={() => window.print()}>
-            <Printer className="w-4 h-4 mr-2" />
-            Print Results
-          </Button>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-);
-
-const CBCResults = () => {
-  return (
-    <div className="space-y-4">
-      <h3 className="font-semibold text-lg">Complete Blood Count (CBC)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {[
-          { test: "Hemoglobin (Hb)", result: "____", unit: "g/dL", normal: "M: 13.8-17.2, F: 12.1-15.1" },
-          { test: "Hematocrit (Hct)", result: "____", unit: "%", normal: "M: 40.7-50.3, F: 36.1-44.3" },
-          { test: "RBC Count", result: "____", unit: "×10⁶/μL", normal: "M: 4.7-6.1, F: 4.2-5.4" },
-          { test: "WBC Count", result: "____", unit: "×10³/μL", normal: "5.0-10.0" },
-          { test: "Platelet Count", result: "____", unit: "×10³/μL", normal: "150-450" },
-          { test: "MCV", result: "____", unit: "fL", normal: "82-98" },
-          { test: "MCH", result: "____", unit: "pg", normal: "27-32" },
-          { test: "MCHC", result: "____", unit: "g/dL", normal: "32-36" }
-        ].map((item, index) => (
-          <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
-            <h4 className="font-medium">{item.test}</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="flex justify-between items-center py-1">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Result:</span>
-                <span className="font-medium">{item.result} {item.unit}</span>
-              </div>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Normal:</span>
-                <span className="text-xs text-gray-500 dark:text-gray-500">{item.normal}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border">
-        <p className="font-medium mb-2">Clinical Interpretation:</p>
-        <p className="text-sm">_________________________________________________</p>
-      </div>
-    </div>
-  );
-};
-
-const UrinalysisResults = () => {
-  return (
-    <div className="space-y-4">
-      <h3 className="font-semibold text-lg">Urinalysis (Complete)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {[
-          { test: "Color", result: "____", normal: "Pale Yellow" },
-          { test: "Clarity", result: "____", normal: "Clear" },
-          { test: "Specific Gravity", result: "____", normal: "1.003-1.030" },
-          { test: "pH", result: "____", normal: "4.8-8.0" },
-          { test: "Protein", result: "____", normal: "Negative" },
-          { test: "Glucose", result: "____", normal: "Negative" },
-          { test: "Ketones", result: "____", normal: "Negative" },
-          { test: "Blood", result: "____", normal: "Negative" },
-          { test: "Nitrites", result: "____", normal: "Negative" },
-          { test: "Leukocyte Esterase", result: "____", normal: "Negative" },
-          { test: "WBC/hpf", result: "____", normal: "<5" },
-          { test: "RBC/hpf", result: "____", normal: "<3" },
-          { test: "Epithelial cells", result: "____", normal: "Few" },
-          { test: "Bacteria", result: "____", normal: "None-Few" }
-        ].map((item, index) => (
-          <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">{item.test}:</span>
-              <span className="text-sm font-medium">{item.result}</span>
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-              Normal: {item.normal}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border">
-        <p className="font-medium mb-2">Clinical Interpretation:</p>
-        <p className="text-sm">_________________________________________________</p>
-      </div>
-    </div>
-  );
-};
-
-const labTestSchema = createInsertSchema(labTests).omit({
-  id: true,
-  createdAt: true,
-  testId: true,
-  completedDate: true,
-  results: true,
-  normalValues: true,
-  resultStatus: true,
-  technicianNotes: true,
-  attachments: true
-});
-
-type LabTestFormData = z.infer<typeof labTestSchema>;
-
 export default function Laboratory() {
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
-  const [currentCategory, setCurrentCategory] = useState<keyof typeof commonTests>('hematology');
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patientSearchOpen, setPatientSearchOpen] = useState(false);
   const [showLabRequest, setShowLabRequest] = useState(false);
   const [showLabReport, setShowLabReport] = useState(false);
   const [selectedLabTest, setSelectedLabTest] = useState<LabTest | null>(null);
-  const [selectedTestResults, setSelectedTestResults] = useState<string | null>(null);
-  const [activeMetricFilter, setActiveMetricFilter] = useState<string | null>(null);
-  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [shouldSearch, setShouldSearch] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const form = useForm<LabTestFormData>({
-    resolver: zodResolver(labTestSchema),
+  // Form for lab test request
+  const form = useForm<InsertLabTest>({
+    resolver: zodResolver(insertLabTestSchema),
     defaultValues: {
-      patientId: '',
-      category: 'blood',
-      tests: '',
-      clinicalInfo: '',
-      priority: 'routine',
+      patientId: "",
+      category: "other",
+      tests: "[]",
+      priority: "routine",
       requestedDate: new Date().toISOString().split('T')[0],
-      status: 'pending',
-      paymentStatus: 'unpaid',
-    },
-  });
-
-  // Query for lab tests
-  const { data: labTestsData, isLoading } = useQuery({
-    queryKey: ['/api/lab-tests'],
-  });
-
-  const labTestsList = labTestsData as LabTest[] || [];
-
-  // Apply filtering based on active metric filter
-  const filteredTests = useMemo(() => {
-    if (!activeMetricFilter) return labTestsList;
-    
-    switch (activeMetricFilter) {
-      case 'total':
-        return labTestsList;
-      case 'pending':
-        return labTestsList.filter(test => test.status === 'pending');
-      case 'completed':
-        return labTestsList.filter(test => test.status === 'completed');
-      case 'critical':
-        return labTestsList.filter(test => test.resultStatus === 'critical');
-      case 'turnaround':
-        // Filter by quick turnaround tests (less than 24 hours)
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        return labTestsList.filter(test => 
-          test.requestedDate > twentyFourHoursAgo && test.status === 'completed'
-        );
-      default:
-        return labTestsList;
+      clinicalInfo: ""
     }
-  }, [labTestsList, activeMetricFilter]);
+  });
 
-  // Statistics
-  const totalTests = labTestsList.length;
-  const pendingTests = labTestsList.filter(test => test.status === 'pending');
-  const completedTests = labTestsList.filter(test => test.status === 'completed');
-  const criticalTests = labTestsList.filter(test => test.resultStatus === 'critical');
+  // Fetch lab tests
+  const { data: labTests, isLoading: isLoadingLabTests } = useQuery({
+    queryKey: ["/api/lab-tests"],
+  });
 
-  // Mutations for creating lab tests
-  const createLabTestMutation = useMutation({
-    mutationFn: async (data: LabTestFormData & { tests: string }) => {
-      const response = await fetch('/api/lab-tests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error('Failed to create lab test');
-      return response.json();
+  // Create lab test mutation
+  const createLabTest = useMutation({
+    mutationFn: async (data: InsertLabTest) => {
+      const response = await apiRequest("/api/lab-tests", "POST", data);
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/lab-tests'] });
-      toast({ title: "Success", description: "Lab test request created successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
       form.reset();
       setSelectedTests([]);
       setSelectedPatient(null);
+      toast({
+        title: "Success",
+        description: "Laboratory test request created successfully",
+      });
     },
-    onError: (error) => {
-      toast({ title: "Error", description: "Failed to create lab test request", variant: "destructive" });
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create lab test request",
+        variant: "destructive",
+      });
     },
   });
 
-  const onSubmitRequest = (data: LabTestFormData) => {
-    if (!selectedPatient) {
-      toast({ title: "Error", description: "Please select a patient", variant: "destructive" });
-      return;
-    }
-    if (selectedTests.length === 0) {
-      toast({ title: "Error", description: "Please select at least one test", variant: "destructive" });
-      return;
-    }
-
-    createLabTestMutation.mutate({
-      ...data,
-      patientId: selectedPatient.patientId,
-      tests: JSON.stringify(selectedTests),
-    });
-  };
-
   const handleTestToggle = (testName: string) => {
-    setSelectedTests(prev =>
+    setSelectedTests(prev => 
       prev.includes(testName)
         ? prev.filter(t => t !== testName)
         : [...prev, testName]
     );
   };
 
-  const handleLabTestSelect = (test: LabTest) => {
-    setSelectedLabTest(test);
+  const handleSubmit = async (data: any) => {
+    if (!selectedPatient) {
+      toast({
+        title: "Error",
+        description: "Please select a patient",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedTests.length === 0) {
+      toast({
+        title: "Error", 
+        description: "Please select at least one test",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const labTestData = {
+      ...data,
+      patientId: selectedPatient.patientId,
+      tests: JSON.stringify(selectedTests),
+    };
+
+    // Add to pending sync for offline capability
+    addToPendingSync(labTestData);
+    
+    createLabTest.mutate(labTestData);
+  };
+
+  const handlePatientSelect = (patient: Patient) => {
+    setSelectedPatient(patient);
+    form.setValue("patientId", patient.patientId);
+  };
+
+  const handleLabTestSelect = (labTest: LabTest) => {
+    setSelectedLabTest(labTest);
     setShowLabReport(true);
   };
 
-  const autoResize = (element: HTMLTextAreaElement) => {
-    setTimeout(() => {
-      if (element) {
-        element.style.height = 'auto';
-        element.style.height = Math.max(100, element.scrollHeight) + 'px';
-      }
-    }, 50);
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
   };
 
-  const printLabRequest = () => {
-    if (!selectedPatient || selectedTests.length === 0) {
-      toast({ title: "Error", description: "Please select a patient and tests before printing", variant: "destructive" });
-      return;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return 'text-red-600 dark:text-red-400';
+      case 'high':
+        return 'text-orange-600 dark:text-orange-400';
+      case 'routine':
+        return 'text-blue-600 dark:text-blue-400';
+      default:
+        return 'text-gray-600 dark:text-gray-400';
     }
-    setShowLabRequest(true);
-    setTimeout(() => {
-      const done = () => setShowLabRequest(false);
-      window.addEventListener("afterprint", done, { once: true });
-      window.print();
-    }, 50);
   };
 
-  const printLabReport = () => {
-    if (!selectedLabTest) {
-      toast({ title: "Error", description: "Please select a lab test to print the report", variant: "destructive" });
-      return;
-    }
-    setShowLabReport(true);
-    setTimeout(() => {
-      const done = () => setShowLabReport(false);
-      window.addEventListener("afterprint", done, { once: true });
-      window.print();
-    }, 50);
-  };
+  // Filter tests by status
+  const labTestsArray = Array.isArray(labTests) ? labTests : [];
+  const pendingTests = labTestsArray.filter((test: LabTest) => test.status === 'pending');
+  const completedTests = labTestsArray.filter((test: LabTest) => test.status === 'completed');
+  const inProgressTests = labTestsArray.filter((test: LabTest) => test.status === 'pending'); // Using 'pending' as closest match
 
   return (
-    <div>
-      {/* Premium Laboratory Interface */}
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <motion.h1 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-3xl font-bold text-gray-900 dark:text-white"
-            >
-              Laboratory Department
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-gray-600 dark:text-gray-400 mt-1"
-            >
-              Comprehensive laboratory testing and results management
-            </motion.p>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Button 
-              size="lg" 
-              className="shadow-lg"
-              onClick={() => setShowNewRequestModal(true)}
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              New Test Request
-            </Button>
-          </motion.div>
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Laboratory Department
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Comprehensive laboratory testing and results management
+          </p>
         </div>
+        <Button 
+          onClick={() => setShowLabRequest(true)}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          <Send className="w-4 h-4 mr-2" />
+          New Test Request
+        </Button>
+      </div>
 
-        {/* Summary Metric Cards - Interactive Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card 
-              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
-                activeMetricFilter === 'total' 
-                  ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30' 
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-              }`}
-              onClick={() => setActiveMetricFilter(activeMetricFilter === 'total' ? null : 'total')}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <TestTube className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Tests</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalTests}</p>
-                </div>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-600 rounded-lg">
+                <Clock className="h-6 w-6 text-white" />
               </div>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card 
-              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
-                activeMetricFilter === 'pending' 
-                  ? 'ring-2 ring-orange-500 bg-orange-50 dark:bg-orange-900/30' 
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-              }`}
-              onClick={() => setActiveMetricFilter(activeMetricFilter === 'pending' ? null : 'pending')}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                  <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Pending</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingTests.length}</p>
-                </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-300">Total Tests</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  {labTestsArray.length}
+                </p>
               </div>
-            </Card>
-          </motion.div>
+            </div>
+          </CardContent>
+        </Card>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card 
-              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
-                activeMetricFilter === 'completed' 
-                  ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900/30' 
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-              }`}
-              onClick={() => setActiveMetricFilter(activeMetricFilter === 'completed' ? null : 'completed')}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{completedTests.length}</p>
-                </div>
+        <Card className="border-0 shadow-sm bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-600 rounded-lg">
+                <Clock className="h-6 w-6 text-white" />
               </div>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card 
-              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
-                activeMetricFilter === 'turnaround' 
-                  ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/30' 
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-              }`}
-              onClick={() => setActiveMetricFilter(activeMetricFilter === 'turnaround' ? null : 'turnaround')}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Avg. TAT</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">12h</p>
-                </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-300">Pending</p>
+                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                  {pendingTests.length}
+                </p>
               </div>
-            </Card>
-          </motion.div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Premium Tabbed Interface */}
-        <Tabs defaultValue="requests" className="w-full">
-          <div className="flex justify-between items-center mb-6">
-            <TabsList className="grid w-auto grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-              <TabsTrigger value="requests" className="rounded-lg px-6 py-2.5 text-sm font-medium transition-all">
-                Test Requests
-              </TabsTrigger>
-              <TabsTrigger value="results" className="rounded-lg px-6 py-2.5 text-sm font-medium transition-all">
-                Results
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="rounded-lg px-6 py-2.5 text-sm font-medium transition-all">
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="rounded-lg px-6 py-2.5 text-sm font-medium transition-all">
-                Settings
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-        {/* Requests Tab Content */}
-        <TabsContent value="requests" className="space-y-6">
-          {/* Filter Bar */}
-          <Card className="border-0 shadow-sm">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex flex-wrap gap-3">
-                <div className="flex-1 min-w-64">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input 
-                      placeholder="Search tests by patient, test name, or ID..." 
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Button variant="outline" size="default">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filters
-                </Button>
-                <Button variant="outline" size="default">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Date Range
-                </Button>
+        <Card className="border-0 shadow-sm bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900 dark:to-green-800">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-600 rounded-lg">
+                <Check className="h-6 w-6 text-white" />
               </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-green-600 dark:text-green-300">Completed</p>
+                <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                  {completedTests.length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Active Filter Chips */}
-              {activeMetricFilter && (
-                <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Active filter:</span>
-                  <Badge 
-                    variant="secondary" 
-                    className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                  >
-                    {activeMetricFilter === 'total' && 'All Tests'}
-                    {activeMetricFilter === 'pending' && 'Pending Tests'}
-                    {activeMetricFilter === 'completed' && 'Completed Tests'}
-                    {activeMetricFilter === 'turnaround' && 'Quick Turnaround'}
-                    <button 
-                      onClick={() => setActiveMetricFilter(null)}
-                      className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+        <Card className="border-0 shadow-sm bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-600 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-purple-600 dark:text-purple-300">Abnormal</p>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                  {completedTests.filter((test: LabTest) => test.results && test.results.includes('P. falciparum')).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lab Tests Table */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-xl text-gray-900 dark:text-white">Laboratory Tests</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Test ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Patient</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Tests</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Priority</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Status</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoadingLabTests ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4 text-gray-500 dark:text-gray-400">
+                      Loading lab tests...
+                    </td>
+                  </tr>
+                ) : labTestsArray.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4 text-gray-500 dark:text-gray-400">
+                      No lab tests found
+                    </td>
+                  </tr>
+                ) : (
+                  labTestsArray.map((test: LabTest) => (
+                    <tr 
+                      key={test.id} 
+                      className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                      onClick={() => handleLabTestSelect(test)}
+                      title="Click to view test details and results"
                     >
-                      ×
-                    </button>
-                  </Badge>
-                  <span className="text-sm text-gray-500">({filteredTests.length} results)</span>
-                </div>
-              )}
-            </div>
-
-            {/* Laboratory Tests Table */}
-            <div className="overflow-x-auto">
-              <div className="min-w-full">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Test ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Patient
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Tests
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Priority
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Payment
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {isLoading ? (
-                      <tr>
-                        <td colSpan={8} className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center">
-                            <Activity className="animate-spin w-5 h-5 text-gray-400 mr-2" />
-                            Loading tests...
-                          </div>
-                        </td>
-                      </tr>
-                    ) : filteredTests.map((test) => {
-                      const tests = JSON.parse(test.tests || "[]");
-                      return (
-                        <tr 
-                          key={test.id} 
-                          className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer" 
-                          onClick={() => handleLabTestSelect(test)}
-                          title="Click to open test details and enter results"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {test.testId}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-medical-blue/10 text-medical-blue text-sm font-medium">
-                                  {test.patientId?.substring(0, 2).toUpperCase() || 'UN'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium text-gray-900 dark:text-white">
-                                  Patient {test.patientId || 'Unknown'}
-                                </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{test.patientId}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="max-w-xs">
-                              <div className="flex flex-wrap gap-1">
-                                {tests.slice(0, 2).map((testName: string, index: number) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {testName}
-                                  </Badge>
-                                ))}
-                                {tests.length > 2 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    +{tests.length - 2} more
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant="outline" className="capitalize">
-                              {test.category}
+                      <td className="py-3 px-4">
+                        <span className="font-mono text-sm text-blue-600 dark:text-blue-400">
+                          {test.testId}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {test.patientId}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap gap-1">
+                          {JSON.parse(test.tests || '[]').slice(0, 2).map((testName: string, index: number) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {testName.length > 20 ? `${testName.substring(0, 20)}...` : testName}
                             </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge variant={test.priority === 'urgent' ? 'warning' : test.priority === 'stat' ? 'destructive' : 'info'}>{test.priority}</StatusBadge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge variant={test.status === 'completed' ? 'success' : test.status === 'cancelled' ? 'destructive' : 'warning'}>{test.status}</StatusBadge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge variant={test.paymentStatus === 'paid' ? 'success' : 'destructive'}>{test.paymentStatus}</StatusBadge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(test.requestedDate).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                          ))}
+                          {JSON.parse(test.tests || '[]').length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{JSON.parse(test.tests || '[]').length - 2} more
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`text-sm font-medium ${getPriorityColor(test.priority)}`}>
+                          {test.priority}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge className={getStatusBadgeColor(test.status)}>
+                          {test.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLabTestSelect(test);
+                          }}
+                        >
+                          <FileImage className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
-                    {/* Empty state when no filtered results */}
-                    {filteredTests?.length === 0 && (
-                      <tr>
-                        <td colSpan={8} className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-                            <TestTube className="w-12 h-12 mb-4 text-gray-300 dark:text-gray-600" />
-                            <p className="text-lg font-medium">No tests found</p>
-                            <p className="text-sm">
-                              {activeMetricFilter 
-                                ? `No tests match the current filter "${activeMetricFilter}"`
-                                : 'No laboratory tests have been submitted yet'
-                              }
-                            </p>
-                            {activeMetricFilter && (
-                              <Button
-                                variant="ghost"
-                                onClick={() => setActiveMetricFilter(null)}
-                                className="mt-4"
-                              >
-                                Clear filter
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* Results Tab Content */}
-        <TabsContent value="results" className="space-y-6">
-          <Card className="border-0 shadow-sm">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Test Results</h3>
-              <p className="text-gray-600 dark:text-gray-400">Manage and review laboratory test results</p>
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* Analytics Tab Content */}
-        <TabsContent value="analytics" className="space-y-6">
-          <Card className="border-0 shadow-sm">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Laboratory Analytics</h3>
-              <p className="text-gray-600 dark:text-gray-400">Performance metrics and insights</p>
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* Settings Tab Content */}
-        <TabsContent value="settings" className="space-y-6">
-          <Card className="border-0 shadow-sm">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Laboratory Settings</h3>
-              <p className="text-gray-600 dark:text-gray-400">Configure laboratory preferences and workflows</p>
-            </div>
-          </Card>
-        </TabsContent>
-        </Tabs>
-
-      </div>
-
-      <div className="hidden">
-        {/* Keep original lab request form for now - will be moved to modal later */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <p>Original lab request form content (temporarily simplified to fix JSX structure)</p>
-        </div>
-      </div>
-      {/* Original form content removed to fix JSX structure - will be implemented in modal */}
-      
-      {/* Lab Request Print Modal */}
+      {/* Lab Request Modal */}
       {showLabRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:static print:bg-white">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:shadow-none">
-            <CardHeader className="print:text-center">
-              <CardTitle>Laboratory Test Request</CardTitle>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="text-2xl text-blue-600 dark:text-blue-400">New Laboratory Test Request</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Laboratory test request content will be implemented here</p>
-              <div className="text-center mt-6 print:hidden">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                  {/* Patient Selection */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-800 dark:text-gray-200">Step 1: Select Patient</h4>
+                      {!selectedPatient && (
+                        <Badge variant="outline" className="text-blue-600 border-blue-300">
+                          Required
+                        </Badge>
+                      )}
+                    </div>
+                    {selectedPatient ? (
+                      <div className="p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100">
+                              {selectedPatient.firstName} {selectedPatient.lastName}
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              ID: {selectedPatient.patientId} | Age: {selectedPatient.age} | Gender: {selectedPatient.gender}
+                            </p>
+                          </div>
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedPatient(null);
+                              setPatientSearchOpen(true);
+                            }}
+                          >
+                            Change Patient
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        onClick={() => setPatientSearchOpen(true)}
+                        className="w-full p-4 h-auto border-dashed"
+                      >
+                        <div className="text-center">
+                          <p className="font-medium text-gray-700 dark:text-gray-300">Select a Patient</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Click to search and select patient</p>
+                        </div>
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Test Selection */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-800 dark:text-gray-200">Step 2: Select Tests</h4>
+                      <Badge variant="outline" className="text-blue-600 border-blue-300">
+                        {selectedTests.length} selected
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(testCategories).map(([category, tests]) => (
+                        <div key={category} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                          <h5 className="font-semibold text-gray-900 dark:text-white mb-3 border-b border-gray-200 dark:border-gray-600 pb-2">
+                            {category}
+                          </h5>
+                          <div className="space-y-2">
+                            {tests.map((test) => (
+                              <div key={test} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={test}
+                                  checked={selectedTests.includes(test)}
+                                  onCheckedChange={() => handleTestToggle(test)}
+                                />
+                                <label 
+                                  htmlFor={test}
+                                  className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                                >
+                                  {test}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Request Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="priority"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Priority Level</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select priority" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="routine">Routine</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="urgent">Urgent</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Test Category</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="blood">Blood Tests</SelectItem>
+                              <SelectItem value="urine">Urine Tests</SelectItem>
+                              <SelectItem value="stool">Stool Tests</SelectItem>
+                              <SelectItem value="microbiology">Microbiology</SelectItem>
+                              <SelectItem value="chemistry">Chemistry</SelectItem>
+                              <SelectItem value="hormonal">Hormonal</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="clinicalInfo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Clinical Information</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Relevant symptoms, clinical findings, or suspected diagnosis..."
+                            className="min-h-[100px]"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Button 
+                      type="submit" 
+                      disabled={createLabTest.isPending}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {createLabTest.isPending ? "Submitting..." : "Submit Request"}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setShowLabRequest(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Patient Search Modal */}
+      {patientSearchOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Select Patient</CardTitle>
+                <Button variant="outline" onClick={() => setPatientSearchOpen(false)}>Close</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <PatientSearch
+                viewMode="search"
+                selectedDate=""
+                searchTerm=""
+                onSearchTermChange={() => {}}
+                shouldSearch={true}
+                onShouldSearchChange={() => {}}
+                onSelectPatient={(patient) => {
+                  handlePatientSelect(patient);
+                  setPatientSearchOpen(false);
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Lab Report Modal */}
+      {showLabReport && selectedLabTest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:static print:bg-white">
+          <Card className="w-full max-w-6xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:shadow-none">
+            <CardHeader className="print:text-center border-b">
+              <div className="flex items-center justify-between print:block">
+                <div>
+                  <CardTitle className="text-2xl text-blue-700 dark:text-blue-300">
+                    Laboratory Test Report - {selectedLabTest.testId}
+                  </CardTitle>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Patient: <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedLabTest.patientId}</span> | 
+                    Status: <span className={`font-semibold ${
+                      selectedLabTest.status === 'completed' ? 'text-green-600' : 
+                      selectedLabTest.status === 'pending' ? 'text-yellow-600' : 'text-blue-600'
+                    }`}>{selectedLabTest.status}</span> |
+                    Priority: <span className={`font-semibold ${getPriorityColor(selectedLabTest.priority)}`}>
+                      {selectedLabTest.priority}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-8 print:p-4">
+              {/* Test Information */}
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <h4 className="font-semibold text-lg mb-3 text-blue-700 dark:text-blue-300">Test Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Test ID:</p>
+                    <p className="font-mono text-blue-600 dark:text-blue-400">{selectedLabTest.testId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Date Requested:</p>
+                    <p className="text-gray-900 dark:text-gray-100">
+                      {new Date(selectedLabTest.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Category:</p>
+                    <p className="text-gray-900 dark:text-gray-100">{selectedLabTest.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Requested Date:</p>
+                    <p className="text-gray-900 dark:text-gray-100">{selectedLabTest.requestedDate}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Requested Tests */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-lg mb-3 text-blue-700 dark:text-blue-300">Requested Tests</h4>
+                <div className="flex flex-wrap gap-2">
+                  {JSON.parse(selectedLabTest.tests || '[]').map((testName: string, index: number) => (
+                    <Badge key={index} variant="outline" className="text-sm py-1 px-2">
+                      {testName}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Clinical Information */}
+              {selectedLabTest.clinicalInfo && (
+                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                  <h4 className="font-semibold text-lg mb-2 text-blue-700 dark:text-blue-300">Clinical Information</h4>
+                  <p className="text-gray-700 dark:text-gray-300">{selectedLabTest.clinicalInfo}</p>
+                </div>
+              )}
+
+              {/* Lab Results */}
+              {selectedLabTest.results ? (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-lg mb-4 text-blue-700 dark:text-blue-300">Laboratory Results</h4>
+                  {formatLabResults(selectedLabTest.results)}
+                </div>
+              ) : (
+                <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
+                  <p className="text-yellow-800 dark:text-yellow-200">
+                    <Clock className="w-4 h-4 inline mr-2" />
+                    Results pending - Test has not been completed yet
+                  </p>
+                </div>
+              )}
+
+              {/* Clinical Interpretation */}
+              {selectedLabTest.results && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-lg mb-4 text-blue-700 dark:text-blue-300">Clinical Interpretation</h4>
+                  <div className="space-y-2">
+                    {getClinicalInterpretation(selectedLabTest.results)?.map((finding, index) => (
+                      <div 
+                        key={index} 
+                        className={`p-3 rounded-lg border-l-4 ${
+                          finding.includes('🚨') 
+                            ? 'bg-red-50 dark:bg-red-900 border-red-500 text-red-800 dark:text-red-200'
+                            : finding.includes('⚠️')
+                            ? 'bg-yellow-50 dark:bg-yellow-900 border-yellow-500 text-yellow-800 dark:text-yellow-200'
+                            : finding.includes('ℹ️')
+                            ? 'bg-blue-50 dark:bg-blue-900 border-blue-500 text-blue-800 dark:text-blue-200'
+                            : 'bg-green-50 dark:bg-green-900 border-green-500 text-green-800 dark:text-green-200'
+                        }`}
+                      >
+                        {finding}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Notes */}
+              {selectedLabTest.technicianNotes && (
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="font-semibold text-lg mb-2 text-blue-700 dark:text-blue-300">Technician Notes</h4>
+                  <p className="text-gray-700 dark:text-gray-300">{selectedLabTest.technicianNotes}</p>
+                </div>
+              )}
+
+              {/* Attachments */}
+              {selectedLabTest.attachments && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-lg mb-4 text-blue-700 dark:text-blue-300">Attachments</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {JSON.parse(selectedLabTest.attachments).map((attachment: {url: string, name: string, type: string}, index: number) => (
+                      attachment.type.startsWith('image/') ? (
+                        <img 
+                          key={index} 
+                          src={attachment.url} 
+                          alt={attachment.name} 
+                          className="rounded-lg border shadow-sm max-h-64 object-contain"
+                        />
+                      ) : (
+                        <div key={index} className="p-4 border rounded-lg">
+                          <p className="text-sm font-medium">{attachment.name}</p>
+                          <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            View File
+                          </a>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Report Footer */}
+              <div className="border-t pt-6 mt-8 print:mt-4 print:pt-4">
+                <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+                  <div>
+                    <p>Report generated on: {new Date().toLocaleDateString()}</p>
+                    <p>Bahr El Ghazal Clinic Laboratory Department</p>
+                  </div>
+                  <div className="text-right">
+                    <p>Laboratory Technician</p>
+                    <p className="mt-8">_______________________</p>
+                    <p>Signature & Date</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="text-center mt-8 print:hidden border-t pt-6">
                 <Button 
                   variant="outline" 
                   onClick={() => window.print()}
                   className="mr-4"
                 >
                   <Printer className="w-4 h-4 mr-2" />
-                  Print Request
-                </Button>
-                <Button variant="outline" onClick={() => setShowLabRequest(false)}>
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      
-      {/* Lab Test Results Entry Modal */}
-      {showLabReport && selectedLabTest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-medical-blue">
-                Lab Test Results Entry - {selectedLabTest.testId}
-              </CardTitle>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Patient: {selectedLabTest.patientId} | Priority: {selectedLabTest.priority} | Status: {selectedLabTest.status}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Test Details */}
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">Requested Tests:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {JSON.parse(selectedLabTest.tests || '[]').map((testName: string, index: number) => (
-                    <Badge key={index} variant="outline" className="text-sm">
-                      {testName}
-                    </Badge>
-                  ))}
-                </div>
-                {selectedLabTest.clinicalInfo && (
-                  <div className="mt-3">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Clinical Information:</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{selectedLabTest.clinicalInfo}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Results Entry */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 dark:text-white">Test Results</h4>
-                
-                {JSON.parse(selectedLabTest.tests || '[]').includes('Complete Blood Count (CBC)') && (
-                  <div className="border rounded-lg p-4">
-                    <h5 className="font-medium mb-3">Complete Blood Count (CBC)</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Hemoglobin (Hb) g/dL</label>
-                        <Input placeholder="Normal: M: 13.8-17.2, F: 12.1-15.1" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Hematocrit (Hct) %</label>
-                        <Input placeholder="Normal: M: 40.7-50.3, F: 36.1-44.3" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">WBC Count ×10³/μL</label>
-                        <Input placeholder="Normal: 5.0-10.0" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Platelet Count ×10³/μL</label>
-                        <Input placeholder="Normal: 150-450" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {JSON.parse(selectedLabTest.tests || '[]').some((test: string) => 
-                  !test.includes('Complete Blood Count') && !test.includes('Hematocrit') && !test.includes('Hemoglobin')
-                ) && (
-                  <div className="border rounded-lg p-4">
-                    <h5 className="font-medium mb-3">Other Test Results</h5>
-                    <div className="space-y-3">
-                      {JSON.parse(selectedLabTest.tests || '[]').filter((test: string) => 
-                        !test.includes('Complete Blood Count') && !test.includes('Hematocrit') && !test.includes('Hemoglobin')
-                      ).map((testName: string, index: number) => (
-                        <div key={index}>
-                          <label className="block text-sm font-medium mb-1">{testName}</label>
-                          <Input placeholder="Enter result..." />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Technician Notes */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Technician Notes</label>
-                  <Textarea 
-                    placeholder="Add any observations, comments, or additional findings..."
-                    rows={3}
-                  />
-                </div>
-
-                {/* Result Status */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Result Status</label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select result status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="abnormal">Abnormal</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                        <SelectItem value="inconclusive">Inconclusive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Test Status</label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select test status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Save Results
-                </Button>
-                <Button variant="outline">
-                  <Printer className="w-4 h-4 mr-2" />
                   Print Report
                 </Button>
-                <Button variant="outline" onClick={() => setShowLabReport(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowLabReport(false)}
+                >
                   Close
                 </Button>
               </div>
             </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* New Test Request Modal */}
-      {showNewRequestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle className="text-2xl text-medical-blue dark:text-blue-400">New Laboratory Test Request</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Patient Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-800 dark:text-gray-200">Step 1: Select Patient</h4>
-                    {!selectedPatient && (
-                      <Badge variant="outline" className="text-blue-600 border-blue-300">
-                        👆 Click on a patient to select
-                      </Badge>
-                    )}
-                  </div>
-                  <PatientSearch 
-                    viewMode="all"
-                    selectedDate={new Date().toISOString().split('T')[0]}
-                    searchTerm={searchTerm}
-                    onSearchTermChange={setSearchTerm}
-                    shouldSearch={shouldSearch}
-                    onShouldSearchChange={setShouldSearch}
-                    onSelectPatient={(patient: Patient) => setSelectedPatient(patient)} 
-                  />
-                  {selectedPatient && (
-                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <p className="font-medium text-green-800 dark:text-green-200">
-                          Patient Selected: {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
-                        </p>
-                      </div>
-                      <p className="text-sm text-green-600 dark:text-green-300">
-                        Age: {selectedPatient.age || 'Unknown'} • {selectedPatient.gender} • {selectedPatient.village} • Phone: {selectedPatient.phoneNumber}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Step 2 Indicator */}
-                {selectedPatient && (
-                  <div className="border-t pt-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Badge variant="default" className="bg-blue-600">Step 2</Badge>
-                      <h4 className="font-medium text-gray-800 dark:text-gray-200">Select Laboratory Tests</h4>
-                    </div>
-                  </div>
-                )}
-
-                {/* Laboratory Test Request Form */}
-                {selectedPatient && (
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6">
-                      {/* Test Categories */}
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-gray-800 dark:text-gray-200">Select Laboratory Tests</h4>
-                        <Tabs defaultValue="hematology" className="w-full">
-                          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
-                            <TabsTrigger value="hematology">Blood</TabsTrigger>
-                            <TabsTrigger value="urine">Urine</TabsTrigger>
-                            <TabsTrigger value="serology">Serology</TabsTrigger>
-                            <TabsTrigger value="parasitology">Parasites</TabsTrigger>
-                            <TabsTrigger value="biochemistry">Chemistry</TabsTrigger>
-                            <TabsTrigger value="hormones">Hormones</TabsTrigger>
-                          </TabsList>
-                          {Object.entries(commonTests).map(([category, tests]) => (
-                            <TabsContent key={category} value={category} className="space-y-3">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {tests.map((test) => (
-                                  <div key={test} className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={test}
-                                      checked={selectedTests.includes(test)}
-                                      onCheckedChange={() => handleTestToggle(test)}
-                                    />
-                                    <label htmlFor={test} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                      {test}
-                                    </label>
-                                  </div>
-                                ))}
-                              </div>
-                            </TabsContent>
-                          ))}
-                        </Tabs>
-                      </div>
-
-                      {/* Selected Tests Summary */}
-                      {selectedTests.length > 0 && (
-                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                            Selected Tests ({selectedTests.length}):
-                          </h5>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedTests.map((test) => (
-                              <Badge key={test} variant="secondary" className="text-xs">
-                                {test}
-                                <button
-                                  type="button"
-                                  onClick={() => handleTestToggle(test)}
-                                  className="ml-1 text-red-500 hover:text-red-700"
-                                >
-                                  ×
-                                </button>
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="priority"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Priority</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select priority" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="routine">Routine</SelectItem>
-                                  <SelectItem value="urgent">Urgent</SelectItem>
-                                  <SelectItem value="stat">STAT</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="paymentStatus"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Payment Status</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select payment status" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="paid">Paid</SelectItem>
-                                  <SelectItem value="unpaid">Unpaid</SelectItem>
-                                  <SelectItem value="partial">Partial Payment</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="clinicalInfo"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Clinical Information</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Enter clinical history, symptoms, or relevant information..."
-                                {...field}
-                                value={field.value || ""}
-                                rows={3}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="flex gap-4 pt-4 border-t">
-                        <Button 
-                          type="submit" 
-                          disabled={createLabTestMutation.isPending || selectedTests.length === 0}
-                          className="bg-medical-blue hover:bg-blue-700"
-                        >
-                          <TestTube className="w-4 h-4 mr-2" />
-                          {createLabTestMutation.isPending ? "Submitting..." : "Submit Request"}
-                        </Button>
-                        <Button 
-                          type="button" 
-                          variant="outline"
-                          onClick={printLabRequest}
-                          disabled={!selectedPatient || selectedTests.length === 0}
-                        >
-                          <Printer className="w-4 h-4 mr-2" />
-                          Print Request
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                )}
-              </div>
-            </CardContent>
-            <div className="flex justify-end gap-2 p-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowNewRequestModal(false);
-                  setSelectedPatient(null);
-                  setSelectedTests([]);
-                  form.reset();
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
           </Card>
         </div>
       )}
