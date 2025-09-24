@@ -843,7 +843,14 @@ export default function Laboratory() {
               <div className="space-y-6">
                 {/* Patient Selection */}
                 <div>
-                  <h4 className="font-medium mb-4 text-gray-800 dark:text-gray-200">Select Patient</h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium text-gray-800 dark:text-gray-200">Step 1: Select Patient</h4>
+                    {!selectedPatient && (
+                      <Badge variant="outline" className="text-blue-600 border-blue-300">
+                        👆 Click on a patient to select
+                      </Badge>
+                    )}
+                  </div>
                   <PatientSearch 
                     viewMode="all"
                     selectedDate={new Date().toISOString().split('T')[0]}
@@ -855,15 +862,28 @@ export default function Laboratory() {
                   />
                   {selectedPatient && (
                     <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <p className="font-medium text-green-800 dark:text-green-200">
-                        Selected: {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
-                      </p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <p className="font-medium text-green-800 dark:text-green-200">
+                          Patient Selected: {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
+                        </p>
+                      </div>
                       <p className="text-sm text-green-600 dark:text-green-300">
                         Age: {selectedPatient.age || 'Unknown'} • {selectedPatient.gender} • {selectedPatient.village} • Phone: {selectedPatient.phoneNumber}
                       </p>
                     </div>
                   )}
                 </div>
+
+                {/* Step 2 Indicator */}
+                {selectedPatient && (
+                  <div className="border-t pt-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Badge variant="default" className="bg-blue-600">Step 2</Badge>
+                      <h4 className="font-medium text-gray-800 dark:text-gray-200">Select Laboratory Tests</h4>
+                    </div>
+                  </div>
+                )}
 
                 {/* Laboratory Test Request Form */}
                 {selectedPatient && (
