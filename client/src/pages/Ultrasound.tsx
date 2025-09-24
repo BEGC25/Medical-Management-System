@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock, Trash2 } from "lucide-react";
+import { Send, Printer, Check, Clock, Trash2, Waves } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -567,9 +567,14 @@ export default function Ultrasound() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-medical-blue dark:text-blue-400">Ultrasound Department</h1>
-          <p className="text-gray-600 dark:text-gray-300">Request and manage ultrasound examinations</p>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-medical-blue/10 dark:bg-blue-500/10 rounded-lg">
+            <Waves className="w-6 h-6 text-medical-blue dark:text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-medical-blue dark:text-blue-400">Ultrasound Department</h1>
+            <p className="text-gray-600 dark:text-gray-300">Request and manage ultrasound examinations</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Badge variant="secondary" className="text-sm">
@@ -888,7 +893,7 @@ export default function Ultrasound() {
                   <span className="font-medium">Gender:</span> {selectedUltrasoundPatient?.gender || 'Not specified'}
                 </div>
                 <div className="col-span-2">
-                  <span className="font-medium">Exam Type:</span> {selectedUltrasoundExam?.examType?.charAt(0).toUpperCase() + selectedUltrasoundExam?.examType?.slice(1)} Ultrasound
+                  <span className="font-medium">Exam Type:</span> {selectedUltrasoundExam?.examType ? (selectedUltrasoundExam.examType.charAt(0).toUpperCase() + selectedUltrasoundExam.examType.slice(1)) : 'Not specified'} Ultrasound
                 </div>
                 {selectedUltrasoundExam?.clinicalIndication && (
                   <div className="col-span-2">

@@ -113,23 +113,23 @@ export default function PatientSearch({
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800">
+              <thead className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-750 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Age</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Contact</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Gender</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:table-cell">Age</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:table-cell">Contact</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">Gender</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Payment</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Services</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Registered</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden xl:table-cell">Registered</th>
                   {showActions && (
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
                   )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {patients.map((patient: any) => {
+                {patients.map((patient: any, index: number) => {
                   const age = patient.age || 'Unknown';
                   const serviceStatus = patient.serviceStatus || {};
                   const hasUnpaidServices = serviceStatus.hasUnpaidServices;
@@ -142,18 +142,26 @@ export default function PatientSearch({
                   return (
                     <tr 
                       key={patient.id} 
-                      className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${onSelectPatient ? 'cursor-pointer' : ''} ${
-                        hasUnpaidServices ? 'bg-red-50 dark:bg-red-900/10 border-l-4 border-l-red-500' : ''
-                      }`}
+                      className={`transition-colors duration-150 ${
+                        hasUnpaidServices 
+                          ? 'bg-red-50 dark:bg-red-900/10 border-l-4 border-l-red-500 hover:bg-red-100 dark:hover:bg-red-900/20' 
+                          : index % 2 === 0 
+                            ? 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800' 
+                            : 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      } ${onSelectPatient ? 'cursor-pointer' : ''}`}
                       onClick={() => onSelectPatient?.(patient)}
                     >
                       <td className="px-4 py-3 text-sm">{patient.patientId}</td>
                       <td className="px-4 py-3 text-sm font-medium">
                         {patient.firstName} {patient.lastName}
+                        {/* Show age and gender on mobile when columns are hidden */}
+                        <div className="sm:hidden text-xs text-gray-500 mt-1">
+                          Age: {age} • {patient.gender || 'N/A'}
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm">{age}</td>
-                      <td className="px-4 py-3 text-sm">{patient.phoneNumber || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-sm hidden sm:table-cell">{age}</td>
+                      <td className="px-4 py-3 text-sm hidden md:table-cell">{patient.phoneNumber || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm hidden lg:table-cell">
                         {patient.gender && (
                           <Badge variant="outline" className="capitalize">
                             {patient.gender}
@@ -203,7 +211,7 @@ export default function PatientSearch({
                           <span className="text-gray-400 text-xs">No services</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-sm hidden xl:table-cell">
                         {new Date(patient.createdAt).toLocaleDateString()}
                       </td>
                       {showActions && (
