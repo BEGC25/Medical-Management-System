@@ -22,7 +22,7 @@ import {
   Activity,
   Printer
 } from 'lucide-react';
-import { PatientSearch } from '@/components/PatientSearch';
+import PatientSearch from '@/components/PatientSearch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -248,6 +248,8 @@ export default function Laboratory() {
   const [selectedTestResults, setSelectedTestResults] = useState<string | null>(null);
   const [activeMetricFilter, setActiveMetricFilter] = useState<string | null>(null);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [shouldSearch, setShouldSearch] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<LabTestFormData>({
@@ -687,13 +689,13 @@ export default function Laboratory() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge status={test.priority} type="priority" />
+                            <StatusBadge variant={test.priority === 'urgent' ? 'warning' : test.priority === 'stat' ? 'destructive' : 'info'}>{test.priority}</StatusBadge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge status={test.status} type="status" />
+                            <StatusBadge variant={test.status === 'completed' ? 'success' : test.status === 'cancelled' ? 'destructive' : 'warning'}>{test.status}</StatusBadge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge status={test.paymentStatus} type="payment" />
+                            <StatusBadge variant={test.paymentStatus === 'paid' ? 'success' : 'destructive'}>{test.paymentStatus}</StatusBadge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             {new Date(test.requestedDate).toLocaleDateString()}
@@ -839,34 +841,192 @@ export default function Laboratory() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                  <p className="text-yellow-800 dark:text-yellow-200 font-medium">
-                    🔬 New Lab Request Form
-                  </p>
-                  <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
-                    Please select a patient and specify the required laboratory tests
-                  </p>
+                {/* Patient Selection */}
+                <div>
+                  <h4 className="font-medium mb-4 text-gray-800 dark:text-gray-200">Select Patient</h4>
+                  <PatientSearch 
+                    viewMode="all"
+                    selectedDate={new Date().toISOString().split('T')[0]}
+                    searchTerm={searchTerm}
+                    onSearchTermChange={setSearchTerm}
+                    shouldSearch={shouldSearch}
+                    onShouldSearchChange={setShouldSearch}
+                    onSelectPatient={(patient: Patient) => setSelectedPatient(patient)} 
+                  />
+                  {selectedPatient && (
+                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <p className="font-medium text-green-800 dark:text-green-200">
+                        Selected: {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
+                      </p>
+                      <p className="text-sm text-green-600 dark:text-green-300">
+                        Age: {selectedPatient.age || 'Unknown'} • {selectedPatient.gender} • {selectedPatient.village} • Phone: {selectedPatient.phoneNumber}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                
-                <div className="text-center">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Laboratory test request form will be fully implemented here
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                    Including patient selection, test categories, and clinical information
-                  </p>
-                </div>
+
+                {/* Laboratory Test Request Form */}
+                {selectedPatient && (
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6">
+                      {/* Test Categories */}
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-gray-800 dark:text-gray-200">Select Laboratory Tests</h4>
+                        <Tabs defaultValue="hematology" className="w-full">
+                          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
+                            <TabsTrigger value="hematology">Blood</TabsTrigger>
+                            <TabsTrigger value="urine">Urine</TabsTrigger>
+                            <TabsTrigger value="serology">Serology</TabsTrigger>
+                            <TabsTrigger value="parasitology">Parasites</TabsTrigger>
+                            <TabsTrigger value="biochemistry">Chemistry</TabsTrigger>
+                            <TabsTrigger value="hormones">Hormones</TabsTrigger>
+                          </TabsList>
+                          {Object.entries(commonTests).map(([category, tests]) => (
+                            <TabsContent key={category} value={category} className="space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {tests.map((test) => (
+                                  <div key={test} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={test}
+                                      checked={selectedTests.includes(test)}
+                                      onCheckedChange={() => handleTestToggle(test)}
+                                    />
+                                    <label htmlFor={test} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                      {test}
+                                    </label>
+                                  </div>
+                                ))}
+                              </div>
+                            </TabsContent>
+                          ))}
+                        </Tabs>
+                      </div>
+
+                      {/* Selected Tests Summary */}
+                      {selectedTests.length > 0 && (
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                            Selected Tests ({selectedTests.length}):
+                          </h5>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedTests.map((test) => (
+                              <Badge key={test} variant="secondary" className="text-xs">
+                                {test}
+                                <button
+                                  type="button"
+                                  onClick={() => handleTestToggle(test)}
+                                  className="ml-1 text-red-500 hover:text-red-700"
+                                >
+                                  ×
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="priority"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Priority</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select priority" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="routine">Routine</SelectItem>
+                                  <SelectItem value="urgent">Urgent</SelectItem>
+                                  <SelectItem value="stat">STAT</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="paymentStatus"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Payment Status</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select payment status" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="paid">Paid</SelectItem>
+                                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                                  <SelectItem value="partial">Partial Payment</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="clinicalInfo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Clinical Information</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Enter clinical history, symptoms, or relevant information..."
+                                {...field}
+                                value={field.value || ""}
+                                rows={3}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex gap-4 pt-4 border-t">
+                        <Button 
+                          type="submit" 
+                          disabled={createLabTestMutation.isPending || selectedTests.length === 0}
+                          className="bg-medical-blue hover:bg-blue-700"
+                        >
+                          <TestTube className="w-4 h-4 mr-2" />
+                          {createLabTestMutation.isPending ? "Submitting..." : "Submit Request"}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={printLabRequest}
+                          disabled={!selectedPatient || selectedTests.length === 0}
+                        >
+                          <Printer className="w-4 h-4 mr-2" />
+                          Print Request
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                )}
               </div>
             </CardContent>
             <div className="flex justify-end gap-2 p-4 border-t">
               <Button
                 variant="outline"
-                onClick={() => setShowNewRequestModal(false)}
+                onClick={() => {
+                  setShowNewRequestModal(false);
+                  setSelectedPatient(null);
+                  setSelectedTests([]);
+                  form.reset();
+                }}
               >
                 Cancel
-              </Button>
-              <Button className="bg-medical-blue hover:bg-blue-700">
-                Submit Test Request
               </Button>
             </div>
           </Card>
