@@ -1,4 +1,4 @@
-import { eq, like, desc, and, count, or, sql } from "drizzle-orm";
+import { eq, like, ilike, desc, and, count, or, sql } from "drizzle-orm";
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
@@ -201,9 +201,9 @@ export class MemStorage implements IStorage {
       return await db.select().from(patients)
         .where(
           or(
-            like(patients.firstName, `%${search}%`),
-            like(patients.lastName, `%${search}%`),
-            like(patients.patientId, `%${search}%`)
+            ilike(patients.firstName, `%${search}%`),
+            ilike(patients.lastName, `%${search}%`),
+            ilike(patients.patientId, `%${search}%`)
           )
         )
         .orderBy(desc(patients.createdAt));
@@ -683,9 +683,9 @@ export class MemStorage implements IStorage {
     if (search) {
       baseQuery = baseQuery.where(
         or(
-          like(patients.firstName, `%${search}%`),
-          like(patients.lastName, `%${search}%`),
-          like(patients.patientId, `%${search}%`)
+          ilike(patients.firstName, `%${search}%`),
+          ilike(patients.lastName, `%${search}%`),
+          ilike(patients.patientId, `%${search}%`)
         )
       );
     }
