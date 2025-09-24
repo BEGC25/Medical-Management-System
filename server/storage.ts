@@ -542,12 +542,12 @@ export class MemStorage implements IStorage {
 
   async createService(data: schema.InsertService): Promise<schema.Service> {
     const now = new Date().toISOString();
-    const insertData = {
+    const insertData: any = {
       ...data,
       createdAt: now,
     };
     
-    const [service] = await db.insert(services).values([insertData]).returning();
+    const [service] = await db.insert(services).values(insertData).returning();
     return service;
   }
 
@@ -564,13 +564,13 @@ export class MemStorage implements IStorage {
   async createPayment(data: schema.InsertPayment): Promise<schema.Payment> {
     const paymentId = await generatePaymentId();
     const now = new Date().toISOString();
-    const insertData = {
+    const insertData: any = {
       ...data,
       paymentId,
       createdAt: now,
     };
     
-    const [payment] = await db.insert(payments).values([insertData]).returning();
+    const [payment] = await db.insert(payments).values(insertData).returning();
     return payment;
   }
 
@@ -592,12 +592,12 @@ export class MemStorage implements IStorage {
   // Payment Items
   async createPaymentItem(data: schema.InsertPaymentItem): Promise<schema.PaymentItem> {
     const now = new Date().toISOString();
-    const insertData = {
+    const insertData: any = {
       ...data,
       createdAt: now,
     };
     
-    const [paymentItem] = await db.insert(paymentItems).values([insertData]).returning();
+    const [paymentItem] = await db.insert(paymentItems).values(insertData).returning();
     return paymentItem;
   }
 
@@ -678,19 +678,21 @@ export class MemStorage implements IStorage {
 
   // Enhanced patient queries with service status information
   async getPatientsWithStatus(search?: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
-    let baseQuery = db.select().from(patients);
+    let patientsData: schema.Patient[];
     
     if (search) {
-      baseQuery = baseQuery.where(
-        or(
-          ilike(patients.firstName, `%${search}%`),
-          ilike(patients.lastName, `%${search}%`),
-          ilike(patients.patientId, `%${search}%`)
+      patientsData = await db.select().from(patients)
+        .where(
+          or(
+            ilike(patients.firstName, `%${search}%`),
+            ilike(patients.lastName, `%${search}%`),
+            ilike(patients.patientId, `%${search}%`)
+          )
         )
-      );
+        .orderBy(desc(patients.createdAt));
+    } else {
+      patientsData = await db.select().from(patients).orderBy(desc(patients.createdAt));
     }
-    
-    const patientsData = await baseQuery.orderBy(desc(patients.createdAt));
     
     // For each patient, get their service status summary
     const patientsWithStatus = await Promise.all(

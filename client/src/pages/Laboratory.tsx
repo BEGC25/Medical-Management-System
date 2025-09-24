@@ -383,7 +383,7 @@ export default function Laboratory() {
   // Create lab test mutation
   const createLabTest = useMutation({
     mutationFn: async (data: InsertLabTest) => {
-      const response = await apiRequest("/api/lab-tests", "POST", data);
+      const response = await apiRequest("POST", "/api/lab-tests", data);
       return response;
     },
     onSuccess: () => {
