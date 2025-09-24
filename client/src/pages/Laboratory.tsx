@@ -810,21 +810,131 @@ export default function Laboratory() {
         </div>
       )}
       
-      {/* Lab Report Print Modal */}
-      {showLabReport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:static print:bg-white">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:shadow-none">
-            <CardHeader className="print:text-center">
-              <CardTitle>Laboratory Test Report</CardTitle>
+      {/* Lab Test Results Entry Modal */}
+      {showLabReport && selectedLabTest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-medical-blue">
+                Lab Test Results Entry - {selectedLabTest.testId}
+              </CardTitle>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Patient: {selectedLabTest.patientId} | Priority: {selectedLabTest.priority} | Status: {selectedLabTest.status}
+              </div>
             </CardHeader>
-            <CardContent>
-              <p>Laboratory test report content will be implemented here</p>
-              <div className="text-center mt-6 print:hidden">
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.print()}
-                  className="mr-4"
-                >
+            <CardContent className="space-y-6">
+              {/* Test Details */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Requested Tests:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {JSON.parse(selectedLabTest.tests || '[]').map((testName: string, index: number) => (
+                    <Badge key={index} variant="outline" className="text-sm">
+                      {testName}
+                    </Badge>
+                  ))}
+                </div>
+                {selectedLabTest.clinicalInfo && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Clinical Information:</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{selectedLabTest.clinicalInfo}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Results Entry */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white">Test Results</h4>
+                
+                {JSON.parse(selectedLabTest.tests || '[]').includes('Complete Blood Count (CBC)') && (
+                  <div className="border rounded-lg p-4">
+                    <h5 className="font-medium mb-3">Complete Blood Count (CBC)</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Hemoglobin (Hb) g/dL</label>
+                        <Input placeholder="Normal: M: 13.8-17.2, F: 12.1-15.1" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Hematocrit (Hct) %</label>
+                        <Input placeholder="Normal: M: 40.7-50.3, F: 36.1-44.3" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">WBC Count ×10³/μL</label>
+                        <Input placeholder="Normal: 5.0-10.0" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Platelet Count ×10³/μL</label>
+                        <Input placeholder="Normal: 150-450" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {JSON.parse(selectedLabTest.tests || '[]').some((test: string) => 
+                  !test.includes('Complete Blood Count') && !test.includes('Hematocrit') && !test.includes('Hemoglobin')
+                ) && (
+                  <div className="border rounded-lg p-4">
+                    <h5 className="font-medium mb-3">Other Test Results</h5>
+                    <div className="space-y-3">
+                      {JSON.parse(selectedLabTest.tests || '[]').filter((test: string) => 
+                        !test.includes('Complete Blood Count') && !test.includes('Hematocrit') && !test.includes('Hemoglobin')
+                      ).map((testName: string, index: number) => (
+                        <div key={index}>
+                          <label className="block text-sm font-medium mb-1">{testName}</label>
+                          <Input placeholder="Enter result..." />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Technician Notes */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Technician Notes</label>
+                  <Textarea 
+                    placeholder="Add any observations, comments, or additional findings..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Result Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Result Status</label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select result status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="abnormal">Abnormal</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                        <SelectItem value="inconclusive">Inconclusive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Test Status</label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select test status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Save Results
+                </Button>
+                <Button variant="outline">
                   <Printer className="w-4 h-4 mr-2" />
                   Print Report
                 </Button>
