@@ -247,6 +247,7 @@ export default function Laboratory() {
   const [selectedLabTest, setSelectedLabTest] = useState<LabTest | null>(null);
   const [selectedTestResults, setSelectedTestResults] = useState<string | null>(null);
   const [activeMetricFilter, setActiveMetricFilter] = useState<string | null>(null);
+  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<LabTestFormData>({
@@ -416,7 +417,11 @@ export default function Laboratory() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <Button size="lg" className="shadow-lg">
+            <Button 
+              size="lg" 
+              className="shadow-lg"
+              onClick={() => setShowNewRequestModal(true)}
+            >
               <Plus className="w-5 h-5 mr-2" />
               New Test Request
             </Button>
@@ -821,6 +826,49 @@ export default function Laboratory() {
                 </Button>
               </div>
             </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* New Test Request Modal */}
+      {showNewRequestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="text-2xl text-medical-blue dark:text-blue-400">New Laboratory Test Request</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                    🔬 New Lab Request Form
+                  </p>
+                  <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
+                    Please select a patient and specify the required laboratory tests
+                  </p>
+                </div>
+                
+                <div className="text-center">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Laboratory test request form will be fully implemented here
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                    Including patient selection, test categories, and clinical information
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+            <div className="flex justify-end gap-2 p-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setShowNewRequestModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button className="bg-medical-blue hover:bg-blue-700">
+                Submit Test Request
+              </Button>
+            </div>
           </Card>
         </div>
       )}

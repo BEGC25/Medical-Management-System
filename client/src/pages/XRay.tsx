@@ -95,6 +95,7 @@ export default function XRay() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedXrayExam, setSelectedXrayExam] = useState<XrayExam | null>(null);
   const [activeMetricFilter, setActiveMetricFilter] = useState<string | null>(null);
+  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const [showXrayRequest, setShowXrayRequest] = useState(false);
   const [showXrayReport, setShowXrayReport] = useState(false);
   const [safetyChecklist, setSafetyChecklist] = useState({
@@ -257,7 +258,11 @@ export default function XRay() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <Button size="lg" className="shadow-lg">
+            <Button 
+              size="lg" 
+              className="shadow-lg"
+              onClick={() => setShowNewRequestModal(true)}
+            >
               <Plus className="w-5 h-5 mr-2" />
               New X-Ray Request
             </Button>
@@ -679,6 +684,49 @@ export default function XRay() {
                 </Button>
               </div>
             </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* New X-Ray Request Modal */}
+      {showNewRequestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="text-2xl text-medical-blue dark:text-blue-400">New X-Ray Examination Request</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-blue-800 dark:text-blue-200 font-medium">
+                    📷 New X-Ray Request Form
+                  </p>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">
+                    Please select a patient and specify the required X-ray examinations
+                  </p>
+                </div>
+                
+                <div className="text-center">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    X-Ray examination request form will be fully implemented here
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                    Including patient selection, examination type, and clinical indications
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+            <div className="flex justify-end gap-2 p-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setShowNewRequestModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button className="bg-medical-blue hover:bg-blue-700">
+                Submit X-Ray Request
+              </Button>
+            </div>
           </Card>
         </div>
       )}

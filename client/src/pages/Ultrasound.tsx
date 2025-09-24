@@ -126,6 +126,7 @@ export default function Ultrasound() {
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
   const [activeMetricFilter, setActiveMetricFilter] = useState<string | null>(null);
+  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -621,7 +622,10 @@ export default function Ultrasound() {
                 <p className="text-gray-600 dark:text-gray-400">Request and manage ultrasound examinations</p>
               </div>
             </div>
-            <Button className="bg-medical-blue hover:bg-medical-blue/90 text-white">
+            <Button 
+              className="bg-medical-blue hover:bg-medical-blue/90 text-white"
+              onClick={() => setShowNewRequestModal(true)}
+            >
               <Send className="w-4 h-4 mr-2" />
               New Request
             </Button>
@@ -970,8 +974,10 @@ export default function Ultrasound() {
 
         </Tabs>
 
-        {/* New Request Modal (Hidden for now - will be activated by button) */}
-        <Card className="hidden">
+        {/* New Request Modal */}
+        {showNewRequestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
           <CardTitle className="text-medical-blue dark:text-blue-400">New Ultrasound Request</CardTitle>
         </CardHeader>
@@ -1118,7 +1124,17 @@ export default function Ultrasound() {
             )}
           </div>
         </CardContent>
+        <div className="flex justify-end gap-2 p-4 border-t">
+          <Button
+            variant="outline"
+            onClick={() => setShowNewRequestModal(false)}
+          >
+            Cancel
+          </Button>
+        </div>
       </Card>
+      </div>
+      )}
 
       {/* Ultrasound Results & Reports */}
       <Card>
