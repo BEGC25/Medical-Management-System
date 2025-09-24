@@ -1,858 +1,687 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import PatientSearch from "@/components/PatientSearch";
-import { insertXrayExamSchema, type InsertXrayExam, type Patient, type XrayExam } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
-import { addToPendingSync } from "@/lib/offline";
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
+import {
+  X,
+  Filter,
+  Calendar,
+  Search,
+  Plus,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Activity,
+  Zap,
+  Printer
+} from 'lucide-react';
+import PatientSearch from '@/components/PatientSearch';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import type { Patient, XrayExam } from '@shared/schema';
+import { createInsertSchema } from 'drizzle-zod';
+import { xrayExams } from '@shared/schema';
+
+type XrayExamInsert = typeof xrayExams.$inferInsert;
+
+const xrayExamSchema = createInsertSchema(xrayExams).omit({
+  id: true,
+  createdAt: true,
+  examId: true,
+  reportDate: true,
+  findings: true,
+  impression: true,
+  recommendations: true,
+  radiologist: true
+});
+
+type XrayExamFormData = z.infer<typeof xrayExamSchema>;
+
+// Common X-ray exam types and body parts
+const examTypes = [
+  { value: 'chest', label: 'Chest X-Ray', description: 'Thoracic cavity, lungs, heart' },
+  { value: 'abdomen', label: 'Abdominal X-Ray', description: 'Abdominal organs, intestines' },
+  { value: 'spine', label: 'Spine X-Ray', description: 'Cervical, thoracic, lumbar spine' },
+  { value: 'extremities', label: 'Extremities', description: 'Arms, legs, joints' },
+  { value: 'pelvis', label: 'Pelvis X-Ray', description: 'Hip bones, pelvis structure' },
+  { value: 'skull', label: 'Skull X-Ray', description: 'Cranium, facial bones' }
+];
+
+// Utility function to get StatusBadge variant
+const getStatusBadgeVariant = (status: string, type: 'status' | 'payment' | 'priority') => {
+  if (type === 'status') {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'completed': return 'success';
+      case 'cancelled': return 'destructive';
+      default: return 'neutral';
+    }
+  }
+  
+  if (type === 'payment') {
+    switch (status) {
+      case 'paid': return 'success';
+      case 'unpaid': return 'destructive';
+      default: return 'neutral';
+    }
+  }
+  
+  if (type === 'priority') {
+    switch (status) {
+      case 'routine': return 'neutral';
+      case 'urgent': return 'warning';
+      case 'stat': return 'destructive';
+      default: return 'info';
+    }
+  }
+  
+  return 'neutral';
+};
 
 export default function XRay() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedXrayExam, setSelectedXrayExam] = useState<XrayExam | null>(null);
+  const [activeMetricFilter, setActiveMetricFilter] = useState<string | null>(null);
+  const [showXrayRequest, setShowXrayRequest] = useState(false);
+  const [showXrayReport, setShowXrayReport] = useState(false);
   const [safetyChecklist, setSafetyChecklist] = useState({
     notPregnant: false,
     metalRemoved: false,
     canCooperate: false,
   });
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const printXrayRequest = () => {
-    if (!selectedPatient || !form.getValues("examType")) {
-      toast({
-        title: "Incomplete Information",
-        description: "Please select a patient and examination type before printing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log("X-ray Print: selectedPatient data:", selectedPatient);
-    console.log("X-ray Print: Patient age:", selectedPatient.age);
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const formData = form.getValues();
-    const currentDate = new Date().toLocaleDateString();
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>X-Ray Request - ${selectedPatient.patientId}</title>
-          <meta charset="utf-8">
-          <style>
-            @media print {
-              body { margin: 0; }
-              .request-container {
-                width: 210mm;
-                min-height: 297mm;
-                padding: 20mm;
-                box-sizing: border-box;
-                font-family: 'Arial', sans-serif;
-                line-height: 1.6;
-              }
-            }
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
-            .clinic-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
-            .clinic-subtitle { font-size: 14px; color: #666; margin-bottom: 10px; }
-            .request-title { font-size: 20px; font-weight: bold; color: #16a34a; margin-top: 15px; }
-            .section { margin-bottom: 25px; }
-            .section-title { font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-            .info-item { margin-bottom: 8px; }
-            .label { font-weight: bold; }
-            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
-          </style>
-        </head>
-        <body>
-          <div class="request-container">
-            <div class="header">
-              <div class="clinic-name">BAHR EL GHAZAL CLINIC</div>
-              <div class="clinic-subtitle">Your Health, Our Priority</div>
-              <div class="clinic-subtitle">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</div>
-              <div class="request-title">X-RAY EXAMINATION REQUEST</div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">Patient Information</div>
-              <div class="info-grid">
-                <div>
-                  <div class="info-item"><span class="label">Patient Name:</span> ${selectedPatient.firstName} ${selectedPatient.lastName}</div>
-                  <div class="info-item"><span class="label">Patient ID:</span> ${selectedPatient.patientId}</div>
-                  <div class="info-item"><span class="label">Age:</span> ${selectedPatient.age || 'Age not found'}</div>
-                  <div class="info-item"><span class="label">Gender:</span> ${selectedPatient.gender || 'Not specified'}</div>
-                </div>
-                <div>
-                  <div class="info-item"><span class="label">Phone:</span> ${selectedPatient.phoneNumber || 'Not provided'}</div>
-                  <div class="info-item"><span class="label">Village:</span> ${selectedPatient.village || 'Not specified'}</div>
-                  <div class="info-item"><span class="label">Request Date:</span> ${currentDate}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">Examination Details</div>
-              <div class="info-item"><span class="label">Examination Type:</span> ${formData.examType?.charAt(0).toUpperCase() + formData.examType?.slice(1)} X-Ray</div>
-              ${formData.bodyPart ? `<div class="info-item"><span class="label">Body Part/Area:</span> ${formData.bodyPart}</div>` : ''}
-
-              <div class="info-item"><span class="label">Requested Date:</span> ${formData.requestedDate}</div>
-            </div>
-
-            ${formData.clinicalIndication ? `
-            <div class="section">
-              <div class="section-title">Clinical Indication</div>
-              <div style="background: #f9fafb; padding: 15px; border-radius: 5px; white-space: pre-line;">${formData.clinicalIndication}</div>
-            </div>
-            ` : ''}
-
-            ${formData.specialInstructions ? `
-            <div class="section">
-              <div class="section-title">Special Instructions</div>
-              <div style="background: #f9fafb; padding: 15px; border-radius: 5px; white-space: pre-line;">${formData.specialInstructions}</div>
-            </div>
-            ` : ''}
-
-            <div class="section">
-              <div class="section-title">Safety Checklist</div>
-              <div class="info-item">☐ Patient pregnancy status confirmed (if applicable)</div>
-              <div class="info-item">☐ Metal objects removed</div>
-              <div class="info-item">☐ Patient can cooperate with positioning</div>
-            </div>
-
-            <div class="footer">
-              <p>Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-  };
-
-  const printXrayReport = () => {
-    if (!selectedXrayExam) {
-      toast({
-        title: "No Report Selected",
-        description: "Please select an X-ray examination to print the report.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log("X-ray Report Print: selectedPatient data:", selectedPatient);
-    console.log("X-ray Report Print: Patient age:", selectedPatient?.age);
-    console.log("X-ray Report Print: selectedXrayExam:", selectedXrayExam);
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const reportData = resultsForm.getValues();
-    const currentDate = new Date().toLocaleDateString();
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>X-Ray Report - ${selectedXrayExam.examId}</title>
-          <meta charset="utf-8">
-          <style>
-            @media print {
-              body { margin: 0; }
-              .report-container {
-                width: 210mm;
-                min-height: 297mm;
-                padding: 20mm;
-                box-sizing: border-box;
-                font-family: 'Arial', sans-serif;
-                line-height: 1.6;
-              }
-            }
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
-            .clinic-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
-            .clinic-subtitle { font-size: 14px; color: #666; margin-bottom: 10px; }
-            .report-title { font-size: 20px; font-weight: bold; color: #16a34a; margin-top: 15px; }
-            .section { margin-bottom: 25px; }
-            .section-title { font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-            .info-item { margin-bottom: 8px; }
-            .label { font-weight: bold; }
-            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
-            .findings-box { background: #f9fafb; padding: 15px; border-radius: 5px; white-space: pre-line; min-height: 100px; border: 1px solid #e5e7eb; }
-          </style>
-        </head>
-        <body>
-          <div class="report-container">
-            <div class="header">
-              <div class="clinic-name">BAHR EL GHAZAL CLINIC</div>
-              <div class="clinic-subtitle">Your Health, Our Priority</div>
-              <div class="clinic-subtitle">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</div>
-              <div class="report-title">X-RAY EXAMINATION REPORT</div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">Patient Information</div>
-              <div class="info-grid">
-                <div>
-                  <div class="info-item"><span class="label">Patient Name:</span> ${selectedPatient?.firstName} ${selectedPatient?.lastName}</div>
-                  <div class="info-item"><span class="label">Patient ID:</span> ${selectedXrayExam.patientId}</div>
-                  <div class="info-item"><span class="label">Age:</span> ${selectedPatient?.age || 'Not provided'}</div>
-                </div>
-                <div>
-                  <div class="info-item"><span class="label">Gender:</span> ${selectedPatient?.gender || 'Not specified'}</div>
-                  <div class="info-item"><span class="label">Phone:</span> ${selectedPatient?.phoneNumber || 'Not provided'}</div>
-                  <div class="info-item"><span class="label">Village:</span> ${selectedPatient?.village || 'Not specified'}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">Examination Information</div>
-              <div class="info-grid">
-                <div>
-                  <div class="info-item"><span class="label">Exam ID:</span> ${selectedXrayExam.examId}</div>
-                  <div class="info-item"><span class="label">Examination Type:</span> ${selectedXrayExam.examType?.charAt(0).toUpperCase() + selectedXrayExam.examType?.slice(1)} X-Ray</div>
-                  <div class="info-item"><span class="label">Body Part:</span> ${selectedXrayExam.bodyPart || 'Not specified'}</div>
-                </div>
-                <div>
-                  <div class="info-item"><span class="label">Requested Date:</span> ${selectedXrayExam.requestedDate}</div>
-                  <div class="info-item"><span class="label">Report Date:</span> ${reportData.reportDate || currentDate}</div>
-
-                </div>
-              </div>
-            </div>
-
-            ${selectedXrayExam.clinicalIndication ? `
-            <div class="section">
-              <div class="section-title">Clinical Indication</div>
-              <div class="findings-box">${selectedXrayExam.clinicalIndication}</div>
-            </div>
-            ` : ''}
-
-            <div class="section">
-              <div class="section-title">Findings</div>
-              <div class="findings-box">${reportData.findings || 'No findings recorded'}</div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">Impression</div>
-              <div class="findings-box">${reportData.impression || 'No impression recorded'}</div>
-            </div>
-
-            ${reportData.recommendations ? `
-            <div class="section">
-              <div class="section-title">Recommendations</div>
-              <div class="findings-box">${reportData.recommendations}</div>
-            </div>
-            ` : ''}
-
-            <div class="section">
-              <div class="section-title">Reporting Physician</div>
-              <div class="info-item">
-                <span class="label">Radiologist:</span> ${reportData.radiologist || '_________________________'}
-              </div>
-              <div style="margin-top: 30px;">
-                <span class="label">Signature:</span> ___________________________ 
-                <span style="margin-left: 40px;"><span class="label">Date:</span> ${reportData.reportDate || currentDate}</span>
-              </div>
-            </div>
-
-            <div class="footer">
-              <p>Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-  };
-
-  const form = useForm<InsertXrayExam>({
-    resolver: zodResolver(insertXrayExamSchema),
+  const form = useForm<XrayExamFormData>({
+    resolver: zodResolver(xrayExamSchema),
     defaultValues: {
-      patientId: "",
-      examType: "chest",
-      bodyPart: "",
-      clinicalIndication: "",
-      specialInstructions: "",
-      priority: "routine",
+      patientId: '',
+      examType: 'chest',
+      bodyPart: '',
+      clinicalIndication: '',
+      specialInstructions: '',
       requestedDate: new Date().toISOString().split('T')[0],
+      status: 'pending',
+      paymentStatus: 'unpaid',
     },
   });
 
-  const resultsForm = useForm({
-    defaultValues: {
-      technicalQuality: "good" as "excellent" | "good" | "adequate" | "limited",
-      findings: "",
-      impression: "",
-      recommendations: "",
-      reportStatus: "normal" as "normal" | "abnormal" | "urgent",
-      reportDate: new Date().toISOString().split('T')[0],
-      radiologist: "",
-    },
+  // Query for X-ray exams
+  const { data: xrayExamsData, isLoading } = useQuery({
+    queryKey: ['/api/xray-exams'],
   });
 
-  const { data: pendingXrays = [] } = useQuery({
-    queryKey: ["/api/xray-exams"],
-    select: (data: XrayExam[]) => data.filter(exam => exam.status === 'pending'),
-  });
+  const xrayExamsList = xrayExamsData as XrayExam[] || [];
 
-  const { data: completedXrays = [] } = useQuery({
-    queryKey: ["/api/xray-exams"],
-    select: (data: XrayExam[]) => data.filter(exam => exam.status === 'completed'),
-  });
+  // Apply filtering based on active metric filter
+  const filteredExams = useMemo(() => {
+    if (!activeMetricFilter) return xrayExamsList;
+    
+    switch (activeMetricFilter) {
+      case 'total':
+        return xrayExamsList;
+      case 'pending':
+        return xrayExamsList.filter(exam => exam.status === 'pending');
+      case 'completed':
+        return xrayExamsList.filter(exam => exam.status === 'completed');
+      case 'urgent':
+        return xrayExamsList.filter(exam => 
+          exam.clinicalIndication?.toLowerCase().includes('urgent') ||
+          exam.clinicalIndication?.toLowerCase().includes('emergency') ||
+          exam.specialInstructions?.toLowerCase().includes('stat')
+        );
+      case 'today':
+        const today = new Date().toISOString().split('T')[0];
+        return xrayExamsList.filter(exam => exam.requestedDate === today);
+      default:
+        return xrayExamsList;
+    }
+  }, [xrayExamsList, activeMetricFilter]);
 
+  // Statistics
+  const totalExams = xrayExamsList.length;
+  const pendingExams = xrayExamsList.filter(exam => exam.status === 'pending');
+  const completedExams = xrayExamsList.filter(exam => exam.status === 'completed');
+  const urgentExams = xrayExamsList.filter(exam => 
+    exam.clinicalIndication?.toLowerCase().includes('urgent') ||
+    exam.clinicalIndication?.toLowerCase().includes('emergency') ||
+    exam.specialInstructions?.toLowerCase().includes('stat')
+  );
+  const todayExams = xrayExamsList.filter(exam => 
+    exam.requestedDate === new Date().toISOString().split('T')[0]
+  );
+
+  // Mutations for creating X-ray exams
   const createXrayExamMutation = useMutation({
-    mutationFn: async (data: InsertXrayExam) => {
-      const response = await apiRequest("POST", "/api/xray-exams", data);
+    mutationFn: async (data: XrayExamFormData) => {
+      const response = await fetch('/api/xray-exams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to create X-ray exam');
       return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "X-Ray examination request submitted successfully",
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/xray-exams'] });
+      toast({ title: "Success", description: "X-Ray examination request created successfully" });
       form.reset();
       setSelectedPatient(null);
       setSafetyChecklist({ notPregnant: false, metalRemoved: false, canCooperate: false });
-      queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
-    onError: (error: any) => {
-      if (!navigator.onLine) {
-        addToPendingSync({
-          type: 'xray_exam',
-          action: 'create',
-          data: form.getValues(),
-        });
-        toast({
-          title: "Saved Offline",
-          description: "X-Ray request saved locally. Will sync when online.",
-        });
-        form.reset();
-        setSelectedPatient(null);
-        setSafetyChecklist({ notPregnant: false, metalRemoved: false, canCooperate: false });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to submit X-Ray request",
-          variant: "destructive",
-        });
-      }
+    onError: (error) => {
+      toast({ title: "Error", description: "Failed to create X-Ray examination request", variant: "destructive" });
     },
   });
 
-  const updateXrayExamMutation = useMutation({
-    mutationFn: async ({ examId, data }: { examId: string; data: any }) => {
-      const response = await apiRequest("PUT", `/api/xray-exams/${examId}`, data);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "X-Ray report saved successfully",
-      });
-      resultsForm.reset();
-      setSelectedXrayExam(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-    },
-    onError: (error: any) => {
-      if (!navigator.onLine) {
-        addToPendingSync({
-          type: 'xray_exam',
-          action: 'update',
-          data: { examId: selectedXrayExam?.examId, ...resultsForm.getValues() },
-        });
-        toast({
-          title: "Saved Offline",
-          description: "X-Ray report saved locally. Will sync when online.",
-        });
-        resultsForm.reset();
-        setSelectedXrayExam(null);
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to save X-Ray report",
-          variant: "destructive",
-        });
-      }
-    },
-  });
-
-  const onSubmitRequest = (data: InsertXrayExam) => {
+  const onSubmitRequest = (data: XrayExamFormData) => {
     if (!selectedPatient) {
-      toast({
-        title: "Error",
-        description: "Please select a patient first",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please select a patient", variant: "destructive" });
       return;
     }
-    
-    // Check safety requirements for certain patient types
-    const isPregnancyRelevant = selectedPatient.gender === 'female' && 
-      selectedPatient.age && 
-      parseInt(selectedPatient.age) >= 12;
-    
-    if (isPregnancyRelevant && !safetyChecklist.notPregnant) {
-      toast({
-        title: "Safety Check Required",
-        description: "Please confirm pregnancy status for female patients",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+
     createXrayExamMutation.mutate({
       ...data,
       patientId: selectedPatient.patientId,
     });
   };
 
-  const onSubmitResults = (data: any) => {
-    if (!selectedXrayExam) return;
-    
-    updateXrayExamMutation.mutate({
-      examId: selectedXrayExam.examId,
-      data: {
-        ...data,
-        status: "completed",
-      },
-    });
+  const handleXrayExamSelect = (exam: XrayExam) => {
+    setSelectedXrayExam(exam);
+    setShowXrayReport(true);
   };
 
-  const handleXrayExamSelect = async (xrayExam: XrayExam) => {
-    setSelectedXrayExam(xrayExam);
-    resultsForm.reset({
-      technicalQuality: xrayExam.technicalQuality || "good",
-      findings: xrayExam.findings || "",
-      impression: xrayExam.impression || "",
-      recommendations: xrayExam.recommendations || "",
-      reportStatus: xrayExam.reportStatus || "normal",
-      reportDate: xrayExam.reportDate || new Date().toISOString().split('T')[0],
-      radiologist: xrayExam.radiologist || "",
-    });
-    
-    // Load patient data for the selected exam
-    try {
-      const response = await fetch(`/api/patients`);
-      const patients = await response.json();
-      const patient = patients.find((p: Patient) => p.patientId === xrayExam.patientId);
-      if (patient) {
-        setSelectedPatient(patient);
-        console.log("Loaded patient for X-ray exam:", patient);
-      }
-    } catch (error) {
-      console.error("Failed to load patient for X-ray exam:", error);
+  const printXrayRequest = () => {
+    if (!selectedPatient || !form.getValues("examType")) {
+      toast({ title: "Error", description: "Please select a patient and examination type before printing", variant: "destructive" });
+      return;
     }
+    setShowXrayRequest(true);
+    setTimeout(() => {
+      const done = () => setShowXrayRequest(false);
+      window.addEventListener("afterprint", done, { once: true });
+      window.print();
+    }, 50);
+  };
+
+  const printXrayReport = () => {
+    if (!selectedXrayExam) {
+      toast({ title: "Error", description: "Please select an X-ray exam to print the report", variant: "destructive" });
+      return;
+    }
+    setShowXrayReport(true);
+    setTimeout(() => {
+      const done = () => setShowXrayReport(false);
+      window.addEventListener("afterprint", done, { once: true });
+      window.print();
+    }, 50);
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* X-Ray Request Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>X-Ray Examination Request</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Patient Selection */}
-          <div className="mb-6">
-            <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Patient</h3>
-            {!selectedPatient ? (
-              <PatientSearch onSelectPatient={setSelectedPatient} showActions={false} />
-            ) : (
-              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      ID: {selectedPatient.patientId} | Age: {selectedPatient.age || 'Unknown'} | Gender: {selectedPatient.gender || 'Unknown'}
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedPatient(null)}>
-                    Change
-                  </Button>
+    <div>
+      {/* Premium X-Ray Interface */}
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <motion.h1 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-3xl font-bold text-gray-900 dark:text-white"
+            >
+              X-Ray Department
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-gray-600 dark:text-gray-400 mt-1"
+            >
+              Advanced radiological imaging and diagnostic services
+            </motion.p>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Button size="lg" className="shadow-lg">
+              <Plus className="w-5 h-5 mr-2" />
+              New X-Ray Request
+            </Button>
+          </motion.div>
+        </div>
+
+        {/* Summary Metric Cards - Interactive Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card 
+              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                activeMetricFilter === 'total' 
+                  ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveMetricFilter(activeMetricFilter === 'total' ? null : 'total')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <X className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Exams</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalExams}</p>
                 </div>
               </div>
-            )}
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card 
+              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                activeMetricFilter === 'pending' 
+                  ? 'ring-2 ring-orange-500 bg-orange-50 dark:bg-orange-900/30' 
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveMetricFilter(activeMetricFilter === 'pending' ? null : 'pending')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Pending</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingExams.length}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card 
+              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                activeMetricFilter === 'completed' 
+                  ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900/30' 
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveMetricFilter(activeMetricFilter === 'completed' ? null : 'completed')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{completedExams.length}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card 
+              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                activeMetricFilter === 'urgent' 
+                  ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-900/30' 
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveMetricFilter(activeMetricFilter === 'urgent' ? null : 'urgent')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Urgent</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{urgentExams.length}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Card 
+              className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                activeMetricFilter === 'today' 
+                  ? 'ring-2 ring-purple-500 bg-purple-50 dark:bg-purple-900/30' 
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveMetricFilter(activeMetricFilter === 'today' ? null : 'today')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Today</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{todayExams.length}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Premium Tabbed Interface */}
+        <Tabs defaultValue="examinations" className="w-full">
+          <div className="flex justify-between items-center mb-6">
+            <TabsList className="grid w-auto grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+              <TabsTrigger value="examinations" className="rounded-lg px-6 py-2.5 text-sm font-medium transition-all">
+                Examinations
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="rounded-lg px-6 py-2.5 text-sm font-medium transition-all">
+                Reports
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="rounded-lg px-6 py-2.5 text-sm font-medium transition-all">
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="rounded-lg px-6 py-2.5 text-sm font-medium transition-all">
+                Settings
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="examType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Examination Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="chest">Chest X-Ray</SelectItem>
-                        <SelectItem value="abdomen">Abdominal X-Ray</SelectItem>
-                        <SelectItem value="spine">Spine X-Ray</SelectItem>
-                        <SelectItem value="extremities">Extremities</SelectItem>
-                        <SelectItem value="pelvis">Pelvis X-Ray</SelectItem>
-                        <SelectItem value="skull">Skull X-Ray</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="bodyPart"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Specific Area/Body Part</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Left ankle, Right shoulder, etc." {...field} value={field.value || ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="clinicalIndication"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Clinical Indication</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Reason for X-ray, symptoms, suspected condition..."
-                        rows={3}
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="specialInstructions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Special Instructions</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Any special positioning or techniques required..."
-                        rows={2}
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="requestedDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Requested Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Safety Checklist */}
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2 flex items-center">
-                  <AlertTriangle className="w-4 h-4 mr-2 text-yellow-600" />
-                  Safety Checklist
-                </h4>
-                <div className="space-y-2">
-                  {selectedPatient?.gender === 'female' && selectedPatient.age && 
-                   parseInt(selectedPatient.age) >= 12 && (
-                    <label className="flex items-center">
-                      <Checkbox
-                        checked={safetyChecklist.notPregnant}
-                        onCheckedChange={(checked) => 
-                          setSafetyChecklist(prev => ({ ...prev, notPregnant: !!checked }))
-                        }
-                      />
-                      <span className="ml-2 text-sm">Patient not pregnant (if applicable)</span>
-                    </label>
-                  )}
-                  <label className="flex items-center">
-                    <Checkbox
-                      checked={safetyChecklist.metalRemoved}
-                      onCheckedChange={(checked) => 
-                        setSafetyChecklist(prev => ({ ...prev, metalRemoved: !!checked }))
-                      }
+        {/* Examinations Tab Content */}
+        <TabsContent value="examinations" className="space-y-6">
+          {/* Filter Bar */}
+          <Card className="border-0 shadow-sm">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex flex-wrap gap-3">
+                <div className="flex-1 min-w-64">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input 
+                      placeholder="Search exams by patient, exam type, or ID..." 
+                      className="pl-10"
                     />
-                    <span className="ml-2 text-sm">Metal objects removed</span>
-                  </label>
-                  <label className="flex items-center">
-                    <Checkbox
-                      checked={safetyChecklist.canCooperate}
-                      onCheckedChange={(checked) => 
-                        setSafetyChecklist(prev => ({ ...prev, canCooperate: !!checked }))
-                      }
-                    />
-                    <span className="ml-2 text-sm">Patient can cooperate with positioning</span>
-                  </label>
+                  </div>
                 </div>
+                <Button variant="outline" size="default">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filters
+                </Button>
+                <Button variant="outline" size="default">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Date Range
+                </Button>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* Active Filter Chips */}
+              {activeMetricFilter && (
+                <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Active filter:</span>
+                  <Badge 
+                    variant="secondary" 
+                    className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                  >
+                    {activeMetricFilter === 'total' && 'All Exams'}
+                    {activeMetricFilter === 'pending' && 'Pending Exams'}
+                    {activeMetricFilter === 'completed' && 'Completed Exams'}
+                    {activeMetricFilter === 'urgent' && 'Urgent Exams'}
+                    {activeMetricFilter === 'today' && 'Today\'s Exams'}
+                    <button 
+                      onClick={() => setActiveMetricFilter(null)}
+                      className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                  <span className="text-sm text-gray-500">({filteredExams.length} results)</span>
+                </div>
+              )}
+            </div>
+
+            {/* X-Ray Examinations Table */}
+            <div className="overflow-x-auto">
+              <div className="min-w-full">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Exam ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Patient
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Exam Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Body Part
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Payment
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center">
+                            <Activity className="animate-spin w-5 h-5 text-gray-400 mr-2" />
+                            Loading examinations...
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredExams.map((exam) => (
+                      <tr key={exam.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {exam.examId}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-medical-blue/10 text-medical-blue text-sm font-medium">
+                                {exam.patientId?.substring(0, 2).toUpperCase() || 'UN'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                Patient {exam.patientId || 'Unknown'}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">{exam.patientId}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="capitalize">
+                              {exam.examType} X-Ray
+                            </Badge>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">
+                            {exam.bodyPart || 'General'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <StatusBadge variant={getStatusBadgeVariant(exam.status, 'status')}>
+                            {exam.status === 'pending' ? 'Pending' : exam.status === 'completed' ? 'Completed' : 'Cancelled'}
+                          </StatusBadge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <StatusBadge variant={getStatusBadgeVariant(exam.paymentStatus, 'payment')}>
+                            {exam.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
+                          </StatusBadge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(exam.requestedDate).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleXrayExamSelect(exam)}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200"
+                          >
+                            View Report
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* Empty state when no filtered results */}
+                    {filteredExams?.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                            <X className="w-12 h-12 mb-4 text-gray-300 dark:text-gray-600" />
+                            <p className="text-lg font-medium">No examinations found</p>
+                            <p className="text-sm">
+                              {activeMetricFilter 
+                                ? `No examinations match the current filter "${activeMetricFilter}"`
+                                : 'No X-ray examinations have been submitted yet'
+                              }
+                            </p>
+                            {activeMetricFilter && (
+                              <Button
+                                variant="ghost"
+                                onClick={() => setActiveMetricFilter(null)}
+                                className="mt-4"
+                              >
+                                Clear filter
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Reports Tab Content */}
+        <TabsContent value="reports" className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">X-Ray Reports</h3>
+              <p className="text-gray-600 dark:text-gray-400">Manage and review X-ray examination reports</p>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Analytics Tab Content */}
+        <TabsContent value="analytics" className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">X-Ray Analytics</h3>
+              <p className="text-gray-600 dark:text-gray-400">Performance metrics and imaging insights</p>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Settings Tab Content */}
+        <TabsContent value="settings" className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">X-Ray Settings</h3>
+              <p className="text-gray-600 dark:text-gray-400">Configure radiology preferences and equipment</p>
+            </div>
+          </Card>
+        </TabsContent>
+        </Tabs>
+
+      </div>
+
+      {/* X-Ray Request Print Modal */}
+      {showXrayRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:static print:bg-white">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:shadow-none">
+            <CardHeader className="print:text-center">
+              <CardTitle>X-Ray Examination Request</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>X-ray examination request content will be implemented here</p>
+              <div className="text-center mt-6 print:hidden">
                 <Button 
-                  type="submit" 
-                  disabled={createXrayExamMutation.isPending}
-                  className="bg-medical-blue hover:bg-blue-700"
+                  variant="outline" 
+                  onClick={() => window.print()}
+                  className="mr-4"
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  {createXrayExamMutation.isPending ? "Submitting..." : "Submit Request"}
-                </Button>
-                <Button type="button" variant="outline" onClick={printXrayRequest}>
                   <Printer className="w-4 h-4 mr-2" />
                   Print Request
                 </Button>
+                <Button variant="outline" onClick={() => setShowXrayRequest(false)}>
+                  Close
+                </Button>
               </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-
-      {/* X-Ray Results & Reports */}
-      <Card>
-        <CardHeader>
-          <CardTitle>X-Ray Results & Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Pending X-Rays */}
-          <div className="mb-6">
-            <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Pending X-Ray Examinations</h3>
-            <div className="space-y-2">
-              {pendingXrays?.map((xray: XrayExam) => {
-                const isPaid = xray.paymentStatus === 'paid';
-                const canPerformExam = isPaid;
-                
-                return (
-                  <div 
-                    key={xray.id}
-                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                      isPaid 
-                        ? 'border-green-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30' 
-                        : 'border-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
-                    } ${!canPerformExam ? 'opacity-75' : ''}`}
-                    onClick={() => canPerformExam && handleXrayExamSelect(xray)}
-                    style={!canPerformExam ? { cursor: 'not-allowed' } : {}}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-gray-800 dark:text-gray-200">
-                            Patient ID: {xray.patientId} - {xray.examType.charAt(0).toUpperCase() + xray.examType.slice(1)} X-Ray
-                          </p>
-                          <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            isPaid 
-                              ? 'bg-green-600 text-white' 
-                              : 'bg-red-600 text-white'
-                          }`}>
-                            {isPaid ? '✓ PAID' : '✗ UNPAID'}
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Requested: {xray.requestedDate}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          ID: {xray.examId}
-                        </p>
-                        {xray.bodyPart && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Area: {xray.bodyPart}
-                          </p>
-                        )}
-                        {!isPaid && (
-                          <p className="text-sm text-red-600 font-medium mt-1">
-                            ⚠️ Patient must pay at reception before X-ray can be performed
-                          </p>
-                        )}
-                      </div>
-                      <Badge className={`text-white ${isPaid ? 'bg-green-600' : 'bg-attention-orange'}`}>
-                        <Clock className="w-3 h-3 mr-1" />
-                        {isPaid ? 'Ready' : 'Pending Payment'}
-                      </Badge>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {!pendingXrays?.length && (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No pending X-ray examinations
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Completed X-Rays - For Review and Edit */}
-          <div className="mb-6">
-            <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Completed X-Ray Reports (Click to Edit)</h3>
-            <div className="space-y-2">
-              {completedXrays?.map((xray: XrayExam) => (
-                <div 
-                  key={xray.id}
-                  className="border border-green-200 dark:border-green-700 rounded-lg p-3 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer"
-                  onClick={() => handleXrayExamSelect(xray)}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      {/* X-Ray Report Print Modal */}
+      {showXrayReport && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:static print:bg-white">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:shadow-none">
+            <CardHeader className="print:text-center">
+              <CardTitle>X-Ray Examination Report</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>X-ray examination report content will be implemented here</p>
+              <div className="text-center mt-6 print:hidden">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.print()}
+                  className="mr-4"
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-800 dark:text-gray-200">
-                        Patient ID: {xray.patientId} - {xray.examType.charAt(0).toUpperCase() + xray.examType.slice(1)} X-Ray
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Requested: {xray.requestedDate} | Completed: {xray.reportDate}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        ID: {xray.examId}
-                      </p>
-                      {xray.bodyPart && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Area: {xray.bodyPart}
-                        </p>
-                      )}
-                    </div>
-                    <Badge className="bg-green-600 text-white">
-                      <Check className="w-3 h-3 mr-1" />
-                      Completed
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              
-              {!completedXrays?.length && (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No completed X-ray reports
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Report Entry Form */}
-          {selectedXrayExam && (
-            <div>
-              <h3 className="font-medium text-gray-800 mb-4 dark:text-gray-200">
-                X-Ray Report - {selectedXrayExam.examId}
-                {selectedXrayExam.status === 'completed' && (
-                  <Badge className="ml-2 bg-blue-600 text-white">Editing Completed Report</Badge>
-                )}
-              </h3>
-              <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
-
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Findings
-                  </label>
-                  <Textarea
-                    rows={6}
-                    placeholder="Detailed radiological findings..."
-                    {...resultsForm.register("findings")}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Impression/Diagnosis
-                  </label>
-                  <Textarea
-                    rows={3}
-                    placeholder="Radiological impression and diagnosis..."
-                    {...resultsForm.register("impression")}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Recommendations
-                  </label>
-                  <Textarea
-                    rows={2}
-                    placeholder="Follow-up recommendations..."
-                    {...resultsForm.register("recommendations")}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Report Date
-                  </label>
-                  <Input 
-                    type="date" 
-                    {...resultsForm.register("reportDate")}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Radiologist/Reporter
-                  </label>
-                  <Input 
-                    placeholder="Name of reporting physician"
-                    {...resultsForm.register("radiologist")}
-                  />
-                </div>
-                
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    type="submit" 
-                    disabled={updateXrayExamMutation.isPending}
-                    className="bg-health-green hover:bg-green-700"
-                  >
-                    <Check className="w-4 h-4 mr-2" />
-                    {updateXrayExamMutation.isPending ? "Saving..." : "Save Report"}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={printXrayReport}>
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print Report
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Report
+                </Button>
+                <Button variant="outline" onClick={() => setShowXrayReport(false)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
