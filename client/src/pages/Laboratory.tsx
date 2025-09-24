@@ -646,7 +646,12 @@ export default function Laboratory() {
                     ) : filteredTests.map((test) => {
                       const tests = JSON.parse(test.tests || "[]");
                       return (
-                        <tr key={test.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <tr 
+                          key={test.id} 
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer" 
+                          onClick={() => handleLabTestSelect(test)}
+                          title="Click to open test details and enter results"
+                        >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {test.testId}
