@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save, FileText, Printer, Filter, Calendar } from "lucide-react";
+import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
-import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment } from "@shared/schema";
+import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment, type Encounter, type OrderLine, type Service } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
@@ -21,6 +22,8 @@ export default function Treatment() {
   const [showPrescription, setShowPrescription] = useState(false);
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
   const [filterToday, setFilterToday] = useState(false);
+  const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
+  const [showVisitCart, setShowVisitCart] = useState(false);
   
   // Patient search state for PatientSearch component
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,6 +64,103 @@ export default function Treatment() {
       treatmentPlan: "",
       followUpDate: "",
       followUpType: "",
+    },
+  });
+
+  // Get services for billing
+  const { data: services = [] } = useQuery({
+    queryKey: ["/api/services"],
+  });
+
+  // Get today's encounter for selected patient
+  const { data: todayEncounter } = useQuery({
+    queryKey: ["/api/encounters", { patientId: selectedPatient?.patientId, date: new Date().toISOString().split('T')[0] }],
+    queryFn: async () => {
+      if (!selectedPatient) return null;
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/encounters?date=${today}`);
+      if (!response.ok) return null;
+      const encounters = await response.json();
+      return encounters.find((e: Encounter) => e.patientId === selectedPatient.patientId) || null;
+    },
+    enabled: !!selectedPatient,
+  });
+
+  // Get order lines for current encounter
+  const { data: orderLines = [] } = useQuery({
+    queryKey: ["/api/encounters", currentEncounter?.encounterId, "order-lines"],
+    queryFn: async () => {
+      if (!currentEncounter) return [];
+      const response = await fetch(`/api/encounters/${currentEncounter.encounterId}/order-lines`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!currentEncounter,
+  });
+
+  // Update current encounter when patient changes
+  useEffect(() => {
+    if (todayEncounter) {
+      setCurrentEncounter(todayEncounter);
+    } else if (selectedPatient) {
+      // Create new encounter if none exists for today
+      createEncounterMutation.mutate({
+        patientId: selectedPatient.patientId,
+        visitDate: new Date().toISOString().split('T')[0],
+        attendingClinician: "Dr. System", // In real app, get from auth
+      });
+    }
+  }, [todayEncounter, selectedPatient]);
+
+  // Create encounter mutation
+  const createEncounterMutation = useMutation({
+    mutationFn: async (data: { patientId: string; visitDate: string; attendingClinician: string }) => {
+      const response = await fetch("/api/encounters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to create encounter");
+      return response.json();
+    },
+    onSuccess: (encounter) => {
+      setCurrentEncounter(encounter);
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+    },
+  });
+
+  // Auto-add consultation fee
+  const addConsultationMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentEncounter) throw new Error("No encounter found");
+      
+      const consultationService = services.find(s => s.category === "consultation" && s.name.includes("General"));
+      if (!consultationService) throw new Error("Consultation service not found");
+
+      const response = await fetch("/api/order-lines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          encounterId: currentEncounter.encounterId,
+          serviceId: consultationService.id,
+          relatedType: "consultation",
+          description: consultationService.name,
+          quantity: 1,
+          unitPriceSnapshot: consultationService.price,
+          totalPrice: consultationService.price,
+          department: "consultation",
+          orderedBy: "Dr. System",
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to add consultation fee");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+      toast({
+        title: "Consultation Added",
+        description: "Consultation fee has been added to the patient's visit.",
+      });
     },
   });
 
