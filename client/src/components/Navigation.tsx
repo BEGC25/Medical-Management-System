@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   MonitorSpeaker,
   FileSearch,
-  DollarSign,
   Pill
 } from "lucide-react";
 
@@ -20,7 +19,6 @@ const navItems = [
   { path: "/ultrasound", label: "Ultrasound", icon: MonitorSpeaker, category: "Diagnostics" },
   { path: "/treatment", label: "Treatment", icon: Stethoscope, category: "Clinical" },
   { path: "/pharmacy", label: "Pharmacy", icon: Pill, category: "Clinical" },
-  { path: "/payment", label: "Payment", icon: DollarSign, category: "Administration" },
   { path: "/all-results", label: "All Results", icon: FileSearch, category: "Reports" },
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },
 ];
