@@ -21,7 +21,7 @@ export default function Billing() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [statusFilter, setStatusFilter] = useState<string>("open");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedEncounter, setSelectedEncounter] = useState<EncounterWithPatient | null>(null);
   const [showNewEncounterDialog, setShowNewEncounterDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -31,7 +31,7 @@ export default function Billing() {
     queryKey: ["/api/encounters", { status: statusFilter, date: selectedDate }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
+      if (statusFilter && statusFilter !== "all") params.append('status', statusFilter);
       if (selectedDate) params.append('date', selectedDate);
       
       const response = await fetch(`/api/encounters?${params}`);
@@ -225,7 +225,7 @@ export default function Billing() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="open">Open</SelectItem>
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
