@@ -9,7 +9,9 @@ import {
   MonitorSpeaker,
   FileSearch,
   DollarSign,
-  Pill
+  Pill,
+  Settings,
+  Receipt
 } from "lucide-react";
 
 const navItems = [
@@ -21,6 +23,8 @@ const navItems = [
   { path: "/treatment", label: "Treatment", icon: Stethoscope, category: "Clinical" },
   { path: "/pharmacy", label: "Pharmacy", icon: Pill, category: "Clinical" },
   { path: "/payment", label: "Payment", icon: DollarSign, category: "Administration" },
+  { path: "/billing", label: "Billing", icon: Receipt, category: "Administration" },
+  { path: "/billing-settings", label: "Billing Settings", icon: Settings, category: "Administration" },
   { path: "/all-results", label: "All Results", icon: FileSearch, category: "Reports" },
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },
 ];

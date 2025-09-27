@@ -1,7 +1,7 @@
 import express from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema, insertUltrasoundExamSchema, insertPharmacyOrderSchema } from "@shared/schema";
+import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema, insertUltrasoundExamSchema, insertPharmacyOrderSchema, insertBillingSettingsSchema, insertEncounterSchema, insertOrderLineSchema, insertInvoiceSchema } from "@shared/schema";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -569,6 +569,245 @@ router.patch("/api/pharmacy-orders/:orderId/dispense", async (req, res) => {
   } catch (error) {
     console.error('Error dispensing pharmacy order:', error);
     res.status(500).json({ error: "Failed to dispense pharmacy order" });
+  }
+});
+
+// ========================================
+// BILLING SYSTEM ROUTES
+// ========================================
+
+// Billing Settings
+router.get("/api/billing/settings", async (req, res) => {
+  try {
+    const settings = await storage.getBillingSettings();
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching billing settings:', error);
+    res.status(500).json({ error: "Failed to fetch billing settings" });
+  }
+});
+
+router.put("/api/billing/settings", async (req, res) => {
+  try {
+    const result = insertBillingSettingsSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: "Invalid billing settings data", details: result.error.errors });
+    }
+    
+    const settings = await storage.updateBillingSettings(result.data);
+    res.json(settings);
+  } catch (error) {
+    console.error('Error updating billing settings:', error);
+    res.status(500).json({ error: "Failed to update billing settings" });
+  }
+});
+
+// Encounters
+router.get("/api/encounters", async (req, res) => {
+  try {
+    const status = req.query.status as string;
+    const date = req.query.date as string;
+    
+    const encounters = await storage.getEncounters(status, date);
+    res.json(encounters);
+  } catch (error) {
+    console.error('Error fetching encounters:', error);
+    res.status(500).json({ error: "Failed to fetch encounters" });
+  }
+});
+
+router.get("/api/encounters/:encounterId", async (req, res) => {
+  try {
+    const { encounterId } = req.params;
+    const encounter = await storage.getEncounterById(encounterId);
+    
+    if (!encounter) {
+      return res.status(404).json({ error: "Encounter not found" });
+    }
+    
+    // Get order lines for this encounter
+    const orderLines = await storage.getOrderLinesByEncounter(encounterId);
+    
+    res.json({ encounter, orderLines });
+  } catch (error) {
+    console.error('Error fetching encounter:', error);
+    res.status(500).json({ error: "Failed to fetch encounter" });
+  }
+});
+
+router.post("/api/encounters", async (req, res) => {
+  try {
+    const result = insertEncounterSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: "Invalid encounter data", details: result.error.errors });
+    }
+    
+    const encounter = await storage.createEncounter(result.data);
+    res.status(201).json(encounter);
+  } catch (error) {
+    console.error('Error creating encounter:', error);
+    res.status(500).json({ error: "Failed to create encounter" });
+  }
+});
+
+router.put("/api/encounters/:encounterId", async (req, res) => {
+  try {
+    const { encounterId } = req.params;
+    const encounter = await storage.updateEncounter(encounterId, req.body);
+    res.json(encounter);
+  } catch (error) {
+    console.error('Error updating encounter:', error);
+    res.status(500).json({ error: "Failed to update encounter" });
+  }
+});
+
+router.post("/api/encounters/:encounterId/close", async (req, res) => {
+  try {
+    const { encounterId } = req.params;
+    const encounter = await storage.closeEncounter(encounterId);
+    res.json(encounter);
+  } catch (error) {
+    console.error('Error closing encounter:', error);
+    res.status(500).json({ error: "Failed to close encounter" });
+  }
+});
+
+// Order Lines
+router.post("/api/order-lines", async (req, res) => {
+  try {
+    const result = insertOrderLineSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: "Invalid order line data", details: result.error.errors });
+    }
+    
+    const orderLine = await storage.createOrderLine(result.data);
+    res.status(201).json(orderLine);
+  } catch (error) {
+    console.error('Error creating order line:', error);
+    res.status(500).json({ error: "Failed to create order line" });
+  }
+});
+
+router.get("/api/encounters/:encounterId/order-lines", async (req, res) => {
+  try {
+    const { encounterId } = req.params;
+    const orderLines = await storage.getOrderLinesByEncounter(encounterId);
+    res.json(orderLines);
+  } catch (error) {
+    console.error('Error fetching order lines:', error);
+    res.status(500).json({ error: "Failed to fetch order lines" });
+  }
+});
+
+router.put("/api/order-lines/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const orderLine = await storage.updateOrderLine(id, req.body);
+    res.json(orderLine);
+  } catch (error) {
+    console.error('Error updating order line:', error);
+    res.status(500).json({ error: "Failed to update order line" });
+  }
+});
+
+// Invoices
+router.get("/api/invoices", async (req, res) => {
+  try {
+    const status = req.query.status as string;
+    const invoices = await storage.getInvoices(status);
+    res.json(invoices);
+  } catch (error) {
+    console.error('Error fetching invoices:', error);
+    res.status(500).json({ error: "Failed to fetch invoices" });
+  }
+});
+
+router.get("/api/invoices/:invoiceId", async (req, res) => {
+  try {
+    const { invoiceId } = req.params;
+    const invoice = await storage.getInvoiceById(invoiceId);
+    
+    if (!invoice) {
+      return res.status(404).json({ error: "Invoice not found" });
+    }
+    
+    // Get invoice lines
+    const invoiceLines = await storage.getInvoiceLines(invoiceId);
+    
+    res.json({ invoice, invoiceLines });
+  } catch (error) {
+    console.error('Error fetching invoice:', error);
+    res.status(500).json({ error: "Failed to fetch invoice" });
+  }
+});
+
+router.post("/api/encounters/:encounterId/generate-invoice", async (req, res) => {
+  try {
+    const { encounterId } = req.params;
+    const { generatedBy } = req.body;
+    
+    if (!generatedBy) {
+      return res.status(400).json({ error: "generatedBy is required" });
+    }
+    
+    const invoice = await storage.generateInvoiceFromEncounter(encounterId, generatedBy);
+    res.status(201).json(invoice);
+  } catch (error) {
+    console.error('Error generating invoice:', error);
+    res.status(500).json({ error: "Failed to generate invoice" });
+  }
+});
+
+// Enhanced service creation endpoint for automatic encounter/order line creation
+router.post("/api/services/:serviceType/auto-order", async (req, res) => {
+  try {
+    const { serviceType } = req.params;
+    const { patientId, encounterId, serviceId, relatedId, attendingClinician } = req.body;
+    
+    // Create or get today's encounter for this patient
+    let encounter;
+    if (encounterId) {
+      encounter = await storage.getEncounterById(encounterId);
+    } else {
+      // Create new encounter for today
+      const today = new Date().toISOString().split('T')[0];
+      encounter = await storage.createEncounter({
+        patientId,
+        visitDate: today,
+        attendingClinician: attendingClinician || 'System',
+      });
+    }
+    
+    if (!encounter) {
+      return res.status(404).json({ error: "Encounter not found or could not be created" });
+    }
+    
+    // Get service details for price snapshot
+    const services = await storage.getServices();
+    const service = services.find(s => s.id === serviceId);
+    
+    if (!service) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+    
+    // Create order line
+    const orderLine = await storage.createOrderLine({
+      encounterId: encounter.encounterId,
+      serviceId,
+      relatedId,
+      relatedType: serviceType as any,
+      description: service.name,
+      quantity: 1,
+      unitPriceSnapshot: service.price,
+      totalPrice: service.price,
+      department: service.category as any,
+      orderedBy: attendingClinician || 'System',
+    });
+    
+    res.status(201).json({ encounter, orderLine });
+  } catch (error) {
+    console.error('Error creating auto order:', error);
+    res.status(500).json({ error: "Failed to create auto order" });
   }
 });
 

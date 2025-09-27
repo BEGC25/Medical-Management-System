@@ -96,14 +96,87 @@ export const ultrasoundExams = pgTable("ultrasound_exams", {
   createdAt: text("created_at").notNull(),
 });
 
+// Billing Settings Table
+export const billingSettings = pgTable("billing_settings", {
+  id: serial("id").primaryKey(),
+  consultationFee: real("consultation_fee").notNull().default(2000.00),
+  requirePrepayment: boolean("require_prepayment").notNull().default(false),
+  allowEmergencyGrace: boolean("allow_emergency_grace").notNull().default(true),
+  currency: text("currency").notNull().default("SSP"),
+  updatedBy: text("updated_by").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 // Payment System Tables
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
+  code: text("code").unique(), // Service code for easy reference
   name: text("name").notNull(),
-  category: text("category").$type<"consultation" | "laboratory" | "radiology" | "ultrasound">().notNull(),
+  category: text("category").$type<"consultation" | "laboratory" | "radiology" | "ultrasound" | "pharmacy" | "procedure">().notNull(),
   description: text("description"),
   price: real("price").notNull(),
   isActive: boolean("is_active").notNull().default(true),
+  createdAt: text("created_at").notNull(),
+});
+
+// Encounters - Patient's "cart" for this visit
+export const encounters = pgTable("encounters", {
+  id: serial("id").primaryKey(),
+  encounterId: text("encounter_id").unique().notNull(),
+  patientId: text("patient_id").notNull(),  
+  visitDate: text("visit_date").notNull(),
+  status: text("status").$type<"open" | "closed">().notNull().default("open"),
+  policy: text("policy").$type<"cash" | "insurance">().notNull().default("cash"),
+  attendingClinician: text("attending_clinician"),
+  notes: text("notes"),
+  createdAt: text("created_at").notNull(),
+  closedAt: text("closed_at"),
+});
+
+// Order Lines - What was ordered in this encounter
+export const orderLines = pgTable("order_lines", {
+  id: serial("id").primaryKey(),
+  encounterId: text("encounter_id").notNull(),
+  serviceId: integer("service_id").notNull(),
+  relatedId: text("related_id"), // ID of lab test, x-ray, ultrasound, etc.
+  relatedType: text("related_type").$type<"consultation" | "lab_test" | "xray_exam" | "ultrasound_exam" | "pharmacy_order" | "procedure">(),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitPriceSnapshot: real("unit_price_snapshot").notNull(), // Price at time of order
+  totalPrice: real("total_price").notNull(),
+  department: text("department").$type<"consultation" | "laboratory" | "radiology" | "ultrasound" | "pharmacy">(),
+  status: text("status").$type<"requested" | "authorized" | "performed" | "canceled">().notNull().default("requested"),
+  orderedBy: text("ordered_by"), // Who ordered this service
+  createdAt: text("created_at").notNull(),
+});
+
+// Invoices - Billing documents generated from encounters
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  invoiceId: text("invoice_id").unique().notNull(),
+  encounterId: text("encounter_id").notNull(),
+  patientId: text("patient_id").notNull(),
+  subtotal: real("subtotal").notNull(),
+  discount: real("discount").notNull().default(0),
+  tax: real("tax").notNull().default(0),
+  grandTotal: real("grand_total").notNull(),
+  status: text("status").$type<"draft" | "posted" | "void">().notNull().default("draft"),
+  generatedBy: text("generated_by").notNull(),
+  createdAt: text("created_at").notNull(),
+  postedAt: text("posted_at"),
+  voidedAt: text("voided_at"),
+});
+
+// Invoice Lines - Mirror of order lines for billing
+export const invoiceLines = pgTable("invoice_lines", {
+  id: serial("id").primaryKey(),
+  invoiceId: text("invoice_id").notNull(),
+  orderLineId: integer("order_line_id").notNull(),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: real("unit_price").notNull(),
+  totalPrice: real("total_price").notNull(),
   createdAt: text("created_at").notNull(),
 });
 
@@ -181,7 +254,41 @@ export const insertUltrasoundExamSchema = createInsertSchema(ultrasoundExams).om
   createdAt: true,
 });
 
+export const insertBillingSettingsSchema = createInsertSchema(billingSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertServiceSchema = createInsertSchema(services).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEncounterSchema = createInsertSchema(encounters).omit({
+  id: true,
+  encounterId: true,
+  status: true,
+  createdAt: true,
+  closedAt: true,
+});
+
+export const insertOrderLineSchema = createInsertSchema(orderLines).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+});
+
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  invoiceId: true,
+  status: true,
+  createdAt: true,
+  postedAt: true,
+  voidedAt: true,
+});
+
+export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).omit({
   id: true,
   createdAt: true,
 });
@@ -211,7 +318,12 @@ export type Treatment = typeof treatments.$inferSelect;
 export type LabTest = typeof labTests.$inferSelect;
 export type XrayExam = typeof xrayExams.$inferSelect;
 export type UltrasoundExam = typeof ultrasoundExams.$inferSelect;
+export type BillingSettings = typeof billingSettings.$inferSelect;
 export type Service = typeof services.$inferSelect;
+export type Encounter = typeof encounters.$inferSelect;
+export type OrderLine = typeof orderLines.$inferSelect;
+export type Invoice = typeof invoices.$inferSelect;
+export type InvoiceLine = typeof invoiceLines.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type PaymentItem = typeof paymentItems.$inferSelect;
 export type PharmacyOrder = typeof pharmacyOrders.$inferSelect;
@@ -221,7 +333,12 @@ export type InsertTreatment = z.infer<typeof insertTreatmentSchema>;
 export type InsertLabTest = z.infer<typeof insertLabTestSchema>;
 export type InsertXrayExam = z.infer<typeof insertXrayExamSchema>;
 export type InsertUltrasoundExam = z.infer<typeof insertUltrasoundExamSchema>;
+export type InsertBillingSettings = z.infer<typeof insertBillingSettingsSchema>;
 export type InsertService = z.infer<typeof insertServiceSchema>;
+export type InsertEncounter = z.infer<typeof insertEncounterSchema>;
+export type InsertOrderLine = z.infer<typeof insertOrderLineSchema>;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type InsertPaymentItem = z.infer<typeof insertPaymentItemSchema>;
 export type InsertPharmacyOrder = z.infer<typeof insertPharmacyOrderSchema>;
