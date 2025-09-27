@@ -8,13 +8,56 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import PatientSearch from "@/components/PatientSearch";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
 
 interface EncounterWithPatient extends Encounter {
   patient?: Patient;
   orderLines?: OrderLine[];
   totalAmount?: number;
+}
+
+// Simple patient search component for billing
+function BillingPatientSearch({ onPatientSelect }: { onPatientSelect: (patient: Patient) => void }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  const { data: patients = [], isLoading } = useQuery({
+    queryKey: ["/api/patients", searchTerm],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      
+      const response = await fetch(`/api/patients?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch patients');
+      return response.json();
+    },
+    enabled: searchTerm.length > 2 || searchTerm === "",
+  });
+
+  return (
+    <div className="space-y-2">
+      <Input
+        type="text"
+        placeholder="Search patient by name or ID..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      {isLoading && <div className="text-sm text-gray-500">Searching...</div>}
+      {patients.length > 0 && (
+        <div className="max-h-40 overflow-y-auto border rounded">
+          {patients.map((patient: Patient) => (
+            <button
+              key={patient.id}
+              className="w-full text-left p-2 hover:bg-gray-100 border-b last:border-b-0"
+              onClick={() => onPatientSelect(patient)}
+            >
+              <div className="font-medium">{patient.firstName} {patient.lastName}</div>
+              <div className="text-sm text-gray-600">ID: {patient.patientId}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Billing() {
@@ -27,7 +70,7 @@ export default function Billing() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
   // Get encounters
-  const { data: encounters = [], isLoading } = useQuery({
+  const { data: encounters = [], isLoading } = useQuery<Encounter[]>({
     queryKey: ["/api/encounters", { status: statusFilter, date: selectedDate }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -41,8 +84,13 @@ export default function Billing() {
   });
 
   // Get patients for encounter lookup
-  const { data: patients = [] } = useQuery({
+  const { data: patients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
+    queryFn: async () => {
+      const response = await fetch('/api/patients');
+      if (!response.ok) throw new Error('Failed to fetch patients');
+      return response.json();
+    }
   });
 
   // Create encounter mutation
@@ -117,7 +165,7 @@ export default function Billing() {
   });
 
   // Enhanced encounters with patient data and totals
-  const enhancedEncounters: EncounterWithPatient[] = encounters.map((encounter: Encounter) => {
+  const enhancedEncounters: EncounterWithPatient[] = (encounters as Encounter[]).map((encounter: Encounter) => {
     const patient = patients.find((p: Patient) => p.patientId === encounter.patientId);
     return {
       ...encounter,
@@ -183,7 +231,7 @@ export default function Billing() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Select Patient</label>
-                <PatientSearch onPatientSelect={setSelectedPatient} />
+                <BillingPatientSearch onPatientSelect={setSelectedPatient} />
                 {selectedPatient && (
                   <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                     <p className="font-medium">{selectedPatient.firstName} {selectedPatient.lastName}</p>

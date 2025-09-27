@@ -1,20 +1,10 @@
 import { eq, like, ilike, desc, and, count, or, sql } from "drizzle-orm";
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { db } from './db';
 import * as schema from "@shared/schema";
-
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
-
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
 
 const { patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines } = schema;
 
-// Tables are automatically created by Drizzle with PostgreSQL
+// Tables are automatically created by Drizzle
 console.log("✓ Database connection established");
 
 // Counters for sequential IDs
