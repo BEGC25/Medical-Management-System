@@ -110,7 +110,7 @@ export interface IStorage {
 
   // X-Ray Exams
   createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam>;
-  getXrayExams(status?: string): Promise<schema.XrayExam[]>;
+  getXrayExams(status?: string, date?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
   getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]>;
   updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam>;
 
@@ -325,14 +325,35 @@ export class MemStorage implements IStorage {
     return xrayExam;
   }
 
-  async getXrayExams(status?: string): Promise<schema.XrayExam[]> {
-    const query = db.select().from(xrayExams);
+  async getXrayExams(status?: string, date?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]> {
+    const baseQuery = db.select({
+      xrayExam: xrayExams,
+      patient: patients
+    })
+    .from(xrayExams)
+    .leftJoin(patients, eq(xrayExams.patientId, patients.patientId));
     
+    // Apply filters
+    const conditions = [];
     if (status) {
-      return await query.where(eq(xrayExams.status, status as any)).orderBy(desc(xrayExams.requestedDate));
+      conditions.push(eq(xrayExams.status, status as any));
+    }
+    if (date) {
+      conditions.push(eq(xrayExams.requestedDate, date));
     }
     
-    return await query.orderBy(desc(xrayExams.requestedDate));
+    let query = baseQuery;
+    if (conditions.length > 0) {
+      query = baseQuery.where(and(...conditions));
+    }
+    
+    const results = await query.orderBy(desc(xrayExams.requestedDate));
+    
+    // Transform the results to match the expected format
+    return results.map(result => ({
+      ...result.xrayExam,
+      patient: result.patient || undefined
+    }));
   }
 
   async getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]> {

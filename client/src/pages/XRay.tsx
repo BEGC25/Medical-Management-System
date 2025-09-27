@@ -46,6 +46,10 @@ const xrayExamSchema = createInsertSchema(xrayExams).omit({
   impression: true,
   recommendations: true,
   radiologist: true
+}).extend({
+  bodyPart: z.string().nullable().optional(),
+  clinicalIndication: z.string().nullable().optional(),
+  specialInstructions: z.string().nullable().optional(),
 });
 
 type XrayExamFormData = z.infer<typeof xrayExamSchema>;
@@ -119,12 +123,29 @@ export default function XRay() {
     },
   });
 
-  // Query for X-ray exams
+  // Query for X-ray exams with optional date filtering
   const { data: xrayExamsData, isLoading } = useQuery({
     queryKey: ['/api/xray-exams'],
+    queryFn: async () => {
+      const response = await fetch('/api/xray-exams');
+      if (!response.ok) throw new Error('Failed to fetch X-ray exams');
+      return response.json();
+    },
   });
 
-  const xrayExamsList = xrayExamsData as XrayExam[] || [];
+  // Query for today's X-ray exams
+  const { data: todayXrayExamsData } = useQuery({
+    queryKey: ['/api/xray-exams', 'today'],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/xray-exams?date=${today}`);
+      if (!response.ok) throw new Error('Failed to fetch today\'s X-ray exams');
+      return response.json();
+    },
+  });
+
+  const xrayExamsList = xrayExamsData as (XrayExam & { patient?: Patient })[] || [];
+  const todayXrayExamsList = todayXrayExamsData as (XrayExam & { patient?: Patient })[] || [];
 
   // Apply filtering based on active metric filter
   const filteredExams = useMemo(() => {
@@ -144,12 +165,11 @@ export default function XRay() {
           exam.specialInstructions?.toLowerCase().includes('stat')
         );
       case 'today':
-        const today = new Date().toISOString().split('T')[0];
-        return xrayExamsList.filter(exam => exam.requestedDate === today);
+        return todayXrayExamsList; // Use the dedicated today's exams query
       default:
         return xrayExamsList;
     }
-  }, [xrayExamsList, activeMetricFilter]);
+  }, [xrayExamsList, todayXrayExamsList, activeMetricFilter]);
 
   // Statistics
   const totalExams = xrayExamsList.length;
@@ -160,9 +180,7 @@ export default function XRay() {
     exam.clinicalIndication?.toLowerCase().includes('emergency') ||
     exam.specialInstructions?.toLowerCase().includes('stat')
   );
-  const todayExams = xrayExamsList.filter(exam => 
-    exam.requestedDate === new Date().toISOString().split('T')[0]
-  );
+  const todayExams = todayXrayExamsList; // Use the dedicated today's exams query
 
   // Mutations for creating X-ray exams
   const createXrayExamMutation = useMutation({
@@ -519,14 +537,23 @@ export default function XRay() {
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
                               <AvatarFallback className="bg-medical-blue/10 text-medical-blue text-sm font-medium">
-                                {exam.patientId?.substring(0, 2).toUpperCase() || 'UN'}
+                                {exam.patient 
+                                  ? `${exam.patient.firstName.charAt(0)}${exam.patient.lastName.charAt(0)}`
+                                  : exam.patientId?.substring(0, 2).toUpperCase() || 'UN'
+                                }
                               </AvatarFallback>
                             </Avatar>
                             <div>
                               <p className="font-medium text-gray-900 dark:text-white">
-                                Patient {exam.patientId || 'Unknown'}
+                                {exam.patient 
+                                  ? `${exam.patient.firstName} ${exam.patient.lastName}`
+                                  : `Patient ${exam.patientId || 'Unknown'}`
+                                }
                               </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">{exam.patientId}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {exam.patientId}
+                                {exam.patient && ` • Age: ${exam.patient.age} • ${exam.patient.gender}`}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -696,37 +723,194 @@ export default function XRay() {
               <CardTitle className="text-2xl text-medical-blue dark:text-blue-400">New X-Ray Examination Request</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <p className="text-blue-800 dark:text-blue-200 font-medium">
-                    📷 New X-Ray Request Form
-                  </p>
-                  <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">
-                    Please select a patient and specify the required X-ray examinations
-                  </p>
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    X-Ray examination request form will be fully implemented here
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                    Including patient selection, examination type, and clinical indications
-                  </p>
-                </div>
-              </div>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6">
+                  <div className="space-y-6">
+                    {/* Patient Selection */}
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Patient Selection</h3>
+                      {!selectedPatient ? (
+                        <PatientSearch
+                          onSelectPatient={setSelectedPatient}
+                          showActions={false}
+                          viewMode="search"
+                          selectedDate=""
+                          searchTerm=""
+                          onSearchTermChange={() => {}}
+                          shouldSearch={false}
+                          onShouldSearchChange={() => {}}
+                        />
+                      ) : (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-green-800 dark:text-green-200">
+                                {selectedPatient.firstName} {selectedPatient.lastName}
+                              </p>
+                              <p className="text-sm text-green-700 dark:text-green-300">
+                                ID: {selectedPatient.patientId} | Age: {selectedPatient.age} | Gender: {selectedPatient.gender}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedPatient(null)}
+                            >
+                              Change Patient
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* X-Ray Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="examType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Exam Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select exam type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="chest">Chest X-Ray</SelectItem>
+                                <SelectItem value="abdomen">Abdomen X-Ray</SelectItem>
+                                <SelectItem value="spine">Spine X-Ray</SelectItem>
+                                <SelectItem value="extremities">Extremities X-Ray</SelectItem>
+                                <SelectItem value="pelvis">Pelvis X-Ray</SelectItem>
+                                <SelectItem value="skull">Skull X-Ray</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="bodyPart"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Body Part (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Left knee, Right shoulder" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="clinicalIndication"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Clinical Indication</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Describe the clinical reason for this X-ray examination..."
+                              {...field}
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="specialInstructions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Special Instructions (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Any special instructions for the technician..."
+                              {...field}
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Safety Checklist */}
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Safety Checklist</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="notPregnant"
+                            checked={safetyChecklist.notPregnant}
+                            onCheckedChange={(checked) =>
+                              setSafetyChecklist(prev => ({ ...prev, notPregnant: !!checked }))
+                            }
+                          />
+                          <label htmlFor="notPregnant" className="text-sm font-medium">
+                            Patient is not pregnant (or pregnancy status confirmed)
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="metalRemoved"
+                            checked={safetyChecklist.metalRemoved}
+                            onCheckedChange={(checked) =>
+                              setSafetyChecklist(prev => ({ ...prev, metalRemoved: !!checked }))
+                            }
+                          />
+                          <label htmlFor="metalRemoved" className="text-sm font-medium">
+                            Metal objects and jewelry removed from examination area
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="canCooperate"
+                            checked={safetyChecklist.canCooperate}
+                            onCheckedChange={(checked) =>
+                              setSafetyChecklist(prev => ({ ...prev, canCooperate: !!checked }))
+                            }
+                          />
+                          <label htmlFor="canCooperate" className="text-sm font-medium">
+                            Patient can cooperate and follow positioning instructions
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-4 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowNewRequestModal(false);
+                        setSelectedPatient(null);
+                        form.reset();
+                        setSafetyChecklist({ notPregnant: false, metalRemoved: false, canCooperate: false });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-medical-blue hover:bg-blue-700"
+                      disabled={!selectedPatient || createXrayExamMutation.isPending}
+                    >
+                      {createXrayExamMutation.isPending ? 'Submitting...' : 'Submit X-Ray Request'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </CardContent>
-            <div className="flex justify-end gap-2 p-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setShowNewRequestModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button className="bg-medical-blue hover:bg-blue-700">
-                Submit X-Ray Request
-              </Button>
-            </div>
           </Card>
         </div>
       )}

@@ -208,7 +208,8 @@ router.put("/api/lab-tests/:testId", async (req, res) => {
 router.get("/api/xray-exams", async (req, res) => {
   try {
     const status = req.query.status as string;
-    const xrayExams = await storage.getXrayExams(status);
+    const date = req.query.date as string;
+    const xrayExams = await storage.getXrayExams(status, date);
     res.json(xrayExams);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch X-ray exams" });
