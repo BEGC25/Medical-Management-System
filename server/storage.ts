@@ -1,20 +1,10 @@
 import { eq, like, ilike, desc, and, count, or, sql } from "drizzle-orm";
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { db } from './db';
 import * as schema from "@shared/schema";
-
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
-
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
 
 const { patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines } = schema;
 
-// Tables are automatically created by Drizzle with PostgreSQL
+// Tables are automatically created by Drizzle
 console.log("✓ Database connection established");
 
 // Counters for sequential IDs
@@ -863,23 +853,41 @@ export class MemStorage implements IStorage {
       const now = new Date().toISOString();
       const defaultSettings = {
         consultationFee: 2000.00,
-        requirePrepayment: false,
-        allowEmergencyGrace: true,
+        requirePrepayment: 0, // SQLite needs integers for booleans
+        allowEmergencyGrace: 1, // SQLite needs integers for booleans
         currency: "SSP",
         updatedBy: "system",
         createdAt: now,
         updatedAt: now,
       };
       const [newSettings] = await db.insert(billingSettings).values(defaultSettings).returning();
-      return newSettings;
+      
+      // Convert integers back to booleans for the response
+      return {
+        ...newSettings,
+        requirePrepayment: !!newSettings.requirePrepayment,
+        allowEmergencyGrace: !!newSettings.allowEmergencyGrace,
+      };
     }
-    return settings[0];
+    
+    // Convert integers back to booleans for the response
+    return {
+      ...settings[0],
+      requirePrepayment: !!settings[0].requirePrepayment,
+      allowEmergencyGrace: !!settings[0].allowEmergencyGrace,
+    };
   }
 
   async updateBillingSettings(data: schema.InsertBillingSettings): Promise<schema.BillingSettings> {
     const now = new Date().toISOString();
+    
+    // Convert boolean values to integers for SQLite compatibility
     const updateData = {
-      ...data,
+      consultationFee: data.consultationFee,
+      requirePrepayment: data.requirePrepayment ? 1 : 0,
+      allowEmergencyGrace: data.allowEmergencyGrace ? 1 : 0,
+      currency: data.currency,
+      updatedBy: data.updatedBy,
       updatedAt: now,
     };
     
@@ -889,13 +897,25 @@ export class MemStorage implements IStorage {
         ...updateData,
         createdAt: now,
       }).returning();
-      return newSettings;
+      
+      // Convert integers back to booleans for the response
+      return {
+        ...newSettings,
+        requirePrepayment: !!newSettings.requirePrepayment,
+        allowEmergencyGrace: !!newSettings.allowEmergencyGrace,
+      };
     } else {
       const [updatedSettings] = await db.update(billingSettings)
         .set(updateData)
         .where(eq(billingSettings.id, existingSettings[0].id))
         .returning();
-      return updatedSettings;
+      
+      // Convert integers back to booleans for the response  
+      return {
+        ...updatedSettings,
+        requirePrepayment: !!updatedSettings.requirePrepayment,
+        allowEmergencyGrace: !!updatedSettings.allowEmergencyGrace,
+      };
     }
   }
 
