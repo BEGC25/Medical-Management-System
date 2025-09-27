@@ -1,10 +1,10 @@
-import { serial, text, pgTable, real, boolean, integer } from "drizzle-orm/pg-core";
+import { integer, text, sqliteTable, real, blob } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 
-export const patients = pgTable("patients", {
-  id: serial("id").primaryKey(),
+export const patients = sqliteTable("patients", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   patientId: text("patient_id").unique().notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -15,11 +15,11 @@ export const patients = pgTable("patients", {
   emergencyContact: text("emergency_contact"),
   allergies: text("allergies"),
   medicalHistory: text("medical_history"),
-  createdAt: text("created_at").notNull().default(sql`now()`),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
-export const treatments = pgTable("treatments", {
-  id: serial("id").primaryKey(),
+export const treatments = sqliteTable("treatments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   treatmentId: text("treatment_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   visitDate: text("visit_date").notNull(),
@@ -38,8 +38,8 @@ export const treatments = pgTable("treatments", {
   createdAt: text("created_at").notNull(),
 });
 
-export const labTests = pgTable("lab_tests", {
-  id: serial("id").primaryKey(),
+export const labTests = sqliteTable("lab_tests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   testId: text("test_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   category: text("category").$type<"blood" | "urine" | "stool" | "microbiology" | "chemistry" | "hormonal" | "other">().notNull(),
@@ -58,8 +58,8 @@ export const labTests = pgTable("lab_tests", {
   createdAt: text("created_at").notNull(),
 });
 
-export const xrayExams = pgTable("xray_exams", {
-  id: serial("id").primaryKey(),
+export const xrayExams = sqliteTable("xray_exams", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   examId: text("exam_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   examType: text("exam_type").$type<"chest" | "abdomen" | "spine" | "extremities" | "pelvis" | "skull">().notNull(),
@@ -77,8 +77,8 @@ export const xrayExams = pgTable("xray_exams", {
   createdAt: text("created_at").notNull(),
 });
 
-export const ultrasoundExams = pgTable("ultrasound_exams", {
-  id: serial("id").primaryKey(),
+export const ultrasoundExams = sqliteTable("ultrasound_exams", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   examId: text("exam_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   examType: text("exam_type").$type<"abdominal" | "pelvic" | "obstetric" | "cardiac" | "vascular" | "thyroid" | "renal" | "hepatobiliary" | "gynecological" | "urological" | "pediatric" | "musculoskeletal" | "breast" | "scrotal" | "carotid" | "other">().notNull(),
@@ -97,11 +97,11 @@ export const ultrasoundExams = pgTable("ultrasound_exams", {
 });
 
 // Billing Settings Table
-export const billingSettings = pgTable("billing_settings", {
-  id: serial("id").primaryKey(),
+export const billingSettings = sqliteTable("billing_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   consultationFee: real("consultation_fee").notNull().default(2000.00),
-  requirePrepayment: boolean("require_prepayment").notNull().default(false),
-  allowEmergencyGrace: boolean("allow_emergency_grace").notNull().default(true),
+  requirePrepayment: integer("require_prepayment").notNull().default(false),
+  allowEmergencyGrace: integer("allow_emergency_grace").notNull().default(true),
   currency: text("currency").notNull().default("SSP"),
   updatedBy: text("updated_by").notNull(),
   createdAt: text("created_at").notNull(),
@@ -109,20 +109,20 @@ export const billingSettings = pgTable("billing_settings", {
 });
 
 // Payment System Tables
-export const services = pgTable("services", {
-  id: serial("id").primaryKey(),
+export const services = sqliteTable("services", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   code: text("code").unique(), // Service code for easy reference
   name: text("name").notNull(),
   category: text("category").$type<"consultation" | "laboratory" | "radiology" | "ultrasound" | "pharmacy" | "procedure">().notNull(),
   description: text("description"),
   price: real("price").notNull(),
-  isActive: boolean("is_active").notNull().default(true),
+  isActive: integer("is_active").notNull().default(true),
   createdAt: text("created_at").notNull(),
 });
 
 // Encounters - Patient's "cart" for this visit
-export const encounters = pgTable("encounters", {
-  id: serial("id").primaryKey(),
+export const encounters = sqliteTable("encounters", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   encounterId: text("encounter_id").unique().notNull(),
   patientId: text("patient_id").notNull(),  
   visitDate: text("visit_date").notNull(),
@@ -135,8 +135,8 @@ export const encounters = pgTable("encounters", {
 });
 
 // Order Lines - What was ordered in this encounter
-export const orderLines = pgTable("order_lines", {
-  id: serial("id").primaryKey(),
+export const orderLines = sqliteTable("order_lines", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   encounterId: text("encounter_id").notNull(),
   serviceId: integer("service_id").notNull(),
   relatedId: text("related_id"), // ID of lab test, x-ray, ultrasound, etc.
@@ -152,8 +152,8 @@ export const orderLines = pgTable("order_lines", {
 });
 
 // Invoices - Billing documents generated from encounters
-export const invoices = pgTable("invoices", {
-  id: serial("id").primaryKey(),
+export const invoices = sqliteTable("invoices", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   invoiceId: text("invoice_id").unique().notNull(),
   encounterId: text("encounter_id").notNull(),
   patientId: text("patient_id").notNull(),
@@ -169,8 +169,8 @@ export const invoices = pgTable("invoices", {
 });
 
 // Invoice Lines - Mirror of order lines for billing
-export const invoiceLines = pgTable("invoice_lines", {
-  id: serial("id").primaryKey(),
+export const invoiceLines = sqliteTable("invoice_lines", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   invoiceId: text("invoice_id").notNull(),
   orderLineId: integer("order_line_id").notNull(),
   description: text("description").notNull(),
@@ -180,8 +180,8 @@ export const invoiceLines = pgTable("invoice_lines", {
   createdAt: text("created_at").notNull(),
 });
 
-export const payments = pgTable("payments", {
-  id: serial("id").primaryKey(),
+export const payments = sqliteTable("payments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   paymentId: text("payment_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   totalAmount: real("total_amount").notNull(),
@@ -192,8 +192,8 @@ export const payments = pgTable("payments", {
   createdAt: text("created_at").notNull(),
 });
 
-export const paymentItems = pgTable("payment_items", {
-  id: serial("id").primaryKey(),
+export const paymentItems = sqliteTable("payment_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   paymentId: text("payment_id").notNull(),
   serviceId: integer("service_id").notNull(),
   relatedId: text("related_id"), // ID of lab test, x-ray, or ultrasound
@@ -204,8 +204,8 @@ export const paymentItems = pgTable("payment_items", {
   createdAt: text("created_at").notNull(),
 });
 
-export const pharmacyOrders = pgTable("pharmacy_orders", {
-  id: serial("id").primaryKey(),
+export const pharmacyOrders = sqliteTable("pharmacy_orders", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   orderId: text("order_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   treatmentId: text("treatment_id"),
