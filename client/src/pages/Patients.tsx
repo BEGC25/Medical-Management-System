@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Save, X, Printer, Filter, Calendar, Users, Search } from "lucide-react";
+import { UserPlus, Save, X, Printer, Filter, Calendar, Users, Search, DollarSign, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,15 +10,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
-import { insertPatientSchema, type InsertPatient, type Patient } from "@shared/schema";
+import { insertPatientSchema, type InsertPatient, type Patient, type BillingSettings } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
 export default function Patients() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [collectConsultationFee, setCollectConsultationFee] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => {
     // Use local date to avoid timezone issues
     const today = new Date();
@@ -48,6 +50,18 @@ export default function Patients() {
   };
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Get billing settings
+  const { data: billingSettings } = useQuery({
+    queryKey: ["/api/billing/settings"],
+  });
+
+  // Auto-set consultation fee collection based on billing policy
+  useEffect(() => {
+    if (billingSettings?.requirePrepayment) {
+      setCollectConsultationFee(true);
+    }
+  }, [billingSettings]);
 
   // Patient count queries using efficient counts endpoint
   const { data: patientCounts, isLoading: countsLoading } = useQuery({
@@ -263,18 +277,76 @@ export default function Patients() {
 
   const createPatientMutation = useMutation({
     mutationFn: async (data: InsertPatient) => {
-      const response = await apiRequest("POST", "/api/patients", data);
-      return response.json();
+      // Create patient first
+      const patientResponse = await apiRequest("POST", "/api/patients", data);
+      const patient = await patientResponse.json();
+      
+      // If collecting consultation fee, create encounter and add consultation
+      if (collectConsultationFee && billingSettings) {
+        try {
+          // Create encounter for today
+          const encounterResponse = await fetch("/api/encounters", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              patientId: patient.patientId,
+              visitDate: new Date().toISOString().split('T')[0],
+              attendingClinician: "Reception",
+            }),
+          });
+          
+          if (encounterResponse.ok) {
+            const encounter = await encounterResponse.json();
+            
+            // Get consultation service
+            const servicesResponse = await fetch("/api/services");
+            if (servicesResponse.ok) {
+              const services = await servicesResponse.json();
+              const consultationService = services.find((s: any) => 
+                s.category === "consultation" && s.name.includes("General")
+              );
+              
+              if (consultationService) {
+                // Add consultation to encounter
+                await fetch("/api/order-lines", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    encounterId: encounter.encounterId,
+                    serviceId: consultationService.id,
+                    relatedType: "consultation",
+                    description: consultationService.name,
+                    quantity: 1,
+                    unitPriceSnapshot: consultationService.price,
+                    totalPrice: consultationService.price,
+                    department: "consultation",
+                    orderedBy: "Reception",
+                  }),
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to create encounter or add consultation fee:", error);
+          // Don't fail the entire patient creation if billing fails
+        }
+      }
+      
+      return patient;
     },
-    onSuccess: () => {
+    onSuccess: (patient) => {
       toast({
         title: "Success",
-        description: "Patient registered successfully",
+        description: collectConsultationFee 
+          ? `Patient registered successfully. Consultation fee of ${billingSettings?.consultationFee} ${billingSettings?.currency} has been added to today's visit.`
+          : "Patient registered successfully",
       });
       form.reset();
       setShowRegistrationForm(false);
+      setCollectConsultationFee(false);
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
     },
     onError: (error: any) => {
       // Save to offline storage if network error
@@ -830,6 +902,65 @@ export default function Patients() {
                     />
                   </div>
                 </div>
+
+                {/* Consultation Fee Collection - Only for new patients */}
+                {!editingPatient && billingSettings && (
+                  <div className="space-y-4 p-4 bg-blue-50 rounded-lg border">
+                    <h3 className="font-medium text-gray-800 flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Consultation Fee Collection
+                    </h3>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-white rounded border">
+                        <div>
+                          <p className="font-medium">Consultation Fee: {billingSettings.consultationFee} {billingSettings.currency}</p>
+                          <p className="text-sm text-gray-600">
+                            {billingSettings.requirePrepayment 
+                              ? "Payment required before seeing doctor" 
+                              : "Payment can be collected now or later"}
+                          </p>
+                        </div>
+                        {billingSettings.requirePrepayment && (
+                          <Badge variant="destructive">Required</Badge>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="collect-fee"
+                            checked={collectConsultationFee}
+                            onCheckedChange={setCollectConsultationFee}
+                            disabled={billingSettings.requirePrepayment}
+                          />
+                          <label 
+                            htmlFor="collect-fee" 
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            {billingSettings.requirePrepayment 
+                              ? "Collect consultation fee now (Required)" 
+                              : "Collect consultation fee now (Optional)"}
+                          </label>
+                        </div>
+                        {collectConsultationFee && (
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4 text-green-600" />
+                            <span className="text-sm text-green-600 font-medium">
+                              {billingSettings.consultationFee} {billingSettings.currency}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {billingSettings.requirePrepayment && billingSettings.allowEmergencyGrace && (
+                        <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                          <strong>Emergency Grace:</strong> Emergency patients may see doctor before payment (payment required before discharge)
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Form Actions */}
                 <div className="flex gap-4 pt-6 border-t">

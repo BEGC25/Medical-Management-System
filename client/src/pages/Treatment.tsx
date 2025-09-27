@@ -462,6 +462,90 @@ export default function Treatment() {
             )}
           </div>
 
+          {/* Visit Cart - Real-time billing */}
+          {selectedPatient && currentEncounter && (
+            <Card className="border-l-4 border-l-green-500">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    Visit Cart - Today's Services
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">
+                      {orderLines.length} items
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowVisitCart(!showVisitCart)}
+                    >
+                      {showVisitCart ? "Hide" : "Show"} Details
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              {showVisitCart && (
+                <CardContent>
+                  <div className="space-y-3">
+                    {orderLines.length === 0 ? (
+                      <div className="text-center py-4 text-gray-500">
+                        <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>No services added yet</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => addConsultationMutation.mutate()}
+                          disabled={addConsultationMutation.isPending}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Consultation Fee
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        {orderLines.map((line: OrderLine) => (
+                          <div key={line.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <p className="font-medium">{line.description}</p>
+                              <p className="text-sm text-gray-600">
+                                Qty: {line.quantity} × {line.unitPriceSnapshot} SSP
+                              </p>
+                              <Badge variant="outline" className="mt-1">
+                                {line.status}
+                              </Badge>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium text-lg">{line.totalPrice} SSP</p>
+                              <p className="text-sm text-gray-600">{line.department}</p>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="border-t pt-3 flex justify-between items-center">
+                          <span className="font-medium">Total Amount:</span>
+                          <span className="font-bold text-lg text-green-600">
+                            {orderLines.reduce((sum: number, line: OrderLine) => sum + line.totalPrice, 0)} SSP
+                          </span>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                          <Button variant="outline" size="sm">
+                            <FileText className="h-4 w-4 mr-1" />
+                            Preview Bill
+                          </Button>
+                          <Button size="sm">
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            Send to Cashier
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
+
           {/* Treatment Form */}
           {selectedPatient && (
             <Form {...form}>
