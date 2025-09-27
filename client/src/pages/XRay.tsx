@@ -107,6 +107,11 @@ export default function XRay() {
     metalRemoved: false,
     canCooperate: false,
   });
+  
+  // Patient search state for PatientSearch component
+  const [searchTerm, setSearchTerm] = useState("");
+  const [shouldSearch, setShouldSearch] = useState(false);
+  
   const { toast } = useToast();
 
   const form = useForm<XrayExamFormData>({
@@ -735,10 +740,10 @@ export default function XRay() {
                           showActions={false}
                           viewMode="search"
                           selectedDate=""
-                          searchTerm=""
-                          onSearchTermChange={() => {}}
-                          shouldSearch={false}
-                          onShouldSearchChange={() => {}}
+                          searchTerm={searchTerm}
+                          onSearchTermChange={setSearchTerm}
+                          shouldSearch={shouldSearch}
+                          onShouldSearchChange={setShouldSearch}
                         />
                       ) : (
                         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
