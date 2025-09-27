@@ -253,7 +253,7 @@ export default function Payment() {
                             className="mt-2"
                             onClick={() => addServiceToPayment(matchingService, order)}
                           >
-                            Add to Payment (${matchingService.price})
+                            Add to Payment (SSP {matchingService.price})
                           </Button>
                         )}
                       </div>
@@ -289,7 +289,7 @@ export default function Payment() {
                             className="mr-2 mb-1"
                             onClick={() => addServiceToPayment(service)}
                           >
-                            {service.name} (${service.price})
+                            {service.name} (SSP {service.price})
                           </Button>
                         ))}
                       </div>
@@ -308,7 +308,7 @@ export default function Payment() {
                           <div className="text-sm text-gray-600">{item.description}</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">${item.unitPrice}</span>
+                          <span className="font-semibold">SSP {item.unitPrice}</span>
                           <Button
                             size="sm"
                             variant="destructive"
@@ -323,7 +323,7 @@ export default function Payment() {
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between items-center font-bold text-lg">
                         <span>Total Amount:</span>
-                        <span className="text-green-600">${getTotalAmount().toFixed(2)}</span>
+                        <span className="text-green-600">SSP {getTotalAmount().toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -371,7 +371,7 @@ export default function Payment() {
                       className="w-full"
                       size="lg"
                     >
-                      {createPaymentMutation.isPending ? "Processing..." : `Process Payment ($${getTotalAmount().toFixed(2)})`}
+                      {createPaymentMutation.isPending ? "Processing..." : `Process Payment (SSP ${getTotalAmount().toFixed(2)})`}
                     </Button>
                   </div>
                 )}
