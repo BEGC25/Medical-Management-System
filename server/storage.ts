@@ -619,7 +619,6 @@ export class MemStorage implements IStorage {
     const [labTestsData, xrayExamsData, ultrasoundExamsData, pharmacyOrdersData] = await Promise.all([
       db.select({
         total: sql<number>`count(*)`,
-        unpaid: sql<number>`sum(case when ${labTests.paymentStatus} = 'unpaid' then 1 else 0 end)`,
         pending: sql<number>`sum(case when ${labTests.status} = 'pending' then 1 else 0 end)`,
         completed: sql<number>`sum(case when ${labTests.status} = 'completed' then 1 else 0 end)`,
       })
@@ -628,7 +627,6 @@ export class MemStorage implements IStorage {
       
       db.select({
         total: sql<number>`count(*)`,
-        unpaid: sql<number>`sum(case when ${xrayExams.paymentStatus} = 'unpaid' then 1 else 0 end)`,
         pending: sql<number>`sum(case when ${xrayExams.status} = 'pending' then 1 else 0 end)`,
         completed: sql<number>`sum(case when ${xrayExams.status} = 'completed' then 1 else 0 end)`,
       })
@@ -637,7 +635,6 @@ export class MemStorage implements IStorage {
       
       db.select({
         total: sql<number>`count(*)`,
-        unpaid: sql<number>`sum(case when ${ultrasoundExams.paymentStatus} = 'unpaid' then 1 else 0 end)`,
         pending: sql<number>`sum(case when ${ultrasoundExams.status} = 'pending' then 1 else 0 end)`,
         completed: sql<number>`sum(case when ${ultrasoundExams.status} = 'completed' then 1 else 0 end)`,
       })
