@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,13 +10,13 @@ import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { insertBillingSettingsSchema, type InsertBillingSettings } from "@shared/schema";
+import { insertBillingSettingsSchema, type InsertBillingSettings, type BillingSettings } from "@shared/schema";
 
 export default function BillingSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: billingSettings, isLoading } = useQuery({
+  const { data: billingSettings, isLoading } = useQuery<BillingSettings>({
     queryKey: ["/api/billing/settings"],
   });
 
@@ -32,7 +32,7 @@ export default function BillingSettings() {
   });
 
   // Update form when data loads
-  useState(() => {
+  useEffect(() => {
     if (billingSettings) {
       form.reset({
         consultationFee: billingSettings.consultationFee,
@@ -42,7 +42,7 @@ export default function BillingSettings() {
         updatedBy: "admin",
       });
     }
-  });
+  }, [billingSettings, form]);
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: InsertBillingSettings) => {
