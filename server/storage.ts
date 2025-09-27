@@ -853,23 +853,41 @@ export class MemStorage implements IStorage {
       const now = new Date().toISOString();
       const defaultSettings = {
         consultationFee: 2000.00,
-        requirePrepayment: false,
-        allowEmergencyGrace: true,
+        requirePrepayment: 0, // SQLite needs integers for booleans
+        allowEmergencyGrace: 1, // SQLite needs integers for booleans
         currency: "SSP",
         updatedBy: "system",
         createdAt: now,
         updatedAt: now,
       };
       const [newSettings] = await db.insert(billingSettings).values(defaultSettings).returning();
-      return newSettings;
+      
+      // Convert integers back to booleans for the response
+      return {
+        ...newSettings,
+        requirePrepayment: !!newSettings.requirePrepayment,
+        allowEmergencyGrace: !!newSettings.allowEmergencyGrace,
+      };
     }
-    return settings[0];
+    
+    // Convert integers back to booleans for the response
+    return {
+      ...settings[0],
+      requirePrepayment: !!settings[0].requirePrepayment,
+      allowEmergencyGrace: !!settings[0].allowEmergencyGrace,
+    };
   }
 
   async updateBillingSettings(data: schema.InsertBillingSettings): Promise<schema.BillingSettings> {
     const now = new Date().toISOString();
+    
+    // Convert boolean values to integers for SQLite compatibility
     const updateData = {
-      ...data,
+      consultationFee: data.consultationFee,
+      requirePrepayment: data.requirePrepayment ? 1 : 0,
+      allowEmergencyGrace: data.allowEmergencyGrace ? 1 : 0,
+      currency: data.currency,
+      updatedBy: data.updatedBy,
       updatedAt: now,
     };
     
@@ -879,13 +897,25 @@ export class MemStorage implements IStorage {
         ...updateData,
         createdAt: now,
       }).returning();
-      return newSettings;
+      
+      // Convert integers back to booleans for the response
+      return {
+        ...newSettings,
+        requirePrepayment: !!newSettings.requirePrepayment,
+        allowEmergencyGrace: !!newSettings.allowEmergencyGrace,
+      };
     } else {
       const [updatedSettings] = await db.update(billingSettings)
         .set(updateData)
         .where(eq(billingSettings.id, existingSettings[0].id))
         .returning();
-      return updatedSettings;
+      
+      // Convert integers back to booleans for the response  
+      return {
+        ...updatedSettings,
+        requirePrepayment: !!updatedSettings.requirePrepayment,
+        allowEmergencyGrace: !!updatedSettings.allowEmergencyGrace,
+      };
     }
   }
 
