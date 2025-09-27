@@ -128,18 +128,8 @@ export default function XRay() {
     },
   });
 
-  // Query for X-ray exams with optional date filtering
+  // Query for X-ray exams - default to today for better performance
   const { data: xrayExamsData, isLoading } = useQuery({
-    queryKey: ['/api/xray-exams'],
-    queryFn: async () => {
-      const response = await fetch('/api/xray-exams');
-      if (!response.ok) throw new Error('Failed to fetch X-ray exams');
-      return response.json();
-    },
-  });
-
-  // Query for today's X-ray exams
-  const { data: todayXrayExamsData } = useQuery({
     queryKey: ['/api/xray-exams', 'today'],
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
@@ -149,8 +139,21 @@ export default function XRay() {
     },
   });
 
+  // Optional query for all X-ray exams when needed (can be enabled via UI control)
+  const { data: allXrayExamsData } = useQuery({
+    queryKey: ['/api/xray-exams', 'all'],
+    queryFn: async () => {
+      const response = await fetch('/api/xray-exams');
+      if (!response.ok) throw new Error('Failed to fetch X-ray exams');
+      return response.json();
+    },
+    enabled: false, // Only enable when user specifically requests all data
+  });
+
   const xrayExamsList = xrayExamsData as (XrayExam & { patient?: Patient })[] || [];
-  const todayXrayExamsList = todayXrayExamsData as (XrayExam & { patient?: Patient })[] || [];
+  
+  // Use the same data for today's list since we're already fetching today's data by default
+  const todayXrayExamsList = xrayExamsList;
 
   // Apply filtering based on active metric filter
   const filteredExams = useMemo(() => {

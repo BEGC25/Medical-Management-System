@@ -47,16 +47,28 @@ export default function PatientSearch({
 
   const { data: patients, isLoading } = useQuery({
     queryKey: ["/api/patients", getQueryParams(), "withStatus"],
-    enabled: viewMode === 'today' || viewMode === 'date' || viewMode === 'all' || (viewMode === 'search' && shouldSearch && searchTerm.length > 0),
+    enabled: viewMode === 'today' || viewMode === 'date' || viewMode === 'all' || (viewMode === 'search' && shouldSearch && searchTerm.length > 2), // Require at least 3 characters for search
     queryFn: () => {
       if (viewMode === 'today') {
-        return fetch('/api/patients?today=true&withStatus=true').then(res => res.json());
+        return fetch('/api/patients?today=true&withStatus=true').then(res => {
+          if (!res.ok) throw new Error('Failed to fetch today\'s patients - Please check your connection');
+          return res.json();
+        });
       } else if (viewMode === 'date') {
-        return fetch(`/api/patients?date=${encodeURIComponent(selectedDate)}&withStatus=true`).then(res => res.json());
+        return fetch(`/api/patients?date=${encodeURIComponent(selectedDate)}&withStatus=true`).then(res => {
+          if (!res.ok) throw new Error('Failed to fetch patients for selected date - Please try again');
+          return res.json();
+        });
       } else if (viewMode === 'all') {
-        return fetch('/api/patients?withStatus=true').then(res => res.json());
+        return fetch('/api/patients?withStatus=true').then(res => {
+          if (!res.ok) throw new Error('Failed to fetch all patients - Please check your connection');
+          return res.json();
+        });
       } else {
-        return fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}&withStatus=true`).then(res => res.json());
+        return fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}&withStatus=true`).then(res => {
+          if (!res.ok) throw new Error('Failed to search patients - Please try again');
+          return res.json();
+        });
       }
     },
   });

@@ -375,9 +375,16 @@ export default function Laboratory() {
     }
   });
 
-  // Fetch lab tests
+  // Fetch lab tests with default filter for today to improve performance
   const { data: labTests, isLoading: isLoadingLabTests } = useQuery({
-    queryKey: ["/api/lab-tests"],
+    queryKey: ["/api/lab-tests", "today"],
+    queryFn: async () => {
+      // Default to today's tests for better performance
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/lab-tests?date=${today}`);
+      if (!response.ok) throw new Error('Failed to fetch today\'s lab tests');
+      return response.json();
+    },
   });
 
   // Create lab test mutation
