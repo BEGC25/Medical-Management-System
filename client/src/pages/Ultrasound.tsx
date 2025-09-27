@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock, Trash2, Waves, Users, Calendar, TrendingUp, X, Search, Filter, ChevronDown, MoreHorizontal, User, Phone, Heart } from "lucide-react";
+import { Send, Printer, Check, Clock, Trash2, Waves, Users, DollarSign, Calendar, TrendingUp, X, Search, Filter, ChevronDown, MoreHorizontal, User, Phone, Heart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -289,6 +289,9 @@ export default function Ultrasound() {
     switch (activeMetricFilter) {
       case 'pending':
         return allUltrasoundExams.filter(exam => exam.status === 'pending');
+      case 'unpaid':
+        // Assuming exams have a paymentStatus field or we need to check via patient treatment records
+        return allUltrasoundExams.filter(exam => exam.paymentStatus === 'unpaid' || !exam.paymentStatus);
       case 'today':
         const today = new Date().toISOString().split('T')[0];
         return allUltrasoundExams.filter(exam => 
@@ -655,6 +658,30 @@ export default function Ultrasound() {
               </Card>
             </motion.div>
 
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card 
+                className={`p-4 hover:shadow-md transition-all cursor-pointer border-0 shadow-sm ${
+                  activeMetricFilter === 'unpaid' 
+                    ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-900/30' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+                onClick={() => setActiveMetricFilter(activeMetricFilter === 'unpaid' ? null : 'unpaid')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <DollarSign className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Unpaid</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -762,6 +789,12 @@ export default function Ultrasound() {
                           Pending Exams
                         </>
                       )}
+                      {activeMetricFilter === 'unpaid' && (
+                        <>
+                          <DollarSign className="w-3 h-3" />
+                          Unpaid Services
+                        </>
+                      )}
                       {activeMetricFilter === 'today' && (
                         <>
                           <Calendar className="w-3 h-3" />
@@ -848,6 +881,14 @@ export default function Ultrasound() {
                               <Phone className="w-3 h-3" />
                               {exam.phoneNumber || 'N/A'}
                             </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <StatusBadge 
+                              variant={exam.paymentStatus === 'paid' ? 'success' : 'destructive'} 
+                              icon={exam.paymentStatus === 'paid' ? Check : DollarSign}
+                            >
+                              {exam.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
+                            </StatusBadge>
                           </td>
                           <td className="px-6 py-4">
                             <StatusBadge 

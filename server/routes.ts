@@ -386,6 +386,126 @@ router.put("/api/lab-tests/:testId/attachments", async (req, res) => {
   }
 });
 
+// Payment Services
+router.get("/api/services", async (req, res) => {
+  try {
+    const category = req.query.category as string;
+    const services = category 
+      ? await storage.getServicesByCategory(category)
+      : await storage.getServices();
+    res.json(services);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch services" });
+  }
+});
+
+// Payments
+router.post("/api/payments", async (req, res) => {
+  try {
+    const { patientId, items, paymentMethod, receivedBy, notes } = req.body;
+    
+    // Calculate total amount
+    const totalAmount = items.reduce((sum: number, item: any) => sum + (item.unitPrice * item.quantity), 0);
+    
+    // Create payment
+    const payment = await storage.createPayment({
+      patientId,
+      totalAmount,
+      paymentMethod,
+      paymentDate: new Date().toISOString().split('T')[0],
+      receivedBy,
+      notes: notes || "",
+    });
+    
+    // Create payment items
+    for (const item of items) {
+      await storage.createPaymentItem({
+        paymentId: payment.paymentId,
+        serviceId: item.serviceId,
+        relatedId: item.relatedId,
+        relatedType: item.relatedType,
+        quantity: item.quantity || 1,
+        unitPrice: item.unitPrice,
+        totalPrice: item.unitPrice * (item.quantity || 1),
+      });
+    }
+    
+    // Update payment status for related orders
+    for (const item of items) {
+      if (item.relatedId && item.relatedType) {
+        try {
+          if (item.relatedType === 'lab_test') {
+            await storage.updateLabTest(item.relatedId, { paymentStatus: 'paid' });
+          } else if (item.relatedType === 'xray_exam') {
+            await storage.updateXrayExam(item.relatedId, { paymentStatus: 'paid' });
+          } else if (item.relatedType === 'ultrasound_exam') {
+            await storage.updateUltrasoundExam(item.relatedId, { paymentStatus: 'paid' });
+          }
+        } catch (error) {
+          console.error("Error updating payment status:", error);
+        }
+      }
+    }
+    
+    res.status(201).json(payment);
+  } catch (error) {
+    console.error("Error creating payment:", error);
+    res.status(500).json({ error: "Failed to create payment" });
+  }
+});
+
+router.get("/api/payments", async (req, res) => {
+  try {
+    const patientId = req.query.patientId as string;
+    const payments = patientId 
+      ? await storage.getPaymentsByPatient(patientId)
+      : await storage.getPayments();
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch payments" });
+  }
+});
+
+// Get unpaid orders for a patient
+router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
+  try {
+    const patientId = req.params.patientId;
+    
+    const [labTests, xrayExams, ultrasoundExams] = await Promise.all([
+      storage.getLabTestsByPatient(patientId),
+      storage.getXrayExamsByPatient(patientId),
+      storage.getUltrasoundExamsByPatient(patientId),
+    ]);
+    
+    const unpaidOrders = [
+      ...labTests.filter(test => test.paymentStatus === 'unpaid').map(test => ({
+        id: test.testId,
+        type: 'lab_test',
+        description: `Lab Test: ${JSON.parse(test.tests).join(', ')}`,
+        date: test.requestedDate,
+        category: test.category,
+      })),
+      ...xrayExams.filter(exam => exam.paymentStatus === 'unpaid').map(exam => ({
+        id: exam.examId,
+        type: 'xray_exam',
+        description: `X-Ray: ${exam.examType}`,
+        date: exam.requestedDate,
+        bodyPart: exam.bodyPart,
+      })),
+      ...ultrasoundExams.filter(exam => exam.paymentStatus === 'unpaid').map(exam => ({
+        id: exam.examId,
+        type: 'ultrasound_exam',
+        description: `Ultrasound: ${exam.examType}`,
+        date: exam.requestedDate,
+      })),
+    ];
+    
+    res.json(unpaidOrders);
+  } catch (error) {
+    console.error("Error fetching unpaid orders:", error);
+    res.status(500).json({ error: "Failed to fetch unpaid orders" });
+  }
+});
 
 // Pharmacy Orders
 router.get("/api/pharmacy-orders", async (req, res) => {

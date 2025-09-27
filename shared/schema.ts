@@ -48,7 +48,7 @@ export const labTests = pgTable("lab_tests", {
   priority: text("priority").$type<"routine" | "urgent" | "stat">().notNull(),
   requestedDate: text("requested_date").notNull(),
   status: text("status").$type<"pending" | "completed" | "cancelled">().notNull(),
-
+  paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
   results: text("results"),
   normalValues: text("normal_values"),
   resultStatus: text("result_status").$type<"normal" | "abnormal" | "critical">(),
@@ -68,7 +68,7 @@ export const xrayExams = pgTable("xray_exams", {
   specialInstructions: text("special_instructions"),
   requestedDate: text("requested_date").notNull(),
   status: text("status").$type<"pending" | "completed" | "cancelled">().notNull(),
-
+  paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
   findings: text("findings"),
   impression: text("impression"),
   recommendations: text("recommendations"),
@@ -86,7 +86,7 @@ export const ultrasoundExams = pgTable("ultrasound_exams", {
   specialInstructions: text("special_instructions"),
   requestedDate: text("requested_date").notNull(),
   status: text("status").$type<"pending" | "completed" | "cancelled">().notNull(),
-
+  paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
   findings: text("findings"),
   impression: text("impression"),
   recommendations: text("recommendations"),
@@ -96,6 +96,40 @@ export const ultrasoundExams = pgTable("ultrasound_exams", {
   createdAt: text("created_at").notNull(),
 });
 
+// Payment System Tables
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").$type<"consultation" | "laboratory" | "radiology" | "ultrasound">().notNull(),
+  description: text("description"),
+  price: real("price").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: text("created_at").notNull(),
+});
+
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  paymentId: text("payment_id").unique().notNull(),
+  patientId: text("patient_id").notNull(),
+  totalAmount: real("total_amount").notNull(),
+  paymentMethod: text("payment_method").$type<"cash" | "mobile_money" | "bank_transfer">().notNull(),
+  paymentDate: text("payment_date").notNull(),
+  receivedBy: text("received_by").notNull(),
+  notes: text("notes"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const paymentItems = pgTable("payment_items", {
+  id: serial("id").primaryKey(),
+  paymentId: text("payment_id").notNull(),
+  serviceId: integer("service_id").notNull(),
+  relatedId: text("related_id"), // ID of lab test, x-ray, or ultrasound
+  relatedType: text("related_type").$type<"consultation" | "lab_test" | "xray_exam" | "ultrasound_exam">(),
+  quantity: integer("quantity").notNull().default(1),
+  unitPrice: real("unit_price").notNull(),
+  totalPrice: real("total_price").notNull(),
+  createdAt: text("created_at").notNull(),
+});
 
 export const pharmacyOrders = pgTable("pharmacy_orders", {
   id: serial("id").primaryKey(),
@@ -106,7 +140,7 @@ export const pharmacyOrders = pgTable("pharmacy_orders", {
   dosage: text("dosage"),
   quantity: integer("quantity").notNull().default(1),
   status: text("status").$type<"prescribed" | "dispensed">().notNull().default("prescribed"),
-
+  paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
   createdAt: text("created_at").notNull().default(sql`now()`),
 });
 
@@ -127,7 +161,7 @@ export const insertLabTestSchema = createInsertSchema(labTests).omit({
   id: true,
   testId: true,
   status: true,
-
+  paymentStatus: true,
   createdAt: true,
 });
 
@@ -135,7 +169,7 @@ export const insertXrayExamSchema = createInsertSchema(xrayExams).omit({
   id: true,
   examId: true,
   status: true,
-
+  paymentStatus: true,
   createdAt: true,
 });
 
@@ -143,16 +177,31 @@ export const insertUltrasoundExamSchema = createInsertSchema(ultrasoundExams).om
   id: true,
   examId: true,
   status: true,
-
+  paymentStatus: true,
   createdAt: true,
 });
 
+export const insertServiceSchema = createInsertSchema(services).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  paymentId: true,
+  createdAt: true,
+});
+
+export const insertPaymentItemSchema = createInsertSchema(paymentItems).omit({
+  id: true,
+  createdAt: true,
+});
 
 export const insertPharmacyOrderSchema = createInsertSchema(pharmacyOrders).omit({
   id: true,
   orderId: true,
   status: true,
-
+  paymentStatus: true,
   createdAt: true,
 });
 
@@ -162,6 +211,9 @@ export type Treatment = typeof treatments.$inferSelect;
 export type LabTest = typeof labTests.$inferSelect;
 export type XrayExam = typeof xrayExams.$inferSelect;
 export type UltrasoundExam = typeof ultrasoundExams.$inferSelect;
+export type Service = typeof services.$inferSelect;
+export type Payment = typeof payments.$inferSelect;
+export type PaymentItem = typeof paymentItems.$inferSelect;
 export type PharmacyOrder = typeof pharmacyOrders.$inferSelect;
 
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
@@ -169,4 +221,7 @@ export type InsertTreatment = z.infer<typeof insertTreatmentSchema>;
 export type InsertLabTest = z.infer<typeof insertLabTestSchema>;
 export type InsertXrayExam = z.infer<typeof insertXrayExamSchema>;
 export type InsertUltrasoundExam = z.infer<typeof insertUltrasoundExamSchema>;
+export type InsertService = z.infer<typeof insertServiceSchema>;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type InsertPaymentItem = z.infer<typeof insertPaymentItemSchema>;
 export type InsertPharmacyOrder = z.infer<typeof insertPharmacyOrderSchema>;

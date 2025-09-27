@@ -115,6 +115,7 @@ export default function XRay() {
       specialInstructions: '',
       requestedDate: new Date().toISOString().split('T')[0],
       status: 'pending',
+      paymentStatus: 'unpaid',
     },
   });
 
@@ -544,6 +545,11 @@ export default function XRay() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusBadge variant={getStatusBadgeVariant(exam.status, 'status')}>
                             {exam.status === 'pending' ? 'Pending' : exam.status === 'completed' ? 'Completed' : 'Cancelled'}
+                          </StatusBadge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <StatusBadge variant={getStatusBadgeVariant(exam.paymentStatus, 'payment')}>
+                            {exam.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
                           </StatusBadge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

@@ -15,7 +15,7 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
 
-const { patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders } = schema;
+const { patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems } = schema;
 
 // Tables are automatically created by Drizzle with PostgreSQL
 console.log("✓ Database connection established");
@@ -27,6 +27,7 @@ let labCounter = 0;
 let xrayCounter = 0;
 let ultrasoundCounter = 0;
 let prescriptionCounter = 0;
+let paymentCounter = 0;
 
 function generatePatientId(): string {
   patientCounter++;
@@ -78,6 +79,14 @@ async function generatePharmacyId(): Promise<string> {
   return `BGC-PHARM${prescriptionCounter}`;
 }
 
+async function generatePaymentId(): Promise<string> {
+  if (paymentCounter === 0) {
+    const allPayments = await db.select().from(payments);
+    paymentCounter = allPayments.length;
+  }
+  paymentCounter++;
+  return `BGC-PAY${paymentCounter}`;
+}
 
 export interface IStorage {
   // Patients
@@ -118,6 +127,24 @@ export interface IStorage {
   updatePharmacyOrder(orderId: string, data: Partial<schema.PharmacyOrder>): Promise<schema.PharmacyOrder>;
   dispensePharmacyOrder(orderId: string): Promise<schema.PharmacyOrder>;
 
+  // Payment Services
+  getServices(): Promise<schema.Service[]>;
+  getServicesByCategory(category: string): Promise<schema.Service[]>;
+  createService(data: schema.InsertService): Promise<schema.Service>;
+  updateService(id: number, data: Partial<schema.Service>): Promise<schema.Service>;
+
+  // Payments
+  createPayment(data: schema.InsertPayment): Promise<schema.Payment>;
+  getPayments(): Promise<schema.Payment[]>;
+  getPaymentsByPatient(patientId: string): Promise<schema.Payment[]>;
+  getPaymentById(id: number): Promise<schema.Payment | null>;
+  
+  // Payment Items
+  createPaymentItem(data: schema.InsertPaymentItem): Promise<schema.PaymentItem>;
+  getPaymentItems(paymentId: string): Promise<schema.PaymentItem[]>;
+  
+  // Payment status checking
+  checkPaymentStatus(patientId: string, serviceType: 'laboratory' | 'radiology' | 'ultrasound', requestId: string): Promise<boolean>;
 
   // Statistics
   getDashboardStats(): Promise<{
@@ -502,9 +529,105 @@ export class MemStorage implements IStorage {
       .orderBy(desc(treatments.createdAt));
   }
 
+  // Payment Services
+  async getServices(): Promise<schema.Service[]> {
+    return await db.select().from(services).where(eq(services.isActive, true)).orderBy(services.category, services.name);
+  }
 
+  async getServicesByCategory(category: string): Promise<schema.Service[]> {
+    return await db.select().from(services)
+      .where(and(eq(services.category, category as any), eq(services.isActive, true)))
+      .orderBy(services.name);
+  }
 
+  async createService(data: schema.InsertService): Promise<schema.Service> {
+    const now = new Date().toISOString();
+    const insertData: any = {
+      ...data,
+      createdAt: now,
+    };
+    
+    const [service] = await db.insert(services).values(insertData).returning();
+    return service;
+  }
 
+  async updateService(id: number, data: Partial<schema.Service>): Promise<schema.Service> {
+    const [service] = await db.update(services)
+      .set(data)
+      .where(eq(services.id, id))
+      .returning();
+    
+    return service;
+  }
+
+  // Payments
+  async createPayment(data: schema.InsertPayment): Promise<schema.Payment> {
+    const paymentId = await generatePaymentId();
+    const now = new Date().toISOString();
+    const insertData: any = {
+      ...data,
+      paymentId,
+      createdAt: now,
+    };
+    
+    const [payment] = await db.insert(payments).values(insertData).returning();
+    return payment;
+  }
+
+  async getPayments(): Promise<schema.Payment[]> {
+    return await db.select().from(payments).orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentsByPatient(patientId: string): Promise<schema.Payment[]> {
+    return await db.select().from(payments)
+      .where(eq(payments.patientId, patientId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentById(id: number): Promise<schema.Payment | null> {
+    const [payment] = await db.select().from(payments).where(eq(payments.id, id));
+    return payment || null;
+  }
+
+  // Payment Items
+  async createPaymentItem(data: schema.InsertPaymentItem): Promise<schema.PaymentItem> {
+    const now = new Date().toISOString();
+    const insertData: any = {
+      ...data,
+      createdAt: now,
+    };
+    
+    const [paymentItem] = await db.insert(paymentItems).values(insertData).returning();
+    return paymentItem;
+  }
+
+  async getPaymentItems(paymentId: string): Promise<schema.PaymentItem[]> {
+    return await db.select().from(paymentItems).where(eq(paymentItems.paymentId, paymentId));
+  }
+
+  // Payment status checking
+  async checkPaymentStatus(patientId: string, serviceType: 'laboratory' | 'radiology' | 'ultrasound', requestId: string): Promise<boolean> {
+    // Map service types to related types
+    const relatedTypeMap = {
+      'laboratory': 'lab_test',
+      'radiology': 'xray_exam', 
+      'ultrasound': 'ultrasound_exam'
+    };
+    
+    // Check if there's a payment item that covers this service
+    const paymentCheck = await db.select()
+      .from(paymentItems)
+      .innerJoin(payments, eq(paymentItems.paymentId, payments.paymentId))
+      .where(
+        and(
+          eq(payments.patientId, patientId),
+          eq(paymentItems.relatedType, relatedTypeMap[serviceType] as any),
+          eq(paymentItems.relatedId, requestId)
+        )
+      );
+    
+    return paymentCheck.length > 0;
+  }
 
   // Pharmacy Orders
   async createPharmacyOrder(data: schema.InsertPharmacyOrder): Promise<schema.PharmacyOrder> {
@@ -619,6 +742,7 @@ export class MemStorage implements IStorage {
     const [labTestsData, xrayExamsData, ultrasoundExamsData, pharmacyOrdersData] = await Promise.all([
       db.select({
         total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${labTests.paymentStatus} = 'unpaid' then 1 else 0 end)`,
         pending: sql<number>`sum(case when ${labTests.status} = 'pending' then 1 else 0 end)`,
         completed: sql<number>`sum(case when ${labTests.status} = 'completed' then 1 else 0 end)`,
       })
@@ -627,6 +751,7 @@ export class MemStorage implements IStorage {
       
       db.select({
         total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${xrayExams.paymentStatus} = 'unpaid' then 1 else 0 end)`,
         pending: sql<number>`sum(case when ${xrayExams.status} = 'pending' then 1 else 0 end)`,
         completed: sql<number>`sum(case when ${xrayExams.status} = 'completed' then 1 else 0 end)`,
       })
@@ -635,6 +760,7 @@ export class MemStorage implements IStorage {
       
       db.select({
         total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${ultrasoundExams.paymentStatus} = 'unpaid' then 1 else 0 end)`,
         pending: sql<number>`sum(case when ${ultrasoundExams.status} = 'pending' then 1 else 0 end)`,
         completed: sql<number>`sum(case when ${ultrasoundExams.status} = 'completed' then 1 else 0 end)`,
       })
@@ -643,6 +769,7 @@ export class MemStorage implements IStorage {
       
       db.select({
         total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${pharmacyOrders.paymentStatus} = 'unpaid' then 1 else 0 end)`,
         prescribed: sql<number>`sum(case when ${pharmacyOrders.status} = 'prescribed' then 1 else 0 end)`,
         dispensed: sql<number>`sum(case when ${pharmacyOrders.status} = 'dispensed' then 1 else 0 end)`,
       })
@@ -653,10 +780,10 @@ export class MemStorage implements IStorage {
     // Sum up totals
     const totals = {
       totalServices: (labTestsData[0]?.total || 0) + (xrayExamsData[0]?.total || 0) + (ultrasoundExamsData[0]?.total || 0) + (pharmacyOrdersData[0]?.total || 0),
-      unpaidServices: 0,
+      unpaidServices: (labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0),
       pendingServices: (labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0),
       completedServices: (labTestsData[0]?.completed || 0) + (xrayExamsData[0]?.completed || 0) + (ultrasoundExamsData[0]?.completed || 0) + (pharmacyOrdersData[0]?.dispensed || 0),
-      hasUnpaidServices: false,
+      hasUnpaidServices: ((labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0)) > 0,
       hasPendingServices: ((labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0)) > 0
     };
 
@@ -664,6 +791,123 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Initialize default services
+async function seedDefaultServices() {
+  try {
+    const existingServices = await storage.getServices();
+    if (existingServices.length === 0) {
+      console.log("Seeding default services...");
+      
+      // Consultation services
+      await storage.createService({
+        name: "General Consultation",
+        category: "consultation",
+        description: "Basic medical consultation and examination",
+        price: 50.00,
+        isActive: true,
+      });
+      
+      await storage.createService({
+        name: "Follow-up Consultation",
+        category: "consultation", 
+        description: "Follow-up visit for existing patients",
+        price: 30.00,
+        isActive: true,
+      });
+
+      // Laboratory services
+      await storage.createService({
+        name: "Complete Blood Count (CBC)",
+        category: "laboratory",
+        description: "Full blood analysis including RBC, WBC, platelets",
+        price: 25.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Urine Analysis",
+        category: "laboratory",
+        description: "Complete urine examination",
+        price: 15.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Malaria Test",
+        category: "laboratory",
+        description: "Malaria parasite detection",
+        price: 10.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Stool Examination",
+        category: "laboratory",
+        description: "Stool analysis for parasites and infections",
+        price: 15.00,
+        isActive: true,
+      });
+
+      // Radiology services
+      await storage.createService({
+        name: "Chest X-Ray",
+        category: "radiology",
+        description: "X-ray examination of chest and lungs",
+        price: 40.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Abdominal X-Ray",
+        category: "radiology",
+        description: "X-ray examination of abdomen",
+        price: 45.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Extremity X-Ray",
+        category: "radiology",
+        description: "X-ray of arms, legs, hands, or feet",
+        price: 35.00,
+        isActive: true,
+      });
+
+      // Ultrasound services
+      await storage.createService({
+        name: "Abdominal Ultrasound",
+        category: "ultrasound",
+        description: "Ultrasound examination of abdominal organs",
+        price: 60.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Pelvic Ultrasound",
+        category: "ultrasound",
+        description: "Ultrasound examination of pelvic organs",
+        price: 55.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        name: "Obstetric Ultrasound",
+        category: "ultrasound",
+        description: "Pregnancy monitoring ultrasound",
+        price: 65.00,
+        isActive: true,
+      });
+
+      console.log("✓ Default services seeded successfully");
+    }
+  } catch (error) {
+    console.log("Error seeding default services:", error);
+  }
+}
 
 export const storage = new MemStorage();
 
+// Initialize services on startup
+setTimeout(() => {
+  seedDefaultServices();
+}, 100);
