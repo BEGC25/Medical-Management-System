@@ -15,7 +15,7 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
 
-const { patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems } = schema;
+const { patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines } = schema;
 
 // Tables are automatically created by Drizzle with PostgreSQL
 console.log("✓ Database connection established");
@@ -28,6 +28,8 @@ let xrayCounter = 0;
 let ultrasoundCounter = 0;
 let prescriptionCounter = 0;
 let paymentCounter = 0;
+let encounterCounter = 0;
+let invoiceCounter = 0;
 
 function generatePatientId(): string {
   patientCounter++;
@@ -88,6 +90,24 @@ async function generatePaymentId(): Promise<string> {
   return `BGC-PAY${paymentCounter}`;
 }
 
+async function generateEncounterId(): Promise<string> {
+  if (encounterCounter === 0) {
+    const allEncounters = await db.select().from(encounters);
+    encounterCounter = allEncounters.length;
+  }
+  encounterCounter++;
+  return `BGC-ENC${encounterCounter}`;
+}
+
+async function generateInvoiceId(): Promise<string> {
+  if (invoiceCounter === 0) {
+    const allInvoices = await db.select().from(invoices);
+    invoiceCounter = allInvoices.length;
+  }
+  invoiceCounter++;
+  return `BGC-INV${invoiceCounter}`;
+}
+
 export interface IStorage {
   // Patients
   createPatient(data: schema.InsertPatient): Promise<schema.Patient>;
@@ -145,6 +165,33 @@ export interface IStorage {
   
   // Payment status checking
   checkPaymentStatus(patientId: string, serviceType: 'laboratory' | 'radiology' | 'ultrasound', requestId: string): Promise<boolean>;
+
+  // Billing Settings
+  getBillingSettings(): Promise<schema.BillingSettings>;
+  updateBillingSettings(data: schema.InsertBillingSettings): Promise<schema.BillingSettings>;
+
+  // Encounters
+  createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter>;
+  getEncounters(status?: string, date?: string): Promise<schema.Encounter[]>;
+  getEncounterById(encounterId: string): Promise<schema.Encounter | null>;
+  getEncountersByPatient(patientId: string): Promise<schema.Encounter[]>;
+  updateEncounter(encounterId: string, data: Partial<schema.Encounter>): Promise<schema.Encounter>;
+  closeEncounter(encounterId: string): Promise<schema.Encounter>;
+
+  // Order Lines
+  createOrderLine(data: schema.InsertOrderLine): Promise<schema.OrderLine>;
+  getOrderLinesByEncounter(encounterId: string): Promise<schema.OrderLine[]>;
+  updateOrderLine(id: number, data: Partial<schema.OrderLine>): Promise<schema.OrderLine>;
+
+  // Invoices
+  createInvoice(data: schema.InsertInvoice): Promise<schema.Invoice>;
+  getInvoices(status?: string): Promise<schema.Invoice[]>;
+  getInvoiceById(invoiceId: string): Promise<schema.Invoice | null>;
+  generateInvoiceFromEncounter(encounterId: string, generatedBy: string): Promise<schema.Invoice>;
+
+  // Invoice Lines
+  createInvoiceLine(data: schema.InsertInvoiceLine): Promise<schema.InvoiceLine>;
+  getInvoiceLines(invoiceId: string): Promise<schema.InvoiceLine[]>;
 
   // Statistics
   getDashboardStats(): Promise<{
@@ -810,6 +857,225 @@ export class MemStorage implements IStorage {
 
     return totals;
   }
+
+  // Billing Settings Methods
+  async getBillingSettings(): Promise<schema.BillingSettings> {
+    const settings = await db.select().from(billingSettings).limit(1);
+    if (settings.length === 0) {
+      // Create default settings
+      const now = new Date().toISOString();
+      const defaultSettings = {
+        consultationFee: 2000.00,
+        requirePrepayment: false,
+        allowEmergencyGrace: true,
+        currency: "SSP",
+        updatedBy: "system",
+        createdAt: now,
+        updatedAt: now,
+      };
+      const [newSettings] = await db.insert(billingSettings).values(defaultSettings).returning();
+      return newSettings;
+    }
+    return settings[0];
+  }
+
+  async updateBillingSettings(data: schema.InsertBillingSettings): Promise<schema.BillingSettings> {
+    const now = new Date().toISOString();
+    const updateData = {
+      ...data,
+      updatedAt: now,
+    };
+    
+    const existingSettings = await db.select().from(billingSettings).limit(1);
+    if (existingSettings.length === 0) {
+      const [newSettings] = await db.insert(billingSettings).values({
+        ...updateData,
+        createdAt: now,
+      }).returning();
+      return newSettings;
+    } else {
+      const [updatedSettings] = await db.update(billingSettings)
+        .set(updateData)
+        .where(eq(billingSettings.id, existingSettings[0].id))
+        .returning();
+      return updatedSettings;
+    }
+  }
+
+  // Encounter Methods
+  async createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter> {
+    const encounterId = await generateEncounterId();
+    const now = new Date().toISOString();
+    
+    const insertData = {
+      ...data,
+      encounterId,
+      createdAt: now,
+    };
+    
+    const [encounter] = await db.insert(encounters).values(insertData).returning();
+    return encounter;
+  }
+
+  async getEncounters(status?: string, date?: string): Promise<schema.Encounter[]> {
+    let query = db.select().from(encounters);
+    
+    const conditions = [];
+    if (status) {
+      conditions.push(eq(encounters.status, status as any));
+    }
+    if (date) {
+      conditions.push(eq(encounters.visitDate, date));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(encounters.createdAt));
+  }
+
+  async getEncounterById(encounterId: string): Promise<schema.Encounter | null> {
+    const results = await db.select().from(encounters).where(eq(encounters.encounterId, encounterId));
+    return results[0] || null;
+  }
+
+  async getEncountersByPatient(patientId: string): Promise<schema.Encounter[]> {
+    return await db.select().from(encounters)
+      .where(eq(encounters.patientId, patientId))
+      .orderBy(desc(encounters.createdAt));
+  }
+
+  async updateEncounter(encounterId: string, data: Partial<schema.Encounter>): Promise<schema.Encounter> {
+    const [updated] = await db.update(encounters)
+      .set(data)
+      .where(eq(encounters.encounterId, encounterId))
+      .returning();
+    return updated;
+  }
+
+  async closeEncounter(encounterId: string): Promise<schema.Encounter> {
+    const now = new Date().toISOString();
+    const [updated] = await db.update(encounters)
+      .set({ status: "closed", closedAt: now })
+      .where(eq(encounters.encounterId, encounterId))
+      .returning();
+    return updated;
+  }
+
+  // Order Line Methods
+  async createOrderLine(data: schema.InsertOrderLine): Promise<schema.OrderLine> {
+    const now = new Date().toISOString();
+    const insertData = {
+      ...data,
+      createdAt: now,
+    };
+    
+    const [orderLine] = await db.insert(orderLines).values(insertData).returning();
+    return orderLine;
+  }
+
+  async getOrderLinesByEncounter(encounterId: string): Promise<schema.OrderLine[]> {
+    return await db.select().from(orderLines)
+      .where(eq(orderLines.encounterId, encounterId))
+      .orderBy(desc(orderLines.createdAt));
+  }
+
+  async updateOrderLine(id: number, data: Partial<schema.OrderLine>): Promise<schema.OrderLine> {
+    const [updated] = await db.update(orderLines)
+      .set(data)
+      .where(eq(orderLines.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Invoice Methods
+  async createInvoice(data: schema.InsertInvoice): Promise<schema.Invoice> {
+    const invoiceId = await generateInvoiceId();
+    const now = new Date().toISOString();
+    
+    const insertData = {
+      ...data,
+      invoiceId,
+      createdAt: now,
+    };
+    
+    const [invoice] = await db.insert(invoices).values(insertData).returning();
+    return invoice;
+  }
+
+  async getInvoices(status?: string): Promise<schema.Invoice[]> {
+    if (status) {
+      return await db.select().from(invoices)
+        .where(eq(invoices.status, status as any))
+        .orderBy(desc(invoices.createdAt));
+    }
+    return await db.select().from(invoices).orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoiceById(invoiceId: string): Promise<schema.Invoice | null> {
+    const results = await db.select().from(invoices).where(eq(invoices.invoiceId, invoiceId));
+    return results[0] || null;
+  }
+
+  async generateInvoiceFromEncounter(encounterId: string, generatedBy: string): Promise<schema.Invoice> {
+    // Get encounter and its order lines
+    const encounter = await this.getEncounterById(encounterId);
+    if (!encounter) {
+      throw new Error("Encounter not found");
+    }
+
+    const orderLinesData = await this.getOrderLinesByEncounter(encounterId);
+    
+    // Calculate totals
+    const subtotal = orderLinesData.reduce((sum, line) => sum + line.totalPrice, 0);
+    const discount = 0; // Could be configurable
+    const tax = 0; // Could be configurable
+    const grandTotal = subtotal - discount + tax;
+
+    // Create invoice
+    const invoice = await this.createInvoice({
+      encounterId,
+      patientId: encounter.patientId,
+      subtotal,
+      discount,
+      tax,
+      grandTotal,
+      generatedBy,
+    });
+
+    // Create invoice lines
+    for (const orderLine of orderLinesData) {
+      await this.createInvoiceLine({
+        invoiceId: invoice.invoiceId,
+        orderLineId: orderLine.id,
+        description: orderLine.description,
+        quantity: orderLine.quantity,
+        unitPrice: orderLine.unitPriceSnapshot,
+        totalPrice: orderLine.totalPrice,
+      });
+    }
+
+    return invoice;
+  }
+
+  // Invoice Line Methods
+  async createInvoiceLine(data: schema.InsertInvoiceLine): Promise<schema.InvoiceLine> {
+    const now = new Date().toISOString();
+    const insertData = {
+      ...data,
+      createdAt: now,
+    };
+    
+    const [invoiceLine] = await db.insert(invoiceLines).values(insertData).returning();
+    return invoiceLine;
+  }
+
+  async getInvoiceLines(invoiceId: string): Promise<schema.InvoiceLine[]> {
+    return await db.select().from(invoiceLines)
+      .where(eq(invoiceLines.invoiceId, invoiceId))
+      .orderBy(desc(invoiceLines.createdAt));
+  }
 }
 
 // Initialize default services
@@ -819,20 +1085,22 @@ async function seedDefaultServices() {
     if (existingServices.length === 0) {
       console.log("Seeding default services...");
       
-      // Consultation services
+      // Consultation services (updated to match policy)  
       await storage.createService({
+        code: "CONS-GEN",
         name: "General Consultation",
         category: "consultation",
         description: "Basic medical consultation and examination",
-        price: 50.00,
+        price: 2000.00,
         isActive: true,
       });
       
       await storage.createService({
+        code: "CONS-FU",
         name: "Follow-up Consultation",
         category: "consultation", 
         description: "Follow-up visit for existing patients",
-        price: 30.00,
+        price: 1000.00,
         isActive: true,
       });
 
@@ -916,6 +1184,43 @@ async function seedDefaultServices() {
         category: "ultrasound",
         description: "Pregnancy monitoring ultrasound",
         price: 65.00,
+        isActive: true,
+      });
+
+      // Pharmacy services
+      await storage.createService({
+        code: "PHARM-PARACETAMOL",
+        name: "Paracetamol 500mg",
+        category: "pharmacy",
+        description: "Pain reliever and fever reducer",
+        price: 5.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        code: "PHARM-AMOXICILLIN",
+        name: "Amoxicillin 250mg",
+        category: "pharmacy",
+        description: "Antibiotic for bacterial infections",
+        price: 15.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        code: "PHARM-IBUPROFEN",
+        name: "Ibuprofen 400mg",
+        category: "pharmacy",
+        description: "Anti-inflammatory and pain reliever",
+        price: 8.00,
+        isActive: true,
+      });
+
+      await storage.createService({
+        code: "PHARM-ORS",
+        name: "ORS (Oral Rehydration Salts)",
+        category: "pharmacy",
+        description: "For dehydration treatment",
+        price: 3.00,
         isActive: true,
       });
 
