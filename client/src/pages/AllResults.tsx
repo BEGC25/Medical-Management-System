@@ -95,21 +95,63 @@ export default function AllResults() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("today");
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
+  // Get today's date for filtering
+  const today = new Date().toISOString().split('T')[0];
+
+  // Build query parameters based on filter selection
+  const getQueryParams = () => {
+    if (dateFilter === "today") {
+      return { date: today };
+    } else if (dateFilter === "date") {
+      return { date: selectedDate };
+    } else {
+      return {}; // Load all data only when explicitly requested
+    }
+  };
+
+  // Only fetch data when needed, default to today's results for performance
   const { data: labTests = [] } = useQuery<LabTest[]>({
-    queryKey: ["/api/lab-tests"],
+    queryKey: ["/api/lab-tests", getQueryParams()],
+    queryFn: async () => {
+      const params = new URLSearchParams(getQueryParams());
+      const response = await fetch(`/api/lab-tests?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch lab tests');
+      return response.json();
+    },
   });
 
   const { data: xrayExams = [] } = useQuery<XRayExam[]>({
-    queryKey: ["/api/xray-exams"],
+    queryKey: ["/api/xray-exams", getQueryParams()],
+    queryFn: async () => {
+      const params = new URLSearchParams(getQueryParams());
+      const response = await fetch(`/api/xray-exams?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch X-ray exams');
+      return response.json();
+    },
   });
 
   const { data: ultrasoundExams = [] } = useQuery<UltrasoundExam[]>({
-    queryKey: ["/api/ultrasound-exams"],
+    queryKey: ["/api/ultrasound-exams", getQueryParams()],
+    queryFn: async () => {
+      const params = new URLSearchParams(getQueryParams());
+      const response = await fetch(`/api/ultrasound-exams?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch ultrasound exams');
+      return response.json();
+    },
   });
 
+  // Only load patients when needed for search - not all patients
   const { data: patients = [] } = useQuery<Patient[]>({
-    queryKey: ["/api/patients"],
+    queryKey: ["/api/patients", "withStatus"],
+    queryFn: async () => {
+      const response = await fetch('/api/patients?withStatus=true&today=true');
+      if (!response.ok) throw new Error('Failed to fetch patients');
+      return response.json();
+    },
+    enabled: dateFilter === "today" || dateFilter === "date", // Only load when showing filtered results
   });
 
   // Combine all results for a unified view
@@ -1303,7 +1345,7 @@ export default function AllResults() {
           <CardTitle className="text-lg">Search & Filter Results</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
@@ -1336,6 +1378,38 @@ export default function AllResults() {
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
             </select>
+
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-800"
+            >
+              <option value="today">Today Only</option>
+              <option value="date">Select Date</option>
+              <option value="all">All Dates</option>
+            </select>
+          </div>
+          
+          {dateFilter === "date" && (
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-48"
+              />
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <AlertCircle className="h-4 w-4" />
+            <span>
+              Showing {filteredResults.length} results for{" "}
+              {dateFilter === "today" ? "today" : 
+               dateFilter === "date" ? `${selectedDate}` : 
+               "all dates"}
+            </span>
           </div>
         </CardContent>
       </Card>

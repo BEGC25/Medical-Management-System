@@ -160,11 +160,12 @@ router.post("/api/treatments", async (req, res) => {
 router.get("/api/lab-tests", async (req, res) => {
   try {
     const status = req.query.status as string;
-    const labTests = await storage.getLabTests(status);
+    const date = req.query.date as string;
+    const labTests = await storage.getLabTests(status, date);
     res.json(labTests);
   } catch (error) {
     console.error("Error fetching lab tests:", error);
-    res.status(500).json({ error: "Failed to fetch lab tests" });
+    res.status(500).json({ error: "Failed to fetch lab tests - Please check your connection and try again" });
   }
 });
 
@@ -173,7 +174,8 @@ router.get("/api/patients/:patientId/lab-tests", async (req, res) => {
     const labTests = await storage.getLabTestsByPatient(req.params.patientId);
     res.json(labTests);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch lab tests" });
+    console.error("Error fetching patient lab tests:", error);
+    res.status(500).json({ error: "Failed to fetch patient lab tests - Please verify the patient ID and try again" });
   }
 });
 
@@ -212,7 +214,8 @@ router.get("/api/xray-exams", async (req, res) => {
     const xrayExams = await storage.getXrayExams(status, date);
     res.json(xrayExams);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch X-ray exams" });
+    console.error("Error fetching X-ray exams:", error);
+    res.status(500).json({ error: "Failed to fetch X-ray exams - Please check your connection and try again" });
   }
 });
 
@@ -221,7 +224,8 @@ router.get("/api/patients/:patientId/xray-exams", async (req, res) => {
     const xrayExams = await storage.getXrayExamsByPatient(req.params.patientId);
     res.json(xrayExams);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch X-ray exams" });
+    console.error("Error fetching patient X-ray exams:", error);
+    res.status(500).json({ error: "Failed to fetch patient X-ray exams - Please verify the patient ID and try again" });
   }
 });
 
@@ -252,10 +256,12 @@ router.put("/api/xray-exams/:examId", async (req, res) => {
 router.get("/api/ultrasound-exams", async (req, res) => {
   try {
     const status = req.query.status as string;
-    const ultrasoundExams = await storage.getUltrasoundExams(status);
+    const date = req.query.date as string;
+    const ultrasoundExams = await storage.getUltrasoundExams(status, date);
     res.json(ultrasoundExams);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch ultrasound exams" });
+    console.error("Error fetching ultrasound exams:", error);
+    res.status(500).json({ error: "Failed to fetch ultrasound exams - Please check your connection and try again" });
   }
 });
 
@@ -512,11 +518,12 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
 router.get("/api/pharmacy-orders", async (req, res) => {
   try {
     const status = req.query.status as string;
-    const pharmacyOrders = await storage.getPharmacyOrders(status);
+    const date = req.query.date as string;
+    const pharmacyOrders = await storage.getPharmacyOrders(status, date);
     res.json(pharmacyOrders);
   } catch (error) {
     console.error('Error in pharmacy orders route:', error);
-    res.status(500).json({ error: "Failed to fetch pharmacy orders" });
+    res.status(500).json({ error: "Failed to fetch pharmacy orders - Please check your connection and try again" });
   }
 });
 

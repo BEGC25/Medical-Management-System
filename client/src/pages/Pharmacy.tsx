@@ -14,9 +14,15 @@ export default function Pharmacy() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  // Fetch pharmacy orders
+  // Fetch pharmacy orders with default filter for today to improve performance
   const { data: pharmacyOrders = [], isLoading } = useQuery<PharmacyOrder[]>({
-    queryKey: ['/api/pharmacy-orders'],
+    queryKey: ['/api/pharmacy-orders', 'today'],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/pharmacy-orders?date=${today}`);
+      if (!response.ok) throw new Error('Failed to fetch today\'s pharmacy orders');
+      return response.json();
+    },
   });
 
   // Filter orders based on search

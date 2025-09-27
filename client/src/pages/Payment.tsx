@@ -47,20 +47,35 @@ export default function Payment() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Search patients
-  const { data: patients = [] } = useQuery<Patient[]>({
+  // Search patients with better error handling
+  const { data: patients = [], isLoading: patientsLoading, error: patientsError } = useQuery<Patient[]>({
     queryKey: ["/api/patients", searchQuery],
-    enabled: searchQuery.length > 0,
+    queryFn: async () => {
+      const response = await fetch(`/api/patients?search=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) throw new Error('Failed to search patients - Please check your connection and try again');
+      return response.json();
+    },
+    enabled: searchQuery.length >= 2, // Require at least 2 characters
   });
 
-  // Get services
-  const { data: services = [] } = useQuery<Service[]>({
+  // Get services with better error handling
+  const { data: services = [], isLoading: servicesLoading, error: servicesError } = useQuery<Service[]>({
     queryKey: ["/api/services"],
+    queryFn: async () => {
+      const response = await fetch('/api/services');
+      if (!response.ok) throw new Error('Failed to load services - Please refresh the page and try again');
+      return response.json();
+    },
   });
 
-  // Get unpaid orders for selected patient
-  const { data: unpaidOrders = [], refetch: refetchUnpaidOrders } = useQuery<UnpaidOrder[]>({
+  // Get unpaid orders for selected patient with better error handling
+  const { data: unpaidOrders = [], refetch: refetchUnpaidOrders, isLoading: unpaidLoading, error: unpaidError } = useQuery<UnpaidOrder[]>({
     queryKey: [`/api/patients/${selectedPatient?.patientId}/unpaid-orders`],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/${selectedPatient?.patientId}/unpaid-orders`);
+      if (!response.ok) throw new Error('Failed to load unpaid orders - Please verify patient information and try again');
+      return response.json();
+    },
     enabled: !!selectedPatient,
   });
 
@@ -179,9 +194,30 @@ export default function Payment() {
               />
             </div>
             
-            {searchQuery.length > 0 && (
+            {searchQuery.length >= 2 && (
               <div className="grid gap-2 max-h-60 overflow-y-auto">
-                {patients.map((patient: Patient) => (
+                {patientsLoading && (
+                  <div className="flex items-center justify-center p-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-sm text-gray-600">Searching patients...</span>
+                  </div>
+                )}
+                {patientsError && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-800">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="text-sm">{patientsError.message}</span>
+                    </div>
+                  </div>
+                )}
+                {!patientsLoading && !patientsError && patients.length === 0 && (
+                  <div className="p-4 text-center text-gray-500">
+                    <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">No patients found matching "{searchQuery}"</p>
+                    <p className="text-xs text-gray-400 mt-1">Try different search terms</p>
+                  </div>
+                )}
+                {!patientsLoading && !patientsError && patients.map((patient: Patient) => (
                   <Button
                     key={patient.id}
                     variant={selectedPatient?.id === patient.id ? "default" : "outline"}
@@ -198,6 +234,12 @@ export default function Payment() {
                     </div>
                   </Button>
                 ))}
+              </div>
+            )}
+            
+            {searchQuery.length > 0 && searchQuery.length < 2 && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">Enter at least 2 characters to search for patients</p>
               </div>
             )}
 
