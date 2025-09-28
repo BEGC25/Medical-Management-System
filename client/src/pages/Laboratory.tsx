@@ -445,10 +445,18 @@ export default function Laboratory() {
       tests: JSON.stringify(selectedTests),
     };
 
-    // Add to pending sync for offline capability
-    addToPendingSync(labTestData);
-    
-    createLabTest.mutate(labTestData);
+    try {
+      // Add to pending sync for offline capability
+      addToPendingSync(labTestData);
+      
+      await createLabTest.mutateAsync(labTestData);
+      
+      // Close the modal and reset form
+      setShowLabRequest(false);
+      
+    } catch (error) {
+      console.error("Failed to create lab test:", error);
+    }
   };
 
   const handlePatientSelect = (patient: Patient) => {
@@ -507,6 +515,7 @@ export default function Laboratory() {
         <Button 
           onClick={() => setShowLabRequest(true)}
           className="bg-blue-600 hover:bg-blue-700"
+          data-testid="button-new-test-request"
         >
           <Send className="w-4 h-4 mr-2" />
           New Test Request
@@ -714,6 +723,7 @@ export default function Laboratory() {
                               setSelectedPatient(null);
                               setPatientSearchOpen(true);
                             }}
+                            data-testid="button-change-patient"
                           >
                             Change Patient
                           </Button>
@@ -725,6 +735,7 @@ export default function Laboratory() {
                         variant="outline" 
                         onClick={() => setPatientSearchOpen(true)}
                         className="w-full p-4 h-auto border-dashed"
+                        data-testid="button-select-patient"
                       >
                         <div className="text-center">
                           <p className="font-medium text-gray-700 dark:text-gray-300">Select a Patient</p>
@@ -738,28 +749,36 @@ export default function Laboratory() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="font-medium text-gray-800 dark:text-gray-200">Step 2: Select Tests</h4>
-                      <Badge variant="outline" className="text-blue-600 border-blue-300">
-                        {selectedTests.length} selected
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="text-blue-600 border-blue-300">
+                          {selectedTests.length} selected
+                        </Badge>
+                        {selectedTests.length === 0 && (
+                          <Badge variant="outline" className="text-orange-600 border-orange-300">
+                            Required
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {Object.entries(testCategories).map(([category, tests]) => (
-                        <div key={category} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div key={category} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
                           <h5 className="font-semibold text-gray-900 dark:text-white mb-3 border-b border-gray-200 dark:border-gray-600 pb-2">
                             {category}
                           </h5>
                           <div className="space-y-2">
                             {tests.map((test) => (
-                              <div key={test} className="flex items-center space-x-2">
+                              <div key={test} className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-1 rounded transition-colors">
                                 <Checkbox
                                   id={test}
                                   checked={selectedTests.includes(test)}
                                   onCheckedChange={() => handleTestToggle(test)}
+                                  data-testid={`checkbox-test-${test.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
                                 />
                                 <label 
                                   htmlFor={test}
-                                  className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                                  className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer flex-1"
                                 >
                                   {test}
                                 </label>
@@ -787,8 +806,8 @@ export default function Laboratory() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="routine">Routine</SelectItem>
-                              <SelectItem value="high">High</SelectItem>
                               <SelectItem value="urgent">Urgent</SelectItem>
+                              <SelectItem value="stat">STAT</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -846,8 +865,9 @@ export default function Laboratory() {
                   <div className="flex gap-3 pt-4 border-t">
                     <Button 
                       type="submit" 
-                      disabled={createLabTest.isPending}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      disabled={createLabTest.isPending || !selectedPatient || selectedTests.length === 0}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      data-testid="button-submit-request"
                     >
                       {createLabTest.isPending ? "Submitting..." : "Submit Request"}
                     </Button>
@@ -855,6 +875,7 @@ export default function Laboratory() {
                       type="button" 
                       variant="outline" 
                       onClick={() => setShowLabRequest(false)}
+                      data-testid="button-cancel-request"
                     >
                       Cancel
                     </Button>
@@ -873,18 +894,24 @@ export default function Laboratory() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Select Patient</CardTitle>
-                <Button variant="outline" onClick={() => setPatientSearchOpen(false)}>Close</Button>
+                <Button variant="outline" onClick={() => setPatientSearchOpen(false)} data-testid="button-close-patient-search">Close</Button>
               </div>
             </CardHeader>
             <CardContent>
               <PatientSearch
-                viewMode="search"
+                viewMode="all"
                 selectedDate=""
                 searchTerm={searchTerm}
                 onSearchTermChange={setSearchTerm}
                 shouldSearch={shouldSearch}
                 onShouldSearchChange={setShouldSearch}
                 onSelectPatient={(patient) => {
+                  handlePatientSelect(patient);
+                  setPatientSearchOpen(false);
+                  setSearchTerm("");
+                  setShouldSearch(false);
+                }}
+                onViewPatient={(patient) => {
                   handlePatientSelect(patient);
                   setPatientSearchOpen(false);
                   setSearchTerm("");
