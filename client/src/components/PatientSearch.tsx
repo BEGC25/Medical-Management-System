@@ -1,17 +1,16 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Eye, Edit, AlertCircle, Clock, CheckCircle, CreditCard } from "lucide-react";
+import { Search, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
 
 interface PatientSearchProps {
-  onSelectPatient?: (patient: Patient) => void;
-  onEditPatient?: (patient: Patient) => void;
-  onViewPatient?: (patient: Patient) => void;
-  showActions?: boolean;
-  viewMode: 'today' | 'date' | 'search' | 'all';
+  onSelectPatient?: (patient: Patient) => void; // kept for compatibility
+  onEditPatient?: (patient: Patient) => void; // (unused here)
+  onViewPatient?: (patient: Patient) => void; // opens quick-view
+  showActions?: boolean; // default true
+  viewMode: "today" | "date" | "search" | "all";
   selectedDate: string;
   searchTerm: string;
   onSearchTermChange: (term: string) => void;
@@ -19,89 +18,96 @@ interface PatientSearchProps {
   onShouldSearchChange: (should: boolean) => void;
 }
 
-export default function PatientSearch({ 
-  onSelectPatient, 
-  onEditPatient, 
-  onViewPatient, 
-  showActions = true, 
-  viewMode, 
+function money(n?: number) {
+  const v = Number.isFinite(n as number) ? (n as number) : 0;
+  try {
+    return v.toLocaleString(undefined, {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    });
+  } catch {
+    return `₦${v.toLocaleString()}`;
+  }
+}
+
+export default function PatientSearch({
+  onViewPatient,
+  showActions = true,
+  viewMode,
   selectedDate,
   searchTerm,
   onSearchTermChange,
   shouldSearch,
-  onShouldSearchChange
+  onShouldSearchChange,
 }: PatientSearchProps) {
-
-  // Build query based on view mode
-  const getQueryParams = () => {
-    if (viewMode === 'today') {
-      return { today: 'true' };
-    } else if (viewMode === 'date') {
-      return { date: selectedDate };
-    } else if (viewMode === 'all') {
-      return { all: 'true' };
-    } else {
-      return { search: searchTerm };
-    }
-  };
-
   const { data: patients, isLoading } = useQuery({
-    queryKey: ["/api/patients", getQueryParams(), "withStatus"],
-    enabled: viewMode === 'today' || viewMode === 'date' || viewMode === 'all' || (viewMode === 'search' && shouldSearch && searchTerm.length > 2), // Require at least 3 characters for search
-    queryFn: () => {
-      if (viewMode === 'today') {
-        return fetch('/api/patients?today=true&withStatus=true').then(res => {
-          if (!res.ok) throw new Error('Failed to fetch today\'s patients - Please check your connection');
-          return res.json();
-        });
-      } else if (viewMode === 'date') {
-        return fetch(`/api/patients?date=${encodeURIComponent(selectedDate)}&withStatus=true`).then(res => {
-          if (!res.ok) throw new Error('Failed to fetch patients for selected date - Please try again');
-          return res.json();
-        });
-      } else if (viewMode === 'all') {
-        return fetch('/api/patients?withStatus=true').then(res => {
-          if (!res.ok) throw new Error('Failed to fetch all patients - Please check your connection');
-          return res.json();
-        });
-      } else {
-        return fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}&withStatus=true`).then(res => {
-          if (!res.ok) throw new Error('Failed to search patients - Please try again');
-          return res.json();
-        });
+    queryKey: [
+      "/api/patients",
+      viewMode,
+      selectedDate,
+      searchTerm,
+      "withStatus",
+    ],
+    enabled:
+      viewMode === "today" ||
+      viewMode === "date" ||
+      viewMode === "all" ||
+      (viewMode === "search" && shouldSearch && searchTerm.trim().length > 2),
+    queryFn: async () => {
+      if (viewMode === "today") {
+        const r = await fetch("/api/patients?today=true&withStatus=true");
+        if (!r.ok) throw new Error("Failed to fetch today's patients");
+        return r.json();
       }
+      if (viewMode === "date") {
+        const r = await fetch(
+          `/api/patients?date=${encodeURIComponent(selectedDate)}&withStatus=true`,
+        );
+        if (!r.ok)
+          throw new Error("Failed to fetch patients for selected date");
+        return r.json();
+      }
+      if (viewMode === "all") {
+        const r = await fetch("/api/patients?withStatus=true");
+        if (!r.ok) throw new Error("Failed to fetch all patients");
+        return r.json();
+      }
+      const r = await fetch(
+        `/api/patients?search=${encodeURIComponent(searchTerm)}&withStatus=true`,
+      );
+      if (!r.ok) throw new Error("Failed to search patients");
+      return r.json();
     },
   });
 
   const handleSearch = () => {
-    if (searchTerm.trim()) {
-      onShouldSearchChange(true);
-    }
+    if (searchTerm.trim().length > 2) onShouldSearchChange(true);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (e.key === "Enter") handleSearch();
   };
 
   return (
     <div className="space-y-4">
-      {/* Search input - only show for search mode */}
-      {viewMode === 'search' && (
+      {viewMode === "search" && (
         <div className="flex gap-4">
           <div className="flex-1 relative">
             <Input
               type="text"
-              placeholder="Enter patient name or ID..."
+              placeholder="Enter patient name or ID (min 3 chars)…"
               value={searchTerm}
               onChange={(e) => onSearchTermChange(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               className="pl-10"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           </div>
-          <Button onClick={handleSearch} disabled={!searchTerm.trim()}>
+          <Button
+            onClick={handleSearch}
+            disabled={searchTerm.trim().length < 3}
+          >
             <Search className="w-4 h-4 mr-2" />
             Search
           </Button>
@@ -109,207 +115,137 @@ export default function PatientSearch({
       )}
 
       {isLoading && (
-        <div className="text-center py-4">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue"></div>
+        <div className="text-center py-6">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue" />
         </div>
       )}
 
-      {/* Show results for all view modes when data is available */}
-      {((viewMode === 'today' || viewMode === 'date' || viewMode === 'all' || shouldSearch) && patients && patients.length > 0) && (
-        <div>
-          <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">
-            {viewMode === 'today' && 'Today\'s Patients'}
-            {viewMode === 'date' && 'Patients for Selected Date'}
-            {viewMode === 'all' && 'All Patients'}
-            {viewMode === 'search' && 'Search Results'}
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-750 border-b border-gray-200 dark:border-gray-700">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:table-cell">Age</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:table-cell">Contact</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">Gender</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Payment</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Services</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden xl:table-cell">Registered</th>
-                  {showActions && (
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {patients.map((patient: any, index: number) => {
-                  const age = patient.age || 'Unknown';
-                  const serviceStatus = patient.serviceStatus || {};
-                  const hasUnpaidServices = serviceStatus.hasUnpaidServices;
-                  const hasPendingServices = serviceStatus.hasPendingServices;
-                  const unpaidCount = serviceStatus.unpaidServices || 0;
-                  const pendingCount = serviceStatus.pendingServices || 0;
-                  const completedCount = serviceStatus.completedServices || 0;
-                  const totalServices = serviceStatus.totalServices || 0;
-                  
-                  return (
-                    <tr 
-                      key={patient.id} 
-                      className={`transition-colors duration-150 ${
-                        hasUnpaidServices 
-                          ? 'bg-red-50 dark:bg-red-900/10 border-l-4 border-l-red-500 hover:bg-red-100 dark:hover:bg-red-900/20' 
-                          : index % 2 === 0 
-                            ? 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800' 
-                            : 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      } ${onSelectPatient ? 'cursor-pointer' : ''}`}
-                      onClick={() => onSelectPatient?.(patient)}
-                    >
-                      <td className="px-4 py-3 text-sm">{patient.patientId}</td>
-                      <td className="px-4 py-3 text-sm font-medium">
-                        {patient.firstName} {patient.lastName}
-                        {/* Show age and gender on mobile when columns are hidden */}
-                        <div className="sm:hidden text-xs text-gray-500 mt-1">
-                          Age: {age} • {patient.gender || 'N/A'}
+      {patients && patients.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-750 border-b border-gray-200 dark:border-gray-700">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Patient
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:table-cell">
+                  Contact
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Age / Sex
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Balance
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
+                  Registered
+                </th>
+                {showActions && (
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {patients.map((p: any, i: number) => {
+                const s = p.serviceStatus || {};
+                const due = (s.balanceToday ?? s.balance ?? 0) as number;
+
+                return (
+                  <tr
+                    key={p.id || p.patientId}
+                    className={`transition-colors ${
+                      i % 2
+                        ? "bg-white dark:bg-gray-900"
+                        : "bg-gray-50/50 dark:bg-gray-800/50"
+                    } hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer`}
+                    onClick={() => onViewPatient?.(p)}
+                  >
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 grid place-items-center text-xs font-semibold">
+                          {(p.firstName?.[0] || "").toUpperCase()}
+                          {(p.lastName?.[0] || "").toUpperCase()}
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm hidden sm:table-cell">{age}</td>
-                      <td className="px-4 py-3 text-sm hidden md:table-cell">{patient.phoneNumber || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm hidden lg:table-cell">
-                        {patient.gender && (
-                          <Badge variant="outline" className="capitalize">
-                            {patient.gender}
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {hasUnpaidServices ? (
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                            <Badge variant="destructive" className="text-xs">
-                              {unpaidCount} Unpaid
-                            </Badge>
+                        <div>
+                          <div className="font-medium">
+                            {p.firstName} {p.lastName}
                           </div>
-                        ) : totalServices > 0 ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                            <Badge variant="secondary" className="text-xs">
-                              Paid
-                            </Badge>
+                          <div className="text-xs text-gray-500">
+                            ID: {p.patientId}
                           </div>
-                        ) : (
-                          <span className="text-gray-400 text-xs">No services</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {totalServices > 0 ? (
-                          <div className="flex items-center gap-2">
-                            {hasPendingServices && (
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-4 h-4 text-yellow-500" />
-                                <Badge variant="outline" className="text-xs">
-                                  {pendingCount} Pending
-                                </Badge>
-                              </div>
-                            )}
-                            {completedCount > 0 && (
-                              <div className="flex items-center gap-1">
-                                <CheckCircle className="w-4 h-4 text-green-500" />
-                                <Badge variant="secondary" className="text-xs">
-                                  {completedCount} Done
-                                </Badge>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 text-xs">No services</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm hidden xl:table-cell">
-                        {new Date(patient.createdAt).toLocaleDateString()}
-                      </td>
-                      {showActions && (
-                        <td className="px-4 py-3 text-sm">
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onViewPatient?.(patient);
-                              }}
-                              title="View Patient Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditPatient?.(patient);
-                              }}
-                              title="Edit Patient"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 text-sm hidden md:table-cell">
+                      {p.phoneNumber || "—"}
+                    </td>
+
+                    <td className="px-4 py-3 text-sm">
+                      {p.age ?? "—"} • {p.gender || "—"}
+                    </td>
+
+                    <td className="px-4 py-3 text-sm">
+                      {due > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-red-700 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
+                          <CreditCard className="w-3 h-3" />
+                          {money(due)} Due
+                        </span>
+                      ) : (
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Paid
+                        </Badge>
                       )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    </td>
+
+                    <td className="px-4 py-3 text-sm hidden lg:table-cell">
+                      {new Date(p.createdAt).toLocaleDateString()}
+                    </td>
+
+                    {showActions && (
+                      <td className="px-4 py-3 text-sm">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewPatient?.(p);
+                          }}
+                        >
+                          Open
+                        </Button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {((viewMode === 'today' || viewMode === 'date' || viewMode === 'all' || shouldSearch) && patients && patients.length === 0) && (
+      {patients && patients.length === 0 && (
         <div className="text-center py-12 text-gray-500 dark:text-gray-400">
           <div className="flex flex-col items-center gap-4">
-            {viewMode === 'today' && (
-              <>
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                  <Search className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">No patients registered today</h3>
-                  <p className="text-sm text-gray-500">Patients registered today will appear here automatically.</p>
-                </div>
-              </>
-            )}
-            {viewMode === 'date' && (
-              <>
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                  <Search className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">No patients found for selected date</h3>
-                  <p className="text-sm text-gray-500">Try selecting a different date to find patients.</p>
-                </div>
-              </>
-            )}
-            {viewMode === 'all' && (
-              <>
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                  <Search className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">No patients in the database</h3>
-                  <p className="text-sm text-gray-500">Register your first patient to get started with the clinic system.</p>
-                </div>
-              </>
-            )}
-            {viewMode === 'search' && (
-              <>
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                  <Search className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">No patients found</h3>
-                  <p className="text-sm text-gray-500">Try searching with a different name or patient ID.</p>
-                </div>
-              </>
-            )}
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
+              <Search className="w-6 h-6 text-gray-400" />
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                {viewMode === "today" && "No patients registered today"}
+                {viewMode === "date" && "No patients found for selected date"}
+                {viewMode === "all" && "No patients in the database"}
+                {viewMode === "search" && "No patients found"}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {viewMode === "search"
+                  ? "Try a different name or patient ID."
+                  : "Try another view or date."}
+              </p>
+            </div>
           </div>
         </div>
       )}
