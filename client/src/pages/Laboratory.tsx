@@ -357,6 +357,14 @@ export default function Laboratory() {
   const [showLabRequest, setShowLabRequest] = useState(false);
   const [showLabReport, setShowLabReport] = useState(false);
   const [selectedLabTest, setSelectedLabTest] = useState<LabTest | null>(null);
+  const [showResultEntry, setShowResultEntry] = useState(false);
+  const [resultFormData, setResultFormData] = useState({
+    results: '',
+    normalValues: '',
+    resultStatus: 'normal' as 'normal' | 'abnormal' | 'critical',
+    technicianNotes: '',
+    completedDate: new Date().toISOString().split('T')[0]
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
   const { toast } = useToast();
@@ -412,6 +420,44 @@ export default function Laboratory() {
     },
   });
 
+  // Update lab test mutation for result entry
+  const updateLabTest = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("PUT", `/api/lab-tests/${data.testId}`, data);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
+      toast({
+        title: "Success",
+        description: "Lab test results updated successfully",
+      });
+      setShowResultEntry(false);
+      setShowLabReport(true);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update lab test",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleResultSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLabTest) return;
+
+    const updateData = {
+      testId: selectedLabTest.testId,
+      ...resultFormData,
+      status: 'completed',
+      completedDate: resultFormData.completedDate
+    };
+
+    updateLabTest.mutate(updateData);
+  };
+
   const handleTestToggle = (testName: string) => {
     setSelectedTests(prev => 
       prev.includes(testName)
@@ -466,7 +512,11 @@ export default function Laboratory() {
 
   const handleLabTestSelect = (labTest: LabTest) => {
     setSelectedLabTest(labTest);
-    setShowLabReport(true);
+    if (labTest.status === 'pending') {
+      setShowResultEntry(true);
+    } else {
+      setShowLabReport(true);
+    }
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -918,6 +968,172 @@ export default function Laboratory() {
                   setShouldSearch(false);
                 }}
               />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Result Entry Modal */}
+      {showResultEntry && selectedLabTest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="text-2xl text-blue-600 dark:text-blue-400">
+                Enter Lab Results - {selectedLabTest.testId}
+              </CardTitle>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Patient: <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedLabTest.patientId}</span> | 
+                Priority: <span className={`font-semibold ${getPriorityColor(selectedLabTest.priority)}`}>
+                  {selectedLabTest.priority}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Test Information */}
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <h4 className="font-semibold text-lg mb-3 text-blue-700 dark:text-blue-300">Requested Tests</h4>
+                <div className="flex flex-wrap gap-2">
+                  {JSON.parse(selectedLabTest.tests || '[]').map((testName: string, index: number) => (
+                    <Badge key={index} variant="outline" className="text-sm py-1 px-2">
+                      {testName}
+                    </Badge>
+                  ))}
+                </div>
+                {selectedLabTest.clinicalInfo && (
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900 rounded">
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Clinical Information:</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{selectedLabTest.clinicalInfo}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Result Entry Form */}
+              <form onSubmit={handleResultSubmit} className="space-y-6">
+                {/* Test Results */}
+                <div>
+                  <label htmlFor="results" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Test Results *
+                  </label>
+                  <textarea
+                    id="results"
+                    value={resultFormData.results}
+                    onChange={(e) => setResultFormData(prev => ({ ...prev, results: e.target.value }))}
+                    placeholder="Enter detailed test results here..."
+                    className="w-full min-h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                    data-testid="textarea-results"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Enter all test results with values and units
+                  </p>
+                </div>
+
+                {/* Normal Values Reference */}
+                <div>
+                  <label htmlFor="normalValues" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Normal Values Reference
+                  </label>
+                  <textarea
+                    id="normalValues"
+                    value={resultFormData.normalValues}
+                    onChange={(e) => setResultFormData(prev => ({ ...prev, normalValues: e.target.value }))}
+                    placeholder="Enter normal value ranges for reference..."
+                    className="w-full min-h-20 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    data-testid="textarea-normal-values"
+                  />
+                </div>
+
+                {/* Result Status and Completion Date */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="resultStatus" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Result Status *
+                    </label>
+                    <select
+                      id="resultStatus"
+                      value={resultFormData.resultStatus}
+                      onChange={(e) => setResultFormData(prev => ({ ...prev, resultStatus: e.target.value as any }))}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                      data-testid="select-result-status"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="abnormal">Abnormal</option>
+                      <option value="critical">Critical</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="completedDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Completion Date *
+                    </label>
+                    <input
+                      type="date"
+                      id="completedDate"
+                      value={resultFormData.completedDate}
+                      onChange={(e) => setResultFormData(prev => ({ ...prev, completedDate: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                      data-testid="input-completion-date"
+                    />
+                  </div>
+                </div>
+
+                {/* Technician Notes */}
+                <div>
+                  <label htmlFor="technicianNotes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Technician Notes
+                  </label>
+                  <textarea
+                    id="technicianNotes"
+                    value={resultFormData.technicianNotes}
+                    onChange={(e) => setResultFormData(prev => ({ ...prev, technicianNotes: e.target.value }))}
+                    placeholder="Add any additional notes or observations..."
+                    className="w-full min-h-20 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    data-testid="textarea-technician-notes"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button 
+                    type="submit" 
+                    disabled={updateLabTest.isPending || !resultFormData.results}
+                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-testid="button-save-results"
+                  >
+                    {updateLabTest.isPending ? "Saving..." : "Save Results & Complete Test"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowResultEntry(false);
+                      setResultFormData({
+                        results: '',
+                        normalValues: '',
+                        resultStatus: 'normal',
+                        technicianNotes: '',
+                        completedDate: new Date().toISOString().split('T')[0]
+                      });
+                    }}
+                    data-testid="button-cancel-results"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowResultEntry(false);
+                      setShowLabReport(true);
+                    }}
+                    data-testid="button-view-report"
+                  >
+                    View Report
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </div>
