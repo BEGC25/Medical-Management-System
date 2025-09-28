@@ -1,15 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Search, CreditCard } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
 
 interface PatientSearchProps {
-  onSelectPatient?: (patient: Patient) => void; // kept for compatibility
-  onEditPatient?: (patient: Patient) => void; // (unused here)
-  onViewPatient?: (patient: Patient) => void; // opens quick-view
-  showActions?: boolean; // default true
+  onSelectPatient?: (patient: Patient) => void;
+  onEditPatient?: (patient: Patient) => void;
+  onViewPatient?: (patient: Patient) => void;
+  showActions?: boolean;
   viewMode: "today" | "date" | "search" | "all";
   selectedDate: string;
   searchTerm: string;
@@ -37,83 +36,52 @@ export default function PatientSearch({
   viewMode,
   selectedDate,
   searchTerm,
-  onSearchTermChange,
-  shouldSearch,
-  onShouldSearchChange,
 }: PatientSearchProps) {
+  // Always-on search: if 3+ chars, force "search"
+  const effectiveMode = searchTerm.trim().length >= 3 ? "search" : viewMode;
+
   const { data: patients, isLoading } = useQuery({
     queryKey: [
       "/api/patients",
-      viewMode,
+      effectiveMode,
       selectedDate,
       searchTerm,
       "withStatus",
     ],
-    enabled:
-      viewMode === "today" ||
-      viewMode === "date" ||
-      viewMode === "all" ||
-      (viewMode === "search" && shouldSearch && searchTerm.trim().length > 2),
+    enabled: true,
     queryFn: async () => {
-      if (viewMode === "today") {
+      if (effectiveMode === "today") {
         const r = await fetch("/api/patients?today=true&withStatus=true");
         if (!r.ok) throw new Error("Failed to fetch today's patients");
         return r.json();
       }
-      if (viewMode === "date") {
+      if (effectiveMode === "date") {
         const r = await fetch(
-          `/api/patients?date=${encodeURIComponent(selectedDate)}&withStatus=true`,
+          `/api/patients?date=${encodeURIComponent(
+            selectedDate,
+          )}&withStatus=true`,
         );
         if (!r.ok)
           throw new Error("Failed to fetch patients for selected date");
         return r.json();
       }
-      if (viewMode === "all") {
+      if (effectiveMode === "all") {
         const r = await fetch("/api/patients?withStatus=true");
         if (!r.ok) throw new Error("Failed to fetch all patients");
         return r.json();
       }
       const r = await fetch(
-        `/api/patients?search=${encodeURIComponent(searchTerm)}&withStatus=true`,
+        `/api/patients?search=${encodeURIComponent(
+          searchTerm,
+        )}&withStatus=true`,
       );
       if (!r.ok) throw new Error("Failed to search patients");
       return r.json();
     },
   });
 
-  const handleSearch = () => {
-    if (searchTerm.trim().length > 2) onShouldSearchChange(true);
-  };
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === "Enter") handleSearch();
-  };
-
   return (
     <div className="space-y-4">
-      {viewMode === "search" && (
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <Input
-              type="text"
-              placeholder="Enter patient name or ID (min 3 chars)…"
-              value={searchTerm}
-              onChange={(e) => onSearchTermChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="pl-10"
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          </div>
-          <Button
-            onClick={handleSearch}
-            disabled={searchTerm.trim().length < 3}
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Search
-          </Button>
-        </div>
-      )}
-
       {isLoading && (
         <div className="text-center py-6">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue" />
@@ -123,22 +91,20 @@ export default function PatientSearch({
       {patients && patients.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-750 border-b border-gray-200 dark:border-gray-700">
+            <thead className="sticky top-0 z-10 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Patient
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:table-cell">
-                  Contact
-                </th>
+                {/* Contact column removed */}
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Age / Sex
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Balance
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
-                  Registered
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
+                  Date of Service
                 </th>
                 {showActions && (
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -152,6 +118,11 @@ export default function PatientSearch({
               {patients.map((p: any, i: number) => {
                 const s = p.serviceStatus || {};
                 const due = (s.balanceToday ?? s.balance ?? 0) as number;
+                const last =
+                  p.lastVisit ||
+                  p.lastEncounterDate ||
+                  p.updatedAt ||
+                  p.createdAt;
 
                 return (
                   <tr
@@ -180,10 +151,7 @@ export default function PatientSearch({
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-sm hidden md:table-cell">
-                      {p.phoneNumber || "—"}
-                    </td>
-
+                    {/* Contact column removed */}
                     <td className="px-4 py-3 text-sm">
                       {p.age ?? "—"} • {p.gender || "—"}
                     </td>
@@ -201,8 +169,8 @@ export default function PatientSearch({
                       )}
                     </td>
 
-                    <td className="px-4 py-3 text-sm hidden lg:table-cell">
-                      {new Date(p.createdAt).toLocaleDateString()}
+                    <td className="px-4 py-3 text-sm text-right hidden lg:table-cell">
+                      {last ? new Date(last).toLocaleDateString() : "—"}
                     </td>
 
                     {showActions && (
@@ -215,7 +183,7 @@ export default function PatientSearch({
                             onViewPatient?.(p);
                           }}
                         >
-                          Open
+                          View
                         </Button>
                       </td>
                     )}
@@ -235,15 +203,10 @@ export default function PatientSearch({
             </div>
             <div>
               <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                {viewMode === "today" && "No patients registered today"}
-                {viewMode === "date" && "No patients found for selected date"}
-                {viewMode === "all" && "No patients in the database"}
-                {viewMode === "search" && "No patients found"}
+                No patients found
               </h3>
               <p className="text-sm text-gray-500">
-                {viewMode === "search"
-                  ? "Try a different name or patient ID."
-                  : "Try another view or date."}
+                Try a different name or patient ID.
               </p>
             </div>
           </div>
