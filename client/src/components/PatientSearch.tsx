@@ -101,7 +101,7 @@ export default function PatientSearch({
                   Age / Sex
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Balance
+                  Consultation
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
                   Date of Service

@@ -501,9 +501,10 @@ export default function Patients() {
               <Button
                 onClick={() => setShowRegistrationForm(true)}
                 className="bg-health-green hover:bg-green-700"
+                data-testid="button-new-patient"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
-                New Patient
+                Register New Patient
               </Button>
             </div>
           </CardTitle>
@@ -836,9 +837,8 @@ export default function Patients() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
+                              <SelectItem value="Male">Male</SelectItem>
+                              <SelectItem value="Female">Female</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -1186,7 +1186,7 @@ export default function Patients() {
                 </div>
               )}
 
-              {/* Balance */}
+              {/* Consultation Payment Status */}
               {activePatient.serviceStatus && (
                 <div className="mt-1">
                   {((activePatient.serviceStatus.balanceToday ??
@@ -1194,16 +1194,15 @@ export default function Patients() {
                     0) > 0 ? (
                     <div className="inline-flex items-center gap-2 rounded-full bg-red-50 text-red-700 dark:bg-red-900/20 px-3 py-1 text-xs">
                       <CreditCard className="w-3 h-3" />
-                      {money(
+                      Consultation: {money(
                         activePatient.serviceStatus.balanceToday ??
                           activePatient.serviceStatus.balance,
-                      )}{" "}
-                      Due
+                      )} Due
                     </div>
                   ) : (
                     <div className="inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 dark:bg-green-900/20 px-3 py-1 text-xs">
                       <CreditCard className="w-3 h-3" />
-                      Paid
+                      Consultation: Paid
                     </div>
                   )}
                 </div>

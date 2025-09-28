@@ -9,7 +9,7 @@ export const patients = sqliteTable("patients", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   age: text("age"),
-  gender: text("gender").$type<"male" | "female" | "other">(),
+  gender: text("gender").$type<"Male" | "Female">(),
   phoneNumber: text("phone_number"),
   village: text("village"),
   emergencyContact: text("emergency_contact"),
