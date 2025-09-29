@@ -328,7 +328,8 @@ export default function Patients() {
       const patientResponse = await apiRequest("POST", "/api/patients", data);
       const patient = await patientResponse.json();
 
-      if (collectConsultationFee && billingSettings) {
+      // Always create encounter and consultation fee for proper clinic workflow
+      if (billingSettings && servicesList) {
         try {
           const encounterResponse = await fetch("/api/encounters", {
             method: "POST",
@@ -340,14 +341,14 @@ export default function Patients() {
             }),
           });
 
-          if (encounterResponse.ok && servicesList) {
+          if (encounterResponse.ok) {
             const encounter = await encounterResponse.json();
             const consultationService = (servicesList as any[]).find(
               (s) =>
                 s.category === "consultation" && s.name.includes("General"),
             );
             if (consultationService) {
-              await fetch("/api/order-lines", {
+              const orderLineResponse = await fetch("/api/order-lines", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -360,8 +361,24 @@ export default function Patients() {
                   totalPrice: consultationService.price,
                   department: "consultation",
                   orderedBy: "Reception",
+                  paymentStatus: collectConsultationFee ? "paid" : "unpaid"
                 }),
               });
+
+              // If consultation fee was collected, mark the order line as paid
+              if (collectConsultationFee && orderLineResponse.ok) {
+                const orderLine = await orderLineResponse.json();
+                await fetch(`/api/order-lines/${orderLine.id}/payment`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    paymentStatus: "paid",
+                    paymentMethod: "cash",
+                    paidAmount: consultationService.price,
+                    paidAt: new Date().toISOString()
+                  }),
+                });
+              }
             }
           }
         } catch {
