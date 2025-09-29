@@ -28,6 +28,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -520,32 +526,6 @@ export default function Patients() {
         </CardHeader>
 
         <CardContent>
-          {/* Professional Registration Quick Access */}
-          {!showRegistrationForm && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-health-green/10 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl border border-health-green/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-health-green/20 flex items-center justify-center">
-                    <UserPlus className="w-6 h-6 text-health-green" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">New Patient Registration</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Click to register a new patient and collect consultation fee
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => setShowRegistrationForm(true)}
-                  className="bg-health-green hover:bg-green-700 text-white px-8 py-3 text-lg font-medium shadow-lg"
-                  data-testid="quick-register-button"
-                >
-                  Quick Register
-                </Button>
-              </div>
-            </div>
-          )}
-          
           {/* Segmented Nav */}
           <div className="mb-6 space-y-4">
             <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
@@ -788,54 +768,43 @@ export default function Patients() {
         </CardContent>
       </Card>
 
-      {/* Registration / Edit Form */}
-      {showRegistrationForm && (
-        <Card className="border-2 border-health-green/20 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-health-green/5 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {editingPatient ? (
-                  <>
-                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <UserPlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                        Edit Patient Information
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Updating: {editingPatient.firstName} {editingPatient.lastName} (ID: {editingPatient.patientId})
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-10 h-10 rounded-full bg-health-green/20 flex items-center justify-center">
-                      <UserPlus className="h-5 w-5 text-health-green" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                        Patient Registration
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Register new patient and handle consultation payment
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancelEdit}
-                className="hover:bg-red-100 dark:hover:bg-red-900/20"
-                data-testid="button-cancel-registration"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Registration / Edit Form Modal */}
+      <Dialog open={showRegistrationForm} onOpenChange={setShowRegistrationForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {editingPatient ? (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <UserPlus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                      Edit Patient Information
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Updating: {editingPatient.firstName} {editingPatient.lastName} (ID: {editingPatient.patientId})
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-health-green/20 flex items-center justify-center">
+                    <UserPlus className="h-5 w-5 text-health-green" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                      Patient Registration
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Register new patient and handle consultation payment
+                    </p>
+                  </div>
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-6 space-y-6">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
@@ -1107,9 +1076,9 @@ export default function Patients() {
                 </div>
               </form>
             </Form>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ==================== QUICK VIEW / ACTION PANEL ==================== */}
       {activePatient && (
