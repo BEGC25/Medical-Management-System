@@ -794,7 +794,7 @@ export class MemStorage implements IStorage {
 
   async getPatientServiceStatus(patientId: string) {
     // Get counts of services by payment status
-    const [labTestsData, xrayExamsData, ultrasoundExamsData, pharmacyOrdersData] = await Promise.all([
+    const [labTestsData, xrayExamsData, ultrasoundExamsData, pharmacyOrdersData, consultationData] = await Promise.all([
       db.select({
         total: sql<number>`count(*)`,
         unpaid: sql<number>`sum(case when ${labTests.paymentStatus} = 'unpaid' then 1 else 0 end)`,
@@ -829,16 +829,29 @@ export class MemStorage implements IStorage {
         dispensed: sql<number>`sum(case when ${pharmacyOrders.status} = 'dispensed' then 1 else 0 end)`,
       })
       .from(pharmacyOrders)
-      .where(eq(pharmacyOrders.patientId, patientId))
+      .where(eq(pharmacyOrders.patientId, patientId)),
+
+      // Check consultation order lines - they are unpaid if no payment item exists for them
+      db.select({
+        total: sql<number>`count(*)`,
+        unpaid: sql<number>`sum(case when ${paymentItems.id} is null then 1 else 0 end)`,
+      })
+      .from(orderLines)
+      .innerJoin(encounters, eq(orderLines.encounterId, encounters.encounterId))
+      .leftJoin(paymentItems, eq(paymentItems.orderLineId, orderLines.id))
+      .where(and(
+        eq(encounters.patientId, patientId),
+        eq(orderLines.relatedType, "consultation")
+      ))
     ]);
 
-    // Sum up totals
+    // Sum up totals including consultation order lines
     const totals = {
-      totalServices: (labTestsData[0]?.total || 0) + (xrayExamsData[0]?.total || 0) + (ultrasoundExamsData[0]?.total || 0) + (pharmacyOrdersData[0]?.total || 0),
-      unpaidServices: (labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0),
+      totalServices: (labTestsData[0]?.total || 0) + (xrayExamsData[0]?.total || 0) + (ultrasoundExamsData[0]?.total || 0) + (pharmacyOrdersData[0]?.total || 0) + (consultationData[0]?.total || 0),
+      unpaidServices: (labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0) + (consultationData[0]?.unpaid || 0),
       pendingServices: (labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0),
       completedServices: (labTestsData[0]?.completed || 0) + (xrayExamsData[0]?.completed || 0) + (ultrasoundExamsData[0]?.completed || 0) + (pharmacyOrdersData[0]?.dispensed || 0),
-      hasUnpaidServices: ((labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0)) > 0,
+      hasUnpaidServices: ((labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0) + (consultationData[0]?.unpaid || 0)) > 0,
       hasPendingServices: ((labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0)) > 0
     };
 
