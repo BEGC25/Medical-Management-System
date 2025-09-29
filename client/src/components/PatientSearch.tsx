@@ -39,14 +39,10 @@ export default function PatientSearch({
   selectedDate,
   searchTerm,
 }: PatientSearchProps) {
-<<<<<<< HEAD
   // Always-on search: if 3+ chars, force "search"
   const effectiveMode = searchTerm.trim().length >= 3 ? "search" : viewMode;
 
   const { data: patients, isLoading } = useQuery({
-=======
-  const { data: patients, isLoading, error } = useQuery({
->>>>>>> origin/main
     queryKey: [
       "/api/patients",
       effectiveMode,
