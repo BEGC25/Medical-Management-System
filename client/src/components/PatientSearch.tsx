@@ -1,4 +1,3 @@
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,6 @@ function money(n?: number) {
 }
 
 export default function PatientSearch({
-  onSelectPatient,
   onViewPatient,
   showActions = true,
   viewMode,
@@ -82,95 +80,11 @@ export default function PatientSearch({
     },
   });
 
-<<<<<<< HEAD
   return (
     <div className="space-y-4">
       {isLoading && (
         <div className="text-center py-6">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue" />
-=======
-  const handleSearch = () => {
-    if (searchTerm.trim().length > 2) onShouldSearchChange(true);
-  };
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === "Enter") handleSearch();
-  };
-
-  // Auto-trigger search with debounce effect for better UX
-  React.useEffect(() => {
-    if (viewMode === "search" && searchTerm.length >= 3) {
-      const timeoutId = setTimeout(() => {
-        onShouldSearchChange(true);
-      }, 500); // 500ms delay
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchTerm, viewMode, onShouldSearchChange]);
-
-  return (
-    <div className="space-y-4">
-      {viewMode === "search" && (
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <Input
-              type="text"
-              placeholder="Enter patient name or ID (min 3 chars)…"
-              value={searchTerm}
-              onChange={(e) => onSearchTermChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="pl-10"
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          </div>
-          <Button
-            onClick={handleSearch}
-            disabled={searchTerm.trim().length < 3}
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Search
-          </Button>
-        </div>
-      )}
-
-      {viewMode === "search" && searchTerm.length < 3 && (
-        <div className="text-center py-8">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full grid place-items-center mx-auto mb-3">
-            <Search className="w-6 h-6 text-blue-600" />
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {onSelectPatient 
-              ? "Type at least 3 characters to search for patients to select"
-              : "Type at least 3 characters to search for patients"
-            }
-          </p>
-        </div>
-      )}
-
-      {patients && patients.length > 0 && onSelectPatient && (
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-sm text-blue-800 dark:text-blue-200 flex items-center">
-            <Search className="w-4 h-4 mr-2" />
-            Click on a patient row to select them for the X-Ray request
-          </p>
-        </div>
-      )}
-
-      {isLoading && searchTerm.length >= 3 && (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Searching patients...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="text-center py-8">
-          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full grid place-items-center mx-auto mb-3">
-            <Search className="w-6 h-6 text-red-600" />
-          </div>
-          <p className="text-sm text-red-600 dark:text-red-400">
-            Error searching patients. Please try again.
-          </p>
->>>>>>> origin/main
         </div>
       )}
 
@@ -213,20 +127,12 @@ export default function PatientSearch({
                 return (
                   <tr
                     key={p.id || p.patientId}
-                    className={`transition-all duration-200 ${
+                    className={`transition-colors ${
                       i % 2
                         ? "bg-white dark:bg-gray-900"
                         : "bg-gray-50/50 dark:bg-gray-800/50"
-                    } hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer hover:shadow-md border-l-4 border-transparent hover:border-blue-500`}
-                    onClick={() => {
-                      // For selection mode (like in X-Ray form), use onSelectPatient
-                      // For viewing mode (like in main patients page), use onViewPatient
-                      if (onSelectPatient) {
-                        onSelectPatient(p);
-                      } else {
-                        onViewPatient?.(p);
-                      }
-                    }}
+                    } hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer`}
+                    onClick={() => onViewPatient?.(p)}
                   >
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-3">

@@ -21,8 +21,7 @@ import {
   AlertTriangle,
   Activity,
   Zap,
-  Printer,
-  CreditCard
+  Printer
 } from 'lucide-react';
 import PatientSearch from '@/components/PatientSearch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -208,9 +207,6 @@ export default function XRay() {
       form.reset();
       setSelectedPatient(null);
       setSafetyChecklist({ notPregnant: false, metalRemoved: false, canCooperate: false });
-      setSearchTerm("");
-      setShouldSearch(false);
-      setShowNewRequestModal(false);
     },
     onError: (error) => {
       toast({ title: "Error", description: "Failed to create X-Ray examination request", variant: "destructive" });
@@ -742,78 +738,33 @@ export default function XRay() {
                     <div>
                       <h3 className="text-lg font-medium mb-4">Patient Selection</h3>
                       {!selectedPatient ? (
-                        <div className="border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-lg p-6">
-                          <div className="text-center mb-4">
-                            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-full mb-3">
-                              <Search className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                              Select a Patient
-                            </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Search and select a patient to create an X-Ray request
-                            </p>
-                          </div>
-                          <PatientSearch
-                            onSelectPatient={(patient) => {
-                              setSelectedPatient(patient);
-                              // Auto-trigger search reset for better UX
-                              setSearchTerm("");
-                              setShouldSearch(false);
-                            }}
-                            showActions={false}
-                            viewMode="search"
-                            selectedDate=""
-                            searchTerm={searchTerm}
-                            onSearchTermChange={(term) => {
-                              setSearchTerm(term);
-                              // Auto-trigger search after typing stops
-                              if (term.length >= 3) {
-                                setShouldSearch(true);
-                              }
-                            }}
-                            shouldSearch={shouldSearch}
-                            onShouldSearchChange={setShouldSearch}
-                          />
-                        </div>
+                        <PatientSearch
+                          onSelectPatient={setSelectedPatient}
+                          showActions={false}
+                          viewMode="search"
+                          selectedDate=""
+                          searchTerm={searchTerm}
+                          onSearchTermChange={setSearchTerm}
+                          shouldSearch={shouldSearch}
+                          onShouldSearchChange={setShouldSearch}
+                        />
                       ) : (
-                        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                                {selectedPatient.firstName?.[0]?.toUpperCase()}{selectedPatient.lastName?.[0]?.toUpperCase()}
-                              </div>
-                              <div>
-                                <h4 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                                  {selectedPatient.firstName} {selectedPatient.lastName}
-                                </h4>
-                                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-                                  <span className="inline-flex items-center">
-                                    <CreditCard className="w-4 h-4 mr-1" />
-                                    ID: {selectedPatient.patientId}
-                                  </span>
-                                  <span>Age: {selectedPatient.age}</span>
-                                  <span>Gender: {selectedPatient.gender}</span>
-                                </div>
-                                {selectedPatient.phoneNumber && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                    Phone: {selectedPatient.phoneNumber}
-                                  </p>
-                                )}
-                              </div>
+                            <div>
+                              <p className="font-medium text-green-800 dark:text-green-200">
+                                {selectedPatient.firstName} {selectedPatient.lastName}
+                              </p>
+                              <p className="text-sm text-green-700 dark:text-green-300">
+                                ID: {selectedPatient.patientId} | Age: {selectedPatient.age} | Gender: {selectedPatient.gender}
+                              </p>
                             </div>
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                setSelectedPatient(null);
-                                setSearchTerm("");
-                                setShouldSearch(false);
-                              }}
-                              className="ml-4"
+                              onClick={() => setSelectedPatient(null)}
                             >
-                              <Search className="w-4 h-4 mr-2" />
                               Change Patient
                             </Button>
                           </div>
@@ -822,161 +773,129 @@ export default function XRay() {
                     </div>
 
                     {/* X-Ray Details */}
-                    {selectedPatient && (
-                      <div className="space-y-6">
-                        <div className="border-t pt-6">
-                          <h3 className="text-lg font-medium mb-4 flex items-center">
-                            <Activity className="w-5 h-5 mr-2 text-blue-600" />
-                            Examination Details
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField
-                              control={form.control}
-                              name="examType"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-base font-medium">Exam Type *</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger className="h-12">
-                                        <SelectValue placeholder="Select examination type" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="chest">Chest X-Ray</SelectItem>
-                                      <SelectItem value="abdomen">Abdomen X-Ray</SelectItem>
-                                      <SelectItem value="spine">Spine X-Ray</SelectItem>
-                                      <SelectItem value="extremities">Extremities X-Ray</SelectItem>
-                                      <SelectItem value="pelvis">Pelvis X-Ray</SelectItem>
-                                      <SelectItem value="skull">Skull X-Ray</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="examType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Exam Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select exam type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="chest">Chest X-Ray</SelectItem>
+                                <SelectItem value="abdomen">Abdomen X-Ray</SelectItem>
+                                <SelectItem value="spine">Spine X-Ray</SelectItem>
+                                <SelectItem value="extremities">Extremities X-Ray</SelectItem>
+                                <SelectItem value="pelvis">Pelvis X-Ray</SelectItem>
+                                <SelectItem value="skull">Skull X-Ray</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                            <FormField
-                              control={form.control}
-                              name="bodyPart"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-base font-medium">Specific Body Part</FormLabel>
-                                  <FormControl>
-                                    <Input 
-                                      placeholder="e.g., Left knee, Right shoulder" 
-                                      {...field} 
-                                      value={field.value || ''} 
-                                      className="h-12"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
+                      <FormField
+                        control={form.control}
+                        name="bodyPart"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Body Part (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Left knee, Right shoulder" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                          <div className="mt-6">
-                            <FormField
-                              control={form.control}
-                              name="clinicalIndication"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-base font-medium">Clinical Indication *</FormLabel>
-                                  <FormControl>
-                                    <Textarea
-                                      placeholder="Describe the clinical reason for this X-ray examination..."
-                                      className="min-h-[100px] resize-none"
-                                      {...field}
-                                      value={field.value || ''}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
+                    <FormField
+                      control={form.control}
+                      name="clinicalIndication"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Clinical Indication</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Describe the clinical reason for this X-ray examination..."
+                              {...field}
+                              value={field.value || ''}
                             />
-                          </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                          <div className="mt-6">
-                            <FormField
-                              control={form.control}
-                              name="specialInstructions"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-base font-medium">Special Instructions</FormLabel>
-                                  <FormControl>
-                                    <Textarea
-                                      placeholder="Any special instructions for the technician..."
-                                      className="min-h-[80px] resize-none"
-                                      {...field}
-                                      value={field.value || ''}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
+                    <FormField
+                      control={form.control}
+                      name="specialInstructions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Special Instructions (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Any special instructions for the technician..."
+                              {...field}
+                              value={field.value || ''}
                             />
-                          </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Safety Checklist */}
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Safety Checklist</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="notPregnant"
+                            checked={safetyChecklist.notPregnant}
+                            onCheckedChange={(checked) =>
+                              setSafetyChecklist(prev => ({ ...prev, notPregnant: !!checked }))
+                            }
+                          />
+                          <label htmlFor="notPregnant" className="text-sm font-medium">
+                            Patient is not pregnant (or pregnancy status confirmed)
+                          </label>
                         </div>
-
-                        {/* Safety Checklist */}
-                        <div className="border-t pt-6">
-                          <h3 className="text-lg font-medium mb-4 flex items-center">
-                            <AlertTriangle className="w-5 h-5 mr-2 text-orange-600" />
-                            Safety Checklist
-                          </h3>
-                          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-orange-800 dark:text-orange-200">
-                              Please confirm all safety requirements before proceeding with the examination.
-                            </p>
-                          </div>
-                          <div className="space-y-4">
-                            <div className="flex items-start space-x-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                              <Checkbox
-                                id="notPregnant"
-                                checked={safetyChecklist.notPregnant}
-                                onCheckedChange={(checked) =>
-                                  setSafetyChecklist(prev => ({ ...prev, notPregnant: !!checked }))
-                                }
-                                className="mt-1"
-                              />
-                              <label htmlFor="notPregnant" className="text-sm font-medium flex-1 cursor-pointer">
-                                Patient is not pregnant (or pregnancy status confirmed)
-                              </label>
-                            </div>
-                            <div className="flex items-start space-x-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                              <Checkbox
-                                id="metalRemoved"
-                                checked={safetyChecklist.metalRemoved}
-                                onCheckedChange={(checked) =>
-                                  setSafetyChecklist(prev => ({ ...prev, metalRemoved: !!checked }))
-                                }
-                                className="mt-1"
-                              />
-                              <label htmlFor="metalRemoved" className="text-sm font-medium flex-1 cursor-pointer">
-                                Metal objects and jewelry removed from examination area
-                              </label>
-                            </div>
-                            <div className="flex items-start space-x-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                              <Checkbox
-                                id="canCooperate"
-                                checked={safetyChecklist.canCooperate}
-                                onCheckedChange={(checked) =>
-                                  setSafetyChecklist(prev => ({ ...prev, canCooperate: !!checked }))
-                                }
-                                className="mt-1"
-                              />
-                              <label htmlFor="canCooperate" className="text-sm font-medium flex-1 cursor-pointer">
-                                Patient can cooperate and follow positioning instructions
-                              </label>
-                            </div>
-                          </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="metalRemoved"
+                            checked={safetyChecklist.metalRemoved}
+                            onCheckedChange={(checked) =>
+                              setSafetyChecklist(prev => ({ ...prev, metalRemoved: !!checked }))
+                            }
+                          />
+                          <label htmlFor="metalRemoved" className="text-sm font-medium">
+                            Metal objects and jewelry removed from examination area
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="canCooperate"
+                            checked={safetyChecklist.canCooperate}
+                            onCheckedChange={(checked) =>
+                              setSafetyChecklist(prev => ({ ...prev, canCooperate: !!checked }))
+                            }
+                          />
+                          <label htmlFor="canCooperate" className="text-sm font-medium">
+                            Patient can cooperate and follow positioning instructions
+                          </label>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-6 border-t bg-gray-50 dark:bg-gray-800/50 -mx-6 -mb-6 px-6 py-4">
+                  <div className="flex justify-end gap-2 pt-4 border-t">
                     <Button
                       type="button"
                       variant="outline"
@@ -985,33 +904,16 @@ export default function XRay() {
                         setSelectedPatient(null);
                         form.reset();
                         setSafetyChecklist({ notPregnant: false, metalRemoved: false, canCooperate: false });
-                        setSearchTerm("");
-                        setShouldSearch(false);
                       }}
-                      className="px-6"
                     >
                       Cancel
                     </Button>
                     <Button 
                       type="submit" 
-                      className="bg-medical-blue hover:bg-blue-700 px-8"
-                      disabled={!selectedPatient || 
-                        createXrayExamMutation.isPending ||
-                        !form.watch("clinicalIndication")?.trim() ||
-                        !form.watch("examType")
-                      }
+                      className="bg-medical-blue hover:bg-blue-700"
+                      disabled={!selectedPatient || createXrayExamMutation.isPending}
                     >
-                      {createXrayExamMutation.isPending ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Submit X-Ray Request
-                        </>
-                      )}
+                      {createXrayExamMutation.isPending ? 'Submitting...' : 'Submit X-Ray Request'}
                     </Button>
                   </div>
                 </form>
