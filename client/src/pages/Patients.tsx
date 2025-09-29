@@ -214,7 +214,6 @@ export default function Patients() {
                   <th>Age</th>
                   <th>Gender</th>
                   <th>Phone</th>
-                  <th>Village</th>
                   <th>Payment Status</th>
                   <th>Service Status</th>
                 </tr>
@@ -250,7 +249,6 @@ export default function Patients() {
                         <td>${patient.age ?? "-"}</td>
                         <td>${patient.gender ?? "-"}</td>
                         <td>${patient.phoneNumber || "-"}</td>
-                        <td>${patient.village || "-"}</td>
                         <td class="${
                           s.hasUnpaidServices
                             ? "status-unpaid"
@@ -312,8 +310,6 @@ export default function Patients() {
       age: "",
       gender: undefined,
       phoneNumber: "",
-      village: "",
-      emergencyContact: "",
       allergies: "",
       medicalHistory: "",
     },
@@ -328,9 +324,10 @@ export default function Patients() {
       const patientResponse = await apiRequest("POST", "/api/patients", data);
       const patient = await patientResponse.json();
 
-      // Always create encounter and consultation fee for proper clinic workflow
+      // ALWAYS create encounter and consultation fee - this is mandatory for clinic workflow
       if (billingSettings && servicesList) {
         try {
+          // Create encounter for every patient visit
           const encounterResponse = await fetch("/api/encounters", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -347,7 +344,9 @@ export default function Patients() {
               (s) =>
                 s.category === "consultation" && s.name.includes("General"),
             );
+            
             if (consultationService) {
+              // ALWAYS create consultation order line (unpaid by default)
               const orderLineResponse = await fetch("/api/order-lines", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -364,11 +363,11 @@ export default function Patients() {
                 }),
               });
 
-              // If consultation fee was collected, create payment record
+              // ONLY create payment record if fee was actually collected
               if (collectConsultationFee && orderLineResponse.ok) {
                 const orderLine = await orderLineResponse.json();
                 
-                // Create payment record
+                // Create payment record only when fee is collected
                 const paymentResponse = await fetch("/api/payments", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -382,7 +381,7 @@ export default function Patients() {
                   }),
                 });
 
-                // Create payment item linking payment to order line
+                // Link payment to order line
                 if (paymentResponse.ok) {
                   const payment = await paymentResponse.json();
                   await fetch("/api/payment-items", {
@@ -398,8 +397,9 @@ export default function Patients() {
               }
             }
           }
-        } catch {
-          // don't fail overall
+        } catch (error) {
+          console.error("Failed to create encounter/consultation:", error);
+          // don't fail overall patient registration
         }
       }
       return patient;
@@ -408,8 +408,8 @@ export default function Patients() {
       toast({
         title: "Success",
         description: collectConsultationFee
-          ? `Patient registered. Consultation fee added to today's visit.`
-          : "Patient registered successfully",
+          ? "Patient registered with consultation fee payment collected."
+          : "Patient registered. Consultation fee marked as unpaid.",
       });
       form.reset();
       setShowRegistrationForm(false);
@@ -490,8 +490,6 @@ export default function Patients() {
       age: p.age || "",
       gender: p.gender,
       phoneNumber: p.phoneNumber || "",
-      village: p.village || "",
-      emergencyContact: p.emergencyContact || "",
       allergies: p.allergies || "",
       medicalHistory: p.medicalHistory || "",
     });
@@ -939,37 +937,6 @@ export default function Patients() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="village"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Village/Area</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="mt-4">
-                    <FormField
-                      control={form.control}
-                      name="emergencyContact"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Emergency Contact</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Name and phone number"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
                 </div>
 
@@ -1157,10 +1124,6 @@ export default function Patients() {
                   <span className="font-medium">Age/Gender:</span>{" "}
                   {activePatient.age ?? "—"}{" "}
                   {activePatient.gender ? `• ${activePatient.gender}` : ""}
-                </div>
-                <div>
-                  <span className="font-medium">Village:</span>{" "}
-                  {activePatient.village || "—"}
                 </div>
               </div>
 

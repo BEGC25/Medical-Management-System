@@ -11,8 +11,6 @@ export const patients = sqliteTable("patients", {
   age: text("age"),
   gender: text("gender").$type<"Male" | "Female">(),
   phoneNumber: text("phone_number"),
-  village: text("village"),
-  emergencyContact: text("emergency_contact"),
   allergies: text("allergies"),
   medicalHistory: text("medical_history"),
   createdAt: text("created_at").notNull().default(sql`datetime('now')`),
@@ -100,8 +98,8 @@ export const ultrasoundExams = sqliteTable("ultrasound_exams", {
 export const billingSettings = sqliteTable("billing_settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   consultationFee: real("consultation_fee").notNull().default(2000.00),
-  requirePrepayment: integer("require_prepayment").notNull().default(false),
-  allowEmergencyGrace: integer("allow_emergency_grace").notNull().default(true),
+  requirePrepayment: integer("require_prepayment").notNull().default(0),
+  allowEmergencyGrace: integer("allow_emergency_grace").notNull().default(1),
   currency: text("currency").notNull().default("SSP"),
   updatedBy: text("updated_by").notNull(),
   createdAt: text("created_at").notNull(),
@@ -116,7 +114,7 @@ export const services = sqliteTable("services", {
   category: text("category").$type<"consultation" | "laboratory" | "radiology" | "ultrasound" | "pharmacy" | "procedure">().notNull(),
   description: text("description"),
   price: real("price").notNull(),
-  isActive: integer("is_active").notNull().default(true),
+  isActive: integer("is_active").notNull().default(1),
   createdAt: text("created_at").notNull(),
 });
 
