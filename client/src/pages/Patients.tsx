@@ -360,24 +360,41 @@ export default function Patients() {
                   unitPriceSnapshot: consultationService.price,
                   totalPrice: consultationService.price,
                   department: "consultation",
-                  orderedBy: "Reception",
-                  paymentStatus: collectConsultationFee ? "paid" : "unpaid"
+                  orderedBy: "Reception"
                 }),
               });
 
-              // If consultation fee was collected, mark the order line as paid
+              // If consultation fee was collected, create payment record
               if (collectConsultationFee && orderLineResponse.ok) {
                 const orderLine = await orderLineResponse.json();
-                await fetch(`/api/order-lines/${orderLine.id}/payment`, {
-                  method: "PUT",
+                
+                // Create payment record
+                const paymentResponse = await fetch("/api/payments", {
+                  method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    paymentStatus: "paid",
+                    patientId: patient.patientId,
+                    totalAmount: consultationService.price,
                     paymentMethod: "cash",
-                    paidAmount: consultationService.price,
-                    paidAt: new Date().toISOString()
+                    paymentDate: new Date().toISOString().split("T")[0],
+                    receivedBy: "Reception",
+                    notes: "Consultation fee paid at registration"
                   }),
                 });
+
+                // Create payment item linking payment to order line
+                if (paymentResponse.ok) {
+                  const payment = await paymentResponse.json();
+                  await fetch("/api/payment-items", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      paymentId: payment.paymentId,
+                      orderLineId: orderLine.id,
+                      amount: consultationService.price
+                    }),
+                  });
+                }
               }
             }
           }
