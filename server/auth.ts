@@ -67,6 +67,11 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
+      // Only admins can create new users
+      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).send("Username already exists");
@@ -79,10 +84,8 @@ export function setupAuth(app: Express) {
 
       const { password, ...userWithoutPassword } = user;
 
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(userWithoutPassword);
-      });
+      // Don't auto-login the created user, just return the user data
+      res.status(201).json(userWithoutPassword);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
