@@ -408,8 +408,8 @@ export default function Patients() {
       toast({
         title: "Success",
         description: collectConsultationFee
-          ? "Patient registered with consultation fee payment collected."
-          : "Patient registered. Consultation fee marked as unpaid.",
+          ? "Patient registered with consultation service added and payment collected."
+          : "Patient registered with consultation service added. Payment can be collected later.",
       });
       form.reset();
       setShowRegistrationForm(false);
@@ -829,7 +829,7 @@ export default function Patients() {
                       Patient Registration
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Register new patient and handle consultation payment
+                      Register new patient with consultation service included
                     </p>
                   </div>
                 </>
@@ -983,28 +983,28 @@ export default function Patients() {
                   </div>
                 </div>
 
-                {/* Consultation Fee */}
+                {/* Consultation Service & Payment */}
                 {!editingPatient && billingSettings && (
                   <div className="space-y-4 p-4 bg-blue-50 rounded-lg border">
                     <h3 className="font-medium text-gray-800 flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
-                      Consultation Fee Collection
+                      Consultation Service & Payment
                     </h3>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 bg-white rounded border">
                         <div>
-                          <p className="font-medium">
-                            Consultation Fee: {billingSettings.consultationFee}{" "}
-                            {billingSettings.currency}
+                          <p className="font-medium text-green-700 flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Consultation service will be added to patient visit
                           </p>
-                          <p className="text-sm text-gray-600">
-                            {billingSettings.requirePrepayment
+                          <p className="text-sm text-gray-600 mt-1">
+                            Fee: {billingSettings.consultationFee} {billingSettings.currency} - {billingSettings.requirePrepayment
                               ? "Payment required before seeing doctor"
                               : "Payment can be collected now or later"}
                           </p>
                         </div>
                         {billingSettings.requirePrepayment && (
-                          <Badge variant="destructive">Required</Badge>
+                          <Badge variant="destructive">Payment Required</Badge>
                         )}
                       </div>
                       <div className="flex items-center justify-between">
@@ -1020,8 +1020,8 @@ export default function Patients() {
                             className="text-sm font-medium cursor-pointer"
                           >
                             {billingSettings.requirePrepayment
-                              ? "Collect consultation fee now (Required)"
-                              : "Collect consultation fee now (Optional)"}
+                              ? "Collect payment now (Required by policy)"
+                              : "Collect payment now (can be deferred)"}
                           </label>
                         </div>
                         {collectConsultationFee && (
