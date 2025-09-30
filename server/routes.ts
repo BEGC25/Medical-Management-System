@@ -829,9 +829,11 @@ export default router;
 import { createServer } from 'http';
 import { writeFileSync } from 'fs';
 import path from 'path';
+import { setupAuth } from './auth';
 
 // Function to register routes with the express app
 export async function registerRoutes(app: any) {
+  setupAuth(app);
   app.use(router);
   
   // Return a basic HTTP server for compatibility

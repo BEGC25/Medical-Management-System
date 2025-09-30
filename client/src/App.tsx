@@ -13,43 +13,53 @@ import AllResults from "@/pages/AllResults";
 import Payment from "@/pages/Payment";
 import Billing from "@/pages/Billing";
 import BillingSettings from "@/pages/BillingSettings";
+import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { queryClient } from "@/lib/queryClient";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <OfflineIndicator />
-        <Header />
-        <Navigation />
-        
-        {/* Main content area with left margin for sidebar */}
-        <main className="ml-64 pt-16 min-h-screen">
-          <div className="px-6 py-6">
-            <Switch>
-              <Route path="/" component={Dashboard} />
-              <Route path="/patients" component={Patients} />
-              <Route path="/treatment" component={Treatment} />
-              <Route path="/laboratory" component={Laboratory} />
-              <Route path="/xray" component={XRay} />
-              <Route path="/ultrasound" component={Ultrasound} />
-              <Route path="/pharmacy" component={Pharmacy} />
-              <Route path="/payment" component={Payment} />
-              <Route path="/billing" component={Billing} />
-              <Route path="/billing-settings" component={BillingSettings} />
-              <Route path="/reports" component={Reports} />
-              <Route path="/all-results" component={AllResults} />
-              <Route component={NotFound} />
-            </Switch>
-          </div>
-        </main>
-        
-        <Toaster />
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <OfflineIndicator />
+          
+          <Switch>
+            <Route path="/auth" component={AuthPage} />
+            <Route>
+              <Header />
+              <Navigation />
+              
+              <main className="ml-64 pt-16 min-h-screen">
+                <div className="px-6 py-6">
+                  <Switch>
+                    <ProtectedRoute path="/" component={Dashboard} />
+                    <ProtectedRoute path="/patients" component={Patients} />
+                    <ProtectedRoute path="/treatment" component={Treatment} />
+                    <ProtectedRoute path="/laboratory" component={Laboratory} />
+                    <ProtectedRoute path="/xray" component={XRay} />
+                    <ProtectedRoute path="/ultrasound" component={Ultrasound} />
+                    <ProtectedRoute path="/pharmacy" component={Pharmacy} />
+                    <ProtectedRoute path="/payment" component={Payment} />
+                    <ProtectedRoute path="/billing" component={Billing} />
+                    <ProtectedRoute path="/billing-settings" component={BillingSettings} />
+                    <ProtectedRoute path="/reports" component={Reports} />
+                    <ProtectedRoute path="/all-results" component={AllResults} />
+                    <Route component={NotFound} />
+                  </Switch>
+                </div>
+              </main>
+            </Route>
+          </Switch>
+          
+          <Toaster />
+        </div>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

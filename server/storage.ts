@@ -1,8 +1,10 @@
 import { eq, like, ilike, desc, and, count, or, sql } from "drizzle-orm";
 import { db } from './db';
 import * as schema from "@shared/schema";
+import createMemoryStore from "memorystore";
+import session from "express-session";
 
-const { patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines } = schema;
+const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines } = schema;
 
 // Tables are automatically created by Drizzle
 console.log("✓ Database connection established");
@@ -96,6 +98,12 @@ async function generateInvoiceId(): Promise<string> {
 }
 
 export interface IStorage {
+  // Users (Authentication)
+  createUser(data: schema.InsertUser): Promise<schema.User>;
+  getUser(id: number): Promise<schema.User | null>;
+  getUserByUsername(username: string): Promise<schema.User | null>;
+  sessionStore: any;
+
   // Patients
   createPatient(data: schema.InsertPatient): Promise<schema.Patient>;
   getPatients(search?: string): Promise<schema.Patient[]>;
@@ -210,6 +218,36 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  sessionStore: any;
+
+  constructor() {
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000,
+    });
+  }
+
+  async createUser(data: schema.InsertUser): Promise<schema.User> {
+    const now = new Date().toISOString();
+    const insertData: any = {
+      ...data,
+      createdAt: now,
+    };
+    
+    const [user] = await db.insert(users).values(insertData).returning();
+    return user;
+  }
+
+  async getUser(id: number): Promise<schema.User | null> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || null;
+  }
+
+  async getUserByUsername(username: string): Promise<schema.User | null> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || null;
+  }
+
   async createPatient(data: schema.InsertPatient): Promise<schema.Patient> {
     // Initialize counter from existing patients if not set
     if (patientCounter === 0) {

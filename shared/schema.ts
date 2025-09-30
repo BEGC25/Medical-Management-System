@@ -3,6 +3,15 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  username: text("username").unique().notNull(),
+  password: text("password").notNull(),
+  fullName: text("full_name"),
+  role: text("role").$type<"admin" | "reception" | "doctor" | "lab" | "radiology" | "pharmacy">().notNull().default("reception"),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
+});
+
 export const patients = sqliteTable("patients", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   patientId: text("patient_id").unique().notNull(),
@@ -218,6 +227,11 @@ export const pharmacyOrders = sqliteTable("pharmacy_orders", {
 });
 
 // Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertPatientSchema = createInsertSchema(patients).omit({
   id: true,
   patientId: true,
@@ -313,6 +327,8 @@ export const insertPharmacyOrderSchema = createInsertSchema(pharmacyOrders).omit
 });
 
 // Types
+export type User = typeof users.$inferSelect;
+export type SafeUser = Omit<User, "password">;
 export type Patient = typeof patients.$inferSelect;
 export type Treatment = typeof treatments.$inferSelect;
 export type LabTest = typeof labTests.$inferSelect;
@@ -328,6 +344,7 @@ export type Payment = typeof payments.$inferSelect;
 export type PaymentItem = typeof paymentItems.$inferSelect;
 export type PharmacyOrder = typeof pharmacyOrders.$inferSelect;
 
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type InsertTreatment = z.infer<typeof insertTreatmentSchema>;
 export type InsertLabTest = z.infer<typeof insertLabTestSchema>;

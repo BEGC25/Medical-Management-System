@@ -16,6 +16,7 @@ The frontend utilizes React with TypeScript, styled using Radix UI and shadcn/ui
 The backend is built with Node.js and Express.js, using TypeScript for a RESTful API with JSON responses. Data validation is performed using Zod schemas. The system supports offline functionality through local storage caching and a pending sync queue.
 
 ### Feature Specifications
+- **Authentication & Security**: Username/password authentication with Passport.js local strategy, secure password hashing (scrypt), session-based authentication with httpOnly cookies, role-based access control (admin, reception, doctor, lab, radiology, pharmacy), and protected routes ensuring only authenticated users can access the system.
 - **Patient Management**: Registration, search, unique ID generation, medical history, and allergy tracking.
 - **Treatment Module**: Visit recording, vital signs, chief complaint, diagnosis, treatment plans, and follow-up scheduling.
 - **Laboratory System**: Comprehensive test ordering (blood, urine, stool, microbiology, chemistry, hormonal, STI/reproductive health, parasitic/tropical, tuberculosis), chemistry and hormonal machine integration, priority management, results recording with normal values, status tracking, and photo upload for lab results. The system is designed to match clinic workflow, allowing doctors to order simple tests and technicians to input detailed results. It includes robust clinical interpretation, detecting critical medical findings and generating professional medical reports.
