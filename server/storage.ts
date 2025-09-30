@@ -832,9 +832,11 @@ export class MemStorage implements IStorage {
       .where(eq(pharmacyOrders.patientId, patientId)),
 
       // Check consultation order lines - they are unpaid if no payment item exists for them
+      // Also calculate the total amount due for unpaid consultation services
       db.select({
         total: sql<number>`count(*)`,
         unpaid: sql<number>`sum(case when ${paymentItems.id} is null then 1 else 0 end)`,
+        unpaidAmount: sql<number>`sum(case when ${paymentItems.id} is null then ${orderLines.totalPrice} else 0 end)`,
       })
       .from(orderLines)
       .innerJoin(encounters, eq(orderLines.encounterId, encounters.encounterId))
@@ -845,6 +847,9 @@ export class MemStorage implements IStorage {
       ))
     ]);
 
+    // Calculate the total balance due (unpaid consultation amounts)
+    const consultationBalance = consultationData[0]?.unpaidAmount || 0;
+
     // Sum up totals including consultation order lines
     const totals = {
       totalServices: (labTestsData[0]?.total || 0) + (xrayExamsData[0]?.total || 0) + (ultrasoundExamsData[0]?.total || 0) + (pharmacyOrdersData[0]?.total || 0) + (consultationData[0]?.total || 0),
@@ -852,7 +857,10 @@ export class MemStorage implements IStorage {
       pendingServices: (labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0),
       completedServices: (labTestsData[0]?.completed || 0) + (xrayExamsData[0]?.completed || 0) + (ultrasoundExamsData[0]?.completed || 0) + (pharmacyOrdersData[0]?.dispensed || 0),
       hasUnpaidServices: ((labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0) + (consultationData[0]?.unpaid || 0)) > 0,
-      hasPendingServices: ((labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0)) > 0
+      hasPendingServices: ((labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0)) > 0,
+      // Add balance fields that the UI expects
+      balance: consultationBalance,
+      balanceToday: consultationBalance,
     };
 
     return totals;
