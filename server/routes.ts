@@ -115,6 +115,19 @@ router.put("/api/patients/:patientId", async (req, res) => {
   }
 });
 
+router.delete("/api/patients/:patientId", async (req, res) => {
+  try {
+    const success = await storage.deletePatient(req.params.patientId);
+    if (success) {
+      res.json({ message: "Patient deleted successfully" });
+    } else {
+      res.status(404).json({ error: "Patient not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete patient" });
+  }
+});
+
 // Treatments
 router.get("/api/treatments", async (req, res) => {
   try {

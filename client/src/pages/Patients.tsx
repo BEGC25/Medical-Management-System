@@ -6,8 +6,6 @@ import {
   UserPlus,
   Save,
   X,
-  Printer,
-  Filter,
   Calendar,
   Users,
   Search,
@@ -136,158 +134,6 @@ export default function Patients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
 
-  // Print roster (fixed: removed stray escapes)
-  const handlePrintRoster = async () => {
-    try {
-      let apiUrl = "/api/patients";
-      const qs = new URLSearchParams();
-      let viewDescription = "";
-      let patientCountText = "";
-
-      if (viewMode === "today") {
-        qs.append("today", "true");
-        viewDescription = "Today's Patients";
-        patientCountText = `${todayCount}`;
-      } else if (viewMode === "date") {
-        qs.append("date", selectedDate);
-        viewDescription = `Patients for ${formatDate(selectedDate)}`;
-        patientCountText = `${specificDateCount}`;
-      } else if (viewMode === "all") {
-        viewDescription = "All Patients";
-        patientCountText = `${allCount}`;
-      } else if (viewMode === "search") {
-        if (!shouldSearch || !searchTerm.trim()) {
-          toast({
-            title: "No Search Results",
-            description:
-              "Please enter a search term and perform a search before printing",
-            variant: "destructive",
-          });
-          return;
-        }
-        qs.append("search", searchTerm.trim());
-        viewDescription = `Search Results for "${searchTerm}"`;
-        patientCountText = "Search results";
-      }
-
-      qs.append("withStatus", "true");
-      const fullUrl = qs.toString() ? `${apiUrl}?${qs}` : apiUrl;
-
-      const response = await fetch(fullUrl);
-      if (!response.ok) throw new Error("Failed to fetch patient data");
-      const patients = await response.json();
-
-      const html = `
-        <html>
-          <head>
-            <title>Patient Roster - Bahr El Ghazal Clinic</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 20px; }
-              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #ccc; padding-bottom: 15px; }
-              .info { margin-bottom: 20px; font-size: 14px; color: #666; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-              th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
-              th { background: #f5f5f5; }
-              .patient-id { font-weight: bold; color: #0066cc; }
-              .status-unpaid { color: #dc2626; font-weight: bold; }
-              .status-paid { color: #16a34a; }
-              .status-pending { color: #ca8a04; }
-              .status-completed { color: #16a34a; }
-              .status-none { color: #9ca3af; font-style: italic; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h2>Bahr El Ghazal Clinic</h2>
-              <h3>Patient Roster</h3>
-            </div>
-            <div class="info">
-              <p><strong>View:</strong> ${viewDescription}</p>
-              <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-              <p><strong>Total Patients:</strong> ${patientCountText} patients</p>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Patient ID</th>
-                  <th>Name</th>
-                  <th>Age</th>
-                  <th>Gender</th>
-                  <th>Phone</th>
-                  <th>Payment Status</th>
-                  <th>Service Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${patients
-                  .map((patient: any) => {
-                    const s = patient.serviceStatus || {};
-                    const paymentStatus = s.hasUnpaidServices
-                      ? `⚠️ ${s.unpaidServices || 0} UNPAID`
-                      : s.totalServices > 0
-                        ? "✓ PAID"
-                        : "No services";
-
-                    const svcTxt =
-                      s.totalServices > 0
-                        ? [
-                            s.hasPendingServices
-                              ? `⏰ ${s.pendingServices || 0} pending`
-                              : "",
-                            s.completedServices
-                              ? `✓ ${s.completedServices} done`
-                              : "",
-                          ]
-                            .filter(Boolean)
-                            .join(", ") || "Processing"
-                        : "No services";
-
-                    return `
-                      <tr>
-                        <td class="patient-id">${patient.patientId}</td>
-                        <td>${patient.firstName} ${patient.lastName}</td>
-                        <td>${patient.age ?? "-"}</td>
-                        <td>${patient.gender ?? "-"}</td>
-                        <td>${patient.phoneNumber || "-"}</td>
-                        <td class="${
-                          s.hasUnpaidServices
-                            ? "status-unpaid"
-                            : s.totalServices > 0
-                              ? "status-paid"
-                              : "status-none"
-                        }">${paymentStatus}</td>
-                        <td class="${
-                          s.hasPendingServices
-                            ? "status-pending"
-                            : s.completedServices
-                              ? "status-completed"
-                              : "status-none"
-                        }">${svcTxt}</td>
-                      </tr>`;
-                  })
-                  .join("")}
-              </tbody>
-            </table>
-          </body>
-        </html>
-      `;
-
-      const w = window.open("", "_blank");
-      if (w) {
-        w.document.write(html);
-        w.document.close();
-        w.focus();
-        setTimeout(() => w.print(), 500);
-      }
-    } catch (e) {
-      toast({
-        title: "Print Error",
-        description: "Failed to generate patient roster. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const formatDate = (dateStr: string) => {
     const [y, m, d] = dateStr.split("-").map(Number);
     const date = new Date(y, m - 1, d);
@@ -364,8 +210,9 @@ export default function Patients() {
               });
 
               // ONLY create payment record if fee was actually collected
-              if (collectConsultationFee && orderLineResponse.ok) {
+              if (collectConsultationFee && orderLineResponse.ok && billingSettings?.consultationFee) {
                 const orderLine = await orderLineResponse.json();
+                const consultationFee = billingSettings.consultationFee;
                 
                 // Create payment record only when fee is collected
                 const paymentResponse = await fetch("/api/payments", {
@@ -373,7 +220,7 @@ export default function Patients() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     patientId: patient.patientId,
-                    totalAmount: consultationService.price,
+                    totalAmount: consultationFee,
                     paymentMethod: "cash",
                     paymentDate: new Date().toISOString().split("T")[0],
                     receivedBy: "Reception",
@@ -381,18 +228,28 @@ export default function Patients() {
                   }),
                 });
 
+                if (!paymentResponse.ok) {
+                  const errorText = await paymentResponse.text();
+                  console.error("Failed to create payment:", errorText);
+                  throw new Error(`Payment creation failed: ${errorText}`);
+                }
+
                 // Link payment to order line
-                if (paymentResponse.ok) {
-                  const payment = await paymentResponse.json();
-                  await fetch("/api/payment-items", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      paymentId: payment.paymentId,
-                      orderLineId: orderLine.id,
-                      amount: consultationService.price
-                    }),
-                  });
+                const payment = await paymentResponse.json();
+                const paymentItemResponse = await fetch("/api/payment-items", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    paymentId: payment.paymentId,
+                    orderLineId: orderLine.id,
+                    amount: consultationFee
+                  }),
+                });
+
+                if (!paymentItemResponse.ok) {
+                  const errorText = await paymentItemResponse.text();
+                  console.error("Failed to create payment item:", errorText);
+                  throw new Error(`Payment item creation failed: ${errorText}`);
                 }
               }
             }
@@ -473,7 +330,41 @@ export default function Patients() {
     },
   });
 
+  const deletePatientMutation = useMutation({
+    mutationFn: async (patientId: string) => {
+      const response = await apiRequest(
+        "DELETE",
+        `/api/patients/${patientId}`,
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Patient deleted successfully" });
+      setActivePatient(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete patient",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertPatient) => {
+    // Enforce consultation fee collection when required
+    if (!editingPatient && billingSettings?.requirePrepayment && !collectConsultationFee) {
+      toast({
+        title: "Payment Required",
+        description: "Consultation fee must be collected before registration. Please check the payment collection option.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (editingPatient)
       updatePatientMutation.mutate({
         patientId: editingPatient.patientId,
@@ -536,15 +427,6 @@ export default function Patients() {
               )}
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={handlePrintRoster}
-                variant="outline"
-                className="hidden sm:flex"
-                data-testid="button-print-roster"
-              >
-                <Printer className="w-4 h-4 mr-2" />
-                Print Roster
-              </Button>
               <Button
                 onClick={() => setShowRegistrationForm(true)}
                 className="bg-health-green hover:bg-green-700 text-white font-semibold px-6 py-2.5 text-base shadow-lg"
@@ -733,23 +615,10 @@ export default function Patients() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handlePrintRoster}
-                  className="text-xs h-8"
-                  disabled={countsLoading}
-                >
-                  <Printer className="w-3 h-3 mr-1" />
-                  Print
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
                   onClick={() => {
                     setLastRefresh(new Date());
-                    queryClient.invalidateQueries({
+                    queryClient.refetchQueries({
                       queryKey: ["/api/patients"],
-                    });
-                    queryClient.invalidateQueries({
-                      queryKey: ["/api/patients/counts"],
                     });
                     queryClient.refetchQueries({
                       queryKey: ["/api/patients/counts"],
@@ -757,8 +626,8 @@ export default function Patients() {
                   }}
                   className="text-xs h-8"
                   disabled={countsLoading}
+                  data-testid="button-refresh"
                 >
-                  <Filter className="w-3 h-3 mr-1" />
                   {countsLoading ? "Loading..." : "Refresh"}
                 </Button>
               </div>
@@ -1065,15 +934,6 @@ export default function Patients() {
                     <X className="w-4 h-4 mr-2" />
                     Cancel
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => window.print()}
-                    className="ml-auto"
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print Form
-                  </Button>
                 </div>
               </form>
             </Form>
@@ -1293,14 +1153,28 @@ export default function Patients() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="col-span-2"
+                  className="col-span-1"
                   onClick={() => {
                     const p: Patient = activePatient;
                     setActivePatient(null);
                     handleEditPatient(p);
                   }}
+                  data-testid="button-edit-patient"
                 >
-                  ✏️ Edit Patient
+                  ✏️ Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="col-span-1"
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete patient ${activePatient.patientId}? This action cannot be undone.`)) {
+                      deletePatientMutation.mutate(activePatient.patientId);
+                    }
+                  }}
+                  disabled={deletePatientMutation.isPending}
+                  data-testid="button-delete-patient"
+                >
+                  🗑️ Delete
                 </Button>
               </div>
             </div>

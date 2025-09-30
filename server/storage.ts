@@ -102,6 +102,7 @@ export interface IStorage {
   getPatientById(id: string): Promise<schema.Patient | null>;
   getPatientByPatientId(patientId: string): Promise<schema.Patient | null>;
   updatePatient(patientId: string, data: Partial<schema.InsertPatient>): Promise<schema.Patient>;
+  deletePatient(patientId: string): Promise<boolean>;
 
   // Treatments
   createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment>;
@@ -263,6 +264,14 @@ export class MemStorage implements IStorage {
       .returning();
     
     return patient;
+  }
+
+  async deletePatient(patientId: string): Promise<boolean> {
+    const result = await db.delete(patients)
+      .where(eq(patients.patientId, patientId))
+      .returning();
+    
+    return result.length > 0;
   }
 
   async createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment> {
