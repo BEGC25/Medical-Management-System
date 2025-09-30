@@ -1,8 +1,11 @@
-import { Activity, Wifi, WifiOff } from "lucide-react";
+import { Activity, Wifi, WifiOff, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 export default function Header() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { user, logoutMutation } = useAuth();
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -16,6 +19,10 @@ export default function Header() {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700 z-40">
@@ -36,6 +43,34 @@ export default function Header() {
               {isOnline ? <Wifi className="w-4 h-4 text-gray-600 dark:text-gray-300" /> : <WifiOff className="w-4 h-4 text-gray-600 dark:text-gray-300" />}
               <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">{isOnline ? 'Online' : 'Offline'}</span>
             </div>
+            
+            {user && (
+              <>
+                <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20" data-testid="user-info">
+                  <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900 dark:text-white" data-testid="user-fullname">
+                      {user.fullName || user.username}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 capitalize" data-testid="user-role">
+                      {user.role}
+                    </div>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  disabled={logoutMutation.isPending}
+                  data-testid="button-logout"
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
