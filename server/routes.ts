@@ -9,6 +9,28 @@ import {
 
 const router = express.Router();
 
+// Middleware to check admin role
+const requireAdmin = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+};
+
+// Users - Admin only
+router.get("/api/users", requireAdmin, async (req, res) => {
+  try {
+    const users = await storage.getAllUsers();
+    res.json(users);
+  } catch (error) {
+    console.error('Error in users route:', error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
 // Patient Counts - Efficient endpoint for getting counts without full data
 router.get("/api/patients/counts", async (req, res) => {
   try {

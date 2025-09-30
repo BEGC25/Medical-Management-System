@@ -102,6 +102,7 @@ export interface IStorage {
   createUser(data: schema.InsertUser): Promise<schema.User>;
   getUser(id: number): Promise<schema.User | null>;
   getUserByUsername(username: string): Promise<schema.User | null>;
+  getAllUsers(): Promise<schema.User[]>;
   sessionStore: any;
 
   // Patients
@@ -246,6 +247,16 @@ export class MemStorage implements IStorage {
   async getUserByUsername(username: string): Promise<schema.User | null> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || null;
+  }
+
+  async getAllUsers(): Promise<schema.User[]> {
+    return await db.select({
+      id: users.id,
+      username: users.username,
+      fullName: users.fullName,
+      role: users.role,
+      createdAt: users.createdAt,
+    }).from(users).orderBy(desc(users.createdAt));
   }
 
   async createPatient(data: schema.InsertPatient): Promise<schema.Patient> {

@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   BarChart3, 
   Stethoscope, 
@@ -11,7 +12,8 @@ import {
   DollarSign,
   Pill,
   Settings,
-  Receipt
+  Receipt,
+  UserCog
 } from "lucide-react";
 
 const navItems = [
@@ -29,11 +31,21 @@ const navItems = [
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },
 ];
 
+const adminOnlyItems = [
+  { path: "/users", label: "User Management", icon: UserCog, category: "Administration" },
+];
+
 export default function Navigation() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  // Combine regular items with admin-only items if user is admin
+  const allItems = user?.role === 'admin' 
+    ? [...navItems, ...adminOnlyItems]
+    : navItems;
 
   // Group navigation items by category
-  const groupedItems = navItems.reduce((acc, item) => {
+  const groupedItems = allItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }
