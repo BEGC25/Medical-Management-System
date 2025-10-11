@@ -671,12 +671,13 @@ export default function Laboratory() {
                     </td>
                   </tr>
                 ) : (
-                  labTestsArray.map((test: LabTest) => (
+                  labTestsArray.map((test: any) => (
                     <tr 
                       key={test.id} 
                       className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                       onClick={() => handleLabTestSelect(test)}
                       title="Click to view test details and results"
+                      data-testid={`lab-test-row-${test.testId}`}
                     >
                       <td className="py-3 px-4">
                         <span className="font-mono text-sm text-blue-600 dark:text-blue-400">
@@ -684,9 +685,14 @@ export default function Laboratory() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {test.patientId}
-                        </span>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {test.patient ? `${test.patient.firstName} ${test.patient.lastName}` : 'Unknown'}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                            {test.patientId}
+                          </div>
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1">

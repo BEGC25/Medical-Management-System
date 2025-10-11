@@ -120,7 +120,7 @@ export interface IStorage {
 
   // Lab Tests
   createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest>;
-  getLabTests(status?: string): Promise<schema.LabTest[]>;
+  getLabTests(status?: string, date?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
   getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]>;
   updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest>;
   updateLabTestAttachments(testId: string, attachments: any[]): Promise<schema.LabTest>;
@@ -366,14 +366,35 @@ export class MemStorage implements IStorage {
     return labTest;
   }
 
-  async getLabTests(status?: string): Promise<schema.LabTest[]> {
-    const query = db.select().from(labTests);
+  async getLabTests(status?: string, date?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
+    const baseQuery = db.select({
+      labTest: labTests,
+      patient: patients
+    })
+    .from(labTests)
+    .leftJoin(patients, eq(labTests.patientId, patients.patientId));
     
+    // Apply filters
+    const conditions = [];
     if (status) {
-      return await query.where(eq(labTests.status, status as any)).orderBy(desc(labTests.requestedDate));
+      conditions.push(eq(labTests.status, status as any));
+    }
+    if (date) {
+      conditions.push(eq(labTests.requestedDate, date));
     }
     
-    return await query.orderBy(desc(labTests.requestedDate));
+    let query = baseQuery;
+    if (conditions.length > 0) {
+      query = baseQuery.where(and(...conditions));
+    }
+    
+    const results = await query.orderBy(desc(labTests.requestedDate));
+    
+    // Transform the results to match the expected format
+    return results.map(result => ({
+      ...result.labTest,
+      patient: result.patient || undefined
+    }));
   }
 
   async getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]> {
