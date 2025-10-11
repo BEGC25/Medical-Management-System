@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Printer, Check, Clock, Camera, FileImage, Save, AlertCircle } from "lucide-react";
+import { Send, Printer, Check, Clock, Camera, FileImage, Save, AlertCircle, TestTube } from "lucide-react";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -640,41 +640,53 @@ export default function Laboratory() {
       </div>
 
       {/* Lab Tests Table */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl text-gray-900 dark:text-white">Laboratory Tests</CardTitle>
+      <Card className="border-0 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-b">
+          <CardTitle className="text-xl text-gray-900 dark:text-white flex items-center gap-2">
+            <TestTube className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            Laboratory Tests
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Test ID</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Patient</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Tests</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Priority</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Actions</th>
+                <tr className="bg-gray-50 dark:bg-gray-800 border-b">
+                  <th className="text-left py-4 px-4 font-semibold text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider">Test ID</th>
+                  <th className="text-left py-4 px-4 font-semibold text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider">Patient Name</th>
+                  <th className="text-left py-4 px-4 font-semibold text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider">Tests Ordered</th>
+                  <th className="text-left py-4 px-4 font-semibold text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider">Priority</th>
+                  <th className="text-left py-4 px-4 font-semibold text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                  <th className="text-left py-4 px-4 font-semibold text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {isLoadingLabTests ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-4 text-gray-500 dark:text-gray-400">
-                      Loading lab tests...
+                    <td colSpan={6} className="text-center py-12 text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <span>Loading lab tests...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : labTestsArray.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-4 text-gray-500 dark:text-gray-400">
-                      No lab tests found
+                    <td colSpan={6} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-3">
+                        <TestTube className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                        <div className="text-gray-500 dark:text-gray-400">
+                          <p className="font-medium">No lab tests found</p>
+                          <p className="text-sm mt-1">Create a new test request to get started</p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   labTestsArray.map((test: any) => (
                     <tr 
                       key={test.id} 
-                      className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                      className="hover:bg-blue-50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors"
                       onClick={() => handleLabTestSelect(test)}
                       title="Click to view test details and results"
                       data-testid={`lab-test-row-${test.testId}`}
