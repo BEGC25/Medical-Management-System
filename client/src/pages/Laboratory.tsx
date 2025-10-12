@@ -802,11 +802,11 @@ export default function Laboratory() {
                     <div
                       key={test.testId}
                       data-testid={`card-completed-test-${test.testId}`}
-                      className="border border-green-200 dark:border-green-700 rounded-lg p-3 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer"
+                      className="rounded-lg p-3 cursor-pointer transition-colors border border-green-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
                       onClick={() => handleLabTestSelect(test)}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <div className="text-sm font-semibold truncate">{fullName(p) || test.patientId}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
@@ -816,10 +816,10 @@ export default function Laboratory() {
                           </div>
                           <TestsRow tests={tests} />
                         </div>
-                        <Badge className="bg-green-600 text-white">
-                          <Check className="w-3 h-3 mr-1" />
-                          Completed
-                        </Badge>
+                        <div className="shrink-0 flex items-center gap-2">
+                          <Chip tone="emerald">Completed</Chip>
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </div>
                       </div>
                     </div>
                   );
