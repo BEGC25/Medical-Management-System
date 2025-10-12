@@ -1485,9 +1485,15 @@ export default function Laboratory() {
               const criticalFindings: string[] = [];
               const warnings: string[] = [];
 
+              // Helper function to check if titer is significant
+              const getTiterValue = (titer: string): number => {
+                const match = titer?.match(/1:(\d+)/);
+                return match ? parseInt(match[1]) : 0;
+              };
+
               // Analyze results for critical findings
               Object.entries(results).forEach(([testName, testData]) => {
-                // Malaria detection
+                // ===== MALARIA DETECTION =====
                 if (testName === "Blood Film for Malaria (BFFM)") {
                   const parasites = testData["Malaria Parasites"];
                   if (parasites && parasites !== "Not seen" && parasites !== "Negative") {
@@ -1498,57 +1504,185 @@ export default function Laboratory() {
                   }
                 }
 
-                // Widal Test (Typhoid)
+                // ===== WIDAL TEST (TYPHOID) =====
                 if (testName === "Widal Test (Typhoid)") {
-                  const oAg = testData["S. Typhi (O)Ag"];
-                  const hAg = testData["S. Typhi (H)Ag"];
-                  if ((oAg && oAg.includes("1:80")) || (hAg && hAg.includes("1:80"))) {
+                  const oAg = getTiterValue(testData["S. Typhi (O)Ag"]);
+                  const hAg = getTiterValue(testData["S. Typhi (H)Ag"]);
+                  const paraA = getTiterValue(testData["S. Paratyphi A"]);
+                  const paraB = getTiterValue(testData["S. Paratyphi B"]);
+                  
+                  if (oAg >= 320 || hAg >= 320) {
+                    criticalFindings.push(`🔴 VERY HIGH typhoid titers (O:1:${oAg}, H:1:${hAg}) - Strongly suggests active typhoid infection`);
+                  } else if (oAg >= 160 || hAg >= 160) {
+                    warnings.push(`⚠️ HIGH typhoid titers (O:1:${oAg}, H:1:${hAg}) - Probable typhoid fever, start treatment`);
+                  } else if (oAg >= 80 || hAg >= 80) {
                     warnings.push(`⚠️ Elevated typhoid titers - Consider typhoid fever`);
                   }
+
+                  if (paraA >= 160 || paraB >= 160) {
+                    warnings.push(`⚠️ Elevated paratyphoid titers detected`);
+                  }
                 }
 
-                // Urine Analysis
+                // ===== BRUCELLA TEST =====
+                if (testName === "Brucella Test (B.A.T)") {
+                  const abortus = getTiterValue(testData["B. Abortus"]);
+                  const malitensis = getTiterValue(testData["B. Malitensis"]);
+                  
+                  if (abortus >= 160 || malitensis >= 160) {
+                    criticalFindings.push(`🔴 POSITIVE for Brucellosis (Abortus:1:${abortus}, Malitensis:1:${malitensis}) - Zoonotic infection requiring treatment`);
+                  } else if (abortus >= 80 || malitensis >= 80) {
+                    warnings.push(`⚠️ Possible Brucellosis - Consider patient history and clinical correlation`);
+                  }
+                }
+
+                // ===== VDRL TEST (SYPHILIS) =====
+                if (testName === "VDRL Test (Syphilis)") {
+                  const result = testData["VDRL Result"];
+                  const titer = testData["Titer"];
+                  
+                  if (result === "Reactive" || result === "Positive") {
+                    criticalFindings.push(`🔴 POSITIVE for Syphilis (VDRL Reactive${titer ? `, titer: ${titer}` : ""}) - Requires confirmatory testing and treatment`);
+                  }
+                }
+
+                // ===== HEPATITIS B (HBsAg) =====
+                if (testName === "Hepatitis B Test (HBsAg)") {
+                  const result = testData["HBsAg Result"];
+                  if (result === "Reactive" || result === "Positive") {
+                    criticalFindings.push(`🔴 POSITIVE for Hepatitis B - Patient is HBsAg positive, infectious`);
+                  }
+                }
+
+                // ===== URINE ANALYSIS =====
                 if (testName === "Urine Analysis") {
-                  if (testData["Protein"] && testData["Protein"] !== "Negative") {
-                    warnings.push(`⚠️ Proteinuria detected - Kidney function needs assessment`);
+                  const appearance = testData["Appearance"];
+                  const protein = testData["Protein"];
+                  const glucose = testData["Glucose"];
+                  const hbPigment = testData["Hb pigment"];
+                  const nitrite = testData["Nitrite"];
+                  const leucocytes = testData["Leucocytes"];
+
+                  // Bloody urine
+                  if (appearance?.toLowerCase().includes("bloody") || appearance?.toLowerCase().includes("red")) {
+                    criticalFindings.push(`🔴 Bloody urine detected - Possible bleeding, trauma, or severe infection`);
                   }
-                  if (testData["Glucose"] && testData["Glucose"] !== "Negative") {
-                    warnings.push(`⚠️ Glucosuria - Check blood glucose levels`);
+
+                  // Significant proteinuria
+                  if (protein && (protein.includes("+++") || protein.includes("++++"))) {
+                    criticalFindings.push(`🔴 Severe proteinuria (${protein}) - Kidney damage likely, needs urgent evaluation`);
+                  } else if (protein && protein !== "Negative" && protein !== "-") {
+                    warnings.push(`⚠️ Proteinuria detected (${protein}) - Kidney function needs assessment`);
                   }
-                  if (testData["Hb pigment"] === "Positive") {
-                    warnings.push(`⚠️ Blood in urine - Further investigation needed`);
+
+                  // Glucosuria
+                  if (glucose && glucose !== "Negative" && glucose !== "-") {
+                    warnings.push(`⚠️ Glucosuria (${glucose}) - Check blood glucose levels, rule out diabetes`);
+                  }
+
+                  // Blood in urine
+                  if (hbPigment && (hbPigment === "Positive" || hbPigment.includes("+"))) {
+                    warnings.push(`⚠️ Blood in urine (Hb ${hbPigment}) - Further investigation needed`);
+                  }
+
+                  // Nitrite positive - suggests bacterial infection
+                  if (nitrite === "Positive") {
+                    warnings.push(`⚠️ Nitrite positive - Bacterial urinary tract infection likely`);
+                  }
+
+                  // Leucocytes in urine
+                  if (leucocytes && leucocytes !== "Negative" && leucocytes !== "-") {
+                    warnings.push(`⚠️ Leucocytes in urine (${leucocytes}) - Urinary tract infection or inflammation`);
                   }
                 }
 
-                // CBC
+                // ===== COMPLETE BLOOD COUNT (CBC) =====
                 if (testName === "Complete Blood Count (CBC)") {
                   const hb = parseFloat(testData["Hemoglobin"]);
-                  if (!isNaN(hb) && hb < 10) {
-                    warnings.push(`⚠️ Severe anemia detected (Hb: ${hb} g/dL) - Requires treatment`);
+                  const wbc = parseFloat(testData["WBC Count"] || testData["WBC"]);
+                  const platelets = parseFloat(testData["Platelets"]);
+                  
+                  // Severe anemia
+                  if (!isNaN(hb) && hb < 7) {
+                    criticalFindings.push(`🔴 SEVERE anemia (Hb: ${hb} g/dL) - Requires urgent blood transfusion consideration`);
+                  } else if (!isNaN(hb) && hb < 10) {
+                    warnings.push(`⚠️ Moderate anemia (Hb: ${hb} g/dL) - Requires treatment`);
                   }
-                  const wbc = parseFloat(testData["WBC"]);
-                  if (!isNaN(wbc) && wbc > 15) {
-                    warnings.push(`⚠️ Elevated WBC (${wbc}) - Possible infection`);
+                  
+                  // Elevated WBC
+                  if (!isNaN(wbc) && wbc > 15000) {
+                    warnings.push(`⚠️ Elevated WBC (${wbc.toLocaleString()}) - Possible severe infection or leukemia`);
+                  } else if (!isNaN(wbc) && wbc > 11000) {
+                    warnings.push(`⚠️ Elevated WBC (${wbc.toLocaleString()}) - Possible infection`);
+                  }
+
+                  // Low WBC
+                  if (!isNaN(wbc) && wbc < 4000) {
+                    warnings.push(`⚠️ Low WBC (${wbc.toLocaleString()}) - Immunosuppression, needs evaluation`);
+                  }
+
+                  // Thrombocytopenia
+                  if (!isNaN(platelets) && platelets < 50) {
+                    criticalFindings.push(`🔴 Severe thrombocytopenia (Platelets: ${platelets} x10³/µL) - Bleeding risk, urgent care needed`);
+                  } else if (!isNaN(platelets) && platelets < 150) {
+                    warnings.push(`⚠️ Low platelets (${platelets} x10³/µL) - Monitor for bleeding`);
                   }
                 }
 
-                // Liver Function
+                // ===== LIVER FUNCTION TEST =====
                 if (testName === "Liver Function Test (LFT)") {
                   const alt = parseFloat(testData["ALT (SGPT)"]);
                   const ast = parseFloat(testData["AST (SGOT)"]);
-                  if (!isNaN(alt) && alt > 100) {
+                  const bilirubin = parseFloat(testData["Total Bilirubin"]);
+                  
+                  if (!isNaN(alt) && alt > 200) {
+                    criticalFindings.push(`🔴 Severely elevated ALT (${alt} U/L) - Significant liver damage`);
+                  } else if (!isNaN(alt) && alt > 100) {
                     warnings.push(`⚠️ Elevated ALT (${alt} U/L) - Liver function impaired`);
                   }
-                  if (!isNaN(ast) && ast > 100) {
+                  
+                  if (!isNaN(ast) && ast > 200) {
+                    criticalFindings.push(`🔴 Severely elevated AST (${ast} U/L) - Significant liver damage`);
+                  } else if (!isNaN(ast) && ast > 100) {
                     warnings.push(`⚠️ Elevated AST (${ast} U/L) - Liver damage possible`);
+                  }
+
+                  if (!isNaN(bilirubin) && bilirubin > 3) {
+                    warnings.push(`⚠️ Elevated bilirubin (${bilirubin} mg/dL) - Jaundice, liver dysfunction`);
                   }
                 }
 
-                // Renal Function
+                // ===== RENAL FUNCTION TEST =====
                 if (testName === "Renal Function Test (RFT)") {
                   const creatinine = parseFloat(testData["Creatinine"]);
-                  if (!isNaN(creatinine) && creatinine > 1.5) {
+                  const urea = parseFloat(testData["Urea"] || testData["Blood Urea"]);
+                  
+                  if (!isNaN(creatinine) && creatinine > 3) {
+                    criticalFindings.push(`🔴 Severely elevated creatinine (${creatinine} mg/dL) - Acute kidney injury or failure`);
+                  } else if (!isNaN(creatinine) && creatinine > 1.5) {
                     warnings.push(`⚠️ Elevated creatinine (${creatinine} mg/dL) - Kidney function compromised`);
+                  }
+
+                  if (!isNaN(urea) && urea > 50) {
+                    warnings.push(`⚠️ Elevated urea (${urea} mg/dL) - Kidney dysfunction`);
+                  }
+                }
+
+                // ===== BLOOD GLUCOSE =====
+                if (testName === "Blood Glucose Test") {
+                  const fbs = parseFloat(testData["Fasting Blood Sugar (FBS)"]);
+                  const rbs = parseFloat(testData["Random Blood Sugar (RBS)"]);
+                  
+                  if (!isNaN(fbs) && fbs > 200) {
+                    criticalFindings.push(`🔴 Very high fasting glucose (${fbs} mg/dL) - Diabetes, needs urgent management`);
+                  } else if (!isNaN(fbs) && fbs > 126) {
+                    warnings.push(`⚠️ Elevated fasting glucose (${fbs} mg/dL) - Diabetes likely`);
+                  }
+
+                  if (!isNaN(rbs) && rbs > 300) {
+                    criticalFindings.push(`🔴 Dangerously high blood sugar (${rbs} mg/dL) - Diabetic emergency risk`);
+                  } else if (!isNaN(rbs) && rbs > 200) {
+                    warnings.push(`⚠️ High random blood sugar (${rbs} mg/dL) - Diabetes evaluation needed`);
                   }
                 }
               });
