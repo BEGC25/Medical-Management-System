@@ -149,13 +149,13 @@ const commonTests = {
 
 const bloodSugarFields = {
   "Random Blood Sugar (RBS)": {
-    "Blood Glucose": { type: "number" as const, unit: "mg/dL", normal: "<200 (random)" },
-    "Time of Test": { type: "text" as const, unit: "", normal: "Any time" },
+    "Blood Glucose": { type: "number", unit: "mg/dL", normal: "<200 (random)" },
+    "Time of Test": { type: "text", unit: "", normal: "Any time" },
   },
   "Fasting Blood Sugar (FBS)": {
-    "Blood Glucose": { type: "number" as const, unit: "mg/dL", normal: "70-110 (fasting)" },
+    "Blood Glucose": { type: "number", unit: "mg/dL", normal: "70-110 (fasting)" },
     "Fasting Duration": {
-      type: "select" as const,
+      type: "select",
       options: ["8 hours", "10 hours", "12 hours", "14+ hours"],
       normal: "8+ hours",
     },
@@ -176,93 +176,9 @@ const resultFields: Record<
   >
 > = {
   ...bloodSugarFields,
-  
-  "Urine Analysis": {
-    "Appearance": { type: "select" as const, options: ["Clear", "Turbid", "Bloody", "Cloudy"], normal: "Clear" },
-    "Protein": { type: "select" as const, options: ["Negative", "Trace", "+", "++", "+++"], normal: "Negative" },
-    "Glucose": { type: "select" as const, options: ["Negative", "+", "++", "+++"], normal: "Negative" },
-    "Acetone": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-    "Hb pigment": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-    "Leucocytes": { type: "select" as const, options: ["Negative", "+", "++", "+++"], normal: "Negative" },
-    "Nitrite": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-    "PH": { type: "number" as const, unit: "", range: "5.0-8.0", normal: "6.0-7.5" },
-    "Specific Gravity": { type: "number" as const, unit: "", range: "1.003-1.030", normal: "1.010-1.025" },
-    "Bilirubin": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-  },
-
-  "Stool Examination": {
-    "Appearance": { type: "select" as const, options: ["Normal", "Bloody", "Mucoid", "Tarry", "Pale"], normal: "Normal" },
-    "Consistency": { type: "select" as const, options: ["Formed", "Loose", "Watery", "Hard"], normal: "Formed" },
-    "Color": { type: "select" as const, options: ["Brown", "Green", "Yellow", "Black", "Red"], normal: "Brown" },
-    "Ova/Parasites": { type: "select" as const, options: ["None seen", "Ascaris", "Hookworm", "E. histolytica", "G. lamblia"], normal: "None seen" },
-    "Occult Blood": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-  },
-
-  "Complete Blood Count (CBC)": {
-    "WBC": { type: "number" as const, unit: "x10³/µL", normal: "4.0-11.0" },
-    "RBC": { type: "number" as const, unit: "x10⁶/µL", normal: "4.5-5.5" },
-    "Hemoglobin": { type: "number" as const, unit: "g/dL", normal: "12-16" },
-    "Hematocrit": { type: "number" as const, unit: "%", normal: "36-46" },
-    "Platelets": { type: "number" as const, unit: "x10³/µL", normal: "150-400" },
-    "MCV": { type: "number" as const, unit: "fL", normal: "80-100" },
-    "MCH": { type: "number" as const, unit: "pg", normal: "27-32" },
-    "MCHC": { type: "number" as const, unit: "g/dL", normal: "32-36" },
-  },
-
-  "Blood Film for Malaria (BFFM)": {
-    "Malaria Parasites": { type: "select" as const, options: ["Not seen", "P. falciparum", "P. vivax", "P. malariae", "P. ovale"], normal: "Not seen" },
-    "Parasitemia": { type: "select" as const, options: ["None", "+", "++", "+++"], normal: "None" },
-    "Gametocytes": { type: "select" as const, options: ["Not seen", "Seen"], normal: "Not seen" },
-  },
-
-  "Widal Test (Typhoid)": {
-    "S. Typhi (O)Ag": { type: "select" as const, options: ["Negative", "1:20", "1:40", "1:80", "1:160", "1:320"], normal: "Negative or 1:20" },
-    "S. Typhi (H)Ag": { type: "select" as const, options: ["Negative", "1:20", "1:40", "1:80", "1:160", "1:320"], normal: "Negative or 1:20" },
-    "S. Paratyphi A": { type: "select" as const, options: ["Negative", "1:20", "1:40", "1:80", "1:160"], normal: "Negative" },
-    "S. Paratyphi B": { type: "select" as const, options: ["Negative", "1:20", "1:40", "1:80", "1:160"], normal: "Negative" },
-  },
-
-  "Liver Function Test (LFT)": {
-    "Total Bilirubin": { type: "number" as const, unit: "mg/dL", normal: "0.3-1.2" },
-    "Direct Bilirubin": { type: "number" as const, unit: "mg/dL", normal: "0-0.3" },
-    "ALT (SGPT)": { type: "number" as const, unit: "U/L", normal: "7-56" },
-    "AST (SGOT)": { type: "number" as const, unit: "U/L", normal: "10-40" },
-    "ALP": { type: "number" as const, unit: "U/L", normal: "44-147" },
-    "Total Protein": { type: "number" as const, unit: "g/dL", normal: "6.0-8.3" },
-    "Albumin": { type: "number" as const, unit: "g/dL", normal: "3.5-5.0" },
-  },
-
-  "Renal Function Test (RFT)": {
-    "Urea": { type: "number" as const, unit: "mg/dL", normal: "15-40" },
-    "Creatinine": { type: "number" as const, unit: "mg/dL", normal: "0.7-1.3" },
-    "Uric Acid": { type: "number" as const, unit: "mg/dL", normal: "3.5-7.2" },
-    "Sodium": { type: "number" as const, unit: "mmol/L", normal: "135-145" },
-    "Potassium": { type: "number" as const, unit: "mmol/L", normal: "3.5-5.0" },
-    "Chloride": { type: "number" as const, unit: "mmol/L", normal: "98-106" },
-  },
-
-  "Blood Group & Rh": {
-    "Blood Group": { type: "select" as const, options: ["A", "B", "AB", "O"], normal: "Any" },
-    "Rh Factor": { type: "select" as const, options: ["Positive", "Negative"], normal: "Positive" },
-  },
-
-  "Hepatitis B Test (HBsAg)": {
-    "HBsAg": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-  },
-
-  "HIV Test": {
-    "HIV Antibody": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-  },
-
-  "Pregnancy Test (HCG)": {
-    "β-hCG": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative (if not pregnant)" },
-  },
-
-  "Thyroid Hormones": {
-    "TSH": { type: "number" as const, unit: "μIU/mL", normal: "0.4-4.0" },
-    "T3": { type: "number" as const, unit: "ng/dL", normal: "80-200" },
-    "T4": { type: "number" as const, unit: "μg/dL", normal: "5-12" },
-  },
+  /* --- large config omitted for readability in this message ---
+     Use the exact same `resultFields` object from your current file.
+     (Keep all keys & options identical; only the outer component changed.) */
 };
 
 /* ------------------------------------------------------------------ */
