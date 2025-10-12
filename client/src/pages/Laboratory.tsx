@@ -1440,27 +1440,205 @@ export default function Laboratory() {
 
       {/* PRINT — Report */}
       {showLabReport && selectedLabTest && (
-        <div>
-          <Card className="border-2 border-medical-green">
-            <CardContent className="p-6">
-              {/* Print layout - kept exactly as-is from your original file */}
-              <div className="text-center mb-4">
-                <h2 className="text-2xl font-bold">Laboratory Test Report</h2>
-                <p className="text-sm text-gray-600">
-                  Test ID: {selectedLabTest.testId}
-                </p>
+        <div className="print-only">
+          <style>{`
+            @media print {
+              body * { visibility: hidden; }
+              .print-only, .print-only * { visibility: visible; }
+              .print-only { position: absolute; left: 0; top: 0; width: 100%; }
+              @page { margin: 1cm; }
+            }
+          `}</style>
+          <div className="bg-white p-8 max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-6 border-b-2 border-gray-300 pb-4">
+              <h1 className="text-3xl font-bold text-gray-900">Bahr El Ghazal Clinic</h1>
+              <p className="text-sm text-gray-600">Laboratory Test Report</p>
+              <p className="text-xs text-gray-500 mt-1">Generated: {new Date().toLocaleString()}</p>
+            </div>
+
+            {/* Test Information */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold mb-3 text-gray-900">Test Information</h2>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><strong>Category:</strong> {selectedLabTest.category}</div>
+                <div><strong>Priority:</strong> {selectedLabTest.priority}</div>
+                <div><strong>Test ID:</strong> {selectedLabTest.testId}</div>
+                <div><strong>Patient ID:</strong> {selectedLabTest.patientId}</div>
+                <div className="col-span-2"><strong>Patient Name:</strong> {fullName(reportPatient)}</div>
+                <div className="col-span-2">
+                  <strong>Tests Ordered:</strong>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {parseJSON<string[]>(selectedLabTest.tests, []).map((test, i) => (
+                      <span key={i} className="inline-block bg-gray-100 px-3 py-1 rounded text-xs font-medium">
+                        {test}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <p><strong>Patient:</strong> {fullName(reportPatient)}</p>
-                <p><strong>Patient ID:</strong> {selectedLabTest.patientId}</p>
-                <p><strong>Tests:</strong> {parseJSON<string[]>(selectedLabTest.tests, []).join(", ")}</p>
-                <p><strong>Results:</strong></p>
-                <pre className="whitespace-pre-wrap text-sm">{resultsForm.getValues("results")}</pre>
-                <p><strong>Status:</strong> {resultsForm.getValues("resultStatus")}</p>
-                <p><strong>Completed:</strong> {resultsForm.getValues("completedDate")}</p>
+            </div>
+
+            {/* Clinical Interpretation */}
+            {(() => {
+              const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
+              const criticalFindings: string[] = [];
+              const warnings: string[] = [];
+
+              // Analyze results for critical findings
+              Object.entries(results).forEach(([testName, testData]) => {
+                // Malaria detection
+                if (testName === "Blood Film for Malaria (BFFM)") {
+                  const parasites = testData["Malaria Parasites"];
+                  if (parasites && parasites !== "Not seen" && parasites !== "Negative") {
+                    criticalFindings.push(`🔴 POSITIVE for ${parasites} malaria - Requires immediate treatment`);
+                  }
+                  if (testData["Gametocytes"] === "Seen") {
+                    warnings.push(`⚠️ Gametocytes present - Patient is infectious`);
+                  }
+                }
+
+                // Widal Test (Typhoid)
+                if (testName === "Widal Test (Typhoid)") {
+                  const oAg = testData["S. Typhi (O)Ag"];
+                  const hAg = testData["S. Typhi (H)Ag"];
+                  if ((oAg && oAg.includes("1:80")) || (hAg && hAg.includes("1:80"))) {
+                    warnings.push(`⚠️ Elevated typhoid titers - Consider typhoid fever`);
+                  }
+                }
+
+                // Urine Analysis
+                if (testName === "Urine Analysis") {
+                  if (testData["Protein"] && testData["Protein"] !== "Negative") {
+                    warnings.push(`⚠️ Proteinuria detected - Kidney function needs assessment`);
+                  }
+                  if (testData["Glucose"] && testData["Glucose"] !== "Negative") {
+                    warnings.push(`⚠️ Glucosuria - Check blood glucose levels`);
+                  }
+                  if (testData["Hb pigment"] === "Positive") {
+                    warnings.push(`⚠️ Blood in urine - Further investigation needed`);
+                  }
+                }
+
+                // CBC
+                if (testName === "Complete Blood Count (CBC)") {
+                  const hb = parseFloat(testData["Hemoglobin"]);
+                  if (!isNaN(hb) && hb < 10) {
+                    warnings.push(`⚠️ Severe anemia detected (Hb: ${hb} g/dL) - Requires treatment`);
+                  }
+                  const wbc = parseFloat(testData["WBC"]);
+                  if (!isNaN(wbc) && wbc > 15) {
+                    warnings.push(`⚠️ Elevated WBC (${wbc}) - Possible infection`);
+                  }
+                }
+
+                // Liver Function
+                if (testName === "Liver Function Test (LFT)") {
+                  const alt = parseFloat(testData["ALT (SGPT)"]);
+                  const ast = parseFloat(testData["AST (SGOT)"]);
+                  if (!isNaN(alt) && alt > 100) {
+                    warnings.push(`⚠️ Elevated ALT (${alt} U/L) - Liver function impaired`);
+                  }
+                  if (!isNaN(ast) && ast > 100) {
+                    warnings.push(`⚠️ Elevated AST (${ast} U/L) - Liver damage possible`);
+                  }
+                }
+
+                // Renal Function
+                if (testName === "Renal Function Test (RFT)") {
+                  const creatinine = parseFloat(testData["Creatinine"]);
+                  if (!isNaN(creatinine) && creatinine > 1.5) {
+                    warnings.push(`⚠️ Elevated creatinine (${creatinine} mg/dL) - Kidney function compromised`);
+                  }
+                }
+              });
+
+              return (criticalFindings.length > 0 || warnings.length > 0) ? (
+                <div className="mb-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                  <h2 className="text-lg font-bold mb-2 text-yellow-900 flex items-center">
+                    <span className="text-2xl mr-2">ℹ️</span> Clinical Interpretation
+                  </h2>
+                  {criticalFindings.length > 0 && (
+                    <div className="mb-3">
+                      <p className="font-semibold text-red-800 mb-2">Critical Findings Requiring Attention:</p>
+                      <div className="space-y-1">
+                        {criticalFindings.map((finding, i) => (
+                          <div key={i} className="bg-red-100 border-l-4 border-red-600 p-2 text-sm">
+                            {finding}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {warnings.length > 0 && (
+                    <div className="space-y-1">
+                      {warnings.map((warning, i) => (
+                        <div key={i} className="bg-yellow-100 border-l-4 border-yellow-600 p-2 text-sm">
+                          {warning}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null;
+            })()}
+
+            {/* Laboratory Results */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">Laboratory Results</h2>
+              {(() => {
+                const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
+                return Object.entries(results).map(([testName, testData]) => {
+                  const fields = resultFields[testName];
+                  return (
+                    <div key={testName} className="mb-6 border border-gray-300 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-blue-700 mb-3">{testName}</h3>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                        {Object.entries(testData).map(([fieldName, value]) => {
+                          const config = fields?.[fieldName];
+                          const isNormal = config?.normal === value;
+                          const isAbnormal = config?.normal && config.normal !== value;
+                          
+                          return (
+                            <div key={fieldName} className="flex justify-between items-center border-b border-gray-200 py-1">
+                              <span className="font-medium text-gray-700">{fieldName}:</span>
+                              <span className={cx(
+                                "font-semibold",
+                                isNormal && "text-green-600",
+                                isAbnormal && value && value !== "Not seen" && value !== "Negative" && "text-red-600"
+                              )}>
+                                {value} {config?.unit || ""}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-8 pt-4 border-t-2 border-gray-300 text-sm text-gray-600">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p><strong>Completed Date:</strong> {resultsForm.getValues("completedDate")}</p>
+                  <p><strong>Result Status:</strong> <span className="capitalize">{resultsForm.getValues("resultStatus")}</span></p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">Lab Technician Signature:</p>
+                  <div className="border-b border-gray-400 w-48 ml-auto mt-6"></div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+              {resultsForm.getValues("technicianNotes") && (
+                <div className="mt-3">
+                  <p><strong>Technician Notes:</strong></p>
+                  <p className="text-gray-700">{resultsForm.getValues("technicianNotes")}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </>
