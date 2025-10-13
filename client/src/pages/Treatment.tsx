@@ -47,6 +47,12 @@ export default function Treatment() {
     enabled: filterToday,
   });
 
+  // Fetch all patients to get names for treatment records
+  const { data: allPatients = [] } = useQuery<Patient[]>({
+    queryKey: ["/api/patients"],
+    enabled: filterToday,
+  });
+
   const form = useForm<InsertTreatment>({
     resolver: zodResolver(insertTreatmentSchema),
     defaultValues: {
@@ -342,6 +348,18 @@ export default function Treatment() {
     return age || 'Unknown';
   };
 
+  // Get patient name from patient ID
+  const getPatientName = (patientId: string): string => {
+    const patient = allPatients.find(p => p.patientId === patientId);
+    if (!patient) return patientId;
+    return `${patient.firstName} ${patient.lastName}`;
+  };
+
+  // Navigate to patient details page
+  const navigateToPatient = (patientId: string) => {
+    window.location.href = `/patients?patientId=${patientId}`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Today's Treatments List (when filtering) */}
@@ -368,25 +386,43 @@ export default function Treatment() {
             <div className="space-y-3">
               {todaysTreatments && todaysTreatments.length > 0 ? (
                 todaysTreatments.map((treatment: any) => (
-                  <div key={treatment.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <div 
+                    key={treatment.id} 
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 transition-all hover:shadow-md hover:border-medical-blue/50"
+                    data-testid={`treatment-card-${treatment.treatmentId}`}
+                  >
                     <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-gray-200">
-                          Patient: {treatment.patientId} | Visit: {treatment.treatmentId}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Type: {treatment.visitType} | Priority: {treatment.priority}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Chief Complaint: {treatment.chiefComplaint}
-                        </p>
-                        {treatment.diagnosis && (
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium text-gray-600 dark:text-gray-400">Patient:</span>
+                          <button
+                            onClick={() => navigateToPatient(treatment.patientId)}
+                            className="font-semibold text-medical-blue hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
+                            data-testid={`patient-name-${treatment.patientId}`}
+                          >
+                            {getPatientName(treatment.patientId)}
+                          </button>
+                          <span className="text-sm text-gray-500">({treatment.patientId})</span>
+                        </div>
+                        <div className="space-y-1">
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Diagnosis: {treatment.diagnosis}
+                            <span className="font-medium">Visit ID:</span> {treatment.treatmentId}
                           </p>
-                        )}
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <span className="font-medium">Type:</span> <Badge variant="outline" className="ml-1">{treatment.visitType}</Badge>
+                            <span className="ml-3 font-medium">Priority:</span> <Badge variant="outline" className="ml-1">{treatment.priority}</Badge>
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <span className="font-medium">Chief Complaint:</span> {treatment.chiefComplaint}
+                          </p>
+                          {treatment.diagnosis && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <span className="font-medium">Diagnosis:</span> {treatment.diagnosis}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <Badge className="bg-green-600 text-white">
+                      <Badge className="bg-green-600 text-white shrink-0">
                         <Calendar className="w-3 h-3 mr-1" />
                         {treatment.visitDate}
                       </Badge>
