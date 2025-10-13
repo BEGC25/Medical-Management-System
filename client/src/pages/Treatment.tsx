@@ -452,7 +452,8 @@ export default function Treatment() {
             
             {!selectedPatient ? (
               <PatientSearch 
-                onSelectPatient={handlePatientSelect} 
+                onSelectPatient={handlePatientSelect}
+                onViewPatient={handlePatientSelect}
                 showActions={false}
                 viewMode="all"
                 selectedDate=""
