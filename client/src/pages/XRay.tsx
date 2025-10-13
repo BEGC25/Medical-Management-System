@@ -61,6 +61,10 @@ import { addToPendingSync } from '@/lib/offline';
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
+function cx(...cls: Array<string | false | null | undefined>) {
+  return cls.filter(Boolean).join(" ");
+}
+
 function timeAgo(iso?: string) {
   if (!iso) return '';
   const d = new Date(iso).getTime();
@@ -382,82 +386,113 @@ export default function XRay() {
 
   /* --------------------------- Render ---------------------------- */
 
-  const ExamCard = ({ exam, patient }: { exam: XrayExam; patient?: Patient | null }) => (
-    <Card
-      className="hover:shadow-lg transition-shadow cursor-pointer border-0 shadow-sm"
-      onClick={() => handleXrayExamSelect(exam)}
-      data-testid={`card-xray-${exam.examId}`}
-    >
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold text-gray-900 dark:text-white" data-testid={`text-exam-id-${exam.examId}`}>
-                {exam.examId}
-              </h3>
-              <Badge
-                variant={exam.status === 'pending' ? 'secondary' : 'default'}
-                className={
-                  exam.status === 'pending'
-                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                    : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                }
-                data-testid={`badge-status-${exam.examId}`}
-              >
-                {exam.status === 'pending' ? (
-                  <>
-                    <Clock className="w-3 h-3 mr-1" />
-                    Pending
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-3 h-3 mr-1" />
-                    Completed
-                  </>
+  const ExamCard = ({ exam, patient }: { exam: XrayExam; patient?: Patient | null }) => {
+    const isPaid = exam.paymentStatus === 'paid';
+    const canPerform = exam.status === 'completed' || isPaid;
+    
+    return (
+      <Card
+        className={cx(
+          "transition-shadow cursor-pointer shadow-sm",
+          exam.status === 'pending' && !isPaid && "border-red-200 bg-red-50 dark:bg-red-900/10",
+          exam.status === 'pending' && isPaid && "border-green-200 bg-green-50 dark:bg-green-900/10",
+          exam.status === 'completed' && "border-blue-200 bg-blue-50 dark:bg-blue-900/10",
+          canPerform && "hover:shadow-lg",
+          !canPerform && "opacity-75"
+        )}
+        onClick={() => canPerform && handleXrayExamSelect(exam)}
+        style={!canPerform ? { cursor: "not-allowed" } : {}}
+        data-testid={`card-xray-${exam.examId}`}
+      >
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <h3 className="font-semibold text-gray-900 dark:text-white" data-testid={`text-exam-id-${exam.examId}`}>
+                  {exam.examId}
+                </h3>
+                <Badge
+                  variant={exam.status === 'pending' ? 'secondary' : 'default'}
+                  className={
+                    exam.status === 'pending'
+                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  }
+                  data-testid={`badge-status-${exam.examId}`}
+                >
+                  {exam.status === 'pending' ? (
+                    <>
+                      <Clock className="w-3 h-3 mr-1" />
+                      Pending
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3 h-3 mr-1" />
+                      Completed
+                    </>
+                  )}
+                </Badge>
+                {exam.status === 'pending' && (
+                  <Badge
+                    variant={isPaid ? 'default' : 'destructive'}
+                    className={
+                      isPaid
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                    }
+                    data-testid={`badge-payment-${exam.examId}`}
+                  >
+                    {isPaid ? 'Paid' : 'UNPAID'}
+                  </Badge>
                 )}
-              </Badge>
-            </div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300" data-testid={`text-patient-name-${exam.examId}`}>
-              {patient ? fullName(patient) : exam.patientId}
-            </p>
-            {patient && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {patient.age} • {patient.gender}
+              </div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300" data-testid={`text-patient-name-${exam.examId}`}>
+                {patient ? fullName(patient) : exam.patientId}
               </p>
+              {patient && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {patient.age} • {patient.gender}
+                </p>
+              )}
+              {exam.status === 'pending' && !isPaid && (
+                <p className="text-xs text-red-700 dark:text-red-400 mt-2">
+                  ⚠️ Patient must pay at reception before exam can be performed
+                </p>
+              )}
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </div>
+
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600 dark:text-gray-400">Exam Type:</span>
+              <span className="font-medium text-gray-900 dark:text-white capitalize">
+                {exam.examType} X-Ray
+              </span>
+            </div>
+            {exam.bodyPart && (
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Body Part:</span>
+                <span className="font-medium text-gray-900 dark:text-white">{exam.bodyPart}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-gray-600 dark:text-gray-400">Requested:</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {new Date(exam.requestedDate).toLocaleDateString()}
+              </span>
+            </div>
+            {exam.status === 'pending' && (
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Waiting:</span>
+                <span className="font-medium text-orange-600 dark:text-orange-400">{timeAgo(exam.createdAt)}</span>
+              </div>
             )}
           </div>
-          <ChevronRight className="w-5 h-5 text-gray-400" />
-        </div>
-
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Exam Type:</span>
-            <span className="font-medium text-gray-900 dark:text-white capitalize">
-              {exam.examType} X-Ray
-            </span>
-          </div>
-          {exam.bodyPart && (
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Body Part:</span>
-              <span className="font-medium text-gray-900 dark:text-white">{exam.bodyPart}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Requested:</span>
-            <span className="font-medium text-gray-900 dark:text-white">
-              {new Date(exam.requestedDate).toLocaleDateString()}
-            </span>
-          </div>
-          {exam.status === 'pending' && (
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Waiting:</span>
-              <span className="font-medium text-orange-600 dark:text-orange-400">{timeAgo(exam.createdAt)}</span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   const PatientPickerList = ({ patients }: { patients: Patient[] }) => (
     <div className="space-y-2 max-h-96 overflow-y-auto">
