@@ -133,7 +133,7 @@ export const encounters = sqliteTable("encounters", {
   encounterId: text("encounter_id").unique().notNull(),
   patientId: text("patient_id").notNull(),  
   visitDate: text("visit_date").notNull(),
-  status: text("status").$type<"open" | "closed">().notNull().default("open"),
+  status: text("status").$type<"open" | "ready_to_bill" | "closed">().notNull().default("open"),
   policy: text("policy").$type<"cash" | "insurance">().notNull().default("cash"),
   attendingClinician: text("attending_clinician"),
   notes: text("notes"),

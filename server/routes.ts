@@ -736,14 +736,14 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
     
     // 3. Create/update invoice for cart items
     const cartItems = orderLines.filter((ol: any) => ol.addToCart);
-    let invoiceStatus: 'open' | 'closed' = 'closed';
+    let invoiceStatus: 'open' | 'ready_to_bill' | 'closed' = 'closed';
     
     if (cartItems.length > 0) {
       // Create invoice
       try {
         await storage.generateInvoiceFromEncounter(encounterId, 'System');
-        // Keep status as open for billing, will be closed after payment
-        invoiceStatus = 'open';
+        // Set status to ready_to_bill - clinical work complete, awaiting billing
+        invoiceStatus = 'ready_to_bill';
       } catch (invoiceError) {
         console.error('Error creating invoice:', invoiceError);
         // Continue with closing even if invoice fails
