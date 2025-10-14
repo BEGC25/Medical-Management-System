@@ -416,6 +416,67 @@ export default function Treatment() {
     },
   });
 
+  // Close visit mutation
+  const closeVisitMutation = useMutation({
+    mutationFn: async (encounterId: string) => {
+      const response = await apiRequest("POST", `/api/encounters/${encounterId}/close`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+      toast({
+        title: "Success",
+        description: "Visit closed successfully",
+      });
+      setSelectedPatient(null);
+      form.reset();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to close visit",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Close visit validation and handler
+  const handleCloseVisit = () => {
+    if (!currentEncounter) return;
+    
+    // Validate diagnosis exists
+    const diagnosis = form.watch("diagnosis");
+    if (!diagnosis || diagnosis.trim() === "") {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a diagnosis before closing the visit",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if all completed diagnostics are acknowledged
+    const completedDiagnostics = [
+      ...labTests.filter((t: any) => t.status === 'completed' && t.orderLine),
+      ...xrays.filter((x: any) => x.status === 'completed' && x.orderLine),
+      ...ultrasounds.filter((u: any) => u.status === 'completed' && u.orderLine),
+    ];
+    
+    const unacknowledged = completedDiagnostics.filter((d: any) => !d.orderLine.acknowledgedBy);
+    
+    if (unacknowledged.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: `Please acknowledge all ${unacknowledged.length} completed diagnostic result(s) before closing the visit`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // All validations passed, close the visit
+    closeVisitMutation.mutate(currentEncounter.encounterId);
+  };
+
   const handleSubmit = form.handleSubmit((data) => {
     if (!selectedPatient) {
       toast({
@@ -1212,6 +1273,7 @@ export default function Treatment() {
                     type="submit" 
                     disabled={createTreatmentMutation.isPending}
                     className="bg-medical-blue hover:bg-blue-700"
+                    data-testid="save-treatment-btn"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     {createTreatmentMutation.isPending ? "Saving..." : "Save Treatment Record"}
@@ -1225,6 +1287,18 @@ export default function Treatment() {
                     <FileText className="w-4 h-4 mr-2" />
                     Generate Prescription
                   </Button>
+                  {currentEncounter && currentEncounter.status === 'open' && (
+                    <Button 
+                      type="button" 
+                      onClick={handleCloseVisit}
+                      variant="default"
+                      className="bg-orange-600 hover:bg-orange-700"
+                      disabled={closeVisitMutation.isPending}
+                      data-testid="close-visit-btn"
+                    >
+                      {closeVisitMutation.isPending ? "Closing..." : "Close Visit"}
+                    </Button>
+                  )}
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -1279,7 +1353,6 @@ export default function Treatment() {
                       <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
                       <p><strong>Treatment ID:</strong> {savedTreatment?.treatmentId || 'Not available'}</p>
                       <p><strong>Phone:</strong> {selectedPatient.phoneNumber || 'Not provided'}</p>
-                      <p><strong>Village:</strong> {selectedPatient.village || 'Not specified'}</p>
                     </div>
                   </div>
 
