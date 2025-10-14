@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
-import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment, type Encounter, type OrderLine, type Service } from "@shared/schema";
+import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment, type Encounter, type OrderLine, type Service, type LabTest, type XRay, type Ultrasound } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
@@ -129,6 +129,42 @@ export default function Treatment() {
       return response.json();
     },
     enabled: !!currentEncounter,
+  });
+
+  // Get lab tests for this patient
+  const { data: labTests = [] } = useQuery({
+    queryKey: ["/api/lab-tests", { patientId: selectedPatient?.patientId }],
+    queryFn: async () => {
+      if (!selectedPatient) return [];
+      const response = await fetch(`/api/lab-tests?patientId=${selectedPatient.patientId}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!selectedPatient,
+  });
+
+  // Get x-rays for this patient
+  const { data: xrays = [] } = useQuery({
+    queryKey: ["/api/xrays", { patientId: selectedPatient?.patientId }],
+    queryFn: async () => {
+      if (!selectedPatient) return [];
+      const response = await fetch(`/api/xrays?patientId=${selectedPatient.patientId}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!selectedPatient,
+  });
+
+  // Get ultrasounds for this patient
+  const { data: ultrasounds = [] } = useQuery({
+    queryKey: ["/api/ultrasounds", { patientId: selectedPatient?.patientId }],
+    queryFn: async () => {
+      if (!selectedPatient) return [];
+      const response = await fetch(`/api/ultrasounds?patientId=${selectedPatient.patientId}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!selectedPatient,
   });
 
   // Sync loaded visit and patient into state when visitId route is used
@@ -531,6 +567,122 @@ export default function Treatment() {
               </div>
             )}
           </div>
+
+          {/* Orders & Results Panel */}
+          {selectedPatient && currentEncounter && (
+            <Card className="border-l-4 border-l-blue-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Orders & Results
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Lab Tests */}
+                  {labTests.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Laboratory Tests</h4>
+                      <div className="space-y-2">
+                        {labTests.map((test: LabTest) => (
+                          <div key={test.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="font-medium">{test.testType}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {new Date(test.requestDate).toLocaleDateString()}
+                                </p>
+                                <Badge variant={test.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
+                                  {test.status}
+                                </Badge>
+                              </div>
+                              <div className="flex gap-2">
+                                {test.status === 'completed' && (
+                                  <Button variant="outline" size="sm" data-testid={`view-lab-${test.id}`}>
+                                    View Results
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* X-Rays */}
+                  {xrays.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
+                      <div className="space-y-2">
+                        {xrays.map((xray: XRay) => (
+                          <div key={xray.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="font-medium">{xray.bodyPart}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {new Date(xray.requestDate).toLocaleDateString()}
+                                </p>
+                                <Badge variant={xray.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
+                                  {xray.status}
+                                </Badge>
+                              </div>
+                              <div className="flex gap-2">
+                                {xray.status === 'completed' && (
+                                  <Button variant="outline" size="sm" data-testid={`view-xray-${xray.id}`}>
+                                    View Report
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ultrasounds */}
+                  {ultrasounds.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
+                      <div className="space-y-2">
+                        {ultrasounds.map((ultrasound: Ultrasound) => (
+                          <div key={ultrasound.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="font-medium">{ultrasound.examType}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {new Date(ultrasound.requestDate).toLocaleDateString()}
+                                </p>
+                                <Badge variant={ultrasound.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
+                                  {ultrasound.status}
+                                </Badge>
+                              </div>
+                              <div className="flex gap-2">
+                                {ultrasound.status === 'completed' && (
+                                  <Button variant="outline" size="sm" data-testid={`view-ultrasound-${ultrasound.id}`}>
+                                    View Report
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {labTests.length === 0 && xrays.length === 0 && ultrasounds.length === 0 && (
+                    <div className="text-center py-6 text-gray-500">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No orders or results yet</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Visit Cart - Real-time billing */}
           {selectedPatient && currentEncounter && (
