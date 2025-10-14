@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useParams } from "wouter";
 import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
 export default function Treatment() {
+  const { visitId } = useParams<{ visitId?: string }>();
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescription, setShowPrescription] = useState(false);
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
@@ -78,7 +80,32 @@ export default function Treatment() {
     queryKey: ["/api/services"],
   });
 
-  // Get today's encounter for selected patient
+  // Load specific visit if visitId is provided
+  const { data: loadedVisit, isLoading: loadingVisit } = useQuery({
+    queryKey: ["/api/encounters", visitId],
+    queryFn: async () => {
+      if (!visitId) return null;
+      const response = await fetch(`/api/encounters/${visitId}`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!visitId,
+  });
+
+  // Load patient for the loaded visit
+  const { data: loadedPatient } = useQuery({
+    queryKey: ["/api/patients", loadedVisit?.patientId],
+    queryFn: async () => {
+      if (!loadedVisit) return null;
+      const response = await fetch(`/api/patients?id=${loadedVisit.patientId}`);
+      if (!response.ok) return null;
+      const patients = await response.json();
+      return patients[0] || null;
+    },
+    enabled: !!loadedVisit,
+  });
+
+  // Get today's encounter for selected patient (legacy flow)
   const { data: todayEncounter } = useQuery({
     queryKey: ["/api/encounters", { patientId: selectedPatient?.patientId, date: new Date().toISOString().split('T')[0] }],
     queryFn: async () => {
@@ -89,7 +116,7 @@ export default function Treatment() {
       const encounters = await response.json();
       return encounters.find((e: Encounter) => e.patientId === selectedPatient.patientId) || null;
     },
-    enabled: !!selectedPatient,
+    enabled: !!selectedPatient && !visitId,
   });
 
   // Get order lines for current encounter
@@ -104,8 +131,18 @@ export default function Treatment() {
     enabled: !!currentEncounter,
   });
 
-  // Update current encounter when patient changes
+  // Sync loaded visit and patient into state when visitId route is used
   useEffect(() => {
+    if (loadedVisit && loadedPatient && !selectedPatient) {
+      setSelectedPatient(loadedPatient);
+      setCurrentEncounter(loadedVisit);
+    }
+  }, [loadedVisit, loadedPatient]);
+
+  // Update current encounter when patient changes (legacy flow)
+  useEffect(() => {
+    if (visitId) return; // Skip legacy flow when using visitId route
+    
     if (todayEncounter) {
       setCurrentEncounter(todayEncounter);
     } else if (selectedPatient) {
@@ -116,7 +153,7 @@ export default function Treatment() {
         attendingClinician: "Dr. System", // In real app, get from auth
       });
     }
-  }, [todayEncounter, selectedPatient]);
+  }, [todayEncounter, selectedPatient, visitId]);
 
   // Create encounter mutation
   const createEncounterMutation = useMutation({
