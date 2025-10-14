@@ -1,0 +1,162 @@
+Goal
+
+Modernize the Treatment (Visit) page so it is the clinician’s main workspace for a visit:
+
+Document SOAP.
+
+Place/view orders (Lab, X-Ray, Ultrasound).
+
+Review results and acknowledge them.
+
+Manage the Visit Cart (billable services/tests/consumables).
+
+Close Visit & Send to Billing.
+
+Rename (UI copy only)
+
+Show Visit everywhere user-facing (keep encounterId internally if helpful).
+
+“Create/Open Encounter” → Start/Open Visit
+
+“Encounter Status” → Visit Status
+
+“Close Encounter & Send to Billing” → Close Visit & Send to Billing
+
+“Today’s Encounters” → Today’s Visits
+
+Must-fix UX
+
+Click patient row on Treatment Records should open today’s Visit for that patient (or create one if none exists).
+
+Whole row clickable + keyboard (Enter/Space).
+
+Hover state + focus ring.
+
+Never create duplicates for the same day.
+
+Acceptance Criteria
+
+Patient row click:
+
+Check for open visit for today → navigate to /treatment/:visitId.
+
+If none → create { patientId, date, status:"open" } → navigate.
+
+Orders & Results panel (above Visit Cart):
+
+Columns: Order | Status | Result snippet | View | Acknowledge | Add to Cart.
+
+Status pills: Pending / Completed / Abnormal / Critical.
+
+View opens result (lab values, imaging report/images).
+
+Acknowledge toggles and stores acknowledgedBy/acknowledgedAt.
+
+Add to Cart toggles price line items for completed orders.
+
+Button: Add All Completed to Cart.
+
+Visit Cart shows today’s billable items (consultation, procedures, tests, consumables) with qty, unit price, amount, total.
+
+Close Visit & Send to Billing button stays disabled until:
+
+At least one Diagnosis is entered, and
+
+All completed orders are Acknowledged.
+
+On Close, create/update invoice and set visit status to ready_to_bill (or closed if you collect immediately). Show success/error toasts.
+
+Works whether diagnostics are pre-paid or post-paid. If your policy requires pre-pay, unpaid orders must be clearly labeled UNPAID and not added to Cart until paid.
+
+Frontend tasks
+
+Treatment list page
+
+Make each patient row a button (click + keyboard) → navigate to /treatment/new?patientId=<ID>.
+
+New Visit redirector page (/treatment/new)
+
+On mount:
+
+GET /api/visits?patientId=&date=YYYY-MM-DD&status=open
+
+If found → navigate(/treatment/:id)
+
+Else POST /api/visits then navigate(/treatment/:id)
+
+Treatment (Visit) page
+
+Add Orders & Results block per above.
+
+Surface Visit Status pill at top (Open, Ready to bill, Closed).
+
+Wire Close Visit & Send to Billing primary CTA with disabled logic.
+
+Use shadcn + Tailwind; keep accessibility (roles, aria-labels, focus).
+
+Backend/API tasks
+
+Implement or confirm these endpoints (adjust names if you already have them):
+
+POST /api/visits → create { visitId, patientId, date, status }
+
+GET /api/visits (filter by patientId, date, status) → array
+
+GET /api/visits/:id with include=orders,results,attachments → visit + joined orders/results
+
+If an aggregator is hard, the frontend can call:
+
+GET /api/lab-tests?visitId=:id
+
+GET /api/imaging?visitId=:id&type=xray|ultrasound
+
+PUT /api/orders/:orderId → update { acknowledgedBy, acknowledgedAt, addToCart }
+
+POST /api/invoices/fromVisit/:id → returns invoice (create or update)
+
+(Optional) POST /api/visits/:id/close → sets status and triggers invoice update
+
+DB constraint: Add a unique index to prevent duplicates:
+UNIQUE(patientId, date) WHERE status = 'open'.
+
+Data shown in Orders & Results
+
+Each row needs:
+
+{
+  orderId,
+  visitId,
+  type: "lab" | "xray" | "ultrasound",
+  name,               // e.g., "CBC", "Chest X-ray PA"
+  status,             // pending|completed
+  flags?: "abnormal"|"critical"|null,
+  snippet?: string,   // e.g., "HB 11.2 g/dL (low)"
+  resultUrl?: string, // for View
+  acknowledgedAt?: string,
+  acknowledgedBy?: string,
+  addToCart?: boolean
+}
+
+Test Plan
+
+No visit yet: click patient → new visit created → routed to /treatment/:id.
+
+Existing visit: click same patient → reused, no duplicate row.
+
+Add lab/xray orders → mark results Completed in their modules → they appear in Orders & Results.
+
+Acknowledge all → Close Visit becomes enabled → invoice created/updated.
+
+Pre-pay policy: unpaid order shows UNPAID; cannot add to cart until paid.
+
+Keyboard accessibility: focus row + Enter works; toasts on API errors.
+
+Copy (UI text)
+
+Buttons: Save Draft, Generate Prescription, Close Visit & Send to Billing
+
+Section titles: Orders & Results, Visit Cart — Today’s Services, Visit Information (SOAP)
+
+Status pills: Open, All Results Acknowledged, Ready to Bill
+
+If anything in the current codebase conflicts with these routes, please align names but keep the behavior and acceptance criteria exactly as above.

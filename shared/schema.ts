@@ -155,6 +155,9 @@ export const orderLines = sqliteTable("order_lines", {
   department: text("department").$type<"consultation" | "laboratory" | "radiology" | "ultrasound" | "pharmacy">(),
   status: text("status").$type<"requested" | "authorized" | "performed" | "canceled">().notNull().default("requested"),
   orderedBy: text("ordered_by"), // Who ordered this service
+  acknowledgedBy: text("acknowledged_by"), // Clinician who acknowledged the result
+  acknowledgedAt: text("acknowledged_at"), // When result was acknowledged
+  addToCart: integer("add_to_cart").notNull().default(0), // Whether to add to cart (1=yes, 0=no)
   createdAt: text("created_at").notNull(),
 });
 
