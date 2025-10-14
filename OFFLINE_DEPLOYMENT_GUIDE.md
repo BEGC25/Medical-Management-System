@@ -39,10 +39,9 @@ This guide helps you install and run the clinic management system on a local com
    - Run installer with default settings
 
 #### macOS
-```bash
-# Install Homebrew (if not already installed)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
+**Option 1: If you have Homebrew installed:**
+```bash
 # Install Node.js
 brew install node
 
@@ -53,6 +52,12 @@ brew services start postgresql@15
 # Install Git
 brew install git
 ```
+
+**Option 2: Manual installation (no Homebrew required):**
+1. Download Node.js from https://nodejs.org/ (LTS version)
+2. Download PostgreSQL from https://www.postgresql.org/download/macos/
+3. Download Git from https://git-scm.com/download/mac
+4. Install all three with default settings
 
 #### Linux (Ubuntu/Debian)
 ```bash

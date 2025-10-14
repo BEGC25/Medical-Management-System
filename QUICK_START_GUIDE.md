@@ -18,14 +18,15 @@
 #### On Mac:
 1. Open Terminal (press Cmd+Space, type "terminal")
 2. Install required software:
-   ```bash
-   # Install Homebrew first (if not installed)
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   
-   # Install Node.js and PostgreSQL
-   brew install node postgresql@15
-   brew services start postgresql@15
-   ```
+   - **If you have Homebrew installed**:
+     ```bash
+     brew install node postgresql@15
+     brew services start postgresql@15
+     ```
+   - **If you don't have Homebrew**:
+     - Download Node.js from https://nodejs.org (LTS version)
+     - Download PostgreSQL from https://www.postgresql.org/download/macos/
+     - Install both with default settings
 
 ### Step 2: Set Up the System
 
