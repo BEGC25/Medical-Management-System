@@ -699,7 +699,63 @@ router.put("/api/encounters/:encounterId", async (req, res) => {
 router.post("/api/encounters/:encounterId/close", async (req, res) => {
   try {
     const { encounterId } = req.params;
-    const encounter = await storage.closeEncounter(encounterId);
+    
+    // 1. Validate diagnosis exists
+    const treatments = await storage.getTreatments();
+    const treatment = treatments.find((t: any) => t.encounterId === encounterId);
+    if (!treatment || !treatment.diagnosis || treatment.diagnosis.trim() === '') {
+      return res.status(400).json({ error: "Cannot close visit: Diagnosis is required" });
+    }
+    
+    // 2. Check all completed diagnostics are acknowledged
+    const [labTests, xrays, ultrasounds] = await Promise.all([
+      storage.getLabTests(),
+      storage.getXrayExams(),
+      storage.getUltrasoundExams(),
+    ]);
+    
+    const orderLines = await storage.getOrderLinesByEncounter(encounterId);
+    const orderLineMap = new Map(orderLines.map((ol: any) => [ol.relatedId || '', ol]));
+    
+    const completedDiagnostics = [
+      ...labTests.filter((t: any) => t.encounterId === encounterId && t.status === 'completed'),
+      ...xrays.filter((x: any) => x.encounterId === encounterId && x.status === 'completed'),
+      ...ultrasounds.filter((u: any) => u.encounterId === encounterId && u.status === 'completed'),
+    ];
+    
+    const unacknowledged = completedDiagnostics.filter((d: any) => {
+      const orderLine = orderLineMap.get(d.testId || d.xrayId || d.ultrasoundId);
+      return !orderLine || !orderLine.acknowledgedBy;
+    });
+    
+    if (unacknowledged.length > 0) {
+      return res.status(400).json({ 
+        error: `Cannot close visit: ${unacknowledged.length} completed diagnostic(s) need acknowledgment` 
+      });
+    }
+    
+    // 3. Create/update invoice for cart items
+    const cartItems = orderLines.filter((ol: any) => ol.addToCart);
+    let invoiceStatus: 'open' | 'closed' = 'closed';
+    
+    if (cartItems.length > 0) {
+      // Create invoice
+      try {
+        await storage.generateInvoiceFromEncounter(encounterId, 'System');
+        // Keep status as open for billing, will be closed after payment
+        invoiceStatus = 'open';
+      } catch (invoiceError) {
+        console.error('Error creating invoice:', invoiceError);
+        // Continue with closing even if invoice fails
+      }
+    }
+    
+    // 4. Close encounter
+    const encounter = await storage.updateEncounter(encounterId, { 
+      status: invoiceStatus,
+      closedAt: new Date().toISOString() 
+    });
+    
     res.json(encounter);
   } catch (error) {
     console.error('Error closing encounter:', error);
