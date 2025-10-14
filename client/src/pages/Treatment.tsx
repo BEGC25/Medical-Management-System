@@ -703,10 +703,30 @@ export default function Treatment() {
           {selectedPatient && currentEncounter && (
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Orders & Results
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Orders & Results
+                  </CardTitle>
+                  {orders.some(o => o.status === 'completed' && !o.addToCart && o.isPaid) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const completedOrders = orders.filter(o => o.status === 'completed' && !o.addToCart && o.isPaid);
+                        Promise.all(
+                          completedOrders.map(order =>
+                            addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: true })
+                          )
+                        );
+                      }}
+                      data-testid="add-all-to-cart-btn"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Add All Completed to Cart
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -955,7 +975,7 @@ export default function Treatment() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">
-                      {orderLines.length} items
+                      {orders.filter(o => o.addToCart).length} items
                     </Badge>
                     <Button
                       variant="outline"
@@ -970,55 +990,45 @@ export default function Treatment() {
               {showVisitCart && (
                 <CardContent>
                   <div className="space-y-3">
-                    {orderLines.length === 0 ? (
+                    {orders.filter(o => o.addToCart).length === 0 ? (
                       <div className="text-center py-4 text-gray-500">
                         <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No services added yet</p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-2"
-                          onClick={() => addConsultationMutation.mutate()}
-                          disabled={addConsultationMutation.isPending}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Consultation Fee
-                        </Button>
+                        <p>No services added to cart yet</p>
+                        <p className="text-xs mt-1">Acknowledge completed tests and add them to cart</p>
                       </div>
                     ) : (
                       <>
-                        {orderLines.map((line: OrderLine) => (
-                          <div key={line.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        {orders.filter(o => o.addToCart).map((order: any) => (
+                          <div key={order.orderId} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                             <div>
-                              <p className="font-medium">{line.description}</p>
-                              <p className="text-sm text-gray-600">
-                                Qty: {line.quantity} × {line.unitPriceSnapshot} SSP
+                              <p className="font-medium">{order.name}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {order.type.toUpperCase()} - {order.status}
                               </p>
-                              <Badge variant="outline" className="mt-1">
-                                {line.status}
-                              </Badge>
+                              {order.flags && (
+                                <Badge variant={order.flags === 'critical' ? 'destructive' : 'outline'} className="mt-1">
+                                  {order.flags}
+                                </Badge>
+                              )}
                             </div>
                             <div className="text-right">
-                              <p className="font-medium text-lg">{line.totalPrice} SSP</p>
-                              <p className="text-sm text-gray-600">{line.department}</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: false });
+                                }}
+                              >
+                                Remove
+                              </Button>
                             </div>
                           </div>
                         ))}
                         <div className="border-t pt-3 flex justify-between items-center">
-                          <span className="font-medium">Total Amount:</span>
-                          <span className="font-bold text-lg text-green-600">
-                            {orderLines.reduce((sum: number, line: OrderLine) => sum + line.totalPrice, 0)} SSP
+                          <span className="font-medium">Items in Cart:</span>
+                          <span className="font-bold text-lg text-green-600 dark:text-green-400">
+                            {orders.filter(o => o.addToCart).length} service(s)
                           </span>
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                          <Button variant="outline" size="sm">
-                            <FileText className="h-4 w-4 mr-1" />
-                            Preview Bill
-                          </Button>
-                          <Button size="sm">
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            Send to Cashier
-                          </Button>
                         </div>
                       </>
                     )}

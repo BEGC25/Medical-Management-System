@@ -290,9 +290,7 @@ router.put("/api/xray-exams/:examId", async (req, res) => {
 // Ultrasound Exams
 router.get("/api/ultrasound-exams", async (req, res) => {
   try {
-    const status = req.query.status as string;
-    const date = req.query.date as string;
-    const ultrasoundExams = await storage.getUltrasoundExams(status, date);
+    const ultrasoundExams = await storage.getUltrasoundExams();
     res.json(ultrasoundExams);
   } catch (error) {
     console.error("Error fetching ultrasound exams:", error);
@@ -461,14 +459,17 @@ router.post("/api/payments", async (req, res) => {
     
     // Create payment items
     for (const item of items) {
+      const quantity = item.quantity || 1;
+      const amount = item.unitPrice * quantity;
       await storage.createPaymentItem({
         paymentId: payment.paymentId,
         serviceId: item.serviceId,
         relatedId: item.relatedId,
         relatedType: item.relatedType,
-        quantity: item.quantity || 1,
+        quantity,
         unitPrice: item.unitPrice,
-        totalPrice: item.unitPrice * (item.quantity || 1),
+        amount,
+        totalPrice: amount,
       });
     }
     
@@ -552,9 +553,7 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
 // Pharmacy Orders
 router.get("/api/pharmacy-orders", async (req, res) => {
   try {
-    const status = req.query.status as string;
-    const date = req.query.date as string;
-    const pharmacyOrders = await storage.getPharmacyOrders(status, date);
+    const pharmacyOrders = await storage.getPharmacyOrders();
     res.json(pharmacyOrders);
   } catch (error) {
     console.error('Error in pharmacy orders route:', error);
@@ -773,7 +772,7 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
     // Get all diagnostics for this encounter
     const [labTests, xrays, ultrasounds] = await Promise.all([
       storage.getLabTestsByPatient(encounter.patientId),
-      storage.getXRayExamsByPatient(encounter.patientId),
+      storage.getXrayExamsByPatient(encounter.patientId),
       storage.getUltrasoundExamsByPatient(encounter.patientId),
     ]);
     
