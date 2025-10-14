@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/Dashboard";
 import Patients from "@/pages/Patients";
 import Treatment from "@/pages/Treatment";
+import VisitRedirector from "@/pages/VisitRedirector";
 import Laboratory from "@/pages/Laboratory";
 import XRay from "@/pages/XRay";
 import Ultrasound from "@/pages/Ultrasound";
@@ -41,6 +42,8 @@ function App() {
                   <Switch>
                     <ProtectedRoute path="/" component={Dashboard} />
                     <ProtectedRoute path="/patients" component={Patients} />
+                    <ProtectedRoute path="/treatment/new" component={VisitRedirector} />
+                    <ProtectedRoute path="/treatment/:visitId" component={Treatment} />
                     <ProtectedRoute path="/treatment" component={Treatment} />
                     <ProtectedRoute path="/laboratory" component={Laboratory} />
                     <ProtectedRoute path="/xray" component={XRay} />

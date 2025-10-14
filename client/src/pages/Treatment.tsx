@@ -329,12 +329,8 @@ export default function Treatment() {
   });
 
   const handlePatientSelect = (patient: Patient) => {
-    setSelectedPatient(patient);
-    setSavedTreatment(null);
-    toast({
-      title: "Patient Selected",
-      description: `${patient.firstName} ${patient.lastName} (${patient.patientId})`,
-    });
+    // Navigate to visit redirector which will find or create today's visit
+    window.location.href = `/treatment/new?patientId=${patient.patientId}`;
   };
 
   const handleNewTreatment = () => {

@@ -169,7 +169,7 @@ export interface IStorage {
 
   // Encounters
   createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter>;
-  getEncounters(status?: string, date?: string): Promise<schema.Encounter[]>;
+  getEncounters(status?: string, date?: string, patientId?: string): Promise<schema.Encounter[]>;
   getEncounterById(encounterId: string): Promise<schema.Encounter | null>;
   getEncountersByPatient(patientId: string): Promise<schema.Encounter[]>;
   updateEncounter(encounterId: string, data: Partial<schema.Encounter>): Promise<schema.Encounter>;
@@ -1034,7 +1034,7 @@ export class MemStorage implements IStorage {
     return encounter;
   }
 
-  async getEncounters(status?: string, date?: string): Promise<schema.Encounter[]> {
+  async getEncounters(status?: string, date?: string, patientId?: string): Promise<schema.Encounter[]> {
     let query = db.select().from(encounters);
     
     const conditions = [];
@@ -1043,6 +1043,9 @@ export class MemStorage implements IStorage {
     }
     if (date) {
       conditions.push(eq(encounters.visitDate, date));
+    }
+    if (patientId) {
+      conditions.push(eq(encounters.patientId, patientId));
     }
     
     if (conditions.length > 0) {

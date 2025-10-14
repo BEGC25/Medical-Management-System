@@ -642,8 +642,9 @@ router.get("/api/encounters", async (req, res) => {
   try {
     const status = req.query.status as string;
     const date = req.query.date as string;
+    const patientId = req.query.patientId as string;
     
-    const encounters = await storage.getEncounters(status, date);
+    const encounters = await storage.getEncounters(status, date, patientId);
     res.json(encounters);
   } catch (error) {
     console.error('Error fetching encounters:', error);
