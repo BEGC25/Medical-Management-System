@@ -708,6 +708,97 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
   }
 });
 
+// Get diagnostics with acknowledgment status for an encounter
+router.get("/api/encounters/:encounterId/diagnostics", async (req, res) => {
+  try {
+    const { encounterId } = req.params;
+    const encounter = await storage.getEncounterById(encounterId);
+    
+    if (!encounter) {
+      return res.status(404).json({ error: "Encounter not found" });
+    }
+    
+    // Get all diagnostics for this patient
+    const [labTests, xrays, ultrasounds] = await Promise.all([
+      storage.getLabTestsByPatient(encounter.patientId),
+      storage.getXRayExamsByPatient(encounter.patientId),
+      storage.getUltrasoundExamsByPatient(encounter.patientId),
+    ]);
+    
+    // Get all order lines for this encounter
+    const orderLines = await storage.getOrderLinesByEncounter(encounterId);
+    
+    // Create a map of related_id to order line for quick lookup
+    const orderLineMap = new Map(
+      orderLines.map((ol: any) => [ol.relatedId || '', ol])
+    );
+    
+    // Enrich diagnostics with acknowledgment data from order lines
+    const enrichedLabTests = labTests.map((test: any) => ({
+      ...test,
+      orderLine: orderLineMap.get(test.testId),
+    }));
+    
+    const enrichedXrays = xrays.map((xray: any) => ({
+      ...xray,
+      orderLine: orderLineMap.get(xray.xrayId),
+    }));
+    
+    const enrichedUltrasounds = ultrasounds.map((ultrasound: any) => ({
+      ...ultrasound,
+      orderLine: orderLineMap.get(ultrasound.ultrasoundId),
+    }));
+    
+    res.json({
+      labTests: enrichedLabTests,
+      xrays: enrichedXrays,
+      ultrasounds: enrichedUltrasounds,
+    });
+  } catch (error) {
+    console.error('Error fetching diagnostics:', error);
+    res.status(500).json({ error: "Failed to fetch diagnostics" });
+  }
+});
+
+// Update order line acknowledgment
+router.put("/api/order-lines/:id/acknowledge", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { acknowledgedBy, acknowledged } = req.body;
+    
+    const updates: any = {};
+    if (acknowledged) {
+      updates.acknowledgedBy = acknowledgedBy;
+      updates.acknowledgedAt = new Date().toISOString();
+    } else {
+      updates.acknowledgedBy = null;
+      updates.acknowledgedAt = null;
+    }
+    
+    const orderLine = await storage.updateOrderLine(id, updates);
+    res.json(orderLine);
+  } catch (error) {
+    console.error('Error updating acknowledgment:', error);
+    res.status(500).json({ error: "Failed to update acknowledgment" });
+  }
+});
+
+// Update order line add to cart status
+router.put("/api/order-lines/:id/add-to-cart", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { addToCart } = req.body;
+    
+    const orderLine = await storage.updateOrderLine(id, {
+      addToCart: addToCart ? 1 : 0,
+    });
+    res.json(orderLine);
+  } catch (error) {
+    console.error('Error updating add to cart:', error);
+    res.status(500).json({ error: "Failed to update add to cart" });
+  }
+});
+
 // Order Lines
 router.post("/api/order-lines", async (req, res) => {
   try {

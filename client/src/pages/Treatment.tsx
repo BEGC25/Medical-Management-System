@@ -12,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
-import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment, type Encounter, type OrderLine, type Service, type LabTest, type XRay, type Ultrasound } from "@shared/schema";
+import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment, type Encounter, type OrderLine, type Service, type LabTest, type XrayExam, type UltrasoundExam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
@@ -131,41 +132,21 @@ export default function Treatment() {
     enabled: !!currentEncounter,
   });
 
-  // Get lab tests for this patient
-  const { data: labTests = [] } = useQuery({
-    queryKey: ["/api/lab-tests", { patientId: selectedPatient?.patientId }],
+  // Get diagnostics with acknowledgment status for this encounter
+  const { data: diagnostics } = useQuery({
+    queryKey: ["/api/encounters", currentEncounter?.encounterId, "diagnostics"],
     queryFn: async () => {
-      if (!selectedPatient) return [];
-      const response = await fetch(`/api/lab-tests?patientId=${selectedPatient.patientId}`);
-      if (!response.ok) return [];
+      if (!currentEncounter) return { labTests: [], xrays: [], ultrasounds: [] };
+      const response = await fetch(`/api/encounters/${currentEncounter.encounterId}/diagnostics`);
+      if (!response.ok) return { labTests: [], xrays: [], ultrasounds: [] };
       return response.json();
     },
-    enabled: !!selectedPatient,
+    enabled: !!currentEncounter,
   });
 
-  // Get x-rays for this patient
-  const { data: xrays = [] } = useQuery({
-    queryKey: ["/api/xrays", { patientId: selectedPatient?.patientId }],
-    queryFn: async () => {
-      if (!selectedPatient) return [];
-      const response = await fetch(`/api/xrays?patientId=${selectedPatient.patientId}`);
-      if (!response.ok) return [];
-      return response.json();
-    },
-    enabled: !!selectedPatient,
-  });
-
-  // Get ultrasounds for this patient
-  const { data: ultrasounds = [] } = useQuery({
-    queryKey: ["/api/ultrasounds", { patientId: selectedPatient?.patientId }],
-    queryFn: async () => {
-      if (!selectedPatient) return [];
-      const response = await fetch(`/api/ultrasounds?patientId=${selectedPatient.patientId}`);
-      if (!response.ok) return [];
-      return response.json();
-    },
-    enabled: !!selectedPatient,
-  });
+  const labTests = diagnostics?.labTests || [];
+  const xrays = diagnostics?.xrays || [];
+  const ultrasounds = diagnostics?.ultrasounds || [];
 
   // Sync loaded visit and patient into state when visitId route is used
   useEffect(() => {
@@ -385,6 +366,56 @@ export default function Treatment() {
     },
   });
 
+  // Acknowledgment mutation
+  const acknowledgeMutation = useMutation({
+    mutationFn: async ({ orderLineId, acknowledgedBy, acknowledged }: { orderLineId: number; acknowledgedBy: string; acknowledged: boolean }) => {
+      const response = await apiRequest("PUT", `/api/order-lines/${orderLineId}/acknowledge`, {
+        acknowledgedBy,
+        acknowledged,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters", currentEncounter?.encounterId, "diagnostics"] });
+      toast({
+        title: "Success",
+        description: "Result acknowledgment updated",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update acknowledgment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add to cart mutation
+  const addToCartMutation = useMutation({
+    mutationFn: async ({ orderLineId, addToCart }: { orderLineId: number; addToCart: boolean }) => {
+      const response = await apiRequest("PUT", `/api/order-lines/${orderLineId}/add-to-cart`, {
+        addToCart,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters", currentEncounter?.encounterId, "diagnostics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters", currentEncounter?.encounterId, "order-lines"] });
+      toast({
+        title: "Success",
+        description: "Added to visit cart",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add to cart",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = form.handleSubmit((data) => {
     if (!selectedPatient) {
       toast({
@@ -584,19 +615,62 @@ export default function Treatment() {
                     <div>
                       <h4 className="font-semibold mb-2">Laboratory Tests</h4>
                       <div className="space-y-2">
-                        {labTests.map((test: LabTest) => (
+                        {labTests.map((test: any) => (
                           <div key={test.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <div className="flex justify-between items-start">
+                            <div className="flex justify-between items-start gap-3">
                               <div className="flex-1">
-                                <p className="font-medium">{test.testType}</p>
+                                <p className="font-medium">{test.category} - {test.tests}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {new Date(test.requestDate).toLocaleDateString()}
+                                  {new Date(test.requestedDate).toLocaleDateString()}
                                 </p>
                                 <Badge variant={test.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
                                   {test.status}
                                 </Badge>
+                                {test.orderLine?.acknowledgedBy && (
+                                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                    ✓ Acknowledged by {test.orderLine.acknowledgedBy}
+                                  </p>
+                                )}
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex flex-col gap-2">
+                                {test.status === 'completed' && test.orderLine && (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <Checkbox
+                                        id={`ack-lab-${test.id}`}
+                                        checked={!!test.orderLine.acknowledgedBy}
+                                        onCheckedChange={(checked) => {
+                                          acknowledgeMutation.mutate({
+                                            orderLineId: test.orderLine.id,
+                                            acknowledgedBy: "Dr. System", // In real app, use actual user
+                                            acknowledged: checked as boolean,
+                                          });
+                                        }}
+                                        data-testid={`ack-lab-${test.id}`}
+                                      />
+                                      <label htmlFor={`ack-lab-${test.id}`} className="text-sm cursor-pointer">
+                                        Acknowledge
+                                      </label>
+                                    </div>
+                                    {test.orderLine.acknowledgedBy && !test.orderLine.addToCart && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => addToCartMutation.mutate({
+                                          orderLineId: test.orderLine.id,
+                                          addToCart: true,
+                                        })}
+                                        data-testid={`add-cart-lab-${test.id}`}
+                                      >
+                                        <ShoppingCart className="h-3 w-3 mr-1" />
+                                        Add to Cart
+                                      </Button>
+                                    )}
+                                    {test.orderLine.addToCart === 1 && (
+                                      <Badge variant="outline" className="bg-green-50">In Cart</Badge>
+                                    )}
+                                  </>
+                                )}
                                 {test.status === 'completed' && (
                                   <Button variant="outline" size="sm" data-testid={`view-lab-${test.id}`}>
                                     View Results
@@ -615,9 +689,9 @@ export default function Treatment() {
                     <div>
                       <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
                       <div className="space-y-2">
-                        {xrays.map((xray: XRay) => (
+                        {xrays.map((xray: any) => (
                           <div key={xray.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <div className="flex justify-between items-start">
+                            <div className="flex justify-between items-start gap-3">
                               <div className="flex-1">
                                 <p className="font-medium">{xray.bodyPart}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -626,8 +700,51 @@ export default function Treatment() {
                                 <Badge variant={xray.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
                                   {xray.status}
                                 </Badge>
+                                {xray.orderLine?.acknowledgedBy && (
+                                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                    ✓ Acknowledged by {xray.orderLine.acknowledgedBy}
+                                  </p>
+                                )}
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex flex-col gap-2">
+                                {xray.status === 'completed' && xray.orderLine && (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <Checkbox
+                                        id={`ack-xray-${xray.id}`}
+                                        checked={!!xray.orderLine.acknowledgedBy}
+                                        onCheckedChange={(checked) => {
+                                          acknowledgeMutation.mutate({
+                                            orderLineId: xray.orderLine.id,
+                                            acknowledgedBy: "Dr. System",
+                                            acknowledged: checked as boolean,
+                                          });
+                                        }}
+                                        data-testid={`ack-xray-${xray.id}`}
+                                      />
+                                      <label htmlFor={`ack-xray-${xray.id}`} className="text-sm cursor-pointer">
+                                        Acknowledge
+                                      </label>
+                                    </div>
+                                    {xray.orderLine.acknowledgedBy && !xray.orderLine.addToCart && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => addToCartMutation.mutate({
+                                          orderLineId: xray.orderLine.id,
+                                          addToCart: true,
+                                        })}
+                                        data-testid={`add-cart-xray-${xray.id}`}
+                                      >
+                                        <ShoppingCart className="h-3 w-3 mr-1" />
+                                        Add to Cart
+                                      </Button>
+                                    )}
+                                    {xray.orderLine.addToCart === 1 && (
+                                      <Badge variant="outline" className="bg-green-50">In Cart</Badge>
+                                    )}
+                                  </>
+                                )}
                                 {xray.status === 'completed' && (
                                   <Button variant="outline" size="sm" data-testid={`view-xray-${xray.id}`}>
                                     View Report
@@ -646,9 +763,9 @@ export default function Treatment() {
                     <div>
                       <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
                       <div className="space-y-2">
-                        {ultrasounds.map((ultrasound: Ultrasound) => (
+                        {ultrasounds.map((ultrasound: any) => (
                           <div key={ultrasound.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <div className="flex justify-between items-start">
+                            <div className="flex justify-between items-start gap-3">
                               <div className="flex-1">
                                 <p className="font-medium">{ultrasound.examType}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -657,8 +774,51 @@ export default function Treatment() {
                                 <Badge variant={ultrasound.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
                                   {ultrasound.status}
                                 </Badge>
+                                {ultrasound.orderLine?.acknowledgedBy && (
+                                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                    ✓ Acknowledged by {ultrasound.orderLine.acknowledgedBy}
+                                  </p>
+                                )}
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex flex-col gap-2">
+                                {ultrasound.status === 'completed' && ultrasound.orderLine && (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <Checkbox
+                                        id={`ack-ultrasound-${ultrasound.id}`}
+                                        checked={!!ultrasound.orderLine.acknowledgedBy}
+                                        onCheckedChange={(checked) => {
+                                          acknowledgeMutation.mutate({
+                                            orderLineId: ultrasound.orderLine.id,
+                                            acknowledgedBy: "Dr. System",
+                                            acknowledged: checked as boolean,
+                                          });
+                                        }}
+                                        data-testid={`ack-ultrasound-${ultrasound.id}`}
+                                      />
+                                      <label htmlFor={`ack-ultrasound-${ultrasound.id}`} className="text-sm cursor-pointer">
+                                        Acknowledge
+                                      </label>
+                                    </div>
+                                    {ultrasound.orderLine.acknowledgedBy && !ultrasound.orderLine.addToCart && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => addToCartMutation.mutate({
+                                          orderLineId: ultrasound.orderLine.id,
+                                          addToCart: true,
+                                        })}
+                                        data-testid={`add-cart-ultrasound-${ultrasound.id}`}
+                                      >
+                                        <ShoppingCart className="h-3 w-3 mr-1" />
+                                        Add to Cart
+                                      </Button>
+                                    )}
+                                    {ultrasound.orderLine.addToCart === 1 && (
+                                      <Badge variant="outline" className="bg-green-50">In Cart</Badge>
+                                    )}
+                                  </>
+                                )}
                                 {ultrasound.status === 'completed' && (
                                   <Button variant="outline" size="sm" data-testid={`view-ultrasound-${ultrasound.id}`}>
                                     View Report
