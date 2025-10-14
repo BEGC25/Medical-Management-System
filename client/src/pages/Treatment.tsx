@@ -148,6 +148,19 @@ export default function Treatment() {
   const xrays = diagnostics?.xrays || [];
   const ultrasounds = diagnostics?.ultrasounds || [];
 
+  // Load existing treatment records for this encounter
+  const { data: existingTreatment } = useQuery<Treatment | null>({
+    queryKey: ["/api/treatments", "encounter", currentEncounter?.encounterId],
+    queryFn: async () => {
+      if (!currentEncounter?.encounterId) return null;
+      const response = await fetch(`/api/treatments?encounterId=${currentEncounter.encounterId}`);
+      if (!response.ok) return null;
+      const treatments = await response.json();
+      return treatments[0] || null;
+    },
+    enabled: !!currentEncounter?.encounterId,
+  });
+
   // Sync loaded visit and patient into state when visitId route is used
   useEffect(() => {
     if (loadedVisit && loadedPatient && !selectedPatient) {
@@ -155,6 +168,29 @@ export default function Treatment() {
       setCurrentEncounter(loadedVisit);
     }
   }, [loadedVisit, loadedPatient]);
+
+  // Populate form with existing treatment data when it loads
+  useEffect(() => {
+    if (existingTreatment && selectedPatient) {
+      form.reset({
+        patientId: existingTreatment.patientId,
+        visitDate: existingTreatment.visitDate,
+        visitType: existingTreatment.visitType,
+        priority: existingTreatment.priority,
+        chiefComplaint: existingTreatment.chiefComplaint || "",
+        temperature: existingTreatment.temperature,
+        bloodPressure: existingTreatment.bloodPressure || "",
+        heartRate: existingTreatment.heartRate,
+        weight: existingTreatment.weight,
+        examination: existingTreatment.examination || "",
+        diagnosis: existingTreatment.diagnosis || "",
+        treatmentPlan: existingTreatment.treatmentPlan || "",
+        followUpDate: existingTreatment.followUpDate || "",
+        followUpType: existingTreatment.followUpType || "",
+      });
+      setSavedTreatment(existingTreatment);
+    }
+  }, [existingTreatment, selectedPatient]);
 
   // Update current encounter when patient changes (legacy flow)
   useEffect(() => {
@@ -444,12 +480,16 @@ export default function Treatment() {
   const handleCloseVisit = () => {
     if (!currentEncounter) return;
     
-    // Validate diagnosis exists
-    const diagnosis = form.watch("diagnosis");
-    if (!diagnosis || diagnosis.trim() === "") {
+    // Validate diagnosis exists - check both persisted treatment and current form
+    const persistedDiagnosis = existingTreatment?.diagnosis;
+    const currentDiagnosis = form.watch("diagnosis");
+    const hasDiagnosis = (persistedDiagnosis && persistedDiagnosis.trim() !== "") || 
+                         (currentDiagnosis && currentDiagnosis.trim() !== "");
+    
+    if (!hasDiagnosis) {
       toast({
         title: "Validation Error",
-        description: "Please enter a diagnosis before closing the visit",
+        description: "Please enter and save a diagnosis before closing the visit",
         variant: "destructive",
       });
       return;
