@@ -1,0 +1,88 @@
+Proceed with the Visit workspace. Do NOT add a Stripe dependency.
+Keep payments as we have (Cash/Other). If you need a flag, use USE_STRIPE=false and mock a “Paid” status. Please finish the clinical + billing glue first.
+
+Must deliver (in this order)
+
+Open/Create Visit flow (done? verify)
+
+Clicking a patient opens today’s Visit or creates one (no duplicates per day).
+
+Orders & Results panel (functional, not placeholder)
+
+API: GET /api/visits/:id/orders → returns all lab/xray/ultrasound orders with:
+
+{
+  "orderId":"...", "visitId":"...", "type":"lab|xray|ultrasound",
+  "name":"CBC", "status":"pending|completed",
+  "flags":"normal|abnormal|critical|null",
+  "snippet":"HB 11.2 g/dL (low)",
+  "resultUrl":"/api/lab-tests/...",
+  "acknowledgedAt": null, "acknowledgedBy": null,
+  "addToCart": false, "isPaid": true
+}
+
+
+UI shows rows with Status pill, View, Acknowledge, Add to Cart.
+
+“Add All Completed to Cart” bulk action.
+
+Acknowledge + Add to Cart (write APIs)
+
+PUT /api/orders/:orderId/ack → { acknowledged: true }
+
+PUT /api/orders/:orderId/cart → { addToCart: true }
+
+Block cart toggle if isPaid === false and our policy requires pre-pay; show UNPAID badge.
+
+Visit Cart
+
+Items = consultation + procedures + tests (from addToCart) + consumables.
+
+Qty, unit price, amount, total; remove updates total.
+
+Close Visit & Send to Billing
+
+Disabled until: (a) ≥1 diagnosis, (b) all completed orders are acknowledged.
+
+POST /api/visits/:id/close → creates/updates invoice; sets status ready_to_bill (or closed if paid immediately).
+
+Success/error toasts. No Stripe required.
+
+Acceptance criteria
+
+Orders for a visit appear (no “No orders yet” if there are completed labs/US tied to this visit).
+
+Acknowledge writes acknowledgedBy/acknowledgedAt.
+
+Cart reflects toggles and totals; UNPAID orders blocked if pre-pay.
+
+Close button gates correctly and generates/updates the invoice.
+
+Keyboard accessible (row focus + Enter/Space).
+
+Quick troubleshooting (if Orders & Results is empty)
+
+Ensure diagnostics carry visitId (or encounterId mapped) and the join uses that id.
+
+Verify with:
+
+GET /api/visits/:id/orders
+
+GET /api/lab-tests?visitId=:id
+
+GET /api/imaging?visitId=:id&type=ultrasound|xray
+
+If missing links, backfill: UPDATE lab_tests SET visitId=:id WHERE patientId=:pid AND requestedDate=CURRENT_DATE;
+
+DB notes
+
+Keep DB name encounter if already present; UI says Visit.
+
+Unique index to prevent duplicates:
+CREATE UNIQUE INDEX uniq_open_visit ON encounters(patientId, date) WHERE status='open';
+
+order_lines should have: orderId, visitId, relatedId, relatedType, acknowledgedBy, acknowledgedAt, addToCart, isPaid.
+
+Out of scope (for now)
+
+Stripe test keys and checkout flows. Do not block on this. Use cash/mock and proceed.

@@ -760,6 +760,104 @@ router.get("/api/encounters/:encounterId/diagnostics", async (req, res) => {
   }
 });
 
+// Get unified orders for a visit (with flags, snippets, acknowledgment status)
+router.get("/api/visits/:visitId/orders", async (req, res) => {
+  try {
+    const { visitId } = req.params;
+    const encounter = await storage.getEncounterById(visitId);
+    
+    if (!encounter) {
+      return res.status(404).json({ error: "Visit not found" });
+    }
+    
+    // Get all diagnostics for this encounter
+    const [labTests, xrays, ultrasounds] = await Promise.all([
+      storage.getLabTestsByPatient(encounter.patientId),
+      storage.getXRayExamsByPatient(encounter.patientId),
+      storage.getUltrasoundExamsByPatient(encounter.patientId),
+    ]);
+    
+    // Get order lines for this encounter
+    const orderLines = await storage.getOrderLinesByEncounter(visitId);
+    
+    // Create a map of relatedId -> orderLine for quick lookup
+    const orderLineMap = new Map(
+      orderLines.map((ol: any) => [ol.relatedId || '', ol])
+    );
+    
+    // Transform lab tests to unified order format
+    const labOrders = labTests
+      .filter((test: any) => test.encounterId === visitId)
+      .map((test: any) => {
+        const orderLine = orderLineMap.get(test.testId);
+        return {
+          orderId: orderLine?.id || `lab-${test.testId}`,
+          visitId,
+          type: 'lab',
+          name: test.testType || 'Lab Test',
+          status: test.status || 'pending',
+          flags: test.clinicalSignificance || null,
+          snippet: test.criticalFindings || test.interpretation || null,
+          resultUrl: `/api/lab-tests/${test.testId}`,
+          acknowledgedAt: orderLine?.acknowledgedAt || null,
+          acknowledgedBy: orderLine?.acknowledgedBy || null,
+          addToCart: orderLine?.addToCart || false,
+          isPaid: test.paymentStatus === 'paid',
+        };
+      });
+    
+    // Transform X-rays to unified order format
+    const xrayOrders = xrays
+      .filter((xray: any) => xray.encounterId === visitId)
+      .map((xray: any) => {
+        const orderLine = orderLineMap.get(xray.xrayId);
+        return {
+          orderId: orderLine?.id || `xray-${xray.xrayId}`,
+          visitId,
+          type: 'xray',
+          name: xray.examinationType || 'X-Ray',
+          status: xray.status || 'pending',
+          flags: null,
+          snippet: xray.impression || null,
+          resultUrl: `/api/xrays/${xray.xrayId}`,
+          acknowledgedAt: orderLine?.acknowledgedAt || null,
+          acknowledgedBy: orderLine?.acknowledgedBy || null,
+          addToCart: orderLine?.addToCart || false,
+          isPaid: xray.paymentStatus === 'paid',
+        };
+      });
+    
+    // Transform ultrasounds to unified order format
+    const ultrasoundOrders = ultrasounds
+      .filter((us: any) => us.encounterId === visitId)
+      .map((us: any) => {
+        const orderLine = orderLineMap.get(us.ultrasoundId);
+        return {
+          orderId: orderLine?.id || `ultrasound-${us.ultrasoundId}`,
+          visitId,
+          type: 'ultrasound',
+          name: us.examinationType || 'Ultrasound',
+          status: us.status || 'pending',
+          flags: null,
+          snippet: us.impression || null,
+          resultUrl: `/api/ultrasounds/${us.ultrasoundId}`,
+          acknowledgedAt: orderLine?.acknowledgedAt || null,
+          acknowledgedBy: orderLine?.acknowledgedBy || null,
+          addToCart: orderLine?.addToCart || false,
+          isPaid: us.paymentStatus === 'paid',
+        };
+      });
+    
+    // Combine all orders
+    const allOrders = [...labOrders, ...xrayOrders, ...ultrasoundOrders];
+    
+    res.json(allOrders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
 // Update order line acknowledgment
 router.put("/api/order-lines/:id/acknowledge", async (req, res) => {
   try {
@@ -796,6 +894,45 @@ router.put("/api/order-lines/:id/add-to-cart", async (req, res) => {
   } catch (error) {
     console.error('Error updating add to cart:', error);
     res.status(500).json({ error: "Failed to update add to cart" });
+  }
+});
+
+// Simplified acknowledge API for unified orders
+router.put("/api/orders/:orderId/ack", async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    const { acknowledged } = req.body;
+    
+    const updates: any = {};
+    if (acknowledged) {
+      updates.acknowledgedBy = 'Current User'; // TODO: Get from auth session
+      updates.acknowledgedAt = new Date().toISOString();
+    } else {
+      updates.acknowledgedBy = null;
+      updates.acknowledgedAt = null;
+    }
+    
+    const orderLine = await storage.updateOrderLine(orderId, updates);
+    res.json({ acknowledged: !!orderLine.acknowledgedBy });
+  } catch (error) {
+    console.error('Error updating acknowledgment:', error);
+    res.status(500).json({ error: "Failed to update acknowledgment" });
+  }
+});
+
+// Simplified cart API for unified orders
+router.put("/api/orders/:orderId/cart", async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    const { addToCart } = req.body;
+    
+    const orderLine = await storage.updateOrderLine(orderId, {
+      addToCart: addToCart ? 1 : 0,
+    });
+    res.json({ addToCart: !!orderLine.addToCart });
+  } catch (error) {
+    console.error('Error updating cart:', error);
+    res.status(500).json({ error: "Failed to update cart" });
   }
 });
 
