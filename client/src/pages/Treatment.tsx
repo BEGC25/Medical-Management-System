@@ -77,7 +77,7 @@ export default function Treatment() {
   });
 
   // Get services for billing
-  const { data: services = [] } = useQuery({
+  const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
 
@@ -132,21 +132,21 @@ export default function Treatment() {
     enabled: !!currentEncounter,
   });
 
-  // Get diagnostics with acknowledgment status for this encounter
-  const { data: diagnostics } = useQuery({
-    queryKey: ["/api/encounters", currentEncounter?.encounterId, "diagnostics"],
+  // Get unified orders for this visit
+  const { data: orders = [] } = useQuery<any[]>({
+    queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"],
     queryFn: async () => {
-      if (!currentEncounter) return { labTests: [], xrays: [], ultrasounds: [] };
-      const response = await fetch(`/api/encounters/${currentEncounter.encounterId}/diagnostics`);
-      if (!response.ok) return { labTests: [], xrays: [], ultrasounds: [] };
+      if (!currentEncounter) return [];
+      const response = await fetch(`/api/visits/${currentEncounter.encounterId}/orders`);
+      if (!response.ok) return [];
       return response.json();
     },
     enabled: !!currentEncounter,
   });
 
-  const labTests = diagnostics?.labTests || [];
-  const xrays = diagnostics?.xrays || [];
-  const ultrasounds = diagnostics?.ultrasounds || [];
+  const labTests = orders.filter(o => o.type === 'lab');
+  const xrays = orders.filter(o => o.type === 'xray');
+  const ultrasounds = orders.filter(o => o.type === 'ultrasound');
 
   // Load existing treatment records for this encounter
   const { data: existingTreatment } = useQuery<Treatment | null>({
@@ -412,7 +412,7 @@ export default function Treatment() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters", currentEncounter?.encounterId, "diagnostics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
       toast({
         title: "Success",
         description: "Result acknowledgment updated",
@@ -436,8 +436,7 @@ export default function Treatment() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters", currentEncounter?.encounterId, "diagnostics"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters", currentEncounter?.encounterId, "order-lines"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
       toast({
         title: "Success",
         description: "Added to visit cart",

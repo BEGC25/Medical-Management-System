@@ -721,7 +721,7 @@ router.get("/api/encounters/:encounterId/diagnostics", async (req, res) => {
     // Get all diagnostics for this patient
     const [labTests, xrays, ultrasounds] = await Promise.all([
       storage.getLabTestsByPatient(encounter.patientId),
-      storage.getXRayExamsByPatient(encounter.patientId),
+      storage.getXrayExamsByPatient(encounter.patientId),
       storage.getUltrasoundExamsByPatient(encounter.patientId),
     ]);
     
