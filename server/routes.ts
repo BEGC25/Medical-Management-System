@@ -29,7 +29,7 @@ const requireAdmin = (req: any, res: any, next: any) => {
 };
 
 // Users - Admin only
-router.get("/api/users", requireAdmin, async (req, res) => {
+router.get("/api/users", requireAdmin, async (_req, res) => {
   try {
     const users = await storage.getAllUsers();
     res.json(users);
@@ -39,7 +39,7 @@ router.get("/api/users", requireAdmin, async (req, res) => {
   }
 });
 
-// Patient Counts - Efficient endpoint for getting counts without full data
+// Patient Counts
 router.get("/api/patients/counts", async (req, res) => {
   try {
     const date = req.query.date as string;
@@ -70,16 +70,10 @@ router.get("/api/patients/counts", async (req, res) => {
 // Patients
 router.get("/api/patients", async (req, res) => {
   try {
-    const id = req.query.id as string | undefined; // NEW: support ?id= for client compatibility
     const search = req.query.search as string;
     const today = req.query.today;
     const date = req.query.date as string;
     const withStatus = req.query.withStatus === "true";
-
-    if (id) {
-      const patient = await storage.getPatientByPatientId(id);
-      return res.json(patient ? [patient] : []); // client expects array then [0]
-    }
 
     if (withStatus) {
       if (today === "true" || search === "today") {
@@ -117,7 +111,7 @@ router.get("/api/patients/:patientId", async (req, res) => {
       return res.status(404).json({ error: "Patient not found" });
     }
     res.json(patient);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch patient" });
   }
 });
@@ -129,7 +123,9 @@ router.post("/api/patients", async (req, res) => {
     res.status(201).json(patient);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid patient data", details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid patient data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to create patient" });
   }
@@ -142,7 +138,9 @@ router.put("/api/patients/:patientId", async (req, res) => {
     res.json(patient);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid patient data", details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid patient data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to update patient" });
   }
@@ -156,7 +154,7 @@ router.delete("/api/patients/:patientId", async (req, res) => {
     } else {
       res.status(404).json({ error: "Patient not found" });
     }
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to delete patient" });
   }
 });
@@ -164,50 +162,46 @@ router.delete("/api/patients/:patientId", async (req, res) => {
 // Treatments
 router.get("/api/treatments", async (req, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const today = req.query.today === "true" || req.query.filter === "today"; // more forgiving
-    const encounterId = req.query.encounterId as string | undefined;
+    const limit = req.query.limit
+      ? parseInt(req.query.limit as string)
+      : undefined;
+    const today = req.query.today;
 
-    if (encounterId) {
-      // return treatment(s) tied to a visit (used by Treatment.tsx)
-      const all = await storage.getTreatments();
-      const forEncounter = all.filter((t: any) => t.encounterId === encounterId);
-      return res.json(forEncounter);
-    }
-
-    if (today) {
+    if (today === "true" || req.path.includes("today")) {
       const treatments = await storage.getTodaysTreatments();
-      return res.json(treatments);
+      res.json(treatments);
+    } else {
+      const treatments = await storage.getTreatments(limit);
+      res.json(treatments);
     }
-
-    const treatments = await storage.getTreatments(limit);
-    res.json(treatments);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch treatments" });
   }
 });
 
 router.get("/api/patients/:patientId/treatments", async (req, res) => {
   try {
-    const treatments = await storage.getTreatmentsByPatient(req.params.patientId);
+    const treatments = await storage.getTreatmentsByPatient(
+      req.params.patientId
+    );
     res.json(treatments);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch treatments" });
   }
 });
 
 router.post("/api/treatments", async (req, res) => {
   try {
-    // accept optional encounterId coming from the client (post-parse merge)
-    const result = insertTreatmentSchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ error: "Invalid treatment data", details: result.error.errors });
-    }
-    const data = { ...result.data, ...(req.body.encounterId ? { encounterId: req.body.encounterId } : {}) };
-    const treatment = await storage.createTreatment(data as any);
+    const data = insertTreatmentSchema.parse(req.body);
+    const treatment = await storage.createTreatment(data);
     res.status(201).json(treatment);
   } catch (error) {
     console.error("Error creating treatment:", error);
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Invalid treatment data", details: error.errors });
+    }
     res.status(500).json({ error: "Failed to create treatment" });
   }
 });
@@ -221,9 +215,10 @@ router.get("/api/lab-tests", async (req, res) => {
     res.json(labTests);
   } catch (error) {
     console.error("Error fetching lab tests:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to fetch lab tests - Please check your connection and try again" });
+    res.status(500).json({
+      error:
+        "Failed to fetch lab tests - Please check your connection and try again",
+    });
   }
 });
 
@@ -233,11 +228,10 @@ router.get("/api/patients/:patientId/lab-tests", async (req, res) => {
     res.json(labTests);
   } catch (error) {
     console.error("Error fetching patient lab tests:", error);
-    res
-      .status(500)
-      .json({
-        error: "Failed to fetch patient lab tests - Please verify the patient ID and try again",
-      });
+    res.status(500).json({
+      error:
+        "Failed to fetch patient lab tests - Please verify the patient ID and try again",
+    });
   }
 });
 
@@ -252,7 +246,9 @@ router.post("/api/lab-tests", async (req, res) => {
   } catch (error) {
     console.error("Error creating lab test:", error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid lab test data", details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid lab test data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to create lab test" });
   }
@@ -263,7 +259,7 @@ router.put("/api/lab-tests/:testId", async (req, res) => {
     const data = req.body;
     const labTest = await storage.updateLabTest(req.params.testId, data);
     res.json(labTest);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to update lab test" });
   }
 });
@@ -277,9 +273,10 @@ router.get("/api/xray-exams", async (req, res) => {
     res.json(xrayExams);
   } catch (error) {
     console.error("Error fetching X-ray exams:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to fetch X-ray exams - Please check your connection and try again" });
+    res.status(500).json({
+      error:
+        "Failed to fetch X-ray exams - Please check your connection and try again",
+    });
   }
 });
 
@@ -289,11 +286,10 @@ router.get("/api/patients/:patientId/xray-exams", async (req, res) => {
     res.json(xrayExams);
   } catch (error) {
     console.error("Error fetching patient X-ray exams:", error);
-    res
-      .status(500)
-      .json({
-        error: "Failed to fetch patient X-ray exams - Please verify the patient ID and try again",
-      });
+    res.status(500).json({
+      error:
+        "Failed to fetch patient X-ray exams - Please verify the patient ID and try again",
+    });
   }
 });
 
@@ -304,7 +300,9 @@ router.post("/api/xray-exams", async (req, res) => {
     res.status(201).json(xrayExam);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid X-ray exam data", details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid X-ray exam data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to create X-ray exam" });
   }
@@ -315,31 +313,29 @@ router.put("/api/xray-exams/:examId", async (req, res) => {
     const data = req.body;
     const xrayExam = await storage.updateXrayExam(req.params.examId, data);
     res.json(xrayExam);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to update X-ray exam" });
   }
 });
 
 // Ultrasound Exams
-router.get("/api/ultrasound-exams", async (req, res) => {
+router.get("/api/ultrasound-exams", async (_req, res) => {
   try {
     const ultrasoundExams = await storage.getUltrasoundExams();
     res.json(ultrasoundExams);
   } catch (error) {
     console.error("Error fetching ultrasound exams:", error);
-    res
-      .status(500)
-      .json({
-        error: "Failed to fetch ultrasound exams - Please check your connection and try again",
-      });
+    res.status(500).json({ error: "Failed to fetch ultrasound exams - Please check your connection and try again" });
   }
 });
 
 router.get("/api/patients/:patientId/ultrasound-exams", async (req, res) => {
   try {
-    const ultrasoundExams = await storage.getUltrasoundExamsByPatient(req.params.patientId);
+    const ultrasoundExams = await storage.getUltrasoundExamsByPatient(
+      req.params.patientId
+    );
     res.json(ultrasoundExams);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch ultrasound exams" });
   }
 });
@@ -351,7 +347,9 @@ router.post("/api/ultrasound-exams", async (req, res) => {
     res.status(201).json(ultrasoundExam);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid ultrasound exam data", details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid ultrasound exam data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to create ultrasound exam" });
   }
@@ -360,9 +358,12 @@ router.post("/api/ultrasound-exams", async (req, res) => {
 router.put("/api/ultrasound-exams/:examId", async (req, res) => {
   try {
     const data = req.body;
-    const ultrasoundExam = await storage.updateUltrasoundExam(req.params.examId, data);
+    const ultrasoundExam = await storage.updateUltrasoundExam(
+      req.params.examId,
+      data
+    );
     res.json(ultrasoundExam);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to update ultrasound exam" });
   }
 });
@@ -375,13 +376,13 @@ router.delete("/api/ultrasound-exams/:examId", async (req, res) => {
     } else {
       res.status(404).json({ error: "Ultrasound exam not found" });
     }
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to delete ultrasound exam" });
   }
 });
 
 // Dashboard
-router.get("/api/dashboard/stats", async (req, res) => {
+router.get("/api/dashboard/stats", async (_req, res) => {
   try {
     console.log("Dashboard stats route called");
     const stats = await storage.getDashboardStats();
@@ -389,10 +390,12 @@ router.get("/api/dashboard/stats", async (req, res) => {
     res.json(stats);
   } catch (error) {
     console.error("Dashboard stats route error:", error);
-    res.status(500).json({
-      error: "Failed to fetch dashboard stats",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
+    res
+      .status(500)
+      .json({
+        error: "Failed to fetch dashboard stats",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
   }
 });
 
@@ -403,15 +406,17 @@ router.get("/api/dashboard/recent-patients", async (req, res) => {
     res.json(patients);
   } catch (error) {
     console.error("Recent patients error:", error);
-    res.status(500).json({
-      error: "Failed to fetch recent patients",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
+    res
+      .status(500)
+      .json({
+        error: "Failed to fetch recent patients",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
   }
 });
 
 // Object Storage Routes for File Uploads
-router.post("/api/objects/upload", async (req, res) => {
+router.post("/api/objects/upload", async (_req, res) => {
   try {
     const objectStorageService = new ObjectStorageService();
     const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -449,7 +454,8 @@ router.put("/api/lab-tests/:testId/attachments", async (req, res) => {
     const normalizedAttachments = [];
     for (const attachment of attachments) {
       try {
-        const normalizedPath = objectStorageService.normalizeObjectEntityPath(attachment.url);
+        const normalizedPath =
+          objectStorageService.normalizeObjectEntityPath(attachment.url);
         normalizedAttachments.push({
           ...attachment,
           url: normalizedPath,
@@ -460,7 +466,10 @@ router.put("/api/lab-tests/:testId/attachments", async (req, res) => {
       }
     }
 
-    const labTest = await storage.updateLabTestAttachments(req.params.testId, normalizedAttachments);
+    const labTest = await storage.updateLabTestAttachments(
+      req.params.testId,
+      normalizedAttachments
+    );
     res.json(labTest);
   } catch (error) {
     console.error("Error updating lab test attachments:", error);
@@ -472,9 +481,11 @@ router.put("/api/lab-tests/:testId/attachments", async (req, res) => {
 router.get("/api/services", async (req, res) => {
   try {
     const category = req.query.category as string;
-    const services = category ? await storage.getServicesByCategory(category) : await storage.getServices();
+    const services = category
+      ? await storage.getServicesByCategory(category)
+      : await storage.getServices();
     res.json(services);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch services" });
   }
 });
@@ -484,7 +495,10 @@ router.post("/api/payments", async (req, res) => {
   try {
     const { patientId, items, paymentMethod, receivedBy, notes } = req.body;
 
-    const totalAmount = items.reduce((sum: number, item: any) => sum + item.unitPrice * item.quantity, 0);
+    const totalAmount = items.reduce(
+      (sum: number, item: any) => sum + item.unitPrice * item.quantity,
+      0
+    );
 
     const payment = await storage.createPayment({
       patientId,
@@ -536,9 +550,11 @@ router.post("/api/payments", async (req, res) => {
 router.get("/api/payments", async (req, res) => {
   try {
     const patientId = req.query.patientId as string;
-    const payments = patientId ? await storage.getPaymentsByPatient(patientId) : await storage.getPayments();
+    const payments = patientId
+      ? await storage.getPaymentsByPatient(patientId)
+      : await storage.getPayments();
     res.json(payments);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch payments" });
   }
 });
@@ -560,7 +576,9 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
         .map((test) => ({
           id: test.testId,
           type: "lab_test",
-          description: `Lab Test: ${JSON.parse(test.tests).join(", ")}`,
+          description: `Lab Test: ${
+            safeParseTests(test.tests).join(", ") || test.category
+          }`,
           date: test.requestedDate,
           category: test.category,
         })),
@@ -569,7 +587,7 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
         .map((exam) => ({
           id: exam.examId,
           type: "xray_exam",
-          description: `X-Ray: ${exam.examType}`,
+          description: `X-Ray: ${exam.examType || "X-Ray"}`,
           date: exam.requestedDate,
           bodyPart: exam.bodyPart,
         })),
@@ -578,7 +596,7 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
         .map((exam) => ({
           id: exam.examId,
           type: "ultrasound_exam",
-          description: `Ultrasound: ${exam.examType}`,
+          description: `Ultrasound: ${exam.examType || "Ultrasound"}`,
           date: exam.requestedDate,
         })),
     ];
@@ -591,7 +609,7 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
 });
 
 // Pharmacy Orders
-router.get("/api/pharmacy-orders", async (req, res) => {
+router.get("/api/pharmacy-orders", async (_req, res) => {
   try {
     const pharmacyOrders = await storage.getPharmacyOrders();
     res.json(pharmacyOrders);
@@ -599,13 +617,18 @@ router.get("/api/pharmacy-orders", async (req, res) => {
     console.error("Error in pharmacy orders route:", error);
     res
       .status(500)
-      .json({ error: "Failed to fetch pharmacy orders - Please check your connection and try again" });
+      .json({
+        error:
+          "Failed to fetch pharmacy orders - Please check your connection and try again",
+      });
   }
 });
 
 router.get("/api/pharmacy-orders/:patientId", async (req, res) => {
   try {
-    const pharmacyOrders = await storage.getPharmacyOrdersByPatient(req.params.patientId);
+    const pharmacyOrders = await storage.getPharmacyOrdersByPatient(
+      req.params.patientId
+    );
     res.json(pharmacyOrders);
   } catch (error) {
     console.error("Error in patient pharmacy orders route:", error);
@@ -621,7 +644,9 @@ router.post("/api/pharmacy-orders", async (req, res) => {
   } catch (error) {
     console.error("Error creating pharmacy order:", error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid pharmacy order data", details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid pharmacy order data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to create pharmacy order" });
   }
@@ -630,7 +655,10 @@ router.post("/api/pharmacy-orders", async (req, res) => {
 router.patch("/api/pharmacy-orders/:orderId", async (req, res) => {
   try {
     const updates = req.body;
-    const pharmacyOrder = await storage.updatePharmacyOrder(req.params.orderId, updates);
+    const pharmacyOrder = await storage.updatePharmacyOrder(
+      req.params.orderId,
+      updates
+    );
     res.json(pharmacyOrder);
   } catch (error) {
     console.error("Error updating pharmacy order:", error);
@@ -640,7 +668,9 @@ router.patch("/api/pharmacy-orders/:orderId", async (req, res) => {
 
 router.patch("/api/pharmacy-orders/:orderId/dispense", async (req, res) => {
   try {
-    const pharmacyOrder = await storage.dispensePharmacyOrder(req.params.orderId);
+    const pharmacyOrder = await storage.dispensePharmacyOrder(
+      req.params.orderId
+    );
     res.json(pharmacyOrder);
   } catch (error) {
     console.error("Error dispensing pharmacy order:", error);
@@ -653,7 +683,7 @@ router.patch("/api/pharmacy-orders/:orderId/dispense", async (req, res) => {
 // ========================================
 
 // Billing Settings
-router.get("/api/billing/settings", async (req, res) => {
+router.get("/api/billing/settings", async (_req, res) => {
   try {
     const settings = await storage.getBillingSettings();
     res.json(settings);
@@ -667,7 +697,9 @@ router.put("/api/billing/settings", async (req, res) => {
   try {
     const result = insertBillingSettingsSchema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: "Invalid billing settings data", details: result.error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid billing settings data", details: result.error.errors });
     }
 
     const settings = await storage.updateBillingSettings(result.data);
@@ -702,8 +734,10 @@ router.get("/api/encounters/:encounterId", async (req, res) => {
       return res.status(404).json({ error: "Encounter not found" });
     }
 
-    // Return encounter only (frontend expects this)
-    res.json(encounter);
+    // Keep original shape (encounter + orderLines) to remain backward compatible
+    const orderLines = await storage.getOrderLinesByEncounter(encounterId);
+
+    res.json({ encounter, orderLines });
   } catch (error) {
     console.error("Error fetching encounter:", error);
     res.status(500).json({ error: "Failed to fetch encounter" });
@@ -714,7 +748,9 @@ router.post("/api/encounters", async (req, res) => {
   try {
     const result = insertEncounterSchema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: "Invalid encounter data", details: result.error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid encounter data", details: result.error.errors });
     }
 
     const encounter = await storage.createEncounter(result.data);
@@ -764,14 +800,15 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
     ];
 
     const unacknowledged = completedDiagnostics.filter((d: any) => {
-      const orderLine = orderLineMap.get(d.testId || d.xrayId || d.ultrasoundId);
+      const relatedKey = d.testId || d.examId;             // <-- fixed key usage
+      const orderLine = relatedKey ? orderLineMap.get(relatedKey) : null;
       return !orderLine || !orderLine.acknowledgedBy;
     });
 
     if (unacknowledged.length > 0) {
-      return res
-        .status(400)
-        .json({ error: `Cannot close visit: ${unacknowledged.length} completed diagnostic(s) need acknowledgment` });
+      return res.status(400).json({
+        error: `Cannot close visit: ${unacknowledged.length} completed diagnostic(s) need acknowledgment`,
+      });
     }
 
     // 3. Create/update invoice for cart items
@@ -784,7 +821,6 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
         invoiceStatus = "ready_to_bill";
       } catch (invoiceError) {
         console.error("Error creating invoice:", invoiceError);
-        // continue anyway
       }
     }
 
@@ -827,12 +863,12 @@ router.get("/api/encounters/:encounterId/diagnostics", async (req, res) => {
 
     const enrichedXrays = xrays.map((xray: any) => ({
       ...xray,
-      orderLine: orderLineMap.get(xray.xrayId),
+      orderLine: orderLineMap.get(xray.examId),            // <-- use examId
     }));
 
-    const enrichedUltrasounds = ultrasounds.map((ultrasound: any) => ({
-      ...ultrasound,
-      orderLine: orderLineMap.get(ultrasound.ultrasoundId),
+    const enrichedUltrasounds = ultrasounds.map((us: any) => ({
+      ...us,
+      orderLine: orderLineMap.get(us.examId),              // <-- use examId
     }));
 
     res.json({
@@ -846,7 +882,27 @@ router.get("/api/encounters/:encounterId/diagnostics", async (req, res) => {
   }
 });
 
-// Get unified orders for a visit (with flags, snippets, acknowledgment status)
+// Helpers
+function safeParseTests(testsField: string): string[] {
+  if (!testsField) return [];
+  try {
+    const parsed = JSON.parse(testsField);
+    if (Array.isArray(parsed)) return parsed.filter((t) => typeof t === "string");
+    // allow {name: "..."} objects fallback
+    if (Array.isArray(parsed?.tests)) return parsed.tests;
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function resultFlagFromStatus(status?: "normal" | "abnormal" | "critical" | null) {
+  if (status === "critical") return "critical";
+  if (status === "abnormal") return "abnormal";
+  return null;
+}
+
+// Get unified orders for a visit
 router.get("/api/visits/:visitId/orders", async (req, res) => {
   try {
     const { visitId } = req.params;
@@ -865,88 +921,80 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
     const orderLines = await storage.getOrderLinesByEncounter(visitId);
     const orderLineMap = new Map(orderLines.map((ol: any) => [ol.relatedId || "", ol]));
 
+    // LAB
     const labOrders = labTests
       .filter((test: any) => test.encounterId === visitId)
       .map((test: any) => {
-        const ol = orderLineMap.get(test.testId);
+        const orderLine = orderLineMap.get(test.testId);
+        const testNames = safeParseTests(test.tests);
+        const name =
+          testNames.length > 0
+            ? `Lab: ${testNames.join(", ")}`
+            : `Lab: ${test.category || "Test"}`;
+        const flags = resultFlagFromStatus(test.resultStatus as any);
+        const snippet =
+          (Array.isArray(testNames) && testNames.length > 0 && testNames.join(", ")) ||
+          test.technicianNotes ||
+          null;
+
         return {
-          orderId: ol?.id || `lab-${test.testId}`,
+          orderId: orderLine?.id || `lab-${test.testId}`,
           visitId,
           type: "lab",
-          name: test.testType || "Lab Test",
+          name,
           status: test.status || "pending",
-          flags: test.clinicalSignificance || null,
-          snippet: test.criticalFindings || test.interpretation || null,
+          flags,
+          snippet,
           resultUrl: `/api/lab-tests/${test.testId}`,
-          acknowledgedAt: ol?.acknowledgedAt || null,
-          acknowledgedBy: ol?.acknowledgedBy || null,
-          addToCart: !!ol?.addToCart,
+          acknowledgedAt: orderLine?.acknowledgedAt || null,
+          acknowledgedBy: orderLine?.acknowledgedBy || null,
+          addToCart: !!orderLine?.addToCart,
           isPaid: test.paymentStatus === "paid",
-          // NEW: nested orderLine for client
-          orderLine: ol
-            ? {
-                id: ol.id,
-                addToCart: !!ol.addToCart,
-                acknowledgedBy: ol.acknowledgedBy || null,
-                acknowledgedAt: ol.acknowledgedAt || null,
-              }
-            : null,
+          orderLine, // optional passthrough used by client in some places
         };
       });
 
+    // XRAY
     const xrayOrders = xrays
       .filter((xray: any) => xray.encounterId === visitId)
       .map((xray: any) => {
-        const ol = orderLineMap.get(xray.xrayId);
+        const orderLine = orderLineMap.get(xray.examId);   // <-- examId
         return {
-          orderId: ol?.id || `xray-${xray.xrayId}`,
+          orderId: orderLine?.id || `xray-${xray.examId}`,
           visitId,
           type: "xray",
-          name: xray.examinationType || "X-Ray",
+          name: xray.examType || "X-Ray",                  // <-- examType
           status: xray.status || "pending",
           flags: null,
           snippet: xray.impression || null,
-          resultUrl: `/api/xrays/${xray.xrayId}`,
-          acknowledgedAt: ol?.acknowledgedAt || null,
-          acknowledgedBy: ol?.acknowledgedBy || null,
-          addToCart: !!ol?.addToCart,
+          resultUrl: `/api/xrays/${xray.examId}`,
+          acknowledgedAt: orderLine?.acknowledgedAt || null,
+          acknowledgedBy: orderLine?.acknowledgedBy || null,
+          addToCart: !!orderLine?.addToCart,
           isPaid: xray.paymentStatus === "paid",
-          orderLine: ol
-            ? {
-                id: ol.id,
-                addToCart: !!ol.addToCart,
-                acknowledgedBy: ol.acknowledgedBy || null,
-                acknowledgedAt: ol.acknowledgedAt || null,
-              }
-            : null,
+          orderLine,
         };
       });
 
+    // ULTRASOUND
     const ultrasoundOrders = ultrasounds
       .filter((us: any) => us.encounterId === visitId)
       .map((us: any) => {
-        const ol = orderLineMap.get(us.ultrasoundId);
+        const orderLine = orderLineMap.get(us.examId);     // <-- examId
         return {
-          orderId: ol?.id || `ultrasound-${us.ultrasoundId}`,
+          orderId: orderLine?.id || `ultrasound-${us.examId}`,
           visitId,
           type: "ultrasound",
-          name: us.examinationType || "Ultrasound",
+          name: us.examType || "Ultrasound",               // <-- examType
           status: us.status || "pending",
           flags: null,
           snippet: us.impression || null,
-          resultUrl: `/api/ultrasounds/${us.ultrasoundId}`,
-          acknowledgedAt: ol?.acknowledgedAt || null,
-          acknowledgedBy: ol?.acknowledgedBy || null,
-          addToCart: !!ol?.addToCart,
+          resultUrl: `/api/ultrasounds/${us.examId}`,
+          acknowledgedAt: orderLine?.acknowledgedAt || null,
+          acknowledgedBy: orderLine?.acknowledgedBy || null,
+          addToCart: !!orderLine?.addToCart,
           isPaid: us.paymentStatus === "paid",
-          orderLine: ol
-            ? {
-                id: ol.id,
-                addToCart: !!ol.addToCart,
-                acknowledgedBy: ol.acknowledgedBy || null,
-                acknowledgedAt: ol.acknowledgedAt || null,
-              }
-            : null,
+          orderLine,
         };
       });
 
@@ -1005,7 +1053,7 @@ router.put("/api/orders/:orderId/ack", async (req, res) => {
 
     const updates: any = {};
     if (acknowledged) {
-      updates.acknowledgedBy = "Current User"; // TODO: bind to session
+      updates.acknowledgedBy = "Current User"; // TODO: Get from auth session
       updates.acknowledgedAt = new Date().toISOString();
     } else {
       updates.acknowledgedBy = null;
@@ -1041,7 +1089,9 @@ router.post("/api/order-lines", async (req, res) => {
   try {
     const result = insertOrderLineSchema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: "Invalid order line data", details: result.error.errors });
+      return res
+        .status(400)
+        .json({ error: "Invalid order line data", details: result.error.errors });
     }
 
     const orderLine = await storage.createOrderLine(result.data);
@@ -1113,7 +1163,10 @@ router.post("/api/encounters/:encounterId/generate-invoice", async (req, res) =>
       return res.status(400).json({ error: "generatedBy is required" });
     }
 
-    const invoice = await storage.generateInvoiceFromEncounter(encounterId, generatedBy);
+    const invoice = await storage.generateInvoiceFromEncounter(
+      encounterId,
+      generatedBy
+    );
     res.status(201).json(invoice);
   } catch (error) {
     console.error("Error generating invoice:", error);
@@ -1125,7 +1178,8 @@ router.post("/api/encounters/:encounterId/generate-invoice", async (req, res) =>
 router.post("/api/services/:serviceType/auto-order", async (req, res) => {
   try {
     const { serviceType } = req.params;
-    const { patientId, encounterId, serviceId, relatedId, attendingClinician } = req.body;
+    const { patientId, encounterId, serviceId, relatedId, attendingClinician } =
+      req.body;
 
     let encounter;
     if (encounterId) {
@@ -1140,7 +1194,9 @@ router.post("/api/services/:serviceType/auto-order", async (req, res) => {
     }
 
     if (!encounter) {
-      return res.status(404).json({ error: "Encounter not found or could not be created" });
+      return res
+        .status(404)
+        .json({ error: "Encounter not found or could not be created" });
     }
 
     const services = await storage.getServices();
@@ -1173,8 +1229,6 @@ router.post("/api/services/:serviceType/auto-order", async (req, res) => {
 export default router;
 
 import { createServer } from "http";
-import { writeFileSync } from "fs";
-import path from "path";
 import { setupAuth } from "./auth";
 
 // Function to register routes with the express app
