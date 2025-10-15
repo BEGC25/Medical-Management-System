@@ -29,6 +29,8 @@ export const treatments = sqliteTable("treatments", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   treatmentId: text("treatment_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
+  // NEW: link treatment to the visit/encounter if applicable
+  encounterId: text("encounter_id"),
   visitDate: text("visit_date").notNull(),
   visitType: text("visit_type").$type<"consultation" | "follow-up" | "emergency" | "preventive">().notNull(),
   priority: text("priority").$type<"routine" | "urgent" | "emergency">().notNull(),
@@ -42,13 +44,15 @@ export const treatments = sqliteTable("treatments", {
   treatmentPlan: text("treatment_plan"),
   followUpDate: text("follow_up_date"),
   followUpType: text("follow_up_type"),
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 export const labTests = sqliteTable("lab_tests", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   testId: text("test_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
+  // NEW: tie lab test to a specific visit/encounter
+  encounterId: text("encounter_id"),
   category: text("category").$type<"blood" | "urine" | "stool" | "microbiology" | "chemistry" | "hormonal" | "other">().notNull(),
   tests: text("tests").notNull(), // JSON array of test names
   clinicalInfo: text("clinical_info"),
@@ -62,13 +66,15 @@ export const labTests = sqliteTable("lab_tests", {
   completedDate: text("completed_date"),
   technicianNotes: text("technician_notes"),
   attachments: text("attachments"), // JSON array of {url: string, name: string, type: string}
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 export const xrayExams = sqliteTable("xray_exams", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   examId: text("exam_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
+  // NEW: tie x-ray to a specific visit/encounter
+  encounterId: text("encounter_id"),
   examType: text("exam_type").$type<"chest" | "abdomen" | "spine" | "extremities" | "pelvis" | "skull">().notNull(),
   bodyPart: text("body_part"),
   clinicalIndication: text("clinical_indication"),
@@ -81,14 +87,20 @@ export const xrayExams = sqliteTable("xray_exams", {
   recommendations: text("recommendations"),
   reportDate: text("report_date"),
   radiologist: text("radiologist"),
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 export const ultrasoundExams = sqliteTable("ultrasound_exams", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   examId: text("exam_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
-  examType: text("exam_type").$type<"abdominal" | "pelvic" | "obstetric" | "cardiac" | "vascular" | "thyroid" | "renal" | "hepatobiliary" | "gynecological" | "urological" | "pediatric" | "musculoskeletal" | "breast" | "scrotal" | "carotid" | "other">().notNull(),
+  // NEW: tie ultrasound to a specific visit/encounter
+  encounterId: text("encounter_id"),
+  examType: text("exam_type").$type<
+    | "abdominal" | "pelvic" | "obstetric" | "cardiac" | "vascular" | "thyroid"
+    | "renal" | "hepatobiliary" | "gynecological" | "urological" | "pediatric"
+    | "musculoskeletal" | "breast" | "scrotal" | "carotid" | "other"
+  >().notNull(),
   clinicalIndication: text("clinical_indication"),
   specialInstructions: text("special_instructions"),
   requestedDate: text("requested_date").notNull(),
@@ -100,19 +112,19 @@ export const ultrasoundExams = sqliteTable("ultrasound_exams", {
   reportStatus: text("report_status").$type<"normal" | "abnormal" | "urgent">(),
   reportDate: text("report_date"),
   sonographer: text("sonographer"),
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 // Billing Settings Table
 export const billingSettings = sqliteTable("billing_settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  consultationFee: real("consultation_fee").notNull().default(2000.00),
+  consultationFee: real("consultation_fee").notNull().default(2000.0),
   requirePrepayment: integer("require_prepayment").notNull().default(0),
   allowEmergencyGrace: integer("allow_emergency_grace").notNull().default(1),
   currency: text("currency").notNull().default("SSP"),
   updatedBy: text("updated_by").notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
+  updatedAt: text("updated_at").notNull().default(sql`datetime('now')`),
 });
 
 // Payment System Tables
@@ -124,20 +136,20 @@ export const services = sqliteTable("services", {
   description: text("description"),
   price: real("price").notNull(),
   isActive: integer("is_active").notNull().default(1),
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 // Encounters - Patient's "cart" for this visit
 export const encounters = sqliteTable("encounters", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   encounterId: text("encounter_id").unique().notNull(),
-  patientId: text("patient_id").notNull(),  
+  patientId: text("patient_id").notNull(),
   visitDate: text("visit_date").notNull(),
   status: text("status").$type<"open" | "ready_to_bill" | "closed">().notNull().default("open"),
   policy: text("policy").$type<"cash" | "insurance">().notNull().default("cash"),
   attendingClinician: text("attending_clinician"),
   notes: text("notes"),
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
   closedAt: text("closed_at"),
 });
 
@@ -158,7 +170,7 @@ export const orderLines = sqliteTable("order_lines", {
   acknowledgedBy: text("acknowledged_by"), // Clinician who acknowledged the result
   acknowledgedAt: text("acknowledged_at"), // When result was acknowledged
   addToCart: integer("add_to_cart").notNull().default(0), // Whether to add to cart (1=yes, 0=no)
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 // Invoices - Billing documents generated from encounters
@@ -173,7 +185,7 @@ export const invoices = sqliteTable("invoices", {
   grandTotal: real("grand_total").notNull(),
   status: text("status").$type<"draft" | "posted" | "void">().notNull().default("draft"),
   generatedBy: text("generated_by").notNull(),
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
   postedAt: text("posted_at"),
   voidedAt: text("voided_at"),
 });
@@ -187,7 +199,7 @@ export const invoiceLines = sqliteTable("invoice_lines", {
   quantity: integer("quantity").notNull(),
   unitPrice: real("unit_price").notNull(),
   totalPrice: real("total_price").notNull(),
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 export const payments = sqliteTable("payments", {
@@ -199,7 +211,7 @@ export const payments = sqliteTable("payments", {
   paymentDate: text("payment_date").notNull(),
   receivedBy: text("received_by").notNull(),
   notes: text("notes"),
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 export const paymentItems = sqliteTable("payment_items", {
@@ -213,7 +225,7 @@ export const paymentItems = sqliteTable("payment_items", {
   unitPrice: real("unit_price").notNull(),
   totalPrice: real("total_price").notNull(),
   amount: real("amount").notNull(), // Amount paid for this specific item
-  createdAt: text("created_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 export const pharmacyOrders = sqliteTable("pharmacy_orders", {
@@ -226,7 +238,7 @@ export const pharmacyOrders = sqliteTable("pharmacy_orders", {
   quantity: integer("quantity").notNull().default(1),
   status: text("status").$type<"prescribed" | "dispensed">().notNull().default("prescribed"),
   paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
-  createdAt: text("created_at").notNull().default(sql`now()`),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 // Insert schemas
