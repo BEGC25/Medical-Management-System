@@ -1,39 +1,43 @@
 // Medical-Management-System/server/index.ts
-
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Small hardening
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+
+// Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Simple API request logger (captures JSON responses)
+// API request logger (captures JSON bodies)
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let captured: unknown;
 
-  const originalResJson = res.json.bind(res);
-  (res as any).json = (bodyJson: any, ...args: any[]) => {
-    capturedJsonResponse = bodyJson;
-    return originalResJson(bodyJson, ...args);
+  const originalJson = res.json.bind(res);
+  (res as any).json = (body: unknown, ...args: unknown[]) => {
+    captured = body;
+    return originalJson(body, ...args);
   };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let line = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        try {
-          line += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-        } catch {
-          // ignore stringify errors
-        }
+    if (!path.startsWith("/api")) return;
+    const ms = Date.now() - start;
+    let line = `${req.method} ${path} ${res.statusCode} in ${ms}ms`;
+    if (captured) {
+      try {
+        line += ` :: ${JSON.stringify(captured)}`;
+      } catch {
+        // ignore stringify issues
       }
-      if (line.length > 80) line = line.slice(0, 79) + "…";
-      log(line);
     }
+    if (line.length > 120) line = line.slice(0, 119) + "…";
+    log(line);
   });
 
   next();
@@ -42,27 +46,34 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Centralized error handler
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    // rethrow so it shows in Render logs
-    throw err;
-  });
+  // Health checks (place BEFORE static catch-all so they always resolve)
+  app.get("/api/health", (_req, res) => res.status(200).send("ok"));
+  app.get("/health", (_req, res) => res.status(200).send("ok"));
 
-  // Only mount Vite dev middleware in development;
-  // otherwise serve the pre-built static assets
+  // Dev uses Vite middleware; prod serves prebuilt assets
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // Healthcheck for Render/uptime monitors
-  app.get("/health", (_req, res) => res.status(200).send("ok"));
+  // Centralized error handler (keep last)
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err?.status || err?.statusCode || 500;
+    const message = err?.message || "Internal Server Error";
+    try {
+      res.status(status).json({ message });
+    } catch {
+      // ignore write errors
+    }
+    try {
+      log(`ERROR ${status}: ${message}`);
+    } catch {
+      // ignore log errors
+    }
+  });
 
-  // Use Render's injected PORT (e.g., 8080); fallback to 5000 for local dev
+  // Render injects PORT (e.g., 8080). Local fallback: 5000.
   const port = Number(process.env.PORT) || 5000;
   const host = "0.0.0.0";
 
@@ -70,7 +81,6 @@ app.use((req, res, next) => {
     {
       port,
       host,
-      // reusePort not supported on Windows, but safe here
       reusePort: process.platform !== "win32",
     },
     () => {
