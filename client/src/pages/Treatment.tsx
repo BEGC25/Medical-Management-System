@@ -143,6 +143,16 @@ export default function Treatment() {
     },
     enabled: !!currentEncounter,
   });
+  
+  // Auto-add consultation fee once per visit
+  useEffect(() => {
+    if (!currentEncounter || addConsultationMutation.isPending) return;
+    const hasConsult = orders.some(o => o.type === "consultation");
+    if (!hasConsult && services.length > 0) {
+      addConsultationMutation.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEncounter?.encounterId, orders.length, services.length]);
 
   const labTests = orders.filter(o => o.type === 'lab');
   const xrays = orders.filter(o => o.type === 'xray');
@@ -167,7 +177,7 @@ export default function Treatment() {
       setSelectedPatient(loadedPatient);
       setCurrentEncounter(loadedVisit);
     }
-  }, [loadedVisit, loadedPatient]);
+  }, [loadedVisit, loadedPatient, selectedPatient]);
 
   // Populate form with existing treatment data when it loads
   useEffect(() => {
@@ -190,7 +200,7 @@ export default function Treatment() {
       });
       setSavedTreatment(existingTreatment);
     }
-  }, [existingTreatment, selectedPatient]);
+  }, [existingTreatment, selectedPatient, form]);
 
   // Update current encounter when patient changes (legacy flow)
   useEffect(() => {
@@ -252,7 +262,7 @@ export default function Treatment() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
       toast({
         title: "Consultation Added",
         description: "Consultation fee has been added to the patient's visit.",
@@ -289,7 +299,6 @@ export default function Treatment() {
     if (!printWindow) return;
     
     const prescriptionContent = document.getElementById('prescription-print')?.innerHTML;
-    const originalTitle = document.title;
     
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -439,13 +448,13 @@ export default function Treatment() {
       queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
       toast({
         title: "Success",
-        description: "Added to visit cart",
+        description: "Cart updated",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to add to cart",
+        description: "Failed to update cart",
         variant: "destructive",
       });
     },
@@ -529,6 +538,7 @@ export default function Treatment() {
     createTreatmentMutation.mutate({
       ...data,
       patientId: selectedPatient.patientId,
+      encounterId: currentEncounter?.encounterId,
     });
   });
 
@@ -559,6 +569,14 @@ export default function Treatment() {
   const navigateToPatient = (patientId: string) => {
     window.location.href = `/patients?patientId=${patientId}`;
   };
+
+  const hasDiagnosis =
+    !!(existingTreatment?.diagnosis && existingTreatment.diagnosis.trim()) ||
+    !!(form.watch("diagnosis") && form.watch("diagnosis")!.trim());
+  const anyUnackedCompleted = orders.some(
+    o => o.status === "completed" && !o.orderLine?.acknowledgedBy
+  );
+  const canCloseVisit = hasDiagnosis && !anyUnackedCompleted;
 
   return (
     <div className="space-y-6">
@@ -701,24 +719,26 @@ export default function Treatment() {
 
           {/* Orders & Results Panel */}
           {selectedPatient && currentEncounter && (
-            <Card className="border-l-4 border-l-blue-500">
+            <Card className="border-l-4 border-l-blue-500 mb-6">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5" />
                     Orders & Results
                   </CardTitle>
-                  {orders.some(o => o.status === 'completed' && !o.addToCart && o.isPaid) && (
+                  {orders.some(o => o.status === 'completed' && !o.addToCart && !!o.orderLine?.acknowledgedBy) && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const completedOrders = orders.filter(o => o.status === 'completed' && !o.addToCart && o.isPaid);
-                        Promise.all(
-                          completedOrders.map(order =>
-                            addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: true })
-                          )
+                        const toAdd = orders.filter(
+                          o => o.status === 'completed' && !o.addToCart && !!o.orderLine?.acknowledgedBy
                         );
+                        toAdd.forEach(order => {
+                          if (order.orderLine?.id) {
+                            addToCartMutation.mutate({ orderLineId: order.orderLine.id, addToCart: true });
+                          }
+                        });
                       }}
                       data-testid="add-all-to-cart-btn"
                     >
@@ -752,7 +772,7 @@ export default function Treatment() {
                                   </p>
                                 )}
                               </div>
-                              <div className="flex flex-col gap-2">
+                              <div className="flex flex-col items-end gap-2">
                                 {test.status === 'completed' && test.orderLine && (
                                   <>
                                     <div className="flex items-center gap-2">
@@ -786,7 +806,7 @@ export default function Treatment() {
                                         Add to Cart
                                       </Button>
                                     )}
-                                    {test.orderLine.addToCart === 1 && (
+                                    {!!test.orderLine.addToCart && (
                                       <Badge variant="outline" className="bg-green-50">In Cart</Badge>
                                     )}
                                   </>
@@ -826,7 +846,7 @@ export default function Treatment() {
                                   </p>
                                 )}
                               </div>
-                              <div className="flex flex-col gap-2">
+                              <div className="flex flex-col items-end gap-2">
                                 {xray.status === 'completed' && xray.orderLine && (
                                   <>
                                     <div className="flex items-center gap-2">
@@ -860,7 +880,7 @@ export default function Treatment() {
                                         Add to Cart
                                       </Button>
                                     )}
-                                    {xray.orderLine.addToCart === 1 && (
+                                    {!!xray.orderLine.addToCart && (
                                       <Badge variant="outline" className="bg-green-50">In Cart</Badge>
                                     )}
                                   </>
@@ -900,7 +920,7 @@ export default function Treatment() {
                                   </p>
                                 )}
                               </div>
-                              <div className="flex flex-col gap-2">
+                              <div className="flex flex-col items-end gap-2">
                                 {ultrasound.status === 'completed' && ultrasound.orderLine && (
                                   <>
                                     <div className="flex items-center gap-2">
@@ -934,7 +954,7 @@ export default function Treatment() {
                                         Add to Cart
                                       </Button>
                                     )}
-                                    {ultrasound.orderLine.addToCart === 1 && (
+                                    {!!ultrasound.orderLine.addToCart && (
                                       <Badge variant="outline" className="bg-green-50">In Cart</Badge>
                                     )}
                                   </>
@@ -966,7 +986,7 @@ export default function Treatment() {
 
           {/* Visit Cart - Real-time billing */}
           {selectedPatient && currentEncounter && (
-            <Card className="border-l-4 border-l-green-500">
+            <Card className="border-l-4 border-l-green-500 mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1016,7 +1036,9 @@ export default function Treatment() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: false });
+                                  if (order.orderLine?.id) {
+                                    addToCartMutation.mutate({ orderLineId: order.orderLine.id, addToCart: false });
+                                  }
                                 }}
                               >
                                 Remove
@@ -1342,7 +1364,7 @@ export default function Treatment() {
                       onClick={handleCloseVisit}
                       variant="default"
                       className="bg-orange-600 hover:bg-orange-700"
-                      disabled={closeVisitMutation.isPending}
+                      disabled={closeVisitMutation.isPending || !canCloseVisit}
                       data-testid="close-visit-btn"
                     >
                       {closeVisitMutation.isPending ? "Closing..." : "Close Visit"}
