@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText } from "lucide-react";
@@ -88,6 +88,11 @@ export default function PharmacyInventory() {
   // Fetch inventory ledger
   const { data: ledgerEntries = [] } = useQuery<InventoryLedger[]>({
     queryKey: ['/api/pharmacy/ledger'],
+  });
+
+  // Fetch all batches to get pricing info
+  const { data: allBatches = [] } = useQuery<DrugBatch[]>({
+    queryKey: ['/api/pharmacy/batches'],
   });
 
   // Create drug mutation
@@ -201,14 +206,92 @@ export default function PharmacyInventory() {
         </div>
       </div>
 
-      <Tabs defaultValue="catalog" className="space-y-4">
+      <Tabs defaultValue="stock" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="stock" data-testid="tab-stock">📦 Stock Overview</TabsTrigger>
           <TabsTrigger value="catalog" data-testid="tab-catalog">Drug Catalog ({drugs.length})</TabsTrigger>
           <TabsTrigger value="alerts" data-testid="tab-alerts">
-            Alerts ({lowStockDrugs.length + expiringDrugs.length})
+            ⚠️ Alerts ({lowStockDrugs.length + expiringDrugs.length})
           </TabsTrigger>
           <TabsTrigger value="ledger" data-testid="tab-ledger">Transaction History</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="stock" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Current Stock & Prices</CardTitle>
+              <CardDescription>See all drugs, quantities in stock, and current prices</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Drug Name</TableHead>
+                    <TableHead>Strength</TableHead>
+                    <TableHead>Form</TableHead>
+                    <TableHead className="text-right">Stock on Hand</TableHead>
+                    <TableHead className="text-right">Current Price (SSP)</TableHead>
+                    <TableHead>Nearest Expiry</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {drugs.map((drug) => {
+                    const stockInfo = lowStockDrugs.find(d => d.id === drug.id);
+                    const stockLevel = stockInfo?.stockOnHand || 0;
+                    const isLowStock = stockLevel <= drug.reorderLevel;
+                    
+                    // Find most recent batch with stock to get current price
+                    const drugBatches = allBatches
+                      .filter(b => b.drugId === drug.id && b.quantityOnHand > 0)
+                      .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
+                    const currentPrice = drugBatches[0]?.unitCost;
+                    
+                    // Find nearest expiry date
+                    const nearestExpiry = allBatches
+                      .filter(b => b.drugId === drug.id && b.quantityOnHand > 0)
+                      .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0]?.expiryDate;
+                    
+                    return (
+                      <TableRow key={drug.id} className={isLowStock ? "bg-red-50 dark:bg-red-900/20" : ""}>
+                        <TableCell className="font-semibold">{drug.name}</TableCell>
+                        <TableCell>{drug.strength || '-'}</TableCell>
+                        <TableCell className="capitalize">{drug.form}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={`font-bold ${isLowStock ? "text-red-600" : stockLevel === 0 ? "text-gray-400" : "text-green-600"}`}>
+                            {stockLevel}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-lg font-semibold">
+                          {currentPrice ? `${currentPrice.toFixed(2)} SSP` : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {nearestExpiry || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {isLowStock ? (
+                            <Badge variant="destructive">LOW STOCK</Badge>
+                          ) : stockLevel === 0 ? (
+                            <Badge variant="outline" className="border-gray-400">OUT OF STOCK</Badge>
+                          ) : (
+                            <Badge className="bg-green-600">In Stock</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {drugs.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                        No drugs in catalog. Click "Add Drug" to get started.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="catalog" className="space-y-4">
           <Card>
