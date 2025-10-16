@@ -158,11 +158,11 @@ export default function PharmacyInventory() {
   };
 
   const handleReceiveStock = () => {
-    if (!newBatch.drugId || !newBatch.lotNumber || !newBatch.expiryDate || newBatch.quantityOnHand <= 0) {
+    if (!newBatch.drugId || !newBatch.expiryDate || newBatch.quantityOnHand <= 0 || newBatch.unitCost <= 0) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields (Drug, Expiry Date, Quantity, Unit Cost)",
       });
       return;
     }
