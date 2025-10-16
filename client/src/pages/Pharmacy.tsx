@@ -3,7 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package } from "lucide-react";
+import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -126,7 +127,35 @@ export default function Pharmacy() {
             <p className="text-gray-600 dark:text-gray-300">Prescription Management & Dispensing</p>
           </div>
         </div>
+        <Link href="/pharmacy-inventory">
+          <Button className="bg-blue-600 hover:bg-blue-700" data-testid="button-manage-inventory">
+            <Package className="w-4 h-4 mr-2" />
+            Manage Inventory
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </Link>
       </div>
+
+      {/* Info Banner */}
+      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Getting Started with Pharmacy</h3>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                To dispense medications, you first need to <strong>add drugs to your inventory</strong>. 
+                Click the "Manage Inventory" button above to:
+              </p>
+              <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 ml-4 list-disc space-y-1">
+                <li>Add drugs to your catalog (name, strength, form)</li>
+                <li>Receive stock batches with lot numbers and expiry dates</li>
+                <li>Set prices for each batch</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Search */}
       <Card>
@@ -182,7 +211,7 @@ export default function Pharmacy() {
                       )}
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                      Order: {order.orderId} | Drug: {order.drugName}
+                      Order: {order.orderId} | Drug: {order.drugName || <span className="text-orange-600 font-semibold">Not specified</span>}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                       Dosage: {order.dosage || 'As prescribed'}
@@ -317,10 +346,17 @@ export default function Pharmacy() {
                   </SelectContent>
                 </Select>
                 {batches.length === 0 && (
-                  <p className="text-sm text-red-600 mt-2">
-                    <AlertCircle className="w-4 h-4 inline mr-1" />
-                    No stock available for this drug
-                  </p>
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-3 rounded-lg mt-2">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-orange-900 dark:text-orange-100">No stock available for this drug</p>
+                        <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                          Go to <Link href="/pharmacy-inventory" className="underline font-semibold">Pharmacy Inventory</Link> to add this drug and receive stock batches.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
