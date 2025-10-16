@@ -247,6 +247,13 @@ export default function PharmacyInventory() {
         </TabsList>
 
         <TabsContent value="stock" className="space-y-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">📦 What is "Stock Overview"?</h3>
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              This shows <strong>all your drugs at a glance</strong> - how many you have in stock, current selling prices, 
+              when they expire, and if any are running low. Use this to quickly check what's available in your pharmacy.
+            </p>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle>Current Stock & Prices</CardTitle>
@@ -324,6 +331,13 @@ export default function PharmacyInventory() {
         </TabsContent>
 
         <TabsContent value="catalog" className="space-y-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">📋 What is "Drug Catalog"?</h3>
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              This is your <strong>master list of all drugs</strong> your pharmacy can sell. It shows basic information 
+              like drug names, forms (tablet/syrup), and strength. Think of it as your pharmacy's menu of available medicines.
+            </p>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle>Drug Catalog</CardTitle>
@@ -370,6 +384,13 @@ export default function PharmacyInventory() {
         </TabsContent>
 
         <TabsContent value="alerts" className="space-y-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">⚠️ What are "Alerts"?</h3>
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              This shows <strong>warnings about your drugs</strong>. It tells you when drugs are running low (need to reorder) 
+              or will expire soon. Check this regularly to avoid running out of important medicines or selling expired drugs.
+            </p>
+          </div>
           {/* Low Stock Alerts */}
           <Card>
             <CardHeader>
@@ -466,6 +487,13 @@ export default function PharmacyInventory() {
         </TabsContent>
 
         <TabsContent value="ledger">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">📝 What is "Transaction History"?</h3>
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              This shows <strong>every drug movement</strong> in your pharmacy - when you received new stock, when drugs were 
+              dispensed to patients, and any adjustments. It's like a logbook that tracks all inventory changes with dates and who did them.
+            </p>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
