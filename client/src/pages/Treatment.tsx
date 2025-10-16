@@ -52,13 +52,18 @@ export default function Treatment() {
     if (filter === "today") setFilterToday(true);
   }, []);
 
-  // Query for today's treatments if filtering
+  // Query for today's treatments (explicit fetch)
   const { data: todaysTreatments = [] } = useQuery<Treatment[]>({
-    queryKey: ["/api/treatments", "today"],
+    queryKey: ["/api/treatments", { today: true }],
+    queryFn: async () => {
+      const res = await fetch(`/api/treatments?today=true`);
+      if (!res.ok) return [];
+      return res.json();
+    },
     enabled: filterToday,
   });
 
-  // Fetch all patients to get names for treatment records
+  // Fetch all patients to get names for treatment records (used only when filterToday)
   const { data: allPatients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
     enabled: filterToday,
@@ -89,33 +94,33 @@ export default function Treatment() {
     queryKey: ["/api/services"],
   });
 
-  // Load specific visit if visitId is provided
-  const { data: loadedVisit } = useQuery({
+  // Load specific visit if visitId is provided (route returns { encounter, orderLines })
+  const { data: loadedEncounter } = useQuery<Encounter | null>({
     queryKey: ["/api/encounters", visitId],
     queryFn: async () => {
       if (!visitId) return null;
       const response = await fetch(`/api/encounters/${visitId}`);
       if (!response.ok) return null;
-      return response.json();
+      const payload = await response.json();
+      return payload?.encounter ?? null;
     },
     enabled: !!visitId,
   });
 
-  // Load patient for the loaded visit
-  const { data: loadedPatient } = useQuery({
-    queryKey: ["/api/patients", loadedVisit?.patientId],
+  // Load patient for the loaded encounter via /api/patients/:patientId
+  const { data: loadedPatient } = useQuery<Patient | null>({
+    queryKey: ["/api/patients", loadedEncounter?.patientId],
     queryFn: async () => {
-      if (!loadedVisit) return null;
-      const response = await fetch(`/api/patients?id=${loadedVisit.patientId}`);
-      if (!response.ok) return null;
-      const patients = await response.json();
-      return patients[0] || null;
+      if (!loadedEncounter?.patientId) return null;
+      const res = await fetch(`/api/patients/${loadedEncounter.patientId}`);
+      if (!res.ok) return null;
+      return (await res.json()) as Patient;
     },
-    enabled: !!loadedVisit,
+    enabled: !!loadedEncounter?.patientId,
   });
 
   // Get today's encounter for selected patient (legacy flow)
-  const { data: todayEncounter } = useQuery({
+  const { data: todayEncounter } = useQuery<Encounter | null>({
     queryKey: [
       "/api/encounters",
       { patientId: selectedPatient?.patientId, date: new Date().toISOString().split("T")[0] },
@@ -158,7 +163,6 @@ export default function Treatment() {
   // Auto-add consultation fee once per visit (guard against duplicates)
   useEffect(() => {
     if (!currentEncounter || addConsultationMutation.isPending) return;
-    // Consider both orderLines and orders to detect an existing consultation
     const hasConsult =
       orderLines.some((ol: any) => ol.relatedType === "consultation") ||
       orders.some((o) => o.type === "consultation");
@@ -170,26 +174,28 @@ export default function Treatment() {
   const xrays = orders.filter((o) => o.type === "xray");
   const ultrasounds = orders.filter((o) => o.type === "ultrasound");
 
-  // Load existing treatment records for this encounter
+  // Use patient + visitDate to find existing treatment (server doesn't filter by encounterId)
+  const visitDateForLookup = currentEncounter?.visitDate ?? form.watch("visitDate") ?? "";
+
   const { data: existingTreatment } = useQuery<Treatment | null>({
-    queryKey: ["/api/treatments", "encounter", currentEncounter?.encounterId],
+    queryKey: ["/api/treatments", "byPatientAndDate", selectedPatient?.patientId, visitDateForLookup],
     queryFn: async () => {
-      if (!currentEncounter?.encounterId) return null;
-      const response = await fetch(`/api/treatments?encounterId=${currentEncounter.encounterId}`);
-      if (!response.ok) return null;
-      const treatments = await response.json();
-      return treatments[0] || null;
+      if (!selectedPatient || !visitDateForLookup) return null;
+      const res = await fetch(`/api/patients/${selectedPatient.patientId}/treatments`);
+      if (!res.ok) return null;
+      const list: Treatment[] = await res.json();
+      return list.find((t) => t.visitDate === visitDateForLookup) ?? null;
     },
-    enabled: !!currentEncounter?.encounterId,
+    enabled: !!selectedPatient && !!visitDateForLookup,
   });
 
-  // Sync loaded visit and patient into state when visitId route is used
+  // Sync loaded encounter and patient into state when visitId route is used
   useEffect(() => {
-    if (loadedVisit && loadedPatient && !selectedPatient) {
+    if (loadedEncounter && loadedPatient && !selectedPatient) {
       setSelectedPatient(loadedPatient);
-      setCurrentEncounter(loadedVisit);
+      setCurrentEncounter(loadedEncounter);
     }
-  }, [loadedVisit, loadedPatient, selectedPatient]);
+  }, [loadedEncounter, loadedPatient, selectedPatient]);
 
   // Populate form with existing treatment data when it loads
   useEffect(() => {
@@ -217,7 +223,6 @@ export default function Treatment() {
   // Update current encounter when patient changes (legacy flow)
   useEffect(() => {
     if (visitId) return; // Skip legacy flow when using visitId route
-
     if (todayEncounter) {
       setCurrentEncounter(todayEncounter);
     } else if (selectedPatient) {
@@ -493,10 +498,10 @@ export default function Treatment() {
       setSelectedPatient(null);
       form.reset();
     },
-    onError: () => {
+    onError: (err: any) => {
       toast({
         title: "Error",
-        description: "Failed to close visit",
+        description: err?.message || "Failed to close visit",
         variant: "destructive",
       });
     },
@@ -506,7 +511,6 @@ export default function Treatment() {
   const handleCloseVisit = () => {
     if (!currentEncounter) return;
 
-    // Validate diagnosis exists - check both persisted treatment and current form
     const persistedDiagnosis = existingTreatment?.diagnosis;
     const currentDiagnosis = form.watch("diagnosis");
     const hasDiagnosis =
@@ -522,7 +526,6 @@ export default function Treatment() {
       return;
     }
 
-    // Check if all completed diagnostics are acknowledged
     const completedDiagnostics = [
       ...labTests.filter((t: any) => t.status === "completed" && t.orderLine),
       ...xrays.filter((x: any) => x.status === "completed" && x.orderLine),
@@ -539,7 +542,6 @@ export default function Treatment() {
       return;
     }
 
-    // All validations passed, close the visit
     closeVisitMutation.mutate(currentEncounter.encounterId);
   };
 
@@ -556,7 +558,7 @@ export default function Treatment() {
     const payload: SaveTreatmentPayload = {
       ...data,
       patientId: selectedPatient.patientId,
-      encounterId: currentEncounter?.encounterId,
+      encounterId: currentEncounter?.encounterId, // harmless if server strips unknown fields
     };
 
     createTreatmentMutation.mutate(payload);
@@ -771,21 +773,22 @@ export default function Treatment() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* Lab Tests */}
+                    {/* Lab Tests (unified order shape) */}
                     {labTests.length > 0 && (
                       <div>
                         <h4 className="font-semibold mb-2">Laboratory Tests</h4>
                         <div className="space-y-2">
                           {labTests.map((test: any) => (
-                            <div key={test.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div
+                              key={test.orderLine?.id ?? test.orderId}
+                              className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                            >
                               <div className="flex justify-between items-start gap-3">
                                 <div className="flex-1">
-                                  <p className="font-medium">
-                                    {test.category} - {test.tests}
-                                  </p>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {new Date(test.requestedDate).toLocaleDateString()}
-                                  </p>
+                                  <p className="font-medium">{test.name}</p>
+                                  {test.snippet && (
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{test.snippet}</p>
+                                  )}
                                   <Badge
                                     variant={test.status === "completed" ? "default" : "secondary"}
                                     className="mt-1"
@@ -803,7 +806,7 @@ export default function Treatment() {
                                     <>
                                       <div className="flex items-center gap-2">
                                         <Checkbox
-                                          id={`ack-lab-${test.id}`}
+                                          id={`ack-lab-${test.orderLine.id}`}
                                           checked={!!test.orderLine.acknowledgedBy}
                                           onCheckedChange={(checked) => {
                                             acknowledgeMutation.mutate({
@@ -812,9 +815,9 @@ export default function Treatment() {
                                               acknowledged: checked as boolean,
                                             });
                                           }}
-                                          data-testid={`ack-lab-${test.id}`}
+                                          data-testid={`ack-lab-${test.orderLine.id}`}
                                         />
-                                        <label htmlFor={`ack-lab-${test.id}`} className="text-sm cursor-pointer">
+                                        <label htmlFor={`ack-lab-${test.orderLine.id}`} className="text-sm cursor-pointer">
                                           Acknowledge
                                         </label>
                                       </div>
@@ -828,7 +831,7 @@ export default function Treatment() {
                                               addToCart: true,
                                             })
                                           }
-                                          data-testid={`add-cart-lab-${test.id}`}
+                                          data-testid={`add-cart-lab-${test.orderLine.id}`}
                                         >
                                           <ShoppingCart className="h-3 w-3 mr-1" />
                                           Add to Cart
@@ -842,7 +845,12 @@ export default function Treatment() {
                                     </>
                                   )}
                                   {test.status === "completed" && (
-                                    <Button variant="outline" size="sm" data-testid={`view-lab-${test.id}`}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => test.resultUrl && window.open(test.resultUrl, "_blank")}
+                                      data-testid={`view-lab-${test.orderLine?.id ?? test.orderId}`}
+                                    >
                                       View Results
                                     </Button>
                                   )}
@@ -854,19 +862,22 @@ export default function Treatment() {
                       </div>
                     )}
 
-                    {/* X-Rays */}
+                    {/* X-Rays (unified order shape) */}
                     {xrays.length > 0 && (
                       <div>
                         <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
                         <div className="space-y-2">
                           {xrays.map((xray: any) => (
-                            <div key={xray.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div
+                              key={xray.orderLine?.id ?? xray.orderId}
+                              className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                            >
                               <div className="flex justify-between items-start gap-3">
                                 <div className="flex-1">
-                                  <p className="font-medium">{xray.bodyPart}</p>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {new Date(xray.requestDate).toLocaleDateString()}
-                                  </p>
+                                  <p className="font-medium">{xray.name}</p>
+                                  {xray.snippet && (
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{xray.snippet}</p>
+                                  )}
                                   <Badge
                                     variant={xray.status === "completed" ? "default" : "secondary"}
                                     className="mt-1"
@@ -884,7 +895,7 @@ export default function Treatment() {
                                     <>
                                       <div className="flex items-center gap-2">
                                         <Checkbox
-                                          id={`ack-xray-${xray.id}`}
+                                          id={`ack-xray-${xray.orderLine.id}`}
                                           checked={!!xray.orderLine.acknowledgedBy}
                                           onCheckedChange={(checked) => {
                                             acknowledgeMutation.mutate({
@@ -893,9 +904,9 @@ export default function Treatment() {
                                               acknowledged: checked as boolean,
                                             });
                                           }}
-                                          data-testid={`ack-xray-${xray.id}`}
+                                          data-testid={`ack-xray-${xray.orderLine.id}`}
                                         />
-                                        <label htmlFor={`ack-xray-${xray.id}`} className="text-sm cursor-pointer">
+                                        <label htmlFor={`ack-xray-${xray.orderLine.id}`} className="text-sm cursor-pointer">
                                           Acknowledge
                                         </label>
                                       </div>
@@ -909,7 +920,7 @@ export default function Treatment() {
                                               addToCart: true,
                                             })
                                           }
-                                          data-testid={`add-cart-xray-${xray.id}`}
+                                          data-testid={`add-cart-xray-${xray.orderLine.id}`}
                                         >
                                           <ShoppingCart className="h-3 w-3 mr-1" />
                                           Add to Cart
@@ -923,7 +934,12 @@ export default function Treatment() {
                                     </>
                                   )}
                                   {xray.status === "completed" && (
-                                    <Button variant="outline" size="sm" data-testid={`view-xray-${xray.id}`}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => xray.resultUrl && window.open(xray.resultUrl, "_blank")}
+                                      data-testid={`view-xray-${xray.orderLine?.id ?? xray.orderId}`}
+                                    >
                                       View Report
                                     </Button>
                                   )}
@@ -935,19 +951,22 @@ export default function Treatment() {
                       </div>
                     )}
 
-                    {/* Ultrasounds */}
+                    {/* Ultrasounds (unified order shape) */}
                     {ultrasounds.length > 0 && (
                       <div>
                         <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
                         <div className="space-y-2">
                           {ultrasounds.map((ultrasound: any) => (
-                            <div key={ultrasound.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div
+                              key={ultrasound.orderLine?.id ?? ultrasound.orderId}
+                              className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                            >
                               <div className="flex justify-between items-start gap-3">
                                 <div className="flex-1">
-                                  <p className="font-medium">{ultrasound.examType}</p>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {new Date(ultrasound.requestDate).toLocaleDateString()}
-                                  </p>
+                                  <p className="font-medium">{ultrasound.name}</p>
+                                  {ultrasound.snippet && (
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{ultrasound.snippet}</p>
+                                  )}
                                   <Badge
                                     variant={ultrasound.status === "completed" ? "default" : "secondary"}
                                     className="mt-1"
@@ -965,7 +984,7 @@ export default function Treatment() {
                                     <>
                                       <div className="flex items-center gap-2">
                                         <Checkbox
-                                          id={`ack-ultrasound-${ultrasound.id}`}
+                                          id={`ack-ultrasound-${ultrasound.orderLine.id}`}
                                           checked={!!ultrasound.orderLine.acknowledgedBy}
                                           onCheckedChange={(checked) => {
                                             acknowledgeMutation.mutate({
@@ -974,10 +993,10 @@ export default function Treatment() {
                                               acknowledged: checked as boolean,
                                             });
                                           }}
-                                          data-testid={`ack-ultrasound-${ultrasound.id}`}
+                                          data-testid={`ack-ultrasound-${ultrasound.orderLine.id}`}
                                         />
                                         <label
-                                          htmlFor={`ack-ultrasound-${ultrasound.id}`}
+                                          htmlFor={`ack-ultrasound-${ultrasound.orderLine.id}`}
                                           className="text-sm cursor-pointer"
                                         >
                                           Acknowledge
@@ -993,7 +1012,7 @@ export default function Treatment() {
                                               addToCart: true,
                                             })
                                           }
-                                          data-testid={`add-cart-ultrasound-${ultrasound.id}`}
+                                          data-testid={`add-cart-ultrasound-${ultrasound.orderLine.id}`}
                                         >
                                           <ShoppingCart className="h-3 w-3 mr-1" />
                                           Add to Cart
@@ -1007,7 +1026,12 @@ export default function Treatment() {
                                     </>
                                   )}
                                   {ultrasound.status === "completed" && (
-                                    <Button variant="outline" size="sm" data-testid={`view-ultrasound-${ultrasound.id}`}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => ultrasound.resultUrl && window.open(ultrasound.resultUrl, "_blank")}
+                                      data-testid={`view-ultrasound-${ultrasound.orderLine?.id ?? ultrasound.orderId}`}
+                                    >
                                       View Report
                                     </Button>
                                   )}
