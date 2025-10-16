@@ -223,8 +223,11 @@ export const pharmacyOrders = sqliteTable("pharmacy_orders", {
   treatmentId: text("treatment_id"),
   encounterId: text("encounter_id"), // Link to encounter
   serviceId: integer("service_id").notNull(),
+  drugId: integer("drug_id"), // Link to drug from inventory
+  drugName: text("drug_name"), // Drug name for display
   dosage: text("dosage"),
   quantity: integer("quantity").notNull().default(1),
+  instructions: text("instructions"), // Prescription instructions
   status: text("status").$type<"prescribed" | "dispensed">().notNull().default("prescribed"),
   paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
   dispensedBy: text("dispensed_by"),
