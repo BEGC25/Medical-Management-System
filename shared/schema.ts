@@ -238,13 +238,13 @@ export const pharmacyOrders = sqliteTable("pharmacy_orders", {
 // Drug Catalog - Master list of drugs
 export const drugs = sqliteTable("drugs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  drugCode: text("drug_code").unique().notNull(), // SKU or drug code
+  drugCode: text("drug_code").unique(), // SKU or drug code (auto-generated if not provided)
   name: text("name").notNull(),
   genericName: text("generic_name"),
   strength: text("strength"), // e.g., "500mg", "10mg/ml"
   form: text("form").$type<"tablet" | "capsule" | "syrup" | "injection" | "cream" | "ointment" | "drops" | "inhaler" | "other">().notNull(),
   manufacturer: text("manufacturer"),
-  defaultPrice: real("default_price").notNull(),
+  defaultPrice: real("default_price"), // Optional - prices are set per batch when receiving stock
   reorderLevel: integer("reorder_level").notNull().default(10), // Alert when stock falls below this
   isActive: integer("is_active").notNull().default(1), // 1 = active, 0 = discontinued
   notes: text("notes"),
