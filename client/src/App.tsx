@@ -9,6 +9,7 @@ import Laboratory from "@/pages/Laboratory";
 import XRay from "@/pages/XRay";
 import Ultrasound from "@/pages/Ultrasound";
 import Pharmacy from "@/pages/Pharmacy";
+import PharmacyInventory from "@/pages/PharmacyInventory";
 import Reports from "@/pages/Reports";
 import AllResults from "@/pages/AllResults";
 import Payment from "@/pages/Payment";
@@ -49,6 +50,7 @@ function App() {
                     <ProtectedRoute path="/xray" component={XRay} />
                     <ProtectedRoute path="/ultrasound" component={Ultrasound} />
                     <ProtectedRoute path="/pharmacy" component={Pharmacy} />
+                    <ProtectedRoute path="/pharmacy-inventory" component={PharmacyInventory} />
                     <ProtectedRoute path="/payment" component={Payment} />
                     <ProtectedRoute path="/billing" component={Billing} />
                     <ProtectedRoute path="/billing-settings" component={BillingSettings} />
