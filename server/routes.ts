@@ -1,7 +1,7 @@
 import express from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema, insertUltrasoundExamSchema, insertPharmacyOrderSchema, insertBillingSettingsSchema, insertEncounterSchema, insertOrderLineSchema, insertInvoiceSchema } from "@shared/schema";
+import { insertPatientSchema, insertTreatmentSchema, insertLabTestSchema, insertXrayExamSchema, insertUltrasoundExamSchema, insertPharmacyOrderSchema, insertBillingSettingsSchema, insertEncounterSchema, insertOrderLineSchema, insertInvoiceSchema, insertDrugSchema, insertDrugBatchSchema, insertInventoryLedgerSchema } from "@shared/schema";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -1127,6 +1127,198 @@ router.post("/api/services/:serviceType/auto-order", async (req, res) => {
   } catch (error) {
     console.error('Error creating auto order:', error);
     res.status(500).json({ error: "Failed to create auto order" });
+  }
+});
+
+// ==================== PHARMACY INVENTORY ROUTES ====================
+
+// Drug Management - CRUD operations
+router.get("/api/pharmacy/drugs", async (req, res) => {
+  try {
+    const activeOnly = req.query.activeOnly === 'true';
+    const drugs = await storage.getDrugs(activeOnly);
+    res.json(drugs);
+  } catch (error) {
+    console.error('Error fetching drugs:', error);
+    res.status(500).json({ error: "Failed to fetch drugs" });
+  }
+});
+
+router.get("/api/pharmacy/drugs/:id", async (req, res) => {
+  try {
+    const drug = await storage.getDrugById(parseInt(req.params.id));
+    if (!drug) {
+      return res.status(404).json({ error: "Drug not found" });
+    }
+    res.json(drug);
+  } catch (error) {
+    console.error('Error fetching drug:', error);
+    res.status(500).json({ error: "Failed to fetch drug" });
+  }
+});
+
+router.post("/api/pharmacy/drugs", async (req, res) => {
+  try {
+    const data = insertDrugSchema.parse(req.body);
+    const drug = await storage.createDrug(data);
+    res.status(201).json(drug);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid drug data", details: error.errors });
+    }
+    console.error('Error creating drug:', error);
+    res.status(500).json({ error: "Failed to create drug" });
+  }
+});
+
+router.put("/api/pharmacy/drugs/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const drug = await storage.updateDrug(id, req.body);
+    res.json(drug);
+  } catch (error) {
+    console.error('Error updating drug:', error);
+    res.status(500).json({ error: "Failed to update drug" });
+  }
+});
+
+// Batch Management
+router.get("/api/pharmacy/batches", async (req, res) => {
+  try {
+    const drugId = req.query.drugId ? parseInt(req.query.drugId as string) : undefined;
+    const batches = await storage.getDrugBatches(drugId);
+    res.json(batches);
+  } catch (error) {
+    console.error('Error fetching batches:', error);
+    res.status(500).json({ error: "Failed to fetch batches" });
+  }
+});
+
+router.get("/api/pharmacy/batches/:batchId", async (req, res) => {
+  try {
+    const batch = await storage.getDrugBatchById(req.params.batchId);
+    if (!batch) {
+      return res.status(404).json({ error: "Batch not found" });
+    }
+    res.json(batch);
+  } catch (error) {
+    console.error('Error fetching batch:', error);
+    res.status(500).json({ error: "Failed to fetch batch" });
+  }
+});
+
+router.post("/api/pharmacy/batches", async (req, res) => {
+  try {
+    const data = insertDrugBatchSchema.parse(req.body);
+    const batch = await storage.createDrugBatch(data);
+    res.status(201).json(batch);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid batch data", details: error.errors });
+    }
+    console.error('Error creating batch:', error);
+    res.status(500).json({ error: "Failed to create batch" });
+  }
+});
+
+router.get("/api/pharmacy/batches/fefo/:drugId", async (req, res) => {
+  try {
+    const drugId = parseInt(req.params.drugId);
+    const batches = await storage.getBatchesFEFO(drugId);
+    res.json(batches);
+  } catch (error) {
+    console.error('Error fetching FEFO batches:', error);
+    res.status(500).json({ error: "Failed to fetch FEFO batches" });
+  }
+});
+
+// Inventory Ledger
+router.get("/api/pharmacy/ledger", async (req, res) => {
+  try {
+    const drugId = req.query.drugId ? parseInt(req.query.drugId as string) : undefined;
+    const batchId = req.query.batchId as string | undefined;
+    const ledger = await storage.getInventoryLedger(drugId, batchId);
+    res.json(ledger);
+  } catch (error) {
+    console.error('Error fetching ledger:', error);
+    res.status(500).json({ error: "Failed to fetch inventory ledger" });
+  }
+});
+
+router.post("/api/pharmacy/ledger", async (req, res) => {
+  try {
+    const data = insertInventoryLedgerSchema.parse(req.body);
+    const entry = await storage.createInventoryLedger(data);
+    res.status(201).json(entry);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid ledger data", details: error.errors });
+    }
+    console.error('Error creating ledger entry:', error);
+    res.status(500).json({ error: "Failed to create ledger entry" });
+  }
+});
+
+// Stock Queries
+router.get("/api/pharmacy/stock/:drugId", async (req, res) => {
+  try {
+    const drugId = parseInt(req.params.drugId);
+    const stockLevel = await storage.getDrugStockLevel(drugId);
+    res.json({ drugId, stockOnHand: stockLevel });
+  } catch (error) {
+    console.error('Error fetching stock level:', error);
+    res.status(500).json({ error: "Failed to fetch stock level" });
+  }
+});
+
+router.get("/api/pharmacy/alerts/low-stock", async (req, res) => {
+  try {
+    const lowStockDrugs = await storage.getLowStockDrugs();
+    res.json(lowStockDrugs);
+  } catch (error) {
+    console.error('Error fetching low stock drugs:', error);
+    res.status(500).json({ error: "Failed to fetch low stock drugs" });
+  }
+});
+
+router.get("/api/pharmacy/alerts/expiring", async (req, res) => {
+  try {
+    const daysThreshold = req.query.days ? parseInt(req.query.days as string) : 90;
+    const expiringDrugs = await storage.getExpiringSoonDrugs(daysThreshold);
+    res.json(expiringDrugs);
+  } catch (error) {
+    console.error('Error fetching expiring drugs:', error);
+    res.status(500).json({ error: "Failed to fetch expiring drugs" });
+  }
+});
+
+// Dispense Operations
+router.get("/api/pharmacy/prescriptions/paid", async (req, res) => {
+  try {
+    const prescriptions = await storage.getPaidPrescriptions();
+    res.json(prescriptions);
+  } catch (error) {
+    console.error('Error fetching paid prescriptions:', error);
+    res.status(500).json({ error: "Failed to fetch paid prescriptions" });
+  }
+});
+
+router.post("/api/pharmacy/dispense", async (req, res) => {
+  try {
+    const { orderId, batchId, quantity, dispensedBy } = req.body;
+    
+    if (!orderId || !batchId || !quantity || !dispensedBy) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    
+    const order = await storage.dispenseDrug(orderId, batchId, quantity, dispensedBy);
+    res.json(order);
+  } catch (error) {
+    console.error('Error dispensing drug:', error);
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: "Failed to dispense drug" });
   }
 });
 
