@@ -4,7 +4,7 @@ import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 
-const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines } = schema;
+const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
 // Tables are automatically created by Drizzle
 console.log("✓ Database connection established");
@@ -19,6 +19,9 @@ let prescriptionCounter = 0;
 let paymentCounter = 0;
 let encounterCounter = 0;
 let invoiceCounter = 0;
+let drugCodeCounter = 0;
+let batchCounter = 0;
+let ledgerCounter = 0;
 
 function generatePatientId(): string {
   patientCounter++;
@@ -95,6 +98,33 @@ async function generateInvoiceId(): Promise<string> {
   }
   invoiceCounter++;
   return `BGC-INV${invoiceCounter}`;
+}
+
+async function generateDrugCode(): Promise<string> {
+  if (drugCodeCounter === 0) {
+    const allDrugs = await db.select().from(drugs);
+    drugCodeCounter = allDrugs.length;
+  }
+  drugCodeCounter++;
+  return `DRG${drugCodeCounter.toString().padStart(5, '0')}`;
+}
+
+async function generateBatchId(): Promise<string> {
+  if (batchCounter === 0) {
+    const allBatches = await db.select().from(drugBatches);
+    batchCounter = allBatches.length;
+  }
+  batchCounter++;
+  return `BATCH${batchCounter.toString().padStart(6, '0')}`;
+}
+
+async function generateLedgerId(): Promise<string> {
+  if (ledgerCounter === 0) {
+    const allLedger = await db.select().from(inventoryLedger);
+    ledgerCounter = allLedger.length;
+  }
+  ledgerCounter++;
+  return `TXN${ledgerCounter.toString().padStart(8, '0')}`;
 }
 
 export interface IStorage {
@@ -216,6 +246,33 @@ export interface IStorage {
   getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]>;
   getPatientsByDateWithStatus(date: string): Promise<(schema.Patient & { serviceStatus: any })[]>;
   getPatientServiceStatus(patientId: string): Promise<any>;
+
+  // Pharmacy Inventory - Drugs
+  createDrug(data: schema.InsertDrug): Promise<schema.Drug>;
+  getDrugs(activeOnly?: boolean): Promise<schema.Drug[]>;
+  getDrugById(id: number): Promise<schema.Drug | null>;
+  getDrugByCode(drugCode: string): Promise<schema.Drug | null>;
+  updateDrug(id: number, data: Partial<schema.Drug>): Promise<schema.Drug>;
+  
+  // Pharmacy Inventory - Batches
+  createDrugBatch(data: schema.InsertDrugBatch): Promise<schema.DrugBatch>;
+  getDrugBatches(drugId?: number): Promise<schema.DrugBatch[]>;
+  getDrugBatchById(batchId: string): Promise<schema.DrugBatch | null>;
+  updateDrugBatch(batchId: string, data: Partial<schema.DrugBatch>): Promise<schema.DrugBatch>;
+  getBatchesFEFO(drugId: number): Promise<schema.DrugBatch[]>; // First Expiry First Out
+  
+  // Pharmacy Inventory - Ledger
+  createInventoryLedger(data: schema.InsertInventoryLedger): Promise<schema.InventoryLedger>;
+  getInventoryLedger(drugId?: number, batchId?: string): Promise<schema.InventoryLedger[]>;
+  
+  // Pharmacy Inventory - Stock Queries
+  getDrugStockLevel(drugId: number): Promise<number>; // Total quantity on hand
+  getLowStockDrugs(): Promise<(schema.Drug & { stockOnHand: number })[]>;
+  getExpiringSoonDrugs(daysThreshold?: number): Promise<(schema.DrugBatch & { drugName: string })[]>;
+  
+  // Pharmacy - Dispense Operations
+  dispenseDrug(orderId: string, batchId: string, quantity: number, dispensedBy: string): Promise<schema.PharmacyOrder>;
+  getPaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1195,6 +1252,247 @@ export class MemStorage implements IStorage {
     return await db.select().from(invoiceLines)
       .where(eq(invoiceLines.invoiceId, invoiceId))
       .orderBy(desc(invoiceLines.createdAt));
+  }
+
+  // Pharmacy Inventory - Drug Methods
+  async createDrug(data: schema.InsertDrug): Promise<schema.Drug> {
+    const drugCode = data.drugCode || await generateDrugCode();
+    const now = new Date().toISOString();
+    
+    const insertData = {
+      ...data,
+      drugCode,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    const [drug] = await db.insert(drugs).values(insertData).returning();
+    return drug;
+  }
+
+  async getDrugs(activeOnly = false): Promise<schema.Drug[]> {
+    if (activeOnly) {
+      return await db.select().from(drugs)
+        .where(eq(drugs.isActive, 1))
+        .orderBy(drugs.name);
+    }
+    return await db.select().from(drugs).orderBy(drugs.name);
+  }
+
+  async getDrugById(id: number): Promise<schema.Drug | null> {
+    const [drug] = await db.select().from(drugs).where(eq(drugs.id, id));
+    return drug || null;
+  }
+
+  async getDrugByCode(drugCode: string): Promise<schema.Drug | null> {
+    const [drug] = await db.select().from(drugs).where(eq(drugs.drugCode, drugCode));
+    return drug || null;
+  }
+
+  async updateDrug(id: number, data: Partial<schema.Drug>): Promise<schema.Drug> {
+    const now = new Date().toISOString();
+    const [updated] = await db.update(drugs)
+      .set({ ...data, updatedAt: now })
+      .where(eq(drugs.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Pharmacy Inventory - Batch Methods
+  async createDrugBatch(data: schema.InsertDrugBatch): Promise<schema.DrugBatch> {
+    const batchId = await generateBatchId();
+    const now = new Date().toISOString();
+    
+    const insertData = {
+      ...data,
+      batchId,
+      createdAt: now,
+    };
+    
+    const [batch] = await db.insert(drugBatches).values(insertData).returning();
+    
+    // Create ledger entry for receipt
+    await this.createInventoryLedger({
+      drugId: batch.drugId,
+      batchId: batch.batchId,
+      transactionType: 'receive',
+      quantity: batch.quantityOnHand,
+      quantityBefore: 0,
+      quantityAfter: batch.quantityOnHand,
+      unitCost: batch.unitCost,
+      totalValue: batch.quantityOnHand * batch.unitCost,
+      relatedType: 'supplier',
+      performedBy: batch.receivedBy,
+      notes: `Initial stock receipt - Lot: ${batch.lotNumber}`,
+    });
+    
+    return batch;
+  }
+
+  async getDrugBatches(drugId?: number): Promise<schema.DrugBatch[]> {
+    if (drugId) {
+      return await db.select().from(drugBatches)
+        .where(eq(drugBatches.drugId, drugId))
+        .orderBy(drugBatches.expiryDate);
+    }
+    return await db.select().from(drugBatches).orderBy(drugBatches.expiryDate);
+  }
+
+  async getDrugBatchById(batchId: string): Promise<schema.DrugBatch | null> {
+    const [batch] = await db.select().from(drugBatches).where(eq(drugBatches.batchId, batchId));
+    return batch || null;
+  }
+
+  async updateDrugBatch(batchId: string, data: Partial<schema.DrugBatch>): Promise<schema.DrugBatch> {
+    const [updated] = await db.update(drugBatches)
+      .set(data)
+      .where(eq(drugBatches.batchId, batchId))
+      .returning();
+    return updated;
+  }
+
+  async getBatchesFEFO(drugId: number): Promise<schema.DrugBatch[]> {
+    // First Expiry First Out - batches with stock, ordered by expiry date
+    return await db.select().from(drugBatches)
+      .where(and(
+        eq(drugBatches.drugId, drugId),
+        sql`${drugBatches.quantityOnHand} > 0`
+      ))
+      .orderBy(drugBatches.expiryDate);
+  }
+
+  // Pharmacy Inventory - Ledger Methods
+  async createInventoryLedger(data: schema.InsertInventoryLedger): Promise<schema.InventoryLedger> {
+    const transactionId = await generateLedgerId();
+    const now = new Date().toISOString();
+    
+    const insertData = {
+      ...data,
+      transactionId,
+      createdAt: now,
+    };
+    
+    const [ledgerEntry] = await db.insert(inventoryLedger).values(insertData).returning();
+    return ledgerEntry;
+  }
+
+  async getInventoryLedger(drugId?: number, batchId?: string): Promise<schema.InventoryLedger[]> {
+    const conditions = [];
+    if (drugId) conditions.push(eq(inventoryLedger.drugId, drugId));
+    if (batchId) conditions.push(eq(inventoryLedger.batchId, batchId));
+    
+    if (conditions.length > 0) {
+      return await db.select().from(inventoryLedger)
+        .where(and(...conditions))
+        .orderBy(desc(inventoryLedger.createdAt));
+    }
+    
+    return await db.select().from(inventoryLedger).orderBy(desc(inventoryLedger.createdAt));
+  }
+
+  // Pharmacy Inventory - Stock Query Methods
+  async getDrugStockLevel(drugId: number): Promise<number> {
+    const batches = await db.select().from(drugBatches)
+      .where(eq(drugBatches.drugId, drugId));
+    
+    return batches.reduce((total, batch) => total + batch.quantityOnHand, 0);
+  }
+
+  async getLowStockDrugs(): Promise<(schema.Drug & { stockOnHand: number })[]> {
+    const allDrugs = await db.select().from(drugs).where(eq(drugs.isActive, 1));
+    const lowStockDrugs: (schema.Drug & { stockOnHand: number })[] = [];
+    
+    for (const drug of allDrugs) {
+      const stockLevel = await this.getDrugStockLevel(drug.id);
+      if (stockLevel <= drug.reorderLevel) {
+        lowStockDrugs.push({ ...drug, stockOnHand: stockLevel });
+      }
+    }
+    
+    return lowStockDrugs;
+  }
+
+  async getExpiringSoonDrugs(daysThreshold = 90): Promise<(schema.DrugBatch & { drugName: string })[]> {
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
+    const thresholdStr = thresholdDate.toISOString().split('T')[0];
+    
+    const batches = await db.select().from(drugBatches)
+      .where(and(
+        sql`${drugBatches.expiryDate} <= ${thresholdStr}`,
+        sql`${drugBatches.quantityOnHand} > 0`
+      ))
+      .orderBy(drugBatches.expiryDate);
+    
+    const result: (schema.DrugBatch & { drugName: string })[] = [];
+    for (const batch of batches) {
+      const drug = await this.getDrugById(batch.drugId);
+      if (drug) {
+        result.push({ ...batch, drugName: drug.name });
+      }
+    }
+    
+    return result;
+  }
+
+  // Pharmacy - Dispense Operations
+  async dispenseDrug(orderId: string, batchId: string, quantity: number, dispensedBy: string): Promise<schema.PharmacyOrder> {
+    // Get batch
+    const batch = await this.getDrugBatchById(batchId);
+    if (!batch) throw new Error("Batch not found");
+    if (batch.quantityOnHand < quantity) throw new Error("Insufficient stock");
+    
+    // Update batch quantity
+    const newQuantity = batch.quantityOnHand - quantity;
+    await this.updateDrugBatch(batchId, { quantityOnHand: newQuantity });
+    
+    // Create ledger entry
+    await this.createInventoryLedger({
+      drugId: batch.drugId,
+      batchId: batch.batchId,
+      transactionType: 'dispense',
+      quantity: -quantity,
+      quantityBefore: batch.quantityOnHand,
+      quantityAfter: newQuantity,
+      unitCost: batch.unitCost,
+      totalValue: -(quantity * batch.unitCost),
+      relatedId: orderId,
+      relatedType: 'pharmacy_order',
+      performedBy: dispensedBy,
+      notes: `Dispensed to patient - Order: ${orderId}`,
+    });
+    
+    // Update pharmacy order
+    const now = new Date().toISOString();
+    const [order] = await db.update(pharmacyOrders)
+      .set({ 
+        status: 'dispensed',
+        dispensedBy,
+        dispensedAt: now 
+      })
+      .where(eq(pharmacyOrders.orderId, orderId))
+      .returning();
+    
+    return order;
+  }
+
+  async getPaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]> {
+    const orders = await db.select().from(pharmacyOrders)
+      .where(and(
+        eq(pharmacyOrders.status, 'prescribed'),
+        eq(pharmacyOrders.paymentStatus, 'paid')
+      ))
+      .orderBy(desc(pharmacyOrders.createdAt));
+    
+    const result: (schema.PharmacyOrder & { patient: schema.Patient })[] = [];
+    for (const order of orders) {
+      const patient = await this.getPatientByPatientId(order.patientId);
+      if (patient) {
+        result.push({ ...order, patient });
+      }
+    }
+    
+    return result;
   }
 }
 
