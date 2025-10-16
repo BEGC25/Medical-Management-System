@@ -608,7 +608,7 @@ export default function PharmacyInventory() {
                 </div>
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-400">
-                Fill in bulk fields to auto-calculate quantity, or enter manual quantity below.
+                💡 Use bulk fields for carton purchases OR enter manual quantity below (entering one clears the other).
               </p>
             </div>
 
@@ -619,8 +619,15 @@ export default function PharmacyInventory() {
                   id="quantity"
                   type="number"
                   value={newBatch.quantityOnHand}
-                  onChange={(e) => setNewBatch({ ...newBatch, quantityOnHand: parseInt(e.target.value) || 0 })}
-                  disabled={!!(newBatch.unitsPerCarton && newBatch.cartonsReceived)}
+                  onChange={(e) => {
+                    const qty = parseInt(e.target.value) || 0;
+                    setNewBatch({ 
+                      ...newBatch, 
+                      quantityOnHand: qty,
+                      unitsPerCarton: 0,
+                      cartonsReceived: 0
+                    });
+                  }}
                   placeholder="Enter quantity"
                   data-testid="input-quantity"
                 />
