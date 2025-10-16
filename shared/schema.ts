@@ -257,14 +257,16 @@ export const drugBatches = sqliteTable("drug_batches", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   batchId: text("batch_id").unique().notNull(),
   drugId: integer("drug_id").notNull(), // References drugs.id
-  lotNumber: text("lot_number").notNull(),
+  lotNumber: text("lot_number"), // Optional - not all drugs have lot numbers
   expiryDate: text("expiry_date").notNull(), // ISO date
   quantityOnHand: integer("quantity_on_hand").notNull().default(0),
+  unitsPerCarton: integer("units_per_carton"), // How many units in a carton/box
+  cartonsReceived: integer("cartons_received"), // Number of cartons purchased
   unitCost: real("unit_cost").notNull(), // Cost per unit for this batch
   location: text("location"), // Storage location (e.g., "Shelf A", "Refrigerator")
-  receivedDate: text("received_date").notNull(),
+  receivedAt: text("received_at").notNull(), // Date stock was received
   receivedBy: text("received_by").notNull(),
-  supplierId: text("supplier_id"), // Optional supplier reference
+  supplier: text("supplier"), // Supplier name
   createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
@@ -402,6 +404,11 @@ export const insertDrugBatchSchema = createInsertSchema(drugBatches).omit({
   id: true,
   batchId: true,
   createdAt: true,
+}).extend({
+  lotNumber: z.string().optional(), // Optional lot number
+  unitsPerCarton: z.number().optional(), // Optional bulk quantity
+  cartonsReceived: z.number().optional(), // Optional carton count
+  supplier: z.string().optional(), // Optional supplier name
 });
 
 export const insertInventoryLedgerSchema = createInsertSchema(inventoryLedger).omit({

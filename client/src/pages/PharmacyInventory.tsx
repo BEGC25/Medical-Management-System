@@ -56,9 +56,12 @@ export default function PharmacyInventory() {
     lotNumber: "",
     expiryDate: "",
     quantityOnHand: 0,
+    unitsPerCarton: 0,
+    cartonsReceived: 0,
     unitCost: 0,
     supplier: "",
     receivedBy: "Pharmacist",
+    receivedAt: new Date().toISOString().split('T')[0],
   });
   const { toast } = useToast();
 
@@ -526,13 +529,15 @@ export default function PharmacyInventory() {
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="lotNumber">Lot Number *</Label>
+                <Label htmlFor="lotNumber">Lot Number (Optional)</Label>
                 <Input
                   id="lotNumber"
                   value={newBatch.lotNumber}
                   onChange={(e) => setNewBatch({ ...newBatch, lotNumber: e.target.value })}
+                  placeholder="e.g., LOT12345"
                   data-testid="input-lot-number"
                 />
               </div>
@@ -547,31 +552,95 @@ export default function PharmacyInventory() {
                 />
               </div>
             </div>
+
+            {/* Bulk Quantity Section */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-3">
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Bulk Purchase (Optional)</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="unitsPerCarton" className="text-xs">Units per Carton</Label>
+                  <Input
+                    id="unitsPerCarton"
+                    type="number"
+                    value={newBatch.unitsPerCarton || ''}
+                    onChange={(e) => {
+                      const units = parseInt(e.target.value) || 0;
+                      const cartons = newBatch.cartonsReceived || 0;
+                      setNewBatch({ 
+                        ...newBatch, 
+                        unitsPerCarton: units,
+                        quantityOnHand: units > 0 && cartons > 0 ? units * cartons : newBatch.quantityOnHand 
+                      });
+                    }}
+                    placeholder="e.g., 100"
+                    data-testid="input-units-per-carton"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cartonsReceived" className="text-xs">Cartons Received</Label>
+                  <Input
+                    id="cartonsReceived"
+                    type="number"
+                    value={newBatch.cartonsReceived || ''}
+                    onChange={(e) => {
+                      const cartons = parseInt(e.target.value) || 0;
+                      const units = newBatch.unitsPerCarton || 0;
+                      setNewBatch({ 
+                        ...newBatch, 
+                        cartonsReceived: cartons,
+                        quantityOnHand: units > 0 && cartons > 0 ? units * cartons : newBatch.quantityOnHand 
+                      });
+                    }}
+                    placeholder="e.g., 5"
+                    data-testid="input-cartons-received"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="autoQuantity" className="text-xs">Total Quantity</Label>
+                  <Input
+                    id="autoQuantity"
+                    type="number"
+                    value={(newBatch.unitsPerCarton && newBatch.cartonsReceived) ? (newBatch.unitsPerCarton * newBatch.cartonsReceived) : newBatch.quantityOnHand}
+                    readOnly
+                    className="bg-gray-100 dark:bg-gray-800"
+                    data-testid="display-auto-quantity"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Fill in bulk fields to auto-calculate quantity, or enter manual quantity below.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="quantity">Quantity *</Label>
+                <Label htmlFor="quantity">Manual Quantity *</Label>
                 <Input
                   id="quantity"
                   type="number"
                   value={newBatch.quantityOnHand}
                   onChange={(e) => setNewBatch({ ...newBatch, quantityOnHand: parseInt(e.target.value) || 0 })}
+                  disabled={!!(newBatch.unitsPerCarton && newBatch.cartonsReceived)}
+                  placeholder="Enter quantity"
                   data-testid="input-quantity"
                 />
               </div>
               <div>
-                <Label htmlFor="unitCost">Unit Cost (SSP)</Label>
+                <Label htmlFor="unitCost">Unit Cost (SSP) *</Label>
                 <Input
                   id="unitCost"
                   type="number"
                   step="0.01"
                   value={newBatch.unitCost}
                   onChange={(e) => setNewBatch({ ...newBatch, unitCost: parseFloat(e.target.value) || 0 })}
+                  placeholder="Cost per unit"
                   data-testid="input-unit-cost"
                 />
               </div>
             </div>
+
             <div>
-              <Label htmlFor="supplier">Supplier</Label>
+              <Label htmlFor="supplier">Supplier (Optional)</Label>
               <Input
                 id="supplier"
                 value={newBatch.supplier}
