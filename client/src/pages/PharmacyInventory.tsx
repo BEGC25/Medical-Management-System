@@ -38,10 +38,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Common drugs list for quick selection
+const COMMON_DRUGS = [
+  { name: "Paracetamol 500mg", strength: "500mg", form: "tablet" },
+  { name: "Amoxicillin 500mg", strength: "500mg", form: "tablet" },
+  { name: "Ampicillin 500mg", strength: "500mg", form: "tablet" },
+  { name: "Metronidazole 400mg", strength: "400mg", form: "tablet" },
+  { name: "Ciprofloxacin 500mg", strength: "500mg", form: "tablet" },
+  { name: "Doxycycline 100mg", strength: "100mg", form: "capsule" },
+  { name: "Artemether+Lumefantrine (Coartem)", strength: "20mg/120mg", form: "tablet" },
+  { name: "Quinine 300mg", strength: "300mg", form: "tablet" },
+  { name: "Chloroquine 250mg", strength: "250mg", form: "tablet" },
+  { name: "Ibuprofen 400mg", strength: "400mg", form: "tablet" },
+  { name: "Diclofenac 50mg", strength: "50mg", form: "tablet" },
+  { name: "Omeprazole 20mg", strength: "20mg", form: "capsule" },
+  { name: "Albendazole 400mg", strength: "400mg", form: "tablet" },
+  { name: "Mebendazole 100mg", strength: "100mg", form: "tablet" },
+  { name: "ORS (Oral Rehydration Salts)", strength: "20.5g", form: "other" },
+  { name: "Zinc Sulfate 20mg", strength: "20mg", form: "tablet" },
+  { name: "Vitamin B Complex", strength: "various", form: "tablet" },
+  { name: "Folic Acid 5mg", strength: "5mg", form: "tablet" },
+  { name: "Ferrous Sulfate 200mg", strength: "200mg", form: "tablet" },
+  { name: "Cotrimoxazole 960mg", strength: "960mg", form: "tablet" },
+  { name: "Cough Syrup", strength: "100ml", form: "syrup" },
+  { name: "Salbutamol Inhaler", strength: "100mcg", form: "inhaler" },
+  { name: "Hydrocortisone Cream 1%", strength: "1%", form: "cream" },
+  { name: "Gentian Violet Solution", strength: "0.5%", form: "other" },
+  { name: "Eye Drops (Chloramphenicol)", strength: "0.5%", form: "drops" },
+].sort((a, b) => a.name.localeCompare(b.name));
+
 export default function PharmacyInventory() {
   const [showAddDrug, setShowAddDrug] = useState(false);
   const [showReceiveStock, setShowReceiveStock] = useState(false);
   const [selectedDrug, setSelectedDrug] = useState<Drug | null>(null);
+  const [drugSearch, setDrugSearch] = useState("");
   const [newDrug, setNewDrug] = useState({
     name: "",
     genericName: "",
@@ -262,7 +292,7 @@ export default function PharmacyInventory() {
                             {stockLevel}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right font-mono text-lg font-semibold">
+                        <TableCell className="text-right font-mono">
                           {currentPrice ? `${currentPrice.toFixed(2)} SSP` : '-'}
                         </TableCell>
                         <TableCell>
@@ -493,13 +523,47 @@ export default function PharmacyInventory() {
             <DialogDescription>Add a new drug to the catalog</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Quick Select from Common Drugs */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+              <Label htmlFor="commonDrug">Quick Select (Common Drugs)</Label>
+              <Select
+                value=""
+                onValueChange={(value) => {
+                  const drug = COMMON_DRUGS.find(d => d.name === value);
+                  if (drug) {
+                    setNewDrug({
+                      ...newDrug,
+                      name: drug.name,
+                      strength: drug.strength,
+                      form: drug.form as any,
+                      unitOfMeasure: drug.form,
+                    });
+                  }
+                }}
+              >
+                <SelectTrigger id="commonDrug" data-testid="select-common-drug">
+                  <SelectValue placeholder="Select from common drugs list..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMMON_DRUGS.map((drug) => (
+                    <SelectItem key={drug.name} value={drug.name}>
+                      {drug.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Or type custom drug name below
+              </p>
+            </div>
+
             <div>
               <Label htmlFor="name">Drug Name *</Label>
               <Input
                 id="name"
                 value={newDrug.name}
                 onChange={(e) => setNewDrug({ ...newDrug, name: e.target.value })}
-                placeholder="e.g., Paracetamol"
+                placeholder="Type custom drug name or select above"
                 data-testid="input-drug-name"
               />
             </div>
