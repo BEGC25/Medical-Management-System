@@ -520,8 +520,15 @@ export default function PharmacyInventory() {
         <DialogContent data-testid="dialog-add-drug">
           <DialogHeader>
             <DialogTitle>Add New Drug</DialogTitle>
-            <DialogDescription>Add a new drug to the catalog</DialogDescription>
+            <DialogDescription>Add a new drug to the catalog (one-time setup)</DialogDescription>
           </DialogHeader>
+          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg mb-4">
+            <h4 className="font-semibold text-sm text-green-900 dark:text-green-100 mb-1">ℹ️ What is "Add Drug"?</h4>
+            <p className="text-xs text-green-800 dark:text-green-200">
+              This adds the drug to your catalog <strong>once</strong>. You don't set prices or expiry here - 
+              those come later when you "Receive Stock" (when you actually buy the drugs).
+            </p>
+          </div>
           <div className="space-y-4">
             {/* Quick Select from Common Drugs */}
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
@@ -566,9 +573,10 @@ export default function PharmacyInventory() {
                 placeholder="Type custom drug name or select above"
                 data-testid="input-drug-name"
               />
+              <p className="text-xs text-gray-500 mt-1">What the drug is called</p>
             </div>
             <div>
-              <Label htmlFor="genericName">Generic Name</Label>
+              <Label htmlFor="genericName">Generic Name (Optional)</Label>
               <Input
                 id="genericName"
                 value={newDrug.genericName}
@@ -576,6 +584,7 @@ export default function PharmacyInventory() {
                 placeholder="e.g., Acetaminophen"
                 data-testid="input-generic-name"
               />
+              <p className="text-xs text-gray-500 mt-1">Scientific/chemical name (optional)</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -587,6 +596,7 @@ export default function PharmacyInventory() {
                   placeholder="e.g., 500mg"
                   data-testid="input-strength"
                 />
+                <p className="text-xs text-gray-500 mt-1">How strong (500mg, 10ml, etc.)</p>
               </div>
               <div>
                 <Label htmlFor="form">Form</Label>
@@ -631,6 +641,7 @@ export default function PharmacyInventory() {
                   onChange={(e) => setNewDrug({ ...newDrug, reorderLevel: parseInt(e.target.value) || 10 })}
                   data-testid="input-reorder-level"
                 />
+                <p className="text-xs text-gray-500 mt-1">Alert when stock falls below this number</p>
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t">
@@ -655,8 +666,15 @@ export default function PharmacyInventory() {
         <DialogContent data-testid="dialog-receive-stock">
           <DialogHeader>
             <DialogTitle>Receive Stock</DialogTitle>
-            <DialogDescription>Add new stock batch to inventory</DialogDescription>
+            <DialogDescription>Record drugs you just bought/received</DialogDescription>
           </DialogHeader>
+          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg mb-4">
+            <h4 className="font-semibold text-sm text-green-900 dark:text-green-100 mb-1">ℹ️ What is "Receive Stock"?</h4>
+            <p className="text-xs text-green-800 dark:text-green-200">
+              Use this when you <strong>actually receive/buy drugs</strong>. Each time you buy drugs, they have a new batch 
+              with their own expiry date, quantity, and price. This tracks each purchase separately.
+            </p>
+          </div>
           <div className="space-y-4">
             <div>
               <Label htmlFor="drug">Select Drug *</Label>
@@ -675,6 +693,7 @@ export default function PharmacyInventory() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-gray-500 mt-1">Which drug did you receive?</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -687,6 +706,7 @@ export default function PharmacyInventory() {
                   placeholder="e.g., LOT12345"
                   data-testid="input-lot-number"
                 />
+                <p className="text-xs text-gray-500 mt-1">Batch number from box (optional)</p>
               </div>
               <div>
                 <Label htmlFor="expiryDate">Expiry Date *</Label>
@@ -697,12 +717,14 @@ export default function PharmacyInventory() {
                   onChange={(e) => setNewBatch({ ...newBatch, expiryDate: e.target.value })}
                   data-testid="input-expiry-date"
                 />
+                <p className="text-xs text-gray-500 mt-1">When these drugs expire</p>
               </div>
             </div>
 
             {/* Bulk Quantity Section */}
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-3">
               <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Bulk Purchase (Optional)</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">If you bought in cartons/boxes, fill this to auto-calculate total quantity</p>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label htmlFor="unitsPerCarton" className="text-xs">Units per Carton</Label>
@@ -778,6 +800,7 @@ export default function PharmacyInventory() {
                   placeholder="Enter quantity"
                   data-testid="input-quantity"
                 />
+                <p className="text-xs text-gray-500 mt-1">How many tablets/bottles you got</p>
               </div>
               <div>
                 <Label htmlFor="unitCost">Unit Cost (SSP) *</Label>
@@ -790,6 +813,7 @@ export default function PharmacyInventory() {
                   placeholder="Cost per unit"
                   data-testid="input-unit-cost"
                 />
+                <p className="text-xs text-gray-500 mt-1">Price per one tablet/bottle</p>
               </div>
             </div>
 
@@ -802,6 +826,7 @@ export default function PharmacyInventory() {
                 placeholder="Supplier name"
                 data-testid="input-supplier"
               />
+              <p className="text-xs text-gray-500 mt-1">Where you bought from (optional)</p>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button variant="outline" onClick={() => setShowReceiveStock(false)}>
