@@ -192,6 +192,7 @@ router.get("/api/patients/:patientId/treatments", async (req, res) => {
 
 router.post("/api/treatments", async (req, res) => {
   try {
+    console.log("Creating treatment with data:", req.body);
     const data = insertTreatmentSchema.parse(req.body);
     const treatment = await storage.createTreatment(data);
     res.status(201).json(treatment);
@@ -239,9 +240,7 @@ router.post("/api/lab-tests", async (req, res) => {
   try {
     console.log("Creating lab test with data:", req.body);
     const data = insertLabTestSchema.parse(req.body);
-    console.log("Parsed data:", data);
     const labTest = await storage.createLabTest(data);
-    console.log("Created lab test:", labTest);
     res.status(201).json(labTest);
   } catch (error) {
     console.error("Error creating lab test:", error);
@@ -776,31 +775,38 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
   try {
     const { encounterId } = req.params;
 
-    // 1. Validate diagnosis exists
-    const treatments = await storage.getTreatments();
-    const treatment = treatments.find((t: any) => t.encounterId === encounterId);
+    // Load encounter to get patientId + visitDate (treatments table doesn't have encounterId)
+    const encounter = await storage.getEncounterById(encounterId);
+    if (!encounter) {
+      return res.status(404).json({ error: "Encounter not found" });
+    }
+
+    // 1. Validate diagnosis exists for this patient's visit date
+    const patientTreatments = await storage.getTreatmentsByPatient(encounter.patientId);
+    const treatment = patientTreatments.find((t: any) => t.visitDate === encounter.visitDate);
     if (!treatment || !treatment.diagnosis || treatment.diagnosis.trim() === "") {
       return res.status(400).json({ error: "Cannot close visit: Diagnosis is required" });
     }
 
     // 2. Check all completed diagnostics are acknowledged
     const [labTests, xrays, ultrasounds] = await Promise.all([
-      storage.getLabTests(),
-      storage.getXrayExams(),
-      storage.getUltrasoundExams(),
+      storage.getLabTestsByPatient(encounter.patientId),
+      storage.getXrayExamsByPatient(encounter.patientId),
+      storage.getUltrasoundExamsByPatient(encounter.patientId),
     ]);
 
     const orderLines = await storage.getOrderLinesByEncounter(encounterId);
     const orderLineMap = new Map(orderLines.map((ol: any) => [ol.relatedId || "", ol]));
 
+    // Use membership in orderLineMap (do not rely on encounterId columns on tests/exams)
     const completedDiagnostics = [
-      ...labTests.filter((t: any) => t.encounterId === encounterId && t.status === "completed"),
-      ...xrays.filter((x: any) => x.encounterId === encounterId && x.status === "completed"),
-      ...ultrasounds.filter((u: any) => u.encounterId === encounterId && u.status === "completed"),
+      ...labTests.filter((t: any) => t.status === "completed" && orderLineMap.has(t.testId)),
+      ...xrays.filter((x: any) => x.status === "completed" && orderLineMap.has(x.examId)),
+      ...ultrasounds.filter((u: any) => u.status === "completed" && orderLineMap.has(u.examId)),
     ];
 
     const unacknowledged = completedDiagnostics.filter((d: any) => {
-      const relatedKey = d.testId || d.examId;             // <-- fixed key usage
+      const relatedKey = d.testId || d.examId;
       const orderLine = relatedKey ? orderLineMap.get(relatedKey) : null;
       return !orderLine || !orderLine.acknowledgedBy;
     });
@@ -825,12 +831,12 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
     }
 
     // 4. Close encounter
-    const encounter = await storage.updateEncounter(encounterId, {
+    const updated = await storage.updateEncounter(encounterId, {
       status: invoiceStatus,
       closedAt: new Date().toISOString(),
     });
 
-    res.json(encounter);
+    res.json(updated);
   } catch (error) {
     console.error("Error closing encounter:", error);
     res.status(500).json({ error: "Failed to close encounter" });
@@ -863,12 +869,12 @@ router.get("/api/encounters/:encounterId/diagnostics", async (req, res) => {
 
     const enrichedXrays = xrays.map((xray: any) => ({
       ...xray,
-      orderLine: orderLineMap.get(xray.examId),            // <-- use examId
+      orderLine: orderLineMap.get(xray.examId),            // examId
     }));
 
     const enrichedUltrasounds = ultrasounds.map((us: any) => ({
       ...us,
-      orderLine: orderLineMap.get(us.examId),              // <-- use examId
+      orderLine: orderLineMap.get(us.examId),              // examId
     }));
 
     res.json({
@@ -888,8 +894,7 @@ function safeParseTests(testsField: string): string[] {
   try {
     const parsed = JSON.parse(testsField);
     if (Array.isArray(parsed)) return parsed.filter((t) => typeof t === "string");
-    // allow {name: "..."} objects fallback
-    if (Array.isArray(parsed?.tests)) return parsed.tests;
+    if (Array.isArray((parsed as any)?.tests)) return (parsed as any).tests;
     return [];
   } catch {
     return [];
@@ -921,9 +926,9 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
     const orderLines = await storage.getOrderLinesByEncounter(visitId);
     const orderLineMap = new Map(orderLines.map((ol: any) => [ol.relatedId || "", ol]));
 
-    // LAB
+    // LAB (bind to visit via order lines, not encounterId on test rows)
     const labOrders = labTests
-      .filter((test: any) => test.encounterId === visitId)
+      .filter((test: any) => orderLineMap.has(test.testId))
       .map((test: any) => {
         const orderLine = orderLineMap.get(test.testId);
         const testNames = safeParseTests(test.tests);
@@ -950,24 +955,24 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
           acknowledgedBy: orderLine?.acknowledgedBy || null,
           addToCart: !!orderLine?.addToCart,
           isPaid: test.paymentStatus === "paid",
-          orderLine, // optional passthrough used by client in some places
+          orderLine,
         };
       });
 
     // XRAY
     const xrayOrders = xrays
-      .filter((xray: any) => xray.encounterId === visitId)
+      .filter((xray: any) => orderLineMap.has(xray.examId))
       .map((xray: any) => {
-        const orderLine = orderLineMap.get(xray.examId);   // <-- examId
+        const orderLine = orderLineMap.get(xray.examId);
         return {
           orderId: orderLine?.id || `xray-${xray.examId}`,
           visitId,
           type: "xray",
-          name: xray.examType || "X-Ray",                  // <-- examType
+          name: xray.examType || "X-Ray",
           status: xray.status || "pending",
           flags: null,
           snippet: xray.impression || null,
-          resultUrl: `/api/xrays/${xray.examId}`,
+          resultUrl: `/api/xray-exams/${xray.examId}`,
           acknowledgedAt: orderLine?.acknowledgedAt || null,
           acknowledgedBy: orderLine?.acknowledgedBy || null,
           addToCart: !!orderLine?.addToCart,
@@ -978,18 +983,18 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
 
     // ULTRASOUND
     const ultrasoundOrders = ultrasounds
-      .filter((us: any) => us.encounterId === visitId)
+      .filter((us: any) => orderLineMap.has(us.examId))
       .map((us: any) => {
-        const orderLine = orderLineMap.get(us.examId);     // <-- examId
+        const orderLine = orderLineMap.get(us.examId);
         return {
           orderId: orderLine?.id || `ultrasound-${us.examId}`,
           visitId,
           type: "ultrasound",
-          name: us.examType || "Ultrasound",               // <-- examType
+          name: us.examType || "Ultrasound",
           status: us.status || "pending",
           flags: null,
           snippet: us.impression || null,
-          resultUrl: `/api/ultrasounds/${us.examId}`,
+          resultUrl: `/api/ultrasound-exams/${us.examId}`,
           acknowledgedAt: orderLine?.acknowledgedAt || null,
           acknowledgedBy: orderLine?.acknowledgedBy || null,
           addToCart: !!orderLine?.addToCart,
@@ -1235,6 +1240,5 @@ import { setupAuth } from "./auth";
 export async function registerRoutes(app: any) {
   setupAuth(app);
   app.use(router);
-
   return createServer(app);
 }
