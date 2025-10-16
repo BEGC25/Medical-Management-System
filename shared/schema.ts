@@ -391,6 +391,11 @@ export const insertDrugSchema = createInsertSchema(drugs).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  drugCode: z.string().optional(), // Auto-generated if not provided
+  defaultPrice: z.number().optional(), // Prices are set per batch
+  category: z.string().optional(), // Added from frontend
+  unitOfMeasure: z.string().optional(), // Added from frontend
 });
 
 export const insertDrugBatchSchema = createInsertSchema(drugBatches).omit({
