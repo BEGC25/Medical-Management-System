@@ -221,12 +221,67 @@ export const pharmacyOrders = sqliteTable("pharmacy_orders", {
   orderId: text("order_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   treatmentId: text("treatment_id"),
+  encounterId: text("encounter_id"), // Link to encounter
   serviceId: integer("service_id").notNull(),
   dosage: text("dosage"),
   quantity: integer("quantity").notNull().default(1),
   status: text("status").$type<"prescribed" | "dispensed">().notNull().default("prescribed"),
   paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
-  createdAt: text("created_at").notNull().default(sql`now()`),
+  dispensedBy: text("dispensed_by"),
+  dispensedAt: text("dispensed_at"),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
+});
+
+// Drug Catalog - Master list of drugs
+export const drugs = sqliteTable("drugs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  drugCode: text("drug_code").unique().notNull(), // SKU or drug code
+  name: text("name").notNull(),
+  genericName: text("generic_name"),
+  strength: text("strength"), // e.g., "500mg", "10mg/ml"
+  form: text("form").$type<"tablet" | "capsule" | "syrup" | "injection" | "cream" | "ointment" | "drops" | "inhaler" | "other">().notNull(),
+  manufacturer: text("manufacturer"),
+  defaultPrice: real("default_price").notNull(),
+  reorderLevel: integer("reorder_level").notNull().default(10), // Alert when stock falls below this
+  isActive: integer("is_active").notNull().default(1), // 1 = active, 0 = discontinued
+  notes: text("notes"),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
+  updatedAt: text("updated_at").notNull().default(sql`datetime('now')`),
+});
+
+// Drug Batches - Track individual batches/lots with expiry
+export const drugBatches = sqliteTable("drug_batches", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  batchId: text("batch_id").unique().notNull(),
+  drugId: integer("drug_id").notNull(), // References drugs.id
+  lotNumber: text("lot_number").notNull(),
+  expiryDate: text("expiry_date").notNull(), // ISO date
+  quantityOnHand: integer("quantity_on_hand").notNull().default(0),
+  unitCost: real("unit_cost").notNull(), // Cost per unit for this batch
+  location: text("location"), // Storage location (e.g., "Shelf A", "Refrigerator")
+  receivedDate: text("received_date").notNull(),
+  receivedBy: text("received_by").notNull(),
+  supplierId: text("supplier_id"), // Optional supplier reference
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
+});
+
+// Inventory Ledger - Complete transaction history
+export const inventoryLedger = sqliteTable("inventory_ledger", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  transactionId: text("transaction_id").unique().notNull(),
+  drugId: integer("drug_id").notNull(),
+  batchId: text("batch_id"), // References drugBatches.batchId (null for general adjustments)
+  transactionType: text("transaction_type").$type<"receive" | "dispense" | "adjust" | "return" | "expire" | "damage">().notNull(),
+  quantity: integer("quantity").notNull(), // Positive for receive, negative for dispense/adjust out
+  quantityBefore: integer("quantity_before").notNull(), // Stock before transaction
+  quantityAfter: integer("quantity_after").notNull(), // Stock after transaction
+  unitCost: real("unit_cost"), // Cost per unit
+  totalValue: real("total_value"), // quantity * unitCost
+  relatedId: text("related_id"), // pharmacyOrder.orderId, patientId, etc.
+  relatedType: text("related_type").$type<"pharmacy_order" | "patient" | "supplier" | "internal">(),
+  notes: text("notes"),
+  performedBy: text("performed_by").notNull(), // User who made the transaction
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
 // Insert schemas
@@ -329,6 +384,24 @@ export const insertPharmacyOrderSchema = createInsertSchema(pharmacyOrders).omit
   createdAt: true,
 });
 
+export const insertDrugSchema = createInsertSchema(drugs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDrugBatchSchema = createInsertSchema(drugBatches).omit({
+  id: true,
+  batchId: true,
+  createdAt: true,
+});
+
+export const insertInventoryLedgerSchema = createInsertSchema(inventoryLedger).omit({
+  id: true,
+  transactionId: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type SafeUser = Omit<User, "password">;
@@ -346,6 +419,9 @@ export type InvoiceLine = typeof invoiceLines.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type PaymentItem = typeof paymentItems.$inferSelect;
 export type PharmacyOrder = typeof pharmacyOrders.$inferSelect;
+export type Drug = typeof drugs.$inferSelect;
+export type DrugBatch = typeof drugBatches.$inferSelect;
+export type InventoryLedger = typeof inventoryLedger.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
@@ -362,3 +438,6 @@ export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type InsertPaymentItem = z.infer<typeof insertPaymentItemSchema>;
 export type InsertPharmacyOrder = z.infer<typeof insertPharmacyOrderSchema>;
+export type InsertDrug = z.infer<typeof insertDrugSchema>;
+export type InsertDrugBatch = z.infer<typeof insertDrugBatchSchema>;
+export type InsertInventoryLedger = z.infer<typeof insertInventoryLedgerSchema>;
