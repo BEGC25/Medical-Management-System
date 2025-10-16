@@ -77,7 +77,8 @@ export default function PharmacyInventory() {
     queryKey: ['/api/pharmacy/alerts/expiring'],
     queryFn: async () => {
       const response = await fetch('/api/pharmacy/alerts/expiring?days=90');
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -258,7 +259,7 @@ export default function PharmacyInventory() {
             <CardHeader>
               <CardTitle className="text-red-700 dark:text-red-400 flex items-center gap-2">
                 <TrendingDown className="w-5 h-5" />
-                Low Stock Alerts ({lowStockDrugs.length})
+                Low Stock Alerts ({lowStockDrugs?.length || 0})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -300,12 +301,12 @@ export default function PharmacyInventory() {
             <CardHeader>
               <CardTitle className="text-amber-700 dark:text-amber-400 flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Expiring Soon (90 days) - ({expiringDrugs.length})
+                Expiring Soon (90 days) - ({expiringDrugs?.length || 0})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {expiringDrugs.map((batch) => {
+                {Array.isArray(expiringDrugs) && expiringDrugs.map((batch) => {
                   const expiryDate = new Date(batch.expiryDate);
                   const daysToExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                   const isExpired = daysToExpiry < 0;
@@ -338,7 +339,7 @@ export default function PharmacyInventory() {
                     </div>
                   );
                 })}
-                {expiringDrugs.length === 0 && (
+                {(!expiringDrugs || expiringDrugs.length === 0) && (
                   <div className="text-center py-6">
                     <p className="text-gray-500 dark:text-gray-400">No expiring items in the next 90 days</p>
                   </div>
