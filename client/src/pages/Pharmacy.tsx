@@ -57,19 +57,19 @@ export default function Pharmacy() {
   );
   
   const filteredPaidOrders = paidPrescriptions.filter((order) => 
-    order.patient?.patientId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.patient?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.patient?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.drugName?.toLowerCase().includes(searchTerm.toLowerCase())
+    (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.patient?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   const filteredUnpaidOrders = unpaidPrescriptions.filter((order) => 
-    order.patient?.patientId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.patient?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.patient?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.drugName?.toLowerCase().includes(searchTerm.toLowerCase())
+    (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.patient?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Dispense medication mutation
@@ -96,7 +96,7 @@ export default function Pharmacy() {
     },
   });
 
-  const handleDispenseClick = (order: PaidPrescription) => {
+  const handleDispenseClick = (order: PrescriptionWithPatient) => {
     setSelectedOrder(order);
     setSelectedBatch("");
   };
