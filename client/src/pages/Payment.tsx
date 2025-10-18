@@ -196,37 +196,6 @@ export default function Payment() {
     return services.filter(service => service.category === category);
   };
 
-  const handleSelectPatientFromOrder = (order: UnpaidOrder) => {
-    if (order.patient) {
-      setSelectedPatient(order.patient);
-      setSearchQuery("");
-    }
-  };
-
-  const addOrderToPayment = (order: UnpaidOrder) => {
-    // Use the service information from the backend response
-    if (order.serviceId && order.serviceName && order.price !== undefined) {
-      const matchingService: Service = {
-        id: order.serviceId,
-        name: order.serviceName,
-        category: order.type === 'lab_test' ? 'laboratory' :
-                  order.type === 'xray_exam' ? 'radiology' :
-                  order.type === 'ultrasound_exam' ? 'ultrasound' : 'pharmacy',
-        description: order.description,
-        price: order.price,
-      };
-      
-      handleSelectPatientFromOrder(order);
-      addServiceToPayment(matchingService, order);
-    } else {
-      toast({
-        title: "Service Not Found",
-        description: "Could not find pricing information for this service",
-        variant: "destructive",
-      });
-    }
-  };
-
   const getTotalUnpaidCount = () => {
     if (!allUnpaidOrders) return 0;
     return (
@@ -239,10 +208,16 @@ export default function Payment() {
 
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
-    const hasValidService = order.serviceId && order.price !== undefined;
 
     return (
-      <div key={order.id} className="p-4 border rounded-lg bg-red-50 hover:bg-red-100 transition-colors" data-testid={`unpaid-order-${order.id}`}>
+      <div key={order.id} className="p-4 border rounded-lg bg-red-50 hover:bg-red-100 transition-colors cursor-pointer" 
+           data-testid={`unpaid-order-${order.id}`}
+           onClick={() => {
+             if (patient) {
+               setSelectedPatient(patient);
+               setSearchQuery("");
+             }
+           }}>
         <div className="flex justify-between items-start mb-2">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
@@ -263,20 +238,11 @@ export default function Payment() {
             {order.dosage && <p className="text-sm text-red-600">Dosage: {order.dosage}</p>}
             {order.quantity && <p className="text-sm text-red-600">Quantity: {order.quantity}</p>}
           </div>
-          <Badge variant="destructive">UNPAID</Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="destructive">UNPAID</Badge>
+            <span className="text-xs text-gray-500 mt-1">Click to process</span>
+          </div>
         </div>
-        {hasValidService ? (
-          <Button
-            size="sm"
-            className="mt-2"
-            onClick={() => addOrderToPayment(order)}
-            data-testid={`btn-process-payment-${order.id}`}
-          >
-            Process Payment (SSP {order.price})
-          </Button>
-        ) : (
-          <p className="text-xs text-red-600 mt-2">Service pricing not available</p>
-        )}
       </div>
     );
   };
