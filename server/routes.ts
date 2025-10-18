@@ -825,12 +825,16 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
       return res.status(404).json({ error: "Visit not found" });
     }
     
+    console.log(`Getting orders for visit ${visitId}, patient ${encounter.patientId}`);
+    
     // Get all diagnostics for this encounter
     const [labTests, xrays, ultrasounds] = await Promise.all([
       storage.getLabTestsByPatient(encounter.patientId),
       storage.getXrayExamsByPatient(encounter.patientId),
       storage.getUltrasoundExamsByPatient(encounter.patientId),
     ]);
+    
+    console.log(`Found ${labTests.length} lab tests, ${xrays.length} xrays, ${ultrasounds.length} ultrasounds for patient ${encounter.patientId}`);
     
     // Get order lines for this encounter
     const orderLines = await storage.getOrderLinesByEncounter(visitId);
