@@ -810,17 +810,32 @@ export default function Treatment() {
                     <div>
                       <h4 className="font-semibold mb-2">Laboratory Tests</h4>
                       <div className="space-y-2">
-                        {labTests.map((test: any) => (
-                          <div key={test.testId || test.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        {labTests.map((test: any) => {
+                          const testNames = Array.isArray(test.tests) 
+                            ? test.tests 
+                            : (typeof test.tests === 'string' ? JSON.parse(test.tests) : []);
+                          
+                          return (
+                          <div key={test.testId || test.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
                             <div className="flex justify-between items-start gap-3">
                               <div className="flex-1">
-                                <p className="font-medium">{test.category} - {test.tests}</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {new Date(test.requestedDate).toLocaleDateString()}
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant={test.status === 'completed' ? 'default' : 'secondary'}>
+                                    {test.status}
+                                  </Badge>
+                                  {!test.isPaid && (
+                                    <Badge variant="destructive" className="bg-red-600">UNPAID</Badge>
+                                  )}
+                                </div>
+                                <p className="font-semibold text-base capitalize mb-1">{test.category}</p>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-0.5">
+                                  {testNames.map((testName: string, idx: number) => (
+                                    <div key={idx}>• {testName}</div>
+                                  ))}
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                  Requested: {new Date(test.requestedDate).toLocaleDateString()}
                                 </p>
-                                <Badge variant={test.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
-                                  {test.status}
-                                </Badge>
                                 {test.orderLine?.acknowledgedBy && (
                                   <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                                     ✓ Acknowledged by {test.orderLine.acknowledgedBy}
@@ -874,7 +889,8 @@ export default function Treatment() {
                               </div>
                             </div>
                           </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   )}
