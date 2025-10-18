@@ -1119,10 +1119,10 @@ export default function Treatment() {
                       <FileText className="h-4 w-4 mr-2" />
                       Visit Notes
                     </TabsTrigger>
-                    <TabsTrigger value="tests" data-testid="tab-tests" disabled>
+                    <TabsTrigger value="tests" data-testid="tab-tests">
                       Lab Tests
                     </TabsTrigger>
-                    <TabsTrigger value="imaging" data-testid="tab-imaging" disabled>
+                    <TabsTrigger value="imaging" data-testid="tab-imaging">
                       Imaging
                     </TabsTrigger>
                     <TabsTrigger value="medications" data-testid="tab-medications">
@@ -1412,6 +1412,44 @@ export default function Treatment() {
                 </div>
                       </TabsContent>
 
+                      {/* Lab Tests Tab */}
+                      <TabsContent value="tests" className="space-y-6">
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
+                              <Activity className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                                Lab Test Ordering
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                Lab test ordering functionality coming soon
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      {/* Imaging Tab */}
+                      <TabsContent value="imaging" className="space-y-6">
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
+                              <Activity className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                                Imaging Orders
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                X-ray and ultrasound ordering functionality coming soon
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </TabsContent>
+
                       {/* Medications Tab */}
                       <TabsContent value="medications" className="space-y-6">
                         <div className="space-y-4">
@@ -1430,8 +1468,8 @@ export default function Treatment() {
                                 value={selectedDrugId} 
                                 onValueChange={(value) => {
                                   setSelectedDrugId(value);
-                                  const drug = drugs.find(d => d.drugId === value);
-                                  if (drug) setSelectedDrugName(drug.genericName);
+                                  const drug = drugs.find(d => d.id.toString() === value);
+                                  if (drug) setSelectedDrugName(drug.genericName || drug.name);
                                 }}
                               >
                                 <SelectTrigger data-testid="select-drug">
@@ -1439,8 +1477,8 @@ export default function Treatment() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {drugs.map(drug => (
-                                    <SelectItem key={drug.drugId} value={drug.drugId}>
-                                      {drug.genericName} {drug.brandName ? `(${drug.brandName})` : ""} - {drug.strength}
+                                    <SelectItem key={drug.id} value={drug.id.toString()}>
+                                      {drug.genericName || drug.name} - {drug.strength}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -1493,7 +1531,7 @@ export default function Treatment() {
                               }
 
                               setMedications([...medications, {
-                                drugId: selectedDrugId,
+                                drugId: parseInt(selectedDrugId),
                                 drugName: selectedDrugName,
                                 dosage: newMedDosage,
                                 quantity: newMedQuantity,

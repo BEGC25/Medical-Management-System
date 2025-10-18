@@ -12,9 +12,9 @@ interface PatientSearchProps {
   viewMode: "today" | "date" | "search" | "all";
   selectedDate: string;
   searchTerm: string;
-  onSearchTermChange: (term: string) => void;
-  shouldSearch: boolean;
-  onShouldSearchChange: (should: boolean) => void;
+  onSearchTermChange?: (term: string) => void;
+  shouldSearch?: boolean;
+  onShouldSearchChange?: (should: boolean) => void;
 }
 
 function money(n?: number) {
