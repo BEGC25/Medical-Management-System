@@ -1779,8 +1779,38 @@ export default function Treatment() {
               {viewingLabTest.results && (
                 <div>
                   <h4 className="font-semibold mb-2">Results:</h4>
-                  <div className="bg-white dark:bg-gray-900 p-3 rounded border whitespace-pre-line">
-                    {viewingLabTest.results}
+                  <div className="bg-white dark:bg-gray-900 p-4 rounded border">
+                    {(() => {
+                      try {
+                        const results = typeof viewingLabTest.results === 'string' 
+                          ? JSON.parse(viewingLabTest.results) 
+                          : viewingLabTest.results;
+                        
+                        return (
+                          <div className="space-y-3">
+                            {Object.entries(results).map(([testName, testResults]: [string, any]) => (
+                              <div key={testName} className="border-l-4 border-blue-500 pl-4">
+                                <h5 className="font-semibold text-base mb-2">{testName}</h5>
+                                <div className="space-y-1">
+                                  {typeof testResults === 'object' && testResults !== null ? (
+                                    Object.entries(testResults).map(([param, value]: [string, any]) => (
+                                      <div key={param} className="grid grid-cols-2 gap-4 py-1">
+                                        <span className="text-gray-600 dark:text-gray-400">{param}:</span>
+                                        <span className="font-medium">{String(value)}</span>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="font-medium">{String(testResults)}</div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      } catch {
+                        return <div className="whitespace-pre-line">{viewingLabTest.results}</div>;
+                      }
+                    })()}
                   </div>
                 </div>
               )}
