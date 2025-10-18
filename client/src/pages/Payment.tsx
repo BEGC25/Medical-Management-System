@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, DollarSign, Receipt, AlertCircle } from "lucide-react";
+import { Search, DollarSign, Receipt, AlertCircle, Users, TestTube, XCircle as XRayIcon, ActivitySquare, Pill } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Patient {
   id: number;
@@ -26,6 +27,17 @@ interface UnpaidOrder {
   date: string;
   category?: string;
   bodyPart?: string;
+  patient?: Patient | null;
+  patientId: string;
+  dosage?: string;
+  quantity?: number;
+}
+
+interface AllUnpaidOrders {
+  laboratory: UnpaidOrder[];
+  xray: UnpaidOrder[];
+  ultrasound: UnpaidOrder[];
+  pharmacy: UnpaidOrder[];
 }
 
 interface Service {
@@ -68,6 +80,16 @@ export default function Payment() {
     },
   });
 
+  // Get ALL unpaid orders grouped by department
+  const { data: allUnpaidOrders, isLoading: allUnpaidLoading, refetch: refetchAllUnpaid } = useQuery<AllUnpaidOrders>({
+    queryKey: ["/api/unpaid-orders/all"],
+    queryFn: async () => {
+      const response = await fetch('/api/unpaid-orders/all');
+      if (!response.ok) throw new Error('Failed to load unpaid orders');
+      return response.json();
+    },
+  });
+
   // Get unpaid orders for selected patient with better error handling
   const { data: unpaidOrders = [], refetch: refetchUnpaidOrders, isLoading: unpaidLoading, error: unpaidError } = useQuery<UnpaidOrder[]>({
     queryKey: [`/api/patients/${selectedPatient?.patientId}/unpaid-orders`],
@@ -91,10 +113,13 @@ export default function Payment() {
       setNotes("");
       setReceivedBy("");
       refetchUnpaidOrders();
+      refetchAllUnpaid();
       queryClient.invalidateQueries({ queryKey: ["/api/payments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/unpaid-orders/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] });
     },
     onError: (error: any) => {
       toast({
@@ -168,19 +193,215 @@ export default function Payment() {
     return services.filter(service => service.category === category);
   };
 
+  const handleSelectPatientFromOrder = (order: UnpaidOrder) => {
+    if (order.patient) {
+      setSelectedPatient(order.patient);
+      setSearchQuery("");
+    }
+  };
+
+  const addOrderToPayment = (order: UnpaidOrder) => {
+    let matchingService: Service | undefined;
+    
+    if (order.type === 'lab_test') {
+      matchingService = services.find(s => s.category === 'laboratory');
+    } else if (order.type === 'xray_exam') {
+      matchingService = services.find(s => s.category === 'radiology');
+    } else if (order.type === 'ultrasound_exam') {
+      matchingService = services.find(s => s.category === 'ultrasound');
+    } else if (order.type === 'pharmacy_order') {
+      matchingService = services.find(s => s.category === 'pharmacy');
+    }
+    
+    if (matchingService) {
+      handleSelectPatientFromOrder(order);
+      addServiceToPayment(matchingService, order);
+    }
+  };
+
+  const getTotalUnpaidCount = () => {
+    if (!allUnpaidOrders) return 0;
+    return (
+      allUnpaidOrders.laboratory.length +
+      allUnpaidOrders.xray.length +
+      allUnpaidOrders.ultrasound.length +
+      allUnpaidOrders.pharmacy.length
+    );
+  };
+
+  const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
+    const patient = order.patient;
+    const matchingService = services.find(s => {
+      if (order.type === 'lab_test') return s.category === 'laboratory';
+      if (order.type === 'xray_exam') return s.category === 'radiology';
+      if (order.type === 'ultrasound_exam') return s.category === 'ultrasound';
+      if (order.type === 'pharmacy_order') return s.category === 'pharmacy';
+      return false;
+    });
+
+    return (
+      <div key={order.id} className="p-4 border rounded-lg bg-red-50 hover:bg-red-100 transition-colors" data-testid={`unpaid-order-${order.id}`}>
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              {patient ? (
+                <>
+                  <span className="font-semibold text-gray-900">
+                    {patient.firstName} {patient.lastName}
+                  </span>
+                  <Badge variant="outline" className="text-xs">{patient.patientId}</Badge>
+                </>
+              ) : (
+                <span className="font-semibold text-gray-900">{order.patientId}</span>
+              )}
+            </div>
+            <h4 className="font-medium text-red-800">{order.description}</h4>
+            <p className="text-sm text-red-600">Date: {new Date(order.date).toLocaleDateString()}</p>
+            {order.bodyPart && <p className="text-sm text-red-600">Body Part: {order.bodyPart}</p>}
+            {order.dosage && <p className="text-sm text-red-600">Dosage: {order.dosage}</p>}
+            {order.quantity && <p className="text-sm text-red-600">Quantity: {order.quantity}</p>}
+          </div>
+          <Badge variant="destructive">UNPAID</Badge>
+        </div>
+        {matchingService && (
+          <Button
+            size="sm"
+            className="mt-2"
+            onClick={() => addOrderToPayment(order)}
+            data-testid={`btn-process-payment-${order.id}`}
+          >
+            Process Payment (SSP {matchingService.price})
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <DollarSign className="h-8 w-8 text-green-600" />
-        <h1 className="text-3xl font-bold">Payment Processing</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-8 w-8 text-green-600" />
+          <h1 className="text-3xl font-bold">Payment Processing</h1>
+        </div>
+        {allUnpaidOrders && (
+          <Badge variant="destructive" className="text-lg px-4 py-2">
+            {getTotalUnpaidCount()} Pending Payments
+          </Badge>
+        )}
       </div>
+
+      {/* Pending Payments Overview */}
+      {allUnpaidLoading ? (
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading pending payments...</span>
+            </div>
+          </CardContent>
+        </Card>
+      ) : allUnpaidOrders && getTotalUnpaidCount() > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-red-500" />
+              Patients with Pending Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="laboratory" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="laboratory" className="flex items-center gap-2">
+                  <TestTube className="h-4 w-4" />
+                  Laboratory
+                  {allUnpaidOrders.laboratory.length > 0 && (
+                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.laboratory.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="xray" className="flex items-center gap-2">
+                  <XRayIcon className="h-4 w-4" />
+                  X-Ray
+                  {allUnpaidOrders.xray.length > 0 && (
+                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.xray.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="ultrasound" className="flex items-center gap-2">
+                  <ActivitySquare className="h-4 w-4" />
+                  Ultrasound
+                  {allUnpaidOrders.ultrasound.length > 0 && (
+                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.ultrasound.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="pharmacy" className="flex items-center gap-2">
+                  <Pill className="h-4 w-4" />
+                  Pharmacy
+                  {allUnpaidOrders.pharmacy.length > 0 && (
+                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.pharmacy.length}</Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="laboratory" className="mt-4">
+                <div className="space-y-3">
+                  {allUnpaidOrders.laboratory.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8">No pending laboratory payments</p>
+                  ) : (
+                    allUnpaidOrders.laboratory.map(order => renderOrderCard(order, 'laboratory'))
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="xray" className="mt-4">
+                <div className="space-y-3">
+                  {allUnpaidOrders.xray.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8">No pending X-ray payments</p>
+                  ) : (
+                    allUnpaidOrders.xray.map(order => renderOrderCard(order, 'xray'))
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="ultrasound" className="mt-4">
+                <div className="space-y-3">
+                  {allUnpaidOrders.ultrasound.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8">No pending ultrasound payments</p>
+                  ) : (
+                    allUnpaidOrders.ultrasound.map(order => renderOrderCard(order, 'ultrasound'))
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="pharmacy" className="mt-4">
+                <div className="space-y-3">
+                  {allUnpaidOrders.pharmacy.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8">No pending pharmacy payments</p>
+                  ) : (
+                    allUnpaidOrders.pharmacy.map(order => renderOrderCard(order, 'pharmacy'))
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-8">
+            <div className="text-center text-green-600">
+              <DollarSign className="h-16 w-16 mx-auto mb-3 opacity-50" />
+              <p className="text-xl font-semibold">All Payments Up to Date! ✓</p>
+              <p className="text-sm text-gray-500 mt-2">No pending payments at this time</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Patient Search */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Search className="h-5 w-5" />
-            Select Patient
+            Quick Patient Search
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -191,6 +412,7 @@ export default function Payment() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-4"
+                data-testid="input-search-patients"
               />
             </div>
             
