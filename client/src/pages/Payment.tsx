@@ -31,6 +31,9 @@ interface UnpaidOrder {
   patientId: string;
   dosage?: string;
   quantity?: number;
+  serviceId?: number;
+  serviceName?: string;
+  price?: number;
 }
 
 interface AllUnpaidOrders {
@@ -201,21 +204,26 @@ export default function Payment() {
   };
 
   const addOrderToPayment = (order: UnpaidOrder) => {
-    let matchingService: Service | undefined;
-    
-    if (order.type === 'lab_test') {
-      matchingService = services.find(s => s.category === 'laboratory');
-    } else if (order.type === 'xray_exam') {
-      matchingService = services.find(s => s.category === 'radiology');
-    } else if (order.type === 'ultrasound_exam') {
-      matchingService = services.find(s => s.category === 'ultrasound');
-    } else if (order.type === 'pharmacy_order') {
-      matchingService = services.find(s => s.category === 'pharmacy');
-    }
-    
-    if (matchingService) {
+    // Use the service information from the backend response
+    if (order.serviceId && order.serviceName && order.price !== undefined) {
+      const matchingService: Service = {
+        id: order.serviceId,
+        name: order.serviceName,
+        category: order.type === 'lab_test' ? 'laboratory' :
+                  order.type === 'xray_exam' ? 'radiology' :
+                  order.type === 'ultrasound_exam' ? 'ultrasound' : 'pharmacy',
+        description: order.description,
+        price: order.price,
+      };
+      
       handleSelectPatientFromOrder(order);
       addServiceToPayment(matchingService, order);
+    } else {
+      toast({
+        title: "Service Not Found",
+        description: "Could not find pricing information for this service",
+        variant: "destructive",
+      });
     }
   };
 
@@ -231,13 +239,7 @@ export default function Payment() {
 
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
-    const matchingService = services.find(s => {
-      if (order.type === 'lab_test') return s.category === 'laboratory';
-      if (order.type === 'xray_exam') return s.category === 'radiology';
-      if (order.type === 'ultrasound_exam') return s.category === 'ultrasound';
-      if (order.type === 'pharmacy_order') return s.category === 'pharmacy';
-      return false;
-    });
+    const hasValidService = order.serviceId && order.price !== undefined;
 
     return (
       <div key={order.id} className="p-4 border rounded-lg bg-red-50 hover:bg-red-100 transition-colors" data-testid={`unpaid-order-${order.id}`}>
@@ -263,15 +265,17 @@ export default function Payment() {
           </div>
           <Badge variant="destructive">UNPAID</Badge>
         </div>
-        {matchingService && (
+        {hasValidService ? (
           <Button
             size="sm"
             className="mt-2"
             onClick={() => addOrderToPayment(order)}
             data-testid={`btn-process-payment-${order.id}`}
           >
-            Process Payment (SSP {matchingService.price})
+            Process Payment (SSP {order.price})
           </Button>
+        ) : (
+          <p className="text-xs text-red-600 mt-2">Service pricing not available</p>
         )}
       </div>
     );

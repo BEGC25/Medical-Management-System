@@ -512,64 +512,94 @@ router.get("/api/payments", async (req, res) => {
 // Get all unpaid orders across all patients, grouped by department
 router.get("/api/unpaid-orders/all", async (req, res) => {
   try {
-    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, patients] = await Promise.all([
+    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, patients, services] = await Promise.all([
       storage.getLabTests(),
       storage.getXrayExams(),
       storage.getUltrasoundExams(),
       storage.getPharmacyOrders(),
       storage.getPatients(),
+      storage.getServices(),
     ]);
     
-    // Create a map of patients for quick lookup
+    // Create maps for quick lookup
     const patientMap = new Map();
     patients.forEach(p => patientMap.set(p.patientId, p));
     
-    // Group unpaid orders by department with patient info
+    // Map services by category for pricing
+    const getServiceByCategory = (category: string) => {
+      return services.find(s => s.category === category && s.isActive);
+    };
+    
+    // Group unpaid orders by department with patient info and service details
     const result = {
       laboratory: labTests
         .filter(test => test.paymentStatus === 'unpaid')
-        .map(test => ({
-          id: test.testId,
-          type: 'lab_test',
-          description: `Lab Test: ${JSON.parse(test.tests).join(', ')}`,
-          date: test.requestedDate,
-          category: test.category,
-          patient: patientMap.get(test.patientId) || null,
-          patientId: test.patientId,
-        })),
+        .map(test => {
+          const service = getServiceByCategory('laboratory');
+          return {
+            id: test.testId,
+            type: 'lab_test',
+            description: `Lab Test: ${JSON.parse(test.tests).join(', ')}`,
+            date: test.requestedDate,
+            category: test.category,
+            patient: patientMap.get(test.patientId) || null,
+            patientId: test.patientId,
+            serviceId: service?.id,
+            serviceName: service?.name,
+            price: service?.price,
+          };
+        }),
       xray: xrayExams
         .filter(exam => exam.paymentStatus === 'unpaid')
-        .map(exam => ({
-          id: exam.examId,
-          type: 'xray_exam',
-          description: `X-Ray: ${exam.examType}`,
-          date: exam.requestedDate,
-          bodyPart: exam.bodyPart,
-          patient: patientMap.get(exam.patientId) || null,
-          patientId: exam.patientId,
-        })),
+        .map(exam => {
+          const service = getServiceByCategory('radiology');
+          return {
+            id: exam.examId,
+            type: 'xray_exam',
+            description: `X-Ray: ${exam.examType}`,
+            date: exam.requestedDate,
+            bodyPart: exam.bodyPart,
+            patient: patientMap.get(exam.patientId) || null,
+            patientId: exam.patientId,
+            serviceId: service?.id,
+            serviceName: service?.name,
+            price: service?.price,
+          };
+        }),
       ultrasound: ultrasoundExams
         .filter(exam => exam.paymentStatus === 'unpaid')
-        .map(exam => ({
-          id: exam.examId,
-          type: 'ultrasound_exam',
-          description: `Ultrasound: ${exam.examType}`,
-          date: exam.requestedDate,
-          patient: patientMap.get(exam.patientId) || null,
-          patientId: exam.patientId,
-        })),
+        .map(exam => {
+          const service = getServiceByCategory('ultrasound');
+          return {
+            id: exam.examId,
+            type: 'ultrasound_exam',
+            description: `Ultrasound: ${exam.examType}`,
+            date: exam.requestedDate,
+            patient: patientMap.get(exam.patientId) || null,
+            patientId: exam.patientId,
+            serviceId: service?.id,
+            serviceName: service?.name,
+            price: service?.price,
+          };
+        }),
       pharmacy: pharmacyOrders
         .filter(order => order.paymentStatus === 'unpaid' && order.status === 'prescribed')
-        .map(order => ({
-          id: order.orderId,
-          type: 'pharmacy_order',
-          description: `Pharmacy: ${order.drugName || 'Medication'}`,
-          date: order.createdAt,
-          dosage: order.dosage,
-          quantity: order.quantity,
-          patient: patientMap.get(order.patientId) || null,
-          patientId: order.patientId,
-        })),
+        .map(order => {
+          const service = services.find(s => s.id === order.serviceId);
+          return {
+            id: order.orderId,
+            type: 'pharmacy_order',
+            description: `Pharmacy: ${order.drugName || 'Medication'}`,
+            date: order.createdAt,
+            dosage: order.dosage,
+            quantity: order.quantity,
+            patient: patientMap.get(order.patientId) || null,
+            patientId: order.patientId,
+            serviceId: service?.id,
+            serviceName: service?.name,
+            price: service?.price,
+          };
+        }),
     };
     
     res.json(result);
