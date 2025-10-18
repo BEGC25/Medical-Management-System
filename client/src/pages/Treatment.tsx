@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, Link } from "wouter";
-import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2 } from "lucide-react";
+import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2, Edit } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -118,6 +118,12 @@ export default function Treatment() {
   const [newMedDosage, setNewMedDosage] = useState("");
   const [newMedQuantity, setNewMedQuantity] = useState(0);
   const [newMedInstructions, setNewMedInstructions] = useState("");
+  
+  // Prescription editing state
+  const [editingPrescription, setEditingPrescription] = useState<PharmacyOrder | null>(null);
+  const [editDosage, setEditDosage] = useState("");
+  const [editQuantity, setEditQuantity] = useState(0);
+  const [editInstructions, setEditInstructions] = useState("");
   
   // Patient search state for PatientSearch component
   const [searchTerm, setSearchTerm] = useState("");
@@ -646,6 +652,33 @@ export default function Treatment() {
       toast({
         title: "Error",
         description: "Failed to cancel prescription",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Edit pharmacy order mutation
+  const editPrescriptionMutation = useMutation({
+    mutationFn: async (data: { orderId: string; dosage: string; quantity: number; instructions: string }) => {
+      const response = await apiRequest("PATCH", `/api/pharmacy-orders/${data.orderId}`, {
+        dosage: data.dosage,
+        quantity: data.quantity,
+        instructions: data.instructions,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] });
+      setEditingPrescription(null);
+      toast({
+        title: "Success",
+        description: "Prescription updated",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update prescription",
         variant: "destructive",
       });
     },
@@ -1683,20 +1716,37 @@ export default function Treatment() {
                                         )}
                                       </div>
                                       {rx.status === 'prescribed' && rx.paymentStatus === 'unpaid' && (
-                                        <Button
-                                          type="button"
-                                          variant="destructive"
-                                          size="sm"
-                                          onClick={() => {
-                                            if (window.confirm('Cancel this prescription?')) {
-                                              cancelPrescriptionMutation.mutate(rx.orderId);
-                                            }
-                                          }}
-                                          data-testid={`btn-cancel-${rx.orderId}`}
-                                        >
-                                          <Trash2 className="w-4 h-4 mr-1" />
-                                          Cancel
-                                        </Button>
+                                        <div className="flex gap-2">
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                              setEditingPrescription(rx);
+                                              setEditDosage(rx.dosage || '');
+                                              setEditQuantity(rx.quantity || 0);
+                                              setEditInstructions(rx.instructions || '');
+                                            }}
+                                            data-testid={`btn-edit-${rx.orderId}`}
+                                          >
+                                            <Edit className="w-4 h-4 mr-1" />
+                                            Edit
+                                          </Button>
+                                          <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => {
+                                              if (window.confirm('Cancel this prescription?')) {
+                                                cancelPrescriptionMutation.mutate(rx.orderId);
+                                              }
+                                            }}
+                                            data-testid={`btn-cancel-${rx.orderId}`}
+                                          >
+                                            <Trash2 className="w-4 h-4 mr-1" />
+                                            Cancel
+                                          </Button>
+                                        </div>
                                       )}
                                     </div>
                                   </div>
@@ -1897,6 +1947,95 @@ export default function Treatment() {
           )}
         </Card>
       )}
+
+      {/* Edit Prescription Dialog */}
+      <Dialog open={!!editingPrescription} onOpenChange={(open) => !open && setEditingPrescription(null)}>
+        <DialogContent className="max-w-lg" data-testid="dialog-edit-prescription">
+          <DialogHeader>
+            <DialogTitle>Edit Prescription</DialogTitle>
+          </DialogHeader>
+          
+          {editingPrescription && (
+            <div className="space-y-4">
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {editingPrescription.drugName}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Order ID: {editingPrescription.orderId}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Dosage Instructions</label>
+                <Input
+                  placeholder="e.g., 1 tablet twice daily"
+                  value={editDosage}
+                  onChange={(e) => setEditDosage(e.target.value)}
+                  data-testid="input-edit-dosage"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantity</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={editQuantity}
+                  onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
+                  data-testid="input-edit-quantity"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Additional Instructions</label>
+                <Input
+                  placeholder="e.g., Take with food"
+                  value={editInstructions}
+                  onChange={(e) => setEditInstructions(e.target.value)}
+                  data-testid="input-edit-instructions"
+                />
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (!editDosage || editQuantity <= 0) {
+                      toast({
+                        title: "Validation Error",
+                        description: "Please fill in dosage and quantity",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
+                    editPrescriptionMutation.mutate({
+                      orderId: editingPrescription.orderId,
+                      dosage: editDosage,
+                      quantity: editQuantity,
+                      instructions: editInstructions,
+                    });
+                  }}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={editPrescriptionMutation.isPending}
+                  data-testid="btn-save-edit"
+                >
+                  {editPrescriptionMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingPrescription(null)}
+                  data-testid="btn-cancel-edit"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Lab Results Modal */}
       {viewingLabTest && (
