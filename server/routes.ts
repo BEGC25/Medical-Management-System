@@ -553,7 +553,7 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
 // Pharmacy Orders
 router.get("/api/pharmacy-orders", async (req, res) => {
   try {
-    const pharmacyOrders = await storage.getPharmacyOrders();
+    const pharmacyOrders = await storage.getPharmacyOrdersWithPatients();
     res.json(pharmacyOrders);
   } catch (error) {
     console.error('Error in pharmacy orders route:', error);

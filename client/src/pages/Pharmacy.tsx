@@ -25,23 +25,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface PaidPrescription extends PharmacyOrder {
+interface PrescriptionWithPatient extends PharmacyOrder {
   patient: Patient;
 }
 
 export default function Pharmacy() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<PaidPrescription | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<PrescriptionWithPatient | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<string>("");
   const { toast } = useToast();
 
-  // Fetch ALL pharmacy orders
-  const { data: allPrescriptions = [], isLoading } = useQuery<PharmacyOrder[]>({
+  // Fetch ALL pharmacy orders with patient data
+  const { data: allPrescriptions = [], isLoading } = useQuery<PrescriptionWithPatient[]>({
     queryKey: ['/api/pharmacy-orders'],
   });
 
   // Fetch paid prescriptions ready for dispensing
-  const { data: paidPrescriptions = [] } = useQuery<PaidPrescription[]>({
+  const { data: paidPrescriptions = [] } = useQuery<PrescriptionWithPatient[]>({
     queryKey: ['/api/pharmacy/prescriptions/paid'],
   });
 
@@ -65,7 +65,9 @@ export default function Pharmacy() {
   );
   
   const filteredUnpaidOrders = unpaidPrescriptions.filter((order) => 
-    order.patientId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.patient?.patientId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.patient?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.patient?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.drugName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -211,8 +213,11 @@ export default function Pharmacy() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-gray-900 dark:text-white">
-                          Patient: {order.patientId}
+                          {order.patient?.firstName} {order.patient?.lastName}
                         </h3>
+                        <Badge className="bg-gray-600 text-white">
+                          {order.patient?.patientId}
+                        </Badge>
                         <Badge className="bg-orange-600 text-white">
                           UNPAID
                         </Badge>

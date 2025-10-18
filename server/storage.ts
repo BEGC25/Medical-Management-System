@@ -274,6 +274,7 @@ export interface IStorage {
   // Pharmacy - Dispense Operations
   dispenseDrug(orderId: string, batchId: string, quantity: number, dispensedBy: string): Promise<schema.PharmacyOrder>;
   getPaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
+  getPharmacyOrdersWithPatients(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1495,6 +1496,21 @@ export class MemStorage implements IStorage {
         eq(pharmacyOrders.status, 'prescribed'),
         eq(pharmacyOrders.paymentStatus, 'paid')
       ))
+      .orderBy(desc(pharmacyOrders.createdAt));
+    
+    const result: (schema.PharmacyOrder & { patient: schema.Patient })[] = [];
+    for (const order of orders) {
+      const patient = await this.getPatientByPatientId(order.patientId);
+      if (patient) {
+        result.push({ ...order, patient });
+      }
+    }
+    
+    return result;
+  }
+
+  async getPharmacyOrdersWithPatients(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]> {
+    const orders = await db.select().from(pharmacyOrders)
       .orderBy(desc(pharmacyOrders.createdAt));
     
     const result: (schema.PharmacyOrder & { patient: schema.Patient })[] = [];
