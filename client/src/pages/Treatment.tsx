@@ -60,6 +60,16 @@ export default function Treatment() {
     }
   }, []);
 
+  // Clear selected patient when navigating to base /treatment route (no visitId)
+  useEffect(() => {
+    if (!visitId) {
+      setSelectedPatient(null);
+      setCurrentEncounter(null);
+      setSavedTreatment(null);
+      setMedications([]);
+    }
+  }, [visitId]);
+
   // Query for today's treatments if filtering
   const { data: todaysTreatments = [] } = useQuery<Treatment[]>({
     queryKey: ["/api/treatments", "today"],
@@ -1414,38 +1424,57 @@ export default function Treatment() {
 
                       {/* Lab Tests Tab */}
                       <TabsContent value="tests" className="space-y-6">
-                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
-                              <Activity className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                                Lab Test Ordering
-                              </h3>
-                              <p className="text-sm text-gray-500">
-                                Lab test ordering functionality coming soon
-                              </p>
-                            </div>
+                        <div className="space-y-4">
+                          <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Laboratory Tests</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Quick lab test ordering for current patient
+                          </p>
+                          
+                          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              For detailed lab test ordering with full test catalog, visit the <a href="/laboratory" className="text-blue-600 hover:underline">Laboratory</a> page.
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-500">
+                              Use this quick form for common tests or the Laboratory page for comprehensive test selection.
+                            </p>
                           </div>
                         </div>
                       </TabsContent>
 
                       {/* Imaging Tab */}
                       <TabsContent value="imaging" className="space-y-6">
-                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
-                              <Activity className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                                Imaging Orders
-                              </h3>
-                              <p className="text-sm text-gray-500">
-                                X-ray and ultrasound ordering functionality coming soon
+                        <div className="space-y-4">
+                          <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Imaging Studies</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Quick imaging study ordering for current patient
+                          </p>
+                          
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <a href="/x-ray" className="block p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:shadow-md transition-shadow">
+                              <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">X-Ray Examinations</h4>
+                              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                                Order X-ray studies including chest, abdomen, spine, extremities, and more
                               </p>
-                            </div>
+                              <Button variant="outline" size="sm" className="w-full">
+                                Go to X-Ray Module →
+                              </Button>
+                            </a>
+                            
+                            <a href="/ultrasound" className="block p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:shadow-md transition-shadow">
+                              <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">Ultrasound Examinations</h4>
+                              <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+                                Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo
+                              </p>
+                              <Button variant="outline" size="sm" className="w-full">
+                                Go to Ultrasound Module →
+                              </Button>
+                            </a>
+                          </div>
+                          
+                          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
+                            <p className="text-sm text-gray-500 dark:text-gray-500">
+                              Note: For detailed imaging requests with safety checklists and specialized protocols, please use the dedicated X-Ray and Ultrasound modules.
+                            </p>
                           </div>
                         </div>
                       </TabsContent>
