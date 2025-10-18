@@ -29,6 +29,7 @@ export default function Treatment() {
   const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
   const [showVisitSummary, setShowVisitSummary] = useState(false);
   const [activeTab, setActiveTab] = useState("notes");
+  const [viewingLabTest, setViewingLabTest] = useState<any | null>(null);
   
   // Medication ordering state
   const [medications, setMedications] = useState<Array<{
@@ -891,7 +892,12 @@ export default function Treatment() {
                                   </>
                                 )}
                                 {test.status === 'completed' && (
-                                  <Button variant="outline" size="sm" data-testid={`view-lab-${test.id}`}>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setViewingLabTest(test)}
+                                    data-testid={`view-lab-${test.id}`}
+                                  >
                                     View Results
                                   </Button>
                                 )}
@@ -1702,6 +1708,113 @@ export default function Treatment() {
             </Card>
           )}
         </Card>
+      )}
+
+      {/* Lab Results Modal */}
+      {viewingLabTest && (
+        <Dialog open={!!viewingLabTest} onOpenChange={() => setViewingLabTest(null)}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Lab Test Results
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Test Header */}
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="text-lg font-semibold capitalize">{viewingLabTest.category}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Test ID: {viewingLabTest.testId}
+                    </p>
+                  </div>
+                  <Badge variant="default" className="bg-green-600">
+                    {viewingLabTest.status}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Requested:</span> {new Date(viewingLabTest.requestedDate).toLocaleDateString()}
+                  </div>
+                  {viewingLabTest.completedDate && (
+                    <div>
+                      <span className="font-medium">Completed:</span> {new Date(viewingLabTest.completedDate).toLocaleDateString()}
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium">Payment:</span> <Badge variant={viewingLabTest.paymentStatus === 'paid' ? 'default' : 'destructive'}>{viewingLabTest.paymentStatus}</Badge>
+                  </div>
+                  <div>
+                    <span className="font-medium">Priority:</span> {viewingLabTest.priority || 'routine'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tests Performed */}
+              <div>
+                <h4 className="font-semibold mb-2">Tests Performed:</h4>
+                <div className="bg-white dark:bg-gray-900 p-3 rounded border">
+                  {(() => {
+                    const testNames = Array.isArray(viewingLabTest.tests) 
+                      ? viewingLabTest.tests 
+                      : (typeof viewingLabTest.tests === 'string' ? JSON.parse(viewingLabTest.tests) : []);
+                    return testNames.map((testName: string, idx: number) => (
+                      <div key={idx} className="py-1">• {testName}</div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              {/* Clinical Information */}
+              {viewingLabTest.clinicalInfo && (
+                <div>
+                  <h4 className="font-semibold mb-2">Clinical Information:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border">{viewingLabTest.clinicalInfo}</p>
+                </div>
+              )}
+
+              {/* Results */}
+              {viewingLabTest.results && (
+                <div>
+                  <h4 className="font-semibold mb-2">Results:</h4>
+                  <div className="bg-white dark:bg-gray-900 p-3 rounded border whitespace-pre-line">
+                    {viewingLabTest.results}
+                  </div>
+                </div>
+              )}
+
+              {/* Normal Values Reference */}
+              {viewingLabTest.normalValues && (
+                <div>
+                  <h4 className="font-semibold mb-2">Normal Values (Reference):</h4>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800 whitespace-pre-line">
+                    {viewingLabTest.normalValues}
+                  </div>
+                </div>
+              )}
+
+              {/* Clinical Significance */}
+              {viewingLabTest.clinicalSignificance && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-orange-600">Clinical Significance:</h4>
+                  <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded border border-orange-200 dark:border-orange-800">
+                    {viewingLabTest.clinicalSignificance}
+                  </div>
+                </div>
+              )}
+
+              {/* Technician Notes */}
+              {viewingLabTest.technicianNotes && (
+                <div>
+                  <h4 className="font-semibold mb-2">Technician Notes:</h4>
+                  <p className="bg-gray-50 dark:bg-gray-800 p-3 rounded border italic">{viewingLabTest.technicianNotes}</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Prescription Modal */}
