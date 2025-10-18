@@ -509,6 +509,76 @@ router.get("/api/payments", async (req, res) => {
   }
 });
 
+// Get all unpaid orders across all patients, grouped by department
+router.get("/api/unpaid-orders/all", async (req, res) => {
+  try {
+    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, patients] = await Promise.all([
+      storage.getLabTests(),
+      storage.getXrayExams(),
+      storage.getUltrasoundExams(),
+      storage.getPharmacyOrders(),
+      storage.getPatients(),
+    ]);
+    
+    // Create a map of patients for quick lookup
+    const patientMap = new Map();
+    patients.forEach(p => patientMap.set(p.patientId, p));
+    
+    // Group unpaid orders by department with patient info
+    const result = {
+      laboratory: labTests
+        .filter(test => test.paymentStatus === 'unpaid')
+        .map(test => ({
+          id: test.testId,
+          type: 'lab_test',
+          description: `Lab Test: ${JSON.parse(test.tests).join(', ')}`,
+          date: test.requestedDate,
+          category: test.category,
+          patient: patientMap.get(test.patientId) || null,
+          patientId: test.patientId,
+        })),
+      xray: xrayExams
+        .filter(exam => exam.paymentStatus === 'unpaid')
+        .map(exam => ({
+          id: exam.examId,
+          type: 'xray_exam',
+          description: `X-Ray: ${exam.examType}`,
+          date: exam.requestedDate,
+          bodyPart: exam.bodyPart,
+          patient: patientMap.get(exam.patientId) || null,
+          patientId: exam.patientId,
+        })),
+      ultrasound: ultrasoundExams
+        .filter(exam => exam.paymentStatus === 'unpaid')
+        .map(exam => ({
+          id: exam.examId,
+          type: 'ultrasound_exam',
+          description: `Ultrasound: ${exam.examType}`,
+          date: exam.requestedDate,
+          patient: patientMap.get(exam.patientId) || null,
+          patientId: exam.patientId,
+        })),
+      pharmacy: pharmacyOrders
+        .filter(order => order.paymentStatus === 'unpaid' && order.status === 'prescribed')
+        .map(order => ({
+          id: order.orderId,
+          type: 'pharmacy_order',
+          description: `Pharmacy: ${order.drugName || 'Medication'}`,
+          date: order.createdAt,
+          dosage: order.dosage,
+          quantity: order.quantity,
+          patient: patientMap.get(order.patientId) || null,
+          patientId: order.patientId,
+        })),
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching all unpaid orders:", error);
+    res.status(500).json({ error: "Failed to fetch unpaid orders" });
+  }
+});
+
 // Get unpaid orders for a patient
 router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
   try {
