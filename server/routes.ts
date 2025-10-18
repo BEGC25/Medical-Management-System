@@ -1260,6 +1260,16 @@ router.post("/api/pharmacy/ledger", async (req, res) => {
 });
 
 // Stock Queries
+router.get("/api/pharmacy/stock/all", async (req, res) => {
+  try {
+    const drugsWithStock = await storage.getAllDrugsWithStock();
+    res.json(drugsWithStock);
+  } catch (error) {
+    console.error('Error fetching all drugs with stock:', error);
+    res.status(500).json({ error: "Failed to fetch drugs with stock levels" });
+  }
+});
+
 router.get("/api/pharmacy/stock/:drugId", async (req, res) => {
   try {
     const drugId = parseInt(req.params.drugId);

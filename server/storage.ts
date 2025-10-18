@@ -267,6 +267,7 @@ export interface IStorage {
   
   // Pharmacy Inventory - Stock Queries
   getDrugStockLevel(drugId: number): Promise<number>; // Total quantity on hand
+  getAllDrugsWithStock(): Promise<(schema.Drug & { stockOnHand: number })[]>; // All drugs with stock levels
   getLowStockDrugs(): Promise<(schema.Drug & { stockOnHand: number })[]>;
   getExpiringSoonDrugs(daysThreshold?: number): Promise<(schema.DrugBatch & { drugName: string })[]>;
   
@@ -1396,6 +1397,18 @@ export class MemStorage implements IStorage {
       .where(eq(drugBatches.drugId, drugId));
     
     return batches.reduce((total, batch) => total + batch.quantityOnHand, 0);
+  }
+
+  async getAllDrugsWithStock(): Promise<(schema.Drug & { stockOnHand: number })[]> {
+    const allDrugs = await db.select().from(drugs).where(eq(drugs.isActive, 1));
+    const drugsWithStock: (schema.Drug & { stockOnHand: number })[] = [];
+    
+    for (const drug of allDrugs) {
+      const stockLevel = await this.getDrugStockLevel(drug.id);
+      drugsWithStock.push({ ...drug, stockOnHand: stockLevel });
+    }
+    
+    return drugsWithStock;
   }
 
   async getLowStockDrugs(): Promise<(schema.Drug & { stockOnHand: number })[]> {

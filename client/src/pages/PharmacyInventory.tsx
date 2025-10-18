@@ -100,6 +100,11 @@ export default function PharmacyInventory() {
     queryKey: ['/api/pharmacy/drugs'],
   });
 
+  // Fetch all drugs with stock levels for Stock Overview
+  const { data: drugsWithStock = [] } = useQuery<(Drug & { stockOnHand: number })[]>({
+    queryKey: ['/api/pharmacy/stock/all'],
+  });
+
   // Fetch low stock alerts
   const { data: lowStockDrugs = [] } = useQuery<(Drug & { stockOnHand: number })[]>({
     queryKey: ['/api/pharmacy/alerts/low-stock'],
@@ -161,6 +166,7 @@ export default function PharmacyInventory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/batches'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/stock/all'] });
       queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/alerts/low-stock'] });
       queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/ledger'] });
       setShowReceiveStock(false);
@@ -169,9 +175,12 @@ export default function PharmacyInventory() {
         lotNumber: "",
         expiryDate: "",
         quantityOnHand: 0,
+        unitsPerCarton: 0,
+        cartonsReceived: 0,
         unitCost: 0,
         supplier: "",
         receivedBy: "Pharmacist",
+        receivedAt: "",
       });
       toast({
         title: "Stock Received",
@@ -273,9 +282,8 @@ export default function PharmacyInventory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {drugs.map((drug) => {
-                    const stockInfo = lowStockDrugs.find(d => d.id === drug.id);
-                    const stockLevel = stockInfo?.stockOnHand || 0;
+                  {drugsWithStock.map((drug) => {
+                    const stockLevel = drug.stockOnHand;
                     const isLowStock = stockLevel <= drug.reorderLevel;
                     
                     // Find most recent batch with stock to get current price
