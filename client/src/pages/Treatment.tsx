@@ -3,8 +3,9 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams } from "wouter";
-import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign } from "lucide-react";
+import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
-import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment, type Encounter, type OrderLine, type Service, type LabTest, type XrayExam, type UltrasoundExam } from "@shared/schema";
+import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatment, type Encounter, type OrderLine, type Service, type LabTest, type XrayExam, type UltrasoundExam, type Drug, type PharmacyOrder } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
@@ -27,6 +28,16 @@ export default function Treatment() {
   const [filterToday, setFilterToday] = useState(false);
   const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
   const [showVisitSummary, setShowVisitSummary] = useState(false);
+  const [activeTab, setActiveTab] = useState("notes");
+  
+  // Medication ordering state
+  const [medications, setMedications] = useState<Array<{
+    drugId: number;
+    drugName: string;
+    dosage: string;
+    quantity: number;
+    instructions: string;
+  }>>([]);
   
   // Patient search state for PatientSearch component
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,6 +90,11 @@ export default function Treatment() {
   // Get services for billing
   const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
+  });
+
+  // Get drugs for medication ordering
+  const { data: drugs = [] } = useQuery<Drug[]>({
+    queryKey: ["/api/pharmacy/drugs"],
   });
 
   // Load specific visit if visitId is provided
