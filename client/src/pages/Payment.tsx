@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, DollarSign, Receipt, AlertCircle, Users, TestTube, XCircle as XRayIcon, ActivitySquare, Pill } from "lucide-react";
+import { Search, DollarSign, Receipt, AlertCircle, Users, TestTube, XCircle as XRayIcon, ActivitySquare, Pill, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Patient {
   id: number;
@@ -58,6 +59,7 @@ export default function Payment() {
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [receivedBy, setReceivedBy] = useState("");
   const [notes, setNotes] = useState("");
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -70,7 +72,7 @@ export default function Payment() {
       if (!response.ok) throw new Error('Failed to search patients - Please check your connection and try again');
       return response.json();
     },
-    enabled: searchQuery.length >= 2, // Require at least 2 characters
+    enabled: searchQuery.length >= 2,
   });
 
   // Get services with better error handling
@@ -115,6 +117,9 @@ export default function Payment() {
       setPaymentItems([]);
       setNotes("");
       setReceivedBy("");
+      setIsPaymentModalOpen(false);
+      setSelectedPatient(null);
+      setSearchQuery("");
       refetchUnpaidOrders();
       refetchAllUnpaid();
       queryClient.invalidateQueries({ queryKey: ["/api/payments"] });
@@ -132,6 +137,12 @@ export default function Payment() {
       });
     },
   });
+
+  const handleSelectPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setSearchQuery("");
+    setIsPaymentModalOpen(true);
+  };
 
   const addServiceToPayment = (service: Service, relatedOrder?: UnpaidOrder) => {
     const newItem = {
@@ -214,8 +225,7 @@ export default function Payment() {
            data-testid={`unpaid-order-${order.id}`}
            onClick={() => {
              if (patient) {
-               setSelectedPatient(patient);
-               setSearchQuery("");
+               handleSelectPatient(patient);
              }
            }}>
         <div className="flex justify-between items-start mb-2">
@@ -260,6 +270,80 @@ export default function Payment() {
           </Badge>
         )}
       </div>
+
+      {/* Quick Patient Search - Moved to TOP */}
+      <Card className="border-2 border-blue-200 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardTitle className="flex items-center gap-2 text-blue-900">
+            <Search className="h-6 w-6" />
+            Quick Patient Search
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                placeholder="Search patients by name or ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-12 text-base border-2"
+                data-testid="input-search-patients"
+              />
+            </div>
+            
+            {searchQuery.length >= 2 && (
+              <div className="grid gap-2 max-h-60 overflow-y-auto">
+                {patientsLoading && (
+                  <div className="flex items-center justify-center p-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-sm text-gray-600">Searching patients...</span>
+                  </div>
+                )}
+                {patientsError && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-800">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="text-sm">{patientsError.message}</span>
+                    </div>
+                  </div>
+                )}
+                {!patientsLoading && !patientsError && patients.length === 0 && (
+                  <div className="p-4 text-center text-gray-500">
+                    <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">No patients found matching "{searchQuery}"</p>
+                    <p className="text-xs text-gray-400 mt-1">Try different search terms</p>
+                  </div>
+                )}
+                {!patientsLoading && !patientsError && patients.map((patient: Patient) => (
+                  <Button
+                    key={patient.id}
+                    variant="outline"
+                    className="justify-start h-auto p-4 hover:bg-blue-50 hover:border-blue-300 transition-all"
+                    onClick={() => handleSelectPatient(patient)}
+                    data-testid={`patient-result-${patient.patientId}`}
+                  >
+                    <div className="text-left">
+                      <div className="font-semibold">
+                        {patient.firstName} {patient.lastName} ({patient.patientId})
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {patient.age} years old • {patient.gender}
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            )}
+            
+            {searchQuery.length > 0 && searchQuery.length < 2 && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">Enter at least 2 characters to search for patients</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Pending Payments Overview */}
       {allUnpaidLoading ? (
@@ -366,254 +450,198 @@ export default function Payment() {
         </Card>
       )}
 
-      {/* Patient Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Quick Patient Search
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="relative">
-              <Input
-                placeholder="Search patients by name or ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-4"
-                data-testid="input-search-patients"
-              />
-            </div>
-            
-            {searchQuery.length >= 2 && (
-              <div className="grid gap-2 max-h-60 overflow-y-auto">
-                {patientsLoading && (
-                  <div className="flex items-center justify-center p-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-sm text-gray-600">Searching patients...</span>
-                  </div>
-                )}
-                {patientsError && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-red-800">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="text-sm">{patientsError.message}</span>
-                    </div>
-                  </div>
-                )}
-                {!patientsLoading && !patientsError && patients.length === 0 && (
-                  <div className="p-4 text-center text-gray-500">
-                    <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No patients found matching "{searchQuery}"</p>
-                    <p className="text-xs text-gray-400 mt-1">Try different search terms</p>
-                  </div>
-                )}
-                {!patientsLoading && !patientsError && patients.map((patient: Patient) => (
-                  <Button
-                    key={patient.id}
-                    variant={selectedPatient?.id === patient.id ? "default" : "outline"}
-                    className="justify-start h-auto p-4"
-                    onClick={() => setSelectedPatient(patient)}
-                  >
-                    <div className="text-left">
-                      <div className="font-semibold">
-                        {patient.firstName} {patient.lastName} ({patient.patientId})
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {patient.age} years old • {patient.gender}
-                      </div>
-                    </div>
-                  </Button>
-                ))}
+      {/* Payment Processing Modal */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-6 w-6 text-blue-600" />
+                <span>Process Payment</span>
               </div>
-            )}
-            
-            {searchQuery.length > 0 && searchQuery.length < 2 && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">Enter at least 2 characters to search for patients</p>
-              </div>
-            )}
-
-            {selectedPatient && (
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-blue-800">Selected Patient:</h3>
-                <p className="text-blue-700">
-                  {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {selectedPatient && (
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Unpaid Orders */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-                Unpaid Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {unpaidOrders.length === 0 ? (
-                <p className="text-green-600 font-semibold">No unpaid orders found! ✓</p>
-              ) : (
-                <div className="space-y-3">
-                  {unpaidOrders.map((order) => {
-                    const matchingService = services.find(s => 
-                      (order.type === 'lab_test' && s.category === 'laboratory') ||
-                      (order.type === 'xray_exam' && s.category === 'radiology') ||
-                      (order.type === 'ultrasound_exam' && s.category === 'ultrasound')
-                    );
-                    
-                    return (
-                      <div key={order.id} className="p-3 border rounded-lg bg-red-50">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-semibold text-red-800">{order.description}</h4>
-                            <p className="text-sm text-red-600">Date: {order.date}</p>
-                            {order.bodyPart && (
-                              <p className="text-sm text-red-600">Body Part: {order.bodyPart}</p>
-                            )}
-                          </div>
-                          <Badge variant="destructive">UNPAID</Badge>
-                        </div>
-                        {matchingService && (
-                          <Button
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => addServiceToPayment(matchingService, order)}
-                          >
-                            Add to Payment (SSP {matchingService.price})
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
+              {selectedPatient && (
+                <div className="text-sm font-normal text-blue-600">
+                  Patient: {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </DialogTitle>
+          </DialogHeader>
 
-          {/* Payment Items */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Receipt className="h-5 w-5" />
-                Payment Items
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Add services manually */}
-                <div>
-                  <h4 className="font-semibold mb-2">Add Services:</h4>
-                  <div className="grid gap-2">
-                    {["consultation", "laboratory", "radiology", "ultrasound"].map(category => (
-                      <div key={category}>
-                        <h5 className="text-sm font-medium text-gray-600 mb-1 capitalize">{category}</h5>
-                        {getServiceByCategory(category).map(service => (
-                          <Button
-                            key={service.id}
-                            variant="outline"
-                            size="sm"
-                            className="mr-2 mb-1"
-                            onClick={() => addServiceToPayment(service)}
-                          >
-                            {service.name} (SSP {service.price})
-                          </Button>
+          {selectedPatient && (
+            <div className="grid lg:grid-cols-2 gap-6 mt-4">
+              {/* Unpaid Orders */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                    Unpaid Orders
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {unpaidOrders.length === 0 ? (
+                    <p className="text-green-600 font-semibold">No unpaid orders found! ✓</p>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {unpaidOrders.map((order) => {
+                        const matchingService = services.find(s => 
+                          (order.type === 'lab_test' && s.category === 'laboratory') ||
+                          (order.type === 'xray_exam' && s.category === 'radiology') ||
+                          (order.type === 'ultrasound_exam' && s.category === 'ultrasound')
+                        );
+                        
+                        return (
+                          <div key={order.id} className="p-3 border rounded-lg bg-red-50">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-semibold text-red-800">{order.description}</h4>
+                                <p className="text-sm text-red-600">Date: {order.date}</p>
+                                {order.bodyPart && (
+                                  <p className="text-sm text-red-600">Body Part: {order.bodyPart}</p>
+                                )}
+                              </div>
+                              <Badge variant="destructive">UNPAID</Badge>
+                            </div>
+                            {matchingService && (
+                              <Button
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => addServiceToPayment(matchingService, order)}
+                                data-testid={`button-add-service-${order.id}`}
+                              >
+                                Add to Payment (SSP {matchingService.price})
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Payment Items */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Receipt className="h-5 w-5" />
+                    Payment Items
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Add services manually */}
+                    <div>
+                      <h4 className="font-semibold mb-2">Add Services:</h4>
+                      <div className="grid gap-2 max-h-64 overflow-y-auto">
+                        {["consultation", "laboratory", "radiology", "ultrasound"].map(category => (
+                          <div key={category}>
+                            <h5 className="text-sm font-medium text-gray-600 mb-1 capitalize">{category}</h5>
+                            {getServiceByCategory(category).map(service => (
+                              <Button
+                                key={service.id}
+                                variant="outline"
+                                size="sm"
+                                className="mr-2 mb-1"
+                                onClick={() => addServiceToPayment(service)}
+                                data-testid={`button-add-service-manual-${service.id}`}
+                              >
+                                {service.name} (SSP {service.price})
+                              </Button>
+                            ))}
+                          </div>
                         ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </div>
 
-                {/* Payment items list */}
-                {paymentItems.length > 0 && (
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-2">Items to Pay:</h4>
-                    {paymentItems.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded mb-2">
+                    {/* Payment items list */}
+                    {paymentItems.length > 0 && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold mb-2">Items to Pay:</h4>
+                        {paymentItems.map((item, index) => (
+                          <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded mb-2">
+                            <div>
+                              <div className="font-medium">{item.serviceName}</div>
+                              <div className="text-sm text-gray-600">{item.description}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">SSP {item.unitPrice}</span>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removePaymentItem(index)}
+                                data-testid={`button-remove-item-${index}`}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        <div className="border-t pt-2 mt-2">
+                          <div className="flex justify-between items-center font-bold text-lg">
+                            <span>Total Amount:</span>
+                            <span className="text-green-600">SSP {getTotalAmount().toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Payment details */}
+                    {paymentItems.length > 0 && (
+                      <div className="border-t pt-4 space-y-4">
                         <div>
-                          <div className="font-medium">{item.serviceName}</div>
-                          <div className="text-sm text-gray-600">{item.description}</div>
+                          <label className="block text-sm font-medium mb-1">Payment Method</label>
+                          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                            <SelectTrigger data-testid="select-payment-method">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cash">Cash</SelectItem>
+                              <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">SSP {item.unitPrice}</span>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => removePaymentItem(index)}
-                          >
-                            Remove
-                          </Button>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Received By *</label>
+                          <Input
+                            placeholder="Enter staff name who received payment"
+                            value={receivedBy}
+                            onChange={(e) => setReceivedBy(e.target.value)}
+                            data-testid="input-received-by"
+                          />
                         </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Notes</label>
+                          <Textarea
+                            placeholder="Additional notes (optional)"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            rows={2}
+                            data-testid="textarea-notes"
+                          />
+                        </div>
+
+                        <Button
+                          onClick={handleProcessPayment}
+                          disabled={createPaymentMutation.isPending}
+                          className="w-full"
+                          size="lg"
+                          data-testid="button-process-payment"
+                        >
+                          {createPaymentMutation.isPending ? "Processing..." : `Process Payment (SSP ${getTotalAmount().toFixed(2)})`}
+                        </Button>
                       </div>
-                    ))}
-                    
-                    <div className="border-t pt-2 mt-2">
-                      <div className="flex justify-between items-center font-bold text-lg">
-                        <span>Total Amount:</span>
-                        <span className="text-green-600">SSP {getTotalAmount().toFixed(2)}</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                )}
-
-                {/* Payment details */}
-                {paymentItems.length > 0 && (
-                  <div className="border-t pt-4 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Payment Method</label>
-                      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cash">Cash</SelectItem>
-                          <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                          <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Received By *</label>
-                      <Input
-                        placeholder="Enter staff name who received payment"
-                        value={receivedBy}
-                        onChange={(e) => setReceivedBy(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Notes</label>
-                      <Textarea
-                        placeholder="Additional notes (optional)"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        rows={2}
-                      />
-                    </div>
-
-                    <Button
-                      onClick={handleProcessPayment}
-                      disabled={createPaymentMutation.isPending}
-                      className="w-full"
-                      size="lg"
-                    >
-                      {createPaymentMutation.isPending ? "Processing..." : `Process Payment (SSP ${getTotalAmount().toFixed(2)})`}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
