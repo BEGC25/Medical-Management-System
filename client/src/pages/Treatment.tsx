@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1451,25 +1451,29 @@ export default function Treatment() {
                           </p>
                           
                           <div className="grid gap-4 md:grid-cols-2">
-                            <a href="/x-ray" className="block p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:shadow-md transition-shadow">
-                              <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">X-Ray Examinations</h4>
-                              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                                Order X-ray studies including chest, abdomen, spine, extremities, and more
-                              </p>
-                              <Button variant="outline" size="sm" className="w-full">
-                                Go to X-Ray Module →
-                              </Button>
-                            </a>
+                            <Link href="/xray">
+                              <div className="block p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+                                <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">X-Ray Examinations</h4>
+                                <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                                  Order X-ray studies including chest, abdomen, spine, extremities, and more
+                                </p>
+                                <div className="w-full px-4 py-2 border border-blue-300 dark:border-blue-700 rounded text-sm text-center bg-white dark:bg-gray-900">
+                                  Go to X-Ray Module →
+                                </div>
+                              </div>
+                            </Link>
                             
-                            <a href="/ultrasound" className="block p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:shadow-md transition-shadow">
-                              <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">Ultrasound Examinations</h4>
-                              <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
-                                Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo
-                              </p>
-                              <Button variant="outline" size="sm" className="w-full">
-                                Go to Ultrasound Module →
-                              </Button>
-                            </a>
+                            <Link href="/ultrasound">
+                              <div className="block p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+                                <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">Ultrasound Examinations</h4>
+                                <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+                                  Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo
+                                </p>
+                                <div className="w-full px-4 py-2 border border-purple-300 dark:border-purple-700 rounded text-sm text-center bg-white dark:bg-gray-900">
+                                  Go to Ultrasound Module →
+                                </div>
+                              </div>
+                            </Link>
                           </div>
                           
                           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">

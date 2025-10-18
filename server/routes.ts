@@ -842,7 +842,6 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
     
     // Transform lab tests to unified order format
     const labOrders = labTests
-      .filter((test: any) => test.encounterId === visitId)
       .map((test: any) => {
         const orderLine = orderLineMap.get(test.testId);
         return {
@@ -863,7 +862,6 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
     
     // Transform X-rays to unified order format
     const xrayOrders = xrays
-      .filter((xray: any) => xray.encounterId === visitId)
       .map((xray: any) => {
         const orderLine = orderLineMap.get(xray.xrayId);
         return {
@@ -884,7 +882,6 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
     
     // Transform ultrasounds to unified order format
     const ultrasoundOrders = ultrasounds
-      .filter((us: any) => us.encounterId === visitId)
       .map((us: any) => {
         const orderLine = orderLineMap.get(us.ultrasoundId);
         return {
