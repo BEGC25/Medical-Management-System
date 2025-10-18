@@ -228,7 +228,7 @@ export const pharmacyOrders = sqliteTable("pharmacy_orders", {
   dosage: text("dosage"),
   quantity: integer("quantity").notNull().default(1),
   instructions: text("instructions"), // Prescription instructions
-  status: text("status").$type<"prescribed" | "dispensed">().notNull().default("prescribed"),
+  status: text("status").$type<"prescribed" | "dispensed" | "cancelled">().notNull().default("prescribed"),
   paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
   dispensedBy: text("dispensed_by"),
   dispensedAt: text("dispensed_at"),

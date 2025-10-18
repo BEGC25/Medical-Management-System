@@ -268,6 +268,23 @@ export default function Treatment() {
     enabled: !!currentEncounter?.encounterId,
   });
 
+  // Get pharmacy orders for current patient (filtered by encounter if available)
+  const { data: allPrescriptions = [] } = useQuery<PharmacyOrder[]>({
+    queryKey: ["/api/pharmacy-orders", selectedPatient?.patientId],
+    queryFn: async () => {
+      if (!selectedPatient?.patientId) return [];
+      const response = await fetch(`/api/pharmacy-orders/${selectedPatient.patientId}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!selectedPatient?.patientId,
+  });
+
+  // Filter prescriptions to current encounter if available, otherwise show all
+  const prescriptions = currentEncounter
+    ? allPrescriptions.filter(rx => rx.encounterId === currentEncounter.encounterId)
+    : allPrescriptions;
+
   // Sync loaded visit and patient into state when visitId route is used
   useEffect(() => {
     if (loadedVisit?.encounter && loadedPatient && !selectedPatient) {
@@ -605,6 +622,30 @@ export default function Treatment() {
       toast({
         title: "Error",
         description: error.message || "Failed to submit medications",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Cancel pharmacy order mutation
+  const cancelPrescriptionMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await apiRequest("PATCH", `/api/pharmacy-orders/${orderId}`, {
+        status: "cancelled",
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] });
+      toast({
+        title: "Success",
+        description: "Prescription cancelled",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to cancel prescription",
         variant: "destructive",
       });
     },
@@ -1592,8 +1633,81 @@ export default function Treatment() {
                       {/* Medications Tab */}
                       <TabsContent value="medications" className="space-y-6">
                         <div className="space-y-4">
+                          {/* Prescribed Medications Section */}
+                          {prescriptions.length > 0 && (
+                            <div className="mb-6">
+                              <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">
+                                Prescribed Medications ({prescriptions.length})
+                              </h3>
+                              <div className="space-y-2">
+                                {prescriptions.map((rx) => (
+                                  <div 
+                                    key={rx.orderId} 
+                                    className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg"
+                                    data-testid={`prescription-${rx.orderId}`}
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <p className="font-medium text-gray-900 dark:text-white">
+                                            {rx.drugName || 'Medication'}
+                                          </p>
+                                          <Badge 
+                                            variant={rx.status === 'dispensed' ? 'default' : 'secondary'}
+                                            className={rx.status === 'dispensed' ? 'bg-green-600' : ''}
+                                          >
+                                            {rx.status}
+                                          </Badge>
+                                          <Badge 
+                                            variant={rx.paymentStatus === 'paid' ? 'default' : 'destructive'}
+                                            className={rx.paymentStatus === 'paid' ? 'bg-blue-600' : 'bg-red-600'}
+                                          >
+                                            {rx.paymentStatus}
+                                          </Badge>
+                                        </div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                          Dosage: {rx.dosage || 'As prescribed'} | Quantity: {rx.quantity}
+                                        </p>
+                                        {rx.instructions && (
+                                          <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                                            Instructions: {rx.instructions}
+                                          </p>
+                                        )}
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                          Order ID: {rx.orderId} | Prescribed: {new Date(rx.createdAt).toLocaleString()}
+                                        </p>
+                                        {rx.dispensedAt && (
+                                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                            Dispensed: {new Date(rx.dispensedAt).toLocaleString()} by {rx.dispensedBy}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {rx.status === 'prescribed' && rx.paymentStatus === 'unpaid' && (
+                                        <Button
+                                          type="button"
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() => {
+                                            if (window.confirm('Cancel this prescription?')) {
+                                              cancelPrescriptionMutation.mutate(rx.orderId);
+                                            }
+                                          }}
+                                          data-testid={`btn-cancel-${rx.orderId}`}
+                                        >
+                                          <Trash2 className="w-4 h-4 mr-1" />
+                                          Cancel
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="border-t pt-4 mt-4" />
+                            </div>
+                          )}
+
                           <div className="flex items-center justify-between">
-                            <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Medications</h3>
+                            <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                               Select drugs from inventory to create pharmacy orders
                             </p>

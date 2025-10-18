@@ -35,8 +35,13 @@ export default function Pharmacy() {
   const [selectedBatch, setSelectedBatch] = useState<string>("");
   const { toast } = useToast();
 
+  // Fetch ALL pharmacy orders
+  const { data: allPrescriptions = [], isLoading } = useQuery<PharmacyOrder[]>({
+    queryKey: ['/api/pharmacy-orders'],
+  });
+
   // Fetch paid prescriptions ready for dispensing
-  const { data: paidPrescriptions = [], isLoading } = useQuery<PaidPrescription[]>({
+  const { data: paidPrescriptions = [] } = useQuery<PaidPrescription[]>({
     queryKey: ['/api/pharmacy/prescriptions/paid'],
   });
 
@@ -46,11 +51,21 @@ export default function Pharmacy() {
     enabled: !!selectedOrder?.drugId,
   });
 
-  // Filter orders based on search
-  const filteredOrders = paidPrescriptions.filter((order) => 
+  // Split prescriptions by payment status
+  const unpaidPrescriptions = allPrescriptions.filter(
+    (rx) => rx.paymentStatus === 'unpaid' && rx.status === 'prescribed'
+  );
+  
+  const filteredPaidOrders = paidPrescriptions.filter((order) => 
     order.patient?.patientId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.patient?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.patient?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.drugName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const filteredUnpaidOrders = unpaidPrescriptions.filter((order) => 
+    order.patientId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.drugName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -175,17 +190,73 @@ export default function Pharmacy() {
         </CardContent>
       </Card>
 
+      {/* Unpaid Prescriptions - Need Payment */}
+      {filteredUnpaidOrders.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-orange-700 dark:text-orange-400 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Awaiting Payment ({filteredUnpaidOrders.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {filteredUnpaidOrders.map((order) => (
+                <div 
+                  key={order.id} 
+                  className="border border-orange-200 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4"
+                  data-testid={`order-unpaid-${order.orderId}`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          Patient: {order.patientId}
+                        </h3>
+                        <Badge className="bg-orange-600 text-white">
+                          UNPAID
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                        Order: {order.orderId} | Drug: {order.drugName || <span className="text-orange-600 font-semibold">Not specified</span>}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                        Dosage: {order.dosage || 'As prescribed'}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        Quantity: {order.quantity}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Prescribed: {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge variant="outline" className="bg-orange-100 border-orange-300 text-orange-800">
+                        Payment Required
+                      </Badge>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 text-right">
+                        Patient must pay at reception before dispensing
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Ready to Dispense - Paid Prescriptions */}
       <Card>
         <CardHeader>
           <CardTitle className="text-green-700 dark:text-green-400 flex items-center gap-2">
             <Check className="w-5 h-5" />
-            Ready to Dispense - Paid ({filteredOrders.length})
+            Ready to Dispense - Paid ({filteredPaidOrders.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {filteredOrders.map((order) => (
+            {filteredPaidOrders.map((order) => (
               <div 
                 key={order.id} 
                 className="border border-green-200 bg-green-50 dark:bg-green-900/20 rounded-lg p-4 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
@@ -237,10 +308,15 @@ export default function Pharmacy() {
               </div>
             ))}
             
-            {filteredOrders.length === 0 && (
+            {filteredPaidOrders.length === 0 && (
               <div className="text-center py-8">
                 <Pill className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500 dark:text-gray-400">No paid prescriptions ready for dispensing</p>
+                {filteredUnpaidOrders.length > 0 && (
+                  <p className="text-sm text-orange-600 dark:text-orange-400 mt-2">
+                    {filteredUnpaidOrders.length} prescription(s) awaiting payment
+                  </p>
+                )}
               </div>
             )}
           </div>
