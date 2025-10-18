@@ -26,7 +26,7 @@ export default function Treatment() {
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
   const [filterToday, setFilterToday] = useState(false);
   const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
-  const [showVisitCart, setShowVisitCart] = useState(false);
+  const [showVisitSummary, setShowVisitSummary] = useState(false);
   
   // Patient search state for PatientSearch component
   const [searchTerm, setSearchTerm] = useState("");
@@ -722,8 +722,8 @@ export default function Treatment() {
                       }}
                       data-testid="add-all-to-cart-btn"
                     >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Add All Completed to Cart
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add All Completed
                     </Button>
                   )}
                 </div>
@@ -782,12 +782,12 @@ export default function Treatment() {
                                         })}
                                         data-testid={`add-cart-lab-${test.id}`}
                                       >
-                                        <ShoppingCart className="h-3 w-3 mr-1" />
-                                        Add to Cart
+                                        <Plus className="h-3 w-3 mr-1" />
+                                        Add to Summary
                                       </Button>
                                     )}
                                     {test.orderLine.addToCart === 1 && (
-                                      <Badge variant="outline" className="bg-green-50">In Cart</Badge>
+                                      <Badge variant="outline" className="bg-green-50">Added</Badge>
                                     )}
                                   </>
                                 )}
@@ -856,12 +856,12 @@ export default function Treatment() {
                                         })}
                                         data-testid={`add-cart-xray-${xray.id}`}
                                       >
-                                        <ShoppingCart className="h-3 w-3 mr-1" />
-                                        Add to Cart
+                                        <Plus className="h-3 w-3 mr-1" />
+                                        Add to Summary
                                       </Button>
                                     )}
                                     {xray.orderLine.addToCart === 1 && (
-                                      <Badge variant="outline" className="bg-green-50">In Cart</Badge>
+                                      <Badge variant="outline" className="bg-green-50">Added</Badge>
                                     )}
                                   </>
                                 )}
@@ -930,12 +930,12 @@ export default function Treatment() {
                                         })}
                                         data-testid={`add-cart-ultrasound-${ultrasound.id}`}
                                       >
-                                        <ShoppingCart className="h-3 w-3 mr-1" />
-                                        Add to Cart
+                                        <Plus className="h-3 w-3 mr-1" />
+                                        Add to Summary
                                       </Button>
                                     )}
                                     {ultrasound.orderLine.addToCart === 1 && (
-                                      <Badge variant="outline" className="bg-green-50">In Cart</Badge>
+                                      <Badge variant="outline" className="bg-green-50">Added</Badge>
                                     )}
                                   </>
                                 )}
@@ -964,14 +964,14 @@ export default function Treatment() {
             </Card>
           )}
 
-          {/* Visit Cart - Real-time billing */}
+          {/* Visit Summary - Today's Services & Billing */}
           {selectedPatient && currentEncounter && (
             <Card className="border-l-4 border-l-green-500">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5" />
-                    Visit Cart - Today's Services
+                    <DollarSign className="h-5 w-5" />
+                    Visit Summary - Today's Services
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">
@@ -980,21 +980,21 @@ export default function Treatment() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowVisitCart(!showVisitCart)}
+                      onClick={() => setShowVisitSummary(!showVisitSummary)}
                     >
-                      {showVisitCart ? "Hide" : "Show"} Details
+                      {showVisitSummary ? "Hide" : "Show"} Details
                     </Button>
                   </div>
                 </CardTitle>
               </CardHeader>
-              {showVisitCart && (
+              {showVisitSummary && (
                 <CardContent>
                   <div className="space-y-3">
                     {orders.filter(o => o.addToCart).length === 0 ? (
                       <div className="text-center py-4 text-gray-500">
                         <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No services added to cart yet</p>
-                        <p className="text-xs mt-1">Acknowledge completed tests and add them to cart</p>
+                        <p>No services in today's visit yet</p>
+                        <p className="text-xs mt-1">Acknowledge completed tests to add them here</p>
                       </div>
                     ) : (
                       <>
@@ -1025,7 +1025,7 @@ export default function Treatment() {
                           </div>
                         ))}
                         <div className="border-t pt-3 flex justify-between items-center">
-                          <span className="font-medium">Items in Cart:</span>
+                          <span className="font-medium">Services Today:</span>
                           <span className="font-bold text-lg text-green-600 dark:text-green-400">
                             {orders.filter(o => o.addToCart).length} service(s)
                           </span>
