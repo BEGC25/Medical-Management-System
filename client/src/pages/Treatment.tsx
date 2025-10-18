@@ -38,6 +38,11 @@ export default function Treatment() {
     quantity: number;
     instructions: string;
   }>>([]);
+  const [selectedDrugId, setSelectedDrugId] = useState("");
+  const [selectedDrugName, setSelectedDrugName] = useState("");
+  const [newMedDosage, setNewMedDosage] = useState("");
+  const [newMedQuantity, setNewMedQuantity] = useState(0);
+  const [newMedInstructions, setNewMedInstructions] = useState("");
   
   // Patient search state for PatientSearch component
   const [searchTerm, setSearchTerm] = useState("");
@@ -462,6 +467,49 @@ export default function Treatment() {
       toast({
         title: "Error",
         description: "Failed to add to cart",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Submit pharmacy orders mutation
+  const submitMedicationsMutation = useMutation({
+    mutationFn: async (meds: typeof medications) => {
+      if (!selectedPatient || !currentEncounter) throw new Error("No patient or encounter");
+      
+      const pharmacyService = services.find(s => s.category === "pharmacy");
+      if (!pharmacyService) throw new Error("Pharmacy service not found");
+      
+      // Create pharmacy orders for each medication
+      const promises = meds.map(med => 
+        apiRequest("POST", "/api/pharmacy-orders", {
+          patientId: selectedPatient.patientId,
+          encounterId: currentEncounter.encounterId,
+          treatmentId: savedTreatment?.treatmentId,
+          serviceId: pharmacyService.id,
+          drugId: med.drugId,
+          drugName: med.drugName,
+          dosage: med.dosage,
+          quantity: med.quantity,
+          instructions: med.instructions,
+        })
+      );
+      
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pharmacy/prescriptions/paid"] });
+      setMedications([]);
+      toast({
+        title: "Medications Ordered",
+        description: `${medications.length} medication(s) sent to pharmacy`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit medications",
         variant: "destructive",
       });
     },
@@ -1053,16 +1101,47 @@ export default function Treatment() {
               )}
             </Card>
           )}
+          </CardContent>
 
           {/* Treatment Form */}
           {selectedPatient && (
-            <Form {...form}>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Visit Information */}
-                <div>
-                  <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
-                    Visit Information
-                  </h3>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Clinical Documentation & Orders
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+                    <TabsTrigger value="notes" data-testid="tab-notes">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Visit Notes
+                    </TabsTrigger>
+                    <TabsTrigger value="tests" data-testid="tab-tests" disabled>
+                      Lab Tests
+                    </TabsTrigger>
+                    <TabsTrigger value="imaging" data-testid="tab-imaging" disabled>
+                      Imaging
+                    </TabsTrigger>
+                    <TabsTrigger value="medications" data-testid="tab-medications">
+                      <Pill className="h-4 w-4 mr-2" />
+                      Medications
+                      {medications.length > 0 && (
+                        <Badge className="ml-2 bg-green-600">{medications.length}</Badge>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <Form {...form}>
+                    <form onSubmit={handleSubmit} className="mt-6">
+                      <TabsContent value="notes" className="space-y-6">
+                        {/* Visit Information */}
+                        <div>
+                          <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
+                            Visit Information
+                          </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
@@ -1331,27 +1410,173 @@ export default function Treatment() {
                     )}
                   />
                 </div>
+                      </TabsContent>
 
-                {/* Form Actions */}
-                <div className="flex gap-4 pt-6 border-t">
-                  <Button 
-                    type="submit" 
-                    disabled={createTreatmentMutation.isPending}
-                    className="bg-medical-blue hover:bg-blue-700"
-                    data-testid="save-treatment-btn"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {createTreatmentMutation.isPending ? "Saving..." : "Save Treatment Record"}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    onClick={generatePrescription}
-                    className="bg-health-green hover:bg-green-700"
-                    disabled={!selectedPatient || !form.watch("treatmentPlan")}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Generate Prescription
-                  </Button>
+                      {/* Medications Tab */}
+                      <TabsContent value="medications" className="space-y-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Medications</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Select drugs from inventory to create pharmacy orders
+                            </p>
+                          </div>
+
+                          {/* Medication Selection */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Select Drug</label>
+                              <Select 
+                                value={selectedDrugId} 
+                                onValueChange={(value) => {
+                                  setSelectedDrugId(value);
+                                  const drug = drugs.find(d => d.drugId === value);
+                                  if (drug) setSelectedDrugName(drug.genericName);
+                                }}
+                              >
+                                <SelectTrigger data-testid="select-drug">
+                                  <SelectValue placeholder="Choose a medication..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {drugs.map(drug => (
+                                    <SelectItem key={drug.drugId} value={drug.drugId}>
+                                      {drug.genericName} {drug.brandName ? `(${drug.brandName})` : ""} - {drug.strength}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Dosage Instructions</label>
+                              <Input
+                                placeholder="e.g., 1 tablet twice daily"
+                                value={newMedDosage}
+                                onChange={(e) => setNewMedDosage(e.target.value)}
+                                data-testid="input-dosage"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Quantity</label>
+                              <Input
+                                type="number"
+                                min="1"
+                                placeholder="e.g., 30"
+                                value={newMedQuantity}
+                                onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)}
+                                data-testid="input-quantity"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Additional Instructions</label>
+                              <Input
+                                placeholder="e.g., Take with food"
+                                value={newMedInstructions}
+                                onChange={(e) => setNewMedInstructions(e.target.value)}
+                                data-testid="input-instructions"
+                              />
+                            </div>
+                          </div>
+
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Please fill in drug, dosage, and quantity",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+
+                              setMedications([...medications, {
+                                drugId: selectedDrugId,
+                                drugName: selectedDrugName,
+                                dosage: newMedDosage,
+                                quantity: newMedQuantity,
+                                instructions: newMedInstructions,
+                              }]);
+
+                              // Reset form
+                              setSelectedDrugId("");
+                              setSelectedDrugName("");
+                              setNewMedDosage("");
+                              setNewMedQuantity(0);
+                              setNewMedInstructions("");
+
+                              toast({
+                                title: "Added",
+                                description: "Medication added to order list",
+                              });
+                            }}
+                            data-testid="btn-add-medication"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add to Order List
+                          </Button>
+
+                          {/* Medications List */}
+                          {medications.length > 0 && (
+                            <div className="space-y-2">
+                              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4>
+                              <div className="space-y-2">
+                                {medications.map((med, idx) => (
+                                  <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg">
+                                    <div className="flex-1">
+                                      <p className="font-medium">{med.drugName}</p>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        Dosage: {med.dosage} | Quantity: {med.quantity}
+                                      </p>
+                                      {med.instructions && (
+                                        <p className="text-sm text-gray-500 dark:text-gray-500">
+                                          Instructions: {med.instructions}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setMedications(medications.filter((_, i) => i !== idx));
+                                      }}
+                                      data-testid={`btn-remove-med-${idx}`}
+                                    >
+                                      <Trash2 className="w-4 h-4 text-red-600" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <Button
+                                type="button"
+                                onClick={() => submitMedicationsMutation.mutate(medications)}
+                                disabled={submitMedicationsMutation.isPending}
+                                className="w-full bg-green-600 hover:bg-green-700"
+                                data-testid="btn-submit-medications"
+                              >
+                                <Pill className="w-4 h-4 mr-2" />
+                                {submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+
+                      {/* Form Actions - Outside tabs but inside form */}
+                      <div className="flex gap-4 pt-6 mt-6 border-t">
+                        <Button 
+                          type="submit" 
+                          disabled={createTreatmentMutation.isPending}
+                          className="bg-medical-blue hover:bg-blue-700"
+                          data-testid="save-treatment-btn"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          {createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}
+                        </Button>
                   {currentEncounter && currentEncounter.status === 'open' && (
                     <Button 
                       type="button" 
@@ -1364,19 +1589,21 @@ export default function Treatment() {
                       {closeVisitMutation.isPending ? "Closing..." : "Close Visit"}
                     </Button>
                   )}
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleNewTreatment}
-                    className="ml-auto"
-                  >
-                    New Treatment
-                  </Button>
-                </div>
-              </form>
-            </Form>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={handleNewTreatment}
+                          className="ml-auto"
+                        >
+                          New Treatment
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </Tabs>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
         </Card>
       )}
 
