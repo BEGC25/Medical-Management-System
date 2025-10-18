@@ -126,15 +126,15 @@ export default function Treatment() {
 
   // Load patient for the loaded visit
   const { data: loadedPatient } = useQuery({
-    queryKey: ["/api/patients", loadedVisit?.patientId],
+    queryKey: ["/api/patients", loadedVisit?.encounter?.patientId],
     queryFn: async () => {
-      if (!loadedVisit) return null;
-      const response = await fetch(`/api/patients?id=${loadedVisit.patientId}`);
+      if (!loadedVisit?.encounter) return null;
+      const response = await fetch(`/api/patients?id=${loadedVisit.encounter.patientId}`);
       if (!response.ok) return null;
       const patients = await response.json();
       return patients[0] || null;
     },
-    enabled: !!loadedVisit,
+    enabled: !!loadedVisit?.encounter,
   });
 
   // Get today's encounter for selected patient (legacy flow)
@@ -164,15 +164,16 @@ export default function Treatment() {
   });
 
   // Get unified orders for this visit
+  const activeEncounterId = visitId ? loadedVisit?.encounter?.encounterId : currentEncounter?.encounterId;
   const { data: orders = [] } = useQuery<any[]>({
-    queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"],
+    queryKey: ["/api/visits", activeEncounterId, "orders"],
     queryFn: async () => {
-      if (!currentEncounter) return [];
-      const response = await fetch(`/api/visits/${currentEncounter.encounterId}/orders`);
+      if (!activeEncounterId) return [];
+      const response = await fetch(`/api/visits/${activeEncounterId}/orders`);
       if (!response.ok) return [];
       return response.json();
     },
-    enabled: !!currentEncounter,
+    enabled: !!activeEncounterId,
   });
 
   const labTests = orders.filter(o => o.type === 'lab');
@@ -194,9 +195,9 @@ export default function Treatment() {
 
   // Sync loaded visit and patient into state when visitId route is used
   useEffect(() => {
-    if (loadedVisit && loadedPatient && !selectedPatient) {
+    if (loadedVisit?.encounter && loadedPatient && !selectedPatient) {
       setSelectedPatient(loadedPatient);
-      setCurrentEncounter(loadedVisit);
+      setCurrentEncounter(loadedVisit.encounter);
     }
   }, [loadedVisit, loadedPatient]);
 
