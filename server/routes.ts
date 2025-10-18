@@ -849,14 +849,15 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
       .map((test: any) => {
         const orderLine = orderLineMap.get(test.testId);
         return {
+          ...test,
           orderId: orderLine?.id || `lab-${test.testId}`,
           visitId,
           type: 'lab',
-          name: test.testType || 'Lab Test',
-          status: test.status || 'pending',
+          name: test.category || 'Lab Test',
           flags: test.clinicalSignificance || null,
           snippet: test.criticalFindings || test.interpretation || null,
           resultUrl: `/api/lab-tests/${test.testId}`,
+          orderLine,
           acknowledgedAt: orderLine?.acknowledgedAt || null,
           acknowledgedBy: orderLine?.acknowledgedBy || null,
           addToCart: orderLine?.addToCart || false,
@@ -867,16 +868,17 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
     // Transform X-rays to unified order format
     const xrayOrders = xrays
       .map((xray: any) => {
-        const orderLine = orderLineMap.get(xray.xrayId);
+        const orderLine = orderLineMap.get(xray.examId);
         return {
-          orderId: orderLine?.id || `xray-${xray.xrayId}`,
+          ...xray,
+          orderId: orderLine?.id || `xray-${xray.examId}`,
           visitId,
           type: 'xray',
-          name: xray.examinationType || 'X-Ray',
-          status: xray.status || 'pending',
+          name: xray.examType || 'X-Ray',
           flags: null,
           snippet: xray.impression || null,
-          resultUrl: `/api/xrays/${xray.xrayId}`,
+          resultUrl: `/api/xray-exams/${xray.examId}`,
+          orderLine,
           acknowledgedAt: orderLine?.acknowledgedAt || null,
           acknowledgedBy: orderLine?.acknowledgedBy || null,
           addToCart: orderLine?.addToCart || false,
@@ -887,16 +889,17 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
     // Transform ultrasounds to unified order format
     const ultrasoundOrders = ultrasounds
       .map((us: any) => {
-        const orderLine = orderLineMap.get(us.ultrasoundId);
+        const orderLine = orderLineMap.get(us.examId);
         return {
-          orderId: orderLine?.id || `ultrasound-${us.ultrasoundId}`,
+          ...us,
+          orderId: orderLine?.id || `ultrasound-${us.examId}`,
           visitId,
           type: 'ultrasound',
           name: us.examinationType || 'Ultrasound',
-          status: us.status || 'pending',
           flags: null,
           snippet: us.impression || null,
-          resultUrl: `/api/ultrasounds/${us.ultrasoundId}`,
+          resultUrl: `/api/ultrasound-exams/${us.examId}`,
+          orderLine,
           acknowledgedAt: orderLine?.acknowledgedAt || null,
           acknowledgedBy: orderLine?.acknowledgedBy || null,
           addToCart: orderLine?.addToCart || false,

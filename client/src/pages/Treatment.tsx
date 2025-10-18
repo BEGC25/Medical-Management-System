@@ -811,7 +811,7 @@ export default function Treatment() {
                       <h4 className="font-semibold mb-2">Laboratory Tests</h4>
                       <div className="space-y-2">
                         {labTests.map((test: any) => (
-                          <div key={test.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div key={test.testId || test.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                             <div className="flex justify-between items-start gap-3">
                               <div className="flex-1">
                                 <p className="font-medium">{test.category} - {test.tests}</p>
@@ -885,7 +885,7 @@ export default function Treatment() {
                       <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
                       <div className="space-y-2">
                         {xrays.map((xray: any) => (
-                          <div key={xray.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div key={xray.examId || xray.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                             <div className="flex justify-between items-start gap-3">
                               <div className="flex-1">
                                 <p className="font-medium">{xray.bodyPart}</p>
@@ -959,7 +959,7 @@ export default function Treatment() {
                       <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
                       <div className="space-y-2">
                         {ultrasounds.map((ultrasound: any) => (
-                          <div key={ultrasound.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div key={ultrasound.examId || ultrasound.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                             <div className="flex justify-between items-start gap-3">
                               <div className="flex-1">
                                 <p className="font-medium">{ultrasound.examType}</p>
