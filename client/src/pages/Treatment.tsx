@@ -201,6 +201,15 @@ export default function Treatment() {
     }
   }, [loadedVisit, loadedPatient]);
 
+  // Safety check: Ensure patient matches encounter
+  useEffect(() => {
+    if (selectedPatient && currentEncounter && selectedPatient.patientId !== currentEncounter.patientId) {
+      console.warn(`Patient mismatch detected! Selected: ${selectedPatient.patientId}, Encounter: ${currentEncounter.patientId}`);
+      // Redirect to the correct encounter for this patient
+      window.location.href = `/treatment/new?patientId=${selectedPatient.patientId}`;
+    }
+  }, [selectedPatient, currentEncounter]);
+
   // Populate form with existing treatment data when it loads
   useEffect(() => {
     if (existingTreatment && selectedPatient) {
