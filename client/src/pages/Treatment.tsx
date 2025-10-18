@@ -20,6 +20,80 @@ import { insertTreatmentSchema, type InsertTreatment, type Patient, type Treatme
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
+// Helper function to parse JSON safely
+function parseJSON<T = any>(v: any, fallback: T): T {
+  try {
+    return JSON.parse(v ?? "");
+  } catch {
+    return fallback;
+  }
+}
+
+// Result fields configuration (same as Laboratory page)
+const resultFields: Record<
+  string,
+  Record<
+    string,
+    {
+      type: "number" | "text" | "select" | "multiselect";
+      unit?: string;
+      range?: string;
+      normal?: string;
+      options?: string[];
+    }
+  >
+> = {
+  "Complete Blood Count (CBC)": {
+    "WBC": { type: "number", unit: "x10³/µL", normal: "4.0-11.0" },
+    "RBC": { type: "number", unit: "x10⁶/µL", normal: "4.5-5.5" },
+    "Hemoglobin": { type: "number", unit: "g/dL", normal: "12-16" },
+    "Hematocrit": { type: "number", unit: "%", normal: "36-46" },
+    "Platelets": { type: "number", unit: "x10³/µL", normal: "150-400" },
+    "MCV": { type: "number", unit: "fL", normal: "80-100" },
+    "MCH": { type: "number", unit: "pg", normal: "27-32" },
+    "MCHC": { type: "number", unit: "g/dL", normal: "32-36" },
+  },
+  "Blood Film for Malaria (BFFM)": {
+    "Malaria Parasites": { type: "select", options: ["Not seen", "P. falciparum", "P. vivax", "P. malariae", "P. ovale"], normal: "Not seen" },
+    "Parasitemia": { type: "select", options: ["None", "+", "++", "+++"], normal: "None" },
+    "Gametocytes": { type: "select", options: ["Not seen", "Seen"], normal: "Not seen" },
+  },
+  "Urine Analysis": {
+    "Appearance": { type: "select", options: ["Clear", "Turbid", "Bloody", "Cloudy"], normal: "Clear" },
+    "Protein": { type: "select", options: ["Negative", "Trace", "+", "++", "+++"], normal: "Negative" },
+    "Glucose": { type: "select", options: ["Negative", "+", "++", "+++"], normal: "Negative" },
+    "Acetone": { type: "select", options: ["Negative", "Positive"], normal: "Negative" },
+    "Hb pigment": { type: "select", options: ["Negative", "Positive"], normal: "Negative" },
+    "Leucocytes": { type: "select", options: ["Negative", "+", "++", "+++"], normal: "Negative" },
+    "Nitrite": { type: "select", options: ["Negative", "Positive"], normal: "Negative" },
+    "PH": { type: "number", unit: "", range: "5.0-8.0", normal: "6.0-7.5" },
+    "Specific Gravity": { type: "number", unit: "", range: "1.003-1.030", normal: "1.010-1.025" },
+    "Bilirubin": { type: "select", options: ["Negative", "Positive"], normal: "Negative" },
+  },
+  "Liver Function Test (LFT)": {
+    "Total Bilirubin": { type: "number", unit: "mg/dL", normal: "0.3-1.2" },
+    "Direct Bilirubin": { type: "number", unit: "mg/dL", normal: "0-0.3" },
+    "ALT (SGPT)": { type: "number", unit: "U/L", normal: "7-56" },
+    "AST (SGOT)": { type: "number", unit: "U/L", normal: "10-40" },
+    "ALP": { type: "number", unit: "U/L", normal: "44-147" },
+    "Total Protein": { type: "number", unit: "g/dL", normal: "6.0-8.3" },
+    "Albumin": { type: "number", unit: "g/dL", normal: "3.5-5.0" },
+  },
+  "Renal Function Test (RFT)": {
+    "Urea": { type: "number", unit: "mg/dL", normal: "15-40" },
+    "Creatinine": { type: "number", unit: "mg/dL", normal: "0.7-1.3" },
+    "Uric Acid": { type: "number", unit: "mg/dL", normal: "3.5-7.2" },
+    "Sodium": { type: "number", unit: "mmol/L", normal: "135-145" },
+    "Potassium": { type: "number", unit: "mmol/L", normal: "3.5-5.0" },
+    "Chloride": { type: "number", unit: "mmol/L", normal: "98-106" },
+  },
+};
+
+// Helper function to join classes
+function cx(...cls: (string | boolean | null | undefined)[]) {
+  return cls.filter(Boolean).join(" ");
+}
+
 export default function Treatment() {
   const { visitId } = useParams<{ visitId?: string }>();
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -1713,27 +1787,16 @@ export default function Treatment() {
       {/* Lab Results Modal */}
       {viewingLabTest && (
         <Dialog open={!!viewingLabTest} onOpenChange={() => setViewingLabTest(null)}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Lab Test Results
+                Lab Test Results - {viewingLabTest.testId}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {/* Test Header */}
+              {/* Header Info */}
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="text-lg font-semibold capitalize">{viewingLabTest.category}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Test ID: {viewingLabTest.testId}
-                    </p>
-                  </div>
-                  <Badge variant="default" className="bg-green-600">
-                    {viewingLabTest.status}
-                  </Badge>
-                </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Requested:</span> {new Date(viewingLabTest.requestedDate).toLocaleDateString()}
@@ -1755,15 +1818,12 @@ export default function Treatment() {
               {/* Tests Performed */}
               <div>
                 <h4 className="font-semibold mb-2">Tests Performed:</h4>
-                <div className="bg-white dark:bg-gray-900 p-3 rounded border">
-                  {(() => {
-                    const testNames = Array.isArray(viewingLabTest.tests) 
-                      ? viewingLabTest.tests 
-                      : (typeof viewingLabTest.tests === 'string' ? JSON.parse(viewingLabTest.tests) : []);
-                    return testNames.map((testName: string, idx: number) => (
-                      <div key={idx} className="py-1">• {testName}</div>
-                    ));
-                  })()}
+                <div className="flex flex-wrap gap-2">
+                  {parseJSON<string[]>(viewingLabTest.tests, []).map((test, i) => (
+                    <span key={i} className="inline-block bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded text-xs font-medium">
+                      {test}
+                    </span>
+                  ))}
                 </div>
               </div>
 
@@ -1775,71 +1835,137 @@ export default function Treatment() {
                 </div>
               )}
 
-              {/* Results */}
+              {/* Clinical Interpretation */}
+              {(() => {
+                const results = parseJSON<Record<string, Record<string, string>>>(viewingLabTest.results, {});
+                const criticalFindings: string[] = [];
+                const warnings: string[] = [];
+
+                // Analyze results for critical findings
+                Object.entries(results).forEach(([testName, testData]) => {
+                  const fields = resultFields[testName];
+                  if (!fields) return;
+
+                  Object.entries(testData).forEach(([fieldName, value]) => {
+                    const config = fields[fieldName];
+                    if (!config || !value) return;
+
+                    const numValue = parseFloat(value);
+                    
+                    // Check for critical values based on test type
+                    if (testName === "Complete Blood Count (CBC)") {
+                      if (fieldName === "Hemoglobin" && numValue < 7) {
+                        criticalFindings.push(`🔴 SEVERE anemia (Hb: ${value} g/dL) - Requires urgent blood transfusion consideration`);
+                      } else if (fieldName === "Hemoglobin" && numValue < 10) {
+                        warnings.push(`⚠️ Moderate anemia (Hb: ${value} g/dL) - Iron supplementation recommended`);
+                      }
+                      if (fieldName === "WBC" && numValue > 15) {
+                        warnings.push(`⚠️ Elevated WBC (${value} x10³/µL) - Possible infection or inflammation`);
+                      }
+                      if (fieldName === "Platelets" && numValue < 50) {
+                        criticalFindings.push(`🔴 CRITICAL thrombocytopenia (Platelets: ${value} x10³/µL) - Bleeding risk, avoid IM injections`);
+                      }
+                    }
+
+                    if (testName === "Blood Film for Malaria (BFFM)") {
+                      if (fieldName === "Malaria Parasites" && value !== "Not seen" && value !== "None") {
+                        criticalFindings.push(`🔴 POSITIVE for ${value} malaria - Requires immediate treatment`);
+                      }
+                    }
+
+                    if (testName === "Liver Function Test (LFT)") {
+                      if (fieldName === "Total Bilirubin" && numValue > 3) {
+                        warnings.push(`⚠️ Severe jaundice (Bilirubin: ${value} mg/dL) - Hepatic or hemolytic condition`);
+                      }
+                      if (fieldName === "ALT (SGPT)" && numValue > 200) {
+                        warnings.push(`⚠️ Significant liver enzyme elevation (ALT: ${value} U/L) - Hepatocellular injury`);
+                      }
+                    }
+
+                    if (testName === "Renal Function Test (RFT)") {
+                      if (fieldName === "Creatinine" && numValue > 2) {
+                        criticalFindings.push(`🔴 Elevated creatinine (${value} mg/dL) - Possible renal impairment`);
+                      }
+                      if (fieldName === "Potassium" && (numValue > 6 || numValue < 2.5)) {
+                        criticalFindings.push(`🔴 CRITICAL potassium level (${value} mmol/L) - Cardiac arrhythmia risk`);
+                      }
+                    }
+                  });
+                });
+
+                return (criticalFindings.length > 0 || warnings.length > 0) ? (
+                  <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-4">
+                    <h2 className="text-lg font-bold mb-2 text-yellow-900 dark:text-yellow-100 flex items-center">
+                      <span className="text-2xl mr-2">ℹ️</span> Clinical Interpretation
+                    </h2>
+                    {criticalFindings.length > 0 && (
+                      <div className="mb-3">
+                        <p className="font-semibold text-red-800 dark:text-red-300 mb-2">Critical Findings Requiring Attention:</p>
+                        <div className="space-y-1">
+                          {criticalFindings.map((finding, i) => (
+                            <div key={i} className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-600 p-2 text-sm text-red-900 dark:text-red-100">
+                              {finding}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {warnings.length > 0 && (
+                      <div className="space-y-1">
+                        {warnings.map((warning, i) => (
+                          <div key={i} className="bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-600 p-2 text-sm text-yellow-900 dark:text-yellow-100">
+                            {warning}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Laboratory Results */}
               {viewingLabTest.results && (
                 <div>
-                  <h4 className="font-semibold mb-2">Results:</h4>
-                  <div className="bg-white dark:bg-gray-900 p-4 rounded border">
-                    {(() => {
-                      try {
-                        const results = typeof viewingLabTest.results === 'string' 
-                          ? JSON.parse(viewingLabTest.results) 
-                          : viewingLabTest.results;
-                        
-                        return (
-                          <div className="space-y-3">
-                            {Object.entries(results).map(([testName, testResults]: [string, any]) => (
-                              <div key={testName} className="border-l-4 border-blue-500 pl-4">
-                                <h5 className="font-semibold text-base mb-2">{testName}</h5>
-                                <div className="space-y-1">
-                                  {typeof testResults === 'object' && testResults !== null ? (
-                                    Object.entries(testResults).map(([param, value]: [string, any]) => (
-                                      <div key={param} className="grid grid-cols-2 gap-4 py-1">
-                                        <span className="text-gray-600 dark:text-gray-400">{param}:</span>
-                                        <span className="font-medium">{String(value)}</span>
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="font-medium">{String(testResults)}</div>
-                                  )}
+                  <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Laboratory Results</h2>
+                  {(() => {
+                    const results = parseJSON<Record<string, Record<string, string>>>(viewingLabTest.results, {});
+                    return Object.entries(results).map(([testName, testData]) => {
+                      const fields = resultFields[testName];
+                      return (
+                        <div key={testName} className="mb-6 border border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                          <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-400 mb-3">{testName}</h3>
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                            {Object.entries(testData).map(([fieldName, value]) => {
+                              const config = fields?.[fieldName];
+                              const isNormal = config?.normal === value;
+                              const isAbnormal = config?.normal && config.normal !== value;
+                              
+                              return (
+                                <div key={fieldName} className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-1">
+                                  <span className="font-medium text-gray-700 dark:text-gray-300">{fieldName}:</span>
+                                  <span className={cx(
+                                    "font-semibold",
+                                    isNormal && "text-green-600 dark:text-green-400",
+                                    isAbnormal && value && value !== "Not seen" && value !== "Negative" && "text-red-600 dark:text-red-400"
+                                  )}>
+                                    {value} {config?.unit || ""}
+                                  </span>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
-                        );
-                      } catch {
-                        return <div className="whitespace-pre-line">{viewingLabTest.results}</div>;
-                      }
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {/* Normal Values Reference */}
-              {viewingLabTest.normalValues && (
-                <div>
-                  <h4 className="font-semibold mb-2">Normal Values (Reference):</h4>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800 whitespace-pre-line">
-                    {viewingLabTest.normalValues}
-                  </div>
-                </div>
-              )}
-
-              {/* Clinical Significance */}
-              {viewingLabTest.clinicalSignificance && (
-                <div>
-                  <h4 className="font-semibold mb-2 text-orange-600">Clinical Significance:</h4>
-                  <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded border border-orange-200 dark:border-orange-800">
-                    {viewingLabTest.clinicalSignificance}
-                  </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               )}
 
               {/* Technician Notes */}
               {viewingLabTest.technicianNotes && (
                 <div>
-                  <h4 className="font-semibold mb-2">Technician Notes:</h4>
-                  <p className="bg-gray-50 dark:bg-gray-800 p-3 rounded border italic">{viewingLabTest.technicianNotes}</p>
+                  <p className="font-semibold">Technician Notes:</p>
+                  <p className="text-gray-700 dark:text-gray-300">{viewingLabTest.technicianNotes}</p>
                 </div>
               )}
             </div>
