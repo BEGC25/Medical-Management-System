@@ -1671,6 +1671,15 @@ async function seedDefaultServices() {
         isActive: true,
       });
 
+      await storage.createService({
+        code: "PHARM-DISPENSE",
+        name: "Pharmacy Dispensing",
+        category: "pharmacy",
+        description: "General pharmacy medication dispensing fee",
+        price: 5.00,
+        isActive: true,
+      });
+
       console.log("✓ Default services seeded successfully");
     }
   } catch (error) {
