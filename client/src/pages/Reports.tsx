@@ -371,7 +371,7 @@ export default function Reports() {
       </Card>
 
       {/* Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -428,6 +428,21 @@ export default function Reports() {
                 </p>
               </div>
               <Scan className="text-purple-200 text-3xl w-8 h-8" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-teal-500 to-teal-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-teal-100 text-sm">Ultrasounds</p>
+                <p className="text-3xl font-bold">{stats?.ultrasounds || 0}</p>
+                <p className="text-teal-100 text-sm">
+                  Scans performed
+                </p>
+              </div>
+              <Stethoscope className="text-teal-200 text-3xl w-8 h-8" />
             </div>
           </CardContent>
         </Card>
