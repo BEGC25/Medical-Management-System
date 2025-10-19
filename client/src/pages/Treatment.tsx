@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, Link } from "wouter";
-import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2, Edit, X } from "lucide-react";
+import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2, Edit, X, AlertTriangle, Heart, History, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -284,6 +284,19 @@ export default function Treatment() {
       const response = await fetch(`/api/pharmacy-orders/${selectedPatient.patientId}`);
       if (!response.ok) return [];
       return response.json();
+    },
+    enabled: !!selectedPatient?.patientId,
+  });
+
+  // Get recent treatments/visits for this patient
+  const { data: recentTreatments = [] } = useQuery<Treatment[]>({
+    queryKey: ["/api/treatments", "patient", selectedPatient?.patientId],
+    queryFn: async () => {
+      if (!selectedPatient?.patientId) return [];
+      const response = await fetch(`/api/treatments?patientId=${selectedPatient.patientId}`);
+      if (!response.ok) return [];
+      const treatments = await response.json();
+      return treatments.slice(0, 3); // Get last 3 visits
     },
     enabled: !!selectedPatient?.patientId,
   });
@@ -970,6 +983,116 @@ export default function Treatment() {
               </div>
             )}
           </div>
+
+          {/* Medical Alert Panel - CRITICAL INFORMATION */}
+          {selectedPatient && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {/* Allergies - CRITICAL */}
+              <Card className={`${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'border-2 border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200'}`}>
+                <CardHeader className="pb-3">
+                  <CardTitle className={`flex items-center gap-2 text-base ${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'text-red-700 dark:text-red-400' : ''}`}>
+                    <AlertTriangle className={`h-5 w-5 ${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'text-red-600' : 'text-gray-400'}`} />
+                    Allergies
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedPatient.allergies && selectedPatient.allergies.trim() ? (
+                    <div className="bg-white dark:bg-red-950/50 p-3 rounded-lg border border-red-300 dark:border-red-700">
+                      <p className="text-red-900 dark:text-red-200 font-medium whitespace-pre-line">
+                        {selectedPatient.allergies}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 italic">No known allergies</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Medical History */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Heart className="h-5 w-5 text-pink-600" />
+                    Medical History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedPatient.medicalHistory && selectedPatient.medicalHistory.trim() ? (
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                      <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">
+                        {selectedPatient.medicalHistory}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 italic">No medical history recorded</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Visits */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <History className="h-5 w-5 text-blue-600" />
+                    Recent Visits ({recentTreatments.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {recentTreatments.length > 0 ? (
+                    <div className="space-y-2">
+                      {recentTreatments.map((treatment, idx) => (
+                        <div key={treatment.treatmentId} className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm border-l-2 border-blue-400">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {new Date(treatment.visitDate).toLocaleDateString()}
+                            </span>
+                            <Badge variant="outline" className="text-xs">{treatment.visitType}</Badge>
+                          </div>
+                          {treatment.diagnosis && (
+                            <p className="text-gray-700 dark:text-gray-300 text-xs">
+                              <span className="font-medium">Dx:</span> {treatment.diagnosis}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 italic">No previous visits</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Active Medications */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Pill className="h-5 w-5 text-green-600" />
+                    Active Medications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {allPrescriptions.filter(rx => rx.status === 'dispensed').length > 0 ? (
+                    <div className="space-y-2">
+                      {allPrescriptions.filter(rx => rx.status === 'dispensed').slice(0, 5).map((rx) => (
+                        <div key={rx.orderId} className="bg-green-50 dark:bg-green-900/20 p-2 rounded text-sm border-l-2 border-green-500">
+                          <p className="font-medium text-gray-900 dark:text-white">{rx.drugName}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {rx.dosage} • {rx.instructions}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            <Clock className="h-3 w-3 inline mr-1" />
+                            {new Date(rx.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 italic">No active medications</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Orders & Results Panel */}
           {selectedPatient && currentEncounter && (
