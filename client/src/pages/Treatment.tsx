@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, Link } from "wouter";
-import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2, Edit } from "lucide-react";
+import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2, Edit, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -881,51 +881,88 @@ export default function Treatment() {
             <CardTitle>Treatment Records</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Patient Selection */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Select Patient</h3>
+            {/* Patient Selection - Modernized */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 mb-6 shadow-sm border border-blue-100 dark:border-gray-700">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Choose a patient to begin documenting their visit</p>
+              </div>
+            </div>
             
             {!selectedPatient ? (
-              <PatientSearch 
-                onSelectPatient={handlePatientSelect}
-                onViewPatient={handlePatientSelect}
-                showActions={false}
-                viewMode="all"
-                selectedDate=""
-                searchTerm={searchTerm}
-                onSearchTermChange={setSearchTerm}
-                shouldSearch={shouldSearch}
-                onShouldSearchChange={setShouldSearch}
-              />
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-1 shadow-sm">
+                <PatientSearch 
+                  onSelectPatient={handlePatientSelect}
+                  onViewPatient={handlePatientSelect}
+                  showActions={false}
+                  viewMode="all"
+                  selectedDate=""
+                  searchTerm={searchTerm}
+                  onSearchTermChange={setSearchTerm}
+                  shouldSearch={shouldSearch}
+                  onShouldSearchChange={setShouldSearch}
+                />
+              </div>
             ) : (
-              <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200">
-                      {selectedPatient.firstName} {selectedPatient.lastName}
-                      {savedTreatment && (
-                        <Badge className="ml-2 bg-green-100 text-green-800">
-                          Saved: {savedTreatment.treatmentId}
-                        </Badge>
-                      )}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      ID: {selectedPatient.patientId} | 
-                      Age: {getAge(selectedPatient.age || '')} | 
-                      {selectedPatient.gender && ` ${selectedPatient.gender}`}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Contact: {selectedPatient.phoneNumber || 'N/A'}
-                    </p>
+              <div className="p-5 bg-white dark:bg-gray-900 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-md">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* Patient Avatar */}
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      {selectedPatient.firstName?.[0]}{selectedPatient.lastName?.[0]}
+                    </div>
+                    
+                    {/* Patient Info */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-gray-900 dark:text-white text-lg">
+                          {selectedPatient.firstName} {selectedPatient.lastName}
+                        </h4>
+                        {savedTreatment && (
+                          <Badge className="bg-green-600 text-white shadow-sm">
+                            Saved: {savedTreatment.treatmentId}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">ID:</span> 
+                          <span className="font-mono">{selectedPatient.patientId}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">Age:</span> 
+                          {getAge(selectedPatient.age || '')}
+                        </span>
+                        {selectedPatient.gender && (
+                          <span className="flex items-center gap-1">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Gender:</span> 
+                            {selectedPatient.gender}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span> 
+                          {selectedPatient.phoneNumber || 'N/A'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <Badge className="bg-health-green text-white">Selected</Badge>
+                  
+                  {/* Actions */}
+                  <div className="flex flex-col gap-2">
+                    <Badge className="bg-green-600 text-white shadow-sm whitespace-nowrap">
+                      ✓ Selected
+                    </Badge>
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="ml-2"
+                      className="whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-900/20"
                       onClick={() => setSelectedPatient(null)}
                     >
+                      <X className="h-4 w-4 mr-1" />
                       Change
                     </Button>
                   </div>
