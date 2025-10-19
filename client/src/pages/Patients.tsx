@@ -186,10 +186,13 @@ export default function Patients() {
 
           if (encounterResponse.ok) {
             const encounter = await encounterResponse.json();
-            const consultationService = (servicesList as any[]).find(
-              (s) =>
-                s.category === "consultation" && s.name.includes("General"),
+            // Find active consultation services and get the one with highest price (most current)
+            const consultationServices = (servicesList as any[]).filter(
+              (s) => s.category === "consultation" && s.is_active
             );
+            const consultationService = consultationServices.sort(
+              (a, b) => parseFloat(b.price) - parseFloat(a.price)
+            )[0];
             
             if (consultationService) {
               // ALWAYS create consultation order line (unpaid by default)
@@ -854,9 +857,13 @@ export default function Patients() {
 
                 {/* Consultation Service & Payment */}
                 {!editingPatient && billingSettings && servicesList && (() => {
-                  const consultationService = (servicesList as any[]).find(
-                    (s) => s.category === "consultation" && s.name.includes("General")
+                  // Find active consultation services and get the one with highest price (most current)
+                  const consultationServices = (servicesList as any[]).filter(
+                    (s) => s.category === "consultation" && s.is_active
                   );
+                  const consultationService = consultationServices.sort(
+                    (a, b) => parseFloat(b.price) - parseFloat(a.price)
+                  )[0];
                   const consultationFee = consultationService ? parseFloat(consultationService.price) : 0;
                   
                   return (
