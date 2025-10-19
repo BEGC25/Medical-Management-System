@@ -476,10 +476,12 @@ router.put("/api/services/:id", async (req, res) => {
 // Payments
 router.post("/api/payments", async (req, res) => {
   try {
-    const { patientId, items, paymentMethod, receivedBy, notes } = req.body;
+    const { patientId, items, paymentMethod, receivedBy, notes, totalAmount: providedTotal } = req.body;
     
-    // Calculate total amount
-    const totalAmount = items.reduce((sum: number, item: any) => sum + (item.unitPrice * item.quantity), 0);
+    // Calculate total amount from items if provided, otherwise use provided totalAmount
+    const totalAmount = items && items.length > 0 
+      ? items.reduce((sum: number, item: any) => sum + (item.unitPrice * item.quantity), 0)
+      : providedTotal;
     
     // Create payment
     const payment = await storage.createPayment({
@@ -491,37 +493,39 @@ router.post("/api/payments", async (req, res) => {
       notes: notes || "",
     });
     
-    // Create payment items
-    for (const item of items) {
-      const quantity = item.quantity || 1;
-      const amount = item.unitPrice * quantity;
-      await storage.createPaymentItem({
-        paymentId: payment.paymentId,
-        serviceId: item.serviceId,
-        relatedId: item.relatedId,
-        relatedType: item.relatedType,
-        quantity,
-        unitPrice: item.unitPrice,
-        amount,
-        totalPrice: amount,
-      });
-    }
-    
-    // Update payment status for related orders
-    for (const item of items) {
-      if (item.relatedId && item.relatedType) {
-        try {
-          if (item.relatedType === 'lab_test') {
-            await storage.updateLabTest(item.relatedId, { paymentStatus: 'paid' });
-          } else if (item.relatedType === 'xray_exam') {
-            await storage.updateXrayExam(item.relatedId, { paymentStatus: 'paid' });
-          } else if (item.relatedType === 'ultrasound_exam') {
-            await storage.updateUltrasoundExam(item.relatedId, { paymentStatus: 'paid' });
-          } else if (item.relatedType === 'pharmacy_order') {
-            await storage.updatePharmacyOrder(item.relatedId, { paymentStatus: 'paid' });
+    // Create payment items if items array is provided
+    if (items && items.length > 0) {
+      for (const item of items) {
+        const quantity = item.quantity || 1;
+        const amount = item.unitPrice * quantity;
+        await storage.createPaymentItem({
+          paymentId: payment.paymentId,
+          serviceId: item.serviceId,
+          relatedId: item.relatedId,
+          relatedType: item.relatedType,
+          quantity,
+          unitPrice: item.unitPrice,
+          amount,
+          totalPrice: amount,
+        });
+      }
+      
+      // Update payment status for related orders
+      for (const item of items) {
+        if (item.relatedId && item.relatedType) {
+          try {
+            if (item.relatedType === 'lab_test') {
+              await storage.updateLabTest(item.relatedId, { paymentStatus: 'paid' });
+            } else if (item.relatedType === 'xray_exam') {
+              await storage.updateXrayExam(item.relatedId, { paymentStatus: 'paid' });
+            } else if (item.relatedType === 'ultrasound_exam') {
+              await storage.updateUltrasoundExam(item.relatedId, { paymentStatus: 'paid' });
+            } else if (item.relatedType === 'pharmacy_order') {
+              await storage.updatePharmacyOrder(item.relatedId, { paymentStatus: 'paid' });
+            }
+          } catch (error) {
+            console.error("Error updating payment status:", error);
           }
-        } catch (error) {
-          console.error("Error updating payment status:", error);
         }
       }
     }

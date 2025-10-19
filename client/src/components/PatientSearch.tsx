@@ -96,9 +96,11 @@ export default function PatientSearch({
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Patient
                 </th>
-                {/* Contact column removed */}
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Age / Sex
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Contact
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Consultation
@@ -151,9 +153,12 @@ export default function PatientSearch({
                       </div>
                     </td>
 
-                    {/* Contact column removed */}
                     <td className="px-4 py-3 text-sm">
                       {p.age ?? "—"} • {p.gender || "—"}
+                    </td>
+
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {p.phoneNumber || "—"}
                     </td>
 
                     <td className="px-4 py-3 text-sm">
@@ -164,7 +169,7 @@ export default function PatientSearch({
                         </span>
                       ) : (
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          Paid
+                          Paid: 5000 SSP
                         </Badge>
                       )}
                     </td>
