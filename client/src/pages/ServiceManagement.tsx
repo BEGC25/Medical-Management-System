@@ -244,7 +244,7 @@ export default function ServiceManagement() {
                     <FormItem>
                       <FormLabel>Service Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Complete Blood Count (CBC)" data-testid="input-service-name" />
+                        <Input {...field} value={field.value || ""} placeholder="e.g., Complete Blood Count (CBC)" data-testid="input-service-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
