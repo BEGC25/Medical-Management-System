@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Settings, Save, DollarSign, Shield, AlertTriangle } from "lucide-react";
+import { Settings, Save, Shield, AlertTriangle, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,9 +23,9 @@ export default function BillingSettings() {
   const form = useForm<InsertBillingSettings>({
     resolver: zodResolver(insertBillingSettingsSchema),
     defaultValues: {
-      consultationFee: billingSettings?.consultationFee || 2000.00,
-      requirePrepayment: billingSettings?.requirePrepayment || false,
-      allowEmergencyGrace: billingSettings?.allowEmergencyGrace || true,
+      consultationFee: 0, // No longer used, kept for backward compatibility
+      requirePrepayment: billingSettings?.requirePrepayment || 0,
+      allowEmergencyGrace: billingSettings?.allowEmergencyGrace || 1,
       currency: billingSettings?.currency || "SSP",
       updatedBy: "admin", // In a real app, this would come from auth
     },
@@ -35,7 +35,7 @@ export default function BillingSettings() {
   useEffect(() => {
     if (billingSettings) {
       form.reset({
-        consultationFee: billingSettings.consultationFee,
+        consultationFee: 0, // No longer used, kept for backward compatibility
         requirePrepayment: billingSettings.requirePrepayment,
         allowEmergencyGrace: billingSettings.allowEmergencyGrace,
         currency: billingSettings.currency,
@@ -108,9 +108,20 @@ export default function BillingSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Settings className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Billing Settings</h1>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Settings className="h-6 w-6" />
+          <h1 className="text-2xl font-bold">Payment Policy Settings</h1>
+        </div>
+        <div className="flex items-start gap-2 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+          <div className="text-sm text-blue-900 dark:text-blue-100">
+            <p className="font-medium">Service prices are now managed in Service Management</p>
+            <p className="text-blue-700 dark:text-blue-300 mt-1">
+              To update consultation fees and other service prices, go to the Service Management page in the Administration menu.
+            </p>
+          </div>
+        </div>
       </div>
 
       <Form {...form}>
@@ -118,38 +129,11 @@ export default function BillingSettings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Consultation Fee Policy
+                <Settings className="h-5 w-5" />
+                General Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <FormField
-                control={form.control}
-                name="consultationFee"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Consultation Fee</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="2000.00"
-                          {...field}
-                          value={field.value || ""}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                        <Badge variant="secondary">{form.watch("currency")}</Badge>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Standard consultation fee charged to all patients
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="currency"
@@ -160,7 +144,7 @@ export default function BillingSettings() {
                       <Input {...field} placeholder="SSP" maxLength={3} />
                     </FormControl>
                     <FormDescription>
-                      Currency code (e.g., SSP, USD, EUR)
+                      Currency code used throughout the system (e.g., SSP, USD, EUR)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -192,8 +176,8 @@ export default function BillingSettings() {
                     </div>
                     <FormControl>
                       <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                        checked={!!field.value}
+                        onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
                       />
                     </FormControl>
                   </FormItem>
@@ -205,7 +189,7 @@ export default function BillingSettings() {
                   control={form.control}
                   name="allowEmergencyGrace"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-orange-50">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-orange-50 dark:bg-orange-950">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4 text-orange-500" />
@@ -217,8 +201,8 @@ export default function BillingSettings() {
                       </div>
                       <FormControl>
                         <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
                         />
                       </FormControl>
                     </FormItem>
