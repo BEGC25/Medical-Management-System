@@ -329,18 +329,21 @@ export default function Patients() {
 
   const deletePatientMutation = useMutation({
     mutationFn: async ({ patientId, reason, forceDelete }: { patientId: string; reason?: string; forceDelete?: boolean }) => {
-      const response = await apiRequest(
-        "DELETE",
-        `/api/patients/${patientId}`,
-        { reason, forceDelete },
-      );
+      const response = await fetch(`/api/patients/${patientId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason, forceDelete }),
+        credentials: "include",
+      });
+      
+      const data = await response.json();
       
       if (!response.ok) {
-        const error = await response.json();
-        throw error;
+        // Throw the structured error data so onError can access blockReasons
+        throw data;
       }
       
-      return response.json();
+      return data;
     },
     onSuccess: (data) => {
       setDeleteResult(null);
