@@ -29,11 +29,11 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
+            <div className="flex items-center justify-center mb-6">
               <img 
                 src={clinicLogo} 
                 alt="Bahr El Ghazal Clinic Logo" 
-                className="h-20 w-20 object-contain"
+                className="h-40 w-40 object-contain"
               />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
