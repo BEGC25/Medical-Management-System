@@ -1006,13 +1006,13 @@ export default function Patients() {
             <div className="p-4 space-y-3">
               <div className="text-sm text-gray-700 dark:text-gray-300">
                 <div>
-                  <span className="font-medium">Contact:</span>{" "}
-                  {activePatient.phoneNumber || "—"}
-                </div>
-                <div>
                   <span className="font-medium">Age/Gender:</span>{" "}
                   {activePatient.age ?? "—"}{" "}
                   {activePatient.gender ? `• ${activePatient.gender}` : ""}
+                </div>
+                <div>
+                  <span className="font-medium">Contact:</span>{" "}
+                  {activePatient.phoneNumber || "—"}
                 </div>
               </div>
 
