@@ -188,7 +188,7 @@ export default function Patients() {
             const encounter = await encounterResponse.json();
             // Find active consultation services and get the one with highest price (most current)
             const consultationServices = (servicesList as any[]).filter(
-              (s) => s.category === "consultation" && s.is_active === true
+              (s) => s.category === "consultation" && s.isActive === true
             );
             const consultationService = consultationServices.length > 0
               ? consultationServices.sort((a, b) => parseFloat(b.price) - parseFloat(a.price))[0]
@@ -859,17 +859,12 @@ export default function Patients() {
                 {!editingPatient && billingSettings && servicesList && (() => {
                   // Find active consultation services and get the one with highest price (most current)
                   const consultationServices = (servicesList as any[]).filter(
-                    (s) => s.category === "consultation" && s.is_active === true
+                    (s) => s.category === "consultation" && s.isActive === true
                   );
-                  
-                  console.log("All services:", servicesList);
-                  console.log("Consultation services filtered:", consultationServices);
                   
                   const consultationService = consultationServices.length > 0
                     ? consultationServices.sort((a, b) => parseFloat(b.price) - parseFloat(a.price))[0]
                     : null;
-                  
-                  console.log("Selected consultation service:", consultationService);
                   
                   const consultationFee = consultationService ? parseFloat(consultationService.price) : 0;
                   
