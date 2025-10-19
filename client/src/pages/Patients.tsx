@@ -121,6 +121,15 @@ export default function Patients() {
     queryKey: ["/api/billing/settings"],
   });
 
+  // Get consultation service from services list for accurate pricing
+  const { data: servicesList } = useQuery({
+    queryKey: ["/api/services"],
+  });
+  
+  const consultationService = (servicesList as any[] || []).find(
+    (s: any) => s.category === "consultation" && s.name === "Consultation" && s.is_active
+  );
+
   useEffect(() => {
     if (billingSettings?.requirePrepayment) {
       setCollectConsultationFee(true);
@@ -185,10 +194,6 @@ export default function Patients() {
       allergies: "",
       medicalHistory: "",
     },
-  });
-
-  const { data: servicesList } = useQuery({
-    queryKey: ["/api/services"],
   });
 
   const createPatientMutation = useMutation({
@@ -931,7 +936,7 @@ export default function Patients() {
                       className="text-sm font-medium cursor-pointer flex items-center gap-2"
                     >
                       <DollarSign className="w-4 h-4" />
-                      Collect consultation fee ({money(parseFloat(billingSettings.consultationFee))})
+                      Collect consultation fee ({money(consultationService?.price || parseFloat(billingSettings.consultationFee))})
                       {billingSettings.requirePrepayment && (
                         <Badge variant="default" className="ml-2">Required</Badge>
                       )}
