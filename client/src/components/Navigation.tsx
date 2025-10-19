@@ -57,7 +57,7 @@ export default function Navigation() {
 
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700 z-30 pt-16">
-      <nav className="h-full overflow-y-auto px-4 py-6">
+      <nav className="h-full overflow-y-auto px-4 py-6 pb-20">
         <div className="space-y-8">
           {Object.entries(groupedItems).map(([category, items]) => (
             <div key={category} className="space-y-2">
@@ -96,14 +96,14 @@ export default function Navigation() {
               </div>
             </div>
           ))}
-        </div>
-        
-        {/* Professional Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-          <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              © 2025 BGC Medical System
-            </p>
+          
+          {/* Professional Footer - Now part of scrollable content */}
+          <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                © 2025 BGC Medical System
+              </p>
+            </div>
           </div>
         </div>
       </nav>

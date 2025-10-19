@@ -95,6 +95,7 @@ export default function AllResults() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("today");
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
@@ -102,13 +103,13 @@ export default function AllResults() {
   const today = new Date().toISOString().split('T')[0];
 
   // Build query parameters based on filter selection
-  const getQueryParams = () => {
+  const getQueryParams = (): Record<string, string> => {
     if (dateFilter === "today") {
       return { date: today };
     } else if (dateFilter === "date") {
       return { date: selectedDate };
     } else {
-      return {}; // Load all data only when explicitly requested
+      return {} as Record<string, string>; // Load all data only when explicitly requested
     }
   };
 
@@ -188,8 +189,9 @@ export default function AllResults() {
 
     const matchesPatient = selectedPatient === "" || result.patientId === selectedPatient;
     const matchesStatus = statusFilter === "all" || result.status === statusFilter;
+    const matchesType = typeFilter === "all" || result.type === typeFilter;
 
-    return matchesSearch && matchesPatient && matchesStatus;
+    return matchesSearch && matchesPatient && matchesStatus && matchesType;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const getStatusIcon = (status: string) => {
@@ -1414,52 +1416,68 @@ export default function AllResults() {
         </CardContent>
       </Card>
 
-      {/* Results Summary */}
+      {/* Results Summary - Clickable for filtering */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'all' ? 'ring-2 ring-gray-400' : ''}`}
+          onClick={() => setTypeFilter('all')}
+          data-testid="card-all-results"
+        >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Results</p>
-                <p className="text-2xl font-bold">{filteredResults.length}</p>
+                <p className="text-2xl font-bold">{allResults.length}</p>
               </div>
               <FileText className="h-8 w-8 text-gray-400" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'lab' ? 'ring-2 ring-blue-400' : ''}`}
+          onClick={() => setTypeFilter('lab')}
+          data-testid="card-lab-tests"
+        >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Lab Tests</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {filteredResults.filter(r => r.type === 'lab').length}
+                  {allResults.filter(r => r.type === 'lab').length}
                 </p>
               </div>
               <Microscope className="h-8 w-8 text-blue-400" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'xray' ? 'ring-2 ring-amber-400' : ''}`}
+          onClick={() => setTypeFilter('xray')}
+          data-testid="card-xrays"
+        >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">X-Rays</p>
                 <p className="text-2xl font-bold text-amber-600">
-                  {filteredResults.filter(r => r.type === 'xray').length}
+                  {allResults.filter(r => r.type === 'xray').length}
                 </p>
               </div>
               <FileText className="h-8 w-8 text-amber-400" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'ultrasound' ? 'ring-2 ring-teal-400' : ''}`}
+          onClick={() => setTypeFilter('ultrasound')}
+          data-testid="card-ultrasounds"
+        >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Ultrasounds</p>
                 <p className="text-2xl font-bold text-teal-600">
-                  {filteredResults.filter(r => r.type === 'ultrasound').length}
+                  {allResults.filter(r => r.type === 'ultrasound').length}
                 </p>
               </div>
               <Stethoscope className="h-8 w-8 text-teal-400" />
