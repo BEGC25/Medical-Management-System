@@ -1132,57 +1132,21 @@ export default function Patients() {
                 </div>
               )}
 
-              {/* Quick actions */}
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              {/* Quick actions - Simplified for Reception */}
+              <div className="mt-4 space-y-2">
                 <Button
-                  variant="secondary"
-                  onClick={() =>
-                    jump(
-                      `/laboratory?patientId=${activePatient.patientId}&followUp=true`,
-                    )
-                  }
-                >
-                  🧪 Order Lab
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    jump(
-                      `/xray?patientId=${activePatient.patientId}&followUp=true`,
-                    )
-                  }
-                >
-                  📷 Order X-Ray
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    jump(
-                      `/ultrasound?patientId=${activePatient.patientId}&followUp=true`,
-                    )
-                  }
-                >
-                  🌊 Ultrasound
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    jump(`/pharmacy?patientId=${activePatient.patientId}`)
-                  }
-                >
-                  💊 Pharmacy
-                </Button>
-                <Button
-                  className="col-span-2 bg-blue-600 hover:bg-blue-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={() =>
                     jump(`/billing?patientId=${activePatient.patientId}`)
                   }
+                  size="lg"
                 >
-                  💵 Billing & Payments
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Billing & Payments
                 </Button>
                 <Button
                   variant="outline"
-                  className="col-span-1"
+                  className="w-full"
                   onClick={() => {
                     const p: Patient = activePatient;
                     setActivePatient(null);
@@ -1190,20 +1154,7 @@ export default function Patients() {
                   }}
                   data-testid="button-edit-patient"
                 >
-                  ✏️ Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="col-span-1"
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete patient ${activePatient.patientId}? This action cannot be undone.`)) {
-                      deletePatientMutation.mutate(activePatient.patientId);
-                    }
-                  }}
-                  disabled={deletePatientMutation.isPending}
-                  data-testid="button-delete-patient"
-                >
-                  🗑️ Delete
+                  ✏️ Edit Patient Details
                 </Button>
               </div>
             </div>
