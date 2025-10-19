@@ -127,8 +127,11 @@ export default function Patients() {
   });
   
   const consultationService = (servicesList as any[] || []).find(
-    (s: any) => s.category === "consultation" && s.name === "Consultation" && s.is_active
+    (s: any) => s.category === "consultation" && s.name === "Consultation" && s.isActive !== false
   );
+  
+  // Debug log to see what we're getting
+  console.log("Consultation service found:", consultationService);
 
   useEffect(() => {
     if (billingSettings?.requirePrepayment) {
@@ -936,7 +939,11 @@ export default function Patients() {
                       className="text-sm font-medium cursor-pointer flex items-center gap-2"
                     >
                       <DollarSign className="w-4 h-4" />
-                      Collect consultation fee ({money(consultationService?.price || parseFloat(billingSettings.consultationFee))})
+                      {(() => {
+                        const price = consultationService?.price || parseFloat(billingSettings.consultationFee);
+                        console.log("Displaying consultation fee:", price, "consultationService:", consultationService);
+                        return `Collect consultation fee (${money(price)})`;
+                      })()}
                       {billingSettings.requirePrepayment && (
                         <Badge variant="default" className="ml-2">Required</Badge>
                       )}
