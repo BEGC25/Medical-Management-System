@@ -486,7 +486,8 @@ export default function Payment() {
                         const matchingService = services.find(s => 
                           (order.type === 'lab_test' && s.category === 'laboratory') ||
                           (order.type === 'xray_exam' && s.category === 'radiology') ||
-                          (order.type === 'ultrasound_exam' && s.category === 'ultrasound')
+                          (order.type === 'ultrasound_exam' && s.category === 'ultrasound') ||
+                          (order.type === 'pharmacy_order' && s.category === 'pharmacy')
                         );
                         
                         return (
@@ -533,7 +534,7 @@ export default function Payment() {
                     <div>
                       <h4 className="font-semibold mb-2">Add Services:</h4>
                       <div className="grid gap-2 max-h-64 overflow-y-auto">
-                        {["consultation", "laboratory", "radiology", "ultrasound"].map(category => (
+                        {["consultation", "laboratory", "radiology", "ultrasound", "pharmacy"].map(category => (
                           <div key={category}>
                             <h5 className="text-sm font-medium text-gray-600 mb-1 capitalize">{category}</h5>
                             {getServiceByCategory(category).map(service => (
