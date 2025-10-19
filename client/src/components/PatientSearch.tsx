@@ -186,7 +186,7 @@ export default function PatientSearch({
                       {due > 0 ? (
                         <span className="inline-flex items-center gap-1 text-red-700 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
                           <CreditCard className="w-3 h-3" />
-                          {due.toLocaleString()} SSP Due
+                          {Math.round(due).toLocaleString()} SSP Due
                         </span>
                       ) : (
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
