@@ -363,19 +363,23 @@ export default function Patients() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
+      console.log("Delete error:", error); // Debug log
       if (error?.blockReasons) {
+        // Keep dialog open and show the blocking reasons
         setDeleteResult({
           blocked: true,
           blockReasons: error.blockReasons,
           impactSummary: error.impactSummary,
         });
+        // Don't close the dialog - let the user see the blocking reasons
       } else {
         toast({
           title: "Error",
-          description: error.message || "Failed to delete patient",
+          description: error.error || error.message || "Failed to delete patient",
           variant: "destructive",
         });
         setShowDeleteDialog(false);
+        setDeleteResult(null);
       }
     },
   });
