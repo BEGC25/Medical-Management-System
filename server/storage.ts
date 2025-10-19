@@ -141,10 +141,11 @@ export interface IStorage {
   getPatientById(id: string): Promise<schema.Patient | null>;
   getPatientByPatientId(patientId: string): Promise<schema.Patient | null>;
   updatePatient(patientId: string, data: Partial<schema.InsertPatient>): Promise<schema.Patient>;
-  deletePatient(patientId: string, deletedBy: string, deletionReason?: string): Promise<{
+  deletePatient(patientId: string, deletedBy: string, deletionReason?: string, forceDelete?: boolean): Promise<{
     success: boolean;
     blocked?: boolean;
     blockReasons?: string[];
+    forceDeleted?: boolean;
     impactSummary?: {
       encounters: number;
       labTests: number;
@@ -401,10 +402,11 @@ export class MemStorage implements IStorage {
     return patient;
   }
 
-  async deletePatient(patientId: string, deletedBy: string, deletionReason?: string): Promise<{
+  async deletePatient(patientId: string, deletedBy: string, deletionReason?: string, forceDelete: boolean = false): Promise<{
     success: boolean;
     blocked?: boolean;
     blockReasons?: string[];
+    forceDeleted?: boolean;
     impactSummary?: {
       encounters: number;
       labTests: number;
@@ -428,21 +430,21 @@ export class MemStorage implements IStorage {
     // Check for blocking conditions
     const blockReasons: string[] = [];
     
-    // Check for payment history (BLOCKING)
+    // Check for payment history (BLOCKING unless force-delete)
     const patientPayments = await db.select().from(payments).where(eq(payments.patientId, patientId));
-    if (patientPayments.length > 0) {
-      blockReasons.push(`Patient has ${patientPayments.length} payment record(s). Cannot delete patients with financial history.`);
+    if (patientPayments.length > 0 && !forceDelete) {
+      blockReasons.push(`Patient has ${patientPayments.length} payment record(s). Cannot delete patients with financial history without force-delete.`);
     }
 
-    // Check for open encounters (BLOCKING)
+    // Check for open encounters (BLOCKING unless force-delete)
     const openEncounters = await db.select().from(encounters).where(
       and(
         eq(encounters.patientId, patientId),
         eq(encounters.status, 'open')
       )
     );
-    if (openEncounters.length > 0) {
-      blockReasons.push(`Patient has ${openEncounters.length} open encounter(s). Please close or cancel encounters before deletion.`);
+    if (openEncounters.length > 0 && !forceDelete) {
+      blockReasons.push(`Patient has ${openEncounters.length} open encounter(s). Please close encounters before deletion or use force-delete.`);
     }
 
     // Get impact summary (all related records)
@@ -529,6 +531,7 @@ export class MemStorage implements IStorage {
       return {
         success: true,
         blocked: false,
+        forceDeleted: forceDelete,
         impactSummary,
       };
     } catch (error) {

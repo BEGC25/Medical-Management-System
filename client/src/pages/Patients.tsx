@@ -328,11 +328,11 @@ export default function Patients() {
   });
 
   const deletePatientMutation = useMutation({
-    mutationFn: async ({ patientId, reason }: { patientId: string; reason?: string }) => {
+    mutationFn: async ({ patientId, reason, forceDelete }: { patientId: string; reason?: string; forceDelete?: boolean }) => {
       const response = await apiRequest(
         "DELETE",
         `/api/patients/${patientId}`,
-        { reason },
+        { reason, forceDelete },
       );
       
       if (!response.ok) {
@@ -346,9 +346,13 @@ export default function Patients() {
       setDeleteResult(null);
       setShowDeleteDialog(false);
       setDeletionReason("");
+      const totalCancelled = (data.impactSummary?.labTests || 0) + (data.impactSummary?.xrayExams || 0) + 
+                            (data.impactSummary?.ultrasoundExams || 0) + (data.impactSummary?.pharmacyOrders || 0) + 
+                            (data.impactSummary?.encounters || 0);
+      const forceNote = data.forceDeleted ? " (Force deleted with financial history)" : "";
       toast({ 
         title: "Success", 
-        description: `Patient deleted successfully. ${data.impactSummary ? `Cancelled ${data.impactSummary.labTests + data.impactSummary.xrayExams + data.impactSummary.ultrasoundExams + data.impactSummary.pharmacyOrders + data.impactSummary.encounters} related records.` : ''}` 
+        description: `Patient deleted successfully${forceNote}. ${totalCancelled > 0 ? `Cancelled ${totalCancelled} related records.` : ''}` 
       });
       setActivePatient(null);
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
@@ -1257,12 +1261,38 @@ export default function Patients() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             {deleteResult?.blocked ? (
-              <AlertDialogCancel onClick={() => {
-                setDeleteResult(null);
-                setShowDeleteDialog(false);
-              }}>
-                Close
-              </AlertDialogCancel>
+              <>
+                <AlertDialogCancel onClick={() => {
+                  setDeleteResult(null);
+                  setShowDeleteDialog(false);
+                }}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (window.confirm(
+                      "⚠️ FORCE DELETE WARNING ⚠️\n\n" +
+                      "You are about to FORCE DELETE this patient despite financial history.\n\n" +
+                      "This action:\n" +
+                      "• Bypasses all safety protections\n" +
+                      "• Affects financial audit trails\n" +
+                      `• Will delete ${deleteResult.impactSummary?.payments || 0} payment record(s)\n\n` +
+                      "Are you absolutely sure you want to proceed?"
+                    )) {
+                      deletePatientMutation.mutate({
+                        patientId: activePatient.patientId,
+                        reason: deletionReason || "Force deleted despite financial history",
+                        forceDelete: true,
+                      });
+                    }
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700"
+                  data-testid="button-force-delete"
+                  disabled={deletePatientMutation.isPending}
+                >
+                  {deletePatientMutation.isPending ? "Force Deleting..." : "⚠️ Force Delete"}
+                </AlertDialogAction>
+              </>
             ) : (
               <>
                 <AlertDialogCancel onClick={() => {
@@ -1276,6 +1306,7 @@ export default function Patients() {
                     deletePatientMutation.mutate({
                       patientId: activePatient.patientId,
                       reason: deletionReason || undefined,
+                      forceDelete: false,
                     });
                   }}
                   className="bg-red-600 hover:bg-red-700"

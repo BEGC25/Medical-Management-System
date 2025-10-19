@@ -161,8 +161,9 @@ router.delete("/api/patients/:patientId", async (req, res) => {
 
     const deletedBy = req.user.username;
     const deletionReason = req.body.reason as string | undefined;
+    const forceDelete = req.body.forceDelete === true;
 
-    const result = await storage.deletePatient(req.params.patientId, deletedBy, deletionReason);
+    const result = await storage.deletePatient(req.params.patientId, deletedBy, deletionReason, forceDelete);
     
     if (result.blocked) {
       return res.status(400).json({
@@ -176,6 +177,7 @@ router.delete("/api/patients/:patientId", async (req, res) => {
       res.json({
         message: "Patient deleted successfully",
         impactSummary: result.impactSummary,
+        forceDeleted: result.forceDeleted || false,
       });
     } else {
       res.status(500).json({ error: "Failed to delete patient" });
