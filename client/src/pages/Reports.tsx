@@ -61,7 +61,16 @@ export default function Reports() {
   });
 
   const { data: stats } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        fromDate: filters.fromDate,
+        toDate: filters.toDate
+      });
+      const response = await fetch(`/api/dashboard/stats?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch stats');
+      return response.json();
+    },
   });
 
   const { data: recentPatients } = useQuery<PatientData[]>({

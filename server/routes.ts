@@ -357,8 +357,10 @@ router.delete("/api/ultrasound-exams/:examId", async (req, res) => {
 // Dashboard
 router.get("/api/dashboard/stats", async (req, res) => {
   try {
-    console.log("Dashboard stats route called");
-    const stats = await storage.getDashboardStats();
+    const fromDate = req.query.fromDate as string;
+    const toDate = req.query.toDate as string;
+    console.log("Dashboard stats route called", { fromDate, toDate });
+    const stats = await storage.getDashboardStats(fromDate, toDate);
     console.log("Dashboard stats result:", stats);
     res.json(stats);
   } catch (error) {

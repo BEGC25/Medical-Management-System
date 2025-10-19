@@ -1,4 +1,4 @@
-import { eq, like, ilike, desc, and, count, or, sql } from "drizzle-orm";
+import { eq, like, ilike, desc, and, count, or, sql, gte, lte } from "drizzle-orm";
 import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -221,7 +221,7 @@ export interface IStorage {
   getInvoiceLines(invoiceId: string): Promise<schema.InvoiceLine[]>;
 
   // Statistics
-  getDashboardStats(): Promise<{
+  getDashboardStats(fromDate?: string, toDate?: string): Promise<{
     newPatients: number;
     totalVisits: number;
     labTests: number;
@@ -595,19 +595,55 @@ export class MemStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getDashboardStats() {
+  async getDashboardStats(fromDate?: string, toDate?: string) {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      console.log("Getting dashboard stats for date:", today);
+      console.log("Getting dashboard stats", { fromDate, toDate });
       
-      // Get counts with simple queries first
+      // Build date filter conditions
+      const treatmentDateFilter = fromDate && toDate 
+        ? and(
+            gte(treatments.visitDate, fromDate),
+            lte(treatments.visitDate, toDate)
+          )
+        : undefined;
+      
+      const labDateFilter = fromDate && toDate
+        ? and(
+            gte(labTests.requestedDate, fromDate),
+            lte(labTests.requestedDate, toDate)
+          )
+        : undefined;
+      
+      const xrayDateFilter = fromDate && toDate
+        ? and(
+            gte(xrayExams.requestedDate, fromDate),
+            lte(xrayExams.requestedDate, toDate)
+          )
+        : undefined;
+      
+      const ultrasoundDateFilter = fromDate && toDate
+        ? and(
+            gte(ultrasoundExams.requestedDate, fromDate),
+            lte(ultrasoundExams.requestedDate, toDate)
+          )
+        : undefined;
+      
+      // Get counts with date filtering
       const totalPatients = await db.select({ count: count() }).from(patients);
-      const totalTreatments = await db.select({ count: count() }).from(treatments);
-      const totalLabTests = await db.select({ count: count() }).from(labTests);
-      const totalXrays = await db.select({ count: count() }).from(xrayExams);
-      const totalUltrasounds = await db.select({ count: count() }).from(ultrasoundExams);
+      const totalTreatments = treatmentDateFilter
+        ? await db.select({ count: count() }).from(treatments).where(treatmentDateFilter)
+        : await db.select({ count: count() }).from(treatments);
+      const totalLabTests = labDateFilter
+        ? await db.select({ count: count() }).from(labTests).where(labDateFilter)
+        : await db.select({ count: count() }).from(labTests);
+      const totalXrays = xrayDateFilter
+        ? await db.select({ count: count() }).from(xrayExams).where(xrayDateFilter)
+        : await db.select({ count: count() }).from(xrayExams);
+      const totalUltrasounds = ultrasoundDateFilter
+        ? await db.select({ count: count() }).from(ultrasoundExams).where(ultrasoundDateFilter)
+        : await db.select({ count: count() }).from(ultrasoundExams);
       
-      // Get pending counts
+      // Get pending counts (always unfiltered for current pending items)
       const pendingLabTests = await db.select({ count: count() }).from(labTests)
         .where(eq(labTests.status, "pending"));
       const pendingXrays = await db.select({ count: count() }).from(xrayExams)
