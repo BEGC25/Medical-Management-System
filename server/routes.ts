@@ -483,6 +483,8 @@ router.post("/api/payments", async (req, res) => {
             await storage.updateXrayExam(item.relatedId, { paymentStatus: 'paid' });
           } else if (item.relatedType === 'ultrasound_exam') {
             await storage.updateUltrasoundExam(item.relatedId, { paymentStatus: 'paid' });
+          } else if (item.relatedType === 'pharmacy_order') {
+            await storage.updatePharmacyOrder(item.relatedId, { paymentStatus: 'paid' });
           }
         } catch (error) {
           console.error("Error updating payment status:", error);
