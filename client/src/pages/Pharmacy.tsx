@@ -48,6 +48,12 @@ export default function Pharmacy() {
   // Fetch batches for selected drug (FEFO sorted)
   const { data: batches = [] } = useQuery<DrugBatch[]>({
     queryKey: ['/api/pharmacy/batches/fefo', selectedOrder?.drugId],
+    queryFn: async () => {
+      if (!selectedOrder?.drugId) return [];
+      const response = await fetch(`/api/pharmacy/batches/fefo/${selectedOrder.drugId}`);
+      if (!response.ok) throw new Error('Failed to fetch batches');
+      return response.json();
+    },
     enabled: !!selectedOrder?.drugId,
   });
 
