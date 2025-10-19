@@ -2,6 +2,7 @@ import { Activity, Wifi, WifiOff, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import clinicLogo from "@assets/Logo-Clinic_1760859723870.jpeg";
 
 export default function Header() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -29,9 +30,11 @@ export default function Header() {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-medical-blue rounded-xl">
-              <Activity className="w-6 h-6 text-white" />
-            </div>
+            <img 
+              src={clinicLogo} 
+              alt="Bahr El Ghazal Clinic Logo" 
+              className="h-12 w-12 object-contain rounded-lg"
+            />
             <div>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Bahr El Ghazal Clinic</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">Medical Management System</p>
