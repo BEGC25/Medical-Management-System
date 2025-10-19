@@ -99,6 +99,17 @@ router.get("/api/patients", async (req, res) => {
   }
 });
 
+// Reports API - Get total patient count (MUST be before :patientId route)
+router.get("/api/patients/count", async (req, res) => {
+  try {
+    const patients = await storage.getPatients();
+    res.json({ count: patients.length });
+  } catch (error) {
+    console.error('Error fetching patient count:', error);
+    res.status(500).json({ error: "Failed to fetch patient count" });
+  }
+});
+
 router.get("/api/patients/:patientId", async (req, res) => {
   try {
     const patient = await storage.getPatientByPatientId(req.params.patientId);
@@ -1475,6 +1486,97 @@ router.post("/api/pharmacy/dispense", async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
     res.status(500).json({ error: "Failed to dispense drug" });
+  }
+});
+
+// Reports API - Get common diagnoses
+router.get("/api/reports/diagnoses", async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+    const treatments = await storage.getTreatments();
+    
+    // Filter by date range if provided
+    let filteredTreatments = treatments;
+    if (fromDate || toDate) {
+      filteredTreatments = treatments.filter(t => {
+        const visitDate = t.visitDate;
+        if (fromDate && visitDate < fromDate) return false;
+        if (toDate && visitDate > toDate) return false;
+        return true;
+      });
+    }
+    
+    // Count diagnoses
+    const diagnosisCounts: Record<string, number> = {};
+    filteredTreatments.forEach(t => {
+      if (t.diagnosis && t.diagnosis.trim()) {
+        const diagnosis = t.diagnosis.trim();
+        diagnosisCounts[diagnosis] = (diagnosisCounts[diagnosis] || 0) + 1;
+      }
+    });
+    
+    // Convert to array and sort by count
+    const diagnosisArray = Object.entries(diagnosisCounts).map(([diagnosis, count]) => ({
+      diagnosis,
+      count
+    })).sort((a, b) => b.count - a.count);
+    
+    res.json(diagnosisArray);
+  } catch (error) {
+    console.error('Error fetching diagnosis data:', error);
+    res.status(500).json({ error: "Failed to fetch diagnosis data" });
+  }
+});
+
+// Reports API - Get age distribution
+router.get("/api/reports/age-distribution", async (req, res) => {
+  try {
+    const patients = await storage.getPatients();
+    
+    // Define age ranges
+    const ageRanges = {
+      '0-5 years': 0,
+      '6-17 years': 0,
+      '18-64 years': 0,
+      '65+ years': 0,
+      'Unknown': 0
+    };
+    
+    // Count patients by age range
+    patients.forEach(patient => {
+      if (!patient.age || patient.age.trim() === '') {
+        ageRanges['Unknown']++;
+        return;
+      }
+      
+      const age = parseInt(patient.age);
+      if (isNaN(age)) {
+        ageRanges['Unknown']++;
+      } else if (age <= 5) {
+        ageRanges['0-5 years']++;
+      } else if (age <= 17) {
+        ageRanges['6-17 years']++;
+      } else if (age <= 64) {
+        ageRanges['18-64 years']++;
+      } else {
+        ageRanges['65+ years']++;
+      }
+    });
+    
+    // Convert to array with percentages
+    const total = patients.length || 1;
+    const distribution = Object.entries(ageRanges)
+      .filter(([_, count]) => count > 0) // Only show ranges with patients
+      .map(([ageRange, count]) => ({
+        ageRange,
+        count,
+        percentage: Math.round((count / total) * 100)
+      }));
+    
+    res.json(distribution);
+  } catch (error) {
+    console.error('Error fetching age distribution:', error);
+    res.status(500).json({ error: "Failed to fetch age distribution" });
   }
 });
 

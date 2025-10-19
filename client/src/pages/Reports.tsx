@@ -68,21 +68,40 @@ export default function Reports() {
     queryKey: ["/api/dashboard/recent-patients", 10],
   });
 
-  // Mock data for common diagnoses and age distribution
-  const commonDiagnoses = [
-    { name: "Malaria", cases: 234, percentage: 60 },
-    { name: "Respiratory Infections", cases: 189, percentage: 48 },
-    { name: "Hypertension", cases: 156, percentage: 40 },
-    { name: "Diabetes", cases: 98, percentage: 25 },
-    { name: "Tuberculosis", cases: 67, percentage: 17 },
-  ];
+  // Fetch real diagnosis data from treatments
+  const { data: diagnosisData = [] } = useQuery<{ diagnosis: string; count: number }[]>({
+    queryKey: ["/api/reports/diagnoses", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        fromDate: filters.fromDate,
+        toDate: filters.toDate
+      });
+      const response = await fetch(`/api/reports/diagnoses?${params}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
 
-  const ageDistribution = [
-    { range: "0-5 years", percentage: 18 },
-    { range: "6-17 years", percentage: 22 },
-    { range: "18-64 years", percentage: 45 },
-    { range: "65+ years", percentage: 15 },
-  ];
+  // Fetch real patient age distribution
+  const { data: ageDistributionData = [] } = useQuery<{ ageRange: string; count: number; percentage: number }[]>({
+    queryKey: ["/api/reports/age-distribution"],
+    queryFn: async () => {
+      const response = await fetch('/api/reports/age-distribution');
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  // Fetch total patient count
+  const { data: totalPatients = 0 } = useQuery<number>({
+    queryKey: ["/api/patients/count"],
+    queryFn: async () => {
+      const response = await fetch('/api/patients/count');
+      if (!response.ok) return 0;
+      const data = await response.json();
+      return data.count || 0;
+    },
+  });
 
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -358,10 +377,9 @@ export default function Reports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm">Total Patients</p>
-                <p className="text-3xl font-bold">1,247</p>
-                <p className="text-blue-100 text-sm flex items-center">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  +12% from last month
+                <p className="text-3xl font-bold">{totalPatients}</p>
+                <p className="text-blue-100 text-sm">
+                  Registered in system
                 </p>
               </div>
               <Users className="text-blue-200 text-3xl w-8 h-8" />
@@ -375,9 +393,8 @@ export default function Reports() {
               <div>
                 <p className="text-green-100 text-sm">Total Visits</p>
                 <p className="text-3xl font-bold">{stats?.totalVisits || 0}</p>
-                <p className="text-green-100 text-sm flex items-center">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  +8% from last month
+                <p className="text-green-100 text-sm">
+                  In selected period
                 </p>
               </div>
               <Stethoscope className="text-green-200 text-3xl w-8 h-8" />
@@ -391,9 +408,8 @@ export default function Reports() {
               <div>
                 <p className="text-orange-100 text-sm">Lab Tests</p>
                 <p className="text-3xl font-bold">{stats?.labTests || 0}</p>
-                <p className="text-orange-100 text-sm flex items-center">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  +15% from last month
+                <p className="text-orange-100 text-sm">
+                  Tests ordered
                 </p>
               </div>
               <TestTube className="text-orange-200 text-3xl w-8 h-8" />
@@ -407,9 +423,8 @@ export default function Reports() {
               <div>
                 <p className="text-purple-100 text-sm">X-Ray Exams</p>
                 <p className="text-3xl font-bold">{stats?.xrays || 0}</p>
-                <p className="text-purple-100 text-sm flex items-center">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  +3% from last month
+                <p className="text-purple-100 text-sm">
+                  Exams performed
                 </p>
               </div>
               <Scan className="text-purple-200 text-3xl w-8 h-8" />
@@ -427,24 +442,34 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {commonDiagnoses.map((diagnosis, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-700 dark:text-gray-300">{diagnosis.name}</span>
-                    <div className="text-right">
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">
-                        {diagnosis.cases} cases
-                      </span>
+              {diagnosisData.length > 0 ? (
+                diagnosisData.slice(0, 5).map((diagnosis, index) => {
+                  const maxCount = diagnosisData[0]?.count || 1;
+                  const percentage = (diagnosis.count / maxCount) * 100;
+                  return (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700 dark:text-gray-300">{diagnosis.diagnosis || 'Not specified'}</span>
+                        <div className="text-right">
+                          <span className="font-semibold text-gray-800 dark:text-gray-200">
+                            {diagnosis.count} {diagnosis.count === 1 ? 'case' : 'cases'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className={`${getColorForPercentage(percentage)} h-2 rounded-full transition-all duration-300`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
-                      className={`${getColorForPercentage(diagnosis.percentage)} h-2 rounded-full transition-all duration-300`}
-                      style={{ width: `${diagnosis.percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                  No diagnosis data available for selected period
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -456,22 +481,30 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {ageDistribution.map((group, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-700 dark:text-gray-300">{group.range}</span>
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">
-                      {group.percentage}%
-                    </span>
+              {ageDistributionData.length > 0 ? (
+                ageDistributionData.map((group, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 dark:text-gray-300">{group.ageRange}</span>
+                      <div className="text-right">
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">
+                          {group.percentage}% ({group.count} {group.count === 1 ? 'patient' : 'patients'})
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className={`${getColorForPercentage(group.percentage)} h-2 rounded-full transition-all duration-300`}
+                        style={{ width: `${group.percentage}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
-                      className={`${getColorForPercentage(group.percentage)} h-2 rounded-full transition-all duration-300`}
-                      style={{ width: `${group.percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                  No age distribution data available
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
