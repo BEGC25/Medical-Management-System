@@ -17,17 +17,32 @@ interface PatientSearchProps {
   onShouldSearchChange?: (should: boolean) => void;
 }
 
-function money(n?: number) {
-  const v = Number.isFinite(n as number) ? (n as number) : 0;
-  try {
-    return v.toLocaleString(undefined, {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    });
-  } catch {
-    return `₦${v.toLocaleString()}`;
+// Format date as "19 Oct 2025"
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  const date = new Date(dateStr);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+// Generate consistent avatar colors based on initials
+function getAvatarColor(firstName?: string, lastName?: string): string {
+  const name = `${firstName || ""}${lastName || ""}`;
+  const colors = [
+    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
+    "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+    "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
+    "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
+    "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
+  return colors[Math.abs(hash) % colors.length];
 }
 
 export default function PatientSearch({
@@ -138,7 +153,7 @@ export default function PatientSearch({
                   >
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 grid place-items-center text-xs font-semibold">
+                        <div className={`h-8 w-8 rounded-full grid place-items-center text-xs font-semibold ${getAvatarColor(p.firstName, p.lastName)}`}>
                           {(p.firstName?.[0] || "").toUpperCase()}
                           {(p.lastName?.[0] || "").toUpperCase()}
                         </div>
@@ -157,15 +172,21 @@ export default function PatientSearch({
                       {p.age ?? "—"} • {p.gender || "—"}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {p.phoneNumber || "—"}
-                    </td>
+                    {p.phoneNumber ? (
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                        {p.phoneNumber}
+                      </td>
+                    ) : (
+                      <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-600">
+                        —
+                      </td>
+                    )}
 
                     <td className="px-4 py-3 text-sm">
                       {due > 0 ? (
                         <span className="inline-flex items-center gap-1 text-red-700 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
                           <CreditCard className="w-3 h-3" />
-                          {money(due)} Due
+                          {due.toLocaleString()} SSP Due
                         </span>
                       ) : (
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -175,7 +196,7 @@ export default function PatientSearch({
                     </td>
 
                     <td className="px-4 py-3 text-sm text-right hidden lg:table-cell">
-                      {last ? new Date(last).toLocaleDateString() : "—"}
+                      {formatDate(last)}
                     </td>
 
                     {showActions && (

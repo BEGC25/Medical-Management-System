@@ -53,15 +53,7 @@ import { addToPendingSync } from "@/lib/offline";
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
-  try {
-    return v.toLocaleString(undefined, {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    });
-  } catch {
-    return `₦${v.toLocaleString()}`;
-  }
+  return `${v.toLocaleString()} SSP`;
 }
 
 export default function Patients() {
