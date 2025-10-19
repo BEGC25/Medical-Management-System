@@ -1,0 +1,221 @@
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+BGC-Medical-Management-System:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+BGC-Medical-Management-System:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+BGC-Medical-Management-System:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+_app-8a88d97288de9996.js:28 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+_app-8a88d97288de9996.js:28 [LaunchDarkly] LaunchDarkly client initialized
+[Report Only] Refused to frame 'https://www.google.com/' because an ancestor violates the following Content Security Policy directive: "frame-ancestors 'self'".
+
+framework-4ca1e485f3149550.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'battery'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'layout-animations'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'navigation-override'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'oversized-images'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'publickey-credentials'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'speaker-selection'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'unoptimized-images'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'unsized-media'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Unrecognized feature: 'pointer-lock'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-4ca1e485f3149550.js:1
+framework-4ca1e485f3149550.js:1 Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-4ca1e485f3149550.js:1
+BGC-Medical-Management-System:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+logs.browser-intake-us5-datadoghq.com/api/v2/logs?ddsource=browser&ddtags=sdk_version%3A4.46.0%2Capi%3Afetch%2Cenv%3Aproduction%2Cservice%3Awebsite%2Cversion%3Acebf3914&dd-api-key=pub31a5047a3a4692afb84a423db984dc57&dd-evp-origin-version=4.46.0&dd-evp-origin=browser&dd-request-id=4ca8ad1f-b017-4cd1-b273-a2a9c17c60fe:1  Failed to load resource: net::ERR_TIMED_OUT
+framework-4ca1e485f3149550.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-4ca1e485f3149550.js:1
+(anonymous) @ framework-4ca1e485f3149550.js:1
+uD @ framework-4ca1e485f3149550.js:1
+uI @ framework-4ca1e485f3149550.js:1
+uM @ framework-4ca1e485f3149550.js:1
+uS @ framework-4ca1e485f3149550.js:1
+C @ framework-4ca1e485f3149550.js:1
+z @ framework-4ca1e485f3149550.js:1
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4q%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/api/user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+patients:1 Blocked aria-hidden on an element because its descendant retained focus. The focus must not be hidden from assistive technology users. Avoid using aria-hidden on a focused element or its ancestor. Consider using the inert attribute instead, which will also prevent focus. For more details, see the aria-hidden section of the WAI-ARIA specification at https://w3c.github.io/aria/#aria-hidden.
+Element with focus: <button.inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2 w-full>
+Ancestor with aria-hidden: <div.fixed inset-0 z-50> <div data-replit-metadata=​"client/​src/​pages/​Patients.tsx:​971:​6" data-component-name=​"div" class=​"fixed inset-0 z-50" aria-hidden=​"true">​…​</div>​
+injected.js:27 Warning: validateDOMNesting(...): <div> cannot appear as a descendant of <p>.
+    at div
+    at p
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=126c6e28:42:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:281:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=126c6e28:131:11
+    at _c9 (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/components/ui/alert-dialog.tsx:158:12)
+    at div
+    at AlertDialogHeader (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/components/ui/alert-dialog.tsx:86:3)
+    at Slottable2 (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:95:25)
+    at div
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=126c6e28:42:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VNHO7UCP.js?v=126c6e28:61:7
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:79:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:56:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=126c6e28:42:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RCJRLP7A.js?v=126c6e28:29:5
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:233:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:156:58
+    at Presence (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7WPAJ6XX.js?v=126c6e28:24:11)
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:147:64
+    at Provider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-E7IAXTU4.js?v=126c6e28:38:15)
+    at Provider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-E7IAXTU4.js?v=126c6e28:17:13)
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=126c6e28:84:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:79:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:56:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=126c6e28:42:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VNHO7UCP.js?v=126c6e28:260:22
+    at Presence (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7WPAJ6XX.js?v=126c6e28:24:11)
+    at Provider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-E7IAXTU4.js?v=126c6e28:38:15)
+    at DialogPortal (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:109:11)
+    at AlertDialogPortal (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=126c6e28:65:11)
+    at _c3 (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/components/ui/alert-dialog.tsx:50:12)
+    at Provider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-E7IAXTU4.js?v=126c6e28:38:15)
+    at Dialog (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:50:5)
+    at AlertDialog (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=126c6e28:49:11)
+    at div
+    at Patients (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/pages/Patients.tsx:85:59)
+    at Route (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=126c6e28:280:16)
+    at ProtectedRoute (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=126c6e28:336:17)
+    at div
+    at main
+    at Route (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=126c6e28:280:16)
+    at Switch (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=126c6e28:336:17)
+    at div
+    at AuthProvider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at QueryClientProvider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=126c6e28:2933:3)
+    at App
+(anonymous) @ injected.js:27
+injected.js:27 Warning: validateDOMNesting(...): <ul> cannot appear as a descendant of <p>.
+    at ul
+    at div
+    at p
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=126c6e28:42:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:281:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=126c6e28:131:11
+    at _c9 (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/components/ui/alert-dialog.tsx:158:12)
+    at div
+    at AlertDialogHeader (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/components/ui/alert-dialog.tsx:86:3)
+    at Slottable2 (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:95:25)
+    at div
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=126c6e28:42:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VNHO7UCP.js?v=126c6e28:61:7
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:79:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:56:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=126c6e28:42:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RCJRLP7A.js?v=126c6e28:29:5
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:233:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:156:58
+    at Presence (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7WPAJ6XX.js?v=126c6e28:24:11)
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:147:64
+    at Provider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-E7IAXTU4.js?v=126c6e28:38:15)
+    at Provider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-E7IAXTU4.js?v=126c6e28:17:13)
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=126c6e28:84:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:79:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=126c6e28:56:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=126c6e28:42:13
+    at https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VNHO7UCP.js?v=126c6e28:260:22
+    at Presence (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7WPAJ6XX.js?v=126c6e28:24:11)
+    at Provider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-E7IAXTU4.js?v=126c6e28:38:15)
+    at DialogPortal (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:109:11)
+    at AlertDialogPortal (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=126c6e28:65:11)
+    at _c3 (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/components/ui/alert-dialog.tsx:50:12)
+    at Provider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-E7IAXTU4.js?v=126c6e28:38:15)
+    at Dialog (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OOH4VGD5.js?v=126c6e28:50:5)
+    at AlertDialog (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=126c6e28:49:11)
+    at div
+    at Patients (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/pages/Patients.tsx:85:59)
+    at Route (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=126c6e28:280:16)
+    at ProtectedRoute (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=126c6e28:336:17)
+    at div
+    at main
+    at Route (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=126c6e28:280:16)
+    at Switch (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=126c6e28:336:17)
+    at div
+    at AuthProvider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at QueryClientProvider (https://71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=126c6e28:2933:3)
+    at App
+(anonymous) @ injected.js:27
+71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/api/patients/BGC1:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+injected.js:27 Delete error: Object
+71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/api/patients/BGC1:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+injected.js:27 Delete error: Object

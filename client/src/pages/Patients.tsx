@@ -1165,10 +1165,33 @@ export default function Patients() {
                   <Button
                     variant="destructive"
                     className="w-full"
-                    onClick={() => {
+                    onClick={async () => {
                       setDeleteResult(null);
                       setDeletionReason("");
                       setShowDeleteDialog(true);
+                      
+                      // Pre-check if deletion will be blocked
+                      try {
+                        const response = await fetch(`/api/patients/${activePatient.patientId}`, {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ reason: "", forceDelete: false }),
+                          credentials: "include",
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok && data.blockReasons) {
+                          // Set the blocking result immediately
+                          setDeleteResult({
+                            blocked: true,
+                            blockReasons: data.blockReasons,
+                            impactSummary: data.impactSummary,
+                          });
+                        }
+                      } catch (error) {
+                        console.error("Pre-check error:", error);
+                      }
                     }}
                     data-testid="button-delete-patient"
                   >
