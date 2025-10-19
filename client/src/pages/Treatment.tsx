@@ -104,6 +104,8 @@ export default function Treatment() {
   const [showVisitSummary, setShowVisitSummary] = useState(false);
   const [activeTab, setActiveTab] = useState("notes");
   const [viewingLabTest, setViewingLabTest] = useState<any | null>(null);
+  const [viewingXray, setViewingXray] = useState<any | null>(null);
+  const [viewingUltrasound, setViewingUltrasound] = useState<any | null>(null);
   
   // Medication ordering state
   const [medications, setMedications] = useState<Array<{
@@ -1120,7 +1122,12 @@ export default function Treatment() {
                                   </>
                                 )}
                                 {xray.status === 'completed' && (
-                                  <Button variant="outline" size="sm" data-testid={`view-xray-${xray.id}`}>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setViewingXray(xray)}
+                                    data-testid={`view-xray-${xray.id}`}
+                                  >
                                     View Report
                                   </Button>
                                 )}
@@ -1194,7 +1201,12 @@ export default function Treatment() {
                                   </>
                                 )}
                                 {ultrasound.status === 'completed' && (
-                                  <Button variant="outline" size="sm" data-testid={`view-ultrasound-${ultrasound.id}`}>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setViewingUltrasound(ultrasound)}
+                                    data-testid={`view-ultrasound-${ultrasound.id}`}
+                                  >
                                     View Report
                                   </Button>
                                 )}
@@ -2219,6 +2231,174 @@ export default function Treatment() {
                 <div>
                   <p className="font-semibold">Technician Notes:</p>
                   <p className="text-gray-700 dark:text-gray-300">{viewingLabTest.technicianNotes}</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* X-Ray Report Modal */}
+      {viewingXray && (
+        <Dialog open={!!viewingXray} onOpenChange={() => setViewingXray(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                X-Ray Report - {viewingXray.examId}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Report Header */}
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Body Part:</span> {viewingXray.bodyPart}
+                  </div>
+                  <div>
+                    <span className="font-medium">Exam Type:</span> {viewingXray.examType}
+                  </div>
+                  <div>
+                    <span className="font-medium">Requested:</span> {new Date(viewingXray.requestDate || viewingXray.requestedDate).toLocaleDateString()}
+                  </div>
+                  {viewingXray.reportDate && (
+                    <div>
+                      <span className="font-medium">Report Date:</span> {new Date(viewingXray.reportDate).toLocaleDateString()}
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium">Payment:</span> <Badge variant={viewingXray.paymentStatus === 'paid' ? 'default' : 'destructive'}>{viewingXray.paymentStatus}</Badge>
+                  </div>
+                  {viewingXray.radiologist && (
+                    <div>
+                      <span className="font-medium">Radiologist:</span> {viewingXray.radiologist}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Clinical Indication */}
+              {viewingXray.clinicalIndication && (
+                <div>
+                  <h4 className="font-semibold mb-2">Clinical Indication:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border">{viewingXray.clinicalIndication}</p>
+                </div>
+              )}
+
+              {/* Special Instructions */}
+              {viewingXray.specialInstructions && (
+                <div>
+                  <h4 className="font-semibold mb-2">Special Instructions:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border">{viewingXray.specialInstructions}</p>
+                </div>
+              )}
+
+              {/* Findings */}
+              {viewingXray.findings && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-blue-700 dark:text-blue-400">Findings:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border whitespace-pre-line">{viewingXray.findings}</p>
+                </div>
+              )}
+
+              {/* Impression */}
+              {viewingXray.impression && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-green-700 dark:text-green-400">Impression:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border whitespace-pre-line font-medium">{viewingXray.impression}</p>
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {viewingXray.recommendations && (
+                <div>
+                  <h4 className="font-semibold mb-2">Recommendations:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border whitespace-pre-line">{viewingXray.recommendations}</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Ultrasound Report Modal */}
+      {viewingUltrasound && (
+        <Dialog open={!!viewingUltrasound} onOpenChange={() => setViewingUltrasound(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Ultrasound Report - {viewingUltrasound.examId}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Report Header */}
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Exam Type:</span> {viewingUltrasound.examType}
+                  </div>
+                  <div>
+                    <span className="font-medium">Requested:</span> {new Date(viewingUltrasound.requestDate || viewingUltrasound.requestedDate).toLocaleDateString()}
+                  </div>
+                  {viewingUltrasound.reportDate && (
+                    <div>
+                      <span className="font-medium">Report Date:</span> {new Date(viewingUltrasound.reportDate).toLocaleDateString()}
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium">Payment:</span> <Badge variant={viewingUltrasound.paymentStatus === 'paid' ? 'default' : 'destructive'}>{viewingUltrasound.paymentStatus}</Badge>
+                  </div>
+                  {viewingUltrasound.reportStatus && (
+                    <div>
+                      <span className="font-medium">Report Status:</span> <Badge variant={viewingUltrasound.reportStatus === 'normal' ? 'default' : 'destructive'}>{viewingUltrasound.reportStatus}</Badge>
+                    </div>
+                  )}
+                  {viewingUltrasound.sonographer && (
+                    <div>
+                      <span className="font-medium">Sonographer:</span> {viewingUltrasound.sonographer}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Clinical Indication */}
+              {viewingUltrasound.clinicalIndication && (
+                <div>
+                  <h4 className="font-semibold mb-2">Clinical Indication:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border">{viewingUltrasound.clinicalIndication}</p>
+                </div>
+              )}
+
+              {/* Special Instructions */}
+              {viewingUltrasound.specialInstructions && (
+                <div>
+                  <h4 className="font-semibold mb-2">Special Instructions:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border">{viewingUltrasound.specialInstructions}</p>
+                </div>
+              )}
+
+              {/* Findings */}
+              {viewingUltrasound.findings && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-blue-700 dark:text-blue-400">Findings:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border whitespace-pre-line">{viewingUltrasound.findings}</p>
+                </div>
+              )}
+
+              {/* Impression */}
+              {viewingUltrasound.impression && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-green-700 dark:text-green-400">Impression:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border whitespace-pre-line font-medium">{viewingUltrasound.impression}</p>
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {viewingUltrasound.recommendations && (
+                <div>
+                  <h4 className="font-semibold mb-2">Recommendations:</h4>
+                  <p className="bg-white dark:bg-gray-900 p-3 rounded border whitespace-pre-line">{viewingUltrasound.recommendations}</p>
                 </div>
               )}
             </div>
