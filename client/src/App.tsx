@@ -15,6 +15,7 @@ import AllResults from "@/pages/AllResults";
 import Payment from "@/pages/Payment";
 import Billing from "@/pages/Billing";
 import BillingSettings from "@/pages/BillingSettings";
+import ServiceManagement from "@/pages/ServiceManagement";
 import UserManagement from "@/pages/UserManagement";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
@@ -54,6 +55,7 @@ function App() {
                     <ProtectedRoute path="/payment" component={Payment} />
                     <ProtectedRoute path="/billing" component={Billing} />
                     <ProtectedRoute path="/billing-settings" component={BillingSettings} />
+                    <ProtectedRoute path="/service-management" component={ServiceManagement} />
                     <ProtectedRoute path="/reports" component={Reports} />
                     <ProtectedRoute path="/all-results" component={AllResults} />
                     <ProtectedRoute path="/users" component={UserManagement} />

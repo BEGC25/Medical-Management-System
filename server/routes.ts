@@ -439,6 +439,27 @@ router.get("/api/services", async (req, res) => {
   }
 });
 
+router.post("/api/services", async (req, res) => {
+  try {
+    const service = await storage.createService(req.body);
+    res.status(201).json(service);
+  } catch (error) {
+    console.error("Error creating service:", error);
+    res.status(500).json({ error: "Failed to create service" });
+  }
+});
+
+router.put("/api/services/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const service = await storage.updateService(id, req.body);
+    res.json(service);
+  } catch (error) {
+    console.error("Error updating service:", error);
+    res.status(500).json({ error: "Failed to update service" });
+  }
+});
+
 // Payments
 router.post("/api/payments", async (req, res) => {
   try {

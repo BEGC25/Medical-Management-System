@@ -13,7 +13,8 @@ import {
   Pill,
   Settings,
   Receipt,
-  UserCog
+  UserCog,
+  Tag
 } from "lucide-react";
 
 const navItems = [
@@ -32,6 +33,7 @@ const navItems = [
 ];
 
 const adminOnlyItems = [
+  { path: "/service-management", label: "Service Management", icon: Tag, category: "Administration" },
   { path: "/users", label: "User Management", icon: UserCog, category: "Administration" },
 ];
 
