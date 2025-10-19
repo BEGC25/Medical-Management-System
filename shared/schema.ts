@@ -20,8 +20,14 @@ export const patients = sqliteTable("patients", {
   age: text("age"),
   gender: text("gender").$type<"Male" | "Female">(),
   phoneNumber: text("phone_number"),
+  village: text("village"),
+  emergencyContact: text("emergency_contact"),
   allergies: text("allergies"),
   medicalHistory: text("medical_history"),
+  isDeleted: integer("is_deleted").notNull().default(0),
+  deletedAt: text("deleted_at"),
+  deletedBy: text("deleted_by"),
+  deletionReason: text("deletion_reason"),
   createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
@@ -289,6 +295,18 @@ export const inventoryLedger = sqliteTable("inventory_ledger", {
   createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
+// Deletion Audit Log - Track all patient deletions for compliance
+export const deletionAuditLog = sqliteTable("deletion_audit_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  patientId: text("patient_id").notNull(),
+  patientName: text("patient_name").notNull(),
+  deletedBy: text("deleted_by").notNull(),
+  deletionReason: text("deletion_reason"),
+  impactSummary: text("impact_summary"), // JSON: {encounters: 2, labTests: 5, payments: 1, etc.}
+  hadPaymentHistory: integer("had_payment_history").notNull(),
+  deletedAt: text("deleted_at").notNull().default(sql`datetime('now')`),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -298,6 +316,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertPatientSchema = createInsertSchema(patients).omit({
   id: true,
   patientId: true,
+  isDeleted: true,
+  deletedAt: true,
+  deletedBy: true,
+  deletionReason: true,
   createdAt: true,
 });
 
