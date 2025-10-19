@@ -105,6 +105,9 @@ export default function ServiceManagement() {
   });
 
   const handleSubmit = (data: ServiceFormData) => {
+    console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    
     // Convert empty strings to null for optional fields
     const formattedData = {
       ...data,
