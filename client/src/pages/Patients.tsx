@@ -83,6 +83,7 @@ export default function Patients() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteResult, setDeleteResult] = useState<any>(null);
   const [deletionReason, setDeletionReason] = useState("");
+  const [showForceDeleteDialog, setShowForceDeleteDialog] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
@@ -1300,27 +1301,13 @@ export default function Patients() {
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
-                    if (window.confirm(
-                      "⚠️ FORCE DELETE WARNING ⚠️\n\n" +
-                      "You are about to FORCE DELETE this patient despite financial history.\n\n" +
-                      "This action:\n" +
-                      "• Bypasses all safety protections\n" +
-                      "• Affects financial audit trails\n" +
-                      `• Will delete ${deleteResult.impactSummary?.payments || 0} payment record(s)\n\n` +
-                      "Are you absolutely sure you want to proceed?"
-                    )) {
-                      deletePatientMutation.mutate({
-                        patientId: activePatient.patientId,
-                        reason: deletionReason || "Force deleted despite financial history",
-                        forceDelete: true,
-                      });
-                    }
+                    setShowForceDeleteDialog(true);
                   }}
                   className="bg-orange-600 hover:bg-orange-700"
                   data-testid="button-force-delete"
-                  disabled={deletePatientMutation.isPending}
                 >
-                  {deletePatientMutation.isPending ? "Force Deleting..." : "⚠️ Force Delete"}
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Force Delete
                 </AlertDialogAction>
               </>
             ) : (
@@ -1351,6 +1338,71 @@ export default function Patients() {
         </AlertDialogContent>
       </AlertDialog>
       {/* ================== /DELETE DIALOG ================== */}
+
+      {/* ================== FORCE DELETE CONFIRMATION DIALOG ================== */}
+      <AlertDialog open={showForceDeleteDialog} onOpenChange={setShowForceDeleteDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-orange-600">
+              <AlertTriangle className="w-5 h-5" />
+              Force Delete Warning
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p className="text-base font-medium">
+                You are about to force delete this patient despite existing financial history.
+              </p>
+              
+              <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-md p-4 space-y-2">
+                <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
+                  This action will:
+                </p>
+                <ul className="text-sm text-orange-700 dark:text-orange-300 space-y-1 list-disc list-inside">
+                  <li>Bypass all safety protections</li>
+                  <li>Affect financial audit trails</li>
+                  <li>Delete {deleteResult?.impactSummary?.payments || 0} payment record(s)</li>
+                  {deleteResult?.impactSummary?.labTests > 0 && (
+                    <li>Delete {deleteResult.impactSummary.labTests} lab test(s)</li>
+                  )}
+                  {deleteResult?.impactSummary?.xrayExams > 0 && (
+                    <li>Delete {deleteResult.impactSummary.xrayExams} X-ray exam(s)</li>
+                  )}
+                  {deleteResult?.impactSummary?.ultrasoundExams > 0 && (
+                    <li>Delete {deleteResult.impactSummary.ultrasoundExams} ultrasound exam(s)</li>
+                  )}
+                  {deleteResult?.impactSummary?.pharmacyOrders > 0 && (
+                    <li>Delete {deleteResult.impactSummary.pharmacyOrders} pharmacy order(s)</li>
+                  )}
+                </ul>
+              </div>
+
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                This action cannot be undone. All related records will be permanently removed from the system.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowForceDeleteDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowForceDeleteDialog(false);
+                deletePatientMutation.mutate({
+                  patientId: activePatient.patientId,
+                  reason: deletionReason || "Force deleted despite financial history",
+                  forceDelete: true,
+                });
+              }}
+              className="bg-orange-600 hover:bg-orange-700"
+              data-testid="button-confirm-force-delete"
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Proceed with Force Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* ================== /FORCE DELETE CONFIRMATION DIALOG ================== */}
     </div>
   );
 }
