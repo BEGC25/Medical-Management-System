@@ -78,10 +78,10 @@ export default function Dashboard() {
           const Icon = action.icon;
           return (
             <Link key={action.title} href={action.href}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:-translate-y-1">
                 <CardContent className="p-6">
                   <div className="flex items-center">
-                    <div className={`${action.color} bg-opacity-10 p-3 rounded-lg`}>
+                    <div className={`${action.color} bg-opacity-10 p-3 rounded-lg transition-transform hover:scale-110`}>
                       <Icon className={`text-xl w-6 h-6`} style={{ color: `var(--${action.color.replace('bg-', '')}` }} />
                     </div>
                     <div className="ml-4">
@@ -159,12 +159,23 @@ export default function Dashboard() {
             <div className="space-y-3">
               {recentPatients ? (
                 recentPatients.map((patient: any) => (
-                  <div key={patient.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-                    <div>
+                  <div key={patient.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+                    <div className="flex-1">
                       <p className="font-medium text-gray-800 dark:text-gray-200">
                         {patient.firstName} {patient.lastName}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">ID: {patient.patientId}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">ID: {patient.patientId}</p>
+                        {patient.lastVisit && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {new Date(patient.lastVisit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </p>
+                          </>
+                        )}
+                      </div>
                     </div>
                     {getStatusBadge(patient.status)}
                   </div>
@@ -196,34 +207,46 @@ export default function Dashboard() {
               {stats ? (
                 <>
                   <Link href="/laboratory">
-                    <div className="flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                    <div className={`flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-all ${
+                      stats.pending.labResults >= 10 ? 'bg-orange-50 dark:bg-orange-950 border border-attention-orange' : ''
+                    }`}>
                       <div className="flex items-center">
                         <TestTube className="text-attention-orange mr-3 w-4 h-4" />
                         <span className="text-gray-700 dark:text-gray-300">Lab Results</span>
                       </div>
-                      <Badge className="bg-attention-orange text-white">
+                      <Badge className={`bg-attention-orange text-white font-bold min-w-[2rem] justify-center ${
+                        stats.pending.labResults >= 10 ? 'ring-2 ring-attention-orange ring-offset-2 scale-110' : ''
+                      }`}>
                         {stats.pending.labResults}
                       </Badge>
                     </div>
                   </Link>
                   <Link href="/xray">
-                    <div className="flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                    <div className={`flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-all ${
+                      stats.pending.xrayReports >= 10 ? 'bg-purple-50 dark:bg-purple-950 border border-purple-600' : ''
+                    }`}>
                       <div className="flex items-center">
                         <Scan className="text-purple-600 mr-3 w-4 h-4" />
                         <span className="text-gray-700 dark:text-gray-300">X-Ray Reports</span>
                       </div>
-                      <Badge className="bg-purple-600 text-white">
+                      <Badge className={`bg-purple-600 text-white font-bold min-w-[2rem] justify-center ${
+                        stats.pending.xrayReports >= 10 ? 'ring-2 ring-purple-600 ring-offset-2 scale-110' : ''
+                      }`}>
                         {stats.pending.xrayReports}
                       </Badge>
                     </div>
                   </Link>
                   <Link href="/ultrasound">
-                    <div className="flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-colors">
+                    <div className={`flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded cursor-pointer transition-all ${
+                      stats.pending.ultrasoundReports >= 10 ? 'bg-blue-50 dark:bg-blue-950 border border-blue-600' : ''
+                    }`}>
                       <div className="flex items-center">
                         <MonitorSpeaker className="text-blue-600 mr-3 w-4 h-4" />
                         <span className="text-gray-700 dark:text-gray-300">Ultrasound Reports</span>
                       </div>
-                      <Badge className="bg-blue-600 text-white">
+                      <Badge className={`bg-blue-600 text-white font-bold min-w-[2rem] justify-center ${
+                        stats.pending.ultrasoundReports >= 10 ? 'ring-2 ring-blue-600 ring-offset-2 scale-110' : ''
+                      }`}>
                         {stats.pending.ultrasoundReports}
                       </Badge>
                     </div>
