@@ -493,16 +493,22 @@ export default function Payment() {
                         return (
                           <div key={order.id} className="p-3 border rounded-lg bg-red-50">
                             <div className="flex justify-between items-start">
-                              <div>
+                              <div className="flex-1">
                                 <h4 className="font-semibold text-red-800">{order.description}</h4>
                                 <p className="text-sm text-red-600">Date: {order.date}</p>
                                 {order.bodyPart && (
                                   <p className="text-sm text-red-600">Body Part: {order.bodyPart}</p>
                                 )}
+                                {order.dosage && (
+                                  <p className="text-sm text-red-600">Dosage: {order.dosage}</p>
+                                )}
+                                {order.quantity && (
+                                  <p className="text-sm text-red-600">Quantity: {order.quantity}</p>
+                                )}
                               </div>
                               <Badge variant="destructive">UNPAID</Badge>
                             </div>
-                            {matchingService && (
+                            {matchingService ? (
                               <Button
                                 size="sm"
                                 className="mt-2"
@@ -511,7 +517,11 @@ export default function Payment() {
                               >
                                 Add to Payment (SSP {matchingService.price})
                               </Button>
-                            )}
+                            ) : order.type === 'pharmacy_order' ? (
+                              <p className="text-xs text-orange-600 mt-2 italic">
+                                → Manually add pharmacy services from the list below
+                              </p>
+                            ) : null}
                           </div>
                         );
                       })}
