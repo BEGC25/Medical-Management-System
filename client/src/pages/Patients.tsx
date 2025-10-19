@@ -53,7 +53,7 @@ import { addToPendingSync } from "@/lib/offline";
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
-  return `${v.toLocaleString()} SSP`;
+  return `${Math.round(v).toLocaleString()} SSP`;
 }
 
 export default function Patients() {
@@ -215,7 +215,7 @@ export default function Patients() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     patientId: patient.patientId,
-                    totalAmount: consultationFee.toFixed(2),
+                    totalAmount: Math.round(consultationFee),
                     paymentMethod: "cash",
                     paymentDate: new Date().toISOString().split("T")[0],
                     receivedBy: "Reception",
@@ -237,7 +237,7 @@ export default function Patients() {
                   body: JSON.stringify({
                     paymentId: payment.paymentId,
                     orderLineId: orderLine.id,
-                    amount: consultationFee.toFixed(2)
+                    amount: Math.round(consultationFee)
                   }),
                 });
 
@@ -874,7 +874,7 @@ export default function Patients() {
                               Consultation service will be added to patient visit
                             </p>
                             <p className="text-sm text-gray-600 mt-1">
-                              Fee: {consultationFee.toFixed(2)} {billingSettings.currency} - {billingSettings.requirePrepayment
+                              Fee: {Math.round(consultationFee)} {billingSettings.currency} - {billingSettings.requirePrepayment
                                 ? "Payment required before seeing doctor"
                                 : "Payment can be collected now or later"}
                             </p>
@@ -905,7 +905,7 @@ export default function Patients() {
                             <div className="flex items-center gap-2">
                               <CreditCard className="h-4 w-4 text-green-600" />
                               <span className="text-sm text-green-600 font-medium" data-testid="text-consultation-fee">
-                                {consultationFee.toFixed(2)}{" "}
+                                {Math.round(consultationFee)}{" "}
                                 {billingSettings.currency}
                               </span>
                             </div>

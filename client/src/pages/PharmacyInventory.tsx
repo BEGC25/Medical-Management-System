@@ -308,7 +308,7 @@ export default function PharmacyInventory() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          {currentPrice ? `${currentPrice.toFixed(2)} SSP` : '-'}
+                          {currentPrice ? `${Math.round(currentPrice).toLocaleString()} SSP` : '-'}
                         </TableCell>
                         <TableCell>
                           {nearestExpiry || '-'}
@@ -533,7 +533,7 @@ export default function PharmacyInventory() {
                       <TableCell className={entry.quantity < 0 ? "text-red-600" : "text-green-600"}>
                         {entry.quantity > 0 ? '+' : ''}{entry.quantity}
                       </TableCell>
-                      <TableCell>SSP {(entry.totalValue || 0).toFixed(2)}</TableCell>
+                      <TableCell>SSP {Math.round(entry.totalValue || 0).toLocaleString()}</TableCell>
                       <TableCell>{entry.performedBy}</TableCell>
                       <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
                     </TableRow>

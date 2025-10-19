@@ -412,7 +412,7 @@ export default function ServiceManagement() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {Number(service.price).toFixed(2)}
+                        {Math.round(Number(service.price)).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <Badge variant={service.isActive ? "default" : "secondary"}>

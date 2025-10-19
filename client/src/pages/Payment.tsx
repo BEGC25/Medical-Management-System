@@ -591,7 +591,7 @@ export default function Payment() {
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between items-center font-bold text-lg">
                             <span>Total Amount:</span>
-                            <span className="text-green-600">SSP {getTotalAmount().toFixed(2)}</span>
+                            <span className="text-green-600">SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
@@ -642,7 +642,7 @@ export default function Payment() {
                           size="lg"
                           data-testid="button-process-payment"
                         >
-                          {createPaymentMutation.isPending ? "Processing..." : `Process Payment (SSP ${getTotalAmount().toFixed(2)})`}
+                          {createPaymentMutation.isPending ? "Processing..." : `Process Payment (SSP ${Math.round(getTotalAmount()).toLocaleString()})`}
                         </Button>
                       </div>
                     )}
