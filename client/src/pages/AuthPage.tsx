@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Stethoscope, Shield, Users, Activity } from "lucide-react";
+import clinicLogo from "@assets/Logo-Clinic_1760859723870.jpeg";
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
@@ -29,7 +30,11 @@ export default function AuthPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <Stethoscope className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+              <img 
+                src={clinicLogo} 
+                alt="Bahr El Ghazal Clinic Logo" 
+                className="h-20 w-20 object-contain"
+              />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Bahr El Ghazal Clinic
