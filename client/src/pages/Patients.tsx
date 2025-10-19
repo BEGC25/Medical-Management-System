@@ -210,9 +210,9 @@ export default function Patients() {
               });
 
               // ONLY create payment record if fee was actually collected
-              if (collectConsultationFee && orderLineResponse.ok && billingSettings?.consultationFee) {
+              if (collectConsultationFee && orderLineResponse.ok) {
                 const orderLine = await orderLineResponse.json();
-                const consultationFee = billingSettings.consultationFee;
+                const consultationFee = parseFloat(consultationService.price);
                 
                 // Create payment record only when fee is collected
                 const paymentResponse = await fetch("/api/payments", {
@@ -220,7 +220,7 @@ export default function Patients() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     patientId: patient.patientId,
-                    totalAmount: consultationFee,
+                    totalAmount: consultationFee.toFixed(2),
                     paymentMethod: "cash",
                     paymentDate: new Date().toISOString().split("T")[0],
                     receivedBy: "Reception",
@@ -242,7 +242,7 @@ export default function Patients() {
                   body: JSON.stringify({
                     paymentId: payment.paymentId,
                     orderLineId: orderLine.id,
-                    amount: consultationFee
+                    amount: consultationFee.toFixed(2)
                   }),
                 });
 
@@ -853,57 +853,75 @@ export default function Patients() {
                 </div>
 
                 {/* Consultation Service & Payment */}
-                {!editingPatient && billingSettings && (
-                  <div className="space-y-4 p-4 bg-blue-50 rounded-lg border">
-                    <h3 className="font-medium text-gray-800 flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Consultation Service & Payment
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-white rounded border">
-                        <div>
-                          <p className="font-medium text-green-700 flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4" />
-                            Consultation service will be added to patient visit
-                          </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Fee: {billingSettings.consultationFee} {billingSettings.currency} - {billingSettings.requirePrepayment
-                              ? "Payment required before seeing doctor"
-                              : "Payment can be collected now or later"}
-                          </p>
-                        </div>
-                        {billingSettings.requirePrepayment && (
-                          <Badge variant="destructive">Payment Required</Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="collect-fee"
-                            checked={collectConsultationFee}
-                            onCheckedChange={setCollectConsultationFee}
-                            disabled={billingSettings.requirePrepayment}
-                          />
-                          <label
-                            htmlFor="collect-fee"
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {billingSettings.requirePrepayment
-                              ? "Collect payment now (Required by policy)"
-                              : "Collect payment now (can be deferred)"}
-                          </label>
-                        </div>
-                        {collectConsultationFee && (
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4 text-green-600" />
-                            <span className="text-sm text-green-600 font-medium">
-                              {billingSettings.consultationFee}{" "}
-                              {billingSettings.currency}
-                            </span>
+                {!editingPatient && billingSettings && servicesList && (() => {
+                  const consultationService = (servicesList as any[]).find(
+                    (s) => s.category === "consultation" && s.name.includes("General")
+                  );
+                  const consultationFee = consultationService ? parseFloat(consultationService.price) : 0;
+                  
+                  return (
+                    <div className="space-y-4 p-4 bg-blue-50 rounded-lg border">
+                      <h3 className="font-medium text-gray-800 flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Consultation Service & Payment
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-white rounded border">
+                          <div>
+                            <p className="font-medium text-green-700 flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              Consultation service will be added to patient visit
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Fee: {consultationFee.toFixed(2)} {billingSettings.currency} - {billingSettings.requirePrepayment
+                                ? "Payment required before seeing doctor"
+                                : "Payment can be collected now or later"}
+                            </p>
                           </div>
-                        )}
+                          {billingSettings.requirePrepayment && (
+                            <Badge variant="destructive">Payment Required</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="collect-fee"
+                              checked={collectConsultationFee}
+                              onCheckedChange={setCollectConsultationFee}
+                              disabled={billingSettings.requirePrepayment}
+                              data-testid="switch-collect-fee"
+                            />
+                            <label
+                              htmlFor="collect-fee"
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              {billingSettings.requirePrepayment
+                                ? "Collect payment now (Required by policy)"
+                                : "Collect payment now (can be deferred)"}
+                            </label>
+                          </div>
+                          {collectConsultationFee && (
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="h-4 w-4 text-green-600" />
+                              <span className="text-sm text-green-600 font-medium" data-testid="text-consultation-fee">
+                                {consultationFee.toFixed(2)}{" "}
+                                {billingSettings.currency}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  );
+                })()}
+
+                {/* Payment Warning */}
+                {!editingPatient && billingSettings?.requirePrepayment && !collectConsultationFee && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800 font-medium flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Payment confirmation required - Please confirm consultation fee payment before registering patient
+                    </p>
                   </div>
                 )}
 
@@ -913,9 +931,11 @@ export default function Patients() {
                     type="submit"
                     disabled={
                       createPatientMutation.isPending ||
-                      updatePatientMutation.isPending
+                      updatePatientMutation.isPending ||
+                      (!editingPatient && billingSettings?.requirePrepayment && !collectConsultationFee)
                     }
                     className="bg-medical-blue hover:bg-blue-700"
+                    data-testid="button-register-patient"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     {editingPatient
