@@ -614,10 +614,11 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
   try {
     const patientId = req.params.patientId;
     
-    const [labTests, xrayExams, ultrasoundExams] = await Promise.all([
+    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders] = await Promise.all([
       storage.getLabTestsByPatient(patientId),
       storage.getXrayExamsByPatient(patientId),
       storage.getUltrasoundExamsByPatient(patientId),
+      storage.getPharmacyOrdersByPatient(patientId),
     ]);
     
     const unpaidOrders = [
@@ -640,6 +641,14 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
         type: 'ultrasound_exam',
         description: `Ultrasound: ${exam.examType}`,
         date: exam.requestedDate,
+      })),
+      ...pharmacyOrders.filter(order => order.paymentStatus === 'unpaid').map(order => ({
+        id: order.orderId,
+        type: 'pharmacy_order',
+        description: `Pharmacy: ${order.drugName || 'Medication'}`,
+        date: order.createdAt,
+        dosage: order.dosage,
+        quantity: order.quantity,
       })),
     ];
     
