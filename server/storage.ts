@@ -141,7 +141,19 @@ export interface IStorage {
   getPatientById(id: string): Promise<schema.Patient | null>;
   getPatientByPatientId(patientId: string): Promise<schema.Patient | null>;
   updatePatient(patientId: string, data: Partial<schema.InsertPatient>): Promise<schema.Patient>;
-  deletePatient(patientId: string): Promise<boolean>;
+  deletePatient(patientId: string, deletedBy: string, deletionReason?: string): Promise<{
+    success: boolean;
+    blocked?: boolean;
+    blockReasons?: string[];
+    impactSummary?: {
+      encounters: number;
+      labTests: number;
+      xrayExams: number;
+      ultrasoundExams: number;
+      pharmacyOrders: number;
+      payments: number;
+    };
+  }>;
 
   // Treatments
   createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment>;
@@ -343,25 +355,40 @@ export class MemStorage implements IStorage {
     if (search) {
       return await db.select().from(patients)
         .where(
-          or(
-            ilike(patients.firstName, `%${search}%`),
-            ilike(patients.lastName, `%${search}%`),
-            ilike(patients.patientId, `%${search}%`)
+          and(
+            eq(patients.isDeleted, 0),
+            or(
+              ilike(patients.firstName, `%${search}%`),
+              ilike(patients.lastName, `%${search}%`),
+              ilike(patients.patientId, `%${search}%`)
+            )
           )
         )
         .orderBy(desc(patients.createdAt));
     }
     
-    return await db.select().from(patients).orderBy(desc(patients.createdAt));
+    return await db.select().from(patients)
+      .where(eq(patients.isDeleted, 0))
+      .orderBy(desc(patients.createdAt));
   }
 
   async getPatientById(id: string): Promise<schema.Patient | null> {
-    const [patient] = await db.select().from(patients).where(eq(patients.id, parseInt(id)));
+    const [patient] = await db.select().from(patients).where(
+      and(
+        eq(patients.id, parseInt(id)),
+        eq(patients.isDeleted, 0)
+      )
+    );
     return patient || null;
   }
 
   async getPatientByPatientId(patientId: string): Promise<schema.Patient | null> {
-    const [patient] = await db.select().from(patients).where(eq(patients.patientId, patientId));
+    const [patient] = await db.select().from(patients).where(
+      and(
+        eq(patients.patientId, patientId),
+        eq(patients.isDeleted, 0)
+      )
+    );
     return patient || null;
   }
 
@@ -374,12 +401,144 @@ export class MemStorage implements IStorage {
     return patient;
   }
 
-  async deletePatient(patientId: string): Promise<boolean> {
-    const result = await db.delete(patients)
-      .where(eq(patients.patientId, patientId))
-      .returning();
+  async deletePatient(patientId: string, deletedBy: string, deletionReason?: string): Promise<{
+    success: boolean;
+    blocked?: boolean;
+    blockReasons?: string[];
+    impactSummary?: {
+      encounters: number;
+      labTests: number;
+      xrayExams: number;
+      ultrasoundExams: number;
+      pharmacyOrders: number;
+      payments: number;
+    };
+  }> {
+    // Get patient info
+    const patient = await db.select().from(patients).where(eq(patients.patientId, patientId));
+    if (!patient || patient.length === 0) {
+      return { success: false, blocked: true, blockReasons: ["Patient not found"] };
+    }
+
+    const patientData = patient[0];
+    if (patientData.isDeleted === 1) {
+      return { success: false, blocked: true, blockReasons: ["Patient already deleted"] };
+    }
+
+    // Check for blocking conditions
+    const blockReasons: string[] = [];
     
-    return result.length > 0;
+    // Check for payment history (BLOCKING)
+    const patientPayments = await db.select().from(payments).where(eq(payments.patientId, patientId));
+    if (patientPayments.length > 0) {
+      blockReasons.push(`Patient has ${patientPayments.length} payment record(s). Cannot delete patients with financial history.`);
+    }
+
+    // Check for open encounters (BLOCKING)
+    const openEncounters = await db.select().from(encounters).where(
+      and(
+        eq(encounters.patientId, patientId),
+        eq(encounters.status, 'open')
+      )
+    );
+    if (openEncounters.length > 0) {
+      blockReasons.push(`Patient has ${openEncounters.length} open encounter(s). Please close or cancel encounters before deletion.`);
+    }
+
+    // Get impact summary (all related records)
+    const allEncounters = await db.select().from(encounters).where(eq(encounters.patientId, patientId));
+    const patientLabTests = await db.select().from(labTests).where(eq(labTests.patientId, patientId));
+    const patientXrays = await db.select().from(xrayExams).where(eq(xrayExams.patientId, patientId));
+    const patientUltrasounds = await db.select().from(ultrasoundExams).where(eq(ultrasoundExams.patientId, patientId));
+    const patientPharmacy = await db.select().from(pharmacyOrders).where(eq(pharmacyOrders.patientId, patientId));
+
+    const impactSummary = {
+      encounters: allEncounters.length,
+      labTests: patientLabTests.length,
+      xrayExams: patientXrays.length,
+      ultrasoundExams: patientUltrasounds.length,
+      pharmacyOrders: patientPharmacy.length,
+      payments: patientPayments.length,
+    };
+
+    // If blocked, return with reasons
+    if (blockReasons.length > 0) {
+      return {
+        success: false,
+        blocked: true,
+        blockReasons,
+        impactSummary,
+      };
+    }
+
+    // Perform soft-delete in transaction
+    try {
+      const now = new Date().toISOString();
+      
+      // Soft-delete patient
+      await db.update(patients)
+        .set({
+          isDeleted: 1,
+          deletedAt: now,
+          deletedBy: deletedBy,
+          deletionReason: deletionReason || null,
+        })
+        .where(eq(patients.patientId, patientId));
+
+      // Cancel all related records
+      if (patientLabTests.length > 0) {
+        await db.update(labTests)
+          .set({ status: 'cancelled' })
+          .where(eq(labTests.patientId, patientId));
+      }
+
+      if (patientXrays.length > 0) {
+        await db.update(xrayExams)
+          .set({ status: 'cancelled' })
+          .where(eq(xrayExams.patientId, patientId));
+      }
+
+      if (patientUltrasounds.length > 0) {
+        await db.update(ultrasoundExams)
+          .set({ status: 'cancelled' })
+          .where(eq(ultrasoundExams.patientId, patientId));
+      }
+
+      if (patientPharmacy.length > 0) {
+        await db.update(pharmacyOrders)
+          .set({ status: 'cancelled' })
+          .where(eq(pharmacyOrders.patientId, patientId));
+      }
+
+      if (allEncounters.length > 0) {
+        await db.update(encounters)
+          .set({ status: 'closed', closedAt: now })
+          .where(eq(encounters.patientId, patientId));
+      }
+
+      // Create audit log
+      await db.insert(schema.deletionAuditLog).values({
+        patientId: patientId,
+        patientName: `${patientData.firstName} ${patientData.lastName}`,
+        deletedBy: deletedBy,
+        deletionReason: deletionReason || null,
+        impactSummary: JSON.stringify(impactSummary),
+        hadPaymentHistory: patientPayments.length > 0 ? 1 : 0,
+      });
+
+      return {
+        success: true,
+        blocked: false,
+        impactSummary,
+      };
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      return {
+        success: false,
+        blocked: true,
+        blockReasons: ['Database error during deletion'],
+      };
+    }
   }
 
   async createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment> {
