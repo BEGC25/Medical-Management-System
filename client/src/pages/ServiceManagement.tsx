@@ -105,10 +105,17 @@ export default function ServiceManagement() {
   });
 
   const handleSubmit = (data: ServiceFormData) => {
+    // Convert empty strings to null for optional fields
+    const formattedData = {
+      ...data,
+      code: data.code?.trim() || null,
+      description: data.description?.trim() || null,
+    };
+    
     if (editingService) {
-      updateMutation.mutate({ id: editingService.id, data });
+      updateMutation.mutate({ id: editingService.id, data: formattedData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(formattedData);
     }
   };
 
@@ -194,7 +201,7 @@ export default function ServiceManagement() {
                       <FormItem>
                         <FormLabel>Service Code (Optional)</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., LAB001" data-testid="input-service-code" />
+                          <Input {...field} value={field.value || ""} placeholder="e.g., LAB001" data-testid="input-service-code" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
