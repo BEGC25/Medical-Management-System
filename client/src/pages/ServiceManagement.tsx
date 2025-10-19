@@ -48,10 +48,7 @@ export default function ServiceManagement() {
 
   const createMutation = useMutation({
     mutationFn: async (data: ServiceFormData) => {
-      return await apiRequest("/api/services", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("POST", "/api/services", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
@@ -73,10 +70,7 @@ export default function ServiceManagement() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<ServiceFormData> }) => {
-      return await apiRequest(`/api/services/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("PUT", `/api/services/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
@@ -99,10 +93,7 @@ export default function ServiceManagement() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: number }) => {
-      return await apiRequest(`/api/services/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ isActive }),
-      });
+      return await apiRequest("PUT", `/api/services/${id}`, { isActive });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
