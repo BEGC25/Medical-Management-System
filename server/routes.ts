@@ -1428,6 +1428,16 @@ router.get("/api/pharmacy/prescriptions/paid", async (req, res) => {
   }
 });
 
+router.get("/api/pharmacy/prescriptions/dispensed", async (req, res) => {
+  try {
+    const prescriptions = await storage.getDispensedPrescriptions();
+    res.json(prescriptions);
+  } catch (error) {
+    console.error('Error fetching dispensed prescriptions:', error);
+    res.status(500).json({ error: "Failed to fetch dispensed prescriptions" });
+  }
+});
+
 router.post("/api/pharmacy/dispense", async (req, res) => {
   try {
     const { orderId, batchId, quantity, dispensedBy } = req.body;

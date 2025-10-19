@@ -1509,6 +1509,22 @@ export class MemStorage implements IStorage {
     return result;
   }
 
+  async getDispensedPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]> {
+    const orders = await db.select().from(pharmacyOrders)
+      .where(eq(pharmacyOrders.status, 'dispensed'))
+      .orderBy(desc(pharmacyOrders.dispensedAt));
+    
+    const result: (schema.PharmacyOrder & { patient: schema.Patient })[] = [];
+    for (const order of orders) {
+      const patient = await this.getPatientByPatientId(order.patientId);
+      if (patient) {
+        result.push({ ...order, patient });
+      }
+    }
+    
+    return result;
+  }
+
   async getPharmacyOrdersWithPatients(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]> {
     const orders = await db.select().from(pharmacyOrders)
       .orderBy(desc(pharmacyOrders.createdAt));

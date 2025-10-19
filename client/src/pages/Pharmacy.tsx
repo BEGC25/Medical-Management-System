@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface PrescriptionWithPatient extends PharmacyOrder {
   patient: Patient;
@@ -43,6 +44,11 @@ export default function Pharmacy() {
   // Fetch paid prescriptions ready for dispensing
   const { data: paidPrescriptions = [] } = useQuery<PrescriptionWithPatient[]>({
     queryKey: ['/api/pharmacy/prescriptions/paid'],
+  });
+
+  // Fetch dispensed prescriptions history
+  const { data: dispensedPrescriptions = [] } = useQuery<PrescriptionWithPatient[]>({
+    queryKey: ['/api/pharmacy/prescriptions/dispensed'],
   });
 
   // Fetch batches for selected drug (FEFO sorted)
@@ -71,6 +77,14 @@ export default function Pharmacy() {
   );
   
   const filteredUnpaidOrders = unpaidPrescriptions.filter((order) => 
+    (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.patient?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredDispensedOrders = dispensedPrescriptions.filter((order) => 
     (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (order.patient?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,18 +212,166 @@ export default function Pharmacy() {
         </CardContent>
       </Card>
 
-      {/* Unpaid Prescriptions - Need Payment */}
-      {filteredUnpaidOrders.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-orange-700 dark:text-orange-400 flex items-center gap-2">
-              <Clock className="w-5 h-5" />
+      {/* Tabs for different prescription states */}
+      <Tabs defaultValue="ready" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="ready" data-testid="tab-ready">
+            Ready to Dispense ({filteredPaidOrders.length})
+          </TabsTrigger>
+          <TabsTrigger value="dispensed" data-testid="tab-dispensed">
+            Dispensed History ({filteredDispensedOrders.length})
+          </TabsTrigger>
+          {filteredUnpaidOrders.length > 0 && (
+            <TabsTrigger value="unpaid" data-testid="tab-unpaid">
               Awaiting Payment ({filteredUnpaidOrders.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        {/* Ready to Dispense Tab */}
+        <TabsContent value="ready">
+          {filteredPaidOrders.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Check className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No prescriptions ready to dispense</p>
+              </CardContent>
+            </Card>
+          ) : (
             <div className="space-y-3">
-              {filteredUnpaidOrders.map((order) => (
+              {filteredPaidOrders.map((order) => (
+                <Card 
+                  key={order.id}
+                  className="border-green-200 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                  data-testid={`order-paid-${order.orderId}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {order.patient?.firstName} {order.patient?.lastName}
+                          </h3>
+                          <Badge className="bg-gray-600 text-white">
+                            {order.patient?.patientId}
+                          </Badge>
+                          <Badge className="bg-green-600 text-white">
+                            ✓ PAID
+                          </Badge>
+                          {order.patient?.allergies && order.patient.allergies.trim() !== '' && (
+                            <Badge className="bg-red-600 text-white">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              ALLERGIES
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                          Order: {order.orderId} | Drug: {order.drugName || <span className="text-red-600 font-semibold">Not specified</span>}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                          Dosage: {order.dosage || 'As prescribed'}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Quantity: {order.quantity}
+                        </p>
+                        {order.instructions && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 italic">
+                            Instructions: {order.instructions}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          Prescribed: {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => handleDispenseClick(order)}
+                        className="bg-green-600 hover:bg-green-700"
+                        data-testid={`button-dispense-${order.orderId}`}
+                      >
+                        <Pill className="w-4 h-4 mr-2" />
+                        Dispense
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Dispensed History Tab */}
+        <TabsContent value="dispensed">
+          {filteredDispensedOrders.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No dispensed medications yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredDispensedOrders.map((order) => (
+                <Card 
+                  key={order.id}
+                  className="border-blue-200 bg-blue-50 dark:bg-blue-900/20"
+                  data-testid={`order-dispensed-${order.orderId}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {order.patient?.firstName} {order.patient?.lastName}
+                          </h3>
+                          <Badge className="bg-gray-600 text-white">
+                            {order.patient?.patientId}
+                          </Badge>
+                          <Badge className="bg-blue-600 text-white">
+                            ✓ DISPENSED
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                          Order: {order.orderId} | Drug: {order.drugName}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                          Dosage: {order.dosage || 'As prescribed'}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Quantity: {order.quantity}
+                        </p>
+                        {order.instructions && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 italic">
+                            Instructions: {order.instructions}
+                          </p>
+                        )}
+                        <div className="flex gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                          <p>Prescribed: {new Date(order.createdAt).toLocaleDateString()}</p>
+                          {order.dispensedAt && (
+                            <p className="font-semibold text-blue-600 dark:text-blue-400">
+                              Dispensed: {new Date(order.dispensedAt).toLocaleDateString()} {new Date(order.dispensedAt).toLocaleTimeString()}
+                            </p>
+                          )}
+                        </div>
+                        {order.dispensedBy && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Dispensed by: {order.dispensedBy}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Unpaid Orders Tab */}
+        <TabsContent value="unpaid">
+          <Card>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                {filteredUnpaidOrders.map((order) => (
                 <div 
                   key={order.id} 
                   className="border border-orange-200 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4"
@@ -255,84 +417,8 @@ export default function Pharmacy() {
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* Ready to Dispense - Paid Prescriptions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-green-700 dark:text-green-400 flex items-center gap-2">
-            <Check className="w-5 h-5" />
-            Ready to Dispense - Paid ({filteredPaidOrders.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {filteredPaidOrders.map((order) => (
-              <div 
-                key={order.id} 
-                className="border border-green-200 bg-green-50 dark:bg-green-900/20 rounded-lg p-4 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                data-testid={`order-paid-${order.orderId}`}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {order.patient?.firstName} {order.patient?.lastName}
-                      </h3>
-                      <Badge className="bg-gray-600 text-white">
-                        {order.patient?.patientId}
-                      </Badge>
-                      <Badge className="bg-green-600 text-white">
-                        ✓ PAID
-                      </Badge>
-                      {order.patient?.allergies && order.patient.allergies.trim() !== '' && (
-                        <Badge className="bg-red-600 text-white">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          ALLERGIES
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                      Order: {order.orderId} | Drug: {order.drugName || <span className="text-orange-600 font-semibold">Not specified</span>}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                      Dosage: {order.dosage || 'As prescribed'}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Quantity: {order.quantity}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Prescribed: {new Date(order.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Button
-                      onClick={() => handleDispenseClick(order)}
-                      className="bg-green-600 hover:bg-green-700"
-                      data-testid={`button-dispense-${order.orderId}`}
-                    >
-                      <Pill className="w-4 h-4 mr-2" />
-                      Dispense
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {filteredPaidOrders.length === 0 && (
-              <div className="text-center py-8">
-                <Pill className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">No paid prescriptions ready for dispensing</p>
-                {filteredUnpaidOrders.length > 0 && (
-                  <p className="text-sm text-orange-600 dark:text-orange-400 mt-2">
-                    {filteredUnpaidOrders.length} prescription(s) awaiting payment
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Dispense Dialog with Batch Selection */}
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
