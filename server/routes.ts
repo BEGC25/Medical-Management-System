@@ -150,13 +150,38 @@ router.put("/api/patients/:patientId", async (req, res) => {
 
 router.delete("/api/patients/:patientId", async (req, res) => {
   try {
-    const success = await storage.deletePatient(req.params.patientId);
-    if (success) {
-      res.json({ message: "Patient deleted successfully" });
+    // Check if user is authenticated and is admin
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Only administrators can delete patients" });
+    }
+
+    const deletedBy = req.user.username;
+    const deletionReason = req.body.reason as string | undefined;
+
+    const result = await storage.deletePatient(req.params.patientId, deletedBy, deletionReason);
+    
+    if (result.blocked) {
+      return res.status(400).json({
+        error: "Cannot delete patient",
+        blockReasons: result.blockReasons,
+        impactSummary: result.impactSummary,
+      });
+    }
+
+    if (result.success) {
+      res.json({
+        message: "Patient deleted successfully",
+        impactSummary: result.impactSummary,
+      });
     } else {
-      res.status(404).json({ error: "Patient not found" });
+      res.status(500).json({ error: "Failed to delete patient" });
     }
   } catch (error) {
+    console.error('Error in delete patient route:', error);
     res.status(500).json({ error: "Failed to delete patient" });
   }
 });
