@@ -111,6 +111,7 @@ export default function Treatment() {
   const [viewingLabTest, setViewingLabTest] = useState<any | null>(null);
   const [viewingXray, setViewingXray] = useState<any | null>(null);
   const [viewingUltrasound, setViewingUltrasound] = useState<any | null>(null);
+  const [todayFilter, setTodayFilter] = useState(""); // <-- ADDED for search
   
   // Medication ordering state
   const [medications, setMedications] = useState<Array<{
@@ -174,7 +175,7 @@ export default function Treatment() {
 
   // Filter out soft-deleted patients from the list
   // The API is likely returning all patients, but we should only work with active ones.
-  // A proper fix involves updating the GET /api/patients endpoint.
+  // A proper fix involves updating the GET /api/patients endpoint. [cite: 186-189]
   const activePatients = allPatients.filter((p: any) => !p.is_deleted);
   
   // Create a set of active patient IDs for quick lookup
@@ -186,6 +187,28 @@ export default function Treatment() {
   );
 
   // --- END PATCH ---
+
+  // Get patient name from patient ID
+  const getPatientName = (patientId: string): string => {
+    // UPDATED: Use the filtered list of active patients
+    const patient = activePatients.find(p => p.patientId === patientId);
+    if (!patient) return patientId;
+    return `${patient.firstName} ${patient.lastName}`;
+  };
+
+  // --- START: Added search filtering for Today's Visits list ---
+  const filteredTodaysTreatments = activeTodaysTreatments.filter(treatment => {
+    if (todayFilter === "") return true;
+    
+    const patientName = getPatientName(treatment.patientId).toLowerCase(); // Use existing helper [cite: 693-698]
+    const filter = todayFilter.toLowerCase();
+    
+    return patientName.includes(filter) || 
+           treatment.patientId.toLowerCase().includes(filter) ||
+           (treatment.chiefComplaint && treatment.chiefComplaint.toLowerCase().includes(filter)) ||
+           (treatment.diagnosis && treatment.diagnosis.toLowerCase().includes(filter));
+  });
+  // --- END: Added search filtering ---
 
   const form = useForm<InsertTreatment>({
     resolver: zodResolver(insertTreatmentSchema),
@@ -840,14 +863,6 @@ export default function Treatment() {
     return age || 'Unknown';
   };
 
-  // Get patient name from patient ID
-  const getPatientName = (patientId: string): string => {
-    // UPDATED: Use the filtered list of active patients
-    const patient = activePatients.find(p => p.patientId === patientId);
-    if (!patient) return patientId;
-    return `${patient.firstName} ${patient.lastName}`;
-  };
-
   // Navigate to patient details page
   const navigateToPatient = (patientId: string) => {
     window.location.href = `/patients?patientId=${patientId}`;
@@ -874,15 +889,29 @@ export default function Treatment() {
                 Back to New Treatment
               </Button>
             </CardTitle>
+            
+            {/* --- START: Added Search Bar --- */}
+            <div className="relative mt-4">
+              <Input
+                placeholder="Search today's visits by patient name, ID, or complaint..."
+                value={todayFilter}
+                onChange={(e) => setTodayFilter(e.target.value)}
+                className="max-w-md pl-10"
+              />
+              <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </div>
+            {/* --- END: Added Search Bar --- */}
+            
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {/* UPDATED: Use the filtered list activeTodaysTreatments */}
-              {activeTodaysTreatments && activeTodaysTreatments.length > 0 ? (
-                activeTodaysTreatments.map((treatment: any) => (
-                  <div 
+              {/* UPDATED: Use the filtered list filteredTodaysTreatments and add Link */}
+              {filteredTodaysTreatments && filteredTodaysTreatments.length > 0 ? (
+                filteredTodaysTreatments.map((treatment: any) => (
+                  <Link 
                     key={treatment.id} 
-                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 transition-all hover:shadow-md hover:border-medical-blue/50"
+                    href={`/treatment/${treatment.encounterId}`} // Link to the encounter
+                    className="block border border-gray-200 dark:border-gray-700 rounded-lg p-4 transition-all hover:shadow-md hover:border-medical-blue/50 cursor-pointer"
                     data-testid={`treatment-card-${treatment.treatmentId}`}
                   >
                     <div className="flex justify-between items-start">
@@ -890,7 +919,12 @@ export default function Treatment() {
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-medium text-gray-600 dark:text-gray-400">Patient:</span>
                           <button
-                            onClick={() => navigateToPatient(treatment.patientId)}
+                            onClick={(e) => {
+                              // Prevent link navigation when clicking patient profile button
+                              e.preventDefault(); 
+                              e.stopPropagation();
+                              navigateToPatient(treatment.patientId);
+                            }}
                             className="font-semibold text-medical-blue hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
                             data-testid={`patient-name-${treatment.patientId}`}
                           >
@@ -921,11 +955,12 @@ export default function Treatment() {
                         {treatment.visitDate}
                       </Badge>
                     </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No treatment visits recorded today
+                  {/* UPDATED empty state message */}
+                  {todayFilter ? "No visits match your search." : "No treatment visits recorded today."}
                 </p>
               )}
             </div>
