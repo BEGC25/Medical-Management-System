@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter"; // Import useLocation
 import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2, Edit, X, AlertTriangle, Heart, History, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -100,6 +100,7 @@ export default function Treatment() {
   const visitId = rawVisitId && rawVisitId !== "new" ? rawVisitId : undefined;
   const searchParams = new URLSearchParams(window.location.search);
   const patientIdFromQuery = searchParams.get("patientId") || undefined;
+  const filterParam = searchParams.get('filter'); // Get filter from URL
 
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescription, setShowPrescription] = useState(false);
@@ -112,6 +113,9 @@ export default function Treatment() {
   const [viewingXray, setViewingXray] = useState<any | null>(null);
   const [viewingUltrasound, setViewingUltrasound] = useState<any | null>(null);
   const [todayFilter, setTodayFilter] = useState(""); // <-- ADDED for search
+  
+  // Use wouter's location hook for navigation
+  const [, setLocation] = useLocation(); 
   
   // Medication ordering state
   const [medications, setMedications] = useState<Array<{
@@ -142,12 +146,13 @@ export default function Treatment() {
 
   // Check for filter parameter in URL
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const filter = urlParams.get('filter');
-    if (filter === 'today') {
+    // Read directly from searchParams defined earlier
+    if (filterParam === 'today') {
       setFilterToday(true);
+    } else {
+      setFilterToday(false); // Ensure it's false otherwise
     }
-  }, []);
+  }, [filterParam]); // Re-run when filterParam changes
 
   // Clear selected patient when navigating to base /treatment route (no visitId)
   useEffect(() => {
@@ -162,20 +167,20 @@ export default function Treatment() {
   // Query for today's treatments if filtering
   const { data: todaysTreatments = [] } = useQuery<Treatment[]>({
     queryKey: ["/api/treatments", "today"],
-    enabled: filterToday,
+    enabled: filterToday, // Only run query if filterToday is true
   });
 
   // Fetch all patients to get names for treatment records
   const { data: allPatients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
-    enabled: filterToday,
+    enabled: filterToday, // Only run query if filterToday is true
   });
 
   // --- START PATCH TO FIX DELETED PATIENT VISIBILITY ---
 
   // Filter out soft-deleted patients from the list
   // The API is likely returning all patients, but we should only work with active ones.
-  // A proper fix involves updating the GET /api/patients endpoint. [cite: 186-189]
+  [cite_start]// A proper fix involves updating the GET /api/patients endpoint. [cite: 186-189]
   const activePatients = allPatients.filter((p: any) => !p.is_deleted);
   
   // Create a set of active patient IDs for quick lookup
@@ -200,7 +205,7 @@ export default function Treatment() {
   const filteredTodaysTreatments = activeTodaysTreatments.filter(treatment => {
     if (todayFilter === "") return true;
     
-    const patientName = getPatientName(treatment.patientId).toLowerCase(); // Use existing helper [cite: 693-698]
+    [cite_start]const patientName = getPatientName(treatment.patientId).toLowerCase(); // Use existing helper [cite: 693-698]
     const filter = todayFilter.toLowerCase();
     
     return patientName.includes(filter) || 
@@ -386,9 +391,9 @@ export default function Treatment() {
     if (selectedPatient && currentEncounter && selectedPatient.patientId !== currentEncounter.patientId) {
       console.warn(`Patient mismatch detected! Selected: ${selectedPatient.patientId}, Encounter: ${currentEncounter.patientId}`);
       // Redirect to the correct encounter for this patient
-      window.location.href = `/treatment/new?patientId=${selectedPatient.patientId}`;
+      setLocation(`/treatment/new?patientId=${selectedPatient.patientId}`); // Use setLocation
     }
-  }, [selectedPatient, currentEncounter]);
+  }, [selectedPatient, currentEncounter, setLocation]); // Add setLocation dependency
 
   // Populate form with existing treatment data when it loads
   useEffect(() => {
@@ -411,7 +416,7 @@ export default function Treatment() {
       });
       setSavedTreatment(existingTreatment);
     }
-  }, [existingTreatment, selectedPatient]);
+  }, [existingTreatment, selectedPatient, form]); // Add form dependency
 
   // Update current encounter when patient changes (legacy flow)
   useEffect(() => {
@@ -427,7 +432,7 @@ export default function Treatment() {
         attendingClinician: "Dr. System", // In real app, get from auth
       });
     }
-  }, [todayEncounter, selectedPatient, visitId]);
+  }, [todayEncounter, selectedPatient, visitId, createEncounterMutation]); // Add mutation dependency
 
   // Create encounter mutation
   const createEncounterMutation = useMutation({
@@ -849,7 +854,7 @@ export default function Treatment() {
 
   const handlePatientSelect = (patient: Patient) => {
     // Navigate to visit redirector which will find or create today's visit
-    window.location.href = `/treatment/new?patientId=${patient.patientId}`;
+    setLocation(`/treatment/new?patientId=${patient.patientId}`); // Use setLocation
   };
 
   const handleNewTreatment = () => {
@@ -857,6 +862,7 @@ export default function Treatment() {
     setSelectedPatient(null);
     setSavedTreatment(null);
     setShowPrescription(false);
+    setLocation('/treatment'); // Navigate back to base treatment page
   };
 
   const getAge = (age: string) => {
@@ -865,7 +871,7 @@ export default function Treatment() {
 
   // Navigate to patient details page
   const navigateToPatient = (patientId: string) => {
-    window.location.href = `/patients?patientId=${patientId}`;
+    setLocation(`/patients?patientId=${patientId}`); // Use setLocation
   };
 
   return (
@@ -884,7 +890,7 @@ export default function Treatment() {
               </div>
               <Button 
                 variant="outline"
-                onClick={() => setFilterToday(false)}
+                onClick={() => setLocation('/treatment')} // Navigate back using setLocation
               >
                 Back to New Treatment
               </Button>
@@ -910,7 +916,8 @@ export default function Treatment() {
                 filteredTodaysTreatments.map((treatment: any) => (
                   <Link 
                     key={treatment.id} 
-                    href={`/treatment/${treatment.encounterId}`} // Link to the encounter
+                    // UPDATED: Link should go to encounterId if available, otherwise treatmentId as fallback
+                    href={`/treatment/${treatment.encounterId || treatment.treatmentId}`} 
                     className="block border border-gray-200 dark:border-gray-700 rounded-lg p-4 transition-all hover:shadow-md hover:border-medical-blue/50 cursor-pointer"
                     data-testid={`treatment-card-${treatment.treatmentId}`}
                   >
@@ -972,7 +979,18 @@ export default function Treatment() {
       {!filterToday && (
         <Card className="print:hidden">
           <CardHeader>
-            <CardTitle>Treatment Records</CardTitle>
+            {/* --- START: Added Button to switch views --- */}
+            <div className="flex justify-between items-center">
+              <CardTitle>Treatment Records</CardTitle>
+              <Button 
+                variant="outline"
+                onClick={() => setLocation('/treatment?filter=today')} // Navigate using setLocation
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                View Today's Visits
+              </Button>
+            </div>
+            {/* --- END: Added Button --- */}
           </CardHeader>
           <CardContent>
             {/* Patient Selection - Modernized */}
