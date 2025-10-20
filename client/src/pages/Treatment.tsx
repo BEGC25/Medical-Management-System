@@ -170,6 +170,23 @@ export default function Treatment() {
     enabled: filterToday,
   });
 
+  // --- START PATCH TO FIX DELETED PATIENT VISIBILITY ---
+
+  // Filter out soft-deleted patients from the list
+  // The API is likely returning all patients, but we should only work with active ones.
+  // A proper fix involves updating the GET /api/patients endpoint.
+  const activePatients = allPatients.filter((p: any) => !p.is_deleted);
+  
+  // Create a set of active patient IDs for quick lookup
+  const activePatientIds = new Set(activePatients.map(p => p.patientId));
+  
+  // Filter today's treatments to only show those from active (non-deleted) patients
+  const activeTodaysTreatments = todaysTreatments.filter(t => 
+    activePatientIds.has(t.patientId)
+  );
+
+  // --- END PATCH ---
+
   const form = useForm<InsertTreatment>({
     resolver: zodResolver(insertTreatmentSchema),
     defaultValues: {
@@ -825,7 +842,8 @@ export default function Treatment() {
 
   // Get patient name from patient ID
   const getPatientName = (patientId: string): string => {
-    const patient = allPatients.find(p => p.patientId === patientId);
+    // UPDATED: Use the filtered list of active patients
+    const patient = activePatients.find(p => p.patientId === patientId);
     if (!patient) return patientId;
     return `${patient.firstName} ${patient.lastName}`;
   };
@@ -859,8 +877,9 @@ export default function Treatment() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {todaysTreatments && todaysTreatments.length > 0 ? (
-                todaysTreatments.map((treatment: any) => (
+              {/* UPDATED: Use the filtered list activeTodaysTreatments */}
+              {activeTodaysTreatments && activeTodaysTreatments.length > 0 ? (
+                activeTodaysTreatments.map((treatment: any) => (
                   <div 
                     key={treatment.id} 
                     className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 transition-all hover:shadow-md hover:border-medical-blue/50"
@@ -2025,7 +2044,7 @@ export default function Treatment() {
                             onClick={() => {
                               if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
                                 toast({
-                                  title: "ValidationError",
+                                  title: "Validation Error",
                                   description: "Please fill in drug, dosage, and quantity",
                                   variant: "destructive",
                                 });
