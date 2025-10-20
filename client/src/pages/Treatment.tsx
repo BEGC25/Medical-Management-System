@@ -112,7 +112,7 @@ export default function Treatment() {
   const [viewingLabTest, setViewingLabTest] = useState<any | null>(null);
   const [viewingXray, setViewingXray] = useState<any | null>(null);
   const [viewingUltrasound, setViewingUltrasound] = useState<any | null>(null);
-  const [todayFilter, setTodayFilter] = useState(""); // <-- ADDED for search
+  const [todayFilter, setTodayFilter] = useState("");
   
   // Use wouter's location hook for navigation
   const [, setLocation] = useLocation(); 
@@ -176,11 +176,7 @@ export default function Treatment() {
     enabled: filterToday, // Only run query if filterToday is true
   });
 
-  // --- START PATCH TO FIX DELETED PATIENT VISIBILITY ---
-
   // Filter out soft-deleted patients from the list
-  // The API is likely returning all patients, but we should only work with active ones.
-  [cite_start]// A proper fix involves updating the GET /api/patients endpoint. [cite: 186-189]
   const activePatients = allPatients.filter((p: any) => !p.is_deleted);
   
   // Create a set of active patient IDs for quick lookup
@@ -191,21 +187,18 @@ export default function Treatment() {
     activePatientIds.has(t.patientId)
   );
 
-  // --- END PATCH ---
-
   // Get patient name from patient ID
   const getPatientName = (patientId: string): string => {
-    // UPDATED: Use the filtered list of active patients
     const patient = activePatients.find(p => p.patientId === patientId);
     if (!patient) return patientId;
     return `${patient.firstName} ${patient.lastName}`;
   };
 
-  // --- START: Added search filtering for Today's Visits list ---
+  // Filter Today's Visits list based on the search input
   const filteredTodaysTreatments = activeTodaysTreatments.filter(treatment => {
     if (todayFilter === "") return true;
     
-    const patientName = getPatientName(treatment.patientId).toLowerCase(); // Use existing helper [cite: 693-698]
+    const patientName = getPatientName(treatment.patientId).toLowerCase();
     const filter = todayFilter.toLowerCase();
     
     return patientName.includes(filter) || 
@@ -213,7 +206,6 @@ export default function Treatment() {
            (treatment.chiefComplaint && treatment.chiefComplaint.toLowerCase().includes(filter)) ||
            (treatment.diagnosis && treatment.diagnosis.toLowerCase().includes(filter));
   });
-  // --- END: Added search filtering ---
 
   const form = useForm<InsertTreatment>({
     resolver: zodResolver(insertTreatmentSchema),
@@ -384,7 +376,7 @@ export default function Treatment() {
       setSelectedPatient(loadedPatient);
       setCurrentEncounter(loadedVisit.encounter);
     }
-  }, [loadedVisit, loadedPatient]);
+  }, [loadedVisit, loadedPatient, selectedPatient]); // Added selectedPatient dependency
 
   // Safety check: Ensure patient matches encounter
   useEffect(() => {
@@ -418,23 +410,7 @@ export default function Treatment() {
     }
   }, [existingTreatment, selectedPatient, form]); // Add form dependency
 
-  // Update current encounter when patient changes (legacy flow)
-  useEffect(() => {
-    if (visitId) return; // Skip legacy flow when using visitId route
-    
-    if (todayEncounter) {
-      setCurrentEncounter(todayEncounter);
-    } else if (selectedPatient) {
-      // Create new encounter if none exists for today
-      createEncounterMutation.mutate({
-        patientId: selectedPatient.patientId,
-        visitDate: new Date().toISOString().split('T')[0],
-        attendingClinician: "Dr. System", // In real app, get from auth
-      });
-    }
-  }, [todayEncounter, selectedPatient, visitId, createEncounterMutation]); // Add mutation dependency
-
-  // Create encounter mutation
+  // Create encounter mutation (defined below useEffect)
   const createEncounterMutation = useMutation({
     mutationFn: async (data: { patientId: string; visitDate: string; attendingClinician: string }) => {
       const response = await fetch("/api/encounters", {
@@ -450,6 +426,23 @@ export default function Treatment() {
       queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
     },
   });
+
+  // Update current encounter when patient changes (legacy flow)
+  useEffect(() => {
+    if (visitId) return; // Skip legacy flow when using visitId route
+    
+    if (todayEncounter) {
+      setCurrentEncounter(todayEncounter);
+    } else if (selectedPatient && !createEncounterMutation.isPending && !currentEncounter) { // Prevent multiple creates
+      // Create new encounter if none exists for today
+      createEncounterMutation.mutate({
+        patientId: selectedPatient.patientId,
+        visitDate: new Date().toISOString().split('T')[0],
+        attendingClinician: "Dr. System", // In real app, get from auth
+      });
+    }
+  }, [todayEncounter, selectedPatient, visitId, createEncounterMutation, currentEncounter]); // Added mutation and currentEncounter dependency
+
 
   // Auto-add consultation fee
   const addConsultationMutation = useMutation({
@@ -896,7 +889,6 @@ export default function Treatment() {
               </Button>
             </CardTitle>
             
-            {/* --- START: Added Search Bar --- */}
             <div className="relative mt-4">
               <Input
                 placeholder="Search today's visits by patient name, ID, or complaint..."
@@ -906,17 +898,14 @@ export default function Treatment() {
               />
               <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
-            {/* --- END: Added Search Bar --- */}
             
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {/* UPDATED: Use the filtered list filteredTodaysTreatments and add Link */}
               {filteredTodaysTreatments && filteredTodaysTreatments.length > 0 ? (
                 filteredTodaysTreatments.map((treatment: any) => (
                   <Link 
                     key={treatment.id} 
-                    // UPDATED: Link should go to encounterId if available, otherwise treatmentId as fallback
                     href={`/treatment/${treatment.encounterId || treatment.treatmentId}`} 
                     className="block border border-gray-200 dark:border-gray-700 rounded-lg p-4 transition-all hover:shadow-md hover:border-medical-blue/50 cursor-pointer"
                     data-testid={`treatment-card-${treatment.treatmentId}`}
@@ -927,7 +916,6 @@ export default function Treatment() {
                           <span className="font-medium text-gray-600 dark:text-gray-400">Patient:</span>
                           <button
                             onClick={(e) => {
-                              // Prevent link navigation when clicking patient profile button
                               e.preventDefault(); 
                               e.stopPropagation();
                               navigateToPatient(treatment.patientId);
@@ -966,7 +954,6 @@ export default function Treatment() {
                 ))
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  {/* UPDATED empty state message */}
                   {todayFilter ? "No visits match your search." : "No treatment visits recorded today."}
                 </p>
               )}
@@ -979,7 +966,6 @@ export default function Treatment() {
       {!filterToday && (
         <Card className="print:hidden">
           <CardHeader>
-            {/* --- START: Added Button to switch views --- */}
             <div className="flex justify-between items-center">
               <CardTitle>Treatment Records</CardTitle>
               <Button 
@@ -990,7 +976,6 @@ export default function Treatment() {
                 View Today's Visits
               </Button>
             </div>
-            {/* --- END: Added Button --- */}
           </CardHeader>
           <CardContent>
             {/* Patient Selection - Modernized */}
