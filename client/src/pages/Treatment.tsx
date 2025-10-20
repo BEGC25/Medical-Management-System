@@ -95,7 +95,12 @@ function cx(...cls: (string | boolean | null | undefined)[]) {
 }
 
 export default function Treatment() {
-  const { visitId } = useParams<{ visitId?: string }>();
+  // Normalize visitId and read patientId from query string
+  const { visitId: rawVisitId } = useParams<{ visitId?: string }>();
+  const visitId = rawVisitId && rawVisitId !== "new" ? rawVisitId : undefined;
+  const searchParams = new URLSearchParams(window.location.search);
+  const patientIdFromQuery = searchParams.get("patientId") || undefined;
+
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescription, setShowPrescription] = useState(false);
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
@@ -207,29 +212,51 @@ export default function Treatment() {
     enabled: !!visitId,
   });
 
-  // Load patient for the loaded visit
-  const { data: loadedPatient } = useQuery({
+  // Load patient for the loaded visit (when visiting /treatment/:visitId)
+  const { data: loadedPatient } = useQuery<Patient | null>({
     queryKey: ["/api/patients", loadedVisit?.encounter?.patientId],
     queryFn: async () => {
-      if (!loadedVisit?.encounter) return null;
-      const response = await fetch(`/api/patients?id=${loadedVisit.encounter.patientId}`);
+      const pid = loadedVisit?.encounter?.patientId;
+      if (!pid) return null;
+      const response = await fetch(`/api/patients/${pid}`);
       if (!response.ok) return null;
-      const patients = await response.json();
-      return patients[0] || null;
+      return response.json();
     },
-    enabled: !!loadedVisit?.encounter,
+    enabled: !!loadedVisit?.encounter?.patientId,
   });
 
-  // Get today's encounter for selected patient (legacy flow)
-  const { data: todayEncounter } = useQuery({
-    queryKey: ["/api/encounters", { patientId: selectedPatient?.patientId, date: new Date().toISOString().split('T')[0] }],
+  // If we came via /treatment/new?patientId=..., load that patient
+  const { data: patientFromQuery } = useQuery<Patient | null>({
+    queryKey: ["/api/patients", patientIdFromQuery],
+    queryFn: async () => {
+      if (!patientIdFromQuery) return null;
+      const res = await fetch(`/api/patients/${patientIdFromQuery}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!patientIdFromQuery && !visitId && !selectedPatient,
+  });
+
+  // Adopt the patient loaded from the query param
+  useEffect(() => {
+    if (patientFromQuery) setSelectedPatient(patientFromQuery);
+  }, [patientFromQuery]);
+
+  // Get today's encounter for the selected patient (legacy flow, no visitId)
+  const { data: todayEncounter } = useQuery<Encounter | null>({
+    queryKey: [
+      "/api/encounters",
+      { pid: selectedPatient?.patientId, date: new Date().toISOString().split("T")[0] },
+    ],
     queryFn: async () => {
       if (!selectedPatient) return null;
-      const today = new Date().toISOString().split('T')[0];
-      const response = await fetch(`/api/encounters?date=${today}`);
+      const today = new Date().toISOString().split("T")[0];
+      const response = await fetch(
+        `/api/encounters?date=${today}&patientId=${selectedPatient.patientId}`
+      );
       if (!response.ok) return null;
       const encounters = await response.json();
-      return encounters.find((e: Encounter) => e.patientId === selectedPatient.patientId) || null;
+      return encounters[0] || null;
     },
     enabled: !!selectedPatient && !visitId,
   });
@@ -1998,7 +2025,7 @@ export default function Treatment() {
                             onClick={() => {
                               if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
                                 toast({
-                                  title: "Validation Error",
+                                  title: "ValidationError",
                                   description: "Please fill in drug, dosage, and quantity",
                                   variant: "destructive",
                                 });
