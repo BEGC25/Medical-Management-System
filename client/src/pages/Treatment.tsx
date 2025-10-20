@@ -205,7 +205,7 @@ export default function Treatment() {
   const filteredTodaysTreatments = activeTodaysTreatments.filter(treatment => {
     if (todayFilter === "") return true;
     
-    [cite_start]const patientName = getPatientName(treatment.patientId).toLowerCase(); // Use existing helper [cite: 693-698]
+    const patientName = getPatientName(treatment.patientId).toLowerCase(); // Use existing helper [cite: 693-698]
     const filter = todayFilter.toLowerCase();
     
     return patientName.includes(filter) || 
