@@ -198,11 +198,11 @@ export interface IStorage {
   getPayments(): Promise<schema.Payment[]>;
   getPaymentsByPatient(patientId: string): Promise<schema.Payment[]>;
   getPaymentById(id: number): Promise<schema.Payment | null>;
-  
+
   // Payment Items
   createPaymentItem(data: schema.InsertPaymentItem): Promise<schema.PaymentItem>;
   getPaymentItems(paymentId: string): Promise<schema.PaymentItem[]>;
-  
+
   // Payment status checking
   checkPaymentStatus(patientId: string, serviceType: 'laboratory' | 'radiology' | 'ultrasound', requestId: string): Promise<boolean>;
 
@@ -248,12 +248,12 @@ export interface IStorage {
   }>;
 
   getRecentPatients(limit?: number): Promise<(schema.Patient & { lastVisit?: string; status: string })[]>;
-  
+
   // Today filters
   getTodaysPatients(): Promise<schema.Patient[]>;
   getPatientsByDate(date: string): Promise<schema.Patient[]>;
   getTodaysTreatments(): Promise<schema.Treatment[]>;
-  
+
   // Enhanced patient queries with service status
   getPatientsWithStatus(search?: string): Promise<(schema.Patient & { serviceStatus: any })[]>;
   getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]>;
@@ -266,24 +266,24 @@ export interface IStorage {
   getDrugById(id: number): Promise<schema.Drug | null>;
   getDrugByCode(drugCode: string): Promise<schema.Drug | null>;
   updateDrug(id: number, data: Partial<schema.Drug>): Promise<schema.Drug>;
-  
+
   // Pharmacy Inventory - Batches
   createDrugBatch(data: schema.InsertDrugBatch): Promise<schema.DrugBatch>;
   getDrugBatches(drugId?: number): Promise<schema.DrugBatch[]>;
   getDrugBatchById(batchId: string): Promise<schema.DrugBatch | null>;
   updateDrugBatch(batchId: string, data: Partial<schema.DrugBatch>): Promise<schema.DrugBatch>;
   getBatchesFEFO(drugId: number): Promise<schema.DrugBatch[]>; // First Expiry First Out
-  
+
   // Pharmacy Inventory - Ledger
   createInventoryLedger(data: schema.InsertInventoryLedger): Promise<schema.InventoryLedger>;
   getInventoryLedger(drugId?: number, batchId?: string): Promise<schema.InventoryLedger[]>;
-  
+
   // Pharmacy Inventory - Stock Queries
   getDrugStockLevel(drugId: number): Promise<number>; // Total quantity on hand
   getAllDrugsWithStock(): Promise<(schema.Drug & { stockOnHand: number })[]>; // All drugs with stock levels
   getLowStockDrugs(): Promise<(schema.Drug & { stockOnHand: number })[]>;
   getExpiringSoonDrugs(daysThreshold?: number): Promise<(schema.DrugBatch & { drugName: string })[]>;
-  
+
   // Pharmacy - Dispense Operations
   dispenseDrug(orderId: string, batchId: string, quantity: number, dispensedBy: string): Promise<schema.PharmacyOrder>;
   getPaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
@@ -306,7 +306,7 @@ export class MemStorage implements IStorage {
       ...data,
       createdAt: now,
     };
-    
+
     const [user] = await db.insert(users).values(insertData).returning();
     return user;
   }
@@ -334,30 +334,34 @@ export class MemStorage implements IStorage {
   async createPatient(data: schema.InsertPatient): Promise<schema.Patient> {
     // Initialize counter from existing patients if not set
     if (patientCounter === 0) {
-      const allPatients = await db.select().from(patients);
-      patientCounter = allPatients.length;
+      // --- MODIFIED: Count only non-deleted patients for ID generation ---
+      const activePatientsCount = await db.select({ count: count() }).from(patients).where(eq(patients.isDeleted, 0));
+      patientCounter = activePatientsCount[0]?.count || 0;
     }
-    
+
     const patientId = generatePatientId();
     const now = new Date().toISOString();
-    
+
     const insertData: any = {
       ...data,
       patientId,
       createdAt: now,
+      isDeleted: 0, // Ensure new patients are not deleted
     };
-    
+
     const [patient] = await db.insert(patients).values(insertData).returning();
-    
+
     return patient;
   }
 
   async getPatients(search?: string): Promise<schema.Patient[]> {
+    const baseCondition = eq(patients.isDeleted, 0); // Always filter out deleted
+
     if (search) {
       return await db.select().from(patients)
         .where(
           and(
-            eq(patients.isDeleted, 0),
+            baseCondition, // Added filter
             or(
               ilike(patients.firstName, `%${search}%`),
               ilike(patients.lastName, `%${search}%`),
@@ -367,9 +371,10 @@ export class MemStorage implements IStorage {
         )
         .orderBy(desc(patients.createdAt));
     }
-    
+
+    // --- MODIFIED: Added isDeleted filter for the non-search case ---
     return await db.select().from(patients)
-      .where(eq(patients.isDeleted, 0))
+      .where(baseCondition) // Added filter
       .orderBy(desc(patients.createdAt));
   }
 
@@ -377,7 +382,7 @@ export class MemStorage implements IStorage {
     const [patient] = await db.select().from(patients).where(
       and(
         eq(patients.id, parseInt(id)),
-        eq(patients.isDeleted, 0)
+        eq(patients.isDeleted, 0) // Already correct
       )
     );
     return patient || null;
@@ -387,18 +392,22 @@ export class MemStorage implements IStorage {
     const [patient] = await db.select().from(patients).where(
       and(
         eq(patients.patientId, patientId),
-        eq(patients.isDeleted, 0)
+        eq(patients.isDeleted, 0) // Already correct
       )
     );
     return patient || null;
   }
 
   async updatePatient(patientId: string, data: Partial<schema.InsertPatient>): Promise<schema.Patient> {
+    // --- MODIFIED: Ensure we only update non-deleted patients ---
     const [patient] = await db.update(patients)
       .set(data as any)
-      .where(eq(patients.patientId, patientId))
+      .where(and(
+        eq(patients.patientId, patientId),
+        eq(patients.isDeleted, 0) // Added safety check
+      ))
       .returning();
-    
+
     return patient;
   }
 
@@ -417,50 +426,63 @@ export class MemStorage implements IStorage {
     };
   }> {
     // Get patient info
-    const patient = await db.select().from(patients).where(eq(patients.patientId, patientId));
-    if (!patient || patient.length === 0) {
+    // --- MODIFIED: Fetch regardless of isDeleted, check flag later ---
+    const patientResult = await db.select().from(patients).where(eq(patients.patientId, patientId));
+    if (!patientResult || patientResult.length === 0) {
       return { success: false, blocked: true, blockReasons: ["Patient not found"] };
     }
 
-    const patientData = patient[0];
+    const patientData = patientResult[0];
+    // --- MODIFIED: Check isDeleted flag here ---
     if (patientData.isDeleted === 1) {
       return { success: false, blocked: true, blockReasons: ["Patient already deleted"] };
     }
 
     // Check for blocking conditions
     const blockReasons: string[] = [];
-    
+
     // Check for payment history (BLOCKING unless force-delete)
-    const patientPayments = await db.select().from(payments).where(eq(payments.patientId, patientId));
-    if (patientPayments.length > 0 && !forceDelete) {
-      blockReasons.push(`Patient has ${patientPayments.length} payment record(s). Cannot delete patients with financial history without force-delete.`);
+    const patientPayments = await db.select({ count: count() }).from(payments).where(eq(payments.patientId, patientId));
+    const paymentCount = patientPayments[0]?.count || 0;
+    if (paymentCount > 0 && !forceDelete) {
+      blockReasons.push(`Patient has ${paymentCount} payment record(s). Cannot delete patients with financial history without force-delete.`);
     }
 
     // Check for open encounters (BLOCKING unless force-delete)
-    const openEncounters = await db.select().from(encounters).where(
+    const openEncounters = await db.select({ count: count() }).from(encounters).where(
       and(
         eq(encounters.patientId, patientId),
         eq(encounters.status, 'open')
       )
     );
-    if (openEncounters.length > 0 && !forceDelete) {
-      blockReasons.push(`Patient has ${openEncounters.length} open encounter(s). Please close encounters before deletion or use force-delete.`);
+    const openEncounterCount = openEncounters[0]?.count || 0;
+    if (openEncounterCount > 0 && !forceDelete) {
+      blockReasons.push(`Patient has ${openEncounterCount} open encounter(s). Please close encounters before deletion or use force-delete.`);
     }
 
     // Get impact summary (all related records)
-    const allEncounters = await db.select().from(encounters).where(eq(encounters.patientId, patientId));
-    const patientLabTests = await db.select().from(labTests).where(eq(labTests.patientId, patientId));
-    const patientXrays = await db.select().from(xrayExams).where(eq(xrayExams.patientId, patientId));
-    const patientUltrasounds = await db.select().from(ultrasoundExams).where(eq(ultrasoundExams.patientId, patientId));
-    const patientPharmacy = await db.select().from(pharmacyOrders).where(eq(pharmacyOrders.patientId, patientId));
+    // --- MODIFIED: Use count() for efficiency ---
+    const [
+      allEncountersCountResult,
+      patientLabTestsCountResult,
+      patientXraysCountResult,
+      patientUltrasoundsCountResult,
+      patientPharmacyCountResult
+    ] = await Promise.all([
+      db.select({ count: count() }).from(encounters).where(eq(encounters.patientId, patientId)),
+      db.select({ count: count() }).from(labTests).where(eq(labTests.patientId, patientId)),
+      db.select({ count: count() }).from(xrayExams).where(eq(xrayExams.patientId, patientId)),
+      db.select({ count: count() }).from(ultrasoundExams).where(eq(ultrasoundExams.patientId, patientId)),
+      db.select({ count: count() }).from(pharmacyOrders).where(eq(pharmacyOrders.patientId, patientId))
+    ]);
 
     const impactSummary = {
-      encounters: allEncounters.length,
-      labTests: patientLabTests.length,
-      xrayExams: patientXrays.length,
-      ultrasoundExams: patientUltrasounds.length,
-      pharmacyOrders: patientPharmacy.length,
-      payments: patientPayments.length,
+      encounters: allEncountersCountResult[0]?.count || 0,
+      labTests: patientLabTestsCountResult[0]?.count || 0,
+      xrayExams: patientXraysCountResult[0]?.count || 0,
+      ultrasoundExams: patientUltrasoundsCountResult[0]?.count || 0,
+      pharmacyOrders: patientPharmacyCountResult[0]?.count || 0,
+      payments: paymentCount,
     };
 
     // If blocked, return with reasons
@@ -473,10 +495,10 @@ export class MemStorage implements IStorage {
       };
     }
 
-    // Perform soft-delete in transaction
+    // Perform soft-delete in transaction (Drizzle doesn't have explicit transactions API like some ORMs, rely on single statements)
     try {
       const now = new Date().toISOString();
-      
+
       // Soft-delete patient
       await db.update(patients)
         .set({
@@ -487,35 +509,36 @@ export class MemStorage implements IStorage {
         })
         .where(eq(patients.patientId, patientId));
 
-      // Cancel all related records
-      if (patientLabTests.length > 0) {
+      // --- MODIFIED: Simplified cancellation logic - only cancel PENDING items ---
+      if (impactSummary.labTests > 0) {
         await db.update(labTests)
           .set({ status: 'cancelled' })
-          .where(eq(labTests.patientId, patientId));
+          .where(and(eq(labTests.patientId, patientId), eq(labTests.status, 'pending')));
       }
 
-      if (patientXrays.length > 0) {
+      if (impactSummary.xrayExams > 0) {
         await db.update(xrayExams)
           .set({ status: 'cancelled' })
-          .where(eq(xrayExams.patientId, patientId));
+          .where(and(eq(xrayExams.patientId, patientId), eq(xrayExams.status, 'pending')));
       }
 
-      if (patientUltrasounds.length > 0) {
+      if (impactSummary.ultrasoundExams > 0) {
         await db.update(ultrasoundExams)
           .set({ status: 'cancelled' })
-          .where(eq(ultrasoundExams.patientId, patientId));
+          .where(and(eq(ultrasoundExams.patientId, patientId), eq(ultrasoundExams.status, 'pending')));
       }
 
-      if (patientPharmacy.length > 0) {
+      if (impactSummary.pharmacyOrders > 0) {
         await db.update(pharmacyOrders)
           .set({ status: 'cancelled' })
-          .where(eq(pharmacyOrders.patientId, patientId));
+          .where(and(eq(pharmacyOrders.patientId, patientId), eq(pharmacyOrders.status, 'prescribed')));
       }
-
-      if (allEncounters.length > 0) {
+      
+      // --- MODIFIED: Only close OPEN encounters ---
+      if (impactSummary.encounters > 0) {
         await db.update(encounters)
           .set({ status: 'closed', closedAt: now })
-          .where(eq(encounters.patientId, patientId));
+          .where(and(eq(encounters.patientId, patientId), eq(encounters.status, 'open')));
       }
 
       // Create audit log
@@ -525,7 +548,8 @@ export class MemStorage implements IStorage {
         deletedBy: deletedBy,
         deletionReason: deletionReason || null,
         impactSummary: JSON.stringify(impactSummary),
-        hadPaymentHistory: patientPayments.length > 0 ? 1 : 0,
+        hadPaymentHistory: paymentCount > 0 ? 1 : 0,
+        // deletedAt is defaulted by DB
       });
 
       return {
@@ -547,15 +571,15 @@ export class MemStorage implements IStorage {
   async createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment> {
     const treatmentId = await generateTreatmentId();
     const now = new Date().toISOString();
-    
+
     const insertData: any = {
       ...data,
       treatmentId,
       createdAt: now,
     };
-    
+
     const [treatment] = await db.insert(treatments).values(insertData).returning();
-    
+
     return treatment;
   }
 
@@ -574,27 +598,31 @@ export class MemStorage implements IStorage {
   async createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest> {
     const testId = await generateLabId();
     const now = new Date().toISOString();
-    
+
     const insertData: any = {
       ...data,
       testId,
       status: "pending",
+      paymentStatus: 'unpaid', // Ensure default
       createdAt: now,
     };
-    
+
     const [labTest] = await db.insert(labTests).values(insertData).returning();
-    
+
     return labTest;
   }
 
   async getLabTests(status?: string, date?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
     const baseQuery = db.select({
       labTest: labTests,
-      patient: patients
+      patient: patients // Select whole patient object
     })
     .from(labTests)
-    .leftJoin(patients, eq(labTests.patientId, patients.patientId));
-    
+    .leftJoin(patients, and(
+      eq(labTests.patientId, patients.patientId),
+      eq(patients.isDeleted, 0) // --- MODIFIED: Ensure joined patient is not deleted ---
+    ));
+
     // Apply filters
     const conditions = [];
     if (status) {
@@ -603,19 +631,21 @@ export class MemStorage implements IStorage {
     if (date) {
       conditions.push(eq(labTests.requestedDate, date));
     }
-    
+
     let query = baseQuery;
     if (conditions.length > 0) {
       query = baseQuery.where(and(...conditions));
     }
-    
+
     const results = await query.orderBy(desc(labTests.requestedDate));
-    
+
     // Transform the results to match the expected format
-    return results.map(result => ({
-      ...result.labTest,
-      patient: result.patient || undefined
-    }));
+    return results
+      .filter(result => result.patient != null) // --- MODIFIED: Filter out results where patient was deleted ---
+      .map(result => ({
+        ...result.labTest,
+        patient: result.patient || undefined // Should not be undefined due to filter
+      }));
   }
 
   async getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]> {
@@ -629,7 +659,7 @@ export class MemStorage implements IStorage {
       .set(data)
       .where(eq(labTests.testId, testId))
       .returning();
-    
+
     return labTest;
   }
 
@@ -639,23 +669,24 @@ export class MemStorage implements IStorage {
       .set({ attachments: attachmentsJson })
       .where(eq(labTests.testId, testId))
       .returning();
-    
+
     return labTest;
   }
 
   async createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam> {
     const examId = await generateXrayId();
     const now = new Date().toISOString();
-    
+
     const insertData: any = {
       ...data,
       examId,
       status: "pending",
+      paymentStatus: 'unpaid', // Ensure default
       createdAt: now,
     };
-    
+
     const [xrayExam] = await db.insert(xrayExams).values(insertData).returning();
-    
+
     return xrayExam;
   }
 
@@ -665,8 +696,11 @@ export class MemStorage implements IStorage {
       patient: patients
     })
     .from(xrayExams)
-    .leftJoin(patients, eq(xrayExams.patientId, patients.patientId));
-    
+    .leftJoin(patients, and(
+      eq(xrayExams.patientId, patients.patientId),
+      eq(patients.isDeleted, 0) // --- MODIFIED: Ensure joined patient is not deleted ---
+    ));
+
     // Apply filters
     const conditions = [];
     if (status) {
@@ -675,19 +709,21 @@ export class MemStorage implements IStorage {
     if (date) {
       conditions.push(eq(xrayExams.requestedDate, date));
     }
-    
+
     let query = baseQuery;
     if (conditions.length > 0) {
       query = baseQuery.where(and(...conditions));
     }
-    
+
     const results = await query.orderBy(desc(xrayExams.requestedDate));
-    
+
     // Transform the results to match the expected format
-    return results.map(result => ({
-      ...result.xrayExam,
-      patient: result.patient || undefined
-    }));
+    return results
+      .filter(result => result.patient != null) // --- MODIFIED: Filter out results where patient was deleted ---
+      .map(result => ({
+        ...result.xrayExam,
+        patient: result.patient || undefined // Should not be undefined due to filter
+      }));
   }
 
   async getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]> {
@@ -701,7 +737,7 @@ export class MemStorage implements IStorage {
       .set(data)
       .where(eq(xrayExams.examId, examId))
       .returning();
-    
+
     return xrayExam;
   }
 
@@ -709,29 +745,38 @@ export class MemStorage implements IStorage {
   async createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam> {
     const examId = await generateUltrasoundId();
     const createdAt = new Date().toISOString();
-    
+
     const insertData: any = {
       ...data,
       examId,
       status: "pending",
+      paymentStatus: 'unpaid', // Ensure default
       createdAt,
     };
-    
+
     const [ultrasoundExam] = await db.insert(ultrasoundExams)
       .values(insertData)
       .returning();
-    
+
     return ultrasoundExam;
   }
 
   async getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]> {
-    const query = db.select().from(ultrasoundExams);
-    
+    // --- MODIFIED: Join patients and filter ---
+    const baseQuery = db.select({ ultrasoundExam: ultrasoundExams })
+        .from(ultrasoundExams)
+        .innerJoin(patients, and(
+            eq(ultrasoundExams.patientId, patients.patientId),
+            eq(patients.isDeleted, 0) // Only include exams for non-deleted patients
+        ));
+
     if (status) {
-      return await query.where(eq(ultrasoundExams.status, status as any)).orderBy(desc(ultrasoundExams.requestedDate));
+        const results = await baseQuery.where(eq(ultrasoundExams.status, status as any)).orderBy(desc(ultrasoundExams.requestedDate));
+        return results.map(r => r.ultrasoundExam);
     }
-    
-    return await query.orderBy(desc(ultrasoundExams.requestedDate));
+
+    const results = await baseQuery.orderBy(desc(ultrasoundExams.requestedDate));
+    return results.map(r => r.ultrasoundExam);
   }
 
   async getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]> {
@@ -745,7 +790,7 @@ export class MemStorage implements IStorage {
       .set(data)
       .where(eq(ultrasoundExams.examId, examId))
       .returning();
-    
+
     return ultrasoundExam;
   }
 
@@ -753,45 +798,45 @@ export class MemStorage implements IStorage {
     const result = await db.delete(ultrasoundExams)
       .where(eq(ultrasoundExams.examId, examId))
       .returning();
-    
+
     return result.length > 0;
   }
 
   async getDashboardStats(fromDate?: string, toDate?: string) {
     try {
       console.log("Getting dashboard stats", { fromDate, toDate });
-      
+
       // Build date filter conditions
-      const treatmentDateFilter = fromDate && toDate 
+      const treatmentDateFilter = fromDate && toDate
         ? and(
             gte(treatments.visitDate, fromDate),
             lte(treatments.visitDate, toDate)
           )
         : undefined;
-      
+
       const labDateFilter = fromDate && toDate
         ? and(
             gte(labTests.requestedDate, fromDate),
             lte(labTests.requestedDate, toDate)
           )
         : undefined;
-      
+
       const xrayDateFilter = fromDate && toDate
         ? and(
             gte(xrayExams.requestedDate, fromDate),
             lte(xrayExams.requestedDate, toDate)
           )
         : undefined;
-      
+
       const ultrasoundDateFilter = fromDate && toDate
         ? and(
             gte(ultrasoundExams.requestedDate, fromDate),
             lte(ultrasoundExams.requestedDate, toDate)
           )
         : undefined;
-      
-      // Get counts with date filtering
-      const totalPatients = await db.select({ count: count() }).from(patients);
+
+      // --- MODIFIED: Add isDeleted filter to patient count ---
+      const totalPatients = await db.select({ count: count() }).from(patients).where(eq(patients.isDeleted, 0));
       const totalTreatments = treatmentDateFilter
         ? await db.select({ count: count() }).from(treatments).where(treatmentDateFilter)
         : await db.select({ count: count() }).from(treatments);
@@ -804,7 +849,7 @@ export class MemStorage implements IStorage {
       const totalUltrasounds = ultrasoundDateFilter
         ? await db.select({ count: count() }).from(ultrasoundExams).where(ultrasoundDateFilter)
         : await db.select({ count: count() }).from(ultrasoundExams);
-      
+
       // Get pending counts (always unfiltered for current pending items)
       const pendingLabTests = await db.select({ count: count() }).from(labTests)
         .where(eq(labTests.status, "pending"));
@@ -812,7 +857,7 @@ export class MemStorage implements IStorage {
         .where(eq(xrayExams.status, "pending"));
       const pendingUltrasounds = await db.select({ count: count() }).from(ultrasoundExams)
         .where(eq(ultrasoundExams.status, "pending"));
-      
+
       console.log("Total counts:", {
         patients: totalPatients[0]?.count || 0,
         treatments: totalTreatments[0]?.count || 0,
@@ -823,9 +868,9 @@ export class MemStorage implements IStorage {
         pendingXrays: pendingXrays[0]?.count || 0,
         pendingUltrasounds: pendingUltrasounds[0]?.count || 0
       });
-      
+
       return {
-        newPatients: totalPatients[0]?.count || 0,
+        newPatients: totalPatients[0]?.count || 0, // This might need refinement if 'new' means created today
         totalVisits: totalTreatments[0]?.count || 0,
         labTests: totalLabTests[0]?.count || 0,
         xrays: totalXrays[0]?.count || 0,
@@ -845,23 +890,25 @@ export class MemStorage implements IStorage {
   async getRecentPatients(limit = 5): Promise<(schema.Patient & { lastVisit?: string; status: string })[]> {
     try {
       console.log("Getting recent patients, limit:", limit);
+      // --- MODIFIED: Add isDeleted filter ---
       const recentPatients = await db.select().from(patients)
+        .where(eq(patients.isDeleted, 0)) // Added filter
         .orderBy(desc(patients.createdAt))
         .limit(limit);
-      
+
       console.log("Found patients:", recentPatients.length);
-      
+
       const result = [];
       for (const patient of recentPatients) {
         try {
           // Use a simpler query that works with SQLite
           const treatmentResults = await db.select().from(treatments)
             .where(eq(treatments.patientId, patient.patientId))
-            .orderBy(desc(treatments.createdAt))
+            .orderBy(desc(treatments.createdAt)) // Use createdAt or visitDate? Using createdAt for most recent entry.
             .limit(1);
-          
+
           const lastTreatment = treatmentResults[0];
-          
+
           result.push({
             ...patient,
             lastVisit: lastTreatment?.visitDate,
@@ -877,7 +924,7 @@ export class MemStorage implements IStorage {
           });
         }
       }
-      
+
       console.log("Recent patients result:", result);
       return result;
     } catch (error) {
@@ -888,28 +935,42 @@ export class MemStorage implements IStorage {
   // Today filter methods
   async getTodaysPatients(): Promise<schema.Patient[]> {
     const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
-    
+
+    // --- MODIFIED: Add isDeleted filter ---
     return await db.select().from(patients)
       .where(
-        // Check if created today by comparing the date part of the timestamp
-        like(patients.createdAt, `${today}%`)
+        and(
+          eq(patients.isDeleted, 0), // Added filter
+          // Check if created today by comparing the date part of the timestamp
+          like(patients.createdAt, `${today}%`)
+        )
       )
       .orderBy(desc(patients.createdAt));
   }
 
   async getPatientsByDate(date: string): Promise<schema.Patient[]> {
+    // --- MODIFIED: Add isDeleted filter ---
     return await db.select().from(patients)
       .where(
-        // Use DATE function to extract date part, avoiding timezone issues
-        sql`DATE(${patients.createdAt}) = ${date}`
+        and(
+          eq(patients.isDeleted, 0), // Added filter
+          // Use DATE function to extract date part, avoiding timezone issues
+          sql`DATE(${patients.createdAt}) = ${date}`
+        )
       )
       .orderBy(desc(patients.createdAt));
   }
-  
+
   async getTodaysTreatments(): Promise<schema.Treatment[]> {
     const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
-    
-    return await db.select().from(treatments)
+
+    // --- MODIFIED: Join patients and filter ---
+    return await db.select({ treatment: treatments })
+      .from(treatments)
+      .innerJoin(patients, and(
+          eq(treatments.patientId, patients.patientId),
+          eq(patients.isDeleted, 0) // Only treatments for non-deleted patients
+      ))
       .where(
         // Check if visit date is today (exact match) or created today
         or(
@@ -917,7 +978,8 @@ export class MemStorage implements IStorage {
           like(treatments.createdAt, `${today}%`)
         )
       )
-      .orderBy(desc(treatments.createdAt));
+      .orderBy(desc(treatments.createdAt))
+      .then(results => results.map(r => r.treatment)); // Extract treatment object
   }
 
   // Payment Services
@@ -936,8 +998,9 @@ export class MemStorage implements IStorage {
     const insertData: any = {
       ...data,
       createdAt: now,
+      isActive: data.isActive ?? true, // Default to active
     };
-    
+
     const [service] = await db.insert(services).values(insertData).returning();
     return service;
   }
@@ -947,7 +1010,7 @@ export class MemStorage implements IStorage {
       .set(data)
       .where(eq(services.id, id))
       .returning();
-    
+
     return service;
   }
 
@@ -960,7 +1023,7 @@ export class MemStorage implements IStorage {
       paymentId,
       createdAt: now,
     };
-    
+
     const [payment] = await db.insert(payments).values(insertData).returning();
     return payment;
   }
@@ -987,7 +1050,7 @@ export class MemStorage implements IStorage {
       ...data,
       createdAt: now,
     };
-    
+
     const [paymentItem] = await db.insert(paymentItems).values(insertData).returning();
     return paymentItem;
   }
@@ -1001,12 +1064,12 @@ export class MemStorage implements IStorage {
     // Map service types to related types
     const relatedTypeMap = {
       'laboratory': 'lab_test',
-      'radiology': 'xray_exam', 
+      'radiology': 'xray_exam',
       'ultrasound': 'ultrasound_exam'
     };
-    
+
     // Check if there's a payment item that covers this service
-    const paymentCheck = await db.select()
+    const paymentCheck = await db.select({ count: count() })
       .from(paymentItems)
       .innerJoin(payments, eq(paymentItems.paymentId, payments.paymentId))
       .where(
@@ -1016,8 +1079,8 @@ export class MemStorage implements IStorage {
           eq(paymentItems.relatedId, requestId)
         )
       );
-    
-    return paymentCheck.length > 0;
+
+    return (paymentCheck[0]?.count || 0) > 0;
   }
 
   // Pharmacy Orders
@@ -1027,20 +1090,31 @@ export class MemStorage implements IStorage {
     const insertData = {
       ...data,
       orderId,
+      status: 'prescribed', // Ensure default
+      paymentStatus: 'unpaid', // Ensure default
       createdAt: now,
     };
-    
+
     const [pharmacyOrder] = await db.insert(pharmacyOrders).values([insertData]).returning();
     return pharmacyOrder;
   }
 
   async getPharmacyOrders(status?: string): Promise<schema.PharmacyOrder[]> {
+    // --- MODIFIED: Join patients and filter ---
+    const baseQuery = db.select({ pharmacyOrder: pharmacyOrders })
+      .from(pharmacyOrders)
+      .innerJoin(patients, and(
+          eq(pharmacyOrders.patientId, patients.patientId),
+          eq(patients.isDeleted, 0) // Only include orders for non-deleted patients
+      ));
+
     if (status) {
-      return await db.select().from(pharmacyOrders)
-        .where(eq(pharmacyOrders.status, status as any))
+      const results = await baseQuery.where(eq(pharmacyOrders.status, status as any))
         .orderBy(desc(pharmacyOrders.createdAt));
+      return results.map(r => r.pharmacyOrder);
     }
-    return await db.select().from(pharmacyOrders).orderBy(desc(pharmacyOrders.createdAt));
+    const results = await baseQuery.orderBy(desc(pharmacyOrders.createdAt));
+    return results.map(r => r.pharmacyOrder);
   }
 
   async getPharmacyOrdersByPatient(patientId: string): Promise<schema.PharmacyOrder[]> {
@@ -1054,37 +1128,46 @@ export class MemStorage implements IStorage {
       .set(data)
       .where(eq(pharmacyOrders.orderId, orderId))
       .returning();
-    
+
     return pharmacyOrder;
   }
 
   async dispensePharmacyOrder(orderId: string): Promise<schema.PharmacyOrder> {
+    const now = new Date().toISOString();
     const [pharmacyOrder] = await db.update(pharmacyOrders)
-      .set({ status: 'dispensed' })
+      .set({ status: 'dispensed', dispensedAt: now }) // --- MODIFIED: Also set dispensedAt ---
       .where(eq(pharmacyOrders.orderId, orderId))
       .returning();
-    
+
     return pharmacyOrder;
   }
 
   // Enhanced patient queries with service status information
   async getPatientsWithStatus(search?: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
     let patientsData: schema.Patient[];
-    
+
+    // --- MODIFIED: Added isDeleted filter here ---
+    const baseCondition = eq(patients.isDeleted, 0);
+
     if (search) {
       patientsData = await db.select().from(patients)
         .where(
-          or(
-            ilike(patients.firstName, `%${search}%`),
-            ilike(patients.lastName, `%${search}%`),
-            ilike(patients.patientId, `%${search}%`)
+          and(
+            baseCondition, // Added filter
+            or(
+              ilike(patients.firstName, `%${search}%`),
+              ilike(patients.lastName, `%${search}%`),
+              ilike(patients.patientId, `%${search}%`)
+            )
           )
         )
         .orderBy(desc(patients.createdAt));
     } else {
-      patientsData = await db.select().from(patients).orderBy(desc(patients.createdAt));
+      patientsData = await db.select().from(patients)
+        .where(baseCondition) // Added filter
+        .orderBy(desc(patients.createdAt));
     }
-    
+
     // For each patient, get their service status summary
     const patientsWithStatus = await Promise.all(
       patientsData.map(async (patient) => {
@@ -1092,77 +1175,86 @@ export class MemStorage implements IStorage {
         return { ...patient, serviceStatus };
       })
     );
-    
+
     return patientsWithStatus;
   }
 
   async getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]> {
     const today = new Date().toISOString().split('T')[0];
-    
+
+    // --- MODIFIED: Add isDeleted filter ---
     const patientsData = await db.select().from(patients)
-      .where(like(patients.createdAt, `${today}%`))
+      .where(and(
+        eq(patients.isDeleted, 0), // Added filter
+        like(patients.createdAt, `${today}%`)
+      ))
       .orderBy(desc(patients.createdAt));
-    
+
     const patientsWithStatus = await Promise.all(
       patientsData.map(async (patient) => {
         const serviceStatus = await this.getPatientServiceStatus(patient.patientId);
         return { ...patient, serviceStatus };
       })
     );
-    
+
     return patientsWithStatus;
   }
 
   async getPatientsByDateWithStatus(date: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
+    // --- MODIFIED: Add isDeleted filter ---
     const patientsData = await db.select().from(patients)
-      .where(sql`DATE(${patients.createdAt}) = ${date}`)
+      .where(and(
+        eq(patients.isDeleted, 0), // Added filter
+        sql`DATE(${patients.createdAt}) = ${date}`
+      ))
       .orderBy(desc(patients.createdAt));
-    
+
     const patientsWithStatus = await Promise.all(
       patientsData.map(async (patient) => {
         const serviceStatus = await this.getPatientServiceStatus(patient.patientId);
         return { ...patient, serviceStatus };
       })
     );
-    
+
     return patientsWithStatus;
   }
 
   async getPatientServiceStatus(patientId: string) {
     // Get counts of services by payment status
+    // --- NOTE: These queries do not need isDeleted check as they operate on specific patient's orders ---
     const [labTestsData, xrayExamsData, ultrasoundExamsData, pharmacyOrdersData, consultationData] = await Promise.all([
       db.select({
-        total: sql<number>`count(*)`,
-        unpaid: sql<number>`sum(case when ${labTests.paymentStatus} = 'unpaid' then 1 else 0 end)`,
-        pending: sql<number>`sum(case when ${labTests.status} = 'pending' then 1 else 0 end)`,
-        completed: sql<number>`sum(case when ${labTests.status} = 'completed' then 1 else 0 end)`,
+        total: sql<number>`count(*)`.mapWith(Number),
+        unpaid: sql<number>`sum(case when ${labTests.paymentStatus} = 'unpaid' then 1 else 0 end)`.mapWith(Number),
+        pending: sql<number>`sum(case when ${labTests.status} = 'pending' then 1 else 0 end)`.mapWith(Number),
+        completed: sql<number>`sum(case when ${labTests.status} = 'completed' then 1 else 0 end)`.mapWith(Number),
       })
       .from(labTests)
       .where(eq(labTests.patientId, patientId)),
-      
+
       db.select({
-        total: sql<number>`count(*)`,
-        unpaid: sql<number>`sum(case when ${xrayExams.paymentStatus} = 'unpaid' then 1 else 0 end)`,
-        pending: sql<number>`sum(case when ${xrayExams.status} = 'pending' then 1 else 0 end)`,
-        completed: sql<number>`sum(case when ${xrayExams.status} = 'completed' then 1 else 0 end)`,
+        total: sql<number>`count(*)`.mapWith(Number),
+        unpaid: sql<number>`sum(case when ${xrayExams.paymentStatus} = 'unpaid' then 1 else 0 end)`.mapWith(Number),
+        pending: sql<number>`sum(case when ${xrayExams.status} = 'pending' then 1 else 0 end)`.mapWith(Number),
+        completed: sql<number>`sum(case when ${xrayExams.status} = 'completed' then 1 else 0 end)`.mapWith(Number),
       })
       .from(xrayExams)
       .where(eq(xrayExams.patientId, patientId)),
-      
+
       db.select({
-        total: sql<number>`count(*)`,
-        unpaid: sql<number>`sum(case when ${ultrasoundExams.paymentStatus} = 'unpaid' then 1 else 0 end)`,
-        pending: sql<number>`sum(case when ${ultrasoundExams.status} = 'pending' then 1 else 0 end)`,
-        completed: sql<number>`sum(case when ${ultrasoundExams.status} = 'completed' then 1 else 0 end)`,
+        total: sql<number>`count(*)`.mapWith(Number),
+        unpaid: sql<number>`sum(case when ${ultrasoundExams.paymentStatus} = 'unpaid' then 1 else 0 end)`.mapWith(Number),
+        pending: sql<number>`sum(case when ${ultrasoundExams.status} = 'pending' then 1 else 0 end)`.mapWith(Number),
+        completed: sql<number>`sum(case when ${ultrasoundExams.status} = 'completed' then 1 else 0 end)`.mapWith(Number),
       })
       .from(ultrasoundExams)
       .where(eq(ultrasoundExams.patientId, patientId)),
-      
+
       db.select({
-        total: sql<number>`count(*)`,
-        unpaid: sql<number>`sum(case when ${pharmacyOrders.paymentStatus} = 'unpaid' then 1 else 0 end)`,
-        prescribed: sql<number>`sum(case when ${pharmacyOrders.status} = 'prescribed' then 1 else 0 end)`,
-        dispensed: sql<number>`sum(case when ${pharmacyOrders.status} = 'dispensed' then 1 else 0 end)`,
+        total: sql<number>`count(*)`.mapWith(Number),
+        unpaid: sql<number>`sum(case when ${pharmacyOrders.paymentStatus} = 'unpaid' then 1 else 0 end)`.mapWith(Number),
+        prescribed: sql<number>`sum(case when ${pharmacyOrders.status} = 'prescribed' then 1 else 0 end)`.mapWith(Number),
+        dispensed: sql<number>`sum(case when ${pharmacyOrders.status} = 'dispensed' then 1 else 0 end)`.mapWith(Number),
       })
       .from(pharmacyOrders)
       .where(eq(pharmacyOrders.patientId, patientId)),
@@ -1170,9 +1262,9 @@ export class MemStorage implements IStorage {
       // Check consultation order lines - they are unpaid if no payment item exists for them
       // Also calculate the total amount due for unpaid consultation services
       db.select({
-        total: sql<number>`count(*)`,
-        unpaid: sql<number>`sum(case when ${paymentItems.id} is null then 1 else 0 end)`,
-        unpaidAmount: sql<number>`sum(case when ${paymentItems.id} is null then ${orderLines.totalPrice} else 0 end)`,
+        total: sql<number>`count(*)`.mapWith(Number),
+        unpaid: sql<number>`sum(case when ${paymentItems.id} is null then 1 else 0 end)`.mapWith(Number),
+        unpaidAmount: sql<number>`sum(case when ${paymentItems.id} is null then ${orderLines.totalPrice} else 0 end)`.mapWith(Number),
       })
       .from(orderLines)
       .innerJoin(encounters, eq(orderLines.encounterId, encounters.encounterId))
@@ -1183,20 +1275,45 @@ export class MemStorage implements IStorage {
       ))
     ]);
 
-    // Calculate the total balance due (unpaid consultation amounts)
+    // Calculate the total balance due (unpaid consultation amounts + unpaid amounts from other services if prices available)
+    // For simplicity, let's just use consultation balance for now, assuming other prices are handled elsewhere or sum to zero if paid
     const consultationBalance = consultationData[0]?.unpaidAmount || 0;
 
     // Sum up totals including consultation order lines
+    const labTotal = labTestsData[0]?.total || 0;
+    const labUnpaid = labTestsData[0]?.unpaid || 0;
+    const labPending = labTestsData[0]?.pending || 0;
+    const labCompleted = labTestsData[0]?.completed || 0;
+
+    const xrayTotal = xrayExamsData[0]?.total || 0;
+    const xrayUnpaid = xrayExamsData[0]?.unpaid || 0;
+    const xrayPending = xrayExamsData[0]?.pending || 0;
+    const xrayCompleted = xrayExamsData[0]?.completed || 0;
+
+    const usTotal = ultrasoundExamsData[0]?.total || 0;
+    const usUnpaid = ultrasoundExamsData[0]?.unpaid || 0;
+    const usPending = ultrasoundExamsData[0]?.pending || 0;
+    const usCompleted = ultrasoundExamsData[0]?.completed || 0;
+
+    const pharmTotal = pharmacyOrdersData[0]?.total || 0;
+    const pharmUnpaid = pharmacyOrdersData[0]?.unpaid || 0;
+    const pharmPrescribed = pharmacyOrdersData[0]?.prescribed || 0;
+    const pharmDispensed = pharmacyOrdersData[0]?.dispensed || 0;
+
+    const consultTotal = consultationData[0]?.total || 0;
+    const consultUnpaid = consultationData[0]?.unpaid || 0;
+
+
     const totals = {
-      totalServices: (labTestsData[0]?.total || 0) + (xrayExamsData[0]?.total || 0) + (ultrasoundExamsData[0]?.total || 0) + (pharmacyOrdersData[0]?.total || 0) + (consultationData[0]?.total || 0),
-      unpaidServices: (labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0) + (consultationData[0]?.unpaid || 0),
-      pendingServices: (labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0),
-      completedServices: (labTestsData[0]?.completed || 0) + (xrayExamsData[0]?.completed || 0) + (ultrasoundExamsData[0]?.completed || 0) + (pharmacyOrdersData[0]?.dispensed || 0),
-      hasUnpaidServices: ((labTestsData[0]?.unpaid || 0) + (xrayExamsData[0]?.unpaid || 0) + (ultrasoundExamsData[0]?.unpaid || 0) + (pharmacyOrdersData[0]?.unpaid || 0) + (consultationData[0]?.unpaid || 0)) > 0,
-      hasPendingServices: ((labTestsData[0]?.pending || 0) + (xrayExamsData[0]?.pending || 0) + (ultrasoundExamsData[0]?.pending || 0) + (pharmacyOrdersData[0]?.prescribed || 0)) > 0,
+      totalServices: labTotal + xrayTotal + usTotal + pharmTotal + consultTotal,
+      unpaidServices: labUnpaid + xrayUnpaid + usUnpaid + pharmUnpaid + consultUnpaid,
+      pendingServices: labPending + xrayPending + usPending + pharmPrescribed, // Consultations don't have a 'pending' state here
+      completedServices: labCompleted + xrayCompleted + usCompleted + pharmDispensed, // Consultations don't have a 'completed' state here
+      hasUnpaidServices: (labUnpaid + xrayUnpaid + usUnpaid + pharmUnpaid + consultUnpaid) > 0,
+      hasPendingServices: (labPending + xrayPending + usPending + pharmPrescribed) > 0,
       // Add balance fields that the UI expects
-      balance: consultationBalance,
-      balanceToday: consultationBalance,
+      balance: consultationBalance, // Simplified balance calculation
+      balanceToday: consultationBalance, // Simplified balance calculation
     };
 
     return totals;
@@ -1218,7 +1335,7 @@ export class MemStorage implements IStorage {
         updatedAt: now,
       };
       const [newSettings] = await db.insert(billingSettings).values(defaultSettings).returning();
-      
+
       // Convert integers back to booleans for the response
       return {
         ...newSettings,
@@ -1226,7 +1343,7 @@ export class MemStorage implements IStorage {
         allowEmergencyGrace: !!newSettings.allowEmergencyGrace,
       };
     }
-    
+
     // Convert integers back to booleans for the response
     return {
       ...settings[0],
@@ -1237,7 +1354,7 @@ export class MemStorage implements IStorage {
 
   async updateBillingSettings(data: schema.InsertBillingSettings): Promise<schema.BillingSettings> {
     const now = new Date().toISOString();
-    
+
     // Convert boolean values to integers for SQLite compatibility
     const updateData = {
       consultationFee: data.consultationFee,
@@ -1247,14 +1364,14 @@ export class MemStorage implements IStorage {
       updatedBy: data.updatedBy,
       updatedAt: now,
     };
-    
+
     const existingSettings = await db.select().from(billingSettings).limit(1);
     if (existingSettings.length === 0) {
       const [newSettings] = await db.insert(billingSettings).values({
         ...updateData,
         createdAt: now,
       }).returning();
-      
+
       // Convert integers back to booleans for the response
       return {
         ...newSettings,
@@ -1266,8 +1383,8 @@ export class MemStorage implements IStorage {
         .set(updateData)
         .where(eq(billingSettings.id, existingSettings[0].id))
         .returning();
-      
-      // Convert integers back to booleans for the response  
+
+      // Convert integers back to booleans for the response
       return {
         ...updatedSettings,
         requirePrepayment: !!updatedSettings.requirePrepayment,
@@ -1280,20 +1397,27 @@ export class MemStorage implements IStorage {
   async createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter> {
     const encounterId = await generateEncounterId();
     const now = new Date().toISOString();
-    
+
     const insertData = {
       ...data,
       encounterId,
+      status: 'open', // Ensure default
       createdAt: now,
     };
-    
+
     const [encounter] = await db.insert(encounters).values(insertData).returning();
     return encounter;
   }
 
   async getEncounters(status?: string, date?: string, patientId?: string): Promise<schema.Encounter[]> {
-    let query = db.select().from(encounters);
-    
+    // --- MODIFIED: Join patients and filter ---
+    let query = db.select({ encounter: encounters })
+        .from(encounters)
+        .innerJoin(patients, and(
+            eq(encounters.patientId, patients.patientId),
+            eq(patients.isDeleted, 0) // Only encounters for non-deleted patients
+        ));
+
     const conditions = [];
     if (status) {
       conditions.push(eq(encounters.status, status as any));
@@ -1304,20 +1428,29 @@ export class MemStorage implements IStorage {
     if (patientId) {
       conditions.push(eq(encounters.patientId, patientId));
     }
-    
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
-    
-    return await query.orderBy(desc(encounters.createdAt));
+
+    const results = await query.orderBy(desc(encounters.createdAt));
+    return results.map(r => r.encounter);
   }
 
   async getEncounterById(encounterId: string): Promise<schema.Encounter | null> {
-    const results = await db.select().from(encounters).where(eq(encounters.encounterId, encounterId));
-    return results[0] || null;
+    // --- MODIFIED: Join patients and filter ---
+    const results = await db.select({ encounter: encounters })
+        .from(encounters)
+        .innerJoin(patients, and(
+            eq(encounters.patientId, patients.patientId),
+            eq(patients.isDeleted, 0)
+        ))
+        .where(eq(encounters.encounterId, encounterId));
+    return results[0]?.encounter || null;
   }
 
   async getEncountersByPatient(patientId: string): Promise<schema.Encounter[]> {
+    // --- No change needed here, implicitly for an active patient ---
     return await db.select().from(encounters)
       .where(eq(encounters.patientId, patientId))
       .orderBy(desc(encounters.createdAt));
@@ -1347,7 +1480,7 @@ export class MemStorage implements IStorage {
       ...data,
       createdAt: now,
     };
-    
+
     const [orderLine] = await db.insert(orderLines).values(insertData).returning();
     return orderLine;
   }
@@ -1370,40 +1503,55 @@ export class MemStorage implements IStorage {
   async createInvoice(data: schema.InsertInvoice): Promise<schema.Invoice> {
     const invoiceId = await generateInvoiceId();
     const now = new Date().toISOString();
-    
+
     const insertData = {
       ...data,
       invoiceId,
+      status: 'draft', // Ensure default
       createdAt: now,
     };
-    
+
     const [invoice] = await db.insert(invoices).values(insertData).returning();
     return invoice;
   }
 
   async getInvoices(status?: string): Promise<schema.Invoice[]> {
+    // --- MODIFIED: Join patients and filter ---
+    let query = db.select({ invoice: invoices })
+        .from(invoices)
+        .innerJoin(patients, and(
+            eq(invoices.patientId, patients.patientId),
+            eq(patients.isDeleted, 0) // Only invoices for non-deleted patients
+        ));
+
     if (status) {
-      return await db.select().from(invoices)
-        .where(eq(invoices.status, status as any))
-        .orderBy(desc(invoices.createdAt));
+      query = query.where(eq(invoices.status, status as any));
     }
-    return await db.select().from(invoices).orderBy(desc(invoices.createdAt));
+    const results = await query.orderBy(desc(invoices.createdAt));
+    return results.map(r => r.invoice);
   }
 
   async getInvoiceById(invoiceId: string): Promise<schema.Invoice | null> {
-    const results = await db.select().from(invoices).where(eq(invoices.invoiceId, invoiceId));
-    return results[0] || null;
+    // --- MODIFIED: Join patients and filter ---
+    const results = await db.select({ invoice: invoices })
+        .from(invoices)
+        .innerJoin(patients, and(
+            eq(invoices.patientId, patients.patientId),
+            eq(patients.isDeleted, 0)
+        ))
+        .where(eq(invoices.invoiceId, invoiceId));
+    return results[0]?.invoice || null;
   }
 
   async generateInvoiceFromEncounter(encounterId: string, generatedBy: string): Promise<schema.Invoice> {
     // Get encounter and its order lines
-    const encounter = await this.getEncounterById(encounterId);
+    const encounter = await this.getEncounterById(encounterId); // Already checks patient deleted status
     if (!encounter) {
-      throw new Error("Encounter not found");
+      throw new Error("Encounter not found or belongs to a deleted patient");
     }
 
     const orderLinesData = await this.getOrderLinesByEncounter(encounterId);
-    
+
     // Calculate totals
     const subtotal = orderLinesData.reduce((sum, line) => sum + line.totalPrice, 0);
     const discount = 0; // Could be configurable
@@ -1433,6 +1581,9 @@ export class MemStorage implements IStorage {
       });
     }
 
+    // --- ADDED: Update encounter status after generating invoice ---
+    await this.updateEncounter(encounterId, { status: 'ready_to_bill' });
+
     return invoice;
   }
 
@@ -1443,7 +1594,7 @@ export class MemStorage implements IStorage {
       ...data,
       createdAt: now,
     };
-    
+
     const [invoiceLine] = await db.insert(invoiceLines).values(insertData).returning();
     return invoiceLine;
   }
@@ -1458,14 +1609,15 @@ export class MemStorage implements IStorage {
   async createDrug(data: schema.InsertDrug): Promise<schema.Drug> {
     const drugCode = data.drugCode || await generateDrugCode();
     const now = new Date().toISOString();
-    
+
     const insertData = {
       ...data,
       drugCode,
+      isActive: data.isActive ?? true, // Default to active
       createdAt: now,
       updatedAt: now,
     };
-    
+
     const [drug] = await db.insert(drugs).values(insertData).returning();
     return drug;
   }
@@ -1502,15 +1654,15 @@ export class MemStorage implements IStorage {
   async createDrugBatch(data: schema.InsertDrugBatch): Promise<schema.DrugBatch> {
     const batchId = await generateBatchId();
     const now = new Date().toISOString();
-    
+
     const insertData = {
       ...data,
       batchId,
       createdAt: now,
     };
-    
+
     const [batch] = await db.insert(drugBatches).values(insertData).returning();
-    
+
     // Create ledger entry for receipt
     await this.createInventoryLedger({
       drugId: batch.drugId,
@@ -1522,10 +1674,11 @@ export class MemStorage implements IStorage {
       unitCost: batch.unitCost,
       totalValue: batch.quantityOnHand * batch.unitCost,
       relatedType: 'supplier',
+      relatedId: data.supplier || undefined,
       performedBy: batch.receivedBy,
       notes: `Initial stock receipt - Lot: ${batch.lotNumber}`,
     });
-    
+
     return batch;
   }
 
@@ -1556,7 +1709,7 @@ export class MemStorage implements IStorage {
     return await db.select().from(drugBatches)
       .where(and(
         eq(drugBatches.drugId, drugId),
-        sql`${drugBatches.quantityOnHand} > 0`
+        sql`${drugBatches.quantityOnHand} > 0` // Use sql helper for comparison
       ))
       .orderBy(drugBatches.expiryDate);
   }
@@ -1565,13 +1718,13 @@ export class MemStorage implements IStorage {
   async createInventoryLedger(data: schema.InsertInventoryLedger): Promise<schema.InventoryLedger> {
     const transactionId = await generateLedgerId();
     const now = new Date().toISOString();
-    
+
     const insertData = {
       ...data,
       transactionId,
       createdAt: now,
     };
-    
+
     const [ledgerEntry] = await db.insert(inventoryLedger).values(insertData).returning();
     return ledgerEntry;
   }
@@ -1580,47 +1733,48 @@ export class MemStorage implements IStorage {
     const conditions = [];
     if (drugId) conditions.push(eq(inventoryLedger.drugId, drugId));
     if (batchId) conditions.push(eq(inventoryLedger.batchId, batchId));
-    
+
     if (conditions.length > 0) {
       return await db.select().from(inventoryLedger)
         .where(and(...conditions))
         .orderBy(desc(inventoryLedger.createdAt));
     }
-    
+
     return await db.select().from(inventoryLedger).orderBy(desc(inventoryLedger.createdAt));
   }
 
   // Pharmacy Inventory - Stock Query Methods
   async getDrugStockLevel(drugId: number): Promise<number> {
-    const batches = await db.select().from(drugBatches)
+    const result = await db.select({ total: sql<number>`sum(${drugBatches.quantityOnHand})`.mapWith(Number) })
+      .from(drugBatches)
       .where(eq(drugBatches.drugId, drugId));
-    
-    return batches.reduce((total, batch) => total + batch.quantityOnHand, 0);
+
+    return result[0]?.total || 0;
   }
 
   async getAllDrugsWithStock(): Promise<(schema.Drug & { stockOnHand: number })[]> {
     const allDrugs = await db.select().from(drugs).where(eq(drugs.isActive, 1));
     const drugsWithStock: (schema.Drug & { stockOnHand: number })[] = [];
-    
+
     for (const drug of allDrugs) {
       const stockLevel = await this.getDrugStockLevel(drug.id);
       drugsWithStock.push({ ...drug, stockOnHand: stockLevel });
     }
-    
+
     return drugsWithStock;
   }
 
   async getLowStockDrugs(): Promise<(schema.Drug & { stockOnHand: number })[]> {
     const allDrugs = await db.select().from(drugs).where(eq(drugs.isActive, 1));
     const lowStockDrugs: (schema.Drug & { stockOnHand: number })[] = [];
-    
+
     for (const drug of allDrugs) {
       const stockLevel = await this.getDrugStockLevel(drug.id);
       if (stockLevel <= drug.reorderLevel) {
         lowStockDrugs.push({ ...drug, stockOnHand: stockLevel });
       }
     }
-    
+
     return lowStockDrugs;
   }
 
@@ -1628,23 +1782,18 @@ export class MemStorage implements IStorage {
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
     const thresholdStr = thresholdDate.toISOString().split('T')[0];
-    
-    const batches = await db.select().from(drugBatches)
+
+    const batches = await db.select()
+      .from(drugBatches)
+      .innerJoin(drugs, eq(drugBatches.drugId, drugs.id)) // Join to get drug name
       .where(and(
         sql`${drugBatches.expiryDate} <= ${thresholdStr}`,
-        sql`${drugBatches.quantityOnHand} > 0`
+        sql`${drugBatches.quantityOnHand} > 0` // Use sql helper
       ))
       .orderBy(drugBatches.expiryDate);
-    
-    const result: (schema.DrugBatch & { drugName: string })[] = [];
-    for (const batch of batches) {
-      const drug = await this.getDrugById(batch.drugId);
-      if (drug) {
-        result.push({ ...batch, drugName: drug.name });
-      }
-    }
-    
-    return result;
+
+    // --- MODIFIED: Map result directly ---
+    return batches.map(b => ({ ...b.drug_batches, drugName: b.drugs.name }));
   }
 
   // Pharmacy - Dispense Operations
@@ -1653,11 +1802,11 @@ export class MemStorage implements IStorage {
     const batch = await this.getDrugBatchById(batchId);
     if (!batch) throw new Error("Batch not found");
     if (batch.quantityOnHand < quantity) throw new Error("Insufficient stock");
-    
+
     // Update batch quantity
     const newQuantity = batch.quantityOnHand - quantity;
     await this.updateDrugBatch(batchId, { quantityOnHand: newQuantity });
-    
+
     // Create ledger entry
     await this.createInventoryLedger({
       drugId: batch.drugId,
@@ -1673,69 +1822,63 @@ export class MemStorage implements IStorage {
       performedBy: dispensedBy,
       notes: `Dispensed to patient - Order: ${orderId}`,
     });
-    
+
     // Update pharmacy order
     const now = new Date().toISOString();
     const [order] = await db.update(pharmacyOrders)
-      .set({ 
+      .set({
         status: 'dispensed',
         dispensedBy,
-        dispensedAt: now 
+        dispensedAt: now
       })
       .where(eq(pharmacyOrders.orderId, orderId))
       .returning();
-    
+
     return order;
   }
 
   async getPaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]> {
-    const orders = await db.select().from(pharmacyOrders)
+    // --- MODIFIED: Join patients and filter ---
+    const orders = await db.select({ order: pharmacyOrders, patient: patients })
+      .from(pharmacyOrders)
+      .innerJoin(patients, and(
+          eq(pharmacyOrders.patientId, patients.patientId),
+          eq(patients.isDeleted, 0)
+      ))
       .where(and(
         eq(pharmacyOrders.status, 'prescribed'),
         eq(pharmacyOrders.paymentStatus, 'paid')
       ))
       .orderBy(desc(pharmacyOrders.createdAt));
-    
-    const result: (schema.PharmacyOrder & { patient: schema.Patient })[] = [];
-    for (const order of orders) {
-      const patient = await this.getPatientByPatientId(order.patientId);
-      if (patient) {
-        result.push({ ...order, patient });
-      }
-    }
-    
-    return result;
+
+    return orders.map(o => ({ ...o.order, patient: o.patient }));
   }
 
   async getDispensedPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]> {
-    const orders = await db.select().from(pharmacyOrders)
+     // --- MODIFIED: Join patients and filter ---
+    const orders = await db.select({ order: pharmacyOrders, patient: patients })
+      .from(pharmacyOrders)
+      .innerJoin(patients, and(
+          eq(pharmacyOrders.patientId, patients.patientId),
+          eq(patients.isDeleted, 0)
+      ))
       .where(eq(pharmacyOrders.status, 'dispensed'))
-      .orderBy(desc(pharmacyOrders.dispensedAt));
-    
-    const result: (schema.PharmacyOrder & { patient: schema.Patient })[] = [];
-    for (const order of orders) {
-      const patient = await this.getPatientByPatientId(order.patientId);
-      if (patient) {
-        result.push({ ...order, patient });
-      }
-    }
-    
-    return result;
+      .orderBy(desc(pharmacyOrders.dispensedAt)); // Order by dispensed time
+
+    return orders.map(o => ({ ...o.order, patient: o.patient }));
   }
 
   async getPharmacyOrdersWithPatients(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]> {
-    const orders = await db.select().from(pharmacyOrders)
+     // --- MODIFIED: Join patients and filter ---
+    const orders = await db.select({ order: pharmacyOrders, patient: patients })
+      .from(pharmacyOrders)
+      .innerJoin(patients, and(
+          eq(pharmacyOrders.patientId, patients.patientId),
+          eq(patients.isDeleted, 0) // Only orders for active patients
+      ))
       .orderBy(desc(pharmacyOrders.createdAt));
-    
-    const result: (schema.PharmacyOrder & { patient: schema.Patient })[] = [];
-    for (const order of orders) {
-      const patient = await this.getPatientByPatientId(order.patientId);
-      if (patient) {
-        result.push({ ...order, patient });
-      }
-    }
-    
-    return result;
+
+    return orders.map(o => ({ ...o.order, patient: o.patient }));
   }
 }
 
@@ -1745,8 +1888,8 @@ async function seedDefaultServices() {
     const existingServices = await storage.getServices();
     if (existingServices.length === 0) {
       console.log("Seeding default services...");
-      
-      // Consultation services (updated to match policy)  
+
+      // Consultation services (updated to match policy)
       await storage.createService({
         code: "CONS-GEN",
         name: "General Consultation",
@@ -1755,11 +1898,11 @@ async function seedDefaultServices() {
         price: 2000.00,
         isActive: true,
       });
-      
+
       await storage.createService({
         code: "CONS-FU",
         name: "Follow-up Consultation",
-        category: "consultation", 
+        category: "consultation",
         description: "Follow-up visit for existing patients",
         price: 1000.00,
         isActive: true,
@@ -1890,9 +2033,10 @@ async function seedDefaultServices() {
         name: "Pharmacy Dispensing",
         category: "pharmacy",
         description: "General pharmacy medication dispensing fee",
-        price: 5.00,
+        price: 5.00, // Example fee
         isActive: true,
       });
+
 
       console.log("✓ Default services seeded successfully");
     }
@@ -1906,4 +2050,4 @@ export const storage = new MemStorage();
 // Initialize services on startup
 setTimeout(() => {
   seedDefaultServices();
-}, 100);
+}, 100); // Delay slightly to ensure DB connection is ready
