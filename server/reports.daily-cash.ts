@@ -1,50 +1,119 @@
-// server/routes/reports.daily-cash.ts
-import { Router } from 'express';
-import type { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+// server/reports.daily-cash.ts
+import { Router } from "express";
+import type { Request, Response } from "express";
+
 const router = Router();
 
+type Runner = (sql: string, params?: any[]) => Promise<any[]>;
+
+let runnerPromise: Promise<Runner> | null = null;
+async function getRunner(): Promise<Runner> {
+  if (runnerPromise) return runnerPromise;
+  runnerPromise = (async () => {
+    // Try your existing DB helper first (server/db.ts)
+    try {
+      // @ts-ignore - tolerate different exports
+      const dbmod = await import("./db");
+      if (dbmod?.query) {
+        return async (sql: string, params: any[] = []) => {
+          const r = await dbmod.query(sql, params);
+          return r?.rows ?? r ?? [];
+        };
+      }
+      if (dbmod?.default?.query) {
+        return async (sql: string, params: any[] = []) => {
+          const r = await dbmod.default.query(sql, params);
+          return r?.rows ?? r ?? [];
+        };
+      }
+      if (dbmod?.pool?.query) {
+        return async (sql: string, params: any[] = []) => {
+          const r = await dbmod.pool.query(sql, params);
+          return r?.rows ?? r ?? [];
+        };
+      }
+    } catch (_) {
+      // ignore and try prisma fallback
+    }
+
+    // Optional fallback: Prisma (only if installed; otherwise we keep working)
+    try {
+      // @ts-ignore
+      const { PrismaClient } = await import("@prisma/client");
+      // @ts-ignore
+      const prisma = new PrismaClient();
+      return async (sql: string, params: any[] = []) => {
+        // @ts-ignore
+        const res = await prisma.$queryRawUnsafe(sql, ...params);
+        return Array.isArray(res) ? res : [];
+      };
+    } catch (_e) {
+      // Neither db.ts nor Prisma available
+      throw new Error(
+        "No database client available. Ensure server/db.ts exports query/pool, or install @prisma/client."
+      );
+    }
+  })();
+  return runnerPromise;
+}
+
 function ymd(v?: string) {
-  const s = v ?? new Date().toISOString().slice(0,10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error('Invalid date');
+  const s = v ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error("Invalid date");
   return s;
 }
-function asBool(v: any) { return String(v ?? 'false').toLowerCase() === 'true'; }
+function asBool(v: any) {
+  return String(v ?? "false").toLowerCase() === "true";
+}
 
 // GET /api/reports/daily-cash?date=YYYY-MM-DD&byCashier=true|false
-router.get('/api/reports/daily-cash', async (req: Request, res: Response) => {
+router.get("/api/reports/daily-cash", async (req: Request, res: Response) => {
   try {
-    const day = ymd(String(req.query.date || ''));
+    const run = await getRunner();
+    const day = ymd(String(req.query.date || ""));
     const byCashier = asBool(req.query.byCashier);
 
-    const groupCols = ['department'] as string[];
-    if (byCashier) groupCols.push('cashier_id');
+    const groupCols = ["department"];
+    if (byCashier) groupCols.push("cashier_id");
 
-    const rows = await prisma.$queryRawUnsafe(`
-      SELECT ${groupCols.join(', ')}, SUM(total_amount)::numeric AS total_amount, SUM(receipt_count)::int AS receipt_count
+    const rows = (await run(
+      `
+      SELECT ${groupCols.join(", ")},
+             SUM(total_amount) AS total_amount,
+             SUM(receipt_count) AS receipt_count
       FROM finance_vw_daily_cash
       WHERE collection_date = $1 AND payment_method = 'cash'
-      GROUP BY ${groupCols.join(', ')}
-      ORDER BY ${groupCols.join(', ')}
-    `, day) as any[];
+      GROUP BY ${groupCols.join(", ")}
+      ORDER BY ${groupCols.join(", ")}
+    `,
+      [day]
+    )) as any[];
 
-    const totals = await prisma.$queryRawUnsafe(`
-      SELECT COALESCE(SUM(total_amount),0)::numeric AS total_amount,
-             COALESCE(SUM(receipt_count),0)::int AS receipt_count
+    const totals = (await run(
+      `
+      SELECT COALESCE(SUM(total_amount),0) AS total_amount,
+             COALESCE(SUM(receipt_count),0) AS receipt_count
       FROM finance_vw_daily_cash
       WHERE collection_date = $1 AND payment_method = 'cash'
-    `, day) as any[];
+    `,
+      [day]
+    )) as any[];
 
     res.json({
       date: day,
-      method: 'cash',
+      method: "cash",
       byCashier,
       totals: totals?.[0] ?? { total_amount: 0, receipt_count: 0 },
-      rows
+      rows,
     });
   } catch (err: any) {
-    res.status(500).json({ error: err?.message ?? 'Server error. Did you create the view finance_vw_daily_cash?' });
+    res
+      .status(500)
+      .json({
+        error:
+          err?.message ??
+          "Server error. Did you create the view finance_vw_daily_cash?",
+      });
   }
 });
 
