@@ -1,18 +1,33 @@
 import { useEffect, useMemo, useState } from "react"
-import { format } from "date-fns"
 
-type Row = {
+// API row shape
+type ApiRow = {
   department: string
-  count: number
-  amount: number
+  cashier_id?: number | string | null
+  receipt_count: number | string
+  total_amount: number | string
+}
+
+type ApiPayload = {
+  date: string
+  method: string
+  byCashier: boolean
+  totals: { total_amount: number | string; receipt_count: number | string }
+  rows: ApiRow[]
+}
+
+function todayYMD() {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 export default function ReportsDailyCash() {
-  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"))
-  const [data, setData] = useState<Row[]>([])
-  const [totals, setTotals] = useState({ count: 0, amount: 0 })
+  const [date, setDate] = useState(todayYMD())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rows, setRows] = useState<ApiRow[]>([])
+  const [totals, setTotals] = useState({ receipt_count: 0, total_amount: 0 })
 
   const url = useMemo(
     () => `/api/reports/daily-cash?date=${encodeURIComponent(date)}`,
@@ -27,10 +42,19 @@ export default function ReportsDailyCash() {
       try {
         const res = await fetch(url, { credentials: "include" })
         if (!res.ok) throw new Error(await res.text())
-        const json = await res.json()
+        const json = (await res.json()) as ApiPayload
+
         if (!cancelled) {
-          setData(json.rows || [])
-          setTotals(json.totals || { count: 0, amount: 0 })
+          const mappedRows = (json.rows || []).map((r) => ({
+            ...r,
+            receipt_count: Number(r.receipt_count ?? 0),
+            total_amount: Number(r.total_amount ?? 0),
+          }))
+          setRows(mappedRows)
+          setTotals({
+            receipt_count: Number(json.totals?.receipt_count ?? 0),
+            total_amount: Number(json.totals?.total_amount ?? 0),
+          })
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to load")
@@ -39,7 +63,9 @@ export default function ReportsDailyCash() {
       }
     }
     go()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [url])
 
   return (
@@ -51,37 +77,42 @@ export default function ReportsDailyCash() {
         <input
           type="date"
           value={date}
-          onChange={e => setDate(e.target.value)}
+          onChange={(e) => setDate(e.target.value)}
           className="border rounded px-2 py-1"
         />
-        <a
-          href={`${url}&format=csv`}
-          className="ml-auto underline"
-        >
+        <a href={`${url.replace("/api/reports/daily-cash", "/api/reports/daily-cash.csv")}`} className="ml-auto underline">
           Download CSV
         </a>
       </div>
 
       {loading && <div>Loading…</div>}
-      {error && <div className="text-red-600">{error}</div>}
+      {error && (
+        <div className="text-red-600">
+          {String(error).includes("finance_vw_daily_cash")
+            ? "The SQL view is missing on this database."
+            : error}
+        </div>
+      )}
 
       {!loading && !error && (
         <div className="overflow-x-auto">
-          <table className="min-w-[600px] w-full border">
+          <table className="min-w-[700px] w-full border">
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left p-2 border">Department</th>
-                <th className="text-right p-2 border">Receipts</th>
-                <th className="text-right p-2 border">Amount (SSP)</th>
+                <th className="text-right p-2 border"># Receipts</th>
+                <th className="text-right p-2 border">Total Cash</th>
               </tr>
             </thead>
             <tbody>
-              {data.map((r) => (
-                <tr key={r.department}>
-                  <td className="p-2 border">{r.department}</td>
-                  <td className="p-2 border text-right">{r.count}</td>
+              {rows.map((r) => (
+                <tr key={`${r.department}-${String(r.cashier_id ?? "")}`}>
+                  <td className="p-2 border capitalize">{r.department}</td>
                   <td className="p-2 border text-right">
-                    {r.amount.toLocaleString()}
+                    {Number(r.receipt_count).toLocaleString()}
+                  </td>
+                  <td className="p-2 border text-right">
+                    {Number(r.total_amount).toLocaleString()}
                   </td>
                 </tr>
               ))}
@@ -89,8 +120,12 @@ export default function ReportsDailyCash() {
             <tfoot className="bg-gray-50 font-semibold">
               <tr>
                 <td className="p-2 border">Total</td>
-                <td className="p-2 border text-right">{totals.count}</td>
-                <td className="p-2 border text-right">{totals.amount.toLocaleString()}</td>
+                <td className="p-2 border text-right">
+                  {Number(totals.receipt_count).toLocaleString()}
+                </td>
+                <td className="p-2 border text-right">
+                  {Number(totals.total_amount).toLocaleString()}
+                </td>
               </tr>
             </tfoot>
           </table>
