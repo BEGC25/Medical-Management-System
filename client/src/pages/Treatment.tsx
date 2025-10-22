@@ -26,28 +26,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
 
-// ✅ New components wired in
+// New components wired in
 import OmniOrderBar from "@/components/OmniOrderBar";
 import RightRailCart from "@/components/RightRailCart";
 import ResultDrawer from "@/components/ResultDrawer";
@@ -98,11 +85,7 @@ const resultFields: Record<
     MCHC: { type: "number", unit: "g/dL", normal: "32-36" },
   },
   "Blood Film for Malaria (BFFM)": {
-    "Malaria Parasites": {
-      type: "select",
-      options: ["Not seen", "P. falciparum", "P. vivax", "P. malariae", "P. ovale"],
-      normal: "Not seen",
-    },
+    "Malaria Parasites": { type: "select", options: ["Not seen", "P. falciparum", "P. vivax", "P. malariae", "P. ovale"], normal: "Not seen" },
     Parasitemia: { type: "select", options: ["None", "+", "++", "+++"], normal: "None" },
     Gametocytes: { type: "select", options: ["Not seen", "Seen"], normal: "Not seen" },
   },
@@ -137,10 +120,6 @@ const resultFields: Record<
   },
 };
 
-function cx(...cls: (string | boolean | null | undefined)[]) {
-  return cls.filter(Boolean).join(" ");
-}
-
 // ---------- component ----------
 export default function Treatment() {
   const { visitId: rawVisitId } = useParams<{ visitId?: string }>();
@@ -155,7 +134,7 @@ export default function Treatment() {
   const [showVisitSummary, setShowVisitSummary] = useState(false);
   const [activeTab, setActiveTab] = useState("notes");
 
-  // ✅ unified result drawer state
+  // unified result drawer state
   const [resultDrawer, setResultDrawer] = useState<{
     open: boolean;
     kind: "lab" | "xray" | "ultrasound" | null;
@@ -179,7 +158,6 @@ export default function Treatment() {
   // Prescription editing
   const [editingPrescription, setEditingPrescription] = useState<PharmacyOrder | null>(null);
   const [editDosage, setEditDosage] = useState("");
-  thead;
   const [editQuantity, setEditQuantity] = useState(0);
   const [editInstructions, setEditInstructions] = useState("");
 
@@ -506,19 +484,8 @@ export default function Treatment() {
   });
 
   const acknowledgeMutation = useMutation({
-    mutationFn: async ({
-      orderLineId,
-      acknowledgedBy,
-      acknowledged,
-    }: {
-      orderLineId: number;
-      acknowledgedBy: string;
-      acknowledged: boolean;
-    }) => {
-      const r = await apiRequest("PUT", `/api/order-lines/${orderLineId}/acknowledge`, {
-        acknowledgedBy,
-        acknowledged,
-      });
+    mutationFn: async ({ orderLineId, acknowledgedBy, acknowledged }: { orderLineId: number; acknowledgedBy: string; acknowledged: boolean }) => {
+      const r = await apiRequest("PUT", `/api/order-lines/${orderLineId}/acknowledge`, { acknowledgedBy, acknowledged });
       return r.json();
     },
     onSuccess: () => {
@@ -621,7 +588,6 @@ export default function Treatment() {
     if (!currentEncounter || !services.length) return;
     const hasConsult = orders.some((o: any) => o.type === "consultation");
     if (!hasConsult) addConsultationMutation.mutate();
-    // include orders in deps to avoid multiple posts if still loading; JSON.stringify is fine here
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEncounter?.encounterId, services.length, JSON.stringify(orders)]);
 
@@ -682,7 +648,7 @@ export default function Treatment() {
   const printPrescription = () => {
     const win = window.open("", "_blank");
     if (!win) return;
-    const html = document.getElementById("prescription-print")?.innerHTML;
+    const html = document.getElementById("prescription-print")?.innerHTML || "";
     win.document.write(`
       <!doctype html><html><head>
       <meta charset="utf-8" />
@@ -692,7 +658,7 @@ export default function Treatment() {
         body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}
         .text-center{text-align:center}.border-b{border-bottom:1px solid #e5e7eb}.mb-6{margin-bottom:1.5rem}.pb-4{padding-bottom:1rem}
       </style>
-      </head><body><div class="prescription-container">${html || ""}</div></body></html>
+      </head><body><div class="prescription-container">${html}</div></body></html>
     `);
     win.document.close();
     win.focus();
@@ -700,7 +666,6 @@ export default function Treatment() {
     win.close();
   };
 
-  // helpers
   const getAge = (age: string) => age || "Unknown";
 
   // prescriptions filtered to current encounter if available
@@ -819,7 +784,7 @@ export default function Treatment() {
             )}
           </div>
 
-          {/* ✅ OmniOrderBar lives here (only when an encounter exists) */}
+          {/* OmniOrderBar (only when an encounter exists) */}
           {selectedPatient && currentEncounter && (
             <OmniOrderBar
               encounterId={currentEncounter.encounterId}
@@ -832,135 +797,6 @@ export default function Treatment() {
               }}
               className="mb-4"
             />
-          )}
-
-          {/* medical alert panels */}
-          {selectedPatient && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* Allergies */}
-              <Card
-                className={`${
-                  selectedPatient.allergies && selectedPatient.allergies.trim()
-                    ? "border-2 border-red-500 bg-red-50 dark:bg-red-900/10"
-                    : "border-gray-200"
-                }`}
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle
-                    className={`flex items-center gap-2 text-base ${
-                      selectedPatient.allergies && selectedPatient.allergies.trim() ? "text-red-700 dark:text-red-400" : ""
-                    }`}
-                  >
-                    <AlertTriangle
-                      className={`h-5 w-5 ${
-                        selectedPatient.allergies && selectedPatient.allergies.trim() ? "text-red-600" : "text-gray-400"
-                      }`}
-                    />
-                    Allergies
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {selectedPatient.allergies && selectedPatient.allergies.trim() ? (
-                    <div className="bg-white dark:bg-red-950/50 p-3 rounded-lg border border-red-300 dark:border-red-700">
-                      <p className="text-red-900 dark:text-red-200 font-medium whitespace-pre-line">
-                        {selectedPatient.allergies}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400 italic">No known allergies</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Medical History */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Heart className="h-5 w-5 text-pink-600" />
-                    Medical History
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {selectedPatient.medicalHistory && selectedPatient.medicalHistory.trim() ? (
-                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                      <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">
-                        {selectedPatient.medicalHistory}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400 italic">No medical history recorded</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Recent Visits */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <History className="h-5 w-5 text-blue-600" />
-                    Recent Visits ({recentTreatments.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {recentTreatments.length > 0 ? (
-                    <div className="space-y-2">
-                      {recentTreatments.map((t) => (
-                        <div key={t.treatmentId} className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm border-l-2 border-blue-400">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-gray-900 dark:text-white">
-                              {new Date(t.visitDate).toLocaleDateString()}
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {t.visitType}
-                            </Badge>
-                          </div>
-                          {t.diagnosis && (
-                            <p className="text-gray-700 dark:text-gray-300 text-xs">
-                              <span className="font-medium">Dx:</span> {t.diagnosis}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400 italic">No previous visits</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Active Medications */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Pill className="h-5 w-5 text-green-600" />
-                    Active Medications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {allPrescriptions.filter((rx) => rx.status === "dispensed").length > 0 ? (
-                    <div className="space-y-2">
-                      {allPrescriptions
-                        .filter((rx) => rx.status === "dispensed")
-                        .slice(0, 5)
-                        .map((rx) => (
-                          <div key={rx.orderId} className="bg-green-50 dark:bg-green-900/20 p-2 rounded text-sm border-l-2 border-green-500">
-                            <p className="font-medium text-gray-900 dark:text-white">{rx.drugName}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                              {rx.dosage} • {rx.instructions}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                              <Clock className="h-3 w-3 inline mr-1" />
-                              {new Date(rx.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400 italic">No active medications</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
           )}
 
           {/* ---------- TWO-COLUMN LAYOUT WITH RIGHT CART ---------- */}
@@ -1019,9 +855,7 @@ export default function Treatment() {
                                   <div className="flex justify-between items-start gap-3">
                                     <div className="flex-1">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <Badge variant={test.status === "completed" ? "default" : "secondary"}>
-                                          {test.status}
-                                        </Badge>
+                                        <Badge variant={test.status === "completed" ? "default" : "secondary"}>{test.status}</Badge>
                                         {!test.isPaid && <Badge variant="destructive" className="bg-red-600">UNPAID</Badge>}
                                       </div>
                                       <p className="font-semibold text-base capitalize mb-1">{test.category}</p>
@@ -1303,9 +1137,7 @@ export default function Treatment() {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() =>
-                                          addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: false })
-                                        }
+                                        onClick={() => addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: false })}
                                       >
                                         Remove
                                       </Button>
@@ -1600,16 +1432,11 @@ export default function Treatment() {
                           <TabsContent value="tests" className="space-y-6">
                             <div className="space-y-4">
                               <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Laboratory Tests</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Quick lab test ordering for current patient
-                              </p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Quick lab test ordering for current patient</p>
                               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                   For detailed lab test ordering with full test catalog, visit the{" "}
-                                  <a href="/laboratory" className="text-blue-600 hover:underline">
-                                    Laboratory
-                                  </a>{" "}
-                                  page.
+                                  <a href="/laboratory" className="text-blue-600 hover:underline">Laboratory</a> page.
                                 </p>
                                 <p className="text-sm text-gray-500 dark:text-gray-500">
                                   Use this quick form for common tests or the Laboratory page for comprehensive test selection.
@@ -1622,29 +1449,22 @@ export default function Treatment() {
                           <TabsContent value="imaging" className="space-y-6">
                             <div className="space-y-4">
                               <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Imaging Studies</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Quick imaging study ordering for current patient
-                              </p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Quick imaging study ordering for current patient</p>
 
                               <div className="grid gap-4 md:grid-cols-2">
                                 <Link href="/xray">
                                   <div className="block p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
                                     <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">X-Ray Examinations</h4>
-                                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                                      Order X-ray studies including chest, abdomen, spine, extremities, and more
-                                    </p>
+                                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">Order X-ray studies including chest, abdomen, spine, extremities, and more</p>
                                     <div className="w-full px-4 py-2 border border-blue-300 dark:border-blue-700 rounded text-sm text-center bg-white dark:bg-gray-900">
                                       Go to X-Ray Module →
                                     </div>
                                   </div>
                                 </Link>
-
                                 <Link href="/ultrasound">
                                   <div className="block p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
                                     <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">Ultrasound Examinations</h4>
-                                    <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
-                                      Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo
-                                    </p>
+                                    <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo</p>
                                     <div className="w-full px-4 py-2 border border-purple-300 dark:border-purple-700 rounded text-sm text-center bg-white dark:bg-gray-900">
                                       Go to Ultrasound Module →
                                     </div>
@@ -1666,46 +1486,27 @@ export default function Treatment() {
                               {/* Prescribed list */}
                               {prescriptions.length > 0 && (
                                 <div className="mb-6">
-                                  <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">
-                                    Prescribed Medications ({prescriptions.length})
-                                  </h3>
+                                  <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">Prescribed Medications ({prescriptions.length})</h3>
                                   <div className="space-y-2">
                                     {prescriptions.map((rx) => (
-                                      <div
-                                        key={rx.orderId}
-                                        className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg"
-                                        data-testid={`prescription-${rx.orderId}`}
-                                      >
+                                      <div key={rx.orderId} className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg" data-testid={`prescription-${rx.orderId}`}>
                                         <div className="flex items-start justify-between">
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
-                                              <p className="font-medium text-gray-900 dark:text-white">
-                                                {rx.drugName || "Medication"}
-                                              </p>
-                                              <Badge
-                                                variant={rx.status === "dispensed" ? "default" : "secondary"}
-                                                className={rx.status === "dispensed" ? "bg-green-600" : ""}
-                                              >
+                                              <p className="font-medium text-gray-900 dark:text-white">{rx.drugName || "Medication"}</p>
+                                              <Badge variant={rx.status === "dispensed" ? "default" : "secondary"} className={rx.status === "dispensed" ? "bg-green-600" : ""}>
                                                 {rx.status}
                                               </Badge>
-                                              <Badge
-                                                variant={rx.paymentStatus === "paid" ? "default" : "destructive"}
-                                                className={rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"}
-                                              >
+                                              <Badge variant={rx.paymentStatus === "paid" ? "default" : "destructive"} className={rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"}>
                                                 {rx.paymentStatus}
                                               </Badge>
                                             </div>
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                               Dosage: {rx.dosage || "As prescribed"} | Quantity: {rx.quantity}
                                             </p>
-                                            {rx.instructions && (
-                                              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                                                Instructions: {rx.instructions}
-                                              </p>
-                                            )}
+                                            {rx.instructions && <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>}
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                              Order ID: {rx.orderId} | Prescribed:{" "}
-                                              {new Date(rx.createdAt).toLocaleString()}
+                                              Order ID: {rx.orderId} | Prescribed: {new Date(rx.createdAt).toLocaleString()}
                                             </p>
                                             {rx.dispensedAt && (
                                               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
@@ -1757,9 +1558,7 @@ export default function Treatment() {
 
                               <div className="flex items-center justify-between">
                                 <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  Select drugs from inventory to create pharmacy orders
-                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Select drugs from inventory to create pharmacy orders</p>
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -1788,34 +1587,17 @@ export default function Treatment() {
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Dosage Instructions</label>
-                                  <Input
-                                    placeholder="e.g., 1 tablet twice daily"
-                                    value={newMedDosage}
-                                    onChange={(e) => setNewMedDosage(e.target.value)}
-                                    data-testid="input-dosage"
-                                  />
+                                  <Input placeholder="e.g., 1 tablet twice daily" value={newMedDosage} onChange={(e) => setNewMedDosage(e.target.value)} data-testid="input-dosage" />
                                 </div>
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Quantity</label>
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    placeholder="e.g., 30"
-                                    value={newMedQuantity}
-                                    onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)}
-                                    data-testid="input-quantity"
-                                  />
+                                  <Input type="number" min="1" placeholder="e.g., 30" value={newMedQuantity} onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)} data-testid="input-quantity" />
                                 </div>
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Additional Instructions</label>
-                                  <Input
-                                    placeholder="e.g., Take with food"
-                                    value={newMedInstructions}
-                                    onChange={(e) => setNewMedInstructions(e.target.value)}
-                                    data-testid="input-instructions"
-                                  />
+                                  <Input placeholder="e.g., Take with food" value={newMedInstructions} onChange={(e) => setNewMedInstructions(e.target.value)} data-testid="input-instructions" />
                                 </div>
                               </div>
 
@@ -1823,22 +1605,12 @@ export default function Treatment() {
                                 type="button"
                                 onClick={() => {
                                   if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
-                                    toast({
-                                      title: "Validation Error",
-                                      description: "Please fill in drug, dosage, and quantity",
-                                      variant: "destructive",
-                                    });
+                                    toast({ title: "Validation Error", description: "Please fill in drug, dosage, and quantity", variant: "destructive" });
                                     return;
                                   }
                                   setMedications([
                                     ...medications,
-                                    {
-                                      drugId: parseInt(selectedDrugId),
-                                      drugName: selectedDrugName,
-                                      dosage: newMedDosage,
-                                      quantity: newMedQuantity,
-                                      instructions: newMedInstructions,
-                                    },
+                                    { drugId: parseInt(selectedDrugId), drugName: selectedDrugName, dosage: newMedDosage, quantity: newMedQuantity, instructions: newMedInstructions },
                                   ]);
                                   setSelectedDrugId("");
                                   setSelectedDrugName("");
@@ -1855,44 +1627,24 @@ export default function Treatment() {
 
                               {medications.length > 0 && (
                                 <div className="space-y-2">
-                                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
-                                    Medications to Order ({medications.length})
-                                  </h4>
+                                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4>
                                   <div className="space-y-2">
                                     {medications.map((med, idx) => (
                                       <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg">
                                         <div className="flex-1">
                                           <p className="font-medium">{med.drugName}</p>
-                                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Dosage: {med.dosage} | Quantity: {med.quantity}
-                                          </p>
-                                          {med.instructions && (
-                                            <p className="text-sm text-gray-500 dark:text-gray-500">Instructions: {med.instructions}</p>
-                                          )}
+                                          <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {med.dosage} | Quantity: {med.quantity}</p>
+                                          {med.instructions && <p className="text-sm text-gray-500 dark:text-gray-500">Instructions: {med.instructions}</p>}
                                         </div>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => setMedications(medications.filter((_, i) => i !== idx))}
-                                          data-testid={`btn-remove-med-${idx}`}
-                                        >
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => setMedications(medications.filter((_, i) => i !== idx))} data-testid={`btn-remove-med-${idx}`}>
                                           <Trash2 className="w-4 h-4 text-red-600" />
                                         </Button>
                                       </div>
                                     ))}
                                   </div>
-                                  <Button
-                                    type="button"
-                                    onClick={() => submitMedicationsMutation.mutate(medications)}
-                                    disabled={submitMedicationsMutation.isPending}
-                                    className="w-full bg-green-600 hover:bg-green-700"
-                                    data-testid="btn-submit-medications"
-                                  >
+                                  <Button type="button" onClick={() => submitMedicationsMutation.mutate(medications)} disabled={submitMedicationsMutation.isPending} className="w-full bg-green-600 hover:bg-green-700" data-testid="btn-submit-medications">
                                     <Pill className="w-4 h-4 mr-2" />
-                                    {submitMedicationsMutation.isPending
-                                      ? "Submitting..."
-                                      : `Send ${medications.length} Order(s) to Pharmacy`}
+                                    {submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}
                                   </Button>
                                 </div>
                               )}
@@ -1901,12 +1653,7 @@ export default function Treatment() {
 
                           {/* Actions */}
                           <div className="flex gap-4 pt-6 mt-6 border-t">
-                            <Button
-                              type="submit"
-                              disabled={createTreatmentMutation.isPending}
-                              className="bg-medical-blue hover:bg-blue-700"
-                              data-testid="save-treatment-btn"
-                            >
+                            <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-medical-blue hover:bg-blue-700" data-testid="save-treatment-btn">
                               <Save className="w-4 h-4 mr-2" />
                               {createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}
                             </Button>
@@ -1935,12 +1682,10 @@ export default function Treatment() {
                 </Card>
               </div>
 
-              {/* ✅ Right rail cart */}
+              {/* Right rail cart */}
               <RightRailCart
                 orders={orders}
-                onRemove={(orderId) =>
-                  addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })
-                }
+                onRemove={(orderId) => addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })}
                 onPrint={() => window.print()}
               />
             </div>
@@ -1964,33 +1709,17 @@ export default function Treatment() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Dosage Instructions</label>
-                <Input
-                  placeholder="e.g., 1 tablet twice daily"
-                  value={editDosage}
-                  onChange={(e) => setEditDosage(e.target.value)}
-                  data-testid="input-edit-dosage"
-                />
+                <Input placeholder="e.g., 1 tablet twice daily" value={editDosage} onChange={(e) => setEditDosage(e.target.value)} data-testid="input-edit-dosage" />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Quantity</label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={editQuantity}
-                  onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
-                  data-testid="input-edit-quantity"
-                />
+                <Input type="number" min="1" value={editQuantity} onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)} data-testid="input-edit-quantity" />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Additional Instructions</label>
-                <Input
-                  placeholder="e.g., Take with food"
-                  value={editInstructions}
-                  onChange={(e) => setEditInstructions(e.target.value)}
-                  data-testid="input-edit-instructions"
-                />
+                <Input placeholder="e.g., Take with food" value={editInstructions} onChange={(e) => setEditInstructions(e.target.value)} data-testid="input-edit-instructions" />
               </div>
 
               <div className="flex gap-2 pt-4">
@@ -1998,19 +1727,10 @@ export default function Treatment() {
                   type="button"
                   onClick={() => {
                     if (!editDosage || editQuantity <= 0) {
-                      toast({
-                        title: "Validation Error",
-                        description: "Please fill in dosage and quantity",
-                        variant: "destructive",
-                      });
+                      toast({ title: "Validation Error", description: "Please fill in dosage and quantity", variant: "destructive" });
                       return;
                     }
-                    editPrescriptionMutation.mutate({
-                      orderId: editingPrescription.orderId,
-                      dosage: editDosage,
-                      quantity: editQuantity,
-                      instructions: editInstructions,
-                    });
+                    editPrescriptionMutation.mutate({ orderId: editingPrescription.orderId, dosage: editDosage, quantity: editQuantity, instructions: editInstructions });
                   }}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                   disabled={editPrescriptionMutation.isPending}
@@ -2027,7 +1747,7 @@ export default function Treatment() {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Universal Result Drawer */}
+      {/* Universal Result Drawer */}
       <ResultDrawer
         open={resultDrawer.open}
         kind={resultDrawer.kind}
@@ -2043,7 +1763,7 @@ export default function Treatment() {
         }
       />
 
-      {/* Prescription print sheet (unchanged rendering; appears only when showPrescription is true) */}
+      {/* Prescription print sheet */}
       {showPrescription && selectedPatient && (
         <div>
           <Card className="border-2 border-medical-green">
@@ -2052,35 +1772,21 @@ export default function Treatment() {
                 <div className="text-center border-b pb-4 mb-6">
                   <h1 className="text-2xl font-bold">BAHR EL GHAZAL CLINIC</h1>
                   <p className="text-sm text-gray-600">Your Health, Our Priority</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
                   <p className="text-lg font-semibold mt-2">PRESCRIPTION</p>
                 </div>
 
                 <div className="flex-1">
                   <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
                     <div>
-                      <p>
-                        <strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}
-                      </p>
-                      <p>
-                        <strong>Patient ID:</strong> {selectedPatient.patientId}
-                      </p>
-                      <p>
-                        <strong>Age:</strong> {selectedPatient.age || "Not specified"}
-                      </p>
+                      <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
+                      <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
+                      <p><strong>Age:</strong> {selectedPatient.age || "Not specified"}</p>
                     </div>
                     <div>
-                      <p>
-                        <strong>Date:</strong> {new Date().toLocaleDateString()}
-                      </p>
-                      <p>
-                        <strong>Treatment ID:</strong> {savedTreatment?.treatmentId || "Not available"}
-                      </p>
-                      <p>
-                        <strong>Phone:</strong> {selectedPatient.phoneNumber || "Not provided"}
-                      </p>
+                      <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                      <p><strong>Treatment ID:</strong> {savedTreatment?.treatmentId || "Not available"}</p>
+                      <p><strong>Phone:</strong> {selectedPatient.phoneNumber || "Not provided"}</p>
                     </div>
                   </div>
 
@@ -2133,20 +1839,12 @@ export default function Treatment() {
 
           <div className="flex gap-2 mb-4">
             <Input type="date" value={queueDate} onChange={(e) => setQueueDate(e.target.value)} className="w-40" />
-            <Input
-              placeholder="Filter by name, ID or complaint…"
-              value={queueFilter}
-              onChange={(e) => setQueueFilter(e.target.value)}
-              className="flex-1"
-            />
+            <Input placeholder="Filter by name, ID or complaint…" value={queueFilter} onChange={(e) => setQueueFilter(e.target.value)} className="flex-1" />
           </div>
 
           <div className="border rounded-lg divide-y max-h-[60vh] overflow-y-auto">
             {queueLoading && <div className="p-6 text-center text-gray-500">Loading…</div>}
-
-            {!queueLoading && visibleQueue.length === 0 && (
-              <div className="p-10 text-center text-gray-500">No visits on {queueDate}.</div>
-            )}
+            {!queueLoading && visibleQueue.length === 0 && <div className="p-10 text-center text-gray-500">No visits on {queueDate}.</div>}
 
             {visibleQueue.map((v) => (
               <button
