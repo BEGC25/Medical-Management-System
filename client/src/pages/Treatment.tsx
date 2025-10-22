@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, Link } from "wouter";
-import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2, Edit, X, AlertTriangle, Heart, History, Clock } from "lucide-react";
+import { Save, FileText, Printer, Filter, Calendar, ShoppingCart, Plus, DollarSign, Pill, Activity, Trash2, Edit, X, AlertTriangle, Heart, History, Clock, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,10 @@ export default function Treatment() {
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
   
+  // Landing: search bar + date filter
+  const [listDate, setListDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [listQuery, setListQuery] = useState("");
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -168,14 +173,14 @@ export default function Treatment() {
   // Fetch all patients to get names for treatment records
   const { data: allPatients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
-    enabled: filterToday,
+    enabled: filterToday || !visitId, // <-- UPDATED: Enable for landing page too
   });
 
   // --- START PATCH TO FIX DELETED PATIENT VISIBILITY ---
 
   // Filter out soft-deleted patients from the list
   // The API is likely returning all patients, but we should only work with active ones.
-  // A proper fix involves updating the GET /api/patients endpoint. [cite: 186-189]
+  // A proper fix involves updating the GET /api/patients endpoint.
   const activePatients = allPatients.filter((p: any) => !p.is_deleted);
   
   // Create a set of active patient IDs for quick lookup
@@ -196,11 +201,30 @@ export default function Treatment() {
     return `${patient.firstName} ${patient.lastName}`;
   };
 
+  // Visits for a specific date (doctor can change the date)
+  const { data: visitsOnDate = [], isFetching: loadingVisitsOnDate } = useQuery<Treatment[]>({
+    queryKey: ["/api/treatments", { date: listDate }],
+    queryFn: async () => {
+      const res = await fetch(`/api/treatments?date=${listDate}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !filterToday, // only when not in "Today's Queue" mode
+  });
+  
+  // Keep only active patients and allow text filter
+  const visitsOnDateActive = visitsOnDate.filter(t => activePatientIds.has(t.patientId));
+  const filteredVisitsOnDate = visitsOnDateActive.filter(t => {
+    if (!listQuery) return true;
+    const hay = `${getPatientName(t.patientId)} ${t.patientId} ${t.chiefComplaint || ""} ${t.diagnosis || ""}`.toLowerCase();
+    return hay.includes(listQuery.toLowerCase());
+  });
+
   // --- START: Added search filtering for Today's Visits list ---
   const filteredTodaysTreatments = activeTodaysTreatments.filter(treatment => {
     if (todayFilter === "") return true;
     
-    const patientName = getPatientName(treatment.patientId).toLowerCase(); // Use existing helper [cite: 693-698]
+    const patientName = getPatientName(treatment.patientId).toLowerCase(); // Use existing helper
     const filter = todayFilter.toLowerCase();
     
     return patientName.includes(filter) || 
@@ -988,19 +1012,43 @@ export default function Treatment() {
             </div>
             
             {!selectedPatient ? (
-              <div className="bg-white dark:bg-gray-900 rounded-lg p-1 shadow-sm">
-                <PatientSearch 
-                  onSelectPatient={handlePatientSelect}
-                  onViewPatient={handlePatientSelect}
-                  showActions={false}
-                  viewMode="all"
-                  selectedDate=""
-                  searchTerm={searchTerm}
-                  onSearchTermChange={setSearchTerm}
-                  shouldSearch={shouldSearch}
-                  onShouldSearchChange={setShouldSearch}
-                />
-              </div>
+              <>
+                {/* Landing controls */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                  {/* Patient search input (drives PatientSearch props you already have) */}
+                  <div className="relative flex-1">
+                    <Input
+                      placeholder="Search patients by name, ID or phone…"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") setShouldSearch(true); }}
+                      className="pl-9"
+                    />
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  </div>
+                  <Button onClick={() => setShouldSearch(true)}>Search</Button>
+                  <Button variant="outline" onClick={() => { setSearchTerm(""); setShouldSearch(false); }}>
+                    Clear
+                  </Button>
+                  <Button variant="secondary" onClick={() => setFilterToday(true)}>
+                    Today&apos;s Queue
+                  </Button>
+                </div>
+                
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-1 shadow-sm">
+                  <PatientSearch 
+                    onSelectPatient={handlePatientSelect}
+                    onViewPatient={handlePatientSelect}
+                    showActions={false}
+                    viewMode="all"
+                    selectedDate=""
+                    searchTerm={searchTerm}
+                    onSearchTermChange={setSearchTerm}
+                    shouldSearch={shouldSearch}
+                    onShouldSearchChange={setShouldSearch}
+                  />
+                </div>
+              </>
             ) : (
               <div className="p-5 bg-white dark:bg-gray-900 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-md">
                 <div className="flex items-start justify-between gap-4">
@@ -1064,6 +1112,63 @@ export default function Treatment() {
               </div>
             )}
           </div>
+
+          {/* Visits by date */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Visits on date</span>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      value={listDate}
+                      onChange={(e) => setListDate(e.target.value)}
+                      className="pr-9"
+                    />
+                    <Calendar className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  </div>
+                  <div className="relative">
+                    <Input
+                      placeholder="Filter by name, ID, complaint…"
+                      value={listQuery}
+                      onChange={(e) => setListQuery(e.target.value)}
+                      className="w-64 pl-8"
+                    />
+                    <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingVisitsOnDate ? (
+                <p className="text-sm text-gray-500">Loading…</p>
+              ) : filteredVisitsOnDate.length === 0 ? (
+                <p className="text-gray-500">No visits on {listDate}.</p>
+              ) : (
+                <div className="rounded-lg border divide-y dark:divide-gray-700">
+                  {filteredVisitsOnDate.map((v) => (
+                    <Link key={v.treatmentId} href={`/treatment/${v.encounterId}`}>
+                      <div className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">
+                            {getPatientName(v.patientId)}{" "}
+                            <span className="text-gray-500 font-normal">({v.patientId})</span>
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            {v.chiefComplaint || v.diagnosis || "—"}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="shrink-0">
+                          {v.visitType}
+                        </Badge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Medical Alert Panel - CRITICAL INFORMATION */}
           {selectedPatient && (
