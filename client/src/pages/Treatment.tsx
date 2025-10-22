@@ -984,7 +984,6 @@ export default function Treatment() {
                     size="sm" 
                     className="whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-900/20"
                     onClick={() => setSelectedPatient(null)}
-                  >
                     <X className="h-4 w-4 mr-1" />
                     Change
                   </Button>
@@ -2143,14 +2142,12 @@ export default function Treatment() {
     </div>
 
     <RightRailCart
-      orders={{orders}}
+      orders={orders}
       onRemove={(orderId) => addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })}
       onPrint={() => window.print()}
     />
   </div>
 )}
-
->
 
       {/* Edit Prescription Dialog */}
       <Dialog open={!!editingPrescription} onOpenChange={(open) => !open && setEditingPrescription(null)}>
