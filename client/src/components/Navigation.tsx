@@ -29,6 +29,10 @@ const navItems = [
   { path: "/billing", label: "Billing", icon: Receipt, category: "Administration" },
   { path: "/billing-settings", label: "Billing Settings", icon: Settings, category: "Administration" },
   { path: "/all-results", label: "All Results", icon: FileSearch, category: "Reports" },
+
+  // ✅ NEW: Daily Cash report (manager)
+  { path: "/reports/daily-cash", label: "Daily Cash", icon: BarChart3, category: "Reports" },
+
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },
 ];
 
