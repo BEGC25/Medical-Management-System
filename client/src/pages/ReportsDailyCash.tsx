@@ -7,7 +7,6 @@ type ApiRow = {
   receipt_count: number | string
   total_amount: number | string
 }
-
 type ApiPayload = {
   date: string
   method: string
@@ -24,14 +23,26 @@ function todayYMD() {
 
 export default function ReportsDailyCash() {
   const [date, setDate] = useState(todayYMD())
+  const [byCashier, setByCashier] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rows, setRows] = useState<ApiRow[]>([])
   const [totals, setTotals] = useState({ receipt_count: 0, total_amount: 0 })
 
-  const url = useMemo(
-    () => `/api/reports/daily-cash?date=${encodeURIComponent(date)}`,
-    [date]
+  const jsonUrl = useMemo(
+    () =>
+      `/api/reports/daily-cash?date=${encodeURIComponent(
+        date
+      )}&byCashier=${byCashier}`,
+    [date, byCashier]
+  )
+  const csvUrl = useMemo(
+    () =>
+      `/api/reports/daily-cash.csv?date=${encodeURIComponent(
+        date
+      )}&byCashier=${byCashier}`,
+    [date, byCashier]
   )
 
   useEffect(() => {
@@ -40,10 +51,9 @@ export default function ReportsDailyCash() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(url, { credentials: "include" })
+        const res = await fetch(jsonUrl, { credentials: "include" })
         if (!res.ok) throw new Error(await res.text())
         const json = (await res.json()) as ApiPayload
-
         if (!cancelled) {
           const mappedRows = (json.rows || []).map((r) => ({
             ...r,
@@ -66,13 +76,13 @@ export default function ReportsDailyCash() {
     return () => {
       cancelled = true
     }
-  }, [url])
+  }, [jsonUrl])
 
   return (
     <div className="p-4 space-y-4">
       <h1 className="text-xl font-semibold">Daily Cash by Department</h1>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <label className="text-sm">Date</label>
         <input
           type="date"
@@ -80,9 +90,23 @@ export default function ReportsDailyCash() {
           onChange={(e) => setDate(e.target.value)}
           className="border rounded px-2 py-1"
         />
-        <a href={`${url.replace("/api/reports/daily-cash", "/api/reports/daily-cash.csv")}`} className="ml-auto underline">
+
+        <label className="text-sm flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={byCashier}
+            onChange={(e) => setByCashier(e.target.checked)}
+          />
+          Group by cashier
+        </label>
+
+        <a href={csvUrl} className="ml-auto underline">
           Download CSV
         </a>
+
+        <button onClick={() => window.print()} className="border rounded px-3 py-1">
+          Print Manager Copy
+        </button>
       </div>
 
       {loading && <div>Loading…</div>}
@@ -96,18 +120,22 @@ export default function ReportsDailyCash() {
 
       {!loading && !error && (
         <div className="overflow-x-auto">
-          <table className="min-w-[700px] w-full border">
+          <table className="min-w-[800px] w-full border">
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left p-2 border">Department</th>
+                {byCashier && <th className="text-left p-2 border">Cashier</th>}
                 <th className="text-right p-2 border"># Receipts</th>
                 <th className="text-right p-2 border">Total Cash</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={`${r.department}-${String(r.cashier_id ?? "")}`}>
+                <tr
+                  key={`${r.department}-${byCashier ? String(r.cashier_id ?? "") : "all"}`}
+                >
                   <td className="p-2 border capitalize">{r.department}</td>
+                  {byCashier && <td className="p-2 border">{r.cashier_id ?? "-"}</td>}
                   <td className="p-2 border text-right">
                     {Number(r.receipt_count).toLocaleString()}
                   </td>
@@ -119,7 +147,8 @@ export default function ReportsDailyCash() {
             </tbody>
             <tfoot className="bg-gray-50 font-semibold">
               <tr>
-                <td className="p-2 border">Total</td>
+                <td className="p-2 border">{byCashier ? "Total (all cashiers)" : "Total"}</td>
+                {byCashier && <td className="p-2 border"></td>}
                 <td className="p-2 border text-right">
                   {Number(totals.receipt_count).toLocaleString()}
                 </td>
@@ -129,6 +158,14 @@ export default function ReportsDailyCash() {
               </tr>
             </tfoot>
           </table>
+
+          {/* Signature footer for printouts */}
+          <div className="mt-12 print:mt-24">
+            <div className="flex justify-between">
+              <div>Receptionist Signature: ____________________</div>
+              <div>Manager Signature: ____________________</div>
+            </div>
+          </div>
         </div>
       )}
     </div>
