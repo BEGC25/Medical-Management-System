@@ -26,19 +26,22 @@ import { queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
+// ✅ NEW: Daily Cash page
+import ReportsDailyCash from "@/pages/ReportsDailyCash";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <OfflineIndicator />
-          
+
           <Switch>
             <Route path="/auth" component={AuthPage} />
             <Route>
               <Header />
               <Navigation />
-              
+
               <main className="ml-64 pt-16 min-h-screen">
                 <div className="px-6 py-6">
                   <Switch>
@@ -57,6 +60,8 @@ function App() {
                     <ProtectedRoute path="/billing-settings" component={BillingSettings} />
                     <ProtectedRoute path="/service-management" component={ServiceManagement} />
                     <ProtectedRoute path="/reports" component={Reports} />
+                    {/* ✅ NEW route for Daily Cash */}
+                    <ProtectedRoute path="/reports/daily-cash" component={ReportsDailyCash} />
                     <ProtectedRoute path="/all-results" component={AllResults} />
                     <ProtectedRoute path="/users" component={UserManagement} />
                     <Route component={NotFound} />
@@ -65,7 +70,7 @@ function App() {
               </main>
             </Route>
           </Switch>
-          
+
           <Toaster />
         </div>
       </AuthProvider>
