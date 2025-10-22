@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -22,6 +23,7 @@ import { addToPendingSync } from "@/lib/offline";
 import OmniOrderBar from "@/components/OmniOrderBar";
 import RightRailCart from "@/components/RightRailCart";
 import ResultDrawer from "@/components/ResultDrawer";
+
 
 // Helper function to parse JSON safely
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -872,1304 +874,1284 @@ export default function Treatment() {
 
   return (
     <div className="space-y-6">
-      
-      {/* Main container for 2-col layout */}
-      <div className={cx(
-        "grid gap-4",
-        selectedPatient && currentEncounter ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1"
-      )}>
-
-        {/* Left Column (all page cards) */}
-        <div className="space-y-4">
-      
-          {/* Card 1: Patient Select, Alerts, Orders, Summary, Clinical Docs */}
-          <Card className="print:hidden">
-            <CardHeader>
-              <CardTitle>Treatment Records</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Patient Selection - Modernized */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 mb-6 shadow-sm border border-blue-100 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Activity className="h-5 w-5 text-white" />
+      {/* Treatment Entry Form */}
+      <Card className="print:hidden">
+        <CardHeader>
+          <CardTitle>Treatment Records</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Patient Selection - Modernized */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 mb-6 shadow-sm border border-blue-100 dark:border-gray-700">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Activity className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Choose a patient to begin documenting their visit</p>
+            </div>
+          </div>
+          
+          {!selectedPatient ? (
+            <>
+              {/* Landing controls */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                {/* Patient search input (drives PatientSearch props you already have) */}
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Search patients by name, ID or phone…"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") setShouldSearch(true); }}
+                    className="pl-9"
+                  />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Choose a patient to begin documenting their visit</p>
-                </div>
+                <Button onClick={() => setShouldSearch(true)}>Search</Button>
+                <Button variant="outline" onClick={() => { setSearchTerm(""); setShouldSearch(false); }}>
+                  Clear
+                </Button>
+                <Button variant="outline" onClick={() => setQueueOpen(true)}>
+                  Today&apos;s Queue
+                </Button>
               </div>
               
-              {!selectedPatient ? (
-                <>
-                  {/* Landing controls */}
-                  <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                    {/* Patient search input (drives PatientSearch props you already have) */}
-                    <div className="relative flex-1">
-                      <Input
-                        placeholder="Search patients by name, ID or phone…"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") setShouldSearch(true); }}
-                        className="pl-9"
-                      />
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    </div>
-                    <Button onClick={() => setShouldSearch(true)}>Search</Button>
-                    <Button variant="outline" onClick={() => { setSearchTerm(""); setShouldSearch(false); }}>
-                      Clear
-                    </Button>
-                    <Button variant="outline" onClick={() => setQueueOpen(true)}>
-                      Today&apos;s Queue
-                    </Button>
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-1 shadow-sm">
+                <PatientSearch 
+                  onSelectPatient={handlePatientSelect}
+                  onViewPatient={handlePatientSelect}
+                  showActions={false}
+                  viewMode="all"
+                  selectedDate=""
+                  searchTerm={searchTerm}
+                  onSearchTermChange={setSearchTerm}
+                  shouldSearch={shouldSearch}
+                  onShouldSearchChange={setShouldSearch}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="p-5 bg-white dark:bg-gray-900 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-md">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  {/* Patient Avatar */}
+                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    {selectedPatient.firstName?.[0]}{selectedPatient.lastName?.[0]}
                   </div>
                   
-                  <div className="bg-white dark:bg-gray-900 rounded-lg p-1 shadow-sm">
-                    <PatientSearch 
-                      onSelectPatient={handlePatientSelect}
-                      onViewPatient={handlePatientSelect}
-                      showActions={false}
-                      viewMode="all"
-                      selectedDate=""
-                      searchTerm={searchTerm}
-                      onSearchTermChange={setSearchTerm}
-                      shouldSearch={shouldSearch}
-                      onShouldSearchChange={setShouldSearch}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="p-5 bg-white dark:bg-gray-900 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-md">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1">
-                      {/* Patient Avatar */}
-                      <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                        {selectedPatient.firstName?.[0]}{selectedPatient.lastName?.[0]}
-                      </div>
-                      
-                      {/* Patient Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-bold text-gray-900 dark:text-white text-lg">
-                            {selectedPatient.firstName} {selectedPatient.lastName}
-                          </h4>
-                          {savedTreatment && (
-                            <Badge className="bg-green-600 text-white shadow-sm">
-                              Saved: {savedTreatment.treatmentId}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
-                          <span className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">ID:</span> 
-                            <span className="font-mono">{selectedPatient.patientId}</span>
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Age:</span> 
-                            {getAge(selectedPatient.age || '')}
-                          </span>
-                          {selectedPatient.gender && (
-                            <span className="flex items-center gap-1">
-                              <span className="font-medium text-gray-700 dark:text-gray-300">Gender:</span> 
-                              {selectedPatient.gender}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span> 
-                            {selectedPatient.phoneNumber || 'N/A'}
-                          </span>
-                        </div>
-                      </div>
+                  {/* Patient Info */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-gray-900 dark:text-white text-lg">
+                        {selectedPatient.firstName} {selectedPatient.lastName}
+                      </h4>
+                      {savedTreatment && (
+                        <Badge className="bg-green-600 text-white shadow-sm">
+                          Saved: {savedTreatment.treatmentId}
+                        </Badge>
+                      )}
                     </div>
-                    
-                    {/* Actions */}
-                    <div className="flex flex-col gap-2">
-                      <Badge className="bg-green-600 text-white shadow-sm whitespace-nowrap">
-                        ✓ Selected
-                      </Badge>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-900/20"
-                        onClick={() => setSelectedPatient(null)}
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        Change
-                      </Button>
+                    <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">ID:</span> 
+                        <span className="font-mono">{selectedPatient.patientId}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Age:</span> 
+                        {getAge(selectedPatient.age || '')}
+                      </span>
+                      {selectedPatient.gender && (
+                        <span className="flex items-center gap-1">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">Gender:</span> 
+                          {selectedPatient.gender}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span> 
+                        {selectedPatient.phoneNumber || 'N/A'}
+                      </span>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* OmniOrderBar insertion */}
-            {selectedPatient && currentEncounter && (
-              <OmniOrderBar
-                encounterId={currentEncounter.encounterId}
-                services={services}
-                drugs={drugs}
-                onQueueDrug={({ id, name }) => {
-                  setSelectedDrugId(String(id));
-                  setSelectedDrugName(name);
-                  setActiveTab("medications");
-                }}
-                className="mb-4"
-              />
-            )}
-
-            {/* Medical Alert Panel - CRITICAL INFORMATION */}
-            {selectedPatient && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {/* Allergies - CRITICAL */}
-                <Card className={`${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'border-2 border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200'}`}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className={`flex items-center gap-2 text-base ${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'text-red-700 dark:text-red-400' : ''}`}>
-                      <AlertTriangle className={`h-5 w-5 ${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'text-red-600' : 'text-gray-400'}`} />
-                      Allergies
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {selectedPatient.allergies && selectedPatient.allergies.trim() ? (
-                      <div className="bg-white dark:bg-red-950/50 p-3 rounded-lg border border-red-300 dark:border-red-700">
-                        <p className="text-red-900 dark:text-red-200 font-medium whitespace-pre-line">
-                          {selectedPatient.allergies}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 dark:text-gray-400 italic">No known allergies</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Medical History */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Heart className="h-5 w-5 text-pink-600" />
-                      Medical History
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {selectedPatient.medicalHistory && selectedPatient.medicalHistory.trim() ? (
-                      <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                        <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">
-                          {selectedPatient.medicalHistory}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 dark:text-gray-400 italic">No medical history recorded</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Recent Visits */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <History className="h-5 w-5 text-blue-600" />
-                      Recent Visits ({recentTreatments.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {recentTreatments.length > 0 ? (
-                      <div className="space-y-2">
-                        {recentTreatments.map((treatment, idx) => (
-                          <div key={treatment.treatmentId} className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm border-l-2 border-blue-400">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-gray-900 dark:text-white">
-                                {new Date(treatment.visitDate).toLocaleDateString()}
-                              </span>
-                              <Badge variant="outline" className="text-xs">{treatment.visitType}</Badge>
-                            </div>
-                            {treatment.diagnosis && (
-                              <p className="text-gray-700 dark:text-gray-300 text-xs">
-                                <span className="font-medium">Dx:</span> {treatment.diagnosis}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 dark:text-gray-400 italic">No previous visits</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Active Medications */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Pill className="h-5 w-5 text-green-600" />
-                      Active Medications
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {allPrescriptions.filter(rx => rx.status === 'dispensed').length > 0 ? (
-                      <div className="space-y-2">
-                        {allPrescriptions.filter(rx => rx.status === 'dispensed').slice(0, 5).map((rx) => (
-                          <div key={rx.orderId} className="bg-green-50 dark:bg-green-900/20 p-2 rounded text-sm border-l-2 border-green-500">
-                            <p className="font-medium text-gray-900 dark:text-white">{rx.drugName}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                              {rx.dosage} • {rx.instructions}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                              <Clock className="h-3 w-3 inline mr-1" />
-                              {new Date(rx.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 dark:text-gray-400 italic">No active medications</p>
-                    )}
-                  </CardContent>
-                </Card>
+                
+                {/* Actions */}
+                <div className="flex flex-col gap-2">
+                  <Badge className="bg-green-600 text-white shadow-sm whitespace-nowrap">
+                    ✓ Selected
+                  </Badge>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-900/20"
+                    onClick={() => setSelectedPatient(null)}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Change
+                  </Button>
+                </div>
               </div>
-            )}
+            </div>
+          )}
+        </div>
 
-            {/* Orders & Results Panel */}
-            {selectedPatient && currentEncounter && (
-              <Card className="border-l-4 border-l-blue-500">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Orders & Results
-                    </CardTitle>
-                    {orders.some(o => o.status === 'completed' && !o.addToCart && o.isPaid) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const completedOrders = orders.filter(o => o.status === 'completed' && !o.addToCart && o.isPaid);
-                          Promise.all(
-                            completedOrders.map(order =>
-                              addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: true })
-                            )
-                          );
-                        }}
-                        data-testid="add-all-to-cart-btn"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add All Completed
-                      </Button>
-                    )}
+        
+{selectedPatient && currentEncounter && (
+  <OmniOrderBar
+    encounterId={currentEncounter.encounterId}
+    services={services}
+    drugs={drugs}
+    onQueueDrug={({ id, name }) => {
+      setSelectedDrugId(String(id));
+      setSelectedDrugName(name);
+      setActiveTab("medications");
+    }}
+    className="mb-4"
+  />
+)}
+
+        {/* Medical Alert Panel - CRITICAL INFORMATION */}
+        {selectedPatient && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Allergies - CRITICAL */}
+            <Card className={`${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'border-2 border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200'}`}>
+              <CardHeader className="pb-3">
+                <CardTitle className={`flex items-center gap-2 text-base ${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'text-red-700 dark:text-red-400' : ''}`}>
+                  <AlertTriangle className={`h-5 w-5 ${selectedPatient.allergies && selectedPatient.allergies.trim() ? 'text-red-600' : 'text-gray-400'}`} />
+                  Allergies
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedPatient.allergies && selectedPatient.allergies.trim() ? (
+                  <div className="bg-white dark:bg-red-950/50 p-3 rounded-lg border border-red-300 dark:border-red-700">
+                    <p className="text-red-900 dark:text-red-200 font-medium whitespace-pre-line">
+                      {selectedPatient.allergies}
+                    </p>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Lab Tests */}
-                    {labTests.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Laboratory Tests</h4>
-                        <div className="space-y-2">
-                          {labTests.map((test: any) => {
-                            const testNames = Array.isArray(test.tests) 
-                              ? test.tests 
-                              : (typeof test.tests === 'string' ? JSON.parse(test.tests) : []);
-                            
-                            return (
-                            <div key={test.testId || test.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
-                              <div className="flex justify-between items-start gap-3">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Badge variant={test.status === 'completed' ? 'default' : 'secondary'}>
-                                      {test.status}
-                                    </Badge>
-                                    {!test.isPaid && (
-                                      <Badge variant="destructive" className="bg-red-600">UNPAID</Badge>
-                                    )}
-                                  </div>
-                                  <p className="font-semibold text-base capitalize mb-1">{test.category}</p>
-                                  <div className="text-sm text-gray-700 dark:text-gray-300 space-y-0.5">
-                                    {testNames.map((testName: string, idx: number) => (
-                                      <div key={idx}>• {testName}</div>
-                                    ))}
-                                  </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    Requested: {new Date(test.requestedDate).toLocaleDateString()}
-                                  </p>
-                                  {test.orderLine?.acknowledgedBy && (
-                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                      ✓ Acknowledged by {test.orderLine.acknowledgedBy}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                  {test.status === 'completed' && test.orderLine && (
-                                    <>
-                                      <div className="flex items-center gap-2">
-                                        <Checkbox
-                                          id={`ack-lab-${test.id}`}
-                                          checked={!!test.orderLine.acknowledgedBy}
-                                          onCheckedChange={(checked) => {
-                                            acknowledgeMutation.mutate({
-                                              orderLineId: test.orderLine.id,
-                                              acknowledgedBy: "Dr. System", // In real app, use actual user
-                                              acknowledged: checked as boolean,
-                                            });
-                                          }}
-                                          data-testid={`ack-lab-${test.id}`}
-                                        />
-                                        <label htmlFor={`ack-lab-${test.id}`} className="text-sm cursor-pointer">
-                                          Acknowledge
-                                        </label>
-                                      </div>
-                                      {test.orderLine.acknowledgedBy && !test.orderLine.addToCart && (
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          onClick={() => addToCartMutation.mutate({
-                                            orderLineId: test.orderLine.id,
-                                            addToCart: true,
-                                          })}
-                                          data-testid={`add-cart-lab-${test.id}`}
-                                        >
-                                          <Plus className="h-3 w-3 mr-1" />
-                                          Add to Summary
-                                        </Button>
-                                      )}
-                                      {test.orderLine.addToCart === 1 && (
-                                        <Badge variant="outline" className="bg-green-50">Added</Badge>
-                                      )}
-                                    </>
-                                  )}
-                                  {test.status === 'completed' && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      onClick={() => setViewingLabTest(test)}
-                                      data-testid={`view-lab-${test.id}`}
-                                    >
-                                      View Results
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 italic">No known allergies</p>
+                )}
+              </CardContent>
+            </Card>
 
-                    {/* X-Rays */}
-                    {xrays.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
-                        <div className="space-y-2">
-                          {xrays.map((xray: any) => (
-                            <div key={xray.examId || xray.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <div className="flex justify-between items-start gap-3">
-                                <div className="flex-1">
-                                  <p className="font-medium">{xray.bodyPart}</p>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {new Date(xray.requestDate).toLocaleDateString()}
-                                  </p>
-                                  <Badge variant={xray.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
-                                    {xray.status}
-                                  </Badge>
-                                  {xray.orderLine?.acknowledgedBy && (
-                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                      ✓ Acknowledged by {xray.orderLine.acknowledgedBy}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                  {xray.status === 'completed' && xray.orderLine && (
-                                    <>
-                                      <div className="flex items-center gap-2">
-                                        <Checkbox
-                                          id={`ack-xray-${xray.id}`}
-                                          checked={!!xray.orderLine.acknowledgedBy}
-                                          onCheckedChange={(checked) => {
-                                            acknowledgeMutation.mutate({
-                                              orderLineId: xray.orderLine.id,
-                                              acknowledgedBy: "Dr. System",
-                                              acknowledged: checked as boolean,
-                                            });
-                                          }}
-                                          data-testid={`ack-xray-${xray.id}`}
-                                        />
-                                        <label htmlFor={`ack-xray-${xray.id}`} className="text-sm cursor-pointer">
-                                          Acknowledge
-                                        </label>
-                                      </div>
-                                      {xray.orderLine.acknowledgedBy && !xray.orderLine.addToCart && (
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          onClick={() => addToCartMutation.mutate({
-                                            orderLineId: xray.orderLine.id,
-                                            addToCart: true,
-                                          })}
-                                          data-testid={`add-cart-xray-${xray.id}`}
-                                        >
-                                          <Plus className="h-3 w-3 mr-1" />
-                                          Add to Summary
-                                        </Button>
-                                      )}
-                                      {xray.orderLine.addToCart === 1 && (
-                                        <Badge variant="outline" className="bg-green-50">Added</Badge>
-                                      )}
-                                    </>
-                                  )}
-                                  {xray.status === 'completed' && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      onClick={() => setViewingXray(xray)}
-                                      data-testid={`view-xray-${xray.id}`}
-                                    >
-                                      View Report
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Ultrasounds */}
-                    {ultrasounds.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
-                        <div className="space-y-2">
-                          {ultrasounds.map((ultrasound: any) => (
-                            <div key={ultrasound.examId || ultrasound.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <div className="flex justify-between items-start gap-3">
-                                <div className="flex-1">
-                                  <p className="font-medium">{ultrasound.examType}</p>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {new Date(ultrasound.requestDate).toLocaleDateString()}
-                                  </p>
-                                  <Badge variant={ultrasound.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
-                                    {ultrasound.status}
-                                  </Badge>
-                                  {ultrasound.orderLine?.acknowledgedBy && (
-                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                      ✓ Acknowledged by {ultrasound.orderLine.acknowledgedBy}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                  {ultrasound.status === 'completed' && ultrasound.orderLine && (
-                                    <>
-                                      <div className="flex items-center gap-2">
-                                        <Checkbox
-                                          id={`ack-ultrasound-${ultrasound.id}`}
-                                          checked={!!ultrasound.orderLine.acknowledgedBy}
-                                          onCheckedChange={(checked) => {
-                                            acknowledgeMutation.mutate({
-                                              orderLineId: ultrasound.orderLine.id,
-                                              acknowledgedBy: "Dr. System",
-                                              acknowledged: checked as boolean,
-                                            });
-                                          }}
-                                          data-testid={`ack-ultrasound-${ultrasound.id}`}
-                                        />
-                                        <label htmlFor={`ack-ultrasound-${ultrasound.id}`} className="text-sm cursor-pointer">
-                                          Acknowledge
-                                        </label>
-                                      </div>
-                                      {ultrasound.orderLine.acknowledgedBy && !ultrasound.orderLine.addToCart && (
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          onClick={() => addToCartMutation.mutate({
-                                            orderLineId: ultrasound.orderLine.id,
-                                            addToCart: true,
-                                          })}
-                                          data-testid={`add-cart-ultrasound-${ultrasound.id}`}
-                                        >
-                                          <Plus className="h-3 w-3 mr-1" />
-                                          Add to Summary
-                                        </Button>
-                                      )}
-                                      {ultrasound.orderLine.addToCart === 1 && (
-                                        <Badge variant="outline" className="bg-green-50">Added</Badge>
-                                      )}
-                                    </>
-                                  )}
-                                  {ultrasound.status === 'completed' && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      onClick={() => setViewingUltrasound(ultrasound)}
-                                      data-testid={`view-ultrasound-${ultrasound.id}`}
-                                    >
-                                      View Report
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Empty state */}
-                    {labTests.length === 0 && xrays.length === 0 && ultrasounds.length === 0 && (
-                      <div className="text-center py-6 text-gray-500">
-                        <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No orders or results yet</p>
-                      </div>
-                    )}
+            {/* Medical History */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Heart className="h-5 w-5 text-pink-600" />
+                  Medical History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedPatient.medicalHistory && selectedPatient.medicalHistory.trim() ? (
+                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                    <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">
+                      {selectedPatient.medicalHistory}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 italic">No medical history recorded</p>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Visit Summary - Today's Services & Billing */}
-            {selectedPatient && currentEncounter && (
-              <Card className="border-l-4 border-l-green-500">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Visit Summary - Today's Services
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {orders.filter(o => o.addToCart).length} items
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowVisitSummary(!showVisitSummary)}
-                      >
-                        {showVisitSummary ? "Hide" : "Show"} Details
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                {showVisitSummary && (
-                  <CardContent>
-                    <div className="space-y-3">
-                      {orders.filter(o => o.addToCart).length === 0 ? (
-                        <div className="text-center py-4 text-gray-500">
-                          <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p>No services in today's visit yet</p>
-                          <p className="text-xs mt-1">Acknowledge completed tests to add them here</p>
+            {/* Recent Visits */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <History className="h-5 w-5 text-blue-600" />
+                  Recent Visits ({recentTreatments.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentTreatments.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentTreatments.map((treatment, idx) => (
+                      <div key={treatment.treatmentId} className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm border-l-2 border-blue-400">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {new Date(treatment.visitDate).toLocaleDateString()}
+                          </span>
+                          <Badge variant="outline" className="text-xs">{treatment.visitType}</Badge>
                         </div>
-                      ) : (
-                        <>
-                          {orders.filter(o => o.addToCart).map((order: any) => (
-                            <div key={order.orderId} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <div>
-                                <p className="font-medium">{order.name}</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {order.type.toUpperCase()} - {order.status}
-                                </p>
-                                {order.flags && (
-                                  <Badge variant={order.flags === 'critical' ? 'destructive' : 'outline'} className="mt-1">
-                                    {order.flags}
-                                  </Badge>
+                        {treatment.diagnosis && (
+                          <p className="text-gray-700 dark:text-gray-300 text-xs">
+                            <span className="font-medium">Dx:</span> {treatment.diagnosis}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 italic">No previous visits</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Active Medications */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Pill className="h-5 w-5 text-green-600" />
+                  Active Medications
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {allPrescriptions.filter(rx => rx.status === 'dispensed').length > 0 ? (
+                  <div className="space-y-2">
+                    {allPrescriptions.filter(rx => rx.status === 'dispensed').slice(0, 5).map((rx) => (
+                      <div key={rx.orderId} className="bg-green-50 dark:bg-green-900/20 p-2 rounded text-sm border-l-2 border-green-500">
+                        <p className="font-medium text-gray-900 dark:text-white">{rx.drugName}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          {rx.dosage} • {rx.instructions}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          <Clock className="h-3 w-3 inline mr-1" />
+                          {new Date(rx.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 italic">No active medications</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        
+
+        
+        </CardContent>
+
+        
+      </Card
+
+{selectedPatient && currentEncounter && (
+  <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+    <div className="space-y-4">
+      <Card className="border-l-4 border-l-blue-500">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Orders & Results
+                </CardTitle>
+                {orders.some(o => o.status === 'completed' && !o.addToCart && o.isPaid) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const completedOrders = orders.filter(o => o.status === 'completed' && !o.addToCart && o.isPaid);
+                      Promise.all(
+                        completedOrders.map(order =>
+                          addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: true })
+                        )
+                      );
+                    }}
+                    data-testid="add-all-to-cart-btn"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add All Completed
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Lab Tests */}
+                {labTests.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Laboratory Tests</h4>
+                    <div className="space-y-2">
+                      {labTests.map((test: any) => {
+                        const testNames = Array.isArray(test.tests) 
+                          ? test.tests 
+                          : (typeof test.tests === 'string' ? JSON.parse(test.tests) : []);
+
+                        return (
+                        <div key={test.testId || test.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant={test.status === 'completed' ? 'default' : 'secondary'}>
+                                  {test.status}
+                                </Badge>
+                                {!test.isPaid && (
+                                  <Badge variant="destructive" className="bg-red-600">UNPAID</Badge>
                                 )}
                               </div>
-                              <div className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: false });
-                                  }}
-                                >
-                                  Remove
-                                </Button>
+                              <p className="font-semibold text-base capitalize mb-1">{test.category}</p>
+                              <div className="text-sm text-gray-700 dark:text-gray-300 space-y-0.5">
+                                {testNames.map((testName: string, idx: number) => (
+                                  <div key={idx}>• {testName}</div>
+                                ))}
                               </div>
-                            </div>
-                          ))}
-                          <div className="border-t pt-3 flex justify-between items-center">
-                            <span className="font-medium">Services Today:</span>
-                            <span className="font-bold text-lg text-green-600 dark:text-green-400">
-                              {orders.filter(o => o.addToCart).length} service(s)
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            )}
-            </CardContent>
-
-            {/* Treatment Form */}
-            {selectedPatient && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Clinical Documentation & Orders
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-                      <TabsTrigger value="notes" data-testid="tab-notes">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Visit Notes
-                      </TabsTrigger>
-                      <TabsTrigger value="tests" data-testid="tab-tests">
-                        Lab Tests
-                      </TabsTrigger>
-                      <TabsTrigger value="imaging" data-testid="tab-imaging">
-                        Imaging
-                      </TabsTrigger>
-                      <TabsTrigger value="medications" data-testid="tab-medications">
-                        <Pill className="h-4 w-4 mr-2" />
-                        Medications
-                        {medications.length > 0 && (
-                          <Badge className="ml-2 bg-green-600">{medications.length}</Badge>
-                        )}
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <Form {...form}>
-                      <form onSubmit={handleSubmit} className="mt-6">
-                        <TabsContent value="notes" className="space-y-6">
-                          {/* Visit Information */}
-                          <div>
-                            <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
-                              Visit Information
-                            </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="visitDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Visit Date</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="visitType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Visit Type</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="consultation">Consultation</SelectItem>
-                                <SelectItem value="follow-up">Follow-up</SelectItem>
-                                <SelectItem value="emergency">Emergency</SelectItem>
-                                <SelectItem value="preventive">Preventive Care</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="priority"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Priority</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="routine">Routine</SelectItem>
-                                <SelectItem value="urgent">Urgent</SelectItem>
-                                <SelectItem value="emergency">Emergency</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Chief Complaint */}
-                  <FormField
-                    control={form.control}
-                    name="chiefComplaint"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Chief Complaint</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="What brings the patient in today?"
-                            rows={3}
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Vital Signs */}
-                  <div>
-                    <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
-                      Vital Signs
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="temperature"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Temperature (°C)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.1" 
-                                placeholder="36.5"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="bloodPressure"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Blood Pressure</FormLabel>
-                            <FormControl>
-                              <Input placeholder="120/80" {...field} value={field.value ?? ""} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="heartRate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Heart Rate (bpm)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="72"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="weight"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Weight (kg)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.1" 
-                                placeholder="65.0"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Examination Findings */}
-                  <FormField
-                    control={form.control}
-                    name="examination"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Physical Examination</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Detailed examination findings..."
-                            rows={4}
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Diagnosis */}
-                  <FormField
-                    control={form.control}
-                    name="diagnosis"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Diagnosis</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Primary and secondary diagnoses..."
-                            rows={3}
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Treatment Plan */}
-                  <FormField
-                    control={form.control}
-                    name="treatmentPlan"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Treatment Plan</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Medications, procedures, recommendations..."
-                            rows={4}
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Follow-up */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="followUpDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Follow-up Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} value={field.value ?? ""} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="followUpType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Next Visit Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="No follow-up needed" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">No follow-up needed</SelectItem>
-                              <SelectItem value="routine">Routine Follow-up</SelectItem>
-                              <SelectItem value="urgent">Urgent Follow-up</SelectItem>
-                              <SelectItem value="lab-results">Lab Results Review</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                        </TabsContent>
-
-                        {/* Lab Tests Tab */}
-                        <TabsContent value="tests" className="space-y-6">
-                          <div className="space-y-4">
-                            <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Laboratory Tests</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Quick lab test ordering for current patient
-                            </p>
-                            
-                            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                For detailed lab test ordering with full test catalog, visit the <a href="/laboratory" className="text-blue-600 hover:underline">Laboratory</a> page.
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                Requested: {new Date(test.requestedDate).toLocaleDateString()}
                               </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-500">
-                                Use this quick form for common tests or the Laboratory page for comprehensive test selection.
-                              </p>
+                              {test.orderLine?.acknowledgedBy && (
+                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                  ✓ Acknowledged by {test.orderLine.acknowledgedBy}
+                                </p>
+                              )}
                             </div>
-                          </div>
-                        </TabsContent>
-
-                        {/* Imaging Tab */}
-                        <TabsContent value="imaging" className="space-y-6">
-                          <div className="space-y-4">
-                            <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Imaging Studies</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Quick imaging study ordering for current patient
-                            </p>
-                            
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <Link href="/xray">
-                                <div className="block p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-                                  <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">X-Ray Examinations</h4>
-                                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                                    Order X-ray studies including chest, abdomen, spine, extremities, and more
-                                  </p>
-                                  <div className="w-full px-4 py-2 border border-blue-300 dark:border-blue-700 rounded text-sm text-center bg-white dark:bg-gray-900">
-                                    Go to X-Ray Module →
+                            <div className="flex flex-col gap-2">
+                              {test.status === 'completed' && test.orderLine && (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={`ack-lab-${test.id}`}
+                                      checked={!!test.orderLine.acknowledgedBy}
+                                      onCheckedChange={(checked) => {
+                                        acknowledgeMutation.mutate({
+                                          orderLineId: test.orderLine.id,
+                                          acknowledgedBy: "Dr. System", // In real app, use actual user
+                                          acknowledged: checked as boolean,
+                                        });
+                                      }}
+                                      data-testid={`ack-lab-${test.id}`}
+                                    />
+                                    <label htmlFor={`ack-lab-${test.id}`} className="text-sm cursor-pointer">
+                                      Acknowledge
+                                    </label>
                                   </div>
-                                </div>
-                              </Link>
-                              
-                              <Link href="/ultrasound">
-                                <div className="block p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-                                  <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">Ultrasound Examinations</h4>
-                                  <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
-                                    Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo
-                                  </p>
-                                  <div className="w-full px-4 py-2 border border-purple-300 dark:border-purple-700 rounded text-sm text-center bg-white dark:bg-gray-900">
-                                    Go to Ultrasound Module →
-                                  </div>
-                                </div>
-                              </Link>
-                            </div>
-                            
-                            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
-                              <p className="text-sm text-gray-500 dark:text-gray-500">
-                                Note: For detailed imaging requests with safety checklists and specialized protocols, please use the dedicated X-Ray and Ultrasound modules.
-                              </p>
-                            </div>
-                          </div>
-                        </TabsContent>
-
-                        {/* Medications Tab */}
-                        <TabsContent value="medications" className="space-y-6">
-                          <div className="space-y-4">
-                            {/* Prescribed Medications Section */}
-                            {prescriptions.length > 0 && (
-                              <div className="mb-6">
-                                <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">
-                                  Prescribed Medications ({prescriptions.length})
-                                </h3>
-                                <div className="space-y-2">
-                                  {prescriptions.map((rx) => (
-                                    <div 
-                                      key={rx.orderId} 
-                                      className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg"
-                                      data-testid={`prescription-${rx.orderId}`}
+                                  {test.orderLine.acknowledgedBy && !test.orderLine.addToCart && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => addToCartMutation.mutate({
+                                        orderLineId: test.orderLine.id,
+                                        addToCart: true,
+                                      })}
+                                      data-testid={`add-cart-lab-${test.id}`}
                                     >
-                                      <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2 mb-2">
-                                            <p className="font-medium text-gray-900 dark:text-white">
-                                              {rx.drugName || 'Medication'}
-                                            </p>
-                                            <Badge 
-                                              variant={rx.status === 'dispensed' ? 'default' : 'secondary'}
-                                              className={rx.status === 'dispensed' ? 'bg-green-600' : ''}
-                                            >
-                                              {rx.status}
-                                            </Badge>
-                                            <Badge 
-                                              variant={rx.paymentStatus === 'paid' ? 'default' : 'destructive'}
-                                              className={rx.paymentStatus === 'paid' ? 'bg-blue-600' : 'bg-red-600'}
-                                            >
-                                              {rx.paymentStatus}
-                                            </Badge>
-                                          </div>
-                                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Dosage: {rx.dosage || 'As prescribed'} | Quantity: {rx.quantity}
-                                          </p>
-                                          {rx.instructions && (
-                                            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                                              Instructions: {rx.instructions}
-                                            </p>
-                                          )}
-                                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                            Order ID: {rx.orderId} | Prescribed: {new Date(rx.createdAt).toLocaleString()}
-                                          </p>
-                                          {rx.dispensedAt && (
-                                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                              Dispensed: {new Date(rx.dispensedAt).toLocaleString()} by {rx.dispensedBy}
-                                            </p>
-                                          )}
-                                        </div>
-                                        {rx.status === 'prescribed' && rx.paymentStatus === 'unpaid' && (
-                                          <div className="flex gap-2">
-                                            <Button
-                                              type="button"
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => {
-                                                setEditingPrescription(rx);
-                                                setEditDosage(rx.dosage || '');
-                                                setEditQuantity(rx.quantity || 0);
-                                                setEditInstructions(rx.instructions || '');
-                                              }}
-                                              data-testid={`btn-edit-${rx.orderId}`}
-                                            >
-                                              <Edit className="w-4 h-4 mr-1" />
-                                              Edit
-                                            </Button>
-                                            <Button
-                                              type="button"
-                                              variant="destructive"
-                                              size="sm"
-                                              onClick={() => {
-                                                if (window.confirm('Cancel this prescription?')) {
-                                                  cancelPrescriptionMutation.mutate(rx.orderId);
-                                                }
-                                              }}
-                                              data-testid={`btn-cancel-${rx.orderId}`}
-                                            >
-                                              <Trash2 className="w-4 h-4 mr-1" />
-                                              Cancel
-                                            </Button>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="border-t pt-4 mt-4" />
-                              </div>
-                            )}
-
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Select drugs from inventory to create pharmacy orders
-                              </p>
-                            </div>
-
-                            {/* Medication Selection */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Select Drug</label>
-                                <Select 
-                                  value={selectedDrugId} 
-                                  onValueChange={(value) => {
-                                    setSelectedDrugId(value);
-                                    const drug = drugs.find(d => d.id.toString() === value);
-                                    if (drug) setSelectedDrugName(drug.genericName || drug.name);
-                                  }}
+                                      <Plus className="h-3 w-3 mr-1" />
+                                      Add to Summary
+                                    </Button>
+                                  )}
+                                  {test.orderLine.addToCart === 1 && (
+                                    <Badge variant="outline" className="bg-green-50">Added</Badge>
+                                  )}
+                                </>
+                              )}
+                              {test.status === 'completed' && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setViewingLabTest(test)}
+                                  data-testid={`view-lab-${test.id}`}
                                 >
-                                  <SelectTrigger data-testid="select-drug">
-                                    <SelectValue placeholder="Choose a medication..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {drugs.map(drug => (
-                                      <SelectItem key={drug.id} value={drug.id.toString()}>
-                                        {drug.genericName || drug.name} - {drug.strength}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
+                                  View Results
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Dosage Instructions</label>
-                                <Input
-                                  placeholder="e.g., 1 tablet twice daily"
-                                  value={newMedDosage}
-                                  onChange={(e) => setNewMedDosage(e.target.value)}
-                                  data-testid="input-dosage"
-                                />
-                              </div>
+                {/* X-Rays */}
+                {xrays.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
+                    <div className="space-y-2">
+                      {xrays.map((xray: any) => (
+                        <div key={xray.examId || xray.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1">
+                              <p className="font-medium">{xray.bodyPart}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {new Date(xray.requestDate).toLocaleDateString()}
+                              </p>
+                              <Badge variant={xray.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
+                                {xray.status}
+                              </Badge>
+                              {xray.orderLine?.acknowledgedBy && (
+                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                  ✓ Acknowledged by {xray.orderLine.acknowledgedBy}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              {xray.status === 'completed' && xray.orderLine && (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={`ack-xray-${xray.id}`}
+                                      checked={!!xray.orderLine.acknowledgedBy}
+                                      onCheckedChange={(checked) => {
+                                        acknowledgeMutation.mutate({
+                                          orderLineId: xray.orderLine.id,
+                                          acknowledgedBy: "Dr. System",
+                                          acknowledged: checked as boolean,
+                                        });
+                                      }}
+                                      data-testid={`ack-xray-${xray.id}`}
+                                    />
+                                    <label htmlFor={`ack-xray-${xray.id}`} className="text-sm cursor-pointer">
+                                      Acknowledge
+                                    </label>
+                                  </div>
+                                  {xray.orderLine.acknowledgedBy && !xray.orderLine.addToCart && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => addToCartMutation.mutate({
+                                        orderLineId: xray.orderLine.id,
+                                        addToCart: true,
+                                      })}
+                                      data-testid={`add-cart-xray-${xray.id}`}
+                                    >
+                                      <Plus className="h-3 w-3 mr-1" />
+                                      Add to Summary
+                                    </Button>
+                                  )}
+                                  {xray.orderLine.addToCart === 1 && (
+                                    <Badge variant="outline" className="bg-green-50">Added</Badge>
+                                  )}
+                                </>
+                              )}
+                              {xray.status === 'completed' && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setViewingXray(xray)}
+                                  data-testid={`view-xray-${xray.id}`}
+                                >
+                                  View Report
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Quantity</label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  placeholder="e.g., 30"
-                                  value={newMedQuantity}
-                                  onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)}
-                                  data-testid="input-quantity"
-                                />
-                              </div>
+                {/* Ultrasounds */}
+                {ultrasounds.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
+                    <div className="space-y-2">
+                      {ultrasounds.map((ultrasound: any) => (
+                        <div key={ultrasound.examId || ultrasound.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1">
+                              <p className="font-medium">{ultrasound.examType}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {new Date(ultrasound.requestDate).toLocaleDateString()}
+                              </p>
+                              <Badge variant={ultrasound.status === 'completed' ? 'default' : 'secondary'} className="mt-1">
+                                {ultrasound.status}
+                              </Badge>
+                              {ultrasound.orderLine?.acknowledgedBy && (
+                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                  ✓ Acknowledged by {ultrasound.orderLine.acknowledgedBy}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              {ultrasound.status === 'completed' && ultrasound.orderLine && (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={`ack-ultrasound-${ultrasound.id}`}
+                                      checked={!!ultrasound.orderLine.acknowledgedBy}
+                                      onCheckedChange={(checked) => {
+                                        acknowledgeMutation.mutate({
+                                          orderLineId: ultrasound.orderLine.id,
+                                          acknowledgedBy: "Dr. System",
+                                          acknowledged: checked as boolean,
+                                        });
+                                      }}
+                                      data-testid={`ack-ultrasound-${ultrasound.id}`}
+                                    />
+                                    <label htmlFor={`ack-ultrasound-${ultrasound.id}`} className="text-sm cursor-pointer">
+                                      Acknowledge
+                                    </label>
+                                  </div>
+                                  {ultrasound.orderLine.acknowledgedBy && !ultrasound.orderLine.addToCart && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => addToCartMutation.mutate({
+                                        orderLineId: ultrasound.orderLine.id,
+                                        addToCart: true,
+                                      })}
+                                      data-testid={`add-cart-ultrasound-${ultrasound.id}`}
+                                    >
+                                      <Plus className="h-3 w-3 mr-1" />
+                                      Add to Summary
+                                    </Button>
+                                  )}
+                                  {ultrasound.orderLine.addToCart === 1 && (
+                                    <Badge variant="outline" className="bg-green-50">Added</Badge>
+                                  )}
+                                </>
+                              )}
+                              {ultrasound.status === 'completed' && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setViewingUltrasound(ultrasound)}
+                                  data-testid={`view-ultrasound-${ultrasound.id}`}
+                                >
+                                  View Report
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Additional Instructions</label>
-                                <Input
-                                  placeholder="e.g., Take with food"
-                                  value={newMedInstructions}
-                                  onChange={(e) => setNewMedInstructions(e.target.value)}
-                                  data-testid="input-instructions"
-                                />
+                {/* Empty state */}
+                {labTests.length === 0 && xrays.length === 0 && ultrasounds.length === 0 && (
+                  <div className="text-center py-6 text-gray-500">
+                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No orders or results yet</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+      <Card className="border-l-4 border-l-green-500">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Visit Summary - Today's Services
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">
+                    {orders.filter(o => o.addToCart).length} items
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowVisitSummary(!showVisitSummary)}
+                  >
+                    {showVisitSummary ? "Hide" : "Show"} Details
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            {showVisitSummary && (
+              <CardContent>
+                <div className="space-y-3">
+                  {orders.filter(o => o.addToCart).length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No services in today's visit yet</p>
+                      <p className="text-xs mt-1">Acknowledge completed tests to add them here</p>
+                    </div>
+                  ) : (
+                    <>
+                      {orders.filter(o => o.addToCart).map((order: any) => (
+                        <div key={order.orderId} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div>
+                            <p className="font-medium">{order.name}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {order.type.toUpperCase()} - {order.status}
+                            </p>
+                            {order.flags && (
+                              <Badge variant={order.flags === 'critical' ? 'destructive' : 'outline'} className="mt-1">
+                                {order.flags}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: false });
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="border-t pt-3 flex justify-between items-center">
+                        <span className="font-medium">Services Today:</span>
+                        <span className="font-bold text-lg text-green-600 dark:text-green-400">
+                          {orders.filter(o => o.addToCart).length} service(s)
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+      <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Clinical Documentation & Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+                  <TabsTrigger value="notes" data-testid="tab-notes">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Visit Notes
+                  </TabsTrigger>
+                  <TabsTrigger value="tests" data-testid="tab-tests">
+                    Lab Tests
+                  </TabsTrigger>
+                  <TabsTrigger value="imaging" data-testid="tab-imaging">
+                    Imaging
+                  </TabsTrigger>
+                  <TabsTrigger value="medications" data-testid="tab-medications">
+                    <Pill className="h-4 w-4 mr-2" />
+                    Medications
+                    {medications.length > 0 && (
+                      <Badge className="ml-2 bg-green-600">{medications.length}</Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+
+                <Form {...form}>
+                  <form onSubmit={handleSubmit} className="mt-6">
+                    <TabsContent value="notes" className="space-y-6">
+                      {/* Visit Information */}
+                      <div>
+                        <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
+                          Visit Information
+                        </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="visitDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Visit Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="visitType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Visit Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="consultation">Consultation</SelectItem>
+                            <SelectItem value="follow-up">Follow-up</SelectItem>
+                            <SelectItem value="emergency">Emergency</SelectItem>
+                            <SelectItem value="preventive">Preventive Care</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="routine">Routine</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                            <SelectItem value="emergency">Emergency</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Chief Complaint */}
+              <FormField
+                control={form.control}
+                name="chiefComplaint"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Chief Complaint</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="What brings the patient in today?"
+                        rows={3}
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Vital Signs */}
+              <div>
+                <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
+                  Vital Signs
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="temperature"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Temperature (°C)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="36.5"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="bloodPressure"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Blood Pressure</FormLabel>
+                        <FormControl>
+                          <Input placeholder="120/80" {...field} value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="heartRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Heart Rate (bpm)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="72"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="weight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Weight (kg)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="65.0"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Examination Findings */}
+              <FormField
+                control={form.control}
+                name="examination"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Physical Examination</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Detailed examination findings..."
+                        rows={4}
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Diagnosis */}
+              <FormField
+                control={form.control}
+                name="diagnosis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Diagnosis</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Primary and secondary diagnoses..."
+                        rows={3}
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Treatment Plan */}
+              <FormField
+                control={form.control}
+                name="treatmentPlan"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Treatment Plan</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Medications, procedures, recommendations..."
+                        rows={4}
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Follow-up */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="followUpDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Follow-up Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="followUpType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Next Visit Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="No follow-up needed" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">No follow-up needed</SelectItem>
+                          <SelectItem value="routine">Routine Follow-up</SelectItem>
+                          <SelectItem value="urgent">Urgent Follow-up</SelectItem>
+                          <SelectItem value="lab-results">Lab Results Review</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+                    </TabsContent>
+
+                    {/* Lab Tests Tab */}
+                    <TabsContent value="tests" className="space-y-6">
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Laboratory Tests</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Quick lab test ordering for current patient
+                        </p>
+
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            For detailed lab test ordering with full test catalog, visit the <a href="/laboratory" className="text-blue-600 hover:underline">Laboratory</a> page.
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-500">
+                            Use this quick form for common tests or the Laboratory page for comprehensive test selection.
+                          </p>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* Imaging Tab */}
+                    <TabsContent value="imaging" className="space-y-6">
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Imaging Studies</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Quick imaging study ordering for current patient
+                        </p>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <Link href="/xray">
+                            <div className="block p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+                              <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">X-Ray Examinations</h4>
+                              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                                Order X-ray studies including chest, abdomen, spine, extremities, and more
+                              </p>
+                              <div className="w-full px-4 py-2 border border-blue-300 dark:border-blue-700 rounded text-sm text-center bg-white dark:bg-gray-900">
+                                Go to X-Ray Module →
                               </div>
+                            </div>
+                          </Link>
+
+                          <Link href="/ultrasound">
+                            <div className="block p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+                              <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">Ultrasound Examinations</h4>
+                              <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+                                Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo
+                              </p>
+                              <div className="w-full px-4 py-2 border border-purple-300 dark:border-purple-700 rounded text-sm text-center bg-white dark:bg-gray-900">
+                                Go to Ultrasound Module →
+                              </div>
+                            </div>
+                          </Link>
+                        </div>
+
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
+                          <p className="text-sm text-gray-500 dark:text-gray-500">
+                            Note: For detailed imaging requests with safety checklists and specialized protocols, please use the dedicated X-Ray and Ultrasound modules.
+                          </p>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* Medications Tab */}
+                    <TabsContent value="medications" className="space-y-6">
+                      <div className="space-y-4">
+                        {/* Prescribed Medications Section */}
+                        {prescriptions.length > 0 && (
+                          <div className="mb-6">
+                            <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">
+                              Prescribed Medications ({prescriptions.length})
+                            </h3>
+                            <div className="space-y-2">
+                              {prescriptions.map((rx) => (
+                                <div 
+                                  key={rx.orderId} 
+                                  className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg"
+                                  data-testid={`prescription-${rx.orderId}`}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <p className="font-medium text-gray-900 dark:text-white">
+                                          {rx.drugName || 'Medication'}
+                                        </p>
+                                        <Badge 
+                                          variant={rx.status === 'dispensed' ? 'default' : 'secondary'}
+                                          className={rx.status === 'dispensed' ? 'bg-green-600' : ''}
+                                        >
+                                          {rx.status}
+                                        </Badge>
+                                        <Badge 
+                                          variant={rx.paymentStatus === 'paid' ? 'default' : 'destructive'}
+                                          className={rx.paymentStatus === 'paid' ? 'bg-blue-600' : 'bg-red-600'}
+                                        >
+                                          {rx.paymentStatus}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        Dosage: {rx.dosage || 'As prescribed'} | Quantity: {rx.quantity}
+                                      </p>
+                                      {rx.instructions && (
+                                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                                          Instructions: {rx.instructions}
+                                        </p>
+                                      )}
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                        Order ID: {rx.orderId} | Prescribed: {new Date(rx.createdAt).toLocaleString()}
+                                      </p>
+                                      {rx.dispensedAt && (
+                                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                          Dispensed: {new Date(rx.dispensedAt).toLocaleString()} by {rx.dispensedBy}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {rx.status === 'prescribed' && rx.paymentStatus === 'unpaid' && (
+                                      <div className="flex gap-2">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            setEditingPrescription(rx);
+                                            setEditDosage(rx.dosage || '');
+                                            setEditQuantity(rx.quantity || 0);
+                                            setEditInstructions(rx.instructions || '');
+                                          }}
+                                          data-testid={`btn-edit-${rx.orderId}`}
+                                        >
+                                          <Edit className="w-4 h-4 mr-1" />
+                                          Edit
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() => {
+                                            if (window.confirm('Cancel this prescription?')) {
+                                              cancelPrescriptionMutation.mutate(rx.orderId);
+                                            }
+                                          }}
+                                          data-testid={`btn-cancel-${rx.orderId}`}
+                                        >
+                                          <Trash2 className="w-4 h-4 mr-1" />
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="border-t pt-4 mt-4" />
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Select drugs from inventory to create pharmacy orders
+                          </p>
+                        </div>
+
+                        {/* Medication Selection */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Select Drug</label>
+                            <Select 
+                              value={selectedDrugId} 
+                              onValueChange={(value) => {
+                                setSelectedDrugId(value);
+                                const drug = drugs.find(d => d.id.toString() === value);
+                                if (drug) setSelectedDrugName(drug.genericName || drug.name);
+                              }}
+                            >
+                              <SelectTrigger data-testid="select-drug">
+                                <SelectValue placeholder="Choose a medication..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {drugs.map(drug => (
+                                  <SelectItem key={drug.id} value={drug.id.toString()}>
+                                    {drug.genericName || drug.name} - {drug.strength}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Dosage Instructions</label>
+                            <Input
+                              placeholder="e.g., 1 tablet twice daily"
+                              value={newMedDosage}
+                              onChange={(e) => setNewMedDosage(e.target.value)}
+                              data-testid="input-dosage"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Quantity</label>
+                            <Input
+                              type="number"
+                              min="1"
+                              placeholder="e.g., 30"
+                              value={newMedQuantity}
+                              onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)}
+                              data-testid="input-quantity"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Additional Instructions</label>
+                            <Input
+                              placeholder="e.g., Take with food"
+                              value={newMedInstructions}
+                              onChange={(e) => setNewMedInstructions(e.target.value)}
+                              data-testid="input-instructions"
+                            />
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
+                              toast({
+                                title: "Validation Error",
+                                description: "Please fill in drug, dosage, and quantity",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+
+                            setMedications([...medications, {
+                              drugId: parseInt(selectedDrugId),
+                              drugName: selectedDrugName,
+                              dosage: newMedDosage,
+                              quantity: newMedQuantity,
+                              instructions: newMedInstructions,
+                            }]);
+
+                            // Reset form
+                            setSelectedDrugId("");
+                            setSelectedDrugName("");
+                            setNewMedDosage("");
+                            setNewMedQuantity(0);
+                            setNewMedInstructions("");
+
+                            toast({
+                              title: "Added",
+                              description: "Medication added to order list",
+                            });
+                          }}
+                          data-testid="btn-add-medication"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add to Order List
+                        </Button>
+
+                        {/* Medications List */}
+                        {medications.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4>
+                            <div className="space-y-2">
+                              {medications.map((med, idx) => (
+                                <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg">
+                                  <div className="flex-1">
+                                    <p className="font-medium">{med.drugName}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      Dosage: {med.dosage} | Quantity: {med.quantity}
+                                    </p>
+                                    {med.instructions && (
+                                      <p className="text-sm text-gray-500 dark:text-gray-500">
+                                        Instructions: {med.instructions}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setMedications(medications.filter((_, i) => i !== idx));
+                                    }}
+                                    data-testid={`btn-remove-med-${idx}`}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
 
                             <Button
                               type="button"
-                              onClick={() => {
-                                if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
-                                  toast({
-                                    title: "Validation Error",
-                                    description: "Please fill in drug, dosage, and quantity",
-                                    variant: "destructive",
-                                  });
-                                  return;
-                                }
-
-                                setMedications([...medications, {
-                                  drugId: parseInt(selectedDrugId),
-                                  drugName: selectedDrugName,
-                                  dosage: newMedDosage,
-                                  quantity: newMedQuantity,
-                                  instructions: newMedInstructions,
-                                }]);
-
-                                // Reset form
-                                setSelectedDrugId("");
-                                setSelectedDrugName("");
-                                setNewMedDosage("");
-                                setNewMedQuantity(0);
-                                setNewMedInstructions("");
-
-                                toast({
-                                  title: "Added",
-                                  description: "Medication added to order list",
-                                });
-                              }}
-                              data-testid="btn-add-medication"
+                              onClick={() => submitMedicationsMutation.mutate(medications)}
+                              disabled={submitMedicationsMutation.isPending}
+                              className="w-full bg-green-600 hover:bg-green-700"
+                              data-testid="btn-submit-medications"
                             >
-                              <Plus className="w-4 h-4 mr-2" />
-                              Add to Order List
+                              <Pill className="w-4 h-4 mr-2" />
+                              {submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}
                             </Button>
-
-                            {/* Medications List */}
-                            {medications.length > 0 && (
-                              <div className="space-y-2">
-                                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4>
-                                <div className="space-y-2">
-                                  {medications.map((med, idx) => (
-                                    <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg">
-                                      <div className="flex-1">
-                                        <p className="font-medium">{med.drugName}</p>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                                          Dosage: {med.dosage} | Quantity: {med.quantity}
-                                        </p>
-                                        {med.instructions && (
-                                          <p className="text-sm text-gray-500 dark:text-gray-500">
-                                            Instructions: {med.instructions}
-                                          </p>
-                                        )}
-                                      </div>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                          setMedications(medications.filter((_, i) => i !== idx));
-                                        }}
-                                        data-testid={`btn-remove-med-${idx}`}
-                                      >
-                                        <Trash2 className="w-4 h-4 text-red-600" />
-                                      </Button>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                <Button
-                                  type="button"
-                                  onClick={() => submitMedicationsMutation.mutate(medications)}
-                                  disabled={submitMedicationsMutation.isPending}
-                                  className="w-full bg-green-600 hover:bg-green-700"
-                                  data-testid="btn-submit-medications"
-                                >
-                                  <Pill className="w-4 h-4 mr-2" />
-                                  {submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}
-                                </Button>
-                              </div>
-                            )}
                           </div>
-                        </TabsContent>
+                        )}
+                      </div>
+                    </TabsContent>
 
-                        {/* Form Actions - Outside tabs but inside form */}
-                        <div className="flex gap-4 pt-6 mt-6 border-t">
-                          <Button 
-                            type="submit" 
-                            disabled={createTreatmentMutation.isPending}
-                            className="bg-medical-blue hover:bg-blue-700"
-                            data-testid="save-treatment-btn"
-                          >
-                            <Save className="w-4 h-4 mr-2" />
-                            {createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}
-                          </Button>
-                    {currentEncounter && currentEncounter.status === 'open' && (
+                    {/* Form Actions - Outside tabs but inside form */}
+                    <div className="flex gap-4 pt-6 mt-6 border-t">
+                      <Button 
+                        type="submit" 
+                        disabled={createTreatmentMutation.isPending}
+                        className="bg-medical-blue hover:bg-blue-700"
+                        data-testid="save-treatment-btn"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}
+                      </Button>
+                {currentEncounter && currentEncounter.status === 'open' && (
+                  <Button 
+                    type="button" 
+                    onClick={handleCloseVisit}
+                    variant="default"
+                    className="bg-orange-600 hover:bg-orange-700"
+                    disabled={closeVisitMutation.isPending}
+                    data-testid="close-visit-btn"
+                  >
+                    {closeVisitMutation.isPending ? "Closing..." : "Close Visit"}
+                  </Button>
+                )}
                       <Button 
                         type="button" 
-                        onClick={handleCloseVisit}
-                        variant="default"
-                        className="bg-orange-600 hover:bg-orange-700"
-                        disabled={closeVisitMutation.isPending}
-                        data-testid="close-visit-btn"
+                        variant="outline" 
+                        onClick={handleNewTreatment}
+                        className="ml-auto"
                       >
-                        {closeVisitMutation.isPending ? "Closing..." : "Close Visit"}
+                        New Treatment
                       </Button>
-                    )}
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={handleNewTreatment}
-                            className="ml-auto"
-                          >
-                            New Treatment
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            )}
+                    </div>
+                  </form>
+                </Form>
+              </Tabs>
+            </CardContent>
           </Card>
-        
-        </div> {/* End Left Column */}
-        
-        {/* Right Column (Cart) */}
-        {selectedPatient && currentEncounter && (
-          <div className="sticky top-4 h-screen max-h-[calc(100vh-2rem)] overflow-y-auto print:hidden">
-            <RightRailCart
-              orders={orders}
-              onRemove={(orderId) =>
-                addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })
-              }
-              onPrint={() => window.print()}
-            />
-          </div>
-        )}
-        
-      </div> {/* End 2-col Grid */}
+    </div>
 
-      {/* Modals are outside the grid */}
+    <RightRailCart
+      orders={{orders}}
+      onRemove={(orderId) => addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })}
+      onPrint={() => window.print()}
+    />
+  </div>
+)}
+
+>
 
       {/* Edit Prescription Dialog */}
       <Dialog open={!!editingPrescription} onOpenChange={(open) => !open && setEditingPrescription(null)}>
@@ -2260,56 +2242,56 @@ export default function Treatment() {
         </DialogContent>
       </Dialog>
 
-      {/* Lab Results Drawer */}
-      <ResultDrawer
-        open={!!viewingLabTest}
-        onOpenChange={() => setViewingLabTest(null)}
-        kind="lab"
-        data={viewingLabTest}
-        onAcknowledge={(id, val) =>
-          acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
-        }
-        onAddToCart={(id, val) =>
-          addToCartMutation.mutate({ orderLineId: id, addToCart: val })
-        }
-        onCopyToNotes={(txt) =>
-          form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
-        }
-      />
+      {/* LAB */}
+<ResultDrawer
+  open={!!viewingLabTest}
+  onOpenChange={() => setViewingLabTest(null)}
+  kind="lab"
+  data={viewingLabTest}
+  onAcknowledge={(id, val) =>
+    acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
+  }
+  onAddToCart={(id, val) =>
+    addToCartMutation.mutate({ orderLineId: id, addToCart: val })
+  }
+  onCopyToNotes={(txt) =>
+    form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
+  }
+/>
 
-      {/* XRAY Drawer */}
-      <ResultDrawer
-        open={!!viewingXray}
-        onOpenChange={() => setViewingXray(null)}
-        kind="xray"
-        data={viewingXray}
-        onAcknowledge={(id, val) =>
-          acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
-        }
-        onAddToCart={(id, val) =>
-          addToCartMutation.mutate({ orderLineId: id, addToCart: val })
-        }
-        onCopyToNotes={(txt) =>
-          form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
-        }
-      />
+{/* XRAY */}
+<ResultDrawer
+  open={!!viewingXray}
+  onOpenChange={() => setViewingXray(null)}
+  kind="xray"
+  data={viewingXray}
+  onAcknowledge={(id, val) =>
+    acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
+  }
+  onAddToCart={(id, val) =>
+    addToCartMutation.mutate({ orderLineId: id, addToCart: val })
+  }
+  onCopyToNotes={(txt) =>
+    form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
+  }
+/>
 
-      {/* ULTRASOUND Drawer */}
-      <ResultDrawer
-        open={!!viewingUltrasound}
-        onOpenChange={() => setViewingUltrasound(null)}
-        kind="ultrasound"
-        data={viewingUltrasound}
-        onAcknowledge={(id, val) =>
-          acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
-        }
-        onAddToCart={(id, val) =>
-          addToCartMutation.mutate({ orderLineId: id, addToCart: val })
-        }
-        onCopyToNotes={(txt) =>
-          form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
-        }
-      />
+{/* ULTRASOUND */}
+<ResultDrawer
+  open={!!viewingUltrasound}
+  onOpenChange={() => setViewingUltrasound(null)}
+  kind="ultrasound"
+  data={viewingUltrasound}
+  onAcknowledge={(id, val) =>
+    acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
+  }
+  onAddToCart={(id, val) =>
+    addToCartMutation.mutate({ orderLineId: id, addToCart: val })
+  }
+  onCopyToNotes={(txt) =>
+    form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
+  }
+/>
 
       {/* Prescription Modal */}
       {showPrescription && selectedPatient && (
