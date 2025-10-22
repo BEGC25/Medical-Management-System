@@ -1125,8 +1125,7 @@ export default function Treatment() {
         </CardContent>
 
         
-      </Card
-
+      </Card>
 {selectedPatient && currentEncounter && (
   <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
     <div className="space-y-4">
