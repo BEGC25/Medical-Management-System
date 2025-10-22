@@ -4,6 +4,12 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// ✅ Added: Daily Cash report routes (you uploaded these into /server)
+import dailyCashRouter from "./reports.daily-cash";
+import dailyCashCsvRouter from "./reports.daily-cash.csv";
+// (Optional) If you decide to use the close-day endpoint later, uncomment:
+// import cashCloseRouter from "./cash.close";
+
 const app = express();
 
 // Trust the reverse proxy (Render) so secure cookies & IPs work correctly
@@ -68,7 +74,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Register all existing app routes
   const server = await registerRoutes(app);
+
+  // ✅ Register the Daily Cash APIs BEFORE the error handler
+  app.use(dailyCashRouter);
+  app.use(dailyCashCsvRouter);
+  // Optional close-day endpoint:
+  // app.use(cashCloseRouter);
 
   // Centralized error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
