@@ -61,6 +61,8 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   }
 }
 
+const fmt = (d?: string | number | Date) => (d ? new Date(d).toLocaleString() : "—");
+
 const resultFields: Record<
   string,
   Record<
@@ -800,7 +802,7 @@ export default function Treatment() {
           )}
 
           {/* ---------- TWO-COLUMN LAYOUT WITH RIGHT CART ---------- */}
-          {selectedPatient && currentEncounter && (
+          {selectedPatient && currentEncounter ? (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
               <div className="space-y-4">
                 {/* Orders & Results */}
@@ -813,19 +815,18 @@ export default function Treatment() {
                       </CardTitle>
 
                       {orders.some(
-                        (o: any) => o.status === "completed" && !o.addToCart && o.isPaid && o.orderLine?.id
+                        (o: any) => o.orderLine && o.status === "completed" && !o.orderLine.addToCart
                       ) && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            const completed = orders.filter(
-                              (o: any) => o.status === "completed" && !o.addToCart && o.isPaid && o.orderLine?.id
-                            );
-                            completed.forEach((o: any) =>
-                              addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true })
-                            );
-                          }}
+                          onClick={() =>
+                            orders
+                              .filter((o: any) => o.orderLine && o.status === "completed" && !o.orderLine.addToCart)
+                              .forEach((o: any) =>
+                                addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true })
+                              )
+                          }
                           data-testid="add-all-to-cart-btn"
                         >
                           <Plus className="h-4 w-4 mr-2" />
@@ -865,7 +866,7 @@ export default function Treatment() {
                                         ))}
                                       </div>
                                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                        Requested: {new Date(test.requestedDate).toLocaleDateString()}
+                                        Requested: {fmt(test.requestedDate)}
                                       </p>
                                       {test.orderLine?.acknowledgedBy && (
                                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
@@ -874,7 +875,7 @@ export default function Treatment() {
                                       )}
                                     </div>
                                     <div className="flex flex-col gap-2">
-                                      {test.status === "completed" && test.orderLine && (
+                                      {test.orderLine && (
                                         <>
                                           <div className="flex items-center gap-2">
                                             <Checkbox
@@ -884,7 +885,7 @@ export default function Treatment() {
                                                 acknowledgeMutation.mutate({
                                                   orderLineId: test.orderLine.id,
                                                   acknowledgedBy: "Dr. System",
-                                                  acknowledged: !!checked,
+                                                  acknowledged: Boolean(checked),
                                                 })
                                               }
                                               data-testid={`ack-lab-${test.id}`}
@@ -893,7 +894,7 @@ export default function Treatment() {
                                               Acknowledge
                                             </label>
                                           </div>
-                                          {test.orderLine.acknowledgedBy && !test.orderLine.addToCart && (
+                                          {!test.orderLine.addToCart && (
                                             <Button
                                               variant="outline"
                                               size="sm"
@@ -913,7 +914,6 @@ export default function Treatment() {
                                           )}
                                         </>
                                       )}
-
                                       {test.status === "completed" && (
                                         <Button variant="outline" size="sm" onClick={() => openResult("lab", test)}>
                                           View Results
@@ -939,7 +939,7 @@ export default function Treatment() {
                                   <div className="flex-1">
                                     <p className="font-medium">{x.bodyPart}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                                      {new Date(x.requestDate).toLocaleDateString()}
+                                      {fmt(x.completedAt || x.resultDate || x.requestDate)}
                                     </p>
                                     <Badge variant={x.status === "completed" ? "default" : "secondary"} className="mt-1">
                                       {x.status}
@@ -951,7 +951,7 @@ export default function Treatment() {
                                     )}
                                   </div>
                                   <div className="flex flex-col gap-2">
-                                    {x.status === "completed" && x.orderLine && (
+                                    {x.orderLine && (
                                       <>
                                         <div className="flex items-center gap-2">
                                           <Checkbox
@@ -961,7 +961,7 @@ export default function Treatment() {
                                               acknowledgeMutation.mutate({
                                                 orderLineId: x.orderLine.id,
                                                 acknowledgedBy: "Dr. System",
-                                                acknowledged: !!checked,
+                                                acknowledged: Boolean(checked),
                                               })
                                             }
                                             data-testid={`ack-xray-${x.id}`}
@@ -970,7 +970,7 @@ export default function Treatment() {
                                             Acknowledge
                                           </label>
                                         </div>
-                                        {x.orderLine.acknowledgedBy && !x.orderLine.addToCart && (
+                                        {!x.orderLine.addToCart && (
                                           <Button
                                             variant="outline"
                                             size="sm"
@@ -990,7 +990,6 @@ export default function Treatment() {
                                         )}
                                       </>
                                     )}
-
                                     {x.status === "completed" && (
                                       <Button variant="outline" size="sm" onClick={() => openResult("xray", x)}>
                                         View Report
@@ -1015,7 +1014,7 @@ export default function Treatment() {
                                   <div className="flex-1">
                                     <p className="font-medium">{u.examType}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                                      {new Date(u.requestDate).toLocaleDateString()}
+                                      {fmt(u.completedAt || u.resultDate || u.requestDate)}
                                     </p>
                                     <Badge variant={u.status === "completed" ? "default" : "secondary"} className="mt-1">
                                       {u.status}
@@ -1027,7 +1026,7 @@ export default function Treatment() {
                                     )}
                                   </div>
                                   <div className="flex flex-col gap-2">
-                                    {u.status === "completed" && u.orderLine && (
+                                    {u.orderLine && (
                                       <>
                                         <div className="flex items-center gap-2">
                                           <Checkbox
@@ -1037,7 +1036,7 @@ export default function Treatment() {
                                               acknowledgeMutation.mutate({
                                                 orderLineId: u.orderLine.id,
                                                 acknowledgedBy: "Dr. System",
-                                                acknowledged: !!checked,
+                                                acknowledged: Boolean(checked),
                                               })
                                             }
                                             data-testid={`ack-ultrasound-${u.id}`}
@@ -1046,7 +1045,7 @@ export default function Treatment() {
                                             Acknowledge
                                           </label>
                                         </div>
-                                        {u.orderLine.acknowledgedBy && !u.orderLine.addToCart && (
+                                        {!u.orderLine.addToCart && (
                                           <Button
                                             variant="outline"
                                             size="sm"
@@ -1066,7 +1065,6 @@ export default function Treatment() {
                                         )}
                                       </>
                                     )}
-
                                     {u.status === "completed" && (
                                       <Button variant="outline" size="sm" onClick={() => openResult("ultrasound", u)}>
                                         View Report
@@ -1506,11 +1504,11 @@ export default function Treatment() {
                                             </p>
                                             {rx.instructions && <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>}
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                              Order ID: {rx.orderId} | Prescribed: {new Date(rx.createdAt).toLocaleString()}
+                                              Order ID: {rx.orderId} | Prescribed: {fmt(rx.createdAt)}
                                             </p>
                                             {rx.dispensedAt && (
                                               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                                Dispensed: {new Date(rx.dispensedAt).toLocaleString()} by {rx.dispensedBy}
+                                                Dispensed: {fmt(rx.dispensedAt)} by {rx.dispensedBy}
                                               </p>
                                             )}
                                           </div>
@@ -1684,12 +1682,14 @@ export default function Treatment() {
 
               {/* Right rail cart */}
               <RightRailCart
-                orders={orders}
-                onRemove={(orderId) => addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })}
+                orders={orders.filter((o: any) => o.orderLine && o.orderLine.addToCart)}
+                onRemove={(orderLineId) =>
+                  addToCartMutation.mutate({ orderLineId, addToCart: false })
+                }
                 onPrint={() => window.print()}
               />
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
@@ -1702,179 +1702,4 @@ export default function Treatment() {
 
           {editingPrescription && (
             <div className="space-y-4">
-              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="font-medium text-gray-900 dark:text-white">{editingPrescription.drugName}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Order ID: {editingPrescription.orderId}</p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Dosage Instructions</label>
-                <Input placeholder="e.g., 1 tablet twice daily" value={editDosage} onChange={(e) => setEditDosage(e.target.value)} data-testid="input-edit-dosage" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Quantity</label>
-                <Input type="number" min="1" value={editQuantity} onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)} data-testid="input-edit-quantity" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Additional Instructions</label>
-                <Input placeholder="e.g., Take with food" value={editInstructions} onChange={(e) => setEditInstructions(e.target.value)} data-testid="input-edit-instructions" />
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    if (!editDosage || editQuantity <= 0) {
-                      toast({ title: "Validation Error", description: "Please fill in dosage and quantity", variant: "destructive" });
-                      return;
-                    }
-                    editPrescriptionMutation.mutate({ orderId: editingPrescription.orderId, dosage: editDosage, quantity: editQuantity, instructions: editInstructions });
-                  }}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={editPrescriptionMutation.isPending}
-                  data-testid="btn-save-edit"
-                >
-                  {editPrescriptionMutation.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setEditingPrescription(null)} data-testid="btn-cancel-edit">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Universal Result Drawer */}
-      <ResultDrawer
-        open={resultDrawer.open}
-        kind={resultDrawer.kind}
-        data={resultDrawer.data}
-        patient={selectedPatient}
-        resultFields={resultFields}
-        onOpenChange={(open) => (open ? null : closeResult())}
-        onAcknowledge={(orderLineId: number, acknowledged: boolean) =>
-          acknowledgeMutation.mutate({ orderLineId, acknowledgedBy: "Dr. System", acknowledged })
-        }
-        onAddToSummary={(orderLineId: number, add: boolean) =>
-          addToCartMutation.mutate({ orderLineId, addToCart: add })
-        }
-      />
-
-      {/* Prescription print sheet */}
-      {showPrescription && selectedPatient && (
-        <div>
-          <Card className="border-2 border-medical-green">
-            <CardContent className="p-6">
-              <div id="prescription-print" className="flex flex-col min-h-[100vh] p-8">
-                <div className="text-center border-b pb-4 mb-6">
-                  <h1 className="text-2xl font-bold">BAHR EL GHAZAL CLINIC</h1>
-                  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
-                  <p className="text-xs text-gray-500 mt-1">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
-                  <p className="text-lg font-semibold mt-2">PRESCRIPTION</p>
-                </div>
-
-                <div className="flex-1">
-                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
-                    <div>
-                      <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
-                      <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
-                      <p><strong>Age:</strong> {selectedPatient.age || "Not specified"}</p>
-                    </div>
-                    <div>
-                      <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-                      <p><strong>Treatment ID:</strong> {savedTreatment?.treatmentId || "Not available"}</p>
-                      <p><strong>Phone:</strong> {selectedPatient.phoneNumber || "Not provided"}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Rx (Treatment Plan):</h4>
-                      <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
-                        {form.getValues("treatmentPlan")}
-                      </div>
-                    </div>
-
-                    {form.getValues("followUpDate") && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Follow-up:</h4>
-                        <p className="pl-4">
-                          Next visit: {form.getValues("followUpDate")}
-                          {form.getValues("followUpType") && ` (${form.getValues("followUpType")})`}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-auto pt-8 border-t">
-                  <p className="mt-6">Doctor's Signature: ____________________</p>
-                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4 print:hidden">
-                <Button onClick={printPrescription} className="bg-medical-blue hover:bg-blue-700">
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Prescription
-                </Button>
-                <Button variant="outline" onClick={() => setShowPrescription(false)}>
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Queue modal */}
-      <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Today’s Queue</DialogTitle>
-          </DialogHeader>
-
-          <div className="flex gap-2 mb-4">
-            <Input type="date" value={queueDate} onChange={(e) => setQueueDate(e.target.value)} className="w-40" />
-            <Input placeholder="Filter by name, ID or complaint…" value={queueFilter} onChange={(e) => setQueueFilter(e.target.value)} className="flex-1" />
-          </div>
-
-          <div className="border rounded-lg divide-y max-h-[60vh] overflow-y-auto">
-            {queueLoading && <div className="p-6 text-center text-gray-500">Loading…</div>}
-            {!queueLoading && visibleQueue.length === 0 && <div className="p-10 text-center text-gray-500">No visits on {queueDate}.</div>}
-
-            {visibleQueue.map((v) => (
-              <button
-                key={v.treatmentId ?? v.encounterId ?? v.patientId}
-                onClick={() => {
-                  setQueueOpen(false);
-                  if (v.encounterId) {
-                    window.location.href = `/treatment/${v.encounterId}`;
-                  } else {
-                    window.location.href = `/treatment/new?patientId=${v.patientId}`;
-                  }
-                }}
-                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">
-                      {getPatientName(v.patientId)} <span className="text-xs text-gray-500">({v.patientId})</span>
-                    </div>
-                    <div className="text-sm text-gray-500 truncate">{v.chiefComplaint || "—"}</div>
-                  </div>
-                  <Badge variant="secondary" className="shrink-0">
-                    {v.visitType || "consultation"}
-                  </Badge>
-                </div>
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+              <div className="p
