@@ -1,182 +1,203 @@
-// src/components/OmniOrderBar.tsx
-import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as Lucide from "lucide-react"; // ✅ avoids missing named-export crashes
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils"; // or swap for your own cx helper if you prefer
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import type { Service, Drug } from "@shared/schema";
+import {useMemo, useState} from "react";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {Search, FlaskConical, Scan, Waves, Stethoscope, Pill, Plus, Loader2} from "lucide-react";
+import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
+import {apiRequest} from "@/lib/queryClient";
+
+type Service = {
+  id: number;
+  name: string;
+  category?: string | null;
+  department?: string | null;
+  price?: number | null;
+  code?: string | null;
+  tags?: string[] | null;
+};
+
+type Drug = {
+  id: number;
+  name?: string | null;
+  genericName?: string | null;
+  strength?: string | null;
+};
 
 type Props = {
   encounterId: string;
   services: Service[];
   drugs: Drug[];
-  onQueueDrug: (d: { id: number | string; name: string }) => void;
+  onQueueDrug: (d: { id: number; name: string }) => void;
   className?: string;
 };
 
-// ✅ Safe icon map (fallbacks keep older lucide versions happy)
-const Icons = {
-  Search: Lucide.Search,
-  Beaker: (Lucide as any).Beaker ?? (Lucide as any).FlaskConical ?? Lucide.TestTube,
-  XRay: (Lucide as any).XRay ?? Lucide.Image,
-  Waves: (Lucide as any).Waves ?? Lucide.Activity,
-  Stethoscope: (Lucide as any).Stethoscope ?? (Lucide as any).HeartPulse ?? Lucide.Activity,
-  Pill: Lucide.Pill,
-  Plus: Lucide.Plus,
-  Loader: (Lucide as any).Loader2 ?? Lucide.Loader,
+type Kind = "lab" | "xray" | "ultrasound" | "consult" | "pharmacy";
+
+const synonyms: Record<Kind, string[]> = {
+  lab: ["lab", "laboratory", "hematology", "chemistry", "microbiology", "serology"],
+  xray: ["xray", "x-ray", "radiology", "imaging", "xr"],
+  ultrasound: ["ultrasound", "sono", "us", "sonography", "echo"],
+  consult: ["consult", "consultation", "clinic", "doctor", "visit"],
+  pharmacy: ["pharmacy", "drug", "medication", "dispensary", "rx"]
 };
 
-const CATS = [
-  { key: "lab", label: "Lab", icon: Icons.Beaker },
-  { key: "xray", label: "X-Ray", icon: Icons.XRay },
-  { key: "ultrasound", label: "Ultrasound", icon: Icons.Waves },
-  { key: "consultation", label: "Consult", icon: Icons.Stethoscope },
-  { key: "pharmacy", label: "Pharmacy", icon: Icons.Pill },
-] as const;
+function normalizeKind(s: Service): Kind | "unknown" {
+  const bucket = (s.category || s.department || "").toLowerCase();
+  const name = (s.name || "").toLowerCase();
+  const hay = `${bucket} ${name}`;
+  for (const k of Object.keys(synonyms) as Kind[]) {
+    if (synonyms[k].some(w => hay.includes(w))) return k;
+  }
+  return "unknown";
+}
 
-export default function OmniOrderBar({ encounterId, services, drugs, onQueueDrug, className }: Props) {
-  const { toast } = useToast();
-  const qc = useQueryClient();
+export default function OmniOrderBar({encounterId, services, drugs, onQueueDrug, className}: Props) {
+  const [tab, setTab] = useState<Kind>("lab");
+  const [q, setQ] = useState("");
+  const queryClient = useQueryClient();
 
-  const [active, setActive] = useState<(typeof CATS)[number]["key"]>("lab");
-  const [term, setTerm] = useState("");
+  const mk = useMemo(() => {
+    const catalog = services.map(s => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      price: s.price || 0,
+      kind: normalizeKind(s) as Kind | "unknown",
+      tags: s.tags || [],
+      raw: s
+    }));
 
-  // Filter helpers
-  const normalized = term.trim().toLowerCase();
+    const byKind = (k: Kind) => catalog.filter(c => c.kind === k);
 
-  const serviceMatches = useMemo(() => {
-    const pool = services.filter((s) => (s.category || "").toLowerCase() === active);
-    if (!normalized) return pool.slice(0, 8);
-    return pool
-      .filter((s) => [s.name, s.code, s.category].join(" ").toLowerCase().includes(normalized))
-      .slice(0, 12);
-  }, [services, active, normalized]);
+    const filter = (items: typeof catalog | { id: number; name: string }[]) => {
+      if (!q.trim()) return items;
+      const needle = q.toLowerCase();
+      return items.filter((it: any) =>
+        (it.name || "").toLowerCase().includes(needle) ||
+        (it.code || "").toLowerCase().includes(needle) ||
+        (Array.isArray(it.tags) ? it.tags.join(" ").toLowerCase().includes(needle) : false)
+      );
+    };
 
-  const drugMatches = useMemo(() => {
-    if (active !== "pharmacy") return [];
-    const pool = drugs;
-    if (!normalized) return pool.slice(0, 12);
-    return pool
-      .filter((d) =>
-        [d.name, d.genericName, d.strength, d.form].filter(Boolean).join(" ").toLowerCase().includes(normalized)
-      )
-      .slice(0, 12);
-  }, [active, drugs, normalized]);
+    const pharmacyItems = drugs.map(d => ({
+      id: d.id,
+      name: `${d.genericName || d.name || "Drug"}${d.strength ? ` ${d.strength}` : ""}`
+    }));
 
-  // Create an order-line for services (lab/xray/ultrasound/consultation)
-  const addOrderMutation = useMutation({
-    mutationFn: async (svc: Service) => {
+    return {
+      lab: filter(byKind("lab")),
+      xray: filter(byKind("xray")),
+      ultrasound: filter(byKind("ultrasound")),
+      consult: filter(byKind("consult")),
+      pharmacy: filter(pharmacyItems)
+    };
+  }, [services, drugs, q]);
+
+  const orderMutation = useMutation({
+    mutationFn: async (payload: { serviceId: number; kind: Kind; name: string; price: number }) => {
+      const {serviceId, kind, name, price} = payload;
       const body = {
         encounterId,
-        serviceId: svc.id,
-        relatedType: (svc.category || active) as string,
-        description: svc.name,
+        serviceId,
+        relatedType: kind,
+        description: name,
         quantity: 1,
-        unitPriceSnapshot: svc.price,
-        totalPrice: svc.price,
-        department: svc.category || active,
-        orderedBy: "Dr. System",
+        unitPriceSnapshot: price,
+        totalPrice: price,
+        department: kind,
+        orderedBy: "Dr. System"
       };
       const res = await apiRequest("POST", "/api/order-lines", body);
       return res.json();
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/visits", encounterId, "orders"] });
-      toast({ title: "Added", description: "Order queued successfully." });
-    },
-    onError: () => toast({ title: "Error", description: "Failed to add order.", variant: "destructive" }),
+      queryClient.invalidateQueries({queryKey: ["/api/visits", encounterId, "orders"]});
+    }
   });
 
-  return (
-    <Card className={cn("p-3 sm:p-4 border-2 border-blue-100 dark:border-blue-800", className)}>
-      <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 overflow-x-auto">
-        {CATS.map(({ key, label, icon: Icon }) => (
-          <Button
-            key={key}
-            type="button"
-            variant={active === key ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActive(key)}
-            className="whitespace-nowrap"
-          >
-            <Icon className="h-4 w-4 mr-1.5" />
-            {label}
-          </Button>
-        ))}
+  const TabBtn = ({k, icon: Icon, label}: { k: Kind; icon: any; label: string }) => (
+    <Button
+      type="button"
+      variant={tab === k ? "default" : "outline"}
+      onClick={() => setTab(k)}
+      className="gap-2"
+    >
+      <Icon className="h-4 w-4"/>
+      {label}
+      <Badge variant="secondary" className="ml-1">
+        {(mk as any)[k].length}
+      </Badge>
+    </Button>
+  );
 
-        <div className="relative ml-auto min-w-[200px] flex-1 max-w-sm">
-          <Icons.Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  const addService = (svc: any, kind: Kind) => {
+    orderMutation.mutate({serviceId: svc.id, kind, name: svc.name, price: svc.price || 0});
+  };
+
+  return (
+    <div className={`rounded-lg border bg-white p-3 shadow-sm ${className || ""}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <TabBtn k="lab" icon={FlaskConical} label="Lab"/>
+        <TabBtn k="xray" icon={Scan} label="X-Ray"/>
+        <TabBtn k="ultrasound" icon={Waves} label="Ultrasound"/>
+        <TabBtn k="consult" icon={Stethoscope} label="Consult"/>
+        <TabBtn k="pharmacy" icon={Pill} label="Pharmacy"/>
+
+        <div className="ml-auto relative w-[320px]">
+          <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
           <Input
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            placeholder={`Search ${active === "pharmacy" ? "drugs" : "services"}…`}
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder="Search services…"
             className="pl-8"
           />
         </div>
       </div>
 
-      {/* Results */}
-      {active === "pharmacy" ? (
-        <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {drugMatches.map((d) => (
-            <li key={d.id} className="flex items-center justify-between rounded border p-2 bg-white dark:bg-gray-900">
-              <div className="min-w-0">
-                <div className="font-medium truncate">
-                  {d.genericName || d.name}
-                  {d.strength ? <span className="text-muted-foreground"> • {d.strength}</span> : null}
+      <div className="mt-3">
+        {/* Lab / XRay / US / Consult = services */}
+        {tab !== "pharmacy" && (mk as any)[tab].length > 0 && (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {(mk as any)[tab].map((svc: any) => (
+              <div key={`${tab}-${svc.id}`} className="flex items-center justify-between rounded border p-3">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{svc.name}</div>
+                  <div className="text-xs text-gray-500">
+                    {svc.code ? `Code: ${svc.code} • ` : ""} {svc.price ? `SSP ${svc.price}` : "—"}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground truncate">{d.form}</div>
+                <Button size="sm" onClick={() => addService(svc, tab)} disabled={orderMutation.isPending}>
+                  {orderMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4 mr-1"/>}
+                  Add
+                </Button>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onQueueDrug({ id: d.id, name: d.genericName || d.name })}
-                title="Queue drug for prescription"
-              >
-                <Icons.Plus className="h-4 w-4" />
-              </Button>
-            </li>
-          ))}
-          {drugMatches.length === 0 && (
-            <div className="text-sm text-muted-foreground p-2">No matching drugs.</div>
-          )}
-        </ul>
-      ) : (
-        <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {serviceMatches.map((s) => (
-            <li key={s.id} className="flex items-center justify-between rounded border p-2 bg-white dark:bg-gray-900">
-              <div className="min-w-0">
-                <div className="font-medium truncate">{s.name}</div>
-                <div className="text-xs text-muted-foreground truncate flex items-center gap-2">
-                  <Badge variant="secondary">{s.category}</Badge>
-                  {s.price != null && <span>SSP {Number(s.price).toLocaleString()}</span>}
-                </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pharmacy = drugs to queue into Medications tab */}
+        {tab === "pharmacy" && (mk as any).pharmacy.length > 0 && (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {(mk as any).pharmacy.map((d: any) => (
+              <div key={`drug-${d.id}`} className="flex items-center justify-between rounded border p-3">
+                <div className="font-medium truncate">{d.name}</div>
+                <Button size="sm" onClick={() => onQueueDrug({id: d.id, name: d.name})}>
+                  <Plus className="h-4 w-4 mr-1"/> Queue
+                </Button>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => addOrderMutation.mutate(s)}
-                disabled={addOrderMutation.isPending}
-                title="Add order"
-              >
-                {addOrderMutation.isPending ? (
-                  <Icons.Loader className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Icons.Plus className="h-4 w-4" />
-                )}
-              </Button>
-            </li>
-          ))}
-          {serviceMatches.length === 0 && (
-            <div className="text-sm text-muted-foreground p-2">No matching services.</div>
-          )}
-        </ul>
-      )}
-    </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {(mk as any)[tab].length === 0 && (
+          <div className="text-sm text-gray-500 p-4">
+            No matching services. Try another tab or search term. If this keeps showing, set service
+            categories to one of: <span className="font-mono">lab, xray, ultrasound, consultation, pharmacy</span>
+            (synonyms like “radiology”, “laboratory”, “sono”, “consultation” are handled too).
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
