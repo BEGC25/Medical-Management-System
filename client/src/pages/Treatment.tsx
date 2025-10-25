@@ -2003,12 +2003,17 @@ export default function Treatment() {
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
               <div id="prescription-print" className="flex flex-col min-h-[100vh] p-8">
+                
                 <div className="text-center border-b pb-4 mb-6">
                   <h1 className="text-2xl font-bold">BAHR EL GHAZAL CLINIC</h1>
                   <p className="text-sm text-gray-600">Your Health, Our Priority</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
-                  </img alt="Bahr El Ghazal Clinic logo" src="https://i.imgur.com/g9vY0vX.png" />
+                  </p> {/* <-- THIS IS THE FIX */}
+                  
+                  {/* You can replace this wireframe image with your actual clinic logo */}
+                  <img alt="Bahr El Ghazal Clinic logo" src="https://i.imgur.com/g9vY0vX.png" className="w-24 h-auto mx-auto my-2" />
+                  
                   <p className="text-lg font-semibold mt-2">PRESCRIPTION</p>
                 </div>
 
