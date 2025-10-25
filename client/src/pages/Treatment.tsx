@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -150,8 +150,9 @@ export default function Treatment() {
   const [activeTab, setActiveTab] = useState("notes");
 
   // Quick Orders local UI state
-  const [qoTab, setQoTab] = useState<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy">("lab");
-  const [qoSearch, setQoSearch] = useState("");
+  // which top-level service category is visible in the catalog
+  const [orderTab, setOrderTab] =
+    useState<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy">("lab");
 
   // unified result drawer state
   const [resultDrawer, setResultDrawer] = useState<{
@@ -271,6 +272,12 @@ export default function Treatment() {
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
   const { data: drugs = [] } = useQuery<Drug[]>({ queryKey: ["/api/pharmacy/drugs"] });
 
+  // only the active category cards
+  const visibleServices = useMemo(
+    () => services.filter(s => s.category === orderTab),
+    [services, orderTab]
+  );
+
   // visit via /treatment/:visitId
   const { data: loadedVisit } = useQuery({
     queryKey: ["/api/encounters", visitId],
@@ -337,6 +344,12 @@ export default function Treatment() {
     },
     enabled: !!activeEncounterId,
   });
+
+  // visit cart (aka summary)
+  const cartItems = useMemo(
+    () => orders.filter(o => !!o.addToCart),
+    [orders]
+  );
 
   const labTests = orders.filter((o) => o.type === "lab");
   const xrays = orders.filter((o) => o.type === "xray");
@@ -525,6 +538,28 @@ export default function Treatment() {
     },
     onError: () => toast({ title: "Error", description: "Failed to add to summary", variant: "destructive" }),
   });
+
+  // acknowledge + keep cart in sync
+  function toggleAcknowledgeAndCart(opts: {
+    orderLineId: number;
+    acknowledged: boolean;
+    alreadyInCart?: boolean;
+  }) {
+    const { orderLineId, acknowledged, alreadyInCart } = opts;
+
+    acknowledgeMutation.mutate({
+      orderLineId,
+      acknowledgedBy: "Dr. System",
+      acknowledged
+    });
+
+    // auto-sync summary
+    if (acknowledged && !alreadyInCart) {
+      addToCartMutation.mutate({ orderLineId, addToCart: true });
+    } else if (!acknowledged && alreadyInCart) {
+      addToCartMutation.mutate({ orderLineId, addToCart: false });
+    }
+  }
 
   const submitMedicationsMutation = useMutation({
     mutationFn: async (meds: typeof medications) => {
@@ -803,166 +838,19 @@ export default function Treatment() {
             )}
           </div>
 
-          {/* Quick Orders Bar (replaces OmniOrderBar) */}
+          {/* Quick Orders Bar */}
           {selectedPatient && currentEncounter && (
-            <div className="flex gap-4 items-start mb-4">
-              <div className="flex-1">
-                {/* Buttons */}
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {(["lab", "xray", "ultrasound", "consult", "pharmacy"] as const).map((k) => (
-                    <Button key={k} variant={qoTab === k ? "default" : "outline"} onClick={() => setQoTab(k)}>
-                      {k === "lab" && "Lab"}
-                      {k === "xray" && "X-Ray"}
-                      {k === "ultrasound" && "Ultrasound"}
-                      {k === "consult" && "Consult"}
-                      {k === "pharmacy" && "Pharmacy"}
-                    </Button>
-                  ))}
-                  <div className="ml-auto w-full sm:w-80">
-                    <Input
-                      placeholder="Search services…"
-                      value={qoSearch}
-                      onChange={(e) => setQoSearch(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Matching services */}
-                <div className="rounded-md border p-3">
-                  {(() => {
-                    const rows = (services ?? [])
-                      .filter((s) => matchesCategory(s, qoTab))
-                      .filter((s) => {
-                        if (!qoSearch) return true;
-                        const needle = qoSearch.toLowerCase();
-                        return (
-                          (s.name ?? "").toLowerCase().includes(needle) ||
-                          (s.description ?? "").toLowerCase().includes(needle)
-                        );
-                      })
-                      .slice(0, 50); // keep it snappy
-
-                    if (rows.length === 0) {
-                      return <div className="text-sm text-muted-foreground">No matching services.</div>;
-                    }
-
-                    return (
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {rows.map((svc: any) => (
-                          <button
-                            key={svc.id}
-                            onClick={async () => {
-                              // Simple routing behavior per category
-                              if (qoTab === "lab") {
-                                window.location.href = `/laboratory?encounterId=${currentEncounter.encounterId}`;
-                                return;
-                              }
-                              if (qoTab === "xray") {
-                                window.location.href = `/xray?encounterId=${currentEncounter.encounterId}`;
-                                return;
-                              }
-                              if (qoTab === "ultrasound") {
-                                window.location.href = `/ultrasound?encounterId=${currentEncounter.encounterId}`;
-                                return;
-                              }
-                              if (qoTab === "consult") {
-                                // create a consultation order-line immediately
-                                try {
-                                  const res = await fetch("/api/order-lines", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                      encounterId: currentEncounter.encounterId,
-                                      serviceId: svc.id,
-                                      relatedType: "consultation",
-                                      description: svc.name,
-                                      quantity: 1,
-                                      unitPriceSnapshot: svc.price,
-                                      totalPrice: svc.price,
-                                      department: "consultation",
-                                      orderedBy: "Dr. System",
-                                    }),
-                                  });
-                                  if (!res.ok) throw new Error();
-                                  toast({ title: "Consultation added", description: svc.name });
-                                  queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
-                                } catch {
-                                  toast({
-                                    title: "Could not add",
-                                    description: svc.name,
-                                    variant: "destructive",
-                                  });
-                                }
-                                return;
-                              }
-                              if (qoTab === "pharmacy") {
-                                // jump to Medications tab and let user pick the drug
-                                setActiveTab("medications");
-                                toast({
-                                  title: "Go to Medications",
-                                  description: "Use the drug selector below.",
-                                });
-                                return;
-                              }
-                            }}
-                            className="text-left rounded-md border p-3 hover:bg-muted transition"
-                          >
-                            <div className="font-medium">{svc.name}</div>
-                            {svc.description && (
-                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                {svc.description}
-                              </div>
-                            )}
-                            {typeof svc.price === "number" && (
-                              <div className="text-xs text-muted-foreground mt-1">Fee: {svc.price}</div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* Right rail: mini visit cart summary */}
-              <div className="w-[320px] hidden lg:block">
-                <div className="rounded-md border p-3">
-                  <div className="font-semibold mb-1">Visit Cart</div>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    {orders.filter((o: any) => o.addToCart || o?.orderLine?.addToCart === 1).length} items
-                  </div>
-                  <div className="space-y-2 max-h-[220px] overflow-auto">
-                    {orders
-                      .filter((o: any) => o.addToCart || o?.orderLine?.addToCart === 1)
-                      .map((o: any) => (
-                        <div
-                          key={o.orderId ?? o?.orderLine?.id}
-                          className="text-sm flex items-center justify-between gap-2 rounded border p-2"
-                        >
-                          <div className="min-w-0">
-                            <div className="font-medium truncate">{o.name ?? o.category ?? "Service"}</div>
-                            <div className="text-xs text-muted-foreground">{(o.type ?? "").toUpperCase()}</div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              addToCartMutation.mutate({
-                                orderLineId: o.orderId ?? o?.orderLine?.id,
-                                addToCart: false,
-                              })
-                            }
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                    {orders.filter((o: any) => o.addToCart || o?.orderLine?.addToCart === 1).length === 0 && (
-                      <div className="text-xs text-muted-foreground">No services in today’s visit yet.</div>
-                    )}
-                  </div>
-                </div>
-              </div>
+            <div className="mb-4">
+              <OmniOrderBar
+                encounterId={currentEncounter.encounterId}
+                services={services}
+                drugs={drugs}
+                onQueueDrug={({ id, name }) => {
+                  setSelectedDrugId(String(id));
+                  setSelectedDrugName(name);
+                  setActiveTab("medications");
+                }}
+              />
             </div>
           )}
 
@@ -1049,10 +937,10 @@ export default function Treatment() {
                                               id={`ack-lab-${test.id}`}
                                               checked={!!test.orderLine.acknowledgedBy}
                                               onCheckedChange={(checked) =>
-                                                acknowledgeMutation.mutate({
+                                                toggleAcknowledgeAndCart({
                                                   orderLineId: test.orderLine.id,
-                                                  acknowledgedBy: "Dr. System",
                                                   acknowledged: !!checked,
+                                                  alreadyInCart: !!test.orderLine.addToCart
                                                 })
                                               }
                                               data-testid={`ack-lab-${test.id}`}
@@ -1142,10 +1030,10 @@ export default function Treatment() {
                                             id={`ack-xray-${x.id}`}
                                             checked={!!x.orderLine.acknowledgedBy}
                                             onCheckedChange={(checked) =>
-                                              acknowledgeMutation.mutate({
+                                              toggleAcknowledgeAndCart({
                                                 orderLineId: x.orderLine.id,
-                                                acknowledgedBy: "Dr. System",
                                                 acknowledged: !!checked,
+                                                alreadyInCart: !!x.orderLine.addToCart
                                               })
                                             }
                                             data-testid={`ack-xray-${x.id}`}
@@ -1230,10 +1118,10 @@ export default function Treatment() {
                                             id={`ack-ultrasound-${u.id}`}
                                             checked={!!u.orderLine.acknowledgedBy}
                                             onCheckedChange={(checked) =>
-                                              acknowledgeMutation.mutate({
+                                              toggleAcknowledgeAndCart({
                                                 orderLineId: u.orderLine.id,
-                                                acknowledgedBy: "Dr. System",
                                                 acknowledged: !!checked,
+                                                alreadyInCart: !!u.orderLine.addToCart
                                               })
                                             }
                                             data-testid={`ack-ultrasound-${u.id}`}
@@ -1297,83 +1185,33 @@ export default function Treatment() {
                 </Card>
 
                 {/* Visit Summary */}
-                <Card className="border-l-4 border-l-green-500">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-5 w-5" />
-                        Visit Summary - Today&apos;s Services
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{orders.filter((o: any) => o.addToCart).length} items</Badge>
-                        <Button variant="outline" size="sm" onClick={() => setShowVisitSummary(!showVisitSummary)}>
-                          {showVisitSummary ? "Hide" : "Show"} Details
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  {showVisitSummary && (
-                    <CardContent>
-                      <div className="space-y-3">
-                        {orders.filter((o: any) => o.addToCart).length === 0 ? (
-                          <div className="text-center py-4 text-gray-500">
-                            <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p>No services in today&apos;s visit yet</p>
-                            <p className="text-xs mt-1">Acknowledge completed tests to add them here</p>
+                {selectedPatient && currentEncounter && cartItems.length > 0 && (
+                  <Card className="border-l-4 border-l-green-500">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>Visit Summary – Today’s Services</span>
+                        <Badge variant="secondary">{cartItems.length} items</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {cartItems.map((order: any) => (
+                        <div key={order.orderId} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div>
+                            <div className="font-medium">{order.name}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">{order.type.toUpperCase()} • {order.status}</div>
                           </div>
-                        ) : (
-                          <>
-                            {orders
-                              .filter((o: any) => o.addToCart)
-                              .map((o: any) => (
-                                <div
-                                  key={o.orderId}
-                                  className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                                >
-                                  <div>
-                                    <p className="font-medium">{o.name}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                      {o.type?.toUpperCase()} {o.status && `– ${o.status}`}
-                                    </p>
-                                    {o.flags && (
-                                      <Badge
-                                        variant={o.flags === "critical" ? "destructive" : "outline"}
-                                        className="mt-1"
-                                      >
-                                        {o.flags}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="text-right">
-                                    {o.orderLine?.id && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
-                                          addToCartMutation.mutate({
-                                            orderLineId: o.orderLine.id,
-                                            addToCart: false,
-                                          })
-                                        }
-                                      >
-                                        Remove
-                                      </Button>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            <div className="border-t pt-3 flex justify-between items-center">
-                              <span className="font-medium">Services Today:</span>
-                              <span className="font-bold text-lg text-green-600 dark:text-green-400">
-                                {orders.filter((o: any) => o.addToCart).length} service(s)
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: false })}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
                     </CardContent>
-                  )}
-                </Card>
+                  </Card>
+                )}
 
                 {/* Clinical Documentation & Orders */}
                 <Card>
@@ -2054,8 +1892,10 @@ export default function Treatment() {
 
               {/* Right rail cart */}
               <RightRailCart
-                orders={orders.filter((o) => o.orderLine && o.orderLine.addToCart)}
-                onRemove={(orderLineId) => addToCartMutation.mutate({ orderLineId, addToCart: false })}
+                orders={cartItems}
+                onRemove={(orderId) =>
+                  addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })
+                }
                 onPrint={() => window.print()}
               />
             </div>
@@ -2152,15 +1992,21 @@ export default function Treatment() {
       {/* Universal Result Drawer */}
       <ResultDrawer
         open={resultDrawer.open}
-        onOpenChange={(open) => (open ? null : setResultDrawer({ open: false, kind: null, data: null }))}
+        onOpenChange={(open) => (open ? null : closeResult())}
         kind={resultDrawer.kind}
         data={resultDrawer.data}
         patient={selectedPatient ?? undefined}
         resultFields={resultFields}
-        onAcknowledge={(id, val) =>
-          acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
+        onAcknowledge={(orderLineId, acknowledged) =>
+          toggleAcknowledgeAndCart({
+            orderLineId,
+            acknowledged,
+            alreadyInCart: !!resultDrawer.data?.orderLine?.addToCart,
+          })
         }
-        onAddToSummary={(id, val) => addToCartMutation.mutate({ orderLineId: id, addToCart: val })}
+        onAddToSummary={(orderLineId, add) =>
+          addToCartMutation.mutate({ orderLineId, addToCart: add })
+        }
         onCopyToNotes={(txt) =>
           form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
         }
