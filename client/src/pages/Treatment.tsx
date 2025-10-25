@@ -35,7 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
 
 // New components wired in
-import OmniOrderBar from "@/components/OmniOrderBar";
+import OmniOrderBar from "@/components/OmniOrderBar"; // We will remove this from the layout but keep the component for now
 import RightRailCart from "@/components/RightRailCart";
 import ResultDrawer from "@/components/ResultDrawer";
 
@@ -147,6 +147,10 @@ export default function Treatment() {
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
   const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
   const [activeTab, setActiveTab] = useState("notes"); // For the new top-level tabs
+
+  // State for the NEW sub-tabs inside "Orders & Results"
+  const [qoTab, setQoTab] = useState<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy" | "all">("all");
+  const [qoSearch, setQoSearch] = useState("");
 
   // unified result drawer state
   const [resultDrawer, setResultDrawer] = useState<{
@@ -829,21 +833,7 @@ export default function Treatment() {
             )}
           </div>
 
-          {/* OmniOrderBar */}
-          {selectedPatient && currentEncounter && (
-            <div className="mb-4">
-              <OmniOrderBar
-                encounterId={currentEncounter.encounterId}
-                services={services}
-                drugs={drugs}
-                onQueueDrug={({ id, name }) => {
-                  setSelectedDrugId(String(id));
-                  setSelectedDrugName(name);
-                  setActiveTab("medications"); // Set the new top-level tab
-                }}
-              />
-            </div>
-          )}
+          {/* !!! REMOVED OmniOrderBar from here !!! */}
 
           {/* ---------- TWO-COLUMN COCKPIT LAYOUT ---------- */}
           {selectedPatient && currentEncounter && (
@@ -1198,37 +1188,172 @@ export default function Treatment() {
                     </Card>
                   </TabsContent>
 
-                  {/* === TAB 2: ORDERS & RESULTS === */}
+                  {/* === TAB 2: ORDERS & RESULTS (UNIFIED) === */}
                   <TabsContent value="orders">
                     <Card>
                       <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="flex items-center gap-2">
-                            <FileText className="h-5 w-5" />
-                            Orders & Results
-                          </CardTitle>
-
-                          {orders.some((o) => o.status === "completed" && o.orderLine && !o.orderLine.addToCart) && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                orders
-                                  .filter((o) => o.orderLine && o.status === "completed" && !o.orderLine.addToCart)
-                                  .forEach((o) =>
-                                    addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true })
-                                  )
-                              }
-                            >
-                              Add All Completed
+                        <CardTitle>Orders & Results</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        
+                        {/* --- NEW: Sub-tabs for Ordering --- */}
+                        <div>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <Button variant={qoTab === "all" ? "default" : "outline"} onClick={() => setQoTab("all")}>
+                              All Results
                             </Button>
+                            {(["lab", "xray", "ultrasound", "consult", "pharmacy"] as const).map((k) => (
+                              <Button key={k} variant={qoTab === k ? "default" : "outline"} onClick={() => setQoTab(k)}>
+                                {k === "lab" && "Lab"}
+                                {k === "xray" && "X-Ray"}
+                                {k === "ultrasound" && "Ultrasound"}
+                                {k === "consult" && "Consult"}
+                                {k === "pharmacy" && "Pharmacy"}
+                              </Button>
+                            ))}
+                            {qoTab !== "all" && (
+                              <div className="ml-auto w-full sm:w-64">
+                                <Input
+                                  placeholder="Search services to add…"
+                                  value={qoSearch}
+                                  onChange={(e) => setQoSearch(e.target.value)}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* --- NEW: Service Catalog (from OmniOrderBar) --- */}
+                          {qoTab !== "all" && (
+                            <div className="rounded-md border p-3 mb-6">
+                              <h3 className="font-semibold mb-3 text-lg">
+                                Add New {qoTab.charAt(0).toUpperCase() + qoTab.slice(1)} Order
+                              </h3>
+                              {(() => {
+                                const rows = (qoTab === 'pharmacy' ? drugs : services)
+                                  .filter((s: any) => {
+                                    if (qoTab === 'pharmacy') {
+                                      return true; // Simple filter for drugs
+                                    }
+                                    return matchesCategory(s, qoTab);
+                                  })
+                                  .filter((s: any) => {
+                                    if (!qoSearch) return true;
+                                    const needle = qoSearch.toLowerCase();
+                                    const name = s.name || s.genericName || "";
+                                    return (
+                                      (name).toLowerCase().includes(needle) ||
+                                      (s.description ?? "").toLowerCase().includes(needle)
+                                    );
+                                  })
+                                  .slice(0, 50); // keep it snappy
+
+                                if (rows.length === 0) {
+                                  return <div className="text-sm text-muted-foreground">No matching services.</div>;
+                                }
+
+                                return (
+                                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                    {rows.map((svc: any) => (
+                                      <button
+                                        key={svc.id}
+                                        onClick={async () => {
+                                          if (!currentEncounter) return;
+                                          
+                                          if (qoTab === "lab") {
+                                            window.location.href = `/laboratory?encounterId=${currentEncounter.encounterId}&serviceId=${svc.id}`;
+                                            return;
+                                          }
+                                          if (qoTab === "xray") {
+                                            window.location.href = `/xray?encounterId=${currentEncounter.encounterId}&serviceId=${svc.id}`;
+                                            return;
+                                          }
+                                          if (qoTab === "ultrasound") {
+                                            window.location.href = `/ultrasound?encounterId=${currentEncounter.encounterId}&serviceId=${svc.id}`;
+                                            return;
+                                          }
+                                          if (qoTab === "consult") {
+                                            try {
+                                              const res = await fetch("/api/order-lines", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({
+                                                  encounterId: currentEncounter.encounterId,
+                                                  serviceId: svc.id,
+                                                  relatedType: "consultation",
+                                                  description: svc.name,
+                                                  quantity: 1,
+                                                  unitPriceSnapshot: svc.price,
+                                                  totalPrice: svc.price,
+                                                  department: "consultation",
+                                                  orderedBy: "Dr. System",
+                                                }),
+                                              });
+                                              if (!res.ok) throw new Error();
+                                              toast({ title: "Consultation added", description: svc.name });
+                                              queryClient.invalidateQueries({ queryKey: ["/api/visits"] });
+                                            } catch {
+                                              toast({
+                                                title: "Could not add",
+                                                description: svc.name,
+                                                variant: "destructive",
+                                              });
+                                            }
+                                            return;
+                                          }
+                                          if (qoTab === "pharmacy") {
+                                            setSelectedDrugId(String(svc.id));
+                                            setSelectedDrugName(svc.genericName || svc.name);
+                                            setActiveTab("medications"); // Jump to main medications tab
+                                            toast({ title: "Medication Selected", description: "Please complete dosage and quantity." });
+                                            return;
+                                          }
+                                        }}
+                                        className="text-left rounded-md border p-3 hover:bg-muted transition"
+                                      >
+                                        <div className="font-medium">{svc.genericName || svc.name}</div>
+                                        {svc.description && (
+                                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                            {svc.description}
+                                          </div>
+                                        )}
+                                        {typeof svc.price === "number" && (
+                                          <div className="text-xs text-muted-foreground mt-1">Fee: {svc.price}</div>
+                                        )}
+                                        {svc.strength && (
+                                          <div className="text-xs text-muted-foreground mt-1">Strength: {svc.strength}</div>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                );
+                              })()}
+                            </div>
                           )}
                         </div>
-                      </CardHeader>
-                      <CardContent>
+
+                        {/* --- Existing Results (Now Filtered) --- */}
                         <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-lg">Existing Results for this Visit</h3>
+                            {orders.some((o) => o.status === "completed" && o.orderLine && !o.orderLine.addToCart) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  orders
+                                    .filter((o) => o.orderLine && o.status === "completed" && !o.orderLine.addToCart)
+                                    .forEach((o) =>
+                                      addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true })
+                                    )
+                                }
+                              >
+                                Add All Completed
+                              </Button>
+                            )}
+                          </div>
+                          
                           {/* Labs */}
-                          {labTests.length > 0 && (
+                          {(qoTab === "all" || qoTab === "lab") && labTests.length > 0 && (
                             <div>
                               <h4 className="font-semibold mb-2">Laboratory Tests</h4>
                               <div className="space-y-2">
@@ -1336,7 +1461,7 @@ export default function Treatment() {
                           )}
 
                           {/* X-rays */}
-                          {xrays.length > 0 && (
+                          {(qoTab === "all" || qoTab === "xray") && xrays.length > 0 && (
                             <div>
                               <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
                               <div className="space-y-2">
@@ -1424,7 +1549,7 @@ export default function Treatment() {
                           )}
 
                           {/* Ultrasound */}
-                          {ultrasounds.length > 0 && (
+                          {(qoTab === "all" || qoTab === "ultrasound") && ultrasounds.length > 0 && (
                             <div>
                               <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
                               <div className="space-y-2">
@@ -1519,7 +1644,6 @@ export default function Treatment() {
                             <div className="text-center py-6 text-gray-500">
                               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               <p>No orders or results yet for this visit</p>
-                              <p className="text-xs mt-1">Use the order bar above to add new services</p>
                             </div>
                           )}
                         </div>
@@ -2009,7 +2133,7 @@ export default function Treatment() {
                   <p className="text-sm text-gray-600">Your Health, Our Priority</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
-                  </p> {/* <-- THIS IS THE FIX */}
+                  </p>
                   
                   {/* You can replace this wireframe image with your actual clinic logo */}
                   <img alt="Bahr El Ghazal Clinic logo" src="https://i.imgur.com/g9vY0vX.png" className="w-24 h-auto mx-auto my-2" />
