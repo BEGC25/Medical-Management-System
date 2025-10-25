@@ -63,6 +63,19 @@ function parseJSON<T = any>(v: any, fallback: T): T {
 
 const fmt = (d?: string | number | Date) => (d ? new Date(d).toLocaleString() : "—");
 
+// --- Quick Orders helpers ---
+const CATEGORY_ALIASES: Record<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy", string[]> = {
+  lab: ["lab", "labs", "laboratory", "hematology", "chemistry", "microbiology"],
+  xray: ["xray", "x-ray", "radiology-xray", "radiology_xray", "radiology"],
+  ultrasound: ["ultrasound", "u/s", "sonography", "radiology-ultrasound"],
+  consult: ["consult", "consultation", "general consultation"],
+  pharmacy: ["pharmacy", "drug", "medication", "dispensary"],
+};
+function matchesCategory(svc: any, active: keyof typeof CATEGORY_ALIASES) {
+  const c = (svc?.category ?? "").toString().toLowerCase().trim();
+  return CATEGORY_ALIASES[active].some((alias) => c.includes(alias));
+}
+
 const resultFields: Record<
   string,
   Record<
@@ -135,6 +148,10 @@ export default function Treatment() {
   const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
   const [showVisitSummary, setShowVisitSummary] = useState(false);
   const [activeTab, setActiveTab] = useState("notes");
+
+  // Quick Orders local UI state
+  const [qoTab, setQoTab] = useState<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy">("lab");
+  const [qoSearch, setQoSearch] = useState("");
 
   // unified result drawer state
   const [resultDrawer, setResultDrawer] = useState<{
@@ -786,19 +803,167 @@ export default function Treatment() {
             )}
           </div>
 
-          {/* OmniOrderBar (only when an encounter exists) */}
+          {/* Quick Orders Bar (replaces OmniOrderBar) */}
           {selectedPatient && currentEncounter && (
-            <OmniOrderBar
-              encounterId={currentEncounter.encounterId}
-              services={services}
-              drugs={drugs}
-              onQueueDrug={({ id, name }) => {
-                setSelectedDrugId(String(id));
-                setSelectedDrugName(name);
-                setActiveTab("medications");
-              }}
-              className="mb-4"
-            />
+            <div className="flex gap-4 items-start mb-4">
+              <div className="flex-1">
+                {/* Buttons */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {(["lab", "xray", "ultrasound", "consult", "pharmacy"] as const).map((k) => (
+                    <Button key={k} variant={qoTab === k ? "default" : "outline"} onClick={() => setQoTab(k)}>
+                      {k === "lab" && "Lab"}
+                      {k === "xray" && "X-Ray"}
+                      {k === "ultrasound" && "Ultrasound"}
+                      {k === "consult" && "Consult"}
+                      {k === "pharmacy" && "Pharmacy"}
+                    </Button>
+                  ))}
+                  <div className="ml-auto w-full sm:w-80">
+                    <Input
+                      placeholder="Search services…"
+                      value={qoSearch}
+                      onChange={(e) => setQoSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Matching services */}
+                <div className="rounded-md border p-3">
+                  {(() => {
+                    const rows = (services ?? [])
+                      .filter((s) => matchesCategory(s, qoTab))
+                      .filter((s) => {
+                        if (!qoSearch) return true;
+                        const needle = qoSearch.toLowerCase();
+                        return (
+                          (s.name ?? "").toLowerCase().includes(needle) ||
+                          (s.description ?? "").toLowerCase().includes(needle)
+                        );
+                      })
+                      .slice(0, 50); // keep it snappy
+
+                    if (rows.length === 0) {
+                      return <div className="text-sm text-muted-foreground">No matching services.</div>;
+                    }
+
+                    return (
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {rows.map((svc: any) => (
+                          <button
+                            key={svc.id}
+                            onClick={async () => {
+                              // Simple routing behavior per category
+                              if (qoTab === "lab") {
+                                window.location.href = `/laboratory?encounterId=${currentEncounter.encounterId}`;
+                                return;
+                              }
+                              if (qoTab === "xray") {
+                                window.location.href = `/xray?encounterId=${currentEncounter.encounterId}`;
+                                return;
+                              }
+                              if (qoTab === "ultrasound") {
+                                window.location.href = `/ultrasound?encounterId=${currentEncounter.encounterId}`;
+                                return;
+                              }
+                              if (qoTab === "consult") {
+                                // create a consultation order-line immediately
+                                try {
+                                  const res = await fetch("/api/order-lines", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      encounterId: currentEncounter.encounterId,
+                                      serviceId: svc.id,
+                                      relatedType: "consultation",
+                                      description: svc.name,
+                                      quantity: 1,
+                                      unitPriceSnapshot: svc.price,
+                                      totalPrice: svc.price,
+                                      department: "consultation",
+                                      orderedBy: "Dr. System",
+                                    }),
+                                  });
+                                  if (!res.ok) throw new Error();
+                                  toast({ title: "Consultation added", description: svc.name });
+                                  queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+                                } catch {
+                                  toast({
+                                    title: "Could not add",
+                                    description: svc.name,
+                                    variant: "destructive",
+                                  });
+                                }
+                                return;
+                              }
+                              if (qoTab === "pharmacy") {
+                                // jump to Medications tab and let user pick the drug
+                                setActiveTab("medications");
+                                toast({
+                                  title: "Go to Medications",
+                                  description: "Use the drug selector below.",
+                                });
+                                return;
+                              }
+                            }}
+                            className="text-left rounded-md border p-3 hover:bg-muted transition"
+                          >
+                            <div className="font-medium">{svc.name}</div>
+                            {svc.description && (
+                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                {svc.description}
+                              </div>
+                            )}
+                            {typeof svc.price === "number" && (
+                              <div className="text-xs text-muted-foreground mt-1">Fee: {svc.price}</div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Right rail: mini visit cart summary */}
+              <div className="w-[320px] hidden lg:block">
+                <div className="rounded-md border p-3">
+                  <div className="font-semibold mb-1">Visit Cart</div>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    {orders.filter((o: any) => o.addToCart || o?.orderLine?.addToCart === 1).length} items
+                  </div>
+                  <div className="space-y-2 max-h-[220px] overflow-auto">
+                    {orders
+                      .filter((o: any) => o.addToCart || o?.orderLine?.addToCart === 1)
+                      .map((o: any) => (
+                        <div
+                          key={o.orderId ?? o?.orderLine?.id}
+                          className="text-sm flex items-center justify-between gap-2 rounded border p-2"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{o.name ?? o.category ?? "Service"}</div>
+                            <div className="text-xs text-muted-foreground">{(o.type ?? "").toUpperCase()}</div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              addToCartMutation.mutate({
+                                orderLineId: o.orderId ?? o?.orderLine?.id,
+                                addToCart: false,
+                              })
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    {orders.filter((o: any) => o.addToCart || o?.orderLine?.addToCart === 1).length === 0 && (
+                      <div className="text-xs text-muted-foreground">No services in today’s visit yet.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ---------- TWO-COLUMN LAYOUT WITH RIGHT CART ---------- */}
@@ -814,14 +979,16 @@ export default function Treatment() {
                         Orders & Results
                       </CardTitle>
 
-                      {orders.some(o => o.status === "completed" && o.orderLine && !o.orderLine.addToCart) && (
+                      {orders.some((o) => o.status === "completed" && o.orderLine && !o.orderLine.addToCart) && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() =>
                             orders
-                              .filter(o => o.orderLine && o.status === "completed" && !o.orderLine.addToCart)
-                              .forEach(o => addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true }))
+                              .filter((o) => o.orderLine && o.status === "completed" && !o.orderLine.addToCart)
+                              .forEach((o) =>
+                                addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true })
+                              )
                           }
                         >
                           Add All Completed
@@ -850,8 +1017,14 @@ export default function Treatment() {
                                   <div className="flex justify-between items-start gap-3">
                                     <div className="flex-1">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <Badge variant={test.status === "completed" ? "default" : "secondary"}>{test.status}</Badge>
-                                        {!test.isPaid && <Badge variant="destructive" className="bg-red-600">UNPAID</Badge>}
+                                        <Badge variant={test.status === "completed" ? "default" : "secondary"}>
+                                          {test.status}
+                                        </Badge>
+                                        {!test.isPaid && (
+                                          <Badge variant="destructive" className="bg-red-600">
+                                            UNPAID
+                                          </Badge>
+                                        )}
                                       </div>
                                       <p className="font-semibold text-base capitalize mb-1">{test.category}</p>
                                       <div className="text-sm text-gray-700 dark:text-gray-300 space-y-0.5">
@@ -884,7 +1057,10 @@ export default function Treatment() {
                                               }
                                               data-testid={`ack-lab-${test.id}`}
                                             />
-                                            <label htmlFor={`ack-lab-${test.id}`} className="text-sm cursor-pointer">
+                                            <label
+                                              htmlFor={`ack-lab-${test.id}`}
+                                              className="text-sm cursor-pointer"
+                                            >
                                               Acknowledge
                                             </label>
                                           </div>
@@ -893,7 +1069,10 @@ export default function Treatment() {
                                               variant="outline"
                                               size="sm"
                                               onClick={() =>
-                                                addToCartMutation.mutate({ orderLineId: test.orderLine.id, addToCart: true })
+                                                addToCartMutation.mutate({
+                                                  orderLineId: test.orderLine.id,
+                                                  addToCart: true,
+                                                })
                                               }
                                               data-testid={`add-cart-lab-${test.id}`}
                                             >
@@ -910,7 +1089,11 @@ export default function Treatment() {
                                       )}
 
                                       {test.status === "completed" && (
-                                        <Button variant="outline" size="sm" onClick={() => openResult("lab", test)}>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => openResult("lab", test)}
+                                        >
                                           View Results
                                         </Button>
                                       )}
@@ -929,14 +1112,20 @@ export default function Treatment() {
                           <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
                           <div className="space-y-2">
                             {xrays.map((x: any) => (
-                              <div key={x.examId || x.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                              <div
+                                key={x.examId || x.orderId}
+                                className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                              >
                                 <div className="flex justify-between items-start gap-3">
                                   <div className="flex-1">
                                     <p className="font-medium">{x.bodyPart}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
                                       {fmt(x.completedAt || x.resultDate || x.requestDate)}
                                     </p>
-                                    <Badge variant={x.status === "completed" ? "default" : "secondary"} className="mt-1">
+                                    <Badge
+                                      variant={x.status === "completed" ? "default" : "secondary"}
+                                      className="mt-1"
+                                    >
                                       {x.status}
                                     </Badge>
                                     {x.orderLine?.acknowledgedBy && (
@@ -961,7 +1150,10 @@ export default function Treatment() {
                                             }
                                             data-testid={`ack-xray-${x.id}`}
                                           />
-                                          <label htmlFor={`ack-xray-${x.id}`} className="text-sm cursor-pointer">
+                                          <label
+                                            htmlFor={`ack-xray-${x.id}`}
+                                            className="text-sm cursor-pointer"
+                                          >
                                             Acknowledge
                                           </label>
                                         </div>
@@ -970,7 +1162,10 @@ export default function Treatment() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() =>
-                                              addToCartMutation.mutate({ orderLineId: x.orderLine.id, addToCart: true })
+                                              addToCartMutation.mutate({
+                                                orderLineId: x.orderLine.id,
+                                                addToCart: true,
+                                              })
                                             }
                                             data-testid={`add-cart-xray-${x.id}`}
                                           >
@@ -1005,14 +1200,20 @@ export default function Treatment() {
                           <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
                           <div className="space-y-2">
                             {ultrasounds.map((u: any) => (
-                              <div key={u.examId || u.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                              <div
+                                key={u.examId || u.orderId}
+                                className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                              >
                                 <div className="flex justify-between items-start gap-3">
                                   <div className="flex-1">
                                     <p className="font-medium">{u.examType}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
                                       {fmt(u.completedAt || u.resultDate || u.requestDate)}
                                     </p>
-                                    <Badge variant={u.status === "completed" ? "default" : "secondary"} className="mt-1">
+                                    <Badge
+                                      variant={u.status === "completed" ? "default" : "secondary"}
+                                      className="mt-1"
+                                    >
                                       {u.status}
                                     </Badge>
                                     {u.orderLine?.acknowledgedBy && (
@@ -1037,7 +1238,10 @@ export default function Treatment() {
                                             }
                                             data-testid={`ack-ultrasound-${u.id}`}
                                           />
-                                          <label htmlFor={`ack-ultrasound-${u.id}`} className="text-sm cursor-pointer">
+                                          <label
+                                            htmlFor={`ack-ultrasound-${u.id}`}
+                                            className="text-sm cursor-pointer"
+                                          >
                                             Acknowledge
                                           </label>
                                         </div>
@@ -1046,7 +1250,10 @@ export default function Treatment() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() =>
-                                              addToCartMutation.mutate({ orderLineId: u.orderLine.id, addToCart: true })
+                                              addToCartMutation.mutate({
+                                                orderLineId: u.orderLine.id,
+                                                addToCart: true,
+                                              })
                                             }
                                             data-testid={`add-cart-ultrasound-${u.id}`}
                                           >
@@ -1063,7 +1270,11 @@ export default function Treatment() {
                                     )}
 
                                     {u.status === "completed" && (
-                                      <Button variant="outline" size="sm" onClick={() => openResult("ultrasound", u)}>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openResult("ultrasound", u)}
+                                      >
                                         View Report
                                       </Button>
                                     )}
@@ -1115,14 +1326,20 @@ export default function Treatment() {
                             {orders
                               .filter((o: any) => o.addToCart)
                               .map((o: any) => (
-                                <div key={o.orderId} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <div
+                                  key={o.orderId}
+                                  className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                                >
                                   <div>
                                     <p className="font-medium">{o.name}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
                                       {o.type?.toUpperCase()} {o.status && `– ${o.status}`}
                                     </p>
                                     {o.flags && (
-                                      <Badge variant={o.flags === "critical" ? "destructive" : "outline"} className="mt-1">
+                                      <Badge
+                                        variant={o.flags === "critical" ? "destructive" : "outline"}
+                                        className="mt-1"
+                                      >
                                         {o.flags}
                                       </Badge>
                                     )}
@@ -1132,7 +1349,12 @@ export default function Treatment() {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: false })}
+                                        onClick={() =>
+                                          addToCartMutation.mutate({
+                                            orderLineId: o.orderLine.id,
+                                            addToCart: false,
+                                          })
+                                        }
                                       >
                                         Remove
                                       </Button>
@@ -1177,7 +1399,9 @@ export default function Treatment() {
                         <TabsTrigger value="medications" data-testid="tab-medications">
                           <Pill className="h-4 w-4 mr-2" />
                           Medications
-                          {medications.length > 0 && <Badge className="ml-2 bg-green-600">{medications.length}</Badge>}
+                          {medications.length > 0 && (
+                            <Badge className="ml-2 bg-green-600">{medications.length}</Badge>
+                          )}
                         </TabsTrigger>
                       </TabsList>
 
@@ -1186,7 +1410,9 @@ export default function Treatment() {
                           {/* NOTES */}
                           <TabsContent value="notes" className="space-y-6">
                             <div>
-                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">Visit Information</h3>
+                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
+                                Visit Information
+                              </h3>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField
                                   control={form.control}
@@ -1256,7 +1482,12 @@ export default function Treatment() {
                                 <FormItem>
                                   <FormLabel>Chief Complaint</FormLabel>
                                   <FormControl>
-                                    <Textarea placeholder="What brings the patient in today?" rows={3} {...field} value={field.value ?? ""} />
+                                    <Textarea
+                                      placeholder="What brings the patient in today?"
+                                      rows={3}
+                                      {...field}
+                                      value={field.value ?? ""}
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -1264,7 +1495,9 @@ export default function Treatment() {
                             />
 
                             <div>
-                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">Vital Signs</h3>
+                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
+                                Vital Signs
+                              </h3>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <FormField
                                   control={form.control}
@@ -1279,7 +1512,11 @@ export default function Treatment() {
                                           placeholder="36.5"
                                           {...field}
                                           value={field.value ?? ""}
-                                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                                          onChange={(e) =>
+                                            field.onChange(
+                                              e.target.value ? parseFloat(e.target.value) : null
+                                            )
+                                          }
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -1311,7 +1548,9 @@ export default function Treatment() {
                                           placeholder="72"
                                           {...field}
                                           value={field.value ?? ""}
-                                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                                          onChange={(e) =>
+                                            field.onChange(e.target.value ? parseInt(e.target.value) : null)
+                                          }
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -1331,7 +1570,11 @@ export default function Treatment() {
                                           placeholder="65.0"
                                           {...field}
                                           value={field.value ?? ""}
-                                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                                          onChange={(e) =>
+                                            field.onChange(
+                                              e.target.value ? parseFloat(e.target.value) : null
+                                            )
+                                          }
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -1348,7 +1591,12 @@ export default function Treatment() {
                                 <FormItem>
                                   <FormLabel>Physical Examination</FormLabel>
                                   <FormControl>
-                                    <Textarea placeholder="Detailed examination findings..." rows={4} {...field} value={field.value ?? ""} />
+                                    <Textarea
+                                      placeholder="Detailed examination findings..."
+                                      rows={4}
+                                      {...field}
+                                      value={field.value ?? ""}
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -1362,7 +1610,12 @@ export default function Treatment() {
                                 <FormItem>
                                   <FormLabel>Diagnosis</FormLabel>
                                   <FormControl>
-                                    <Textarea placeholder="Primary and secondary diagnoses..." rows={3} {...field} value={field.value ?? ""} />
+                                    <Textarea
+                                      placeholder="Primary and secondary diagnoses..."
+                                      rows={3}
+                                      {...field}
+                                      value={field.value ?? ""}
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -1376,7 +1629,12 @@ export default function Treatment() {
                                 <FormItem>
                                   <FormLabel>Treatment Plan</FormLabel>
                                   <FormControl>
-                                    <Textarea placeholder="Medications, procedures, recommendations..." rows={4} {...field} value={field.value ?? ""} />
+                                    <Textarea
+                                      placeholder="Medications, procedures, recommendations..."
+                                      rows={4}
+                                      {...field}
+                                      value={field.value ?? ""}
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -1426,15 +1684,23 @@ export default function Treatment() {
                           {/* TESTS */}
                           <TabsContent value="tests" className="space-y-6">
                             <div className="space-y-4">
-                              <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Laboratory Tests</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Quick lab test ordering for current patient</p>
+                              <h3 className="font-medium text-gray-800 dark:text-gray-200">
+                                Order Laboratory Tests
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Quick lab test ordering for current patient
+                              </p>
                               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                   For detailed lab test ordering with full test catalog, visit the{" "}
-                                  <a href="/laboratory" className="text-blue-600 hover:underline">Laboratory</a> page.
+                                  <a href="/laboratory" className="text-blue-600 hover:underline">
+                                    Laboratory
+                                  </a>{" "}
+                                  page.
                                 </p>
                                 <p className="text-sm text-gray-500 dark:text-gray-500">
-                                  Use this quick form for common tests or the Laboratory page for comprehensive test selection.
+                                  Use this quick form for common tests or the Laboratory page for
+                                  comprehensive test selection.
                                 </p>
                               </div>
                             </div>
@@ -1443,14 +1709,22 @@ export default function Treatment() {
                           {/* IMAGING */}
                           <TabsContent value="imaging" className="space-y-6">
                             <div className="space-y-4">
-                              <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Imaging Studies</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Quick imaging study ordering for current patient</p>
+                              <h3 className="font-medium text-gray-800 dark:text-gray-200">
+                                Order Imaging Studies
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Quick imaging study ordering for current patient
+                              </p>
 
                               <div className="grid gap-4 md:grid-cols-2">
                                 <Link href="/xray">
                                   <div className="block p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-                                    <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">X-Ray Examinations</h4>
-                                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">Order X-ray studies including chest, abdomen, spine, extremities, and more</p>
+                                    <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                                      X-Ray Examinations
+                                    </h4>
+                                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                                      Order X-ray studies including chest, abdomen, spine, extremities, and more
+                                    </p>
                                     <div className="w-full px-4 py-2 border border-blue-300 dark:border-blue-700 rounded text-sm text-center bg-white dark:bg-gray-900">
                                       Go to X-Ray Module →
                                     </div>
@@ -1458,8 +1732,13 @@ export default function Treatment() {
                                 </Link>
                                 <Link href="/ultrasound">
                                   <div className="block p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-                                    <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">Ultrasound Examinations</h4>
-                                    <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo</p>
+                                    <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">
+                                      Ultrasound Examinations
+                                    </h4>
+                                    <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+                                      Order ultrasound studies including obstetric, abdominal, vascular,
+                                      and cardiac echo
+                                    </p>
                                     <div className="w-full px-4 py-2 border border-purple-300 dark:border-purple-700 rounded text-sm text-center bg-white dark:bg-gray-900">
                                       Go to Ultrasound Module →
                                     </div>
@@ -1469,7 +1748,8 @@ export default function Treatment() {
 
                               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
                                 <p className="text-sm text-gray-500 dark:text-gray-500">
-                                  Note: For detailed imaging requests with safety checklists and specialized protocols, please use the dedicated X-Ray and Ultrasound modules.
+                                  Note: For detailed imaging requests with safety checklists and specialized
+                                  protocols, please use the dedicated X-Ray and Ultrasound modules.
                                 </p>
                               </div>
                             </div>
@@ -1481,25 +1761,51 @@ export default function Treatment() {
                               {/* Prescribed list */}
                               {prescriptions.length > 0 && (
                                 <div className="mb-6">
-                                  <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">Prescribed Medications ({prescriptions.length})</h3>
+                                  <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">
+                                    Prescribed Medications ({prescriptions.length})
+                                  </h3>
                                   <div className="space-y-2">
                                     {prescriptions.map((rx) => (
-                                      <div key={rx.orderId} className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg" data-testid={`prescription-${rx.orderId}`}>
+                                      <div
+                                        key={rx.orderId}
+                                        className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg"
+                                        data-testid={`prescription-${rx.orderId}`}
+                                      >
                                         <div className="flex items-start justify-between">
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
-                                              <p className="font-medium text-gray-900 dark:text-white">{rx.drugName || "Medication"}</p>
-                                              <Badge variant={rx.status === "dispensed" ? "default" : "secondary"} className={rx.status === "dispensed" ? "bg-green-600" : ""}>
+                                              <p className="font-medium text-gray-900 dark:text-white">
+                                                {rx.drugName || "Medication"}
+                                              </p>
+                                              <Badge
+                                                variant={
+                                                  rx.status === "dispensed" ? "default" : "secondary"
+                                                }
+                                                className={
+                                                  rx.status === "dispensed" ? "bg-green-600" : ""
+                                                }
+                                              >
                                                 {rx.status}
                                               </Badge>
-                                              <Badge variant={rx.paymentStatus === "paid" ? "default" : "destructive"} className={rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"}>
+                                              <Badge
+                                                variant={
+                                                  rx.paymentStatus === "paid" ? "default" : "destructive"
+                                                }
+                                                className={
+                                                  rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"
+                                                }
+                                              >
                                                 {rx.paymentStatus}
                                               </Badge>
                                             </div>
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                               Dosage: {rx.dosage || "As prescribed"} | Quantity: {rx.quantity}
                                             </p>
-                                            {rx.instructions && <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>}
+                                            {rx.instructions && (
+                                              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                                                Instructions: {rx.instructions}
+                                              </p>
+                                            )}
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                               Order ID: {rx.orderId} | Prescribed: {fmt(rx.createdAt)}
                                             </p>
@@ -1510,39 +1816,40 @@ export default function Treatment() {
                                             )}
                                           </div>
 
-                                          {rx.status === "prescribed" && rx.paymentStatus === "unpaid" && (
-                                            <div className="flex gap-2">
-                                              <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                  setEditingPrescription(rx);
-                                                  setEditDosage(rx.dosage || "");
-                                                  setEditQuantity(rx.quantity || 0);
-                                                  setEditInstructions(rx.instructions || "");
-                                                }}
-                                                data-testid={`btn-edit-${rx.orderId}`}
-                                              >
-                                                <Edit className="w-4 h-4 mr-1" />
-                                                Edit
-                                              </Button>
-                                              <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => {
-                                                  if (window.confirm("Cancel this prescription?")) {
-                                                    cancelPrescriptionMutation.mutate(rx.orderId);
-                                                  }
-                                                }}
-                                                data-testid={`btn-cancel-${rx.orderId}`}
-                                              >
-                                                <Trash2 className="w-4 h-4 mr-1" />
-                                                Cancel
-                                              </Button>
-                                            </div>
-                                          )}
+                                          {rx.status === "prescribed" &&
+                                            rx.paymentStatus === "unpaid" && (
+                                              <div className="flex gap-2">
+                                                <Button
+                                                  type="button"
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    setEditingPrescription(rx);
+                                                    setEditDosage(rx.dosage || "");
+                                                    setEditQuantity(rx.quantity || 0);
+                                                    setEditInstructions(rx.instructions || "");
+                                                  }}
+                                                  data-testid={`btn-edit-${rx.orderId}`}
+                                                >
+                                                  <Edit className="w-4 h-4 mr-1" />
+                                                  Edit
+                                                </Button>
+                                                <Button
+                                                  type="button"
+                                                  variant="destructive"
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    if (window.confirm("Cancel this prescription?")) {
+                                                      cancelPrescriptionMutation.mutate(rx.orderId);
+                                                    }
+                                                  }}
+                                                  data-testid={`btn-cancel-${rx.orderId}`}
+                                                >
+                                                  <Trash2 className="w-4 h-4 mr-1" />
+                                                  Cancel
+                                                </Button>
+                                              </div>
+                                            )}
                                         </div>
                                       </div>
                                     ))}
@@ -1552,8 +1859,12 @@ export default function Treatment() {
                               )}
 
                               <div className="flex items-center justify-between">
-                                <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Select drugs from inventory to create pharmacy orders</p>
+                                <h3 className="font-medium text-gray-800 dark:text-gray-200">
+                                  Order New Medications
+                                </h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  Select drugs from inventory to create pharmacy orders
+                                </p>
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -1582,17 +1893,34 @@ export default function Treatment() {
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Dosage Instructions</label>
-                                  <Input placeholder="e.g., 1 tablet twice daily" value={newMedDosage} onChange={(e) => setNewMedDosage(e.target.value)} data-testid="input-dosage" />
+                                  <Input
+                                    placeholder="e.g., 1 tablet twice daily"
+                                    value={newMedDosage}
+                                    onChange={(e) => setNewMedDosage(e.target.value)}
+                                    data-testid="input-dosage"
+                                  />
                                 </div>
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Quantity</label>
-                                  <Input type="number" min="1" placeholder="e.g., 30" value={newMedQuantity} onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)} data-testid="input-quantity" />
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    placeholder="e.g., 30"
+                                    value={newMedQuantity}
+                                    onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)}
+                                    data-testid="input-quantity"
+                                  />
                                 </div>
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Additional Instructions</label>
-                                  <Input placeholder="e.g., Take with food" value={newMedInstructions} onChange={(e) => setNewMedInstructions(e.target.value)} data-testid="input-instructions" />
+                                  <Input
+                                    placeholder="e.g., Take with food"
+                                    value={newMedInstructions}
+                                    onChange={(e) => setNewMedInstructions(e.target.value)}
+                                    data-testid="input-instructions"
+                                  />
                                 </div>
                               </div>
 
@@ -1600,12 +1928,22 @@ export default function Treatment() {
                                 type="button"
                                 onClick={() => {
                                   if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
-                                    toast({ title: "Validation Error", description: "Please fill in drug, dosage, and quantity", variant: "destructive" });
+                                    toast({
+                                      title: "Validation Error",
+                                      description: "Please fill in drug, dosage, and quantity",
+                                      variant: "destructive",
+                                    });
                                     return;
                                   }
                                   setMedications([
                                     ...medications,
-                                    { drugId: parseInt(selectedDrugId), drugName: selectedDrugName, dosage: newMedDosage, quantity: newMedQuantity, instructions: newMedInstructions },
+                                    {
+                                      drugId: parseInt(selectedDrugId),
+                                      drugName: selectedDrugName,
+                                      dosage: newMedDosage,
+                                      quantity: newMedQuantity,
+                                      instructions: newMedInstructions,
+                                    },
                                   ]);
                                   setSelectedDrugId("");
                                   setSelectedDrugName("");
@@ -1622,24 +1960,51 @@ export default function Treatment() {
 
                               {medications.length > 0 && (
                                 <div className="space-y-2">
-                                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4>
+                                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                                    Medications to Order ({medications.length})
+                                  </h4>
                                   <div className="space-y-2">
                                     {medications.map((med, idx) => (
-                                      <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg">
+                                      <div
+                                        key={idx}
+                                        className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg"
+                                      >
                                         <div className="flex-1">
                                           <p className="font-medium">{med.drugName}</p>
-                                          <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {med.dosage} | Quantity: {med.quantity}</p>
-                                          {med.instructions && <p className="text-sm text-gray-500 dark:text-gray-500">Instructions: {med.instructions}</p>}
+                                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Dosage: {med.dosage} | Quantity: {med.quantity}
+                                          </p>
+                                          {med.instructions && (
+                                            <p className="text-sm text-gray-500 dark:text-gray-500">
+                                              Instructions: {med.instructions}
+                                            </p>
+                                          )}
                                         </div>
-                                        <Button type="button" variant="ghost" size="sm" onClick={() => setMedications(medications.filter((_, i) => i !== idx))} data-testid={`btn-remove-med-${idx}`}>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            setMedications(medications.filter((_, i) => i !== idx))
+                                          }
+                                          data-testid={`btn-remove-med-${idx}`}
+                                        >
                                           <Trash2 className="w-4 h-4 text-red-600" />
                                         </Button>
                                       </div>
                                     ))}
                                   </div>
-                                  <Button type="button" onClick={() => submitMedicationsMutation.mutate(medications)} disabled={submitMedicationsMutation.isPending} className="w-full bg-green-600 hover:bg-green-700" data-testid="btn-submit-medications">
+                                  <Button
+                                    type="button"
+                                    onClick={() => submitMedicationsMutation.mutate(medications)}
+                                    disabled={submitMedicationsMutation.isPending}
+                                    className="w-full bg-green-600 hover:bg-green-700"
+                                    data-testid="btn-submit-medications"
+                                  >
                                     <Pill className="w-4 h-4 mr-2" />
-                                    {submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}
+                                    {submitMedicationsMutation.isPending
+                                      ? "Submitting..."
+                                      : `Send ${medications.length} Order(s) to Pharmacy`}
                                   </Button>
                                 </div>
                               )}
@@ -1648,7 +2013,12 @@ export default function Treatment() {
 
                           {/* Actions */}
                           <div className="flex gap-4 pt-6 mt-6 border-t">
-                            <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-medical-blue hover:bg-blue-700" data-testid="save-treatment-btn">
+                            <Button
+                              type="submit"
+                              disabled={createTreatmentMutation.isPending}
+                              className="bg-medical-blue hover:bg-blue-700"
+                              data-testid="save-treatment-btn"
+                            >
                               <Save className="w-4 h-4 mr-2" />
                               {createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}
                             </Button>
@@ -1666,7 +2036,12 @@ export default function Treatment() {
                               </Button>
                             )}
 
-                            <Button type="button" variant="outline" onClick={handleNewTreatment} className="ml-auto">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleNewTreatment}
+                              className="ml-auto"
+                            >
                               New Treatment
                             </Button>
                           </div>
@@ -1679,7 +2054,7 @@ export default function Treatment() {
 
               {/* Right rail cart */}
               <RightRailCart
-                orders={orders.filter(o => o.orderLine && o.orderLine.addToCart)}
+                orders={orders.filter((o) => o.orderLine && o.orderLine.addToCart)}
                 onRemove={(orderLineId) => addToCartMutation.mutate({ orderLineId, addToCart: false })}
                 onPrint={() => window.print()}
               />
@@ -1699,22 +2074,40 @@ export default function Treatment() {
             <div className="space-y-4">
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <p className="font-medium text-gray-900 dark:text-white">{editingPrescription.drugName}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Order ID: {editingPrescription.orderId}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Order ID: {editingPrescription.orderId}
+                </p>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Dosage Instructions</label>
-                <Input placeholder="e.g., 1 tablet twice daily" value={editDosage} onChange={(e) => setEditDosage(e.target.value)} data-testid="input-edit-dosage" />
+                <Input
+                  placeholder="e.g., 1 tablet twice daily"
+                  value={editDosage}
+                  onChange={(e) => setEditDosage(e.target.value)}
+                  data-testid="input-edit-dosage"
+                />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Quantity</label>
-                <Input type="number" min="1" value={editQuantity} onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)} data-testid="input-edit-quantity" />
+                <Input
+                  type="number"
+                  min="1"
+                  value={editQuantity}
+                  onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
+                  data-testid="input-edit-quantity"
+                />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Additional Instructions</label>
-                <Input placeholder="e.g., Take with food" value={editInstructions} onChange={(e) => setEditInstructions(e.target.value)} data-testid="input-edit-instructions" />
+                <Input
+                  placeholder="e.g., Take with food"
+                  value={editInstructions}
+                  onChange={(e) => setEditInstructions(e.target.value)}
+                  data-testid="input-edit-instructions"
+                />
               </div>
 
               <div className="flex gap-2 pt-4">
@@ -1722,10 +2115,19 @@ export default function Treatment() {
                   type="button"
                   onClick={() => {
                     if (!editDosage || editQuantity <= 0) {
-                      toast({ title: "Validation Error", description: "Please fill in dosage and quantity", variant: "destructive" });
+                      toast({
+                        title: "Validation Error",
+                        description: "Please fill in dosage and quantity",
+                        variant: "destructive",
+                      });
                       return;
                     }
-                    editPrescriptionMutation.mutate({ orderId: editingPrescription.orderId, dosage: editDosage, quantity: editQuantity, instructions: editInstructions });
+                    editPrescriptionMutation.mutate({
+                      orderId: editingPrescription.orderId,
+                      dosage: editDosage,
+                      quantity: editQuantity,
+                      instructions: editInstructions,
+                    });
                   }}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                   disabled={editPrescriptionMutation.isPending}
@@ -1733,7 +2135,12 @@ export default function Treatment() {
                 >
                   {editPrescriptionMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setEditingPrescription(null)} data-testid="btn-cancel-edit">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingPrescription(null)}
+                  data-testid="btn-cancel-edit"
+                >
                   Cancel
                 </Button>
               </div>
@@ -1753,9 +2160,7 @@ export default function Treatment() {
         onAcknowledge={(id, val) =>
           acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
         }
-        onAddToSummary={(id, val) =>
-          addToCartMutation.mutate({ orderLineId: id, addToCart: val })
-        }
+        onAddToSummary={(id, val) => addToCartMutation.mutate({ orderLineId: id, addToCart: val })}
         onCopyToNotes={(txt) =>
           form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
         }
@@ -1770,21 +2175,35 @@ export default function Treatment() {
                 <div className="text-center border-b pb-4 mb-6">
                   <h1 className="text-2xl font-bold">BAHR EL GHAZAL CLINIC</h1>
                   <p className="text-sm text-gray-600">Your Health, Our Priority</p>
-                  <p className="text-xs text-gray-500 mt-1">Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
+                  </p>
                   <p className="text-lg font-semibold mt-2">PRESCRIPTION</p>
                 </div>
 
                 <div className="flex-1">
                   <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
                     <div>
-                      <p><strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
-                      <p><strong>Patient ID:</strong> {selectedPatient.patientId}</p>
-                      <p><strong>Age:</strong> {selectedPatient.age || "Not specified"}</p>
+                      <p>
+                        <strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}
+                      </p>
+                      <p>
+                        <strong>Patient ID:</strong> {selectedPatient.patientId}
+                      </p>
+                      <p>
+                        <strong>Age:</strong> {selectedPatient.age || "Not specified"}
+                      </p>
                     </div>
                     <div>
-                      <p><strong>Date:</strong> {fmt(new Date())}</p>
-                      <p><strong>Treatment ID:</strong> {savedTreatment?.treatmentId || "Not available"}</p>
-                      <p><strong>Phone:</strong> {selectedPatient.phoneNumber || "Not provided"}</p>
+                      <p>
+                        <strong>Date:</strong> {fmt(new Date())}
+                      </p>
+                      <p>
+                        <strong>Treatment ID:</strong> {savedTreatment?.treatmentId || "Not available"}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong> {selectedPatient.phoneNumber || "Not provided"}
+                      </p>
                     </div>
                   </div>
 
@@ -1810,7 +2229,9 @@ export default function Treatment() {
 
                 <div className="mt-auto pt-8 border-t">
                   <p className="mt-6">Doctor's Signature: ____________________</p>
-                  <p className="text-xs text-gray-500 mt-4 text-center">Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com</p>
+                  <p className="text-xs text-gray-500 mt-4 text-center">
+                    Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
+                  </p>
                 </div>
               </div>
 
@@ -1836,13 +2257,25 @@ export default function Treatment() {
           </DialogHeader>
 
           <div className="flex gap-2 mb-4">
-            <Input type="date" value={queueDate} onChange={(e) => setQueueDate(e.target.value)} className="w-40" />
-            <Input placeholder="Filter by name, ID or complaint…" value={queueFilter} onChange={(e) => setQueueFilter(e.target.value)} className="flex-1" />
+            <Input
+              type="date"
+              value={queueDate}
+              onChange={(e) => setQueueDate(e.target.value)}
+              className="w-40"
+            />
+            <Input
+              placeholder="Filter by name, ID or complaint…"
+              value={queueFilter}
+              onChange={(e) => setQueueFilter(e.target.value)}
+              className="flex-1"
+            />
           </div>
 
           <div className="border rounded-lg divide-y max-h-[60vh] overflow-y-auto">
             {queueLoading && <div className="p-6 text-center text-gray-500">Loading…</div>}
-            {!queueLoading && visibleQueue.length === 0 && <div className="p-10 text-center text-gray-500">No visits on {queueDate}.</div>}
+            {!queueLoading && visibleQueue.length === 0 && (
+              <div className="p-10 text-center text-gray-500">No visits on {queueDate}.</div>
+            )}
 
             {visibleQueue.map((v) => (
               <button
@@ -1860,7 +2293,8 @@ export default function Treatment() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <div className="font-medium truncate">
-                      {getPatientName(v.patientId)} <span className="text-xs text-gray-500">({v.patientId})</span>
+                      {getPatientName(v.patientId)}{" "}
+                      <span className="text-xs text-gray-500">({v.patientId})</span>
                     </div>
                     <div className="text-sm text-gray-500 truncate">{v.chiefComplaint || "—"}</div>
                   </div>
