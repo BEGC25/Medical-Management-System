@@ -20,6 +20,7 @@ import {
   History,
   Clock,
   Search,
+  Loader2, // Added Loader2 for the new add button
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,8 +35,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
 
-// New components wired in
-import OmniOrderBar from "@/components/OmniOrderBar"; // We will remove this from the layout but keep the component for now
+// Note: OmniOrderBar component is no longer used in this layout,
+// but we are using its design patterns.
 import RightRailCart from "@/components/RightRailCart";
 import ResultDrawer from "@/components/ResultDrawer";
 
@@ -457,32 +458,49 @@ export default function Treatment() {
     },
   });
 
+  // NEW: Re-usable order mutation for the "+ Add" buttons
+  const orderMutation = useMutation({
+    mutationFn: async (payload: { serviceId: number; kind: string; name: string; price: number }) => {
+      if (!currentEncounter) throw new Error("No active encounter");
+      const { serviceId, kind, name, price } = payload;
+      const body = {
+        encounterId: currentEncounter.encounterId,
+        serviceId,
+        relatedType: kind,
+        description: name,
+        quantity: 1,
+        unitPriceSnapshot: price,
+        totalPrice: price,
+        department: kind,
+        orderedBy: "Dr. System",
+      };
+      const res = await apiRequest("POST", "/api/order-lines", body);
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
+      toast({ title: "Order Added", description: data.description });
+    },
+    onError: (err: any) => {
+      toast({ title: "Order Failed", description: err.message, variant: "destructive" });
+    }
+  });
+
   const addConsultationMutation = useMutation({
     mutationFn: async () => {
       if (!currentEncounter) throw new Error("No encounter found");
       const svc = services.find((s) => s.category === "consultation" && s.name.includes("General"));
       if (!svc) throw new Error("Consultation service not found");
-      const r = await fetch("/api/order-lines", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          encounterId: currentEncounter.encounterId,
-          serviceId: svc.id,
-          relatedType: "consultation",
-          description: svc.name,
-          quantity: 1,
-          unitPriceSnapshot: svc.price,
-          totalPrice: svc.price,
-          department: "consultation",
-          orderedBy: "Dr. System",
-        }),
+      
+      return orderMutation.mutateAsync({
+        serviceId: svc.id,
+        kind: "consultation",
+        name: svc.name,
+        price: svc.price || 0
       });
-      if (!r.ok) throw new Error("Failed to add consultation fee");
-      return r.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
-      toast({ title: "Consultation Added", description: "Consultation fee added to the visit." });
+      // The orderMutation's onSuccess already handles this
     },
   });
 
@@ -529,9 +547,9 @@ export default function Treatment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
-      toast({ title: "Added", description: "Added to visit summary" });
+      toast({ title: "Updated", description: "Visit summary updated" });
     },
-    onError: () => toast({ title: "Error", description: "Failed to add to summary", variant: "destructive" }),
+    onError: () => toast({ title: "Error", description: "Failed to update summary", variant: "destructive" }),
   });
 
   // acknowledge + keep cart in sync
@@ -552,6 +570,7 @@ export default function Treatment() {
     if (acknowledged && !alreadyInCart) {
       addToCartMutation.mutate({ orderLineId, addToCart: true });
     } else if (!acknowledged && alreadyInCart) {
+      // This logic could be debated, but for now, un-acknowledging removes it.
       addToCartMutation.mutate({ orderLineId, addToCart: false });
     }
   }
@@ -731,18 +750,19 @@ export default function Treatment() {
         </CardHeader>
         <CardContent>
           {/* Patient selection */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 mb-6 shadow-sm border border-blue-100 dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Activity className="h-5 w-5 text-white" />
+          {/* THIS CARD IS HIDDEN ONCE A PATIENT IS SELECTED */}
+          {!selectedPatient && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 mb-6 shadow-sm border border-blue-100 dark:border-gray-700">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Choose a patient to begin documenting their visit</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Choose a patient to begin documenting their visit</p>
-              </div>
-            </div>
 
-            {!selectedPatient ? (
               <>
                 <div className="flex flex-col sm:flex-row gap-3 mb-4">
                   <div className="relative flex-1">
@@ -778,62 +798,63 @@ export default function Treatment() {
                   />
                 </div>
               </>
-            ) : (
-              <div className="p-5 bg-white dark:bg-gray-900 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-md">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                      {selectedPatient.firstName?.[0]}
-                      {selectedPatient.lastName?.[0]}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-bold text-gray-900 dark:text-white text-lg">
-                          {selectedPatient.firstName} {selectedPatient.lastName}
-                        </h4>
-                        {savedTreatment && <Badge className="bg-green-600 text-white shadow-sm">Saved: {savedTreatment.treatmentId}</Badge>}
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">ID:</span>
-                          <span className="font-mono">{selectedPatient.patientId}</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Age:</span>
-                          {getAge(selectedPatient.age || "")}
-                        </span>
-                        {selectedPatient.gender && (
-                          <span className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Gender:</span>
-                            {selectedPatient.gender}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span>
-                          {selectedPatient.phoneNumber || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+            </div>
+          )}
 
-                  <div className="flex flex-col gap-2">
-                    <Badge className="bg-green-600 text-white shadow-sm whitespace-nowrap">✓ Selected</Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-900/20"
-                      onClick={() => setSelectedPatient(null)}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Change
-                    </Button>
+          {/* THIS REPLACES THE CARD ABOVE ONCE PATIENT IS SELECTED */}
+          {selectedPatient && (
+            <div className="p-5 bg-white dark:bg-gray-900 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-md mb-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    {selectedPatient.firstName?.[0]}
+                    {selectedPatient.lastName?.[0]}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-gray-900 dark:text-white text-lg">
+                        {selectedPatient.firstName} {selectedPatient.lastName}
+                      </h4>
+                      {savedTreatment && <Badge className="bg-green-600 text-white shadow-sm">Saved: {savedTreatment.treatmentId}</Badge>}
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">ID:</span>
+                        <span className="font-mono">{selectedPatient.patientId}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Age:</span>
+                        {getAge(selectedPatient.age || "")}
+                      </span>
+                      {selectedPatient.gender && (
+                        <span className="flex items-center gap-1">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">Gender:</span>
+                          {selectedPatient.gender}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span>
+                        {selectedPatient.phoneNumber || "N/A"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* !!! REMOVED OmniOrderBar from here !!! */}
+                <div className="flex flex-col gap-2">
+                  <Badge className="bg-green-600 text-white shadow-sm whitespace-nowrap">✓ Selected</Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-900/20"
+                    onClick={() => setSelectedPatient(null)}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Change
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ---------- TWO-COLUMN COCKPIT LAYOUT ---------- */}
           {selectedPatient && currentEncounter && (
@@ -1198,8 +1219,8 @@ export default function Treatment() {
                         
                         {/* --- NEW: Sub-tabs for Ordering --- */}
                         <div>
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <Button variant={qoTab === "all" ? "default" : "outline"} onClick={() => setQoTab("all")}>
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <Button variant={qoTab === "all" ? "secondary" : "outline"} onClick={() => setQoTab("all")}>
                               All Results
                             </Button>
                             {(["lab", "xray", "ultrasound", "consult", "pharmacy"] as const).map((k) => (
@@ -1212,11 +1233,13 @@ export default function Treatment() {
                               </Button>
                             ))}
                             {qoTab !== "all" && (
-                              <div className="ml-auto w-full sm:w-64">
+                              <div className="ml-auto w-full sm:w-64 relative">
+                                <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
                                 <Input
                                   placeholder="Search services to add…"
                                   value={qoSearch}
                                   onChange={(e) => setQoSearch(e.target.value)}
+                                  className="pl-8"
                                 />
                               </div>
                             )}
@@ -1224,8 +1247,8 @@ export default function Treatment() {
 
                           {/* --- NEW: Service Catalog (from OmniOrderBar) --- */}
                           {qoTab !== "all" && (
-                            <div className="rounded-md border p-3 mb-6">
-                              <h3 className="font-semibold mb-3 text-lg">
+                            <div className="rounded-md border p-4 mb-6 bg-muted/30">
+                              <h3 className="font-semibold mb-3 text-base">
                                 Add New {qoTab.charAt(0).toUpperCase() + qoTab.slice(1)} Order
                               </h3>
                               {(() => {
@@ -1234,7 +1257,7 @@ export default function Treatment() {
                                     if (qoTab === 'pharmacy') {
                                       return true; // Simple filter for drugs
                                     }
-                                    return matchesCategory(s, qoTab);
+                                    return matchesCategory(s, qoTab as any);
                                   })
                                   .filter((s: any) => {
                                     if (!qoSearch) return true;
@@ -1248,81 +1271,43 @@ export default function Treatment() {
                                   .slice(0, 50); // keep it snappy
 
                                 if (rows.length === 0) {
-                                  return <div className="text-sm text-muted-foreground">No matching services.</div>;
+                                  return <div className="text-sm text-muted-foreground p-4 text-center">No matching services found.</div>;
                                 }
 
                                 return (
                                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                     {rows.map((svc: any) => (
-                                      <button
-                                        key={svc.id}
-                                        onClick={async () => {
-                                          if (!currentEncounter) return;
-                                          
-                                          if (qoTab === "lab") {
-                                            window.location.href = `/laboratory?encounterId=${currentEncounter.encounterId}&serviceId=${svc.id}`;
-                                            return;
-                                          }
-                                          if (qoTab === "xray") {
-                                            window.location.href = `/xray?encounterId=${currentEncounter.encounterId}&serviceId=${svc.id}`;
-                                            return;
-                                          }
-                                          if (qoTab === "ultrasound") {
-                                            window.location.href = `/ultrasound?encounterId=${currentEncounter.encounterId}&serviceId=${svc.id}`;
-                                            return;
-                                          }
-                                          if (qoTab === "consult") {
-                                            try {
-                                              const res = await fetch("/api/order-lines", {
-                                                method: "POST",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({
-                                                  encounterId: currentEncounter.encounterId,
-                                                  serviceId: svc.id,
-                                                  relatedType: "consultation",
-                                                  description: svc.name,
-                                                  quantity: 1,
-                                                  unitPriceSnapshot: svc.price,
-                                                  totalPrice: svc.price,
-                                                  department: "consultation",
-                                                  orderedBy: "Dr. System",
-                                                }),
-                                              });
-                                              if (!res.ok) throw new Error();
-                                              toast({ title: "Consultation added", description: svc.name });
-                                              queryClient.invalidateQueries({ queryKey: ["/api/visits"] });
-                                            } catch {
-                                              toast({
-                                                title: "Could not add",
-                                                description: svc.name,
-                                                variant: "destructive",
-                                              });
-                                            }
-                                            return;
-                                          }
-                                          if (qoTab === "pharmacy") {
+                                      <div key={svc.id} className="flex items-center justify-between rounded border p-3 bg-white">
+                                        <div className="min-w-0 pr-2">
+                                          <div className="font-medium truncate">{svc.genericName || svc.name}</div>
+                                          <div className="text-xs text-gray-500 truncate">
+                                            {svc.description ? svc.description : (svc.strength ? `Strength: ${svc.strength}` : (typeof svc.price === 'number' ? `Fee: ${svc.price}` : ''))}
+                                          </div>
+                                        </div>
+                                        
+                                        {qoTab === 'pharmacy' ? (
+                                          <Button size="sm" onClick={() => {
                                             setSelectedDrugId(String(svc.id));
                                             setSelectedDrugName(svc.genericName || svc.name);
                                             setActiveTab("medications"); // Jump to main medications tab
                                             toast({ title: "Medication Selected", description: "Please complete dosage and quantity." });
-                                            return;
-                                          }
-                                        }}
-                                        className="text-left rounded-md border p-3 hover:bg-muted transition"
-                                      >
-                                        <div className="font-medium">{svc.genericName || svc.name}</div>
-                                        {svc.description && (
-                                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                            {svc.description}
-                                          </div>
+                                          }}>
+                                            <Plus className="h-4 w-4 mr-1"/> Queue
+                                          </Button>
+                                        ) : (
+                                          <Button 
+                                            size="sm" 
+                                            onClick={() => orderMutation.mutate({ serviceId: svc.id, kind: qoTab, name: svc.name, price: svc.price || 0 })}
+                                            disabled={orderMutation.isPending && orderMutation.variables?.serviceId === svc.id}
+                                          >
+                                            {orderMutation.isPending && orderMutation.variables?.serviceId === svc.id ? 
+                                              <Loader2 className="h-4 w-4 animate-spin"/> : 
+                                              <Plus className="h-4 w-4 mr-1"/>
+                                            }
+                                            Add
+                                          </Button>
                                         )}
-                                        {typeof svc.price === "number" && (
-                                          <div className="text-xs text-muted-foreground mt-1">Fee: {svc.price}</div>
-                                        )}
-                                        {svc.strength && (
-                                          <div className="text-xs text-muted-foreground mt-1">Strength: {svc.strength}</div>
-                                        )}
-                                      </button>
+                                      </div>
                                     ))}
                                   </div>
                                 );
@@ -1334,20 +1319,20 @@ export default function Treatment() {
                         {/* --- Existing Results (Now Filtered) --- */}
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-lg">Existing Results for this Visit</h3>
-                            {orders.some((o) => o.status === "completed" && o.orderLine && !o.orderLine.addToCart) && (
+                            <h3 className="font-semibold text-base">Existing Results for this Visit</h3>
+                            {qoTab !== "all" && orders.some((o) => o.status === "completed" && o.orderLine && !o.orderLine.addToCart) && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() =>
                                   orders
-                                    .filter((o) => o.orderLine && o.status === "completed" && !o.orderLine.addToCart)
+                                    .filter((o) => o.orderLine && o.status === "completed" && !o.orderLine.addToCart && (qoTab === 'all' || o.type === qoTab))
                                     .forEach((o) =>
                                       addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true })
                                     )
                                 }
                               >
-                                Add All Completed
+                                Add All Completed {qoTab}
                               </Button>
                             )}
                           </div>
@@ -2113,9 +2098,10 @@ export default function Treatment() {
             alreadyInCart: !!resultDrawer.data?.orderLine?.addToCart,
           })
         }
-        onAddToSummary={(orderLineId, add) =>
-          addToCartMutation.mutate({ orderLineId, addToCart: add })
-        }
+        // onAddToSummary is now handled by onAcknowledge, so we can remove the prop
+        // onAddToSummary={(orderLineId, add) =>
+        //   addToCartMutation.mutate({ orderLineId, addToCart: add })
+        // }
         onCopyToNotes={(txt) =>
           form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
         }
