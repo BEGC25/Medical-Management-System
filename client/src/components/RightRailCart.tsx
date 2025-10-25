@@ -1,75 +1,42 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Trash2, Printer } from "lucide-react";
-
-type VisitOrder = {
-  orderId: number;
-  name: string;
-  type: string;      // lab|xray|ultrasound|consultation|...
-  status: string;
-  addToCart?: number | boolean;
-  price?: number;    // if you have it on the object
-};
+import {Printer, Trash2} from "lucide-react";
+import {Button} from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
 
 type Props = {
-  orders: VisitOrder[];
-  onRemove: (orderId: number) => void;     // toggle addToCart false
-  onPrint?: () => void;
+  orders: any[];
+  onRemove: (orderId: number) => void;
+  onPrint: () => void;
 };
 
-export default function RightRailCart({ orders, onRemove, onPrint }: Props) {
-  const items = orders.filter(o => !!o.addToCart);
-  const total = items.reduce((sum, o) => sum + (o.price ?? 0), 0);
-
+export default function RightRailCart({orders, onRemove, onPrint}: Props) {
+  const items = (orders || []).filter((o: any) => o.addToCart);
   return (
-    <Card className="p-4 sticky top-4 h-fit space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="h-4 w-4" />
-          <div className="font-semibold">Visit Cart</div>
-        </div>
-        <Badge variant="secondary">{items.length} items</Badge>
-      </div>
+    <div className="rounded-lg border bg-white p-3 shadow-sm">
+      <div className="font-semibold mb-1">Visit Cart</div>
+      <Badge variant="secondary" className="mb-3">{items.length} items</Badge>
 
-      {items.length === 0 && (
-        <p className="text-sm text-gray-500">No services in today’s visit yet.</p>
-      )}
-
-      {items.length > 0 && (
+      {items.length === 0 ? (
+        <div className="text-sm text-gray-500">No services in today’s visit yet.</div>
+      ) : (
         <div className="space-y-2">
-          {items.map((o) => (
-            <div key={o.orderId} className="rounded border p-2 bg-white dark:bg-gray-900">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium leading-tight">{o.name}</div>
-                  <div className="text-xs text-gray-500 uppercase">{o.type} • {o.status}</div>
+          {items.map((it: any) => (
+            <div key={it.orderId} className="rounded border p-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{it.name}</div>
+                  <div className="text-xs text-gray-500">{(it.type || "").toUpperCase()} • {it.status || "—"}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {o.price != null && (
-                    <div className="text-sm font-semibold">SSP {o.price}</div>
-                  )}
-                  <Button variant="ghost" size="icon" onClick={() => onRemove(o.orderId)} aria-label="Remove">
-                    <Trash2 className="h-4 w-4 text-red-600" />
-                  </Button>
-                </div>
+                <Button variant="ghost" size="sm" onClick={() => onRemove(it.orderId)}>
+                  <Trash2 className="h-4 w-4 text-red-600"/>
+                </Button>
               </div>
             </div>
           ))}
-
-          <div className="border-t pt-2 flex items-center justify-between">
-            <div className="text-sm font-medium">Subtotal</div>
-            <div className="text-lg font-semibold">{total ? `SSP ${total}` : "—"}</div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" className="w-full" onClick={onPrint}>
-              <Printer className="h-4 w-4 mr-2" />
-              Print Summary
-            </Button>
-          </div>
+          <Button className="w-full mt-2" onClick={onPrint}>
+            <Printer className="h-4 w-4 mr-2"/> Print Summary
+          </Button>
         </div>
       )}
-    </Card>
+    </div>
   );
 }
