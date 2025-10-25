@@ -61,8 +61,6 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   }
 }
 
-const fmt = (d?: string | number | Date) => (d ? new Date(d).toLocaleString() : "—");
-
 const resultFields: Record<
   string,
   Record<
@@ -814,16 +812,23 @@ export default function Treatment() {
                         Orders & Results
                       </CardTitle>
 
-                      {orders.some(o => o.status === "completed" && o.orderLine && !o.orderLine.addToCart) && (
+                      {orders.some(
+                        (o: any) => o.status === "completed" && !o.addToCart && o.isPaid && o.orderLine?.id
+                      ) && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            orders
-                              .filter(o => o.orderLine && o.status === "completed" && !o.orderLine.addToCart)
-                              .forEach(o => addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true }))
-                          }
+                          onClick={() => {
+                            const completed = orders.filter(
+                              (o: any) => o.status === "completed" && !o.addToCart && o.isPaid && o.orderLine?.id
+                            );
+                            completed.forEach((o: any) =>
+                              addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true })
+                            );
+                          }}
+                          data-testid="add-all-to-cart-btn"
                         >
+                          <Plus className="h-4 w-4 mr-2" />
                           Add All Completed
                         </Button>
                       )}
@@ -860,7 +865,7 @@ export default function Treatment() {
                                         ))}
                                       </div>
                                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                        Requested: {fmt(test.requestedDate)}
+                                        Requested: {new Date(test.requestedDate).toLocaleDateString()}
                                       </p>
                                       {test.orderLine?.acknowledgedBy && (
                                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
@@ -869,7 +874,7 @@ export default function Treatment() {
                                       )}
                                     </div>
                                     <div className="flex flex-col gap-2">
-                                      {test.orderLine && (
+                                      {test.status === "completed" && test.orderLine && (
                                         <>
                                           <div className="flex items-center gap-2">
                                             <Checkbox
@@ -934,7 +939,7 @@ export default function Treatment() {
                                   <div className="flex-1">
                                     <p className="font-medium">{x.bodyPart}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                                      {fmt(x.completedAt || x.resultDate || x.requestDate)}
+                                      {new Date(x.requestDate).toLocaleDateString()}
                                     </p>
                                     <Badge variant={x.status === "completed" ? "default" : "secondary"} className="mt-1">
                                       {x.status}
@@ -946,7 +951,7 @@ export default function Treatment() {
                                     )}
                                   </div>
                                   <div className="flex flex-col gap-2">
-                                    {x.orderLine && (
+                                    {x.status === "completed" && x.orderLine && (
                                       <>
                                         <div className="flex items-center gap-2">
                                           <Checkbox
@@ -1010,7 +1015,7 @@ export default function Treatment() {
                                   <div className="flex-1">
                                     <p className="font-medium">{u.examType}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                                      {fmt(u.completedAt || u.resultDate || u.requestDate)}
+                                      {new Date(u.requestDate).toLocaleDateString()}
                                     </p>
                                     <Badge variant={u.status === "completed" ? "default" : "secondary"} className="mt-1">
                                       {u.status}
@@ -1022,7 +1027,7 @@ export default function Treatment() {
                                     )}
                                   </div>
                                   <div className="flex flex-col gap-2">
-                                    {u.orderLine && (
+                                    {u.status === "completed" && u.orderLine && (
                                       <>
                                         <div className="flex items-center gap-2">
                                           <Checkbox
@@ -1501,11 +1506,11 @@ export default function Treatment() {
                                             </p>
                                             {rx.instructions && <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>}
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                              Order ID: {rx.orderId} | Prescribed: {fmt(rx.createdAt)}
+                                              Order ID: {rx.orderId} | Prescribed: {new Date(rx.createdAt).toLocaleString()}
                                             </p>
                                             {rx.dispensedAt && (
                                               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                                Dispensed: {fmt(rx.dispensedAt)} by {rx.dispensedBy}
+                                                Dispensed: {new Date(rx.dispensedAt).toLocaleString()} by {rx.dispensedBy}
                                               </p>
                                             )}
                                           </div>
@@ -1679,8 +1684,8 @@ export default function Treatment() {
 
               {/* Right rail cart */}
               <RightRailCart
-                orders={orders.filter(o => o.orderLine && o.orderLine.addToCart)}
-                onRemove={(orderLineId) => addToCartMutation.mutate({ orderLineId, addToCart: false })}
+                orders={orders}
+                onRemove={(orderId) => addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })}
                 onPrint={() => window.print()}
               />
             </div>
@@ -1745,19 +1750,16 @@ export default function Treatment() {
       {/* Universal Result Drawer */}
       <ResultDrawer
         open={resultDrawer.open}
-        onOpenChange={(open) => (open ? null : setResultDrawer({ open: false, kind: null, data: null }))}
         kind={resultDrawer.kind}
         data={resultDrawer.data}
-        patient={selectedPatient ?? undefined}
+        patient={selectedPatient}
         resultFields={resultFields}
-        onAcknowledge={(id, val) =>
-          acknowledgeMutation.mutate({ orderLineId: id, acknowledgedBy: "Dr. System", acknowledged: val })
+        onOpenChange={(open) => (open ? null : closeResult())}
+        onAcknowledge={(orderLineId: number, acknowledged: boolean) =>
+          acknowledgeMutation.mutate({ orderLineId, acknowledgedBy: "Dr. System", acknowledged })
         }
-        onAddToSummary={(id, val) =>
-          addToCartMutation.mutate({ orderLineId: id, addToCart: val })
-        }
-        onCopyToNotes={(txt) =>
-          form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
+        onAddToSummary={(orderLineId: number, add: boolean) =>
+          addToCartMutation.mutate({ orderLineId, addToCart: add })
         }
       />
 
@@ -1782,7 +1784,7 @@ export default function Treatment() {
                       <p><strong>Age:</strong> {selectedPatient.age || "Not specified"}</p>
                     </div>
                     <div>
-                      <p><strong>Date:</strong> {fmt(new Date())}</p>
+                      <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
                       <p><strong>Treatment ID:</strong> {savedTreatment?.treatmentId || "Not available"}</p>
                       <p><strong>Phone:</strong> {selectedPatient.phoneNumber || "Not provided"}</p>
                     </div>
