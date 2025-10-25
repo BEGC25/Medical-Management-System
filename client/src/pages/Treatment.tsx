@@ -1,3 +1,4 @@
+// client/src/pages/Treatment.tsx
 import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -7,18 +8,12 @@ import {
   Save,
   FileText,
   Printer,
-  ShoppingCart,
   Plus,
-  DollarSign,
   Pill,
   Activity,
   Trash2,
   Edit,
   X,
-  AlertTriangle,
-  Heart,
-  History,
-  Clock,
   Search,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +47,8 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
-// ---------- helpers ----------
+/* ---------------- helpers ---------------- */
+
 function parseJSON<T = any>(v: any, fallback: T): T {
   try {
     return JSON.parse(v ?? "");
@@ -61,33 +57,15 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   }
 }
 
-const fmt = (d?: string | number | Date) => (d ? new Date(d).toLocaleString() : "—");
-
-// --- Quick Orders helpers ---
-const CATEGORY_ALIASES: Record<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy", string[]> = {
-  lab: ["lab", "labs", "laboratory", "hematology", "chemistry", "microbiology"],
-  xray: ["xray", "x-ray", "radiology-xray", "radiology_xray", "radiology"],
-  ultrasound: ["ultrasound", "u/s", "sonography", "radiology-ultrasound"],
-  consult: ["consult", "consultation", "general consultation"],
-  pharmacy: ["pharmacy", "drug", "medication", "dispensary"],
-};
-function matchesCategory(svc: any, active: keyof typeof CATEGORY_ALIASES) {
-  const c = (svc?.category ?? "").toString().toLowerCase().trim();
-  return CATEGORY_ALIASES[active].some((alias) => c.includes(alias));
+function fmt(d?: string | number | Date) {
+  if (!d) return "—";
+  const dt = new Date(d);
+  return Number.isNaN(dt.getTime()) ? "—" : dt.toLocaleString();
 }
 
 const resultFields: Record<
   string,
-  Record<
-    string,
-    {
-      type: "number" | "text" | "select" | "multiselect";
-      unit?: string;
-      range?: string;
-      normal?: string;
-      options?: string[];
-    }
-  >
+  Record<string, { type: "number" | "text" | "select" | "multiselect"; unit?: string; range?: string; normal?: string; options?: string[] }>
 > = {
   "Complete Blood Count (CBC)": {
     WBC: { type: "number", unit: "x10³/µL", normal: "4.0-11.0" },
@@ -112,8 +90,8 @@ const resultFields: Record<
     "Hb pigment": { type: "select", options: ["Negative", "Positive"], normal: "Negative" },
     Leucocytes: { type: "select", options: ["Negative", "+", "++", "+++"], normal: "Negative" },
     Nitrite: { type: "select", options: ["Negative", "Positive"], normal: "Negative" },
-    PH: { type: "number", unit: "", range: "5.0-8.0", normal: "6.0-7.5" },
-    "Specific Gravity": { type: "number", unit: "", range: "1.003-1.030", normal: "1.010-1.025" },
+    PH: { type: "number", range: "5.0-8.0", normal: "6.0-7.5" },
+    "Specific Gravity": { type: "number", range: "1.003-1.030", normal: "1.010-1.025" },
     Bilirubin: { type: "select", options: ["Negative", "Positive"], normal: "Negative" },
   },
   "Liver Function Test (LFT)": {
@@ -135,7 +113,8 @@ const resultFields: Record<
   },
 };
 
-// ---------- component ----------
+/* --------------- component --------------- */
+
 export default function Treatment() {
   const { visitId: rawVisitId } = useParams<{ visitId?: string }>();
   const visitId = rawVisitId && rawVisitId !== "new" ? rawVisitId : undefined;
@@ -143,27 +122,16 @@ export default function Treatment() {
   const patientIdFromQuery = searchParams.get("patientId") || undefined;
 
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [showPrescription, setShowPrescription] = useState(false);
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
   const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
-  const [showVisitSummary, setShowVisitSummary] = useState(false);
   const [activeTab, setActiveTab] = useState("notes");
 
-  // Quick Orders local UI state
-  // which top-level service category is visible in the catalog
-  const [orderTab, setOrderTab] =
-    useState<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy">("lab");
-
   // unified result drawer state
-  const [resultDrawer, setResultDrawer] = useState<{
-    open: boolean;
-    kind: "lab" | "xray" | "ultrasound" | null;
-    data: any | null;
-  }>({ open: false, kind: null, data: null });
-
-  const openResult = (kind: "lab" | "xray" | "ultrasound", data: any) =>
-    setResultDrawer({ open: true, kind, data });
-  const closeResult = () => setResultDrawer({ open: false, kind: null, data: null });
+  const [resultDrawer, setResultDrawer] = useState<{ open: boolean; kind: "lab" | "xray" | "ultrasound" | null; data: any | null }>({
+    open: false,
+    kind: null,
+    data: null,
+  });
 
   // Medication ordering state
   const [medications, setMedications] = useState<
@@ -175,17 +143,10 @@ export default function Treatment() {
   const [newMedQuantity, setNewMedQuantity] = useState(0);
   const [newMedInstructions, setNewMedInstructions] = useState("");
 
-  // Prescription editing
-  const [editingPrescription, setEditingPrescription] = useState<PharmacyOrder | null>(null);
-  const [editDosage, setEditDosage] = useState("");
-  const [editQuantity, setEditQuantity] = useState(0);
-  const [editInstructions, setEditInstructions] = useState("");
-
   // Patient search
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
 
-  // Queue modal
   const [queueOpen, setQueueOpen] = useState(false);
   const [queueDate, setQueueDate] = useState(new Date().toISOString().slice(0, 10));
   const [queueFilter, setQueueFilter] = useState("");
@@ -224,15 +185,13 @@ export default function Treatment() {
     enabled: queueOpen,
   });
 
-  // filter out soft-deleted patients
   const activePatients = allPatients.filter((p: any) => !p.is_deleted);
   const activePatientIds = new Set(activePatients.map((p) => p.patientId));
 
   const getPatientName = (patientId: string): string => {
-    const patient = activePatients.find((p) => p.patientId === patientId);
-    if (!patient) return patientId;
-    return `${patient.firstName} ${patient.lastName}`;
-  };
+    const p = activePatients.find((x) => x.patientId === patientId);
+    return p ? `${p.firstName} ${p.lastName}` : patientId;
+    };
 
   const visibleQueue = queueVisits.filter((v) => {
     if (!activePatientIds.has(v.patientId)) return false;
@@ -271,12 +230,6 @@ export default function Treatment() {
   // services & drugs
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
   const { data: drugs = [] } = useQuery<Drug[]>({ queryKey: ["/api/pharmacy/drugs"] });
-
-  // only the active category cards
-  const visibleServices = useMemo(
-    () => services.filter(s => s.category === orderTab),
-    [services, orderTab]
-  );
 
   // visit via /treatment/:visitId
   const { data: loadedVisit } = useQuery({
@@ -332,8 +285,32 @@ export default function Treatment() {
     enabled: !!selectedPatient && !visitId,
   });
 
-  // unified orders for this visit
+  // adopt loaded visit
+  useEffect(() => {
+    if (loadedVisit?.encounter && loadedPatient && !selectedPatient) {
+      setSelectedPatient(loadedPatient);
+      setCurrentEncounter(loadedVisit.encounter);
+    }
+  }, [loadedVisit, loadedPatient]); // eslint-disable-line
+
+  // legacy: create encounter if none today
+  useEffect(() => {
+    if (visitId) return;
+    if (todayEncounter) {
+      setCurrentEncounter(todayEncounter);
+    } else if (selectedPatient) {
+      createEncounterMutation.mutate({
+        patientId: selectedPatient.patientId,
+        visitDate: new Date().toISOString().split("T")[0],
+        attendingClinician: "Dr. System",
+      });
+    }
+  }, [todayEncounter, selectedPatient, visitId]); // eslint-disable-line
+
+  // current encounter id (works for both routes)
   const activeEncounterId = visitId ? loadedVisit?.encounter?.encounterId : currentEncounter?.encounterId;
+
+  // unified orders for this visit
   const { data: orders = [] } = useQuery<any[]>({
     queryKey: ["/api/visits", activeEncounterId, "orders"],
     queryFn: async () => {
@@ -345,15 +322,13 @@ export default function Treatment() {
     enabled: !!activeEncounterId,
   });
 
-  // visit cart (aka summary)
-  const cartItems = useMemo(
-    () => orders.filter(o => !!o.addToCart),
-    [orders]
-  );
+  // filtered sets
+  const labTests = useMemo(() => orders.filter((o) => o.type === "lab"), [orders]);
+  const xrays = useMemo(() => orders.filter((o) => o.type === "xray"), [orders]);
+  const ultrasounds = useMemo(() => orders.filter((o) => o.type === "ultrasound"), [orders]);
 
-  const labTests = orders.filter((o) => o.type === "lab");
-  const xrays = orders.filter((o) => o.type === "xray");
-  const ultrasounds = orders.filter((o) => o.type === "ultrasound");
+  // items in cart (based on orderLine.addToCart)
+  const cartItems = useMemo(() => orders.filter((o) => !!o.orderLine?.addToCart), [orders]);
 
   // existing treatment for this encounter
   const { data: existingTreatment } = useQuery<Treatment | null>({
@@ -393,59 +368,8 @@ export default function Treatment() {
     enabled: !!selectedPatient?.patientId,
   });
 
-  // encounter sync for /treatment/:visitId
-  useEffect(() => {
-    if (loadedVisit?.encounter && loadedPatient && !selectedPatient) {
-      setSelectedPatient(loadedPatient);
-      setCurrentEncounter(loadedVisit.encounter);
-    }
-  }, [loadedVisit, loadedPatient]);
+  /* ---------------- mutations ---------------- */
 
-  // safety check: mismatch patient/encounter
-  useEffect(() => {
-    if (selectedPatient && currentEncounter && selectedPatient.patientId !== currentEncounter.patientId) {
-      window.location.href = `/treatment/new?patientId=${selectedPatient.patientId}`;
-    }
-  }, [selectedPatient, currentEncounter]);
-
-  // populate form when existing treatment found
-  useEffect(() => {
-    if (existingTreatment && selectedPatient) {
-      form.reset({
-        patientId: existingTreatment.patientId,
-        visitDate: existingTreatment.visitDate,
-        visitType: existingTreatment.visitType,
-        priority: existingTreatment.priority,
-        chiefComplaint: existingTreatment.chiefComplaint || "",
-        temperature: existingTreatment.temperature,
-        bloodPressure: existingTreatment.bloodPressure || "",
-        heartRate: existingTreatment.heartRate,
-        weight: existingTreatment.weight,
-        examination: existingTreatment.examination || "",
-        diagnosis: existingTreatment.diagnosis || "",
-        treatmentPlan: existingTreatment.treatmentPlan || "",
-        followUpDate: existingTreatment.followUpDate || "",
-        followUpType: existingTreatment.followUpType || "",
-      });
-      setSavedTreatment(existingTreatment);
-    }
-  }, [existingTreatment, selectedPatient]);
-
-  // legacy: create encounter if none today
-  useEffect(() => {
-    if (visitId) return;
-    if (todayEncounter) {
-      setCurrentEncounter(todayEncounter);
-    } else if (selectedPatient) {
-      createEncounterMutation.mutate({
-        patientId: selectedPatient.patientId,
-        visitDate: new Date().toISOString().split("T")[0],
-        attendingClinician: "Dr. System",
-      });
-    }
-  }, [todayEncounter, selectedPatient, visitId]);
-
-  // --- mutations ---
   const createEncounterMutation = useMutation({
     mutationFn: async (data: { patientId: string; visitDate: string; attendingClinician: string }) => {
       const r = await fetch("/api/encounters", {
@@ -464,14 +388,14 @@ export default function Treatment() {
 
   const addConsultationMutation = useMutation({
     mutationFn: async () => {
-      if (!currentEncounter) throw new Error("No encounter found");
+      if (!activeEncounterId) throw new Error("No encounter found");
       const svc = services.find((s) => s.category === "consultation" && s.name.includes("General"));
       if (!svc) throw new Error("Consultation service not found");
       const r = await fetch("/api/order-lines", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          encounterId: currentEncounter.encounterId,
+          encounterId: activeEncounterId,
           serviceId: svc.id,
           relatedType: "consultation",
           description: svc.name,
@@ -486,7 +410,7 @@ export default function Treatment() {
       return r.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       toast({ title: "Consultation Added", description: "Consultation fee added to the visit." });
     },
   });
@@ -521,8 +445,7 @@ export default function Treatment() {
       return r.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
-      toast({ title: "Updated", description: "Result acknowledgment updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
     },
     onError: () => toast({ title: "Error", description: "Failed to update acknowledgment", variant: "destructive" }),
   });
@@ -533,27 +456,14 @@ export default function Treatment() {
       return r.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
-      toast({ title: "Added", description: "Added to visit summary" });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
     },
-    onError: () => toast({ title: "Error", description: "Failed to add to summary", variant: "destructive" }),
+    onError: () => toast({ title: "Error", description: "Failed to update visit cart", variant: "destructive" }),
   });
 
-  // acknowledge + keep cart in sync
-  function toggleAcknowledgeAndCart(opts: {
-    orderLineId: number;
-    acknowledged: boolean;
-    alreadyInCart?: boolean;
-  }) {
+  function toggleAcknowledgeAndCart(opts: { orderLineId: number; acknowledged: boolean; alreadyInCart?: boolean }) {
     const { orderLineId, acknowledged, alreadyInCart } = opts;
-
-    acknowledgeMutation.mutate({
-      orderLineId,
-      acknowledgedBy: "Dr. System",
-      acknowledged
-    });
-
-    // auto-sync summary
+    acknowledgeMutation.mutate({ orderLineId, acknowledgedBy: "Dr. System", acknowledged });
     if (acknowledged && !alreadyInCart) {
       addToCartMutation.mutate({ orderLineId, addToCart: true });
     } else if (!acknowledged && alreadyInCart) {
@@ -563,14 +473,14 @@ export default function Treatment() {
 
   const submitMedicationsMutation = useMutation({
     mutationFn: async (meds: typeof medications) => {
-      if (!selectedPatient || !currentEncounter) throw new Error("No patient or encounter");
+      if (!selectedPatient || !activeEncounterId) throw new Error("No patient or encounter");
       const pharmacyService = services.find((s) => s.category === "pharmacy");
       if (!pharmacyService) throw new Error("Pharmacy service not found");
 
       const promises = meds.map((med) =>
         apiRequest("POST", "/api/pharmacy-orders", {
           patientId: selectedPatient.patientId,
-          encounterId: currentEncounter.encounterId,
+          encounterId: activeEncounterId,
           treatmentId: savedTreatment?.treatmentId,
           serviceId: pharmacyService.id,
           drugId: med.drugId,
@@ -635,25 +545,33 @@ export default function Treatment() {
     onError: () => toast({ title: "Error", description: "Failed to close visit", variant: "destructive" }),
   });
 
-  // ---------- behavior wiring ----------
-
   // auto-add consultation (once per visit)
   useEffect(() => {
-    if (!currentEncounter || !services.length) return;
+    if (!activeEncounterId || !services.length) return;
     const hasConsult = orders.some((o: any) => o.type === "consultation");
     if (!hasConsult) addConsultationMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEncounter?.encounterId, services.length, JSON.stringify(orders)]);
+  }, [activeEncounterId, services.length, JSON.stringify(orders)]);
 
   // auto-cart: any completed + paid + acknowledged result
   useEffect(() => {
     orders
-      .filter((o: any) => o.status === "completed" && o.isPaid && o.orderLine?.acknowledgedBy && !o.addToCart)
+      .filter((o: any) => o.status === "completed" && o.isPaid && o.orderLine?.acknowledgedBy && !o.orderLine?.addToCart)
       .forEach((o: any) => addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(orders)]);
 
-  // ---------- handlers ----------
+  /* ------------ local helpers ------------ */
+
+  const openResult = (kind: "lab" | "xray" | "ultrasound", data: any) => setResultDrawer({ open: true, kind, data });
+  const closeResult = () => setResultDrawer({ open: false, kind: null, data: null });
+  const getAge = (age: string | number | null | undefined) => (age ?? "Unknown").toString();
+
+  // prescriptions filtered to current encounter if available
+  const prescriptions = currentEncounter
+    ? allPrescriptions.filter((rx) => rx.encounterId === currentEncounter.encounterId)
+    : allPrescriptions;
+
   const handleCloseVisit = () => {
     if (!currentEncounter) return;
     const persistedDx = existingTreatment?.diagnosis;
@@ -696,38 +614,10 @@ export default function Treatment() {
     form.reset();
     setSelectedPatient(null);
     setSavedTreatment(null);
-    setShowPrescription(false);
   };
 
-  const printPrescription = () => {
-    const win = window.open("", "_blank");
-    if (!win) return;
-    const html = document.getElementById("prescription-print")?.innerHTML || "";
-    win.document.write(`
-      <!doctype html><html><head>
-      <meta charset="utf-8" />
-      <title>Prescription - ${savedTreatment?.treatmentId || "BGC"}</title>
-      <style>
-        @media print { body{margin:0} .prescription-container{width:210mm; min-height:297mm; max-height:297mm; padding:20mm; box-sizing:border-box; display:flex; flex-direction:column;} .content{flex:1} .footer{margin-top:auto}}
-        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}
-        .text-center{text-align:center}.border-b{border-bottom:1px solid #e5e7eb}.mb-6{margin-bottom:1.5rem}.pb-4{padding-bottom:1rem}
-      </style>
-      </head><body><div class="prescription-container">${html}</div></body></html>
-    `);
-    win.document.close();
-    win.focus();
-    win.print();
-    win.close();
-  };
+  /* ---------------------- UI ---------------------- */
 
-  const getAge = (age: string) => age || "Unknown";
-
-  // prescriptions filtered to current encounter if available
-  const prescriptions = currentEncounter
-    ? allPrescriptions.filter((rx) => rx.encounterId === currentEncounter.encounterId)
-    : allPrescriptions;
-
-  // ---------- UI ----------
   return (
     <div className="space-y-6">
       <Card className="print:hidden">
@@ -805,7 +695,7 @@ export default function Treatment() {
                         </span>
                         <span className="flex items-center gap-1">
                           <span className="font-medium text-gray-700 dark:text-gray-300">Age:</span>
-                          {getAge(selectedPatient.age || "")}
+                          {getAge(selectedPatient.age)}
                         </span>
                         {selectedPatient.gender && (
                           <span className="flex items-center gap-1">
@@ -838,11 +728,11 @@ export default function Treatment() {
             )}
           </div>
 
-          {/* Quick Orders Bar */}
-          {selectedPatient && currentEncounter && (
+          {/* Order Bar */}
+          {selectedPatient && activeEncounterId && (
             <div className="mb-4">
               <OmniOrderBar
-                encounterId={currentEncounter.encounterId}
+                encounterId={activeEncounterId}
                 services={services}
                 drugs={drugs}
                 onQueueDrug={({ id, name }) => {
@@ -855,7 +745,7 @@ export default function Treatment() {
           )}
 
           {/* ---------- TWO-COLUMN LAYOUT WITH RIGHT CART ---------- */}
-          {selectedPatient && currentEncounter && (
+          {selectedPatient && activeEncounterId && (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
               <div className="space-y-4">
                 {/* Orders & Results */}
@@ -867,16 +757,14 @@ export default function Treatment() {
                         Orders & Results
                       </CardTitle>
 
-                      {orders.some((o) => o.status === "completed" && o.orderLine && !o.orderLine.addToCart) && (
+                      {orders.some((o) => o.status === "completed" && o.isPaid && o.orderLine && !o.orderLine.addToCart) && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() =>
                             orders
-                              .filter((o) => o.orderLine && o.status === "completed" && !o.orderLine.addToCart)
-                              .forEach((o) =>
-                                addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true })
-                              )
+                              .filter((o) => o.orderLine && o.isPaid && o.status === "completed" && !o.orderLine.addToCart)
+                              .forEach((o) => addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true }))
                           }
                         >
                           Add All Completed
@@ -897,22 +785,14 @@ export default function Treatment() {
                                 : typeof test.tests === "string"
                                 ? parseJSON<string[]>(test.tests, [])
                                 : [];
+                              const lineId = test?.orderLine?.id ?? test?.orderId ?? test?.testId ?? Math.random();
                               return (
-                                <div
-                                  key={test.testId || test.orderId}
-                                  className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500"
-                                >
+                                <div key={lineId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
                                   <div className="flex justify-between items-start gap-3">
                                     <div className="flex-1">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <Badge variant={test.status === "completed" ? "default" : "secondary"}>
-                                          {test.status}
-                                        </Badge>
-                                        {!test.isPaid && (
-                                          <Badge variant="destructive" className="bg-red-600">
-                                            UNPAID
-                                          </Badge>
-                                        )}
+                                        <Badge variant={test.status === "completed" ? "default" : "secondary"}>{test.status}</Badge>
+                                        {!test.isPaid && <Badge variant="destructive" className="bg-red-600">UNPAID</Badge>}
                                       </div>
                                       <p className="font-semibold text-base capitalize mb-1">{test.category}</p>
                                       <div className="text-sm text-gray-700 dark:text-gray-300 space-y-0.5">
@@ -920,68 +800,47 @@ export default function Treatment() {
                                           <div key={idx}>• {n}</div>
                                         ))}
                                       </div>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                        Requested: {fmt(test.requestedDate)}
-                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requested: {fmt(test.requestedDate)}</p>
                                       {test.orderLine?.acknowledgedBy && (
-                                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                          ✓ Acknowledged by {test.orderLine.acknowledgedBy}
-                                        </p>
+                                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Acknowledged by {test.orderLine.acknowledgedBy}</p>
                                       )}
                                     </div>
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-2 items-end">
                                       {test.orderLine && (
                                         <>
-                                          <div className="flex items-center gap-2">
+                                          <label className="flex items-center gap-2 text-sm">
                                             <Checkbox
-                                              id={`ack-lab-${test.id}`}
+                                              id={`ack-lab-${lineId}`}
                                               checked={!!test.orderLine.acknowledgedBy}
                                               onCheckedChange={(checked) =>
                                                 toggleAcknowledgeAndCart({
                                                   orderLineId: test.orderLine.id,
                                                   acknowledged: !!checked,
-                                                  alreadyInCart: !!test.orderLine.addToCart
+                                                  alreadyInCart: !!test.orderLine.addToCart,
                                                 })
                                               }
-                                              data-testid={`ack-lab-${test.id}`}
+                                              data-testid={`ack-lab-${lineId}`}
                                             />
-                                            <label
-                                              htmlFor={`ack-lab-${test.id}`}
-                                              className="text-sm cursor-pointer"
-                                            >
-                                              Acknowledge
-                                            </label>
-                                          </div>
+                                            Acknowledge
+                                          </label>
+
                                           {test.orderLine.acknowledgedBy && !test.orderLine.addToCart && (
                                             <Button
                                               variant="outline"
                                               size="sm"
-                                              onClick={() =>
-                                                addToCartMutation.mutate({
-                                                  orderLineId: test.orderLine.id,
-                                                  addToCart: true,
-                                                })
-                                              }
-                                              data-testid={`add-cart-lab-${test.id}`}
+                                              onClick={() => addToCartMutation.mutate({ orderLineId: test.orderLine.id, addToCart: true })}
+                                              data-testid={`add-cart-lab-${lineId}`}
                                             >
                                               <Plus className="h-3 w-3 mr-1" />
                                               Add to Summary
                                             </Button>
                                           )}
-                                          {test.orderLine.addToCart === 1 && (
-                                            <Badge variant="outline" className="bg-green-50">
-                                              Added
-                                            </Badge>
-                                          )}
+                                          {!!test.orderLine.addToCart && <Badge variant="outline" className="bg-green-50">Added</Badge>}
                                         </>
                                       )}
 
                                       {test.status === "completed" && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => openResult("lab", test)}
-                                        >
+                                        <Button variant="outline" size="sm" onClick={() => openResult("lab", test)}>
                                           View Results
                                         </Button>
                                       )}
@@ -999,85 +858,64 @@ export default function Treatment() {
                         <div>
                           <h4 className="font-semibold mb-2">X-Ray Examinations</h4>
                           <div className="space-y-2">
-                            {xrays.map((x: any) => (
-                              <div
-                                key={x.examId || x.orderId}
-                                className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                              >
-                                <div className="flex justify-between items-start gap-3">
-                                  <div className="flex-1">
-                                    <p className="font-medium">{x.bodyPart}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                      {fmt(x.completedAt || x.resultDate || x.requestDate)}
-                                    </p>
-                                    <Badge
-                                      variant={x.status === "completed" ? "default" : "secondary"}
-                                      className="mt-1"
-                                    >
-                                      {x.status}
-                                    </Badge>
-                                    {x.orderLine?.acknowledgedBy && (
-                                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                        ✓ Acknowledged by {x.orderLine.acknowledgedBy}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-col gap-2">
-                                    {x.orderLine && (
-                                      <>
-                                        <div className="flex items-center gap-2">
-                                          <Checkbox
-                                            id={`ack-xray-${x.id}`}
-                                            checked={!!x.orderLine.acknowledgedBy}
-                                            onCheckedChange={(checked) =>
-                                              toggleAcknowledgeAndCart({
-                                                orderLineId: x.orderLine.id,
-                                                acknowledged: !!checked,
-                                                alreadyInCart: !!x.orderLine.addToCart
-                                              })
-                                            }
-                                            data-testid={`ack-xray-${x.id}`}
-                                          />
-                                          <label
-                                            htmlFor={`ack-xray-${x.id}`}
-                                            className="text-sm cursor-pointer"
-                                          >
+                            {xrays.map((x: any) => {
+                              const lineId = x?.orderLine?.id ?? x?.orderId ?? x?.examId ?? Math.random();
+                              return (
+                                <div key={lineId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                  <div className="flex justify-between items-start gap-3">
+                                    <div className="flex-1">
+                                      <p className="font-medium">{x.bodyPart}</p>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400">{fmt(x.completedAt || x.resultDate || x.requestDate)}</p>
+                                      <Badge variant={x.status === "completed" ? "default" : "secondary"} className="mt-1">
+                                        {x.status}
+                                      </Badge>
+                                      {x.orderLine?.acknowledgedBy && (
+                                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Acknowledged by {x.orderLine.acknowledgedBy}</p>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col gap-2 items-end">
+                                      {x.orderLine && (
+                                        <>
+                                          <label className="flex items-center gap-2 text-sm">
+                                            <Checkbox
+                                              id={`ack-xray-${lineId}`}
+                                              checked={!!x.orderLine.acknowledgedBy}
+                                              onCheckedChange={(checked) =>
+                                                toggleAcknowledgeAndCart({
+                                                  orderLineId: x.orderLine.id,
+                                                  acknowledged: !!checked,
+                                                  alreadyInCart: !!x.orderLine.addToCart,
+                                                })
+                                              }
+                                              data-testid={`ack-xray-${lineId}`}
+                                            />
                                             Acknowledge
                                           </label>
-                                        </div>
-                                        {x.orderLine.acknowledgedBy && !x.orderLine.addToCart && (
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                              addToCartMutation.mutate({
-                                                orderLineId: x.orderLine.id,
-                                                addToCart: true,
-                                              })
-                                            }
-                                            data-testid={`add-cart-xray-${x.id}`}
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" />
-                                            Add to Summary
-                                          </Button>
-                                        )}
-                                        {x.orderLine.addToCart === 1 && (
-                                          <Badge variant="outline" className="bg-green-50">
-                                            Added
-                                          </Badge>
-                                        )}
-                                      </>
-                                    )}
+                                          {x.orderLine.acknowledgedBy && !x.orderLine.addToCart && (
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => addToCartMutation.mutate({ orderLineId: x.orderLine.id, addToCart: true })}
+                                              data-testid={`add-cart-xray-${lineId}`}
+                                            >
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              Add to Summary
+                                            </Button>
+                                          )}
+                                          {!!x.orderLine.addToCart && <Badge variant="outline" className="bg-green-50">Added</Badge>}
+                                        </>
+                                      )}
 
-                                    {x.status === "completed" && (
-                                      <Button variant="outline" size="sm" onClick={() => openResult("xray", x)}>
-                                        View Report
-                                      </Button>
-                                    )}
+                                      {x.status === "completed" && (
+                                        <Button variant="outline" size="sm" onClick={() => openResult("xray", x)}>
+                                          View Report
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -1087,89 +925,64 @@ export default function Treatment() {
                         <div>
                           <h4 className="font-semibold mb-2">Ultrasound Examinations</h4>
                           <div className="space-y-2">
-                            {ultrasounds.map((u: any) => (
-                              <div
-                                key={u.examId || u.orderId}
-                                className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                              >
-                                <div className="flex justify-between items-start gap-3">
-                                  <div className="flex-1">
-                                    <p className="font-medium">{u.examType}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                      {fmt(u.completedAt || u.resultDate || u.requestDate)}
-                                    </p>
-                                    <Badge
-                                      variant={u.status === "completed" ? "default" : "secondary"}
-                                      className="mt-1"
-                                    >
-                                      {u.status}
-                                    </Badge>
-                                    {u.orderLine?.acknowledgedBy && (
-                                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                        ✓ Acknowledged by {u.orderLine.acknowledgedBy}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-col gap-2">
-                                    {u.orderLine && (
-                                      <>
-                                        <div className="flex items-center gap-2">
-                                          <Checkbox
-                                            id={`ack-ultrasound-${u.id}`}
-                                            checked={!!u.orderLine.acknowledgedBy}
-                                            onCheckedChange={(checked) =>
-                                              toggleAcknowledgeAndCart({
-                                                orderLineId: u.orderLine.id,
-                                                acknowledged: !!checked,
-                                                alreadyInCart: !!u.orderLine.addToCart
-                                              })
-                                            }
-                                            data-testid={`ack-ultrasound-${u.id}`}
-                                          />
-                                          <label
-                                            htmlFor={`ack-ultrasound-${u.id}`}
-                                            className="text-sm cursor-pointer"
-                                          >
+                            {ultrasounds.map((u: any) => {
+                              const lineId = u?.orderLine?.id ?? u?.orderId ?? u?.examId ?? Math.random();
+                              return (
+                                <div key={lineId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                  <div className="flex justify-between items-start gap-3">
+                                    <div className="flex-1">
+                                      <p className="font-medium">{u.examType}</p>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400">{fmt(u.completedAt || u.resultDate || u.requestDate)}</p>
+                                      <Badge variant={u.status === "completed" ? "default" : "secondary"} className="mt-1">
+                                        {u.status}
+                                      </Badge>
+                                      {u.orderLine?.acknowledgedBy && (
+                                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Acknowledged by {u.orderLine.acknowledgedBy}</p>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col gap-2 items-end">
+                                      {u.orderLine && (
+                                        <>
+                                          <label className="flex items-center gap-2 text-sm">
+                                            <Checkbox
+                                              id={`ack-ultra-${lineId}`}
+                                              checked={!!u.orderLine.acknowledgedBy}
+                                              onCheckedChange={(checked) =>
+                                                toggleAcknowledgeAndCart({
+                                                  orderLineId: u.orderLine.id,
+                                                  acknowledged: !!checked,
+                                                  alreadyInCart: !!u.orderLine.addToCart,
+                                                })
+                                              }
+                                              data-testid={`ack-ultra-${lineId}`}
+                                            />
                                             Acknowledge
                                           </label>
-                                        </div>
-                                        {u.orderLine.acknowledgedBy && !u.orderLine.addToCart && (
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                              addToCartMutation.mutate({
-                                                orderLineId: u.orderLine.id,
-                                                addToCart: true,
-                                              })
-                                            }
-                                            data-testid={`add-cart-ultrasound-${u.id}`}
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" />
-                                            Add to Summary
-                                          </Button>
-                                        )}
-                                        {u.orderLine.addToCart === 1 && (
-                                          <Badge variant="outline" className="bg-green-50">
-                                            Added
-                                          </Badge>
-                                        )}
-                                      </>
-                                    )}
+                                          {u.orderLine.acknowledgedBy && !u.orderLine.addToCart && (
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => addToCartMutation.mutate({ orderLineId: u.orderLine.id, addToCart: true })}
+                                              data-testid={`add-cart-ultra-${lineId}`}
+                                            >
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              Add to Summary
+                                            </Button>
+                                          )}
+                                          {!!u.orderLine.addToCart && <Badge variant="outline" className="bg-green-50">Added</Badge>}
+                                        </>
+                                      )}
 
-                                    {u.status === "completed" && (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => openResult("ultrasound", u)}
-                                      >
-                                        View Report
-                                      </Button>
-                                    )}
+                                      {u.status === "completed" && (
+                                        <Button variant="outline" size="sm" onClick={() => openResult("ultrasound", u)}>
+                                          View Report
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -1184,8 +997,8 @@ export default function Treatment() {
                   </CardContent>
                 </Card>
 
-                {/* Visit Summary */}
-                {selectedPatient && currentEncounter && cartItems.length > 0 && (
+                {/* Visit Summary – inline (only if there are items) */}
+                {cartItems.length > 0 && (
                   <Card className="border-l-4 border-l-green-500">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
@@ -1195,15 +1008,17 @@ export default function Treatment() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {cartItems.map((order: any) => (
-                        <div key={order.orderId} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div key={order.orderLine.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                           <div>
-                            <div className="font-medium">{order.name}</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">{order.type.toUpperCase()} • {order.status}</div>
+                            <div className="font-medium">{order.name || order.category || order.type}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {order.type?.toUpperCase()} • {order.status}
+                            </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => addToCartMutation.mutate({ orderLineId: order.orderId, addToCart: false })}
+                            onClick={() => addToCartMutation.mutate({ orderLineId: order.orderLine.id, addToCart: false })}
                           >
                             Remove
                           </Button>
@@ -1228,18 +1043,12 @@ export default function Treatment() {
                           <FileText className="h-4 w-4 mr-2" />
                           Visit Notes
                         </TabsTrigger>
-                        <TabsTrigger value="tests" data-testid="tab-tests">
-                          Lab Tests
-                        </TabsTrigger>
-                        <TabsTrigger value="imaging" data-testid="tab-imaging">
-                          Imaging
-                        </TabsTrigger>
+                        <TabsTrigger value="tests" data-testid="tab-tests">Lab Tests</TabsTrigger>
+                        <TabsTrigger value="imaging" data-testid="tab-imaging">Imaging</TabsTrigger>
                         <TabsTrigger value="medications" data-testid="tab-medications">
                           <Pill className="h-4 w-4 mr-2" />
                           Medications
-                          {medications.length > 0 && (
-                            <Badge className="ml-2 bg-green-600">{medications.length}</Badge>
-                          )}
+                          {medications.length > 0 && <Badge className="ml-2 bg-green-600">{medications.length}</Badge>}
                         </TabsTrigger>
                       </TabsList>
 
@@ -1248,9 +1057,7 @@ export default function Treatment() {
                           {/* NOTES */}
                           <TabsContent value="notes" className="space-y-6">
                             <div>
-                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
-                                Visit Information
-                              </h3>
+                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">Visit Information</h3>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField
                                   control={form.control}
@@ -1258,9 +1065,7 @@ export default function Treatment() {
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormLabel>Visit Date</FormLabel>
-                                      <FormControl>
-                                        <Input type="date" {...field} />
-                                      </FormControl>
+                                      <FormControl><Input type="date" {...field} /></FormControl>
                                       <FormMessage />
                                     </FormItem>
                                   )}
@@ -1272,11 +1077,7 @@ export default function Treatment() {
                                     <FormItem>
                                       <FormLabel>Visit Type</FormLabel>
                                       <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                          <SelectTrigger>
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                        </FormControl>
+                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                           <SelectItem value="consultation">Consultation</SelectItem>
                                           <SelectItem value="follow-up">Follow-up</SelectItem>
@@ -1295,11 +1096,7 @@ export default function Treatment() {
                                     <FormItem>
                                       <FormLabel>Priority</FormLabel>
                                       <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                          <SelectTrigger>
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                        </FormControl>
+                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                           <SelectItem value="routine">Routine</SelectItem>
                                           <SelectItem value="urgent">Urgent</SelectItem>
@@ -1320,12 +1117,7 @@ export default function Treatment() {
                                 <FormItem>
                                   <FormLabel>Chief Complaint</FormLabel>
                                   <FormControl>
-                                    <Textarea
-                                      placeholder="What brings the patient in today?"
-                                      rows={3}
-                                      {...field}
-                                      value={field.value ?? ""}
-                                    />
+                                    <Textarea placeholder="What brings the patient in today?" rows={3} {...field} value={field.value ?? ""} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -1333,9 +1125,7 @@ export default function Treatment() {
                             />
 
                             <div>
-                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
-                                Vital Signs
-                              </h3>
+                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">Vital Signs</h3>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <FormField
                                   control={form.control}
@@ -1350,11 +1140,7 @@ export default function Treatment() {
                                           placeholder="36.5"
                                           {...field}
                                           value={field.value ?? ""}
-                                          onChange={(e) =>
-                                            field.onChange(
-                                              e.target.value ? parseFloat(e.target.value) : null
-                                            )
-                                          }
+                                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -1367,9 +1153,7 @@ export default function Treatment() {
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormLabel>Blood Pressure</FormLabel>
-                                      <FormControl>
-                                        <Input placeholder="120/80" {...field} value={field.value ?? ""} />
-                                      </FormControl>
+                                      <FormControl><Input placeholder="120/80" {...field} value={field.value ?? ""} /></FormControl>
                                       <FormMessage />
                                     </FormItem>
                                   )}
@@ -1386,9 +1170,7 @@ export default function Treatment() {
                                           placeholder="72"
                                           {...field}
                                           value={field.value ?? ""}
-                                          onChange={(e) =>
-                                            field.onChange(e.target.value ? parseInt(e.target.value) : null)
-                                          }
+                                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -1408,11 +1190,7 @@ export default function Treatment() {
                                           placeholder="65.0"
                                           {...field}
                                           value={field.value ?? ""}
-                                          onChange={(e) =>
-                                            field.onChange(
-                                              e.target.value ? parseFloat(e.target.value) : null
-                                            )
-                                          }
+                                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -1428,14 +1206,7 @@ export default function Treatment() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Physical Examination</FormLabel>
-                                  <FormControl>
-                                    <Textarea
-                                      placeholder="Detailed examination findings..."
-                                      rows={4}
-                                      {...field}
-                                      value={field.value ?? ""}
-                                    />
-                                  </FormControl>
+                                  <FormControl><Textarea placeholder="Detailed examination findings..." rows={4} {...field} value={field.value ?? ""} /></FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
@@ -1447,14 +1218,7 @@ export default function Treatment() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Diagnosis</FormLabel>
-                                  <FormControl>
-                                    <Textarea
-                                      placeholder="Primary and secondary diagnoses..."
-                                      rows={3}
-                                      {...field}
-                                      value={field.value ?? ""}
-                                    />
-                                  </FormControl>
+                                  <FormControl><Textarea placeholder="Primary and secondary diagnoses..." rows={3} {...field} value={field.value ?? ""} /></FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
@@ -1466,14 +1230,7 @@ export default function Treatment() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Treatment Plan</FormLabel>
-                                  <FormControl>
-                                    <Textarea
-                                      placeholder="Medications, procedures, recommendations..."
-                                      rows={4}
-                                      {...field}
-                                      value={field.value ?? ""}
-                                    />
-                                  </FormControl>
+                                  <FormControl><Textarea placeholder="Medications, procedures, recommendations..." rows={4} {...field} value={field.value ?? ""} /></FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
@@ -1486,9 +1243,7 @@ export default function Treatment() {
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel>Follow-up Date</FormLabel>
-                                    <FormControl>
-                                      <Input type="date" {...field} value={field.value ?? ""} />
-                                    </FormControl>
+                                    <FormControl><Input type="date" {...field} value={field.value ?? ""} /></FormControl>
                                     <FormMessage />
                                   </FormItem>
                                 )}
@@ -1500,11 +1255,7 @@ export default function Treatment() {
                                   <FormItem>
                                     <FormLabel>Next Visit Type</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="No follow-up needed" />
-                                        </SelectTrigger>
-                                      </FormControl>
+                                      <FormControl><SelectTrigger><SelectValue placeholder="No follow-up needed" /></SelectTrigger></FormControl>
                                       <SelectContent>
                                         <SelectItem value="none">No follow-up needed</SelectItem>
                                         <SelectItem value="routine">Routine Follow-up</SelectItem>
@@ -1522,24 +1273,14 @@ export default function Treatment() {
                           {/* TESTS */}
                           <TabsContent value="tests" className="space-y-6">
                             <div className="space-y-4">
-                              <h3 className="font-medium text-gray-800 dark:text-gray-200">
-                                Order Laboratory Tests
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Quick lab test ordering for current patient
-                              </p>
+                              <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Laboratory Tests</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Quick lab test ordering for current patient</p>
                               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                   For detailed lab test ordering with full test catalog, visit the{" "}
-                                  <a href="/laboratory" className="text-blue-600 hover:underline">
-                                    Laboratory
-                                  </a>{" "}
-                                  page.
+                                  <a href="/laboratory" className="text-blue-600 hover:underline">Laboratory</a> page.
                                 </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-500">
-                                  Use this quick form for common tests or the Laboratory page for
-                                  comprehensive test selection.
-                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-500">Use this quick form for common tests or the Laboratory page for comprehensive test selection.</p>
                               </div>
                             </div>
                           </TabsContent>
@@ -1547,48 +1288,28 @@ export default function Treatment() {
                           {/* IMAGING */}
                           <TabsContent value="imaging" className="space-y-6">
                             <div className="space-y-4">
-                              <h3 className="font-medium text-gray-800 dark:text-gray-200">
-                                Order Imaging Studies
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Quick imaging study ordering for current patient
-                              </p>
+                              <h3 className="font-medium text-gray-800 dark:text-gray-200">Order Imaging Studies</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Quick imaging study ordering for current patient</p>
 
                               <div className="grid gap-4 md:grid-cols-2">
                                 <Link href="/xray">
                                   <div className="block p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-                                    <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
-                                      X-Ray Examinations
-                                    </h4>
-                                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                                      Order X-ray studies including chest, abdomen, spine, extremities, and more
-                                    </p>
-                                    <div className="w-full px-4 py-2 border border-blue-300 dark:border-blue-700 rounded text-sm text-center bg-white dark:bg-gray-900">
-                                      Go to X-Ray Module →
-                                    </div>
+                                    <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">X-Ray Examinations</h4>
+                                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">Order X-ray studies including chest, abdomen, spine, extremities, and more</p>
+                                    <div className="w-full px-4 py-2 border border-blue-300 dark:border-blue-700 rounded text-sm text-center bg-white dark:bg-gray-900">Go to X-Ray Module →</div>
                                   </div>
                                 </Link>
                                 <Link href="/ultrasound">
                                   <div className="block p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-                                    <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">
-                                      Ultrasound Examinations
-                                    </h4>
-                                    <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
-                                      Order ultrasound studies including obstetric, abdominal, vascular,
-                                      and cardiac echo
-                                    </p>
-                                    <div className="w-full px-4 py-2 border border-purple-300 dark:border-purple-700 rounded text-sm text-center bg-white dark:bg-gray-900">
-                                      Go to Ultrasound Module →
-                                    </div>
+                                    <h4 className="font-semibold text-purple-900 dark:text-purple-200 mb-2">Ultrasound Examinations</h4>
+                                    <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">Order ultrasound studies including obstetric, abdominal, vascular, and cardiac echo</p>
+                                    <div className="w-full px-4 py-2 border border-purple-300 dark:border-purple-700 rounded text-sm text-center bg-white dark:bg-gray-900">Go to Ultrasound Module →</div>
                                   </div>
                                 </Link>
                               </div>
 
                               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
-                                <p className="text-sm text-gray-500 dark:text-gray-500">
-                                  Note: For detailed imaging requests with safety checklists and specialized
-                                  protocols, please use the dedicated X-Ray and Ultrasound modules.
-                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-500">Note: For detailed imaging requests with safety checklists and specialized protocols, please use the dedicated X-Ray and Ultrasound modules.</p>
                               </div>
                             </div>
                           </TabsContent>
@@ -1599,95 +1320,60 @@ export default function Treatment() {
                               {/* Prescribed list */}
                               {prescriptions.length > 0 && (
                                 <div className="mb-6">
-                                  <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">
-                                    Prescribed Medications ({prescriptions.length})
-                                  </h3>
+                                  <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4">Prescribed Medications ({prescriptions.length})</h3>
                                   <div className="space-y-2">
                                     {prescriptions.map((rx) => (
-                                      <div
-                                        key={rx.orderId}
-                                        className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg"
-                                        data-testid={`prescription-${rx.orderId}`}
-                                      >
+                                      <div key={rx.orderId} className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg" data-testid={`prescription-${rx.orderId}`}>
                                         <div className="flex items-start justify-between">
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
-                                              <p className="font-medium text-gray-900 dark:text-white">
-                                                {rx.drugName || "Medication"}
-                                              </p>
-                                              <Badge
-                                                variant={
-                                                  rx.status === "dispensed" ? "default" : "secondary"
-                                                }
-                                                className={
-                                                  rx.status === "dispensed" ? "bg-green-600" : ""
-                                                }
-                                              >
+                                              <p className="font-medium text-gray-900 dark:text-white">{rx.drugName || "Medication"}</p>
+                                              <Badge variant={rx.status === "dispensed" ? "default" : "secondary"} className={rx.status === "dispensed" ? "bg-green-600" : ""}>
                                                 {rx.status}
                                               </Badge>
-                                              <Badge
-                                                variant={
-                                                  rx.paymentStatus === "paid" ? "default" : "destructive"
-                                                }
-                                                className={
-                                                  rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"
-                                                }
-                                              >
+                                              <Badge variant={rx.paymentStatus === "paid" ? "default" : "destructive"} className={rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"}>
                                                 {rx.paymentStatus}
                                               </Badge>
                                             </div>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                              Dosage: {rx.dosage || "As prescribed"} | Quantity: {rx.quantity}
-                                            </p>
-                                            {rx.instructions && (
-                                              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                                                Instructions: {rx.instructions}
-                                              </p>
-                                            )}
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                              Order ID: {rx.orderId} | Prescribed: {fmt(rx.createdAt)}
-                                            </p>
-                                            {rx.dispensedAt && (
-                                              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                                Dispensed: {fmt(rx.dispensedAt)} by {rx.dispensedBy}
-                                              </p>
-                                            )}
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {rx.dosage || "As prescribed"} | Quantity: {rx.quantity}</p>
+                                            {rx.instructions && <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>}
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Order ID: {rx.orderId} | Prescribed: {fmt(rx.createdAt)}</p>
+                                            {rx.dispensedAt && <p className="text-xs text-green-600 dark:text-green-400 mt-1">Dispensed: {fmt(rx.dispensedAt)} by {rx.dispensedBy}</p>}
                                           </div>
 
-                                          {rx.status === "prescribed" &&
-                                            rx.paymentStatus === "unpaid" && (
-                                              <div className="flex gap-2">
-                                                <Button
-                                                  type="button"
-                                                  variant="outline"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    setEditingPrescription(rx);
-                                                    setEditDosage(rx.dosage || "");
-                                                    setEditQuantity(rx.quantity || 0);
-                                                    setEditInstructions(rx.instructions || "");
-                                                  }}
-                                                  data-testid={`btn-edit-${rx.orderId}`}
-                                                >
-                                                  <Edit className="w-4 h-4 mr-1" />
-                                                  Edit
-                                                </Button>
-                                                <Button
-                                                  type="button"
-                                                  variant="destructive"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    if (window.confirm("Cancel this prescription?")) {
-                                                      cancelPrescriptionMutation.mutate(rx.orderId);
-                                                    }
-                                                  }}
-                                                  data-testid={`btn-cancel-${rx.orderId}`}
-                                                >
-                                                  <Trash2 className="w-4 h-4 mr-1" />
-                                                  Cancel
-                                                </Button>
-                                              </div>
-                                            )}
+                                          {rx.status === "prescribed" && rx.paymentStatus === "unpaid" && (
+                                            <div className="flex gap-2">
+                                              <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                  setEditingPrescription(rx);
+                                                  setEditDosage(rx.dosage || "");
+                                                  setEditQuantity(rx.quantity || 0);
+                                                  setEditInstructions(rx.instructions || "");
+                                                }}
+                                                data-testid={`btn-edit-${rx.orderId}`}
+                                              >
+                                                <Edit className="w-4 h-4 mr-1" />
+                                                Edit
+                                              </Button>
+                                              <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => {
+                                                  if (window.confirm("Cancel this prescription?")) {
+                                                    cancelPrescriptionMutation.mutate(rx.orderId);
+                                                  }
+                                                }}
+                                                data-testid={`btn-cancel-${rx.orderId}`}
+                                              >
+                                                <Trash2 className="w-4 h-4 mr-1" />
+                                                Cancel
+                                              </Button>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     ))}
@@ -1697,12 +1383,8 @@ export default function Treatment() {
                               )}
 
                               <div className="flex items-center justify-between">
-                                <h3 className="font-medium text-gray-800 dark:text-gray-200">
-                                  Order New Medications
-                                </h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  Select drugs from inventory to create pharmacy orders
-                                </p>
+                                <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Select drugs from inventory to create pharmacy orders</p>
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -1731,34 +1413,17 @@ export default function Treatment() {
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Dosage Instructions</label>
-                                  <Input
-                                    placeholder="e.g., 1 tablet twice daily"
-                                    value={newMedDosage}
-                                    onChange={(e) => setNewMedDosage(e.target.value)}
-                                    data-testid="input-dosage"
-                                  />
+                                  <Input placeholder="e.g., 1 tablet twice daily" value={newMedDosage} onChange={(e) => setNewMedDosage(e.target.value)} data-testid="input-dosage" />
                                 </div>
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Quantity</label>
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    placeholder="e.g., 30"
-                                    value={newMedQuantity}
-                                    onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)}
-                                    data-testid="input-quantity"
-                                  />
+                                  <Input type="number" min="1" placeholder="e.g., 30" value={newMedQuantity} onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)} data-testid="input-quantity" />
                                 </div>
 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Additional Instructions</label>
-                                  <Input
-                                    placeholder="e.g., Take with food"
-                                    value={newMedInstructions}
-                                    onChange={(e) => setNewMedInstructions(e.target.value)}
-                                    data-testid="input-instructions"
-                                  />
+                                  <Input placeholder="e.g., Take with food" value={newMedInstructions} onChange={(e) => setNewMedInstructions(e.target.value)} data-testid="input-instructions" />
                                 </div>
                               </div>
 
@@ -1766,11 +1431,7 @@ export default function Treatment() {
                                 type="button"
                                 onClick={() => {
                                   if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
-                                    toast({
-                                      title: "Validation Error",
-                                      description: "Please fill in drug, dosage, and quantity",
-                                      variant: "destructive",
-                                    });
+                                    toast({ title: "Validation Error", description: "Please fill in drug, dosage, and quantity", variant: "destructive" });
                                     return;
                                   }
                                   setMedications([
@@ -1798,51 +1459,24 @@ export default function Treatment() {
 
                               {medications.length > 0 && (
                                 <div className="space-y-2">
-                                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
-                                    Medications to Order ({medications.length})
-                                  </h4>
+                                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4>
                                   <div className="space-y-2">
                                     {medications.map((med, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg"
-                                      >
+                                      <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg">
                                         <div className="flex-1">
                                           <p className="font-medium">{med.drugName}</p>
-                                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Dosage: {med.dosage} | Quantity: {med.quantity}
-                                          </p>
-                                          {med.instructions && (
-                                            <p className="text-sm text-gray-500 dark:text-gray-500">
-                                              Instructions: {med.instructions}
-                                            </p>
-                                          )}
+                                          <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {med.dosage} | Quantity: {med.quantity}</p>
+                                          {med.instructions && <p className="text-sm text-gray-500 dark:text-gray-500">Instructions: {med.instructions}</p>}
                                         </div>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() =>
-                                            setMedications(medications.filter((_, i) => i !== idx))
-                                          }
-                                          data-testid={`btn-remove-med-${idx}`}
-                                        >
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => setMedications(medications.filter((_, i) => i !== idx))} data-testid={`btn-remove-med-${idx}`}>
                                           <Trash2 className="w-4 h-4 text-red-600" />
                                         </Button>
                                       </div>
                                     ))}
                                   </div>
-                                  <Button
-                                    type="button"
-                                    onClick={() => submitMedicationsMutation.mutate(medications)}
-                                    disabled={submitMedicationsMutation.isPending}
-                                    className="w-full bg-green-600 hover:bg-green-700"
-                                    data-testid="btn-submit-medications"
-                                  >
+                                  <Button type="button" onClick={() => submitMedicationsMutation.mutate(medications)} disabled={submitMedicationsMutation.isPending} className="w-full bg-green-600 hover:bg-green-700" data-testid="btn-submit-medications">
                                     <Pill className="w-4 h-4 mr-2" />
-                                    {submitMedicationsMutation.isPending
-                                      ? "Submitting..."
-                                      : `Send ${medications.length} Order(s) to Pharmacy`}
+                                    {submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}
                                   </Button>
                                 </div>
                               )}
@@ -1851,35 +1485,18 @@ export default function Treatment() {
 
                           {/* Actions */}
                           <div className="flex gap-4 pt-6 mt-6 border-t">
-                            <Button
-                              type="submit"
-                              disabled={createTreatmentMutation.isPending}
-                              className="bg-medical-blue hover:bg-blue-700"
-                              data-testid="save-treatment-btn"
-                            >
+                            <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-medical-blue hover:bg-blue-700" data-testid="save-treatment-btn">
                               <Save className="w-4 h-4 mr-2" />
                               {createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}
                             </Button>
 
                             {currentEncounter && currentEncounter.status === "open" && (
-                              <Button
-                                type="button"
-                                onClick={handleCloseVisit}
-                                variant="default"
-                                className="bg-orange-600 hover:bg-orange-700"
-                                disabled={closeVisitMutation.isPending}
-                                data-testid="close-visit-btn"
-                              >
+                              <Button type="button" onClick={handleCloseVisit} variant="default" className="bg-orange-600 hover:bg-orange-700" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn">
                                 {closeVisitMutation.isPending ? "Closing..." : "Close Visit"}
                               </Button>
                             )}
 
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={handleNewTreatment}
-                              className="ml-auto"
-                            >
+                            <Button type="button" variant="outline" onClick={handleNewTreatment} className="ml-auto">
                               New Treatment
                             </Button>
                           </div>
@@ -1890,12 +1507,10 @@ export default function Treatment() {
                 </Card>
               </div>
 
-              {/* Right rail cart */}
+              {/* Right rail cart – pass the full orders; the rail filters addToCart internally */}
               <RightRailCart
-                orders={cartItems}
-                onRemove={(orderId) =>
-                  addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })
-                }
+                orders={orders}
+                onRemove={(orderLineId) => addToCartMutation.mutate({ orderLineId, addToCart: false })}
                 onPrint={() => window.print()}
               />
             </div>
@@ -1906,48 +1521,28 @@ export default function Treatment() {
       {/* Edit Prescription */}
       <Dialog open={!!editingPrescription} onOpenChange={(open) => !open && setEditingPrescription(null)}>
         <DialogContent className="max-w-lg" data-testid="dialog-edit-prescription">
-          <DialogHeader>
-            <DialogTitle>Edit Prescription</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Edit Prescription</DialogTitle></DialogHeader>
 
           {editingPrescription && (
             <div className="space-y-4">
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <p className="font-medium text-gray-900 dark:text-white">{editingPrescription.drugName}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Order ID: {editingPrescription.orderId}
-                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Order ID: {editingPrescription.orderId}</p>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Dosage Instructions</label>
-                <Input
-                  placeholder="e.g., 1 tablet twice daily"
-                  value={editDosage}
-                  onChange={(e) => setEditDosage(e.target.value)}
-                  data-testid="input-edit-dosage"
-                />
+                <Input placeholder="e.g., 1 tablet twice daily" value={editDosage} onChange={(e) => setEditDosage(e.target.value)} data-testid="input-edit-dosage" />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Quantity</label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={editQuantity}
-                  onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
-                  data-testid="input-edit-quantity"
-                />
+                <Input type="number" min="1" value={editQuantity} onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)} data-testid="input-edit-quantity" />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Additional Instructions</label>
-                <Input
-                  placeholder="e.g., Take with food"
-                  value={editInstructions}
-                  onChange={(e) => setEditInstructions(e.target.value)}
-                  data-testid="input-edit-instructions"
-                />
+                <Input placeholder="e.g., Take with food" value={editInstructions} onChange={(e) => setEditInstructions(e.target.value)} data-testid="input-edit-instructions" />
               </div>
 
               <div className="flex gap-2 pt-4">
@@ -1955,19 +1550,10 @@ export default function Treatment() {
                   type="button"
                   onClick={() => {
                     if (!editDosage || editQuantity <= 0) {
-                      toast({
-                        title: "Validation Error",
-                        description: "Please fill in dosage and quantity",
-                        variant: "destructive",
-                      });
+                      toast({ title: "Validation Error", description: "Please fill in dosage and quantity", variant: "destructive" });
                       return;
                     }
-                    editPrescriptionMutation.mutate({
-                      orderId: editingPrescription.orderId,
-                      dosage: editDosage,
-                      quantity: editQuantity,
-                      instructions: editInstructions,
-                    });
+                    editPrescriptionMutation.mutate({ orderId: editingPrescription.orderId, dosage: editDosage, quantity: editQuantity, instructions: editInstructions });
                   }}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                   disabled={editPrescriptionMutation.isPending}
@@ -1975,12 +1561,7 @@ export default function Treatment() {
                 >
                   {editPrescriptionMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditingPrescription(null)}
-                  data-testid="btn-cancel-edit"
-                >
+                <Button type="button" variant="outline" onClick={() => setEditingPrescription(null)} data-testid="btn-cancel-edit">
                   Cancel
                 </Button>
               </div>
@@ -2004,155 +1585,20 @@ export default function Treatment() {
             alreadyInCart: !!resultDrawer.data?.orderLine?.addToCart,
           })
         }
-        onAddToSummary={(orderLineId, add) =>
-          addToCartMutation.mutate({ orderLineId, addToCart: add })
-        }
-        onCopyToNotes={(txt) =>
-          form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())
-        }
+        onAddToSummary={(orderLineId, add) => addToCartMutation.mutate({ orderLineId, addToCart: add })}
+        onCopyToNotes={(txt) => form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())}
       />
-
-      {/* Prescription print sheet */}
-      {showPrescription && selectedPatient && (
-        <div>
-          <Card className="border-2 border-medical-green">
-            <CardContent className="p-6">
-              <div id="prescription-print" className="flex flex-col min-h-[100vh] p-8">
-                <div className="text-center border-b pb-4 mb-6">
-                  <h1 className="text-2xl font-bold">BAHR EL GHAZAL CLINIC</h1>
-                  <p className="text-sm text-gray-600">Your Health, Our Priority</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Phone: +211 91 762 3881 | +211 92 220 0691 | Email: bahr.ghazal.clinic@gmail.com
-                  </p>
-                  <p className="text-lg font-semibold mt-2">PRESCRIPTION</p>
-                </div>
-
-                <div className="flex-1">
-                  <div className="grid grid-cols-2 gap-4 pb-4 border-b mb-6">
-                    <div>
-                      <p>
-                        <strong>Patient:</strong> {selectedPatient.firstName} {selectedPatient.lastName}
-                      </p>
-                      <p>
-                        <strong>Patient ID:</strong> {selectedPatient.patientId}
-                      </p>
-                      <p>
-                        <strong>Age:</strong> {selectedPatient.age || "Not specified"}
-                      </p>
-                    </div>
-                    <div>
-                      <p>
-                        <strong>Date:</strong> {fmt(new Date())}
-                      </p>
-                      <p>
-                        <strong>Treatment ID:</strong> {savedTreatment?.treatmentId || "Not available"}
-                      </p>
-                      <p>
-                        <strong>Phone:</strong> {selectedPatient.phoneNumber || "Not provided"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Rx (Treatment Plan):</h4>
-                      <div className="pl-4 whitespace-pre-line bg-gray-50 p-3 rounded border">
-                        {form.getValues("treatmentPlan")}
-                      </div>
-                    </div>
-
-                    {form.getValues("followUpDate") && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Follow-up:</h4>
-                        <p className="pl-4">
-                          Next visit: {form.getValues("followUpDate")}
-                          {form.getValues("followUpType") && ` (${form.getValues("followUpType")})`}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-auto pt-8 border-t">
-                  <p className="mt-6">Doctor's Signature: ____________________</p>
-                  <p className="text-xs text-gray-500 mt-4 text-center">
-                    Aweil, South Sudan | www.bahrelghazalclinic.com | info@bahrelghazalclinic.com
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4 print:hidden">
-                <Button onClick={printPrescription} className="bg-medical-blue hover:bg-blue-700">
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Prescription
-                </Button>
-                <Button variant="outline" onClick={() => setShowPrescription(false)}>
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Queue modal */}
-      <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Today’s Queue</DialogTitle>
-          </DialogHeader>
-
-          <div className="flex gap-2 mb-4">
-            <Input
-              type="date"
-              value={queueDate}
-              onChange={(e) => setQueueDate(e.target.value)}
-              className="w-40"
-            />
-            <Input
-              placeholder="Filter by name, ID or complaint…"
-              value={queueFilter}
-              onChange={(e) => setQueueFilter(e.target.value)}
-              className="flex-1"
-            />
-          </div>
-
-          <div className="border rounded-lg divide-y max-h-[60vh] overflow-y-auto">
-            {queueLoading && <div className="p-6 text-center text-gray-500">Loading…</div>}
-            {!queueLoading && visibleQueue.length === 0 && (
-              <div className="p-10 text-center text-gray-500">No visits on {queueDate}.</div>
-            )}
-
-            {visibleQueue.map((v) => (
-              <button
-                key={v.treatmentId ?? v.encounterId ?? v.patientId}
-                onClick={() => {
-                  setQueueOpen(false);
-                  if (v.encounterId) {
-                    window.location.href = `/treatment/${v.encounterId}`;
-                  } else {
-                    window.location.href = `/treatment/new?patientId=${v.patientId}`;
-                  }
-                }}
-                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">
-                      {getPatientName(v.patientId)}{" "}
-                      <span className="text-xs text-gray-500">({v.patientId})</span>
-                    </div>
-                    <div className="text-sm text-gray-500 truncate">{v.chiefComplaint || "—"}</div>
-                  </div>
-                  <Badge variant="secondary" className="shrink-0">
-                    {v.visitType || "consultation"}
-                  </Badge>
-                </div>
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
+}
+
+/* local state for prescription editing */
+const editingPrescriptionState = {
+  current: null as PharmacyOrder | null,
+};
+const setEditingPrescription = (rx: PharmacyOrder | null) => {
+  editingPrescriptionState.current = rx;
+};
+const get editingPrescription() {
+  return editingPrescriptionState.current;
 }
