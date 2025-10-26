@@ -208,7 +208,7 @@ export default function Patients() {
         lastName: (raw.lastName || "").trim(),
         // keep age as free-text if that's how your schema works; if numeric typed, coerce
         age: typeof raw.age === "number" ? String(raw.age) : (raw.age ?? "").toString().trim(),
-        gender: raw.gender ?? null,
+        // gender: raw.gender ?? null, // ❌ REMOVED: Do not send null for optional field
         phoneNumber: (raw.phoneNumber ?? "").trim(),
         allergies: raw.allergies ?? "",
         medicalHistory: raw.medicalHistory ?? "",
@@ -217,6 +217,9 @@ export default function Patients() {
         deleted_reason: null, // or "" if your API expects string
         deleted_at: null,
       };
+
+      // ✅ ADDED: If you want to include gender only when set:
+      if (raw.gender) payload.gender = raw.gender;
 
       // Use fetch directly so we can read the error body on failure
       const r = await fetch("/api/patients", {
@@ -741,7 +744,7 @@ export default function Patients() {
                 <tbody>
                   {patientsToDisplay.map((patient: any) => (
                     <tr
-                      key={patient.id}
+                      key={patient.patientId} // ✅ UPDATED: Use stable patientId
                       className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                       onClick={() => handleViewPatient(patient)}
                       data-testid={`patient-row-${patient.patientId}`}
@@ -964,7 +967,9 @@ export default function Patients() {
                     >
                       <DollarSign className="w-4 h-4" />
                       {(() => {
-                        const price = consultationService?.price || parseFloat(billingSettings.consultationFee);
+                        // ✅ UPDATED: Guard against NaN
+                        const price = consultationService?.price
+                          ?? Number.parseFloat(billingSettings?.consultationFee ?? "0");
                         console.log("Displaying consultation fee:", price, "consultationService:", consultationService);
                         return `Collect consultation fee (${money(price)})`;
                       })()}
@@ -1202,33 +1207,11 @@ export default function Patients() {
                   <Button
                     variant="destructive"
                     className="w-full"
-                    onClick={async () => {
+                    // ✅ UPDATED: Removed pre-check DELETE call. Just open the dialog.
+                    onClick={() => {
                       setDeleteResult(null);
                       setDeletionReason("");
                       setShowDeleteDialog(true);
-                      
-                      // Pre-check if deletion will be blocked
-                      try {
-                        const response = await fetch(`/api/patients/${activePatient.patientId}`, {
-                          method: "DELETE",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ reason: "", forceDelete: false }),
-                          credentials: "include",
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (!response.ok && data.blockReasons) {
-                          // Set the blocking result immediately
-                          setDeleteResult({
-                            blocked: true,
-                            blockReasons: data.blockReasons,
-                            impactSummary: data.impactSummary,
-                          });
-                        }
-                      } catch (error) {
-                        console.error("Pre-check error:", error);
-                      }
                     }}
                     data-testid="button-delete-patient"
                   >
