@@ -1,20 +1,21 @@
-import { useState, useEffect } from "react";
+// client/src/pages/Patients.tsx
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import {
-  UserPlus,
-  Save,
-  X,
   Calendar,
-  Users,
-  Search,
-  DollarSign,
-  CreditCard,
-  Trash2,
-  AlertTriangle,
+  CheckCircle,
   Clock,
+  CreditCard,
+  DollarSign,
+  Search,
+  Trash2,
+  UserPlus,
+  X,
 } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import {
   Dialog,
   DialogContent,
@@ -33,6 +35,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +46,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
 import {
   Form,
   FormControl,
@@ -51,39 +55,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import PatientSearch from "@/components/PatientSearch";
+
 import {
   insertPatientSchema,
   type InsertPatient,
   type Patient,
 } from "@shared/schema";
+
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-
-/* ---------- helpers ---------- */
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
   return `${Math.round(v).toLocaleString()} SSP`;
-}
-
-/** Build a clean payload that plays nicely with typical server validation */
-function buildPatientPayload(raw: InsertPatient) {
-  return {
-    firstName: (raw.firstName ?? "").trim(),
-    lastName: (raw.lastName ?? "").trim(),
-    // send null instead of an empty string if not provided
-    age: (raw.age ?? "").toString().trim() || null,
-    // include gender only if present; otherwise null
-    gender: raw.gender ?? null,
-    phoneNumber: (raw.phoneNumber ?? "").trim() || null,
-    allergies: (raw.allergies ?? "").trim() || "",
-    medicalHistory: (raw.medicalHistory ?? "").trim() || "",
-  } as const;
 }
 
 export default function Patients() {
@@ -91,7 +81,7 @@ export default function Patients() {
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [collectConsultationFee, setCollectConsultationFee] = useState(false);
 
-  // quick-view panel
+  // quick view panel
   const [activePatient, setActivePatient] = useState<any | null>(null);
 
   // deletion state
@@ -100,10 +90,9 @@ export default function Patients() {
   const [deletionReason, setDeletionReason] = useState("");
   const [showForceDeleteDialog, setShowForceDeleteDialog] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toLocaleDateString("en-CA");
-  });
+  const [selectedDate, setSelectedDate] = useState(() =>
+    new Date().toLocaleDateString("en-CA"),
+  );
 
   const [viewMode, setViewMode] = useState<"today" | "date" | "search" | "all">(
     () => {
@@ -114,8 +103,9 @@ export default function Patients() {
         }
       } catch {}
       return "today";
-    }
+    },
   );
+
   const handleViewModeChange = (m: "today" | "date" | "search" | "all") => {
     setViewMode(m);
     try {
@@ -127,60 +117,44 @@ export default function Patients() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  /* ---------- data ---------- */
-
-  // Billing settings
+  // billing settings and services
   const { data: billingSettings } = useQuery({
     queryKey: ["/api/billing/settings"],
-    queryFn: async () => {
-      const r = await fetch("/api/billing/settings", { credentials: "include" });
-      if (!r.ok) return null;
-      return r.json();
-    },
   });
 
-  // Services (for consultation service + price)
   const { data: servicesList } = useQuery({
     queryKey: ["/api/services"],
-    queryFn: async () => {
-      const r = await fetch("/api/services", { credentials: "include" });
-      if (!r.ok) return [];
-      return r.json();
-    },
   });
 
-  const consultationService = (Array.isArray(servicesList) ? servicesList : []).find(
-    (s: any) =>
-      s?.category === "consultation" &&
-      s?.name === "Consultation" &&
-      s?.isActive !== false
+  const consultationService = useMemo(
+    () =>
+      ((servicesList as any[]) || []).find(
+        (s) =>
+          s?.category === "consultation" &&
+          (s?.name === "Consultation" || s?.name === "General Consultation") &&
+          s?.isActive !== false,
+      ),
+    [servicesList],
   );
 
   useEffect(() => {
-    if (billingSettings?.requirePrepayment) {
-      setCollectConsultationFee(true);
-    }
+    if (billingSettings?.requirePrepayment) setCollectConsultationFee(true);
   }, [billingSettings]);
 
   // counts
   const { data: patientCounts, isLoading: countsLoading } = useQuery({
     queryKey: ["/api/patients/counts", viewMode, selectedDate],
-    queryFn: async () => {
+    queryFn: () => {
       const params = new URLSearchParams();
       if (viewMode === "date") params.append("date", selectedDate);
-      const r = await fetch(`/api/patients/counts?${params}`, {
-        credentials: "include",
-      });
-      if (!r.ok) return { today: 0, all: 0, date: 0 };
-      return r.json();
+      return fetch(`/api/patients/counts?${params}`).then((r) => r.json());
     },
     refetchInterval: 30000,
   });
 
-  const todayCount = patientCounts?.today ?? 0;
-  const allCount = patientCounts?.all ?? 0;
-  const specificDateCount = patientCounts?.date ?? 0;
-
+  const todayCount = patientCounts?.today || 0;
+  const allCount = patientCounts?.all || 0;
+  const specificDateCount = patientCounts?.date || 0;
   const [lastRefresh] = useState(new Date());
 
   // search
@@ -196,14 +170,12 @@ export default function Patients() {
       }
       setSearchLoading(true);
       try {
-        const r = await fetch(
+        const res = await fetch(
           `/api/patients?search=${encodeURIComponent(searchQuery)}`,
-          { credentials: "include" }
         );
-        const data = await r.json();
-        setSearchResults(data || []);
+        setSearchResults(await res.json());
       } catch (e) {
-        console.error("Search patients failed:", e);
+        console.error(e);
       } finally {
         setSearchLoading(false);
       }
@@ -212,8 +184,7 @@ export default function Patients() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  /* ---------- form ---------- */
-
+  // form
   const form = useForm<InsertPatient>({
     resolver: zodResolver(insertPatientSchema),
     defaultValues: {
@@ -229,133 +200,139 @@ export default function Patients() {
 
   /* ---------- mutations ---------- */
 
-  cconst createPatientMutation = useMutation({
-  mutationFn: async (raw: InsertPatient) => {
-    // Normalize payload so DB constraints are happy
-    const toNull = (v: unknown) => {
-      if (v === undefined || v === null) return null;
-      if (typeof v === "string" && v.trim() === "") return null;
-      return v;
-    };
+  const createPatientMutation = useMutation({
+    mutationFn: async (raw: InsertPatient) => {
+      // Normalize payload so DB constraints are happy
+      const payload: Record<string, any> = {
+        firstName: (raw.firstName || "").trim(),
+        lastName: (raw.lastName || "").trim(),
+        // send null instead of empty string
+        age:
+          raw.age && String(raw.age).trim() !== ""
+            ? String(raw.age).trim()
+            : null,
+        phoneNumber:
+          raw.phoneNumber && raw.phoneNumber.trim() !== ""
+            ? raw.phoneNumber.trim()
+            : null,
+        allergies:
+        raw.allergies && raw.allergies.trim() !== "" ? raw.allergies.trim() : null,
+        medicalHistory:
+          raw.medicalHistory && raw.medicalHistory.trim() !== ""
+            ? raw.medicalHistory.trim()
+            : null,
+      };
+      if (raw.gender) payload.gender = raw.gender; // include only when chosen
 
-    const payload: any = {
-      firstName: (raw.firstName ?? "").trim(),
-      lastName: (raw.lastName ?? "").trim(),
-      // If your DB keeps age as TEXT, this is fine; if it's INTEGER, send null or a number
-      age: toNull(raw.age), // will become null instead of ""
-      gender: raw.gender ?? null, // or: raw.gender ?? "Unspecified" if column is NOT NULL
-      phoneNumber: toNull(raw.phoneNumber),
-      allergies: toNull(raw.allergies),
-      medicalHistory: toNull(raw.medicalHistory),
-      // DO NOT send is_deleted / deleted_* — DB defaults handle those
-    };
-
-    const r = await fetch("/api/patients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-
-    // try to show the real reason on failure
-    let body: any = null;
-    try { body = await r.json(); } catch { /* ignore non-JSON */ }
-
-    if (!r.ok) {
-      const msg = body?.error || body?.message || `Failed to register patient (${r.status})`;
-      throw new Error(msg);
-    }
-
-    const patient = body;
-
-    // Create an encounter and (optionally) add consultation order + payment.
-    try {
-      const encRes = await fetch("/api/encounters", {
+      const r = await fetch("/api/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          patientId: patient.patientId,
-          visitDate: new Date().toISOString().split("T")[0],
-          policy: "cash",
-          attendingClinician: "",
-        }),
+        body: JSON.stringify(payload),
       });
-      const encounter = await encRes.json();
 
-      // Find the Consultation service dynamically
-      const svcList = (await queryClient.ensureQueryData({ queryKey: ["/api/services"] })) as any[] | undefined;
-      const svc = (svcList ?? []).find((s) => s.category === "consultation" && s.name === "Consultation");
-      const consultPrice =
-        svc?.price ?? Number.parseFloat((billingSettings?.consultationFee as any) ?? "0");
+      let body: any = null;
+      try {
+        body = await r.json();
+      } catch {
+        /* ignore */
+      }
+      if (!r.ok) {
+        throw new Error(
+          body?.error || body?.message || `Failed to register patient (${r.status})`,
+        );
+      }
 
-      if (svc) {
-        await fetch("/api/order-lines", {
+      const patient = body;
+
+      // Post-registration: create encounter and consultation order (best effort)
+      try {
+        const encRes = await fetch("/api/encounters", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            encounterId: encounter.encounterId,
-            serviceId: svc.id,
-            relatedType: "consultation",
-            description: "Consultation Fee",
-            quantity: 1,
-            unitPriceSnapshot: consultPrice,
-            totalPrice: consultPrice,
-            department: "consultation",
-            status: "performed",
-            orderedBy: "",
-            addToCart: 1,
+            patientId: patient.patientId,
+            visitDate: new Date().toISOString().slice(0, 10),
+            attendingClinician: "",
+            policy: "cash",
           }),
         });
+        const encounter = await encRes.json();
 
-        if (billingSettings?.requirePrepayment && collectConsultationFee) {
-          await fetch("/api/payments", {
+        const consultPrice =
+          consultationService?.price ??
+          Number.parseFloat(billingSettings?.consultationFee ?? "0");
+
+        if (consultationService) {
+          await fetch("/api/order-lines", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({
-              patientId: patient.patientId,
-              totalAmount: consultPrice,
-              paymentMethod: "cash",
-              receivedBy: "",
-              notes: "Consultation fee - paid at registration",
+              encounterId: encounter.encounterId,
+              serviceId: consultationService.id,
+              relatedType: "consultation",
+              description: "Consultation Fee",
+              quantity: 1,
+              unitPriceSnapshot: consultPrice,
+              totalPrice: consultPrice,
+              department: "consultation",
+              status: "performed",
+              orderedBy: "",
+              addToCart: 1,
             }),
           });
-        }
-      }
-    } catch (e) {
-      console.error("Post-registration flow error:", e);
-      // don't block registration
-    }
 
-    return body;
-  },
-  onSuccess: () => {
-    toast({ title: "Success", description: "Patient registered successfully" });
-    form.reset();
-    setShowRegistrationForm(false);
-    setCollectConsultationFee(billingSettings?.requirePrepayment || false);
-    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
-  },
-  onError: (e: any) => {
-    if (!navigator.onLine) {
-      addToPendingSync({ type: "patient", action: "create", data: form.getValues() });
-      toast({ title: "Saved Offline", description: "Patient saved locally. Will sync when online." });
+          if (billingSettings?.requirePrepayment && collectConsultationFee) {
+            await fetch("/api/payments", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                patientId: patient.patientId,
+                totalAmount: consultPrice,
+                paymentMethod: "cash",
+                receivedBy: "",
+                notes: "Consultation fee - paid at registration",
+              }),
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Post-registration flow error:", e);
+      }
+
+      return body;
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Patient registered successfully" });
       form.reset();
       setShowRegistrationForm(false);
-    } else {
+      setCollectConsultationFee(billingSettings?.requirePrepayment || false);
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+    },
+    onError: (e: any) => {
+      if (!navigator.onLine) {
+        addToPendingSync({ type: "patient", action: "create", data: form.getValues() });
+        toast({
+          title: "Saved Offline",
+          description: "Patient saved locally. Will sync when online.",
+        });
+        form.reset();
+        setShowRegistrationForm(false);
+        return;
+      }
       toast({
         title: "Error",
         description: e?.message || "Failed to register patient",
         variant: "destructive",
       });
-    }
-  },
-});
+    },
+  });
 
   const updatePatientMutation = useMutation({
     mutationFn: async ({
@@ -365,12 +342,8 @@ export default function Patients() {
       patientId: string;
       data: Partial<InsertPatient>;
     }) => {
-      const response = await apiRequest(
-        "PUT",
-        `/api/patients/${patientId}`,
-        data
-      );
-      return response.json();
+      const res = await apiRequest("PUT", `/api/patients/${patientId}`, data);
+      return res.json();
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Patient updated" });
@@ -419,9 +392,7 @@ export default function Patients() {
         (data.impactSummary?.ultrasoundExams || 0) +
         (data.impactSummary?.pharmacyOrders || 0) +
         (data.impactSummary?.encounters || 0);
-      const forceNote = data.forceDeleted
-        ? " (Force deleted with financial history)"
-        : "";
+      const forceNote = data.forceDeleted ? " (Force deleted with financial history)" : "";
       toast({
         title: "Success",
         description: `Patient deleted successfully${forceNote}. ${
@@ -443,7 +414,7 @@ export default function Patients() {
       } else {
         toast({
           title: "Error",
-          description: error.error || error.message || "Failed to delete patient",
+          description: error?.error || error?.message || "Failed to delete patient",
           variant: "destructive",
         });
         setShowDeleteDialog(false);
@@ -452,26 +423,62 @@ export default function Patients() {
     },
   });
 
-  /* ---------- handlers ---------- */
+  // patients list
+  const { data: patientsListData, isLoading: patientsLoading } = useQuery<any[]>({
+    queryKey: ["/api/patients", viewMode, selectedDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (viewMode === "date") params.append("date", selectedDate);
+      if (viewMode === "today") params.append("today", "true");
+      const res = await fetch(`/api/patients?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch patients");
+      return res.json();
+    },
+    refetchInterval: 30000,
+  });
 
-  const onSubmit = (data: InsertPatient) => {
-    if (!editingPatient && billingSettings?.requirePrepayment && !collectConsultationFee) {
-      toast({
-        title: "Payment Required",
-        description:
-          "Consultation fee must be collected before registration. Please check the payment collection option.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const patientsList = patientsListData || [];
 
-    if (editingPatient) {
-      updatePatientMutation.mutate({ patientId: editingPatient.patientId, data });
-    } else {
-      createPatientMutation.mutate(data);
+  // filtering for view modes
+  const filteredPatients = useMemo(() => {
+    if (viewMode === "search") return searchResults;
+    if (viewMode === "today") {
+      const today = new Date().toDateString();
+      return patientsList.filter(
+        (p: any) => new Date(p.createdAt).toDateString() === today,
+      );
     }
+    if (viewMode === "date") {
+      const d = new Date(selectedDate).toDateString();
+      return patientsList.filter(
+        (p: any) => new Date(p.createdAt).toDateString() === d,
+      );
+    }
+    return patientsList;
+  }, [viewMode, patientsList, searchResults, selectedDate]);
+
+  // helpers
+  const jump = (path: string) => (window.location.href = path);
+
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-green-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-orange-500",
+      "bg-teal-500",
+      "bg-indigo-500",
+      "bg-rose-500",
+    ];
+    const hash = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+    return colors[hash % colors.length];
   };
 
+  const getInitials = (first: string, last: string) =>
+    `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+
+  // handlers
   const handleNewPatient = () => {
     form.reset({
       firstName: "",
@@ -489,19 +496,13 @@ export default function Patients() {
 
   const handleViewPatient = (p: any) => setActivePatient(p);
 
-  const handleCancelEdit = () => {
-    form.reset();
-    setEditingPatient(null);
-    setShowRegistrationForm(false);
-  };
-
   const handleEditPatient = (p: Patient) => {
     setEditingPatient(p);
     form.reset({
       firstName: p.firstName,
       lastName: p.lastName,
       age: p.age || "",
-      gender: p.gender || undefined,
+      gender: (p as any).gender || undefined,
       phoneNumber: p.phoneNumber || "",
       allergies: p.allergies || "",
       medicalHistory: p.medicalHistory || "",
@@ -509,71 +510,31 @@ export default function Patients() {
     setShowRegistrationForm(true);
   };
 
-  const { data: patientsListData, isLoading: patientsLoading } = useQuery<any[]>(
-    {
-      queryKey: ["/api/patients", viewMode, selectedDate],
-      queryFn: async () => {
-        const params = new URLSearchParams();
-        if (viewMode === "date") params.append("date", selectedDate);
-        if (viewMode === "today") params.append("today", "true");
-        const r = await fetch(`/api/patients?${params}`, {
-          credentials: "include",
-        });
-        if (!r.ok) throw new Error("Failed to fetch patients");
-        return r.json();
-      },
-      refetchInterval: 30000,
-    }
-  );
-
-  const patientsList = patientsListData || [];
-
-  const filteredPatients = (() => {
-    if (viewMode === "search") return searchResults;
-
-    if (viewMode === "today") {
-      const today = new Date().toDateString();
-      return patientsList.filter((p: any) => {
-        return new Date(p.createdAt).toDateString() === today;
-      });
-    }
-
-    if (viewMode === "date") {
-      const selected = new Date(selectedDate).toDateString();
-      return patientsList.filter((p: any) => {
-        return new Date(p.createdAt).toDateString() === selected;
-      });
-    }
-
-    return patientsList;
-  })();
-
-  const patientsToDisplay = filteredPatients;
-
-  const jump = (path: string) => {
-    window.location.href = path;
+  const handleCancelEdit = () => {
+    form.reset();
+    setEditingPatient(null);
+    setShowRegistrationForm(false);
   };
 
-  function getAvatarColor(name: string): string {
-    const colors = [
-      "bg-blue-500",
-      "bg-green-500",
-      "bg-purple-500",
-      "bg-pink-500",
-      "bg-orange-500",
-      "bg-teal-500",
-      "bg-indigo-500",
-      "bg-rose-500",
-    ];
-    const hash = name.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    return colors[hash % colors.length];
-  }
+  const onSubmit = (data: InsertPatient) => {
+    if (!editingPatient && billingSettings?.requirePrepayment && !collectConsultationFee) {
+      toast({
+        title: "Payment Required",
+        description:
+          "Consultation fee must be collected before registration. Please toggle the switch.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  function getInitials(firstName: string, lastName: string): string {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  }
+    if (editingPatient) {
+      updatePatientMutation.mutate({ patientId: editingPatient.patientId, data });
+    } else {
+      createPatientMutation.mutate(data);
+    }
+  };
 
-  /* ---------- UI ---------- */
+  const patientsToDisplay = filteredPatients;
 
   return (
     <div className="relative">
@@ -612,7 +573,7 @@ export default function Patients() {
                     {countsLoading ? "..." : allCount}
                   </p>
                 </div>
-                <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <UserPlus className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
             </CardContent>
           </Card>
@@ -640,39 +601,32 @@ export default function Patients() {
             variant={viewMode === "today" ? "default" : "outline"}
             onClick={() => handleViewModeChange("today")}
             className="flex items-center gap-2"
-            data-testid="button-view-today"
           >
             <Calendar className="w-4 h-4" />
             Today ({todayCount})
           </Button>
-
           <Button
             variant={viewMode === "date" ? "default" : "outline"}
             onClick={() => handleViewModeChange("date")}
             className="flex items-center gap-2"
-            data-testid="button-view-date"
           >
             <Calendar className="w-4 h-4" />
             By Date ({specificDateCount})
           </Button>
-
           <Button
             variant={viewMode === "search" ? "default" : "outline"}
             onClick={() => handleViewModeChange("search")}
             className="flex items-center gap-2"
-            data-testid="button-view-search"
           >
             <Search className="w-4 h-4" />
             Search
           </Button>
-
           <Button
             variant={viewMode === "all" ? "default" : "outline"}
             onClick={() => handleViewModeChange("all")}
             className="flex items-center gap-2"
-            data-testid="button-view-all"
           >
-            <Users className="w-4 h-4" />
+            <UserPlus className="w-4 h-4" />
             All Patients ({allCount})
           </Button>
 
@@ -680,7 +634,6 @@ export default function Patients() {
             <Button
               onClick={handleNewPatient}
               className="bg-medical-blue hover:bg-blue-700"
-              data-testid="button-new-patient"
             >
               <UserPlus className="w-4 h-4 mr-2" />
               New Patient
@@ -695,7 +648,6 @@ export default function Patients() {
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="max-w-xs"
-              data-testid="input-date-picker"
             />
           </div>
         )}
@@ -710,7 +662,6 @@ export default function Patients() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
-                data-testid="input-search"
               />
             </div>
           </div>
@@ -733,11 +684,7 @@ export default function Patients() {
           {patientsLoading || (viewMode === "search" && searchLoading) ? (
             <div className="text-center py-8">Loading...</div>
           ) : patientsToDisplay.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {viewMode === "search" && searchQuery
-                ? "No patients found matching your search"
-                : "No patients found"}
-            </div>
+            <div className="text-center py-8 text-gray-500">No patients found</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -769,16 +716,15 @@ export default function Patients() {
                       key={patient.patientId}
                       className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                       onClick={() => handleViewPatient(patient)}
-                      data-testid={`patient-row-${patient.patientId}`}
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${getAvatarColor(
-                              (patient.firstName || "") + (patient.lastName || "")
+                              (patient.firstName || "") + (patient.lastName || ""),
                             )}`}
                           >
-                            {getInitials(patient.firstName || "", patient.lastName || "")}
+                            {getInitials(patient.firstName || "?", patient.lastName || "?")}
                           </div>
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">
@@ -812,7 +758,6 @@ export default function Patients() {
                             e.stopPropagation();
                             handleViewPatient(patient);
                           }}
-                          data-testid={`button-view-${patient.patientId}`}
                         >
                           View
                         </Button>
@@ -826,16 +771,15 @@ export default function Patients() {
         </CardContent>
       </Card>
 
-      {/* Registration/Edit Dialog */}
+      {/* Registration / Edit Dialog */}
       <Dialog open={showRegistrationForm} onOpenChange={setShowRegistrationForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingPatient ? "Edit Patient" : "New Patient Registration"}
             </DialogTitle>
-            {/* a11y: prevent aria warning */}
-            <DialogDescription className="sr-only">
-              Use this form to register a new patient or update an existing one.
+            <DialogDescription>
+              Fill in the patient’s basic details. Only name is required; the rest can be added later.
             </DialogDescription>
           </DialogHeader>
 
@@ -850,7 +794,7 @@ export default function Patients() {
                       <FormItem>
                         <FormLabel>First Name *</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-firstname" placeholder="Enter first name" />
+                          <Input {...field} placeholder="Enter first name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -863,7 +807,7 @@ export default function Patients() {
                       <FormItem>
                         <FormLabel>Last Name *</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-lastname" placeholder="Enter last name" />
+                          <Input {...field} placeholder="Enter last name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -879,7 +823,7 @@ export default function Patients() {
                       <FormItem>
                         <FormLabel>Age</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-age" placeholder="e.g., 25, 6 months, 2 years" />
+                          <Input {...field} placeholder="e.g., 25, 6 months, 2 years" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -893,7 +837,7 @@ export default function Patients() {
                         <FormLabel>Gender</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger data-testid="select-gender">
+                            <SelectTrigger>
                               <SelectValue placeholder="Select gender" />
                             </SelectTrigger>
                           </FormControl>
@@ -915,7 +859,7 @@ export default function Patients() {
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input {...field} data-testid="input-phone" placeholder="Enter phone number" />
+                        <Input {...field} placeholder="Enter phone number" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -929,12 +873,7 @@ export default function Patients() {
                     <FormItem>
                       <FormLabel>Allergies</FormLabel>
                       <FormControl>
-                        <Textarea
-                          {...field}
-                          data-testid="textarea-allergies"
-                          placeholder="List any known allergies"
-                          rows={2}
-                        />
+                        <Textarea {...field} placeholder="List any known allergies" rows={2} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -950,7 +889,6 @@ export default function Patients() {
                       <FormControl>
                         <Textarea
                           {...field}
-                          data-testid="textarea-medical-history"
                           placeholder="Previous conditions, surgeries, etc."
                           rows={3}
                         />
@@ -967,7 +905,6 @@ export default function Patients() {
                       checked={collectConsultationFee}
                       onCheckedChange={setCollectConsultationFee}
                       disabled={billingSettings.requirePrepayment}
-                      data-testid="switch-collect-fee"
                     />
                     <label
                       htmlFor="collect-fee"
@@ -981,7 +918,9 @@ export default function Patients() {
                         return `Collect consultation fee (${money(price)})`;
                       })()}
                       {billingSettings.requirePrepayment && (
-                        <Badge variant="default" className="ml-2">Required</Badge>
+                        <Badge variant="default" className="ml-2">
+                          Required
+                        </Badge>
                       )}
                     </label>
                   </div>
@@ -991,10 +930,10 @@ export default function Patients() {
                   <Button
                     type="submit"
                     className="flex-1"
-                    disabled={createPatientMutation.isPending || updatePatientMutation.isPending}
-                    data-testid="button-save-patient"
+                    disabled={
+                      createPatientMutation.isPending || updatePatientMutation.isPending
+                    }
                   >
-                    <Save className="w-4 h-4 mr-2" />
                     {editingPatient ? "Update Patient" : "Register Patient"}
                   </Button>
                   <Button type="button" variant="outline" onClick={handleCancelEdit}>
@@ -1031,8 +970,8 @@ export default function Patients() {
             <div className="p-4 space-y-3">
               <div className="text-sm text-gray-700 dark:text-gray-300">
                 <div>
-                  <span className="font-medium">Age/Gender:</span>{" "}
-                  {activePatient.age ?? "—"} {activePatient.gender ? `• ${activePatient.gender}` : ""}
+                  <span className="font-medium">Age/Gender:</span> {activePatient.age ?? "—"}{" "}
+                  {activePatient.gender ? `• ${activePatient.gender}` : ""}
                 </div>
                 <div>
                   <span className="font-medium">Contact:</span>{" "}
@@ -1042,21 +981,21 @@ export default function Patients() {
 
               {activePatient.serviceStatus && (
                 <div className="mt-1">
-                  {((activePatient.serviceStatus.balanceToday ??
-                    activePatient.serviceStatus.balance) ||
+                  {(activePatient.serviceStatus.balanceToday ??
+                    activePatient.serviceStatus.balance ||
                     0) > 0 ? (
                     <div className="inline-flex items-center gap-2 rounded-full bg-red-50 text-red-700 dark:bg-red-900/20 px-3 py-1 text-xs">
                       <CreditCard className="w-3 h-3" />
                       Consultation:{" "}
                       {money(
                         activePatient.serviceStatus.balanceToday ??
-                          activePatient.serviceStatus.balance
+                          activePatient.serviceStatus.balance,
                       )}{" "}
                       Due
                     </div>
                   ) : (
                     <div className="inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 dark:bg-green-900/20 px-3 py-1 text-xs">
-                      <CreditCard className="w-3 h-3" />
+                      <CheckCircle className="w-3 h-3" />
                       Consultation: Paid
                     </div>
                   )}
@@ -1080,7 +1019,6 @@ export default function Patients() {
                     setActivePatient(null);
                     handleEditPatient(p);
                   }}
-                  data-testid="button-edit-patient"
                 >
                   ✏️ Edit Patient Details
                 </Button>
@@ -1094,7 +1032,6 @@ export default function Patients() {
                       setDeletionReason("");
                       setShowDeleteDialog(true);
                     }}
-                    data-testid="button-delete-patient"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete Patient
@@ -1106,20 +1043,17 @@ export default function Patients() {
         </div>
       )}
 
-      {/* Delete Confirmation */}
+      {/* Delete dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="w-5 h-5" />
-              Delete Patient?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Delete Patient?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               {deleteResult?.blocked ? (
                 <>
                   <div className="text-red-600 font-semibold">Cannot Delete Patient</div>
                   <div className="space-y-2">
-                    {deleteResult.blockReasons.map((reason: string, idx: number) => (
+                    {deleteResult.blockReasons?.map((reason: string, idx: number) => (
                       <div
                         key={idx}
                         className="text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-200 dark:border-red-800"
@@ -1128,31 +1062,6 @@ export default function Patients() {
                       </div>
                     ))}
                   </div>
-                  {deleteResult.impactSummary && (
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                      <div className="font-medium mb-1">Related Records:</div>
-                      <ul className="list-disc list-inside space-y-0.5">
-                        {deleteResult.impactSummary.encounters > 0 && (
-                          <li>{deleteResult.impactSummary.encounters} Encounter(s)</li>
-                        )}
-                        {deleteResult.impactSummary.labTests > 0 && (
-                          <li>{deleteResult.impactSummary.labTests} Lab Test(s)</li>
-                        )}
-                        {deleteResult.impactSummary.xrayExams > 0 && (
-                          <li>{deleteResult.impactSummary.xrayExams} X-Ray(s)</li>
-                        )}
-                        {deleteResult.impactSummary.ultrasoundExams > 0 && (
-                          <li>{deleteResult.impactSummary.ultrasoundExams} Ultrasound(s)</li>
-                        )}
-                        {deleteResult.impactSummary.pharmacyOrders > 0 && (
-                          <li>{deleteResult.impactSummary.pharmacyOrders} Pharmacy Order(s)</li>
-                        )}
-                        {deleteResult.impactSummary.payments > 0 && (
-                          <li>{deleteResult.impactSummary.payments} Payment(s)</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
                 </>
               ) : (
                 <>
@@ -1169,9 +1078,9 @@ export default function Patients() {
                     </div>
                     <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
                       <li>Mark the patient as deleted</li>
-                      <li>Cancel all pending lab tests, X-rays, ultrasounds, and pharmacy orders</li>
+                      <li>Cancel pending diagnostics and orders</li>
                       <li>Close all open encounters</li>
-                      <li>Remove patient from all department queues</li>
+                      <li>Remove patient from department queues</li>
                     </ul>
                   </div>
                   <div className="mt-3">
@@ -1184,7 +1093,6 @@ export default function Patients() {
                       placeholder="e.g., Test patient, duplicate record, etc."
                       className="mt-1"
                       rows={2}
-                      data-testid="textarea-deletion-reason"
                     />
                   </div>
                 </>
@@ -1203,13 +1111,9 @@ export default function Patients() {
                   Cancel
                 </AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => {
-                    setShowForceDeleteDialog(true);
-                  }}
+                  onClick={() => setShowForceDeleteDialog(true)}
                   className="bg-orange-600 hover:bg-orange-700"
-                  data-testid="button-force-delete"
                 >
-                  <AlertTriangle className="w-4 h-4 mr-2" />
                   Force Delete
                 </AlertDialogAction>
               </>
@@ -1224,15 +1128,14 @@ export default function Patients() {
                   Cancel
                 </AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => {
+                  onClick={() =>
                     deletePatientMutation.mutate({
                       patientId: activePatient.patientId,
                       reason: deletionReason || undefined,
                       forceDelete: false,
-                    });
-                  }}
+                    })
+                  }
                   className="bg-red-600 hover:bg-red-700"
-                  data-testid="button-confirm-delete"
                   disabled={deletePatientMutation.isPending}
                 >
                   {deletePatientMutation.isPending ? "Deleting..." : "Delete Patient"}
@@ -1243,44 +1146,18 @@ export default function Patients() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Force Delete */}
+      {/* Force delete dialog */}
       <AlertDialog open={showForceDeleteDialog} onOpenChange={setShowForceDeleteDialog}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-orange-600">
-              <AlertTriangle className="w-5 h-5" />
-              Force Delete Warning
-            </AlertDialogTitle>
+            <AlertDialogTitle>Force Delete Warning</AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
               <p className="text-base font-medium">
                 You are about to force delete this patient despite existing financial history.
               </p>
-
-              <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-md p-4 space-y-2">
-                <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
-                  This action will:
-                </p>
-                <ul className="text-sm text-orange-700 dark:text-orange-300 space-y-1 list-disc list-inside">
-                  <li>Bypass all safety protections</li>
-                  <li>Affect financial audit trails</li>
-                  <li>Delete {deleteResult?.impactSummary?.payments || 0} payment record(s)</li>
-                  {deleteResult?.impactSummary?.labTests > 0 && (
-                    <li>Delete {deleteResult.impactSummary.labTests} lab test(s)</li>
-                  )}
-                  {deleteResult?.impactSummary?.xrayExams > 0 && (
-                    <li>Delete {deleteResult.impactSummary.xrayExams} X-ray exam(s)</li>
-                  )}
-                  {deleteResult?.impactSummary?.ultrasoundExams > 0 && (
-                    <li>Delete {deleteResult.impactSummary.ultrasoundExams} ultrasound exam(s)</li>
-                  )}
-                  {deleteResult?.impactSummary?.pharmacyOrders > 0 && (
-                    <li>Delete {deleteResult.impactSummary.pharmacyOrders} pharmacy order(s)</li>
-                  )}
-                </ul>
-              </div>
-
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                This action cannot be undone. All related records will be permanently removed from the system.
+                This action cannot be undone. All related records will be permanently removed
+                from the system.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1293,14 +1170,13 @@ export default function Patients() {
                 setShowForceDeleteDialog(false);
                 deletePatientMutation.mutate({
                   patientId: activePatient.patientId,
-                  reason: deletionReason || "Force deleted despite financial history",
+                  reason:
+                    deletionReason || "Force deleted despite financial history",
                   forceDelete: true,
                 });
               }}
               className="bg-orange-600 hover:bg-orange-700"
-              data-testid="button-confirm-force-delete"
             >
-              <AlertTriangle className="w-4 h-4 mr-2" />
               Proceed with Force Delete
             </AlertDialogAction>
           </AlertDialogFooter>
