@@ -229,138 +229,133 @@ export default function Patients() {
 
   /* ---------- mutations ---------- */
 
-  const createPatientMutation = useMutation({
-    mutationFn: async (raw: InsertPatient) => {
-      // 1) auth preflight
-      const who = await fetch("/api/user", { credentials: "include" });
-      if (who.status === 401) {
-        throw new Error("You are not signed in (401). Please log in again.");
-      }
+  cconst createPatientMutation = useMutation({
+  mutationFn: async (raw: InsertPatient) => {
+    // Normalize payload so DB constraints are happy
+    const toNull = (v: unknown) => {
+      if (v === undefined || v === null) return null;
+      if (typeof v === "string" && v.trim() === "") return null;
+      return v;
+    };
 
-      // 2) build clean payload
-      const payload = buildPatientPayload(raw);
+    const payload: any = {
+      firstName: (raw.firstName ?? "").trim(),
+      lastName: (raw.lastName ?? "").trim(),
+      // If your DB keeps age as TEXT, this is fine; if it's INTEGER, send null or a number
+      age: toNull(raw.age), // will become null instead of ""
+      gender: raw.gender ?? null, // or: raw.gender ?? "Unspecified" if column is NOT NULL
+      phoneNumber: toNull(raw.phoneNumber),
+      allergies: toNull(raw.allergies),
+      medicalHistory: toNull(raw.medicalHistory),
+      // DO NOT send is_deleted / deleted_* — DB defaults handle those
+    };
 
-      // 3) POST and surface true error
-      const resp = await fetch("/api/patients", {
+    const r = await fetch("/api/patients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    // try to show the real reason on failure
+    let body: any = null;
+    try { body = await r.json(); } catch { /* ignore non-JSON */ }
+
+    if (!r.ok) {
+      const msg = body?.error || body?.message || `Failed to register patient (${r.status})`;
+      throw new Error(msg);
+    }
+
+    const patient = body;
+
+    // Create an encounter and (optionally) add consultation order + payment.
+    try {
+      const encRes = await fetch("/api/encounters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          patientId: patient.patientId,
+          visitDate: new Date().toISOString().split("T")[0],
+          policy: "cash",
+          attendingClinician: "",
+        }),
       });
+      const encounter = await encRes.json();
 
-      const text = await resp.text();
-      let body: any = undefined;
-      try {
-        body = JSON.parse(text);
-      } catch {
-        /* keep raw text */
-      }
+      // Find the Consultation service dynamically
+      const svcList = (await queryClient.ensureQueryData({ queryKey: ["/api/services"] })) as any[] | undefined;
+      const svc = (svcList ?? []).find((s) => s.category === "consultation" && s.name === "Consultation");
+      const consultPrice =
+        svc?.price ?? Number.parseFloat((billingSettings?.consultationFee as any) ?? "0");
 
-      if (!resp.ok) {
-        const msg =
-          body?.error ||
-          body?.message ||
-          text ||
-          `Failed to create patient (HTTP ${resp.status})`;
-        throw new Error(msg);
-      }
-
-      const patient = body;
-
-      // 4) optional: create encounter + consultation order
-      try {
-        const encRes = await fetch("/api/encounters", {
+      if (svc) {
+        await fetch("/api/order-lines", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            patientId: patient.patientId,
-            visitDate: new Date().toISOString().split("T")[0],
-            policy: "cash",
-            attendingClinician: "",
+            encounterId: encounter.encounterId,
+            serviceId: svc.id,
+            relatedType: "consultation",
+            description: "Consultation Fee",
+            quantity: 1,
+            unitPriceSnapshot: consultPrice,
+            totalPrice: consultPrice,
+            department: "consultation",
+            status: "performed",
+            orderedBy: "",
+            addToCart: 1,
           }),
         });
-        const enc = await encRes.json();
 
-        const svc = (Array.isArray(servicesList) ? servicesList : []).find(
-          (s: any) => s?.category === "consultation" && s?.name === "Consultation"
-        );
-        const consultPrice =
-          svc?.price ?? Number.parseFloat(billingSettings?.consultationFee ?? "0");
-
-        if (svc) {
-          await fetch("/api/order-lines", {
+        if (billingSettings?.requirePrepayment && collectConsultationFee) {
+          await fetch("/api/payments", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({
-              encounterId: enc?.encounterId,
-              serviceId: svc.id,
-              relatedType: "consultation",
-              description: "Consultation Fee",
-              quantity: 1,
-              unitPriceSnapshot: consultPrice,
-              totalPrice: consultPrice,
-              department: "consultation",
-              status: "performed",
-              orderedBy: "",
-              addToCart: 1,
+              patientId: patient.patientId,
+              totalAmount: consultPrice,
+              paymentMethod: "cash",
+              receivedBy: "",
+              notes: "Consultation fee - paid at registration",
             }),
           });
-
-          if (collectConsultationFee) {
-            await fetch("/api/payments", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                patientId: patient.patientId,
-                totalAmount: consultPrice,
-                paymentMethod: "cash",
-                receivedBy: "",
-                notes: "Consultation fee - paid at registration",
-              }),
-            });
-          }
         }
-      } catch (e) {
-        console.error("Post-registration flow error:", e);
       }
+    } catch (e) {
+      console.error("Post-registration flow error:", e);
+      // don't block registration
+    }
 
-      return body;
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Patient registered successfully" });
+    return body;
+  },
+  onSuccess: () => {
+    toast({ title: "Success", description: "Patient registered successfully" });
+    form.reset();
+    setShowRegistrationForm(false);
+    setCollectConsultationFee(billingSettings?.requirePrepayment || false);
+    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+  },
+  onError: (e: any) => {
+    if (!navigator.onLine) {
+      addToPendingSync({ type: "patient", action: "create", data: form.getValues() });
+      toast({ title: "Saved Offline", description: "Patient saved locally. Will sync when online." });
       form.reset();
       setShowRegistrationForm(false);
-      setCollectConsultationFee(billingSettings?.requirePrepayment || false);
-      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
-    },
-    onError: (e: any) => {
-      if (!navigator.onLine) {
-        addToPendingSync({
-          type: "patient",
-          action: "create",
-          data: form.getValues(),
-        });
-        toast({
-          title: "Saved Offline",
-          description: "Patient saved locally. Will sync when online.",
-        });
-        form.reset();
-        setShowRegistrationForm(false);
-        return;
-      }
+    } else {
       toast({
-        title: "Registration failed",
+        title: "Error",
         description: e?.message || "Failed to register patient",
         variant: "destructive",
       });
-    },
-  });
+    }
+  },
+});
 
   const updatePatientMutation = useMutation({
     mutationFn: async ({
