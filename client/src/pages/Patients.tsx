@@ -200,139 +200,138 @@ export default function Patients() {
 
   /* ---------- mutations ---------- */
 
-  const createPatientMutation = useMutation({
-    mutationFn: async (raw: InsertPatient) => {
-      // Normalize payload so DB constraints are happy
-      const payload: Record<string, any> = {
-        firstName: (raw.firstName || "").trim(),
-        lastName: (raw.lastName || "").trim(),
-        // send null instead of empty string
-        age:
-          raw.age && String(raw.age).trim() !== ""
-            ? String(raw.age).trim()
-            : null,
-        phoneNumber:
-          raw.phoneNumber && raw.phoneNumber.trim() !== ""
-            ? raw.phoneNumber.trim()
-            : null,
-        allergies:
-        raw.allergies && raw.allergies.trim() !== "" ? raw.allergies.trim() : null,
-        medicalHistory:
-          raw.medicalHistory && raw.medicalHistory.trim() !== ""
-            ? raw.medicalHistory.trim()
-            : null,
-      };
-      if (raw.gender) payload.gender = raw.gender; // include only when chosen
+const createPatientMutation = useMutation({
+  mutationFn: async (raw: InsertPatient) => {
+    const payload: Record<string, any> = {
+      firstName: (raw.firstName || "").trim(),
+      lastName: (raw.lastName || "").trim(),
+      age: raw.age && String(raw.age).trim() !== "" ? String(raw.age).trim() : null,
+      phoneNumber:
+        raw.phoneNumber && raw.phoneNumber.trim() !== "" ? raw.phoneNumber.trim() : null,
+      allergies: raw.allergies && raw.allergies.trim() !== "" ? raw.allergies.trim() : null,
+      medicalHistory:
+        raw.medicalHistory && raw.medicalHistory.trim() !== "" ? raw.medicalHistory.trim() : null,
+    };
+    if (raw.gender) payload.gender = raw.gender;
 
-      const r = await fetch("/api/patients", {
+    const r = await fetch("/api/patients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    let body: any = null;
+    try { body = await r.json(); } catch {}
+    if (!r.ok) {
+      throw new Error(body?.error || body?.message || `Failed to register patient (${r.status})`);
+    }
+
+    const patient = body;
+
+    try {
+      const encRes = await fetch("/api/encounters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          patientId: patient.patientId,
+          visitDate: new Date().toISOString().slice(0, 10),
+          attendingClinician: "",
+          policy: "cash",
+        }),
       });
+      const encounter = await encRes.json();
 
-      let body: any = null;
-      try {
-        body = await r.json();
-      } catch {
-        /* ignore */
-      }
-      if (!r.ok) {
-        throw new Error(
-          body?.error || body?.message || `Failed to register patient (${r.status})`,
-        );
-      }
+      const consultSvc = ((servicesList as any[]) || []).find(
+        (s) =>
+          s?.category === "consultation" &&
+          (s?.name === "Consultation" || s?.name === "General Consultation") &&
+          s?.isActive !== false,
+      );
+      const consultPrice =
+        consultSvc?.price ?? Number.parseFloat(billingSettings?.consultationFee ?? "0");
 
-      const patient = body;
-
-      // Post-registration: create encounter and consultation order (best effort)
-      try {
-        const encRes = await fetch("/api/encounters", {
+      if (consultSvc) {
+        await fetch("/api/order-lines", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            patientId: patient.patientId,
-            visitDate: new Date().toISOString().slice(0, 10),
-            attendingClinician: "",
-            policy: "cash",
+            encounterId: encounter.encounterId,
+            serviceId: consultSvc.id,
+            relatedType: "consultation",
+            description: "Consultation Fee",
+            quantity: 1,
+            unitPriceSnapshot: consultPrice,
+            totalPrice: consultPrice,
+            department: "consultation",
+            status: "performed",
+            orderedBy: "",
+            addToCart: 1,
           }),
         });
-        const encounter = await encRes.json();
 
-        const consultPrice =
-          consultationService?.price ??
-          Number.parseFloat(billingSettings?.consultationFee ?? "0");
-
-        if (consultationService) {
-          await fetch("/api/order-lines", {
+        if (billingSettings?.requirePrepayment && collectConsultationFee) {
+          await fetch("/api/payments", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({
-              encounterId: encounter.encounterId,
-              serviceId: consultationService.id,
-              relatedType: "consultation",
-              description: "Consultation Fee",
-              quantity: 1,
-              unitPriceSnapshot: consultPrice,
-              totalPrice: consultPrice,
-              department: "consultation",
-              status: "performed",
-              orderedBy: "",
-              addToCart: 1,
+              patientId: patient.patientId,
+              totalAmount: consultPrice,
+              paymentMethod: "cash",
+              receivedBy: "",
+              notes: "Consultation fee - paid at registration",
             }),
           });
-
-          if (billingSettings?.requirePrepayment && collectConsultationFee) {
-            await fetch("/api/payments", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                patientId: patient.patientId,
-                totalAmount: consultPrice,
-                paymentMethod: "cash",
-                receivedBy: "",
-                notes: "Consultation fee - paid at registration",
-              }),
-            });
-          }
         }
-      } catch (e) {
-        console.error("Post-registration flow error:", e);
       }
+    } catch (e) {
+      console.error("Post-registration flow error:", e);
+    }
 
-      return body;
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Patient registered successfully" });
+    return body;
+  },
+  onSuccess: () => {
+    toast({ title: "Success", description: "Patient registered successfully" });
+    form.reset();
+    setShowRegistrationForm(false);
+    setCollectConsultationFee(billingSettings?.requirePrepayment || false);
+    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+  },
+  onError: (e: any) => {
+    if (!navigator.onLine) {
+      addToPendingSync({ type: "patient", action: "create", data: form.getValues() });
+      toast({ title: "Saved Offline", description: "Patient saved locally. Will sync when online." });
       form.reset();
       setShowRegistrationForm(false);
-      setCollectConsultationFee(billingSettings?.requirePrepayment || false);
-      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
-    },
-    onError: (e: any) => {
-      if (!navigator.onLine) {
-        addToPendingSync({ type: "patient", action: "create", data: form.getValues() });
-        toast({
-          title: "Saved Offline",
-          description: "Patient saved locally. Will sync when online.",
-        });
-        form.reset();
-        setShowRegistrationForm(false);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: e?.message || "Failed to register patient",
-        variant: "destructive",
-      });
-    },
-  });
+      return;
+    }
+    toast({ title: "Error", description: e?.message || "Failed to register patient", variant: "destructive" });
+  },
+});
+
+const updatePatientMutation = useMutation({
+  mutationFn: async ({ patientId, data }: { patientId: string; data: Partial<InsertPatient> }) => {
+    const res = await apiRequest("PUT", `/api/patients/${patientId}`, data);
+    return res.json();
+  },
+  onSuccess: () => {
+    toast({ title: "Success", description: "Patient updated" });
+    form.reset();
+    setEditingPatient(null);
+    setShowRegistrationForm(false);
+    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+  },
+  onError: () => {
+    toast({ title: "Error", description: "Failed to update patient", variant: "destructive" });
+  },
+});
 
   const updatePatientMutation = useMutation({
     mutationFn: async ({
