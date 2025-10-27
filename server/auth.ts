@@ -1,5 +1,4 @@
 // Medical-Management-System/server/auth.ts
-
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
@@ -7,22 +6,23 @@ import session from "express-session";
 import { randomBytes } from "crypto";
 
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
-
-// ✅ correct imports:
-import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql } from "drizzle-orm"; // <-- needed for DB-side password check
+import { db } from "./db";         // drizzle instance
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    // minimal shape stored in session
+    interface User {
+      id: number;
+      username: string;
+      role: string;
+    }
   }
 }
 
 declare module "express-session" {
   interface SessionData {
     csrfToken?: string;
-    failedLoginCount?: number;
   }
 }
 
@@ -32,11 +32,9 @@ function corsAllowlistMiddleware(allowedOrigins: string[]) {
   return (req: any, res: any, next: any) => {
     const origin = req.headers.origin as string | undefined;
     let ok = false;
-
     if (origin) {
       ok = normalized.includes(origin) || origin.endsWith(".vercel.app");
     }
-
     if (ok && origin) {
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Vary", "Origin");
@@ -44,50 +42,29 @@ function corsAllowlistMiddleware(allowedOrigins: string[]) {
       res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token");
       res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     }
-
     if (req.method === "OPTIONS") return res.sendStatus(204);
-    return next();
+    next();
   };
 }
 
-// OPTIONAL CSRF (disabled by default until frontend sends the header)
+// OPTIONAL CSRF (you can leave it off until the app sends the header)
 function csrfMiddleware(enforce: boolean) {
-  const shouldEnforce = !!enforce;
-  const exemptPaths = new Set<string>([
-    "/api/login",
-    "/api/logout",
-    "/api/register",
-    "/api/health",
-  ]);
-
+  const exempt = new Set<string>(["/api/login", "/api/logout", "/api/health"]);
   return (req: any, res: any, next: any) => {
-    if (!req.session.csrfToken) {
-      req.session.csrfToken = randomBytes(24).toString("hex");
-    }
-
-    if (!shouldEnforce) return next();
-
-    const method = req.method.toUpperCase();
-    const isStateChanging = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-    const path = req.path;
-
-    if (!isStateChanging || exemptPaths.has(path)) return next();
-
-    const header = (req.headers["x-csrf-token"] || "") as string;
-    if (header && header === req.session.csrfToken) return next();
-
+    if (!req.session.csrfToken) req.session.csrfToken = randomBytes(24).toString("hex");
+    if (!enforce) return next();
+    const needs = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method.toUpperCase());
+    if (!needs || exempt.has(req.path)) return next();
+    const hdr = (req.headers["x-csrf-token"] || "") as string;
+    if (hdr && hdr === req.session.csrfToken) return next();
     return res.status(403).json({ error: "CSRF token invalid or missing" });
   };
 }
 
 export function setupAuth(app: Express) {
-  const sessionSecret =
-    process.env.SESSION_SECRET || "dev-secret-change-in-production";
-
-  // Trust Render/Cloudflare proxy for secure cookies
+  const sessionSecret = process.env.SESSION_SECRET || "dev-secret";
   app.set("trust proxy", 1);
 
-  // CORS before session
   const defaultAllowed = [
     "https://app.bahrelghazalclinic.com",
     "https://medical-management-system-wine.vercel.app",
@@ -98,46 +75,42 @@ export function setupAuth(app: Express) {
     process.env.ALLOWED_ORIGINS?.split(",").map((s) => s.trim()) || [];
   app.use(corsAllowlistMiddleware([...defaultAllowed, ...envAllowed]));
 
-  const sessionSettings: session.SessionOptions = {
-    name: "sid",
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    },
-  };
+  app.use(
+    session({
+      name: "sid",
+      secret: sessionSecret,
+      resave: false,
+      saveUninitialized: false,
+      store: storage.sessionStore,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+      },
+    })
+  );
 
-  app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // ---- Local strategy: let Postgres verify the password with crypt() ----
+  // ✅ Verify password inside Postgres using pgcrypto `crypt(...)`
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // one query: verify hash + ensure active
-        const result: any = await db.execute(sql`
+        const result = await db.execute(sql`
           SELECT id, username, role
           FROM users
           WHERE username = ${username}
+            AND is_active = TRUE
             AND crypt(${password}, password_hash) = password_hash
-            AND COALESCE(is_active, true) = true
-            AND COALESCE(status, 'active') = 'active'
           LIMIT 1
         `);
-
-        const rows = Array.isArray(result) ? result : result.rows;
-        const user = rows?.[0];
+        const user = (result as any).rows?.[0];
         if (!user) return done(null, false);
-
         return done(null, user);
       } catch (e) {
-        return done(e);
+        return done(e as Error);
       }
     })
   );
@@ -145,60 +118,21 @@ export function setupAuth(app: Express) {
   passport.serializeUser((user, done) => done(null, (user as any).id));
   passport.deserializeUser(async (id: number, done) => {
     try {
-      const user = await storage.getUser(id);
-      done(null, user);
+      const user = await storage.getUser(id); // must return {id, username, role, ...}
+      done(null, user ? { id: user.id, username: user.username, role: user.role } : false);
     } catch (e) {
       done(e);
     }
   });
 
-  // Expose CSRF token
-  const enforceCsrf = process.env.ENFORCE_CSRF === "1";
-  app.use(csrfMiddleware(enforceCsrf));
-  app.get("/api/csrf", (req: any, res) => {
-    res.json({ csrfToken: req.session.csrfToken });
-  });
+  app.use(csrfMiddleware(process.env.ENFORCE_CSRF === "1"));
+  app.get("/api/csrf", (req: any, res) => res.json({ csrfToken: req.session.csrfToken }));
 
-  // ---- Register: store pgcrypto hash in password_hash ----
-  app.post("/api/register", async (req: any, res) => {
-    try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Admin access required" });
-      }
-
-      const { username, password, role = "staff", is_active = true, status = "active" } =
-        req.body || {};
-
-      if (!username || !password) {
-        return res.status(400).json({ error: "username and password required" });
-      }
-
-      const result: any = await db.execute(sql`
-        INSERT INTO users (username, role, password_hash, is_active, status)
-        VALUES (${username}, ${role}, crypt(${password}, gen_salt('bf', 12)), ${is_active}, ${status})
-        ON CONFLICT (username) DO UPDATE
-          SET role = EXCLUDED.role,
-              password_hash = EXCLUDED.password_hash,
-              is_active = EXCLUDED.is_active,
-              status = EXCLUDED.status
-        RETURNING id, username, role, is_active, status
-      `);
-
-      const rows = Array.isArray(result) ? result : result.rows;
-      return res.status(201).json(rows[0]);
-    } catch (error: any) {
-      return res.status(400).json({ error: error.message });
-    }
-  });
-
-  // ---- Login: unchanged surface, works with pgcrypto hashes ----
   app.post("/api/login", (req: any, res, next) => {
     req.session.regenerate((err: any) => {
       if (err) return next(err);
       passport.authenticate("local", (authErr, user) => {
-        if (authErr || !user) {
-          return res.status(401).json({ error: "Invalid credentials" });
-        }
+        if (authErr || !user) return res.status(401).json({ error: "Invalid credentials" });
         req.login(user, (loginErr: any) => {
           if (loginErr) return next(loginErr);
           req.session.csrfToken = randomBytes(24).toString("hex");
@@ -217,6 +151,6 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req: any, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user!);
+    res.json(req.user);
   });
 }
