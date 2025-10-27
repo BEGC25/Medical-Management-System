@@ -7,8 +7,8 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { pool } from "./db"; // <- use Postgres pool when available
-import { User as SelectUser } from "@shared/schema";
+import type { User as SelectUser } from "@shared/schema";
+import { pool } from "./db"; // <-- use Postgres pool for bcrypt verify
 
 declare global {
   namespace Express {
@@ -25,26 +25,72 @@ declare module "express-session" {
 
 const scryptAsync = promisify(scrypt);
 
-// Fallback (SQLite/dev) hashing
-async function hashPassword(password: string) {
+/* ----------------- hashing helpers ----------------- */
+
+// scrypt (our local format: "<hex>.<saltHex>")
+async function scryptHash(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
 
-async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
+async function scryptCompare(supplied: string, stored: string) {
+  const parts = stored.split(".");
+  if (parts.length !== 2) return false;
+  const [hex, salt] = parts;
+  const hashedBuf = Buffer.from(hex, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Minimal, dependency-free CORS with allowlist + credentials
-function corsAllowlistMiddleware(allowedOrigins: string[]) {
-  const normalized = allowedOrigins
-    .map((o) => o.trim())
-    .filter(Boolean);
+// bcrypt (pgcrypto) — let Postgres verify it for us
+async function bcryptCompareViaPgcrypto(
+  supplied: string,
+  bcryptHashFromDb: string
+) {
+  // When running on SQLite locally, pool will be null; bcrypt hashes won’t exist there.
+  if (!pool) return false;
+  const { rows } = await pool.query<{ ok: boolean }>(
+    "SELECT crypt($1, $2) = $2 AS ok",
+    [supplied, bcryptHashFromDb]
+  );
+  return !!rows?.[0]?.ok;
+}
 
+/**
+ * Accept both password field names and both hashing schemes.
+ * - bcrypt in column `password_hash` (starts with "$2") => verify in Postgres
+ * - scrypt in column `password` (format "<hex>.<salt>") => verify in Node
+ */
+async function flexibleVerifyPassword(
+  supplied: string,
+  user: any
+): Promise<boolean> {
+  const stored =
+    (user?.password as string | undefined) ??
+    (user?.password_hash as string | undefined) ??
+    "";
+
+  if (!stored) return false;
+
+  // bcrypt hashes look like "$2a$..." or "$2b$..."
+  if (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")) {
+    return bcryptCompareViaPgcrypto(supplied, stored);
+  }
+
+  // our scrypt format contains a dot between hex and salt
+  if (stored.includes(".")) {
+    return scryptCompare(supplied, stored);
+  }
+
+  // unknown format
+  return false;
+}
+
+/* ----------------- minimal, dependency-free CORS ----------------- */
+
+function corsAllowlistMiddleware(allowedOrigins: string[]) {
+  const normalized = allowedOrigins.map((o) => o.trim()).filter(Boolean);
   return (req: any, res: any, next: any) => {
     const origin = req.headers.origin as string | undefined;
     let ok = false;
@@ -52,8 +98,7 @@ function corsAllowlistMiddleware(allowedOrigins: string[]) {
     if (origin) {
       ok =
         normalized.includes(origin) ||
-        // allow any *.vercel.app (preview deployments)
-        origin.endsWith(".vercel.app");
+        origin.endsWith(".vercel.app"); // allow Vercel previews
     }
 
     if (ok && origin) {
@@ -70,17 +115,16 @@ function corsAllowlistMiddleware(allowedOrigins: string[]) {
       );
     }
 
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(204);
-    }
-    return next();
+    if (req.method === "OPTIONS") return res.sendStatus(204);
+    next();
   };
 }
 
-// OPTIONAL CSRF (disabled by default until frontend sends the header)
+/* ----------------- optional CSRF ----------------- */
+
 function csrfMiddleware(enforce: boolean) {
   const shouldEnforce = !!enforce;
-  const exemptPaths = new Set<string>([
+  const exempt = new Set<string>([
     "/api/login",
     "/api/logout",
     "/api/register",
@@ -91,14 +135,11 @@ function csrfMiddleware(enforce: boolean) {
     if (!req.session.csrfToken) {
       req.session.csrfToken = randomBytes(24).toString("hex");
     }
-
     if (!shouldEnforce) return next();
 
     const method = req.method.toUpperCase();
-    const isStateChanging = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-    const path = req.path;
-
-    if (!isStateChanging || exemptPaths.has(path)) return next();
+    const stateChanging = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+    if (!stateChanging || exempt.has(req.path)) return next();
 
     const header = (req.headers["x-csrf-token"] || "") as string;
     if (header && header === req.session.csrfToken) return next();
@@ -107,14 +148,16 @@ function csrfMiddleware(enforce: boolean) {
   };
 }
 
+/* ----------------- main setup ----------------- */
+
 export function setupAuth(app: Express) {
   const sessionSecret =
     process.env.SESSION_SECRET || "dev-secret-change-in-production";
 
-  // Trust Render/Cloudflare proxy for secure cookies
+  // Render/Vercel proxies
   app.set("trust proxy", 1);
 
-  // CORS before session
+  // CORS first
   const defaultAllowed = [
     "https://app.bahrelghazalclinic.com",
     "https://medical-management-system-wine.vercel.app",
@@ -125,6 +168,7 @@ export function setupAuth(app: Express) {
     process.env.ALLOWED_ORIGINS?.split(",").map((s) => s.trim()) || [];
   app.use(corsAllowlistMiddleware([...defaultAllowed, ...envAllowed]));
 
+  // Sessions
   const sessionSettings: session.SessionOptions = {
     name: "sid",
     secret: sessionSecret,
@@ -132,46 +176,27 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Render: true
+      secure: process.env.NODE_ENV === "production", // true on Render
       httpOnly: true,
-      sameSite: "lax", // app.* and api.* are same-site
+      sameSite: "lax", // api.* and app.* are same-site
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
   };
-
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // ---- LocalStrategy: prefer Postgres bcrypt(crypt) if pool exists; otherwise fallback to scrypt (SQLite/dev)
+  // Local strategy — **supports bcrypt (pgcrypto) & scrypt**
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        if (pool) {
-          // Postgres path — password_hash column created with pgcrypto's crypt()
-          const { rows } = await pool.query(
-            `SELECT id, username, role
-               FROM users
-              WHERE username = $1
-                AND is_active = TRUE
-                AND crypt($2, password_hash) = password_hash
-              LIMIT 1`,
-            [username, password]
-          );
-
-          const user = rows[0];
-          if (!user) return done(null, false);
-          return done(null, user);
-        } else {
-          // SQLite/dev path — stored "password" using scrypt (legacy)
-          const user = await storage.getUserByUsername(username);
-          if (!user || !user.password) return done(null, false);
-          const ok = await comparePasswords(password, user.password);
-          if (!ok) return done(null, false);
-          return done(null, user);
-        }
+        const user = await storage.getUserByUsername(username);
+        if (!user) return done(null, false);
+        const ok = await flexibleVerifyPassword(password, user);
+        if (!ok) return done(null, false);
+        return done(null, user);
       } catch (e) {
-        return done(e as Error);
+        return done(e);
       }
     })
   );
@@ -182,61 +207,39 @@ export function setupAuth(app: Express) {
       const user = await storage.getUser(id);
       done(null, user);
     } catch (e) {
-      done(e as Error);
+      done(e);
     }
   });
 
-  // Expose CSRF token (frontend can fetch and store it; send back via X-CSRF-Token if you enable enforcement)
   const enforceCsrf = process.env.ENFORCE_CSRF === "1";
   app.use(csrfMiddleware(enforceCsrf));
   app.get("/api/csrf", (req: any, res) => {
     res.json({ csrfToken: req.session.csrfToken });
   });
 
-  // --- Registration (admin only). Uses DB-appropriate hashing automatically.
-  app.post("/api/register", async (req: any, res, next) => {
+  // Routes
+  app.post("/api/register", async (req: any, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      const { username, password, role = "clinician" } = req.body ?? {};
-      if (!username || !password) {
-        return res.status(400).json({ error: "username and password required" });
-      }
+      const exists = await storage.getUserByUsername(req.body.username);
+      if (exists) return res.status(400).send("Username already exists");
 
-      if (pool) {
-        // Postgres path: write bcrypt via pgcrypto/crypt()
-        const q = `
-          INSERT INTO users (username, role, password_hash, is_active, status)
-          VALUES ($1, $2, crypt($3, gen_salt('bf', 12)), TRUE, 'active')
-          ON CONFLICT (username) DO UPDATE
-          SET role = EXCLUDED.role,
-              password_hash = EXCLUDED.password_hash,
-              is_active = TRUE,
-              status = 'active'
-          RETURNING id, username, role
-        `;
-        const { rows } = await pool.query(q, [username, role, password]);
-        return res.status(201).json(rows[0]);
-      } else {
-        // SQLite/dev: legacy scrypt storage helper
-        const existing = await storage.getUserByUsername(username);
-        if (existing) return res.status(400).json({ error: "Username already exists" });
+      // We’ll store scrypt in `password` by default for new users.
+      const user = await storage.createUser({
+        ...req.body,
+        password: await scryptHash(req.body.password),
+      });
 
-        const user = await storage.createUser({
-          ...req.body,
-          password: await hashPassword(password),
-        });
-        const { password: _pw, ...userWithoutPassword } = user;
-        return res.status(201).json(userWithoutPassword);
-      }
+      const { password, ...safe } = user;
+      res.status(201).json(safe);
     } catch (error: any) {
-      return res.status(400).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   });
 
-  // --- Login / Logout / Current user
   app.post("/api/login", (req: any, res, next) => {
     req.session.regenerate((err: any) => {
       if (err) return next(err);
@@ -247,7 +250,8 @@ export function setupAuth(app: Express) {
         req.login(user, (loginErr: any) => {
           if (loginErr) return next(loginErr);
           req.session.csrfToken = randomBytes(24).toString("hex");
-          return res.status(200).json(user);
+          const { password, password_hash, ...safe } = user as any;
+          return res.status(200).json(safe);
         });
       })(req, res, next);
     });
@@ -262,9 +266,9 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req: any, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated()) {
-      return res.sendStatus(401);
+      return res.sendStatus(401); // expected on the blank login screen
     }
-    const { password, ...userWithoutPassword } = req.user!;
-    res.json(userWithoutPassword);
+    const { password, password_hash, ...safe } = req.user as any;
+    res.json(safe);
   });
 }
