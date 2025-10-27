@@ -1,14 +1,17 @@
 // Medical-Management-System/server/auth.ts
+
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import { randomBytes } from "crypto";
+
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
-// 👇 add: drizzle db + sql tag
-import { db, sql } from "./db";
+// ✅ correct imports:
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 declare global {
   namespace Express {
