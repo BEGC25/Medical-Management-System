@@ -1,13 +1,14 @@
 // Medical-Management-System/server/auth.ts
-
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+
+// 👇 add: drizzle db + sql tag
+import { db, sql } from "./db";
 
 declare global {
   namespace Express {
@@ -22,55 +23,26 @@ declare module "express-session" {
   }
 }
 
-const scryptAsync = promisify(scrypt);
-
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
-
-async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
-}
-
 // Minimal, dependency-free CORS with allowlist + credentials
 function corsAllowlistMiddleware(allowedOrigins: string[]) {
-  const normalized = allowedOrigins
-    .map((o) => o.trim())
-    .filter(Boolean);
-
+  const normalized = allowedOrigins.map((o) => o.trim()).filter(Boolean);
   return (req: any, res: any, next: any) => {
     const origin = req.headers.origin as string | undefined;
     let ok = false;
 
     if (origin) {
-      ok =
-        normalized.includes(origin) ||
-        // allow any *.vercel.app (preview deployments)
-        origin.endsWith(".vercel.app");
+      ok = normalized.includes(origin) || origin.endsWith(".vercel.app");
     }
 
     if (ok && origin) {
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Vary", "Origin");
       res.setHeader("Access-Control-Allow-Credentials", "true");
-      res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Content-Type, X-CSRF-Token"
-      );
-      res.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-      );
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token");
+      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     }
 
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(204);
-    }
+    if (req.method === "OPTIONS") return res.sendStatus(204);
     return next();
   };
 }
@@ -86,7 +58,6 @@ function csrfMiddleware(enforce: boolean) {
   ]);
 
   return (req: any, res: any, next: any) => {
-    // ensure token exists on session
     if (!req.session.csrfToken) {
       req.session.csrfToken = randomBytes(24).toString("hex");
     }
@@ -131,9 +102,9 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Render: true
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      sameSite: "lax", // app.* and api.* are same-site
+      sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
   };
@@ -142,14 +113,25 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Local strategy
+  // ---- Local strategy: let Postgres verify the password with crypt() ----
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        // one query: verify hash + ensure active
+        const result: any = await db.execute(sql`
+          SELECT id, username, role
+          FROM users
+          WHERE username = ${username}
+            AND crypt(${password}, password_hash) = password_hash
+            AND COALESCE(is_active, true) = true
+            AND COALESCE(status, 'active') = 'active'
+          LIMIT 1
+        `);
+
+        const rows = Array.isArray(result) ? result : result.rows;
+        const user = rows?.[0];
         if (!user) return done(null, false);
-        const ok = await comparePasswords(password, user.password);
-        if (!ok) return done(null, false);
+
         return done(null, user);
       } catch (e) {
         return done(e);
@@ -167,40 +149,47 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Expose CSRF token (frontend: call once after login, store and send via X-CSRF-Token)
+  // Expose CSRF token
   const enforceCsrf = process.env.ENFORCE_CSRF === "1";
   app.use(csrfMiddleware(enforceCsrf));
   app.get("/api/csrf", (req: any, res) => {
     res.json({ csrfToken: req.session.csrfToken });
   });
 
-  // Auth routes
-  app.post("/api/register", async (req: any, res, next) => {
+  // ---- Register: store pgcrypto hash in password_hash ----
+  app.post("/api/register", async (req: any, res) => {
     try {
-      // Only admins can create users
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        return res.status(400).send("Username already exists");
+      const { username, password, role = "staff", is_active = true, status = "active" } =
+        req.body || {};
+
+      if (!username || !password) {
+        return res.status(400).json({ error: "username and password required" });
       }
 
-      const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
-      });
+      const result: any = await db.execute(sql`
+        INSERT INTO users (username, role, password_hash, is_active, status)
+        VALUES (${username}, ${role}, crypt(${password}, gen_salt('bf', 12)), ${is_active}, ${status})
+        ON CONFLICT (username) DO UPDATE
+          SET role = EXCLUDED.role,
+              password_hash = EXCLUDED.password_hash,
+              is_active = EXCLUDED.is_active,
+              status = EXCLUDED.status
+        RETURNING id, username, role, is_active, status
+      `);
 
-      const { password, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
+      const rows = Array.isArray(result) ? result : result.rows;
+      return res.status(201).json(rows[0]);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   });
 
+  // ---- Login: unchanged surface, works with pgcrypto hashes ----
   app.post("/api/login", (req: any, res, next) => {
-    // Regenerate to prevent session fixation
     req.session.regenerate((err: any) => {
       if (err) return next(err);
       passport.authenticate("local", (authErr, user) => {
@@ -209,10 +198,8 @@ export function setupAuth(app: Express) {
         }
         req.login(user, (loginErr: any) => {
           if (loginErr) return next(loginErr);
-          // Refresh CSRF token on new session
           req.session.csrfToken = randomBytes(24).toString("hex");
-          const { password, ...userWithoutPassword } = user;
-          return res.status(200).json(userWithoutPassword);
+          return res.status(200).json(user);
         });
       })(req, res, next);
     });
@@ -221,17 +208,12 @@ export function setupAuth(app: Express) {
   app.post("/api/logout", (req: any, res, next) => {
     req.logout((err: any) => {
       if (err) return next(err);
-      req.session.destroy(() => {
-        res.sendStatus(200);
-      });
+      req.session.destroy(() => res.sendStatus(200));
     });
   });
 
   app.get("/api/user", (req: any, res) => {
-    if (!req.isAuthenticated || !req.isAuthenticated()) {
-      return res.sendStatus(401);
-    }
-    const { password, ...userWithoutPassword } = req.user!;
-    res.json(userWithoutPassword);
+    if (!req.isAuthenticated || !req.isAuthenticated()) return res.sendStatus(401);
+    res.json(req.user!);
   });
 }
