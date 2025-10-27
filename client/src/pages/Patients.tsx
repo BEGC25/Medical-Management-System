@@ -1,9 +1,7 @@
-// client/src/pages/Patients.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import {
   Calendar,
   CheckCircle,
@@ -15,7 +13,6 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   Dialog,
   DialogContent,
@@ -35,7 +31,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,7 +41,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import {
   Form,
   FormControl,
@@ -55,19 +49,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-
 import {
   insertPatientSchema,
   type InsertPatient,
   type Patient,
 } from "@shared/schema";
-
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 
@@ -80,20 +70,16 @@ export default function Patients() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [collectConsultationFee, setCollectConsultationFee] = useState(false);
-
   // quick view panel
   const [activePatient, setActivePatient] = useState<any | null>(null);
-
   // deletion state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteResult, setDeleteResult] = useState<any>(null);
   const [deletionReason, setDeletionReason] = useState("");
   const [showForceDeleteDialog, setShowForceDeleteDialog] = useState(false);
-
   const [selectedDate, setSelectedDate] = useState(() =>
     new Date().toLocaleDateString("en-CA"),
   );
-
   const [viewMode, setViewMode] = useState<"today" | "date" | "search" | "all">(
     () => {
       try {
@@ -121,11 +107,9 @@ export default function Patients() {
   const { data: billingSettings } = useQuery({
     queryKey: ["/api/billing/settings"],
   });
-
   const { data: servicesList } = useQuery({
     queryKey: ["/api/services"],
   });
-
   const consultationService = useMemo(
     () =>
       ((servicesList as any[]) || []).find(
@@ -151,7 +135,6 @@ export default function Patients() {
     },
     refetchInterval: 30000,
   });
-
   const todayCount = patientCounts?.today || 0;
   const allCount = patientCounts?.all || 0;
   const specificDateCount = patientCounts?.date || 0;
@@ -161,7 +144,6 @@ export default function Patients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-
   useEffect(() => {
     const run = async () => {
       if (!searchQuery.trim()) {
@@ -199,148 +181,115 @@ export default function Patients() {
   });
 
   /* ---------- mutations ---------- */
-
-const createPatientMutation = useMutation({
-  mutationFn: async (raw: InsertPatient) => {
-    const payload: Record<string, any> = {
-      firstName: (raw.firstName || "").trim(),
-      lastName: (raw.lastName || "").trim(),
-      age: raw.age && String(raw.age).trim() !== "" ? String(raw.age).trim() : null,
-      phoneNumber:
-        raw.phoneNumber && raw.phoneNumber.trim() !== "" ? raw.phoneNumber.trim() : null,
-      allergies: raw.allergies && raw.allergies.trim() !== "" ? raw.allergies.trim() : null,
-      medicalHistory:
-        raw.medicalHistory && raw.medicalHistory.trim() !== "" ? raw.medicalHistory.trim() : null,
-    };
-    if (raw.gender) payload.gender = raw.gender;
-
-    const r = await fetch("/api/patients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-
-    let body: any = null;
-    try { body = await r.json(); } catch {}
-    if (!r.ok) {
-      throw new Error(body?.error || body?.message || `Failed to register patient (${r.status})`);
-    }
-
-    const patient = body;
-
-    try {
-      const encRes = await fetch("/api/encounters", {
+  const createPatientMutation = useMutation({
+    mutationFn: async (raw: InsertPatient) => {
+      const payload: Record<string, any> = {
+        firstName: (raw.firstName || "").trim(),
+        lastName: (raw.lastName || "").trim(),
+        age: raw.age && String(raw.age).trim() !== "" ? String(raw.age).trim() : null,
+        phoneNumber:
+          raw.phoneNumber && raw.phoneNumber.trim() !== "" ? raw.phoneNumber.trim() : null,
+        allergies: raw.allergies && raw.allergies.trim() !== "" ? raw.allergies.trim() : null,
+        medicalHistory:
+          raw.medicalHistory && raw.medicalHistory.trim() !== "" ? raw.medicalHistory.trim() : null,
+      };
+      if (raw.gender) payload.gender = raw.gender;
+      const r = await fetch("/api/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          patientId: patient.patientId,
-          visitDate: new Date().toISOString().slice(0, 10),
-          attendingClinician: "",
-          policy: "cash",
-        }),
+        body: JSON.stringify(payload),
       });
-      const encounter = await encRes.json();
-
-      const consultSvc = ((servicesList as any[]) || []).find(
-        (s) =>
-          s?.category === "consultation" &&
-          (s?.name === "Consultation" || s?.name === "General Consultation") &&
-          s?.isActive !== false,
-      );
-      const consultPrice =
-        consultSvc?.price ?? Number.parseFloat(billingSettings?.consultationFee ?? "0");
-
-      if (consultSvc) {
-        await fetch("/api/order-lines", {
+      let body: any = null;
+      try { body = await r.json(); } catch {}
+      if (!r.ok) {
+        throw new Error(body?.error || body?.message || `Failed to register patient (${r.status})`);
+      }
+      const patient = body;
+      try {
+        const encRes = await fetch("/api/encounters", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            encounterId: encounter.encounterId,
-            serviceId: consultSvc.id,
-            relatedType: "consultation",
-            description: "Consultation Fee",
-            quantity: 1,
-            unitPriceSnapshot: consultPrice,
-            totalPrice: consultPrice,
-            department: "consultation",
-            status: "performed",
-            orderedBy: "",
-            addToCart: 1,
+            patientId: patient.patientId,
+            visitDate: new Date().toISOString().slice(0, 10),
+            attendingClinician: "",
+            policy: "cash",
           }),
         });
-
-        if (billingSettings?.requirePrepayment && collectConsultationFee) {
-          await fetch("/api/payments", {
+        const encounter = await encRes.json();
+        const consultSvc = ((servicesList as any[]) || []).find(
+          (s) =>
+            s?.category === "consultation" &&
+            (s?.name === "Consultation" || s?.name === "General Consultation") &&
+            s?.isActive !== false,
+        );
+        const consultPrice =
+          consultSvc?.price ?? Number.parseFloat(billingSettings?.consultationFee ?? "0");
+        if (consultSvc) {
+          await fetch("/api/order-lines", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({
-              patientId: patient.patientId,
-              totalAmount: consultPrice,
-              paymentMethod: "cash",
-              receivedBy: "",
-              notes: "Consultation fee - paid at registration",
+              encounterId: encounter.encounterId,
+              serviceId: consultSvc.id,
+              relatedType: "consultation",
+              description: "Consultation Fee",
+              quantity: 1,
+              unitPriceSnapshot: consultPrice,
+              totalPrice: consultPrice,
+              department: "consultation",
+              status: "performed",
+              orderedBy: "",
+              addToCart: 1,
             }),
           });
+          if (billingSettings?.requirePrepayment && collectConsultationFee) {
+            await fetch("/api/payments", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                patientId: patient.patientId,
+                totalAmount: consultPrice,
+                paymentMethod: "cash",
+                receivedBy: "",
+                notes: "Consultation fee - paid at registration",
+              }),
+            });
+          }
         }
+      } catch (e) {
+        console.error("Post-registration flow error:", e);
       }
-    } catch (e) {
-      console.error("Post-registration flow error:", e);
-    }
-
-    return body;
-  },
-  onSuccess: () => {
-    toast({ title: "Success", description: "Patient registered successfully" });
-    form.reset();
-    setShowRegistrationForm(false);
-    setCollectConsultationFee(billingSettings?.requirePrepayment || false);
-    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
-  },
-  onError: (e: any) => {
-    if (!navigator.onLine) {
-      addToPendingSync({ type: "patient", action: "create", data: form.getValues() });
-      toast({ title: "Saved Offline", description: "Patient saved locally. Will sync when online." });
+      return body;
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Patient registered successfully" });
       form.reset();
       setShowRegistrationForm(false);
-      return;
-    }
-    toast({ title: "Error", description: e?.message || "Failed to register patient", variant: "destructive" });
-  },
-});
-
-const updatePatientMutation = useMutation({
-  mutationFn: async ({ patientId, data }: { patientId: string; data: Partial<InsertPatient> }) => {
-    const res = await apiRequest("PUT", `/api/patients/${patientId}`, data);
-    return res.json();
-  },
-  onSuccess: () => {
-    toast({ title: "Success", description: "Patient updated" });
-    form.reset();
-    setEditingPatient(null);
-    setShowRegistrationForm(false);
-    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-  },
-  onError: () => {
-    toast({ title: "Error", description: "Failed to update patient", variant: "destructive" });
-  },
-});
+      setCollectConsultationFee(billingSettings?.requirePrepayment || false);
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+    },
+    onError: (e: any) => {
+      if (!navigator.onLine) {
+        addToPendingSync({ type: "patient", action: "create", data: form.getValues() });
+        toast({ title: "Saved Offline", description: "Patient saved locally. Will sync when online." });
+        form.reset();
+        setShowRegistrationForm(false);
+        return;
+      }
+      toast({ title: "Error", description: e?.message || "Failed to register patient", variant: "destructive" });
+    },
+  });
 
   const updatePatientMutation = useMutation({
-    mutationFn: async ({
-      patientId,
-      data,
-    }: {
-      patientId: string;
-      data: Partial<InsertPatient>;
-    }) => {
+    mutationFn: async ({ patientId, data }: { patientId: string; data: Partial<InsertPatient> }) => {
       const res = await apiRequest("PUT", `/api/patients/${patientId}`, data);
       return res.json();
     },
@@ -353,11 +302,7 @@ const updatePatientMutation = useMutation({
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update patient",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update patient", variant: "destructive" });
     },
   });
 
@@ -435,7 +380,6 @@ const updatePatientMutation = useMutation({
     },
     refetchInterval: 30000,
   });
-
   const patientsList = patientsListData || [];
 
   // filtering for view modes
@@ -458,7 +402,6 @@ const updatePatientMutation = useMutation({
 
   // helpers
   const jump = (path: string) => (window.location.href = path);
-
   const getAvatarColor = (name: string) => {
     const colors = [
       "bg-blue-500",
@@ -473,7 +416,6 @@ const updatePatientMutation = useMutation({
     const hash = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
     return colors[hash % colors.length];
   };
-
   const getInitials = (first: string, last: string) =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 
@@ -525,7 +467,6 @@ const updatePatientMutation = useMutation({
       });
       return;
     }
-
     if (editingPatient) {
       updatePatientMutation.mutate({ patientId: editingPatient.patientId, data });
     } else {
@@ -542,7 +483,6 @@ const updatePatientMutation = useMutation({
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
           Patient Management
         </h1>
-
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <Card>
@@ -560,7 +500,6 @@ const updatePatientMutation = useMutation({
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -576,7 +515,6 @@ const updatePatientMutation = useMutation({
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -593,7 +531,6 @@ const updatePatientMutation = useMutation({
             </CardContent>
           </Card>
         </div>
-
         {/* View Mode */}
         <div className="flex flex-wrap gap-2 mb-4">
           <Button
@@ -628,7 +565,6 @@ const updatePatientMutation = useMutation({
             <UserPlus className="w-4 h-4" />
             All Patients ({allCount})
           </Button>
-
           <div className="ml-auto">
             <Button
               onClick={handleNewPatient}
@@ -639,7 +575,6 @@ const updatePatientMutation = useMutation({
             </Button>
           </div>
         </div>
-
         {viewMode === "date" && (
           <div className="mb-4">
             <Input
@@ -650,7 +585,6 @@ const updatePatientMutation = useMutation({
             />
           </div>
         )}
-
         {viewMode === "search" && (
           <div className="mb-4">
             <div className="relative">
@@ -666,7 +600,6 @@ const updatePatientMutation = useMutation({
           </div>
         )}
       </div>
-
       {/* Patients Table */}
       <Card>
         <CardHeader>
@@ -769,7 +702,6 @@ const updatePatientMutation = useMutation({
           )}
         </CardContent>
       </Card>
-
       {/* Registration / Edit Dialog */}
       <Dialog open={showRegistrationForm} onOpenChange={setShowRegistrationForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -781,7 +713,6 @@ const updatePatientMutation = useMutation({
               Fill in the patient’s basic details. Only name is required; the rest can be added later.
             </DialogDescription>
           </DialogHeader>
-
           <div className="py-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -813,7 +744,6 @@ const updatePatientMutation = useMutation({
                     )}
                   />
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -850,7 +780,6 @@ const updatePatientMutation = useMutation({
                     )}
                   />
                 </div>
-
                 <FormField
                   control={form.control}
                   name="phoneNumber"
@@ -864,7 +793,6 @@ const updatePatientMutation = useMutation({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="allergies"
@@ -878,7 +806,6 @@ const updatePatientMutation = useMutation({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="medicalHistory"
@@ -896,7 +823,6 @@ const updatePatientMutation = useMutation({
                     </FormItem>
                   )}
                 />
-
                 {!editingPatient && billingSettings && (
                   <div className="flex items-center space-x-2 p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
                     <Switch
@@ -924,7 +850,6 @@ const updatePatientMutation = useMutation({
                     </label>
                   </div>
                 )}
-
                 <div className="flex gap-2 pt-4">
                   <Button
                     type="submit"
@@ -945,7 +870,6 @@ const updatePatientMutation = useMutation({
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Quick View Panel */}
       {activePatient && (
         <div className="fixed inset-0 z-50" onClick={() => setActivePatient(null)} aria-hidden>
@@ -965,7 +889,6 @@ const updatePatientMutation = useMutation({
                 <X className="w-5 h-5" />
               </Button>
             </div>
-
             <div className="p-4 space-y-3">
               <div className="text-sm text-gray-700 dark:text-gray-300">
                 <div>
@@ -977,12 +900,9 @@ const updatePatientMutation = useMutation({
                   {activePatient.phoneNumber || "—"}
                 </div>
               </div>
-
               {activePatient.serviceStatus && (
                 <div className="mt-1">
-                  {(activePatient.serviceStatus.balanceToday ??
-                    activePatient.serviceStatus.balance ||
-                    0) > 0 ? (
+                  {((activePatient.serviceStatus.balanceToday ?? activePatient.serviceStatus.balance) || 0) > 0 ? (
                     <div className="inline-flex items-center gap-2 rounded-full bg-red-50 text-red-700 dark:bg-red-900/20 px-3 py-1 text-xs">
                       <CreditCard className="w-3 h-3" />
                       Consultation:{" "}
@@ -1000,7 +920,6 @@ const updatePatientMutation = useMutation({
                   )}
                 </div>
               )}
-
               <div className="mt-4 space-y-2">
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -1021,7 +940,6 @@ const updatePatientMutation = useMutation({
                 >
                   ✏️ Edit Patient Details
                 </Button>
-
                 {user?.role === "admin" && (
                   <Button
                     variant="destructive"
@@ -1041,7 +959,6 @@ const updatePatientMutation = useMutation({
           </div>
         </div>
       )}
-
       {/* Delete dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="max-w-md">
@@ -1144,7 +1061,6 @@ const updatePatientMutation = useMutation({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
       {/* Force delete dialog */}
       <AlertDialog open={showForceDeleteDialog} onOpenChange={setShowForceDeleteDialog}>
         <AlertDialogContent className="max-w-md">
