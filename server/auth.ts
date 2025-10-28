@@ -7,7 +7,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { pool } from "./db";  // Postgres pool for DB queries
+import { pool } from "./db";  // Postgres pool
 import { User as SelectUser } from "@shared/schema";
 
 declare global {
@@ -25,7 +25,7 @@ declare module "express-session" {
 
 const scryptAsync = promisify(scrypt);
 
-// (Kept for completeness; registration uses pgcrypto in Postgres)
+// (kept for completeness; registration uses pgcrypto in Postgres)
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -39,11 +39,9 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Minimal, dependency-free CORS with allowlist + credentials
+/** Minimal CORS with allowlist + credentials */
 function corsAllowlistMiddleware(allowedOrigins: string[]) {
-  const normalized = allowedOrigins
-    .map((o) => o.trim())
-    .filter(Boolean);
+  const normalized = allowedOrigins.map((o) => o.trim()).filter(Boolean);
 
   return (req: any, res: any, next: any) => {
     const origin = req.headers.origin as string | undefined;
@@ -64,9 +62,11 @@ function corsAllowlistMiddleware(allowedOrigins: string[]) {
         "Access-Control-Allow-Headers",
         "X-Requested-With, Content-Type, X-CSRF-Token"
       );
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+      );
       if (req.method === "OPTIONS") {
-        // preflight
         res.status(200).end();
         return;
       }
@@ -75,34 +75,53 @@ function corsAllowlistMiddleware(allowedOrigins: string[]) {
   };
 }
 
-// Simple CSRF (double submit cookie)
+/** CSRF (double-submit style), tolerant when session is missing */
 function csrfMiddleware(enforce: boolean) {
   return (req: any, res: any, next: any) => {
-    if (!req.session) return next(new Error("Session not initialized"));
-    if (!req.session.csrfToken) {
-      req.session.csrfToken = randomBytes(16).toString("hex");
-    }
-    const token = req.get("X-CSRF-Token");
     const method = req.method?.toUpperCase?.();
     const isWrite =
       method === "POST" || method === "PUT" || method === "DELETE" || method === "PATCH";
+
+    // Always allow preflight
+    if (method === "OPTIONS") return res.status(200).end();
+
+    // If no session, allow reads; block writes when enforcing
+    if (!req.session) {
+      if (enforce && isWrite) {
+        return res.status(403).json({ error: "Session not initialized" });
+      }
+      return next();
+    }
+
+    // Ensure token exists
+    if (!req.session.csrfToken) {
+      req.session.csrfToken = randomBytes(16).toString("hex");
+    }
+
+    // On writes, require correct token if enforcing
     if (enforce && isWrite) {
+      const token = req.get("X-CSRF-Token");
       if (!token || token !== req.session.csrfToken) {
         return res.status(403).json({ error: "Invalid CSRF token" });
       }
     }
-    next();
+
+    return next();
   };
 }
 
 export function setupAuth(app: Express) {
-  // CORS allowlist from env (comma-separated)
-  const allowedOrigins = (process.env.CORS_ALLOWLIST || "")
-    .split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
+  // CORS allowlist (env supports either CORS_ALLOWLIST or CORS_ALLOWED_ORIGINS)
+  const allowedOrigins =
+    (process.env.CORS_ALLOWLIST || process.env.CORS_ALLOWED_ORIGINS || "")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
 
   app.use(corsAllowlistMiddleware(allowedOrigins));
+
+  // Behind Render/Cloudflare → required for secure cookies
+  app.set("trust proxy", 1);
 
   app.use(
     session({
@@ -121,7 +140,7 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Local strategy: verify using Postgres (bcrypt via pgcrypto's crypt())
+  // Verify using Postgres (bcrypt via pgcrypto's crypt())
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
@@ -139,11 +158,11 @@ export function setupAuth(app: Express) {
     })
   );
 
-  // Use username as the session identifier (works if there's no numeric id)
+  // Serialize session by username (works even if there's no numeric id)
   passport.serializeUser((user, done) => done(null, (user as any).username));
   passport.deserializeUser(async (username: string, done) => {
     try {
-      const user = await storage.getUserByUsername(username);
+      const user = await storage.getUserByUsername(username); // storage now selects only real columns
       done(null, user || false);
     } catch (e) {
       done(e);
@@ -154,10 +173,10 @@ export function setupAuth(app: Express) {
   const enforceCsrf = process.env.ENFORCE_CSRF === "1";
   app.use(csrfMiddleware(enforceCsrf));
   app.get("/api/csrf", (req: any, res) => {
-    res.json({ csrfToken: req.session.csrfToken });
+    res.json({ csrfToken: req.session?.csrfToken ?? null });
   });
 
-  // === Auth routes ===
+  // ---------- Routes ----------
 
   // Admin-only registration; store bcrypt hash via pgcrypto in Postgres
   app.post("/api/register", async (req: any, res) => {
@@ -180,6 +199,7 @@ export function setupAuth(app: Express) {
           req.body.role || "reception",
         ]
       );
+
       const { password_hash, password, ...userWithoutPassword } = result.rows[0];
       res.status(201).json(userWithoutPassword);
     } catch (error: any) {
@@ -208,19 +228,20 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // Logout → JSON and tolerant if session already gone
   app.post("/api/logout", (req: any, res) => {
     req.logout(() => {
-      req.session.destroy(() => {
-        res.sendStatus(200);
-      });
+      if (req.session) {
+        req.session.destroy(() => res.status(200).json({ ok: true }));
+      } else {
+        res.status(200).json({ ok: true });
+      }
     });
   });
 
-  // Current user (strip secrets, coerce BigInt → number to avoid JSON crash)
+  // Current user → strip secrets & coerce bigint to number
   app.get("/api/user", (req: any, res) => {
-    if (!req.isAuthenticated?.() || !req.user) {
-      return res.sendStatus(401);
-    }
+    if (!req.isAuthenticated?.() || !req.user) return res.sendStatus(401);
     const raw = req.user as Record<string, unknown>;
     const cleaned: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(raw)) {
@@ -230,7 +251,7 @@ export function setupAuth(app: Express) {
     return res.json(cleaned);
   });
 
-  // Optional: super-light text endpoint to verify session without JSON serialization issues
+  // Simple text probe for debugging sessions
   app.get("/api/whoami", (req: any, res) => {
     if (!req.isAuthenticated?.() || !req.user) return res.sendStatus(401);
     return res.type("text").send(String((req.user as any)?.username ?? "unknown"));
