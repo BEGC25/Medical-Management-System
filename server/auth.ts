@@ -7,7 +7,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { pool } from "./db";  // import the Postgres pool for DB queries
+import { pool } from "./db";  // Postgres pool for DB queries
 import { User as SelectUser } from "@shared/schema";
 
 declare global {
@@ -25,6 +25,7 @@ declare module "express-session" {
 
 const scryptAsync = promisify(scrypt);
 
+// (Kept for completeness; registration uses pgcrypto in Postgres)
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -63,7 +64,7 @@ function corsAllowlistMiddleware(allowedOrigins: string[]) {
         "Access-Control-Allow-Headers",
         "X-Requested-With, Content-Type, X-CSRF-Token"
       );
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
       if (req.method === "OPTIONS") {
         // preflight
         res.status(200).end();
@@ -95,6 +96,7 @@ function csrfMiddleware(enforce: boolean) {
 }
 
 export function setupAuth(app: Express) {
+  // CORS allowlist from env (comma-separated)
   const allowedOrigins = (process.env.CORS_ALLOWLIST || "")
     .split(",")
     .map((o) => o.trim())
@@ -119,11 +121,10 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Local strategy
+  // Local strategy: verify using Postgres (bcrypt via pgcrypto's crypt())
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Verify username & password using Postgres (bcrypt via crypt)
         const result = await pool.query(
           "SELECT * FROM users WHERE username = $1 AND crypt($2, password_hash) = password_hash",
           [username, password]
@@ -138,71 +139,70 @@ export function setupAuth(app: Express) {
     })
   );
 
-  // Use username as the session identifier
+  // Use username as the session identifier (works if there's no numeric id)
   passport.serializeUser((user, done) => done(null, (user as any).username));
   passport.deserializeUser(async (username: string, done) => {
     try {
       const user = await storage.getUserByUsername(username);
-      done(null, user);
+      done(null, user || false);
     } catch (e) {
       done(e);
     }
   });
 
-  // Expose CSRF token (frontend: call once after login, store and send via X-CSRF-Token)
+  // CSRF
   const enforceCsrf = process.env.ENFORCE_CSRF === "1";
   app.use(csrfMiddleware(enforceCsrf));
   app.get("/api/csrf", (req: any, res) => {
     res.json({ csrfToken: req.session.csrfToken });
   });
 
-  // Auth routes
-  app.post("/api/register", async (req: any, res, next) => {
+  // === Auth routes ===
+
+  // Admin-only registration; store bcrypt hash via pgcrypto in Postgres
+  app.post("/api/register", async (req: any, res) => {
     try {
-      // Only admins can create users
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated?.() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
 
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).send("Username already exists");
+        return res.status(400).json({ error: "Username already exists" });
       }
 
-      // Insert new user with bcrypt-hashed password (Postgres pgcrypto)
       const result = await pool.query(
-        "INSERT INTO users (username, password_hash, full_name, role, is_active, status, created_at) VALUES ($1, crypt($2, gen_salt('bf', 12)), $3, $4, 1, 'active', NOW()::text) RETURNING *",
-        [req.body.username, req.body.password, req.body.fullName || null, req.body.role || 'reception']
+        "INSERT INTO users (username, password_hash, full_name, role, is_active, status, created_at) VALUES ($1, crypt($2, gen_salt('bf', 12)), $3, $4, true, 'active', NOW()::text) RETURNING *",
+        [
+          req.body.username,
+          req.body.password,
+          req.body.fullName || null,
+          req.body.role || "reception",
+        ]
       );
-      const user = result.rows[0];
-
-      // Return the created user (excluding the password hash)
-      const { password_hash, ...userWithoutPassword } = user;
+      const { password_hash, password, ...userWithoutPassword } = result.rows[0];
       res.status(201).json(userWithoutPassword);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });
 
+  // Login → return JSON so clients can call response.json()
   app.post("/api/login", (req: any, res, next) => {
-    // Regenerate to prevent session fixation
     req.session.regenerate((err: any) => {
       if (err) return next(err);
       passport.authenticate("local", (authErr, user) => {
         if (authErr) return next(authErr);
         if (!user) {
-          // Basic brute-force throttle
           req.session.failedLoginCount = (req.session.failedLoginCount || 0) + 1;
           const delayMs = Math.min(3000, 200 * req.session.failedLoginCount);
           return setTimeout(() => res.sendStatus(401), delayMs);
         }
         req.logIn(user, (loginErr) => {
           if (loginErr) return next(loginErr);
-          // reset failed count on success
           req.session.failedLoginCount = 0;
-          // rotate CSRF token on login
           req.session.csrfToken = randomBytes(16).toString("hex");
-          return res.sendStatus(200);
+          return res.status(200).json({ ok: true });
         });
       })(req, res, next);
     });
@@ -216,11 +216,23 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // Current user (strip secrets, coerce BigInt → number to avoid JSON crash)
   app.get("/api/user", (req: any, res) => {
-    if (!req.isAuthenticated || !req.isAuthenticated()) {
+    if (!req.isAuthenticated?.() || !req.user) {
       return res.sendStatus(401);
     }
-    const { password, password_hash, ...userWithoutPassword } = req.user!;
-    res.json(userWithoutPassword);
+    const raw = req.user as Record<string, unknown>;
+    const cleaned: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      if (k === "password" || k === "password_hash") continue;
+      cleaned[k] = typeof v === "bigint" ? Number(v) : v;
+    }
+    return res.json(cleaned);
+  });
+
+  // Optional: super-light text endpoint to verify session without JSON serialization issues
+  app.get("/api/whoami", (req: any, res) => {
+    if (!req.isAuthenticated?.() || !req.user) return res.sendStatus(401);
+    return res.type("text").send(String((req.user as any)?.username ?? "unknown"));
   });
 }
