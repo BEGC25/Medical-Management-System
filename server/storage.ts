@@ -1,5 +1,5 @@
 import { eq, like, ilike, desc, and, count, or, sql, gte, lte } from "drizzle-orm";
-import { pool } from "./db";
+import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -316,15 +316,9 @@ export class MemStorage implements IStorage {
     return user || null;
   }
 
-  async getUserByUsername(username: string) {
-    // Select only real columns; DO NOT select 'password' (doesn't exist) or 'password_hash' (sensitive)
-    const { rows } = await pool.query(
-      `SELECT username, full_name, role, is_active, status, created_at
-         FROM users
-        WHERE username = $1`,
-      [username]
-    );
-    return rows[0] ?? null;
+  async getUserByUsername(username: string): Promise<schema.User | null> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || null;
   }
 
   async getAllUsers(): Promise<schema.User[]> {
