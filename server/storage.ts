@@ -334,9 +334,9 @@ export class MemStorage implements IStorage {
   async createPatient(data: schema.InsertPatient): Promise<schema.Patient> {
     // Initialize counter from existing patients if not set
     if (patientCounter === 0) {
-      // --- MODIFIED: Count only non-deleted patients for ID generation ---
-      const activePatientsCount = await db.select({ count: count() }).from(patients).where(eq(patients.isDeleted, 0));
-      patientCounter = activePatientsCount[0]?.count || 0;
+      // --- FIXED: Count *all* patients (deleted or not) to prevent ID collision ---
+      const allPatientsCount = await db.select({ count: count() }).from(patients);
+      patientCounter = allPatientsCount[0]?.count || 0;
     }
 
     const patientId = generatePatientId();
@@ -352,6 +352,68 @@ export class MemStorage implements IStorage {
     const [patient] = await db.insert(patients).values(insertData).returning();
 
     return patient;
+  }
+  // New atomic workflow for patient registration
+  async registerNewPatientWorkflow(
+    data: schema.InsertPatient,
+    collectConsultationFee: boolean,
+    registeredBy: string
+  ): Promise<{
+    patient: schema.Patient;
+    encounter: schema.Encounter;
+  }> {
+    // --- Fix for Red Flag #3: Use stable service code "CONS-GEN" ---
+    const [consultationService] = await db.select().from(services)
+      .where(and(
+        eq(services.code, "CONS-GEN"), // Use stable code from seed script
+        eq(services.isActive, 1)
+      ))
+      .limit(1);
+
+    if (!consultationService) {
+      throw new Error("Critical Error: Default 'CONS-GEN' consultation service not found or is inactive. Please check service management.");
+    }
+
+    // 1. Create Patient
+    const patient = await this.createPatient(data);
+
+    // 2. Create Encounter
+    const encounter = await this.createEncounter({
+      patientId: patient.patientId,
+      visitDate: new Date().toISOString().split("T")[0],
+      policy: "cash",
+      attendingClinician: "", // Reception doesn't assign this
+      notes: "Patient registered at reception.",
+    });
+
+    // 3. Create Consultation Order Line
+    const orderLine = await this.createOrderLine({
+      encounterId: encounter.encounterId,
+      serviceId: consultationService.id,
+      relatedType: "consultation",
+      description: consultationService.name, // Use the service's actual name
+      quantity: 1,
+      unitPriceSnapshot: consultationService.price,
+      totalPrice: consultationService.price,
+      department: "consultation",
+      status: "performed",
+      orderedBy: registeredBy,
+      addToCart: 1, // Always add consultation fee to cart
+    });
+
+    // 4. (Optional) Create Payment
+    if (collectConsultationFee) {
+      const payment = await this.createPayment({
+        patientId: patient.patientId,
+        totalAmount: consultationService.price,
+        paymentMethod: "cash", // Default to cash at registration
+        paymentDate: new Date().toISOString().split("T")[0],
+        receivedBy: registeredBy,
+        notes: "Consultation fee - paid at registration",
+      });
+    }
+
+    return { patient, encounter };
   }
 
   async getPatients(search?: string): Promise<schema.Patient[]> {
