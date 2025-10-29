@@ -127,7 +127,7 @@ export default function Patients() {
   });
   
   const consultationService = (servicesList as any[] || []).find(
-  (s: any) => s.code === "CONS-GEN" // --- FIX: Use stable code 'CONS--GEN'
+  (s: any) => s.code === "CONS--GEN" // --- FIX: Use stable code 'CONS--GEN'
 );
   
   // Debug log to see what we're getting
