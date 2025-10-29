@@ -184,7 +184,7 @@ router.post("/api/patients", async (req, res) => {
         .status(400)
         .json({ error: "Invalid patient data", details: error.errors });
     }
-    if (error instanceof Error && (error.message.includes("CONS-GEN") || error.message.includes("UNIQUE constraint failed: patients.patient_id"))) {
+    if (error instanceof Error && (error.message.includes("CONS--GEN") || error.message.includes("UNIQUE constraint failed: patients.patient_id"))) {
       // Catch the service not found error or a duplicate patientId error
       return res.status(400).json({ error: error.message });
     }
