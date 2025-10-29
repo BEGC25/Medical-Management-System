@@ -159,15 +159,36 @@ router.get("/api/patients/:patientId", async (req, res) => {
 
 router.post("/api/patients", async (req, res) => {
   try {
-    const data = insertPatientSchema.parse(req.body);
-    const patient = await storage.createPatient(data);
-    res.status(201).json(patient);
+    // The frontend will send { patientData: {...}, collectConsultationFee: true }
+    const { patientData, collectConsultationFee } = req.body;
+
+    if (!patientData) {
+      return res.status(400).json({ error: "Invalid request body. Expected { patientData, ... }" });
+    }
+
+    const data = insertPatientSchema.parse(patientData);
+    const registeredBy = (req as any).user?.username || (req as any).user?.email || "System";
+
+    // Call the new atomic storage function
+    const result = await storage.registerNewPatientWorkflow(
+      data,
+      !!collectConsultationFee,
+      registeredBy
+    );
+
+    res.status(201).json(result.patient); // Return just the patient, as before
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid patient data", details: error.errors });
     }
+    if (error instanceof Error && (error.message.includes("CONS-GEN") || error.message.includes("UNIQUE constraint failed: patients.patient_id"))) {
+      // Catch the service not found error or a duplicate patientId error
+      return res.status(400).json({ error: error.message });
+    }
+    console.error("Error in patient registration workflow:", error);
     res.status(500).json({ error: "Failed to create patient" });
   }
 });
