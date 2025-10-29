@@ -127,8 +127,8 @@ export default function Patients() {
   });
   
   const consultationService = (servicesList as any[] || []).find(
-    (s: any) => s.category === "consultation" && s.name === "Consultation" && s.isActive !== false
-  );
+  (s: any) => s.code === "CONS-GEN" // --- FIX: Use stable code 'CONS--GEN'
+);
   
   // Debug log to see what we're getting
   console.log("Consultation service found:", consultationService);
@@ -200,109 +200,52 @@ export default function Patients() {
   });
 
   const createPatientMutation = useMutation({
-    mutationFn: async (data: InsertPatient) => {
-      const patientResponse = await apiRequest("POST", "/api/patients", data);
-      const patient = await patientResponse.json();
+  mutationFn: async (data: InsertPatient) => {
+    // --- FIX: Send all data to the new atomic endpoint ---
+    const registrationData = {
+      patientData: data,
+      collectConsultationFee: collectConsultationFee, // Get state of the checkbox
+    };
 
-      // ALWAYS create encounter and consultation fee - this is mandatory for clinic workflow
-      if (billingSettings && servicesList) {
-        try {
-          // Create encounter for every patient visit
-          const encounterData = {
-            patientId: patient.patientId,
-            visitDate: new Date().toISOString().split("T")[0],
-            policy: "cash",
-            attendingClinician: "",
-          };
-
-          const encounterResponse = await apiRequest(
-            "POST",
-            "/api/encounters",
-            encounterData,
-          );
-          const encounter = await encounterResponse.json();
-
-          // ALWAYS add consultation fee as order line
-          const consultationService = (servicesList as any[]).find(
-            (s: any) => s.category === "consultation" && s.name === "Consultation",
-          );
-
-          if (consultationService) {
-            const orderLineData = {
-              encounterId: encounter.encounterId,
-              serviceId: consultationService.id,
-              relatedType: "consultation",
-              description: "Consultation Fee",
-              quantity: 1,
-              unitPriceSnapshot: consultationService.price,
-              totalPrice: consultationService.price,
-              department: "consultation",
-              status: "performed",
-              orderedBy: "",
-              addToCart: 1,
-            };
-
-            await apiRequest("POST", "/api/order-lines", orderLineData);
-
-            // If prepayment option is checked, create payment automatically
-            if (collectConsultationFee) {
-              try {
-                const paymentData = {
-                  patientId: patient.patientId,
-                  totalAmount: consultationService.price,
-                  paymentMethod: "cash",
-                  receivedBy: "",
-                  notes: "Consultation fee - paid at registration",
-                };
-
-                await apiRequest("POST", "/api/payments", paymentData);
-              } catch (paymentError) {
-                console.error("Error creating consultation payment:", paymentError);
-              }
-            }
-          }
-        } catch (encounterError) {
-          console.error("Error creating encounter:", encounterError);
-        }
-      }
-
-      return patient;
-    },
-    onSuccess: () => {
+    const response = await apiRequest("POST", "/api/patients", registrationData);
+    // The server now handles all steps, so we just return the result.
+    return response.json();
+  },
+  onSuccess: () => {
+    toast({
+      title: "Success",
+      description: "Patient registered successfully",
+    });
+    form.reset();
+    setShowRegistrationForm(false);
+    setCollectConsultationFee(billingSettings?.requirePrepayment || false);
+    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+  },
+  onError: (error: any) => {
+    if (!navigator.onLine) {
+      addToPendingSync({
+        type: "patient",
+        action: "create",
+        data: form.getValues(),
+      });
       toast({
-        title: "Success",
-        description: "Patient registered successfully",
+        title: "Saved Offline",
+        description: "Patient saved locally. Will sync when online.",
       });
       form.reset();
       setShowRegistrationForm(false);
-      setCollectConsultationFee(billingSettings?.requirePrepayment || false);
-      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
-    },
-    onError: () => {
-      if (!navigator.onLine) {
-        addToPendingSync({
-          type: "patient",
-          action: "create",
-          data: form.getValues(),
-        });
-        toast({
-          title: "Saved Offline",
-          description: "Patient saved locally. Will sync when online.",
-        });
-        form.reset();
-        setShowRegistrationForm(false);
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to register patient",
-          variant: "destructive",
-        });
-      }
-    },
-  });
+    } else {
+      toast({
+        title: "Error",
+        description: error?.error || "Failed to register patient", // Show server error
+        variant: "destructive",
+      });
+    }
+  },
+});
 
   const updatePatientMutation = useMutation({
     mutationFn: async ({
