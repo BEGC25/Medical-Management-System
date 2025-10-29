@@ -423,21 +423,9 @@ export default function Patients() {
     if (viewMode === "search") {
       return searchResults;
     }
-
-    if (viewMode === "today") {
-      const today = new Date().toDateString();
-      return patientsList.filter((p: any) => {
-        return new Date(p.createdAt).toDateString() === today;
-      });
-    }
-
-    if (viewMode === "date") {
-      const selected = new Date(selectedDate).toDateString();
-      return patientsList.filter((p: any) => {
-        return new Date(p.createdAt).toDateString() === selected;
-      });
-    }
-
+    
+    // The API already filters for 'today', 'date', and 'all' based on query params.
+    // No need to re-filter on the client.
     return patientsList;
   })();
 
