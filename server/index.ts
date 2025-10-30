@@ -4,41 +4,52 @@ import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
 
 const app = express();
 
-// CORS configuration - permissive in development, strict in production
-const isDevelopment = process.env.NODE_ENV === 'development';
+/** Mask DB URL for safe boot logging */
+function maskDbUrl(url?: string) {
+  if (!url) return "";
+  // postgresql://user:***@host/db?...   (hide password only)
+  return url.replace(/:\/\/([^:]+):[^@]+@/, "://$1:***@");
+}
+
+// --- Boot-time diagnostics (prints once in Render logs)
+console.log("[BOOT] NODE_ENV =", process.env.NODE_ENV);
+console.log("[BOOT] DATABASE_URL =", maskDbUrl(process.env.DATABASE_URL));
+console.log("[BOOT] DIRECT_DATABASE_URL =", maskDbUrl(process.env.DIRECT_DATABASE_URL));
+
+/** CORS configuration - permissive in development, strict in production */
+const isDevelopment = process.env.NODE_ENV === "development";
 
 if (isDevelopment) {
-  // Development mode: Allow all origins (for Replit preview, localhost, etc.)
-  app.use(cors({
-    origin: true, // Allow all origins
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }));
+  app.use(
+    cors({
+      origin: true, // allow all in dev
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  );
 } else {
-  // Production mode: Only allow specified origins
-  const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',') 
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim())
     : [];
 
-  app.use(cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true, // Allow cookies to be sent
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // allow tools with no Origin (curl, Postman, mobile)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error("Not allowed by CORS"));
+      },
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  );
 }
 
 app.use(express.json());
@@ -78,27 +89,61 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // ──────────────────────────────
+  // Robust health checks
+  // ──────────────────────────────
+
+  // Simple uptime endpoint (for Render/ALB)
+  app.get("/health", (_req, res) => res.status(200).send("ok"));
+
+  // DB-aware health endpoint (used by you and the client)
+  app.get("/api/health", async (_req: Request, res: Response) => {
+    res.setHeader("Cache-Control", "no-store");
+    try {
+      if (typeof (storage as any).healthCheck !== "function") {
+        throw new Error(
+          "storage.healthCheck() is not implemented. Add it to server/storage.ts as discussed."
+        );
+      }
+      const row = await (storage as any).healthCheck();
+      return res.json({
+        ok: true,
+        now: row.now,
+        patients: Number(row.patients || 0),
+        services: Number(row.services || 0),
+        billing_settings: Number(row.billing_settings || 0),
+      });
+    } catch (e: any) {
+      // Return structured error so 500s are actionable
+      console.error("[/api/health] error:", e);
+      return res.status(500).json({
+        ok: false,
+        error: e?.message || "DB error",
+        code: e?.code,
+        detail: e?.detail,
+        hint: e?.hint,
+        where: e?.where,
+      });
+    }
+  });
+
   // Centralized error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
-    // rethrow so it shows in Render logs
+    // rethrow so it surfaces in Render logs
     throw err;
   });
 
-  // Only mount Vite dev middleware in development;
-  // otherwise serve the pre-built static assets
+  // Mount vite (dev) or serve built assets (prod)
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // Healthcheck for Render/uptime monitors
-  app.get("/health", (_req, res) => res.status(200).send("ok"));
-
-  // Use Render's injected PORT (e.g., 8080); fallback to 5000 for local dev
+  // Use Render's injected PORT; fallback for local dev
   const port = Number(process.env.PORT) || 5000;
   const host = "0.0.0.0";
 
@@ -106,11 +151,10 @@ app.use((req, res, next) => {
     {
       port,
       host,
-      // reusePort not supported on Windows, but safe here
       reusePort: process.platform !== "win32",
     },
     () => {
       log(`serving on port ${port}`);
-    }
+    },
   );
 })();
