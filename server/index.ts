@@ -1,87 +1,82 @@
 // Medical-Management-System/server/index.ts
 
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
-// ✅ Added: Daily Cash report routes (you uploaded these into /server)
-import dailyCashRouter from "./reports.daily-cash";
-import dailyCashCsvRouter from "./reports.daily-cash.csv";
-// (Optional) If you decide to use the close-day endpoint later, uncomment:
-// import cashCloseRouter from "./cash.close";
-
 const app = express();
 
-// Trust the reverse proxy (Render) so secure cookies & IPs work correctly
-app.set("trust proxy", 1);
+// CORS configuration - permissive in development, strict in production
+const isDevelopment = process.env.NODE_ENV === 'development';
 
-// --- Minimal security headers (no extra deps) ---
-app.use((req, res, next) => {
-  res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  next();
-});
+if (isDevelopment) {
+  // Development mode: Allow all origins (for Replit preview, localhost, etc.)
+  app.use(cors({
+    origin: true, // Allow all origins
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
+} else {
+  // Production mode: Only allow specified origins
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : [];
 
-// --- Lightweight CORS allowlist (defense-in-depth, no 'cors' package) ---
-// Set CORS_ALLOWED_ORIGINS="https://app.bahrelghazalclinic.com,https://staging.app.bahrelghazalclinic.com,http://localhost:5173"
-const ALLOWLIST = (process.env.CORS_ALLOWED_ORIGINS || "")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true, // Allow cookies to be sent
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
+}
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin as string | undefined;
-
-  // Allow if origin is on the allowlist (or if no allowlist configured)
-  if (origin && (ALLOWLIST.length === 0 || ALLOWLIST.includes(origin))) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, X-CSRF-Token"
-    );
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-    );
-  }
-  if (req.method === "OPTIONS") return res.sendStatus(204);
-  next();
-});
-
-// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// --- Safe API access logger (no response bodies / no PHI) ---
+// Simple API request logger (captures JSON responses)
 app.use((req, res, next) => {
   const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  // simple request id for correlating logs
-  const rid = (Math.random().toString(36).slice(2) + Date.now().toString(36)).toUpperCase();
-  res.setHeader("X-Request-Id", rid);
+  const originalResJson = res.json.bind(res);
+  (res as any).json = (bodyJson: any) => {
+    capturedJsonResponse = bodyJson;
+    return originalResJson(bodyJson);
+  };
 
   res.on("finish", () => {
-    // Log only API traffic to keep noise down
-    if (req.path.startsWith("/api")) {
-      const duration = Date.now() - start;
-      log(`[api] ${req.method} ${req.path} ${res.statusCode} ${duration}ms rid=${rid}`);
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let line = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        try {
+          line += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        } catch {
+          // ignore stringify errors
+        }
+      }
+      if (line.length > 80) line = line.slice(0, 79) + "…";
+      log(line);
     }
   });
+
   next();
 });
 
 (async () => {
-  // Register all existing app routes
   const server = await registerRoutes(app);
-
-  // ✅ Register the Daily Cash APIs BEFORE the error handler
-  app.use(dailyCashRouter);
-  app.use(dailyCashCsvRouter);
-  // Optional close-day endpoint:
-  // app.use(cashCloseRouter);
 
   // Centralized error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -92,19 +87,18 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Dev vs prod static serving
+  // Only mount Vite dev middleware in development;
+  // otherwise serve the pre-built static assets
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // Stronger health checks
-  // NOTE: Keep your existing "/" health for Render, and add API-scoped as well.
+  // Healthcheck for Render/uptime monitors
   app.get("/health", (_req, res) => res.status(200).send("ok"));
-  app.get("/api/health", (_req, res) => res.status(200).send("ok"));
 
-  // Bind to Render-provided PORT (e.g., 8080), fallback to 5000 locally
+  // Use Render's injected PORT (e.g., 8080); fallback to 5000 for local dev
   const port = Number(process.env.PORT) || 5000;
   const host = "0.0.0.0";
 
@@ -112,6 +106,7 @@ app.use((req, res, next) => {
     {
       port,
       host,
+      // reusePort not supported on Windows, but safe here
       reusePort: process.platform !== "win32",
     },
     () => {
