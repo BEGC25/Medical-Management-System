@@ -19,10 +19,26 @@ declare module "express-session" {
   interface SessionData {
     csrfToken?: string;
     failedLoginCount?: number;
+    user?: any; // for demo mode
   }
 }
 
 const scryptAsync = promisify(scrypt);
+
+// ======== DEMO / NO-AUTH TOGGLE ========
+const DISABLE_AUTH = String(process.env.DISABLE_AUTH || "")
+  .toLowerCase()
+  .trim() === "true";
+
+// Minimal mock user returned in demo mode
+const demoUser: any = {
+  id: 0,
+  username: "demo",
+  role: "admin",
+  firstName: "Demo",
+  lastName: "User",
+  email: "demo@example.com",
+};
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -39,9 +55,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 // Minimal, dependency-free CORS with allowlist + credentials
 function corsAllowlistMiddleware(allowedOrigins: string[]) {
-  const normalized = allowedOrigins
-    .map((o) => o.trim())
-    .filter(Boolean);
+  const normalized = allowedOrigins.map((o) => o.trim()).filter(Boolean);
 
   return (req: any, res: any, next: any) => {
     const origin = req.headers.origin as string | undefined;
@@ -58,14 +72,8 @@ function corsAllowlistMiddleware(allowedOrigins: string[]) {
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Vary", "Origin");
       res.setHeader("Access-Control-Allow-Credentials", "true");
-      res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Content-Type, X-CSRF-Token"
-      );
-      res.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-      );
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token");
+      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     }
 
     if (req.method === "OPTIONS") {
@@ -133,7 +141,7 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production", // Render: true
       httpOnly: true,
-      sameSite: "lax", // app.* and api.* are same-site
+      sameSite: "lax", // app.* and api.* are same-site; fine for demo mode
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
   };
@@ -142,10 +150,25 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Local strategy
+  // ======== DEMO MODE MIDDLEWARE ========
+  // Short-circuit auth globally when DISABLE_AUTH=true
+  app.use((req: any, _res, next) => {
+    if (DISABLE_AUTH) {
+      // Attach a user and make every request "authenticated"
+      req.user = demoUser;
+      req.isAuthenticated = () => true;
+    }
+    next();
+  });
+
+  // Local strategy (only used when auth is enabled)
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        if (DISABLE_AUTH) {
+          // Should not be hit, but just in case
+          return done(null, demoUser);
+        }
         const user = await storage.getUserByUsername(username);
         if (!user) return done(null, false);
         const ok = await comparePasswords(password, user.password);
@@ -160,6 +183,7 @@ export function setupAuth(app: Express) {
   passport.serializeUser((user, done) => done(null, (user as any).id));
   passport.deserializeUser(async (id: number, done) => {
     try {
+      if (DISABLE_AUTH) return done(null, demoUser);
       const user = await storage.getUser(id);
       done(null, user);
     } catch (e) {
@@ -174,11 +198,12 @@ export function setupAuth(app: Express) {
     res.json({ csrfToken: req.session.csrfToken });
   });
 
-  // Auth routes
-  app.post("/api/register", async (req: any, res, next) => {
+  // ======== AUTH ROUTES ========
+
+  // Register (still enforces admin, but demo mode grants admin automatically)
+  app.post("/api/register", async (req: any, res) => {
     try {
-      // Only admins can create users
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated || !req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
 
@@ -199,8 +224,21 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Login
   app.post("/api/login", (req: any, res, next) => {
-    // Regenerate to prevent session fixation
+    if (DISABLE_AUTH) {
+      // No-auth: always succeed and return demo user; also set a session token so UI "feels" normal
+      req.session.regenerate((_err: any) => {
+        req.session.user = demoUser;
+        req.user = demoUser;
+        req.session.csrfToken = randomBytes(24).toString("hex");
+        const { password, ...userWithoutPassword } = demoUser as any;
+        return res.status(200).json(userWithoutPassword);
+      });
+      return;
+    }
+
+    // Real auth path
     req.session.regenerate((err: any) => {
       if (err) return next(err);
       passport.authenticate("local", (authErr, user) => {
@@ -209,16 +247,25 @@ export function setupAuth(app: Express) {
         }
         req.login(user, (loginErr: any) => {
           if (loginErr) return next(loginErr);
-          // Refresh CSRF token on new session
           req.session.csrfToken = randomBytes(24).toString("hex");
-          const { password, ...userWithoutPassword } = user;
+          const { password, ...userWithoutPassword } = user as any;
           return res.status(200).json(userWithoutPassword);
         });
       })(req, res, next);
     });
   });
 
+  // Logout
   app.post("/api/logout", (req: any, res, next) => {
+    if (DISABLE_AUTH) {
+      // Clear any demo session if present, but always 200
+      try {
+        req.session.destroy(() => res.sendStatus(200));
+      } catch {
+        res.sendStatus(200);
+      }
+      return;
+    }
     req.logout((err: any) => {
       if (err) return next(err);
       req.session.destroy(() => {
@@ -227,7 +274,12 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // Current User
   app.get("/api/user", (req: any, res) => {
+    if (DISABLE_AUTH) {
+      const { password, ...userWithoutPassword } = demoUser as any;
+      return res.json(userWithoutPassword);
+    }
     if (!req.isAuthenticated || !req.isAuthenticated()) {
       return res.sendStatus(401);
     }
