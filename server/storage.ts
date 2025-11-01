@@ -410,7 +410,7 @@ export class MemStorage implements IStorage {
       addToCart: 1, // Always add consultation fee to cart
     });
 
-    // 4. (Optional) Create Payment
+    // 4. (Optional) Create Payment and Link to Order Line
     if (collectConsultationFee) {
       const payment = await this.createPayment({
         patientId: patient.patientId,
@@ -420,6 +420,23 @@ export class MemStorage implements IStorage {
         receivedBy: registeredBy,
         notes: "Consultation fee - paid at registration",
       });
+
+      // Create payment item linking payment to order line
+      await this.createPaymentItem({
+        paymentId: payment.paymentId,
+        orderLineId: orderLine.id,
+        serviceId: consultationService.id,
+        relatedType: "consultation",
+        quantity: 1,
+        unitPrice: consultationService.price,
+        totalPrice: consultationService.price,
+        amount: consultationService.price,
+      });
+
+      // Mark order line as paid by removing from cart
+      await db.update(orderLines)
+        .set({ addToCart: 0 })
+        .where(eq(orderLines.id, orderLine.id));
     }
 
     return { patient, encounter };

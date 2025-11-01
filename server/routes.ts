@@ -1205,7 +1205,24 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
       };
     });
 
-    const allOrders = [...labOrders, ...xrayOrders, ...ultrasoundOrders];
+    // Add consultation order lines (they don't have a separate table)
+    const consultationOrders = orderLines
+      .filter((ol: any) => ol.relatedType === "consultation")
+      .map((ol: any) => ({
+        orderId: ol.id,
+        visitId,
+        type: "consultation",
+        name: ol.description || "Consultation",
+        status: ol.status || "performed",
+        totalPrice: ol.totalPrice,
+        orderLine: ol,
+        acknowledgedAt: ol.acknowledgedAt || null,
+        acknowledgedBy: ol.acknowledgedBy || null,
+        addToCart: ol.addToCart || 0,
+        isPaid: ol.addToCart === 0, // If not in cart, it's paid
+      }));
+
+    const allOrders = [...consultationOrders, ...labOrders, ...xrayOrders, ...ultrasoundOrders];
 
     res.json(allOrders);
   } catch (error) {
