@@ -45,24 +45,26 @@ function App() {
               <main className="ml-64 pt-16 min-h-screen">
                 <div className="px-6 py-6">
                   <Switch>
-                    <ProtectedRoute path="/" component={Dashboard} />
-                    <ProtectedRoute path="/patients" component={Patients} />
-                    <ProtectedRoute path="/treatment/new" component={VisitRedirector} />
-                    <ProtectedRoute path="/treatment/:visitId" component={Treatment} />
-                    <ProtectedRoute path="/treatment" component={Treatment} />
-                    <ProtectedRoute path="/laboratory" component={Laboratory} />
-                    <ProtectedRoute path="/xray" component={XRay} />
-                    <ProtectedRoute path="/ultrasound" component={Ultrasound} />
-                    <ProtectedRoute path="/pharmacy" component={Pharmacy} />
-                    <ProtectedRoute path="/pharmacy-inventory" component={PharmacyInventory} />
-                    <ProtectedRoute path="/payment" component={Payment} />
-                    <ProtectedRoute path="/billing" component={Billing} />
-                    <ProtectedRoute path="/billing-settings" component={BillingSettings} />
-                    <ProtectedRoute path="/service-management" component={ServiceManagement} />
-                    <ProtectedRoute path="/reports" component={Reports} />
-                    <ProtectedRoute path="/reports/daily-cash" component={ReportsDailyCash} />
-                    <ProtectedRoute path="/all-results" component={AllResults} />
-                    <ProtectedRoute path="/users" component={UserManagement} />
+                    {/* 🔒 AUTHENTICATION DISABLED - using Route instead of ProtectedRoute */}
+                    <Route path="/" component={Dashboard} />
+                    <Route path="/patients" component={Patients} />
+                    <Route path="/treatment/new" component={VisitRedirector} />
+                    <Route path="/treatment/:visitId" component={Treatment} />
+                    <Route path="/treatment" component={Treatment} />
+                    <Route path="/laboratory" component={Laboratory} />
+                    <Route path="/xray" component={XRay} />
+                    <Route path="/ultrasound" component={Ultrasound} />
+                    <Route path="/pharmacy" component={Pharmacy} />
+                    <Route path="/pharmacy-inventory" component={PharmacyInventory} />
+                    <Route path="/payment" component={Payment} />
+                    <Route path="/billing" component={Billing} />
+                    <Route path="/billing-settings" component={BillingSettings} />
+                    <Route path="/service-management" component={ServiceManagement} />
+                    <Route path="/reports" component={Reports} />
+                    {/* ✅ NEW route for Daily Cash */}
+                    <Route path="/reports/daily-cash" component={ReportsDailyCash} />
+                    <Route path="/all-results" component={AllResults} />
+                    <Route path="/users" component={UserManagement} />
                     <Route component={NotFound} />
                   </Switch>
                 </div>
