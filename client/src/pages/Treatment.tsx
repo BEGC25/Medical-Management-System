@@ -1167,32 +1167,15 @@ export default function Treatment() {
                                           </div>
                                         </div>
                                       </CardHeader>
-                                      <CardContent className="p-4 space-y-4">
-                                        {/* --- NEW: Inline Results Display --- */}
-                                        {testsOrdered.length > 0 && (
-                                          <div>
-                                            <h5 className="font-medium text-sm mb-1">Tests Ordered:</h5>
-                                            <div className="flex flex-wrap gap-1">
-                                              {testsOrdered.map((t, i) => <Badge key={i} variant="secondary">{t}</Badge>)}
-                                            </div>
-                                          </div>
-                                        )}
+                                    </Card>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
 
-                                        {/* Clinical Interpretation - Comprehensive Analysis */}
-                                        {(() => {
-                                          const criticalFindings: string[] = [];
-                                          const warnings: string[] = [];
-
-                                          // Helper function to check if titer is significant
-                                          const getTiterValue = (titer: string): number => {
-                                            const match = titer?.match(/1:(\d+)/);
-                                            return match ? parseInt(match[1]) : 0;
-                                          };
-
-                                          // Analyze results for critical findings
-                                          Object.entries(parsedResults).forEach(([testName, testData]) => {
-                                            // ===== MALARIA DETECTION =====
-                                            if (testName === "Blood Film for Malaria (BFFM)") {
+                          {/* X-rays */}
+                          {/* ... (Keep X-ray rendering logic, maybe wrap in Card like labs for consistency) ... */}
                                               const parasites = testData["Malaria Parasites"];
                                               if (parasites && parasites !== "Not seen" && parasites !== "Negative") {
                                                 criticalFindings.push(`🔴 POSITIVE for ${parasites} malaria - Requires immediate treatment`);
