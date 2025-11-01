@@ -190,7 +190,7 @@ export default function PatientSearch({
                         </span>
                       ) : (
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          Paid: 5000 SSP
+                          Paid
                         </Badge>
                       )}
                     </td>

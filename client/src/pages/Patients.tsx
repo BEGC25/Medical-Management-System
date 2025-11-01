@@ -351,16 +351,7 @@ export default function Patients() {
   });
 
   const onSubmit = (data: InsertPatient) => {
-    // Enforce consultation fee collection when required
-    if (!editingPatient && billingSettings?.requirePrepayment && !collectConsultationFee) {
-      toast({
-        title: "Payment Required",
-        description: "Consultation fee must be collected before registration. Please check the payment collection option.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // No longer enforce consultation fee - manager can override
     if (editingPatient) {
       updatePatientMutation.mutate({
         patientId: editingPatient.patientId,
@@ -911,7 +902,6 @@ export default function Patients() {
                       id="collect-fee"
                       checked={collectConsultationFee}
                       onCheckedChange={setCollectConsultationFee}
-                      disabled={billingSettings.requirePrepayment}
                       data-testid="switch-collect-fee"
                     />
                     <label
@@ -925,7 +915,7 @@ export default function Patients() {
                         return `Collect consultation fee (${money(price)})`;
                       })()}
                       {billingSettings.requirePrepayment && (
-                        <Badge variant="default" className="ml-2">Required</Badge>
+                        <Badge variant="default" className="ml-2">Recommended</Badge>
                       )}
                     </label>
                   </div>
