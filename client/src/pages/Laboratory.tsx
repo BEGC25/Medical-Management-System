@@ -270,6 +270,46 @@ const resultFields: Record<
     "T3": { type: "number" as const, unit: "ng/dL", normal: "80-200" },
     "T4": { type: "number" as const, unit: "μg/dL", normal: "5-12" },
   },
+
+  "H. Pylori Test": {
+    "H. Pylori Antigen": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Test Method": { type: "select" as const, options: ["Stool Antigen", "Serology", "Breath Test"], normal: "Stool Antigen" },
+  },
+
+  "Hepatitis C Test (HCV)": {
+    "HCV Antibody": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+  },
+
+  "VDRL Test (Syphilis)": {
+    "VDRL": { type: "select" as const, options: ["Non-Reactive", "Reactive"], normal: "Non-Reactive" },
+    "Titer": { type: "select" as const, options: ["None", "1:2", "1:4", "1:8", "1:16", "1:32", "1:64"], normal: "None" },
+  },
+
+  "Brucella Test (B.A.T)": {
+    "Brucella Antibody": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Titer": { type: "select" as const, options: ["None", "1:20", "1:40", "1:80", "1:160", "1:320"], normal: "None" },
+  },
+
+  "ESR (Erythrocyte Sedimentation Rate)": {
+    "ESR (1 hour)": { type: "number" as const, unit: "mm/hr", normal: "0-20 (varies by age/gender)" },
+  },
+
+  "Rheumatoid Factor": {
+    "RF": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Titer": { type: "select" as const, options: ["<20", "20-40", "40-80", ">80"], normal: "<20" },
+  },
+
+  "Hemoglobin (HB)": {
+    "Hemoglobin": { type: "number" as const, unit: "g/dL", normal: "12-16 (adult)" },
+  },
+
+  "Total White Blood Count (TWBC)": {
+    "WBC": { type: "number" as const, unit: "x10³/µL", normal: "4.0-11.0" },
+  },
+
+  "Gonorrhea Test": {
+    "Gonorrhea": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+  },
 };
 
 /* ------------------------------------------------------------------ */
