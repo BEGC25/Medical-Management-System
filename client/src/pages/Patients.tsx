@@ -174,7 +174,7 @@ export default function Patients() {
       setSearchLoading(true);
       try {
         const response = await fetch(
-          `/api/patients?search=${encodeURIComponent(searchQuery)}`,
+          `/api/patients?search=${encodeURIComponent(searchQuery)}&withStatus=true`,
         );
         const data = await response.json();
         setSearchResults(data);
@@ -416,6 +416,7 @@ export default function Patients() {
         const params = new URLSearchParams();
         if (viewMode === "date") params.append("date", selectedDate);
         if (viewMode === "today") params.append("today", "true");
+        params.append("withStatus", "true"); // Include consultation payment status
 
         const response = await fetch(`/api/patients?${params}`);
         if (!response.ok) throw new Error("Failed to fetch patients");
