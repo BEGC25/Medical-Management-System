@@ -1725,6 +1725,93 @@ export default function Laboratory() {
                     warnings.push(`⚠️ High random blood sugar (${rbs} mg/dL) - Diabetes evaluation needed`);
                   }
                 }
+
+                // ===== H. PYLORI TEST =====
+                if (testName === "H. Pylori Test") {
+                  const result = testData["H. Pylori Antigen"];
+                  if (result === "Positive") {
+                    warnings.push(`⚠️ H. Pylori POSITIVE - Causative agent of peptic ulcer disease, requires treatment with antibiotics`);
+                  }
+                }
+
+                // ===== HEPATITIS C TEST (HCV) =====
+                if (testName === "Hepatitis C Test (HCV)") {
+                  const result = testData["HCV Antibody"];
+                  if (result === "Positive") {
+                    criticalFindings.push(`🔴 POSITIVE for Hepatitis C - Chronic liver infection, requires confirmatory testing and specialist referral`);
+                  }
+                }
+
+                // ===== HIV TEST =====
+                if (testName === "HIV Test") {
+                  const result = testData["HIV Antibody"];
+                  if (result === "Positive") {
+                    criticalFindings.push(`🔴 POSITIVE for HIV - Requires confirmatory testing, counseling, and antiretroviral therapy`);
+                  }
+                }
+
+                // ===== GONORRHEA TEST =====
+                if (testName === "Gonorrhea Test") {
+                  const result = testData["Gonorrhea"];
+                  if (result === "Positive") {
+                    criticalFindings.push(`🔴 POSITIVE for Gonorrhea - Sexually transmitted infection requiring antibiotic treatment and partner notification`);
+                  }
+                }
+
+                // ===== PREGNANCY TEST (HCG) =====
+                if (testName === "Pregnancy Test (HCG)") {
+                  const result = testData["β-hCG"];
+                  if (result === "Positive") {
+                    warnings.push(`⚠️ Pregnancy test POSITIVE - Confirm pregnancy and initiate prenatal care`);
+                  }
+                }
+
+                // ===== ESR (ERYTHROCYTE SEDIMENTATION RATE) =====
+                if (testName === "ESR (Erythrocyte Sedimentation Rate)") {
+                  const esr = parseFloat(testData["ESR (1 hour)"]);
+                  if (!isNaN(esr) && esr > 50) {
+                    warnings.push(`⚠️ Markedly elevated ESR (${esr} mm/hr) - Significant inflammation, infection, or malignancy possible`);
+                  } else if (!isNaN(esr) && esr > 30) {
+                    warnings.push(`⚠️ Elevated ESR (${esr} mm/hr) - Inflammatory process present`);
+                  }
+                }
+
+                // ===== RHEUMATOID FACTOR =====
+                if (testName === "Rheumatoid Factor") {
+                  const result = testData["RF"];
+                  const titer = testData["Titer"];
+                  if (result === "Positive") {
+                    if (titer && (titer.includes(">80") || titer.includes("40-80"))) {
+                      warnings.push(`⚠️ Rheumatoid Factor POSITIVE (titer: ${titer}) - Strongly suggests rheumatoid arthritis or autoimmune disease`);
+                    } else {
+                      warnings.push(`⚠️ Rheumatoid Factor POSITIVE - May indicate rheumatoid arthritis, requires clinical correlation`);
+                    }
+                  }
+                }
+
+                // ===== HEMOGLOBIN (HB) =====
+                if (testName === "Hemoglobin (HB)") {
+                  const hb = parseFloat(testData["Hemoglobin"]);
+                  if (!isNaN(hb) && hb < 7) {
+                    criticalFindings.push(`🔴 SEVERE anemia (Hb: ${hb} g/dL) - Requires urgent blood transfusion consideration`);
+                  } else if (!isNaN(hb) && hb < 10) {
+                    warnings.push(`⚠️ Moderate anemia (Hb: ${hb} g/dL) - Requires treatment and investigation`);
+                  } else if (!isNaN(hb) && hb < 12) {
+                    warnings.push(`⚠️ Mild anemia (Hb: ${hb} g/dL) - Monitor and consider iron supplementation`);
+                  }
+                }
+
+                // ===== TOTAL WHITE BLOOD COUNT (TWBC) =====
+                if (testName === "Total White Blood Count (TWBC)") {
+                  const wbc = parseFloat(testData["WBC"]);
+                  if (!isNaN(wbc) && wbc > 15) {
+                    warnings.push(`⚠️ Elevated WBC (${wbc} x10³/µL) - Possible severe infection or leukemia`);
+                  } else if (!isNaN(wbc) && wbc > 11) {
+                    warnings.push(`⚠️ Elevated WBC (${wbc} x10³/µL) - Possible infection`);
+                  } else if (!isNaN(wbc) && wbc < 4) {
+                    warnings.push(`⚠️ Low WBC (${wbc} x10³/µL) - Immunosuppression, requires evaluation`);
+                  }
+                }
               });
 
               return (criticalFindings.length > 0 || warnings.length > 0) ? (
