@@ -61,9 +61,10 @@ const requireRole =
 // Admin-only helper
 const requireAdmin = requireRole("admin");
 
-// 🔒 Apply auth to ALL /api/* routes defined in this router.
-// (Auth routes are added in setupAuth(app) outside this router, so they are not affected.)
-router.use("/api", requireAuth);
+// 🔒 AUTHENTICATION DISABLED FOR TROUBLESHOOTING
+// To re-enable authentication, uncomment the line below:
+// router.use("/api", requireAuth);
+console.log("⚠️  WARNING: Authentication is DISABLED - all API routes are publicly accessible");
 
 /* ------------------------------ Users (admin) ------------------------------ */
 
