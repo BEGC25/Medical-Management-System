@@ -1143,8 +1143,8 @@ export default function Patients() {
                   ✏️ Edit Patient Details
                 </Button>
                 
-                {/* Admin-only Delete button */}
-                {user?.role === 'admin' && (
+                {/* Admin-only Delete button (visible when auth disabled or user is admin) */}
+                {(!user || user?.role === 'admin') && (
                   <Button
                     variant="destructive"
                     className="w-full"
