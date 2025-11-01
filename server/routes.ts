@@ -1746,11 +1746,15 @@ import { createServer } from "http";
 import { writeFileSync } from "fs";
 import path from "path";
 import { setupAuth } from "./auth";
+import dailyCashRouter from "./reports.daily-cash";
+import dailyCashCsvRouter from "./reports.daily-cash.csv";
 
 // Function to register routes with the express app
 export async function registerRoutes(app: any) {
   setupAuth(app);
   app.use(router);
+  app.use(dailyCashRouter);
+  app.use(dailyCashCsvRouter);
 
   // Return a basic HTTP server for compatibility
   return createServer(app);
