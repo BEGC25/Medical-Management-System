@@ -582,17 +582,6 @@ export default function Patients() {
             <Users className="w-4 h-4" />
             All Patients ({allCount})
           </Button>
-
-          <div className="ml-auto">
-            <Button
-              onClick={handleNewPatient}
-              className="bg-medical-blue hover:bg-blue-700"
-              data-testid="button-new-patient"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              New Patient
-            </Button>
-          </div>
         </div>
 
         {/* Date Picker for Date View */}
