@@ -84,8 +84,17 @@ async function generatePaymentId(): Promise<string> {
 
 async function generateEncounterId(): Promise<string> {
   if (encounterCounter === 0) {
-    const allEncounters = await db.select().from(encounters);
-    encounterCounter = allEncounters.length;
+    // Extract the highest encounter number from existing IDs
+    const allEncounters = await db.select({ encounterId: encounters.encounterId }).from(encounters);
+    let maxNum = 0;
+    for (const enc of allEncounters) {
+      const match = enc.encounterId.match(/BGC-ENC(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+    encounterCounter = maxNum;
   }
   encounterCounter++;
   return `BGC-ENC${encounterCounter}`;
