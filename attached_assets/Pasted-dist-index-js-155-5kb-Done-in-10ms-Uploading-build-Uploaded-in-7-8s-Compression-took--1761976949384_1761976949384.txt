@@ -1,0 +1,53 @@
+dist/index.js  155.5kb
+⚡ Done in 10ms
+==> Uploading build...
+==> Uploaded in 7.8s. Compression took 5.5s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'npm run start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+✓ Database connection established
+[BOOT] NODE_ENV = production
+[BOOT] DATABASE_URL = postgresql://neondb_owner:***@ep-autumn-art-a45cr2vw-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
+[BOOT] DIRECT_DATABASE_URL = postgresql://neondb_owner:***@ep-autumn-art-a45cr2vw.us-east-1.aws.neon.tech/neondb?sslmode=require
+5:57:26 AM [express] serving on port 8080
+Error seeding default services: error: password authentication failed for user 'neondb_owner'
+    at /opt/render/project/src/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///opt/render/project/src/node_modules/drizzle-orm/node-postgres/session.js:83:22
+    at async MemStorage.getServices (file:///opt/render/project/src/dist/index.js:1192:12)
+    at async seedDefaultServices (file:///opt/render/project/src/dist/index.js:1837:30) {
+  length: 75,
+  severity: 'ERROR',
+  code: 'XX000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined
+}
+==> Your service is live 🎉
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://api.bahrelghazalclinic.com + 1 more domain
+==> 
+==> ///////////////////////////////////////////////////////////
+5:57:52 AM [express] GET /api/user 401 in 3ms
+5:57:56 AM [express] POST /api/login 401 in 495ms :: {"error":"Invalid credentials"}
+5:58:13 AM [express] GET /api/user 401 in 2ms
+5:58:25 AM [express] POST /api/login 401 in 516ms :: {"error":"Invalid credentials"}
+5:58:38 AM [express] GET /api/user 401 in 2ms
+5:58:43 AM [express] POST /api/login 401 in 533ms :: {"error":"Invalid credentials"}
+6:00:41 AM [express] GET /api/user 401 in 2ms
+6:01:13 AM [express] POST /api/login 401 in 529ms :: {"error":"Invalid credentials"}

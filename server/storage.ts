@@ -2133,9 +2133,35 @@ async function seedDefaultServices() {
   }
 }
 
+// Initialize default admin user if none exists
+async function seedDefaultAdminUser() {
+  try {
+    const existingUsers = await storage.getAllUsers();
+    if (existingUsers.length === 0) {
+      console.log("No users found. Creating default admin user...");
+      
+      // Create default admin: username=admin, password=admin123
+      await storage.createUser({
+        username: "admin",
+        password: "admin123", // Will be hashed by createUser
+        fullName: "Administrator",
+        role: "admin",
+      });
+      
+      console.log("✓ Default admin user created successfully");
+      console.log("  Username: admin");
+      console.log("  Password: admin123");
+      console.log("  ⚠️  IMPORTANT: Change this password immediately after first login!");
+    }
+  } catch (error) {
+    console.log("Error seeding default admin user:", error);
+  }
+}
+
 export const storage = new MemStorage();
 
-// Initialize services on startup
+// Initialize defaults on startup
 setTimeout(() => {
+  seedDefaultAdminUser();
   seedDefaultServices();
 }, 100); // Delay slightly to ensure DB connection is ready
