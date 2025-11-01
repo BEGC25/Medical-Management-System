@@ -32,6 +32,11 @@ function asBool(v: any) { return String(v ?? "false").toLowerCase() === "true"; 
 // GET /api/reports/daily-cash?date=YYYY-MM-DD&byCashier=true|false
 router.get("/api/reports/daily-cash", async (req: Request, res: Response) => {
   try {
+    // Prevent caching of financial data
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    
     const run = await getRunner();
     const day = ymd(String(req.query.date || ""));
     const byCashier = asBool(req.query.byCashier);
