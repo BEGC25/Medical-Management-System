@@ -133,7 +133,7 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production", // Render: true
       httpOnly: true,
-      sameSite: "lax", // app.* and api.* are same-site
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
   };
