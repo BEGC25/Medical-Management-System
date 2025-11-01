@@ -46,20 +46,31 @@ export default function BillingSettings() {
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: InsertBillingSettings) => {
+      console.log("Sending PUT request with data:", data);
       const response = await fetch("/api/billing/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update billing settings");
+        const errorText = await response.text();
+        console.error("Server error response:", errorText);
+        let errorMessage = "Failed to update billing settings";
+        try {
+          const error = JSON.parse(errorText);
+          errorMessage = error.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Settings saved successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/billing/settings"] });
       toast({
         title: "Settings Updated",
@@ -67,6 +78,7 @@ export default function BillingSettings() {
       });
     },
     onError: (error: Error) => {
+      console.error("Save failed:", error);
       toast({
         title: "Update Failed",
         description: error.message,
@@ -76,6 +88,7 @@ export default function BillingSettings() {
   });
 
   const onSubmit = (data: InsertBillingSettings) => {
+    console.log("Submitting billing settings:", data);
     updateSettingsMutation.mutate(data);
   };
 
