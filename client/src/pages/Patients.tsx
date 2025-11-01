@@ -85,6 +85,9 @@ export default function Patients() {
   const [deletionReason, setDeletionReason] = useState("");
   const [showForceDeleteDialog, setShowForceDeleteDialog] = useState(false);
 
+  // Track newly registered patient for highlighting
+  const [newlyRegisteredPatientId, setNewlyRegisteredPatientId] = useState<string | null>(null);
+
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     return today.toLocaleDateString("en-CA");
@@ -211,11 +214,22 @@ export default function Patients() {
     // The server now handles all steps, so we just return the result.
     return response.json();
   },
-  onSuccess: () => {
+  onSuccess: (data) => {
+    const patientName = `${form.getValues('firstName')} ${form.getValues('lastName')}`;
+    const patientId = data?.patient?.patientId || '';
+    
     toast({
-      title: "Success",
-      description: "Patient registered successfully",
+      title: "✓ Patient Registered Successfully",
+      description: `${patientName} (${patientId}) has been added to the system`,
     });
+    
+    // Highlight the newly registered patient
+    if (patientId) {
+      setNewlyRegisteredPatientId(patientId);
+      // Clear highlight after 5 seconds
+      setTimeout(() => setNewlyRegisteredPatientId(null), 5000);
+    }
+    
     form.reset();
     setShowRegistrationForm(false);
     setCollectConsultationFee(billingSettings?.requirePrepayment || false);
@@ -460,9 +474,21 @@ export default function Patients() {
     <div className="relative">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          Patient Management
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Patient Management
+          </h1>
+          {/* Prominent New Patient Button */}
+          <Button
+            onClick={handleNewPatient}
+            size="lg"
+            className="bg-gradient-to-r from-medical-blue to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg text-white font-semibold"
+            data-testid="button-new-patient-primary"
+          >
+            <UserPlus className="w-5 h-5 mr-2" />
+            Register New Patient
+          </Button>
+        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -646,10 +672,16 @@ export default function Patients() {
                   </tr>
                 </thead>
                 <tbody>
-                  {patientsToDisplay.map((patient: any) => (
+                  {patientsToDisplay.map((patient: any) => {
+                    const isNewlyRegistered = patient.patientId === newlyRegisteredPatientId;
+                    return (
                     <tr
                       key={patient.id}
-                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                      className={`border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-all duration-500 ${
+                        isNewlyRegistered 
+                          ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-l-green-500 animate-pulse' 
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }`}
                       onClick={() => handleViewPatient(patient)}
                       data-testid={`patient-row-${patient.patientId}`}
                     >
@@ -698,7 +730,8 @@ export default function Patients() {
                         </Button>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
             </div>
