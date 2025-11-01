@@ -1,0 +1,79 @@
+Cloning from https://github.com/BEGC25/Medical-Management-System
+==> Checking out commit 69403a598759b0a0f5d695ffc10ebed0e95f9bf8 in branch main
+==> Using Node.js version 22.16.0 (default)
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Running build command 'npm ci && npm run build'...
+added 645 packages, and audited 646 packages in 14s
+89 packages are looking for funding
+  run `npm fund` for details
+11 vulnerabilities (3 low, 7 moderate, 1 high)
+To address issues that do not require attention, run:
+  npm audit fix
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+Run `npm audit` for details.
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+vite v5.4.19 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 2181 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                                        0.63 kB │ gzip:   0.38 kB
+../dist/public/assets/Logo-Clinic_1760859723870-qYF8jzm7.jpeg   78.27 kB
+../dist/public/assets/index-BY4TTW6T.css                        98.65 kB │ gzip:  16.29 kB
+../dist/public/assets/index-DYAPRPLn.js                        863.05 kB │ gzip: 229.23 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 6.94s
+  dist/index.js  155.5kb
+⚡ Done in 12ms
+==> Uploading build...
+==> Uploaded in 8.1s. Compression took 4.8s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'npm run start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+✓ Database connection established
+[BOOT] NODE_ENV = production
+[BOOT] DATABASE_URL = postgresql://neondb_owner:***@ep-autumn-art-a45cr2vw-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
+[BOOT] DIRECT_DATABASE_URL = postgresql://neondb_owner:***@ep-autumn-art-a45cr2vw.us-east-1.aws.neon.tech/neondb?sslmode=require
+6:13:56 AM [express] serving on port 8080
+Error seeding default services: error: password authentication failed for user 'neondb_owner'
+    at /opt/render/project/src/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///opt/render/project/src/node_modules/drizzle-orm/node-postgres/session.js:83:22
+    at async MemStorage.getServices (file:///opt/render/project/src/dist/index.js:1192:12)
+    at async seedDefaultServices (file:///opt/render/project/src/dist/index.js:1837:30) {
+  length: 75,
+  severity: 'ERROR',
+  code: 'XX000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined
+}
+==> Your service is live 🎉
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://api.bahrelghazalclinic.com + 1 more domain
+==> 
+==> ///////////////////////////////////////////////////////////
+6:14:57 AM [express] GET /api/user 401 in 4ms
