@@ -39,12 +39,22 @@ const requireAuth = (req: any, res: any, next: any) => {
 const requireRole =
   (...roles: string[]) =>
   (req: any, res: any, next: any) => {
+    console.log("[requireRole] Checking role access:", {
+      hasUser: !!req.user,
+      userRole: req.user?.role,
+      requiredRoles: roles,
+      isAuthenticated: req.isAuthenticated?.(),
+    });
+    
     if (!req.user || !req.user.role) {
+      console.log("[requireRole] DENIED - No user or role");
       return res.status(401).json({ error: "Not authenticated" });
     }
     if (roles.includes(req.user.role) || req.user.role === "admin") {
+      console.log("[requireRole] ALLOWED - User has required role");
       return next();
     }
+    console.log("[requireRole] DENIED - Insufficient privileges");
     return res.status(403).json({ error: "Insufficient role" });
   };
 
