@@ -656,6 +656,9 @@ export default function Patients() {
                       Registered
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Consultation
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
                       Actions
                     </th>
                   </tr>
@@ -704,6 +707,29 @@ export default function Patients() {
                           month: "short",
                           year: "numeric",
                         })}
+                      </td>
+                      <td className="px-4 py-3">
+                        {patient.serviceStatus ? (
+                          ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
+                            <Badge 
+                              variant="outline" 
+                              className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800"
+                              data-testid={`badge-consultation-due-${patient.patientId}`}
+                            >
+                              {money(patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance)} Due
+                            </Badge>
+                          ) : (
+                            <Badge 
+                              variant="outline" 
+                              className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
+                              data-testid={`badge-consultation-paid-${patient.patientId}`}
+                            >
+                              Paid
+                            </Badge>
+                          )
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <Button
