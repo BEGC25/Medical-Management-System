@@ -1119,7 +1119,11 @@ export default function Treatment() {
                                       <CardHeader className="bg-gray-50 dark:bg-gray-800 p-4 border-b">
                                         <div className="flex justify-between items-start gap-3">
                                           <div className="flex-1">
-                                            <CardTitle className="text-base mb-1">{test.category || "Laboratory Test"}</CardTitle>
+                                            <CardTitle className="text-base mb-1">
+                                              {test.category 
+                                                ? test.category.charAt(0).toUpperCase() + test.category.slice(1)
+                                                : "Laboratory Test"}
+                                            </CardTitle>
                                              <div className="flex items-center gap-2 mb-2">
                                               <Badge variant={test.status === "completed" ? "default" : "secondary"}>
                                                 {test.status}
