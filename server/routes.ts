@@ -143,9 +143,17 @@ router.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    // Create session
+    // Create session and explicitly save it
     const sessionUser = toSessionUser(user);
     req.session.user = sessionUser;
+    
+    // Explicitly save the session before responding
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
     
     console.log(`[AUTH] Login successful: ${username} (${user.role})`);
     

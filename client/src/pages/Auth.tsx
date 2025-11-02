@@ -94,9 +94,6 @@ export default function Auth() {
                   {loginMutation.isPending ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center">
-                Default credentials: admin / admin123
-              </p>
             </CardContent>
           </Card>
         </div>
