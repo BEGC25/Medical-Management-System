@@ -1,14 +1,10 @@
-import { Wifi, WifiOff, LogOut, User, Menu } from "lucide-react";
+import { Activity, Wifi, WifiOff, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import clinicLogo from "@assets/Logo-Clinic_1760859723870.jpeg";
 
-interface HeaderProps {
-  onMobileMenuToggle: () => void;
-}
-
-export default function Header({ onMobileMenuToggle }: HeaderProps) {
+export default function Header() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { user, logoutMutation } = useAuth();
 
@@ -34,15 +30,6 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {/* Mobile menu button - only visible on mobile */}
-            <button
-              onClick={onMobileMenuToggle}
-              className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-              data-testid="mobile-menu-toggle"
-            >
-              <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-            </button>
-
             <img 
               src={clinicLogo} 
               alt="Bahr El Ghazal Clinic Logo" 
