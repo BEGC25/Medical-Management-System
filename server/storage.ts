@@ -1701,7 +1701,7 @@ export class MemStorage implements IStorage {
     const insertData = {
       ...data,
       drugCode,
-      isActive: data.isActive ?? true, // Default to active
+      isActive: data.isActive ?? 1, // Default to active (1 = true, 0 = false)
       createdAt: now,
       updatedAt: now,
     };
@@ -1984,7 +1984,7 @@ async function seedDefaultServices() {
         category: "consultation",
         description: "Basic medical consultation and examination",
         price: 2000.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -1993,7 +1993,7 @@ async function seedDefaultServices() {
         category: "consultation",
         description: "Follow-up visit for existing patients",
         price: 1000.00,
-        isActive: true,
+        isActive: 1,
       });
 
       // Laboratory services
@@ -2002,7 +2002,7 @@ async function seedDefaultServices() {
         category: "laboratory",
         description: "Full blood analysis including RBC, WBC, platelets",
         price: 25.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2010,7 +2010,7 @@ async function seedDefaultServices() {
         category: "laboratory",
         description: "Complete urine examination",
         price: 15.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2018,7 +2018,7 @@ async function seedDefaultServices() {
         category: "laboratory",
         description: "Malaria parasite detection",
         price: 10.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2026,7 +2026,7 @@ async function seedDefaultServices() {
         category: "laboratory",
         description: "Stool analysis for parasites and infections",
         price: 15.00,
-        isActive: true,
+        isActive: 1,
       });
 
       // Radiology services
@@ -2035,7 +2035,7 @@ async function seedDefaultServices() {
         category: "radiology",
         description: "X-ray examination of chest and lungs",
         price: 40.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2043,7 +2043,7 @@ async function seedDefaultServices() {
         category: "radiology",
         description: "X-ray examination of abdomen",
         price: 45.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2051,7 +2051,7 @@ async function seedDefaultServices() {
         category: "radiology",
         description: "X-ray of arms, legs, hands, or feet",
         price: 35.00,
-        isActive: true,
+        isActive: 1,
       });
 
       // Ultrasound services
@@ -2060,7 +2060,7 @@ async function seedDefaultServices() {
         category: "ultrasound",
         description: "Ultrasound examination of abdominal organs",
         price: 60.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2068,7 +2068,7 @@ async function seedDefaultServices() {
         category: "ultrasound",
         description: "Ultrasound examination of pelvic organs",
         price: 55.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2076,7 +2076,7 @@ async function seedDefaultServices() {
         category: "ultrasound",
         description: "Pregnancy monitoring ultrasound",
         price: 65.00,
-        isActive: true,
+        isActive: 1,
       });
 
       // Pharmacy services
@@ -2086,7 +2086,7 @@ async function seedDefaultServices() {
         category: "pharmacy",
         description: "Pain reliever and fever reducer",
         price: 5.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2095,7 +2095,7 @@ async function seedDefaultServices() {
         category: "pharmacy",
         description: "Antibiotic for bacterial infections",
         price: 15.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2104,7 +2104,7 @@ async function seedDefaultServices() {
         category: "pharmacy",
         description: "Anti-inflammatory and pain reliever",
         price: 8.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2113,7 +2113,7 @@ async function seedDefaultServices() {
         category: "pharmacy",
         description: "For dehydration treatment",
         price: 3.00,
-        isActive: true,
+        isActive: 1,
       });
 
       await storage.createService({
@@ -2122,7 +2122,7 @@ async function seedDefaultServices() {
         category: "pharmacy",
         description: "General pharmacy medication dispensing fee",
         price: 5.00, // Example fee
-        isActive: true,
+        isActive: 1,
       });
 
 
