@@ -81,7 +81,7 @@ export default function Navigation({ isMobileMenuOpen, onMobileMenuClose }: Navi
 
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* Mobile backdrop - only show on mobile */}
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -94,8 +94,8 @@ export default function Navigation({ isMobileMenuOpen, onMobileMenuClose }: Navi
       <aside className={`
         fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700 pt-16 z-50
         transition-transform duration-300 ease-in-out
-        lg:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:transform-none lg:transition-none
       `}>
         {/* Mobile close button */}
         <button
