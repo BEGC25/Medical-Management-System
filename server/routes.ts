@@ -1167,51 +1167,99 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
   try {
     const patientId = req.params.patientId;
 
-    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders] = await Promise.all([
+    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, services] = await Promise.all([
       storage.getLabTestsByPatient(patientId),
       storage.getXrayExamsByPatient(patientId),
       storage.getUltrasoundExamsByPatient(patientId),
       storage.getPharmacyOrdersByPatient(patientId),
+      storage.getServices(),
     ]);
 
-    const unpaidOrders = [
-      ...labTests
-        .filter((test) => test.paymentStatus === "unpaid")
-        .map((test) => ({
-          id: test.testId,
-          type: "lab_test",
-          description: `Lab Test: ${JSON.parse(test.tests).join(", ")}`,
-          date: test.requestedDate,
-          category: test.category,
-        })),
-      ...xrayExams
-        .filter((exam) => exam.paymentStatus === "unpaid")
-        .map((exam) => ({
+    const getServiceByName = (name: string) => {
+      return services.find((s) => s.name.toLowerCase() === name.toLowerCase() && s.isActive);
+    };
+
+    const getServiceByCategory = (category: string) => {
+      return services.find((s) => s.category === category && s.isActive);
+    };
+
+    const unpaidOrders: any[] = [];
+
+    // Break lab tests into individual items
+    labTests
+      .filter((test) => test.paymentStatus === "unpaid")
+      .forEach((test) => {
+        const testNames = JSON.parse(test.tests);
+        
+        // Return EACH test as a separate item
+        testNames.forEach((testName: string, index: number) => {
+          const service = getServiceByName(testName);
+          if (service) {
+            unpaidOrders.push({
+              id: `${test.testId}-${index}`, // Unique ID for each test
+              parentId: test.testId, // Track parent lab order
+              type: "lab_test_item",
+              description: testName,
+              date: test.requestedDate,
+              category: test.category,
+              serviceId: service.id,
+              serviceName: service.name,
+              price: service.price,
+            });
+          }
+        });
+      });
+
+    // X-ray exams remain as single items
+    xrayExams
+      .filter((exam) => exam.paymentStatus === "unpaid")
+      .forEach((exam) => {
+        const service = getServiceByCategory("radiology");
+        unpaidOrders.push({
           id: exam.examId,
           type: "xray_exam",
           description: `X-Ray: ${exam.examType}`,
           date: exam.requestedDate,
           bodyPart: exam.bodyPart,
-        })),
-      ...ultrasoundExams
-        .filter((exam) => exam.paymentStatus === "unpaid")
-        .map((exam) => ({
+          serviceId: service?.id,
+          serviceName: service?.name,
+          price: service?.price || 0,
+        });
+      });
+
+    // Ultrasound exams remain as single items
+    ultrasoundExams
+      .filter((exam) => exam.paymentStatus === "unpaid")
+      .forEach((exam) => {
+        const service = getServiceByCategory("ultrasound");
+        unpaidOrders.push({
           id: exam.examId,
           type: "ultrasound_exam",
           description: `Ultrasound: ${exam.examType}`,
           date: exam.requestedDate,
-        })),
-      ...pharmacyOrders
-        .filter((order) => order.paymentStatus === "unpaid")
-        .map((order) => ({
+          serviceId: service?.id,
+          serviceName: service?.name,
+          price: service?.price || 0,
+        });
+      });
+
+    // Pharmacy orders remain as single items
+    pharmacyOrders
+      .filter((order) => order.paymentStatus === "unpaid")
+      .forEach((order) => {
+        const service = getServiceByCategory("pharmacy");
+        unpaidOrders.push({
           id: order.orderId,
           type: "pharmacy_order",
           description: `Pharmacy: ${order.drugName || "Medication"}`,
           date: order.createdAt,
           dosage: order.dosage,
           quantity: order.quantity,
-        })),
-    ];
+          serviceId: service?.id,
+          serviceName: service?.name,
+          price: service?.price || 0,
+        });
+      });
 
     res.json(unpaidOrders);
   } catch (error) {

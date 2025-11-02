@@ -759,17 +759,21 @@ export default function Payment() {
                       
                       <div className="space-y-3 max-h-[400px] overflow-y-auto">
                         {unpaidOrders.map((order) => {
-                          const matchingService = services.find(s => 
-                            (order.type === 'lab_test' && s.category === 'laboratory') ||
-                            (order.type === 'xray_exam' && s.category === 'radiology') ||
-                            (order.type === 'ultrasound_exam' && s.category === 'ultrasound') ||
-                            (order.type === 'pharmacy_order' && s.category === 'pharmacy')
-                          );
-                          
                           const isAdded = paymentItems.some(item => item.relatedId === order.id);
                           
-                          // Use order.price if available (for multi-test lab orders), otherwise use matchingService.price
-                          const displayPrice = order.price || matchingService?.price || 0;
+                          // Use order.price directly (now always present from backend)
+                          const displayPrice = order.price || 0;
+                          
+                          // Create service object from order data
+                          const serviceForPayment = {
+                            id: order.serviceId || 0,
+                            name: order.serviceName || order.description,
+                            category: order.type === 'lab_test_item' ? 'laboratory' : 
+                                     order.type === 'xray_exam' ? 'radiology' :
+                                     order.type === 'ultrasound_exam' ? 'ultrasound' : 'pharmacy',
+                            price: displayPrice,
+                            description: order.description
+                          };
                           
                           return (
                             <div 
@@ -800,13 +804,7 @@ export default function Payment() {
                                 <Button
                                   size="sm"
                                   className="w-full mt-2 min-h-[36px] text-xs sm:text-sm"
-                                  onClick={() => addServiceToPayment(matchingService || { 
-                                    id: order.serviceIds?.[0] || 0, 
-                                    name: order.description, 
-                                    category: order.type.replace('_', ' '), 
-                                    price: displayPrice,
-                                    description: ''
-                                  }, order)}
+                                  onClick={() => addServiceToPayment(serviceForPayment, order)}
                                   data-testid={`button-add-service-${order.id}`}
                                 >
                                   <Plus className="h-4 w-4 mr-1" />
