@@ -768,6 +768,9 @@ export default function Payment() {
                           
                           const isAdded = paymentItems.some(item => item.relatedId === order.id);
                           
+                          // Use order.price if available (for multi-test lab orders), otherwise use matchingService.price
+                          const displayPrice = order.price || matchingService?.price || 0;
+                          
                           return (
                             <div 
                               key={order.id} 
@@ -793,15 +796,21 @@ export default function Payment() {
                                   {isAdded ? "ADDED" : "UNPAID"}
                                 </Badge>
                               </div>
-                              {matchingService && !isAdded && (
+                              {!isAdded && displayPrice > 0 && (
                                 <Button
                                   size="sm"
                                   className="w-full mt-2 min-h-[36px] text-xs sm:text-sm"
-                                  onClick={() => addServiceToPayment(matchingService, order)}
+                                  onClick={() => addServiceToPayment(matchingService || { 
+                                    id: order.serviceIds?.[0] || 0, 
+                                    name: order.description, 
+                                    category: order.type.replace('_', ' '), 
+                                    price: displayPrice,
+                                    description: ''
+                                  }, order)}
                                   data-testid={`button-add-service-${order.id}`}
                                 >
                                   <Plus className="h-4 w-4 mr-1" />
-                                  Add (SSP {matchingService.price})
+                                  Add (SSP {displayPrice.toLocaleString()})
                                 </Button>
                               )}
                             </div>

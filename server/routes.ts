@@ -1060,22 +1060,47 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
       return services.find((s) => s.category === category && s.isActive);
     };
 
+    const getServiceByName = (name: string) => {
+      return services.find((s) => s.name.toLowerCase() === name.toLowerCase() && s.isActive);
+    };
+
     const result = {
       laboratory: labTests
         .filter((test) => test.paymentStatus === "unpaid")
         .map((test) => {
-          const service = getServiceByCategory("laboratory");
+          const testNames = JSON.parse(test.tests);
+          
+          // Calculate total price by summing all individual test prices
+          let totalPrice = 0;
+          const serviceIds: number[] = [];
+          
+          testNames.forEach((testName: string) => {
+            const service = getServiceByName(testName);
+            if (service) {
+              totalPrice += service.price;
+              if (!serviceIds.includes(service.id)) {
+                serviceIds.push(service.id);
+              }
+            }
+          });
+          
+          // Fallback to category service if no individual matches found
+          if (totalPrice === 0) {
+            const fallbackService = getServiceByCategory("laboratory");
+            totalPrice = fallbackService?.price || 0;
+            if (fallbackService) serviceIds.push(fallbackService.id);
+          }
+          
           return {
             id: test.testId,
             type: "lab_test",
-            description: `Lab Test: ${JSON.parse(test.tests).join(", ")}`,
+            description: `Lab Test: ${testNames.join(", ")}`,
             date: test.requestedDate,
             category: test.category,
             patient: patientMap.get(test.patientId) || null,
             patientId: test.patientId,
-            serviceId: service?.id,
-            serviceName: service?.name,
-            price: service?.price,
+            serviceIds: serviceIds,
+            price: totalPrice,
           };
         }),
       xray: xrayExams
