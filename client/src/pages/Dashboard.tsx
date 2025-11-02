@@ -14,7 +14,7 @@ import {
   MonitorSpeaker
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
@@ -60,13 +60,15 @@ export default function Dashboard() {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'treated':
-        return <Badge className="bg-health-green text-white">Treated</Badge>;
+        return <StatusBadge variant="status" color="green">Treated</StatusBadge>;
       case 'waiting':
-        return <Badge className="bg-attention-orange text-white">Waiting</Badge>;
+        return <StatusBadge variant="status" color="orange">Waiting</StatusBadge>;
       case 'urgent':
-        return <Badge className="bg-alert-red text-white">Urgent</Badge>;
+        return <StatusBadge variant="status" color="red">Urgent</StatusBadge>;
+      case 'new':
+        return <StatusBadge variant="new" color="green">New</StatusBadge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <StatusBadge variant="status" color="blue">{status}</StatusBadge>;
     }
   };
 
@@ -107,33 +109,33 @@ export default function Dashboard() {
             {stats ? (
               <>
                 <Link href="/patients?filter=today">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">New Patients</span>
-                    <span className="font-semibold text-base sm:text-lg text-medical-blue">{stats.newPatients}</span>
+                    <span className="font-semibold text-base sm:text-lg text-medical-blue tabular-nums text-right min-w-[3ch]">{stats.newPatients}</span>
                   </div>
                 </Link>
                 <Link href="/treatment?filter=today">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Total Visits</span>
-                    <span className="font-semibold text-base sm:text-lg text-health-green">{stats.totalVisits}</span>
+                    <span className="font-semibold text-base sm:text-lg text-health-green tabular-nums text-right min-w-[3ch]">{stats.totalVisits}</span>
                   </div>
                 </Link>
                 <Link href="/laboratory">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Lab Tests</span>
-                    <span className="font-semibold text-base sm:text-lg text-attention-orange">{stats.labTests}</span>
+                    <span className="font-semibold text-base sm:text-lg text-attention-orange tabular-nums text-right min-w-[3ch]">{stats.labTests}</span>
                   </div>
                 </Link>
                 <Link href="/xray">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">X-Rays</span>
-                    <span className="font-semibold text-base sm:text-lg text-purple-600">{stats.xrays}</span>
+                    <span className="font-semibold text-base sm:text-lg text-purple-600 tabular-nums text-right min-w-[3ch]">{stats.xrays}</span>
                   </div>
                 </Link>
                 <Link href="/ultrasound">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Ultrasounds</span>
-                    <span className="font-semibold text-base sm:text-lg text-blue-600">{stats.ultrasounds}</span>
+                    <span className="font-semibold text-base sm:text-lg text-blue-600 tabular-nums text-right min-w-[3ch]">{stats.ultrasounds}</span>
                   </div>
                 </Link>
               </>
@@ -216,11 +218,14 @@ export default function Dashboard() {
                         <TestTube className="text-attention-orange w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                         <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 truncate">Lab Results</span>
                       </div>
-                      <Badge className={`bg-attention-orange text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 shadow-lg ${
-                        stats.pending.labResults >= 10 ? 'ring-2 ring-attention-orange ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110 shadow-xl' : ''
-                      }`}>
+                      <StatusBadge 
+                        variant="count" 
+                        color="orange" 
+                        size="md"
+                        emphasized={stats.pending.labResults >= 10}
+                      >
                         {stats.pending.labResults}
-                      </Badge>
+                      </StatusBadge>
                     </div>
                   </Link>
                   <Link href="/xray">
@@ -231,11 +236,14 @@ export default function Dashboard() {
                         <Scan className="text-purple-600 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                         <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 truncate">X-Ray Reports</span>
                       </div>
-                      <Badge className={`bg-purple-600 text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 shadow-lg ${
-                        stats.pending.xrayReports >= 10 ? 'ring-2 ring-purple-600 ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110 shadow-xl' : ''
-                      }`}>
+                      <StatusBadge 
+                        variant="count" 
+                        color="purple" 
+                        size="md"
+                        emphasized={stats.pending.xrayReports >= 10}
+                      >
                         {stats.pending.xrayReports}
-                      </Badge>
+                      </StatusBadge>
                     </div>
                   </Link>
                   <Link href="/ultrasound">
@@ -246,11 +254,14 @@ export default function Dashboard() {
                         <MonitorSpeaker className="text-blue-600 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                         <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 truncate">Ultrasound Reports</span>
                       </div>
-                      <Badge className={`bg-blue-600 text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 shadow-lg ${
-                        stats.pending.ultrasoundReports >= 10 ? 'ring-2 ring-blue-600 ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110 shadow-xl' : ''
-                      }`}>
+                      <StatusBadge 
+                        variant="count" 
+                        color="blue" 
+                        size="md"
+                        emphasized={stats.pending.ultrasoundReports >= 10}
+                      >
                         {stats.pending.ultrasoundReports}
-                      </Badge>
+                      </StatusBadge>
                     </div>
                   </Link>
                 </>
