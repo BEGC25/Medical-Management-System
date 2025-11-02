@@ -68,7 +68,7 @@ console.log("⚠️  WARNING: Authentication is DISABLED - all API routes are pu
 
 /* ------------------------------ Users (admin) ------------------------------ */
 
-router.get("/api/users", requireAdmin, async (_req, res) => {
+router.get("/api/users", async (_req, res) => {
   try {
     const users = await storage.getAllUsers();
     res.json(users);
