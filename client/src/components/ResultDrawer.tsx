@@ -121,7 +121,41 @@ export default function ResultDrawer(props: {
                 </div>
               )}
 
-              {/* Clinical Interpretation - Comprehensive Analysis */}
+              {/* Laboratory Results - SHOW DATA FIRST */}
+              {results && Object.keys(results).length > 0 && (
+                <div className="space-y-5">
+                  <div className="font-semibold">Laboratory Results</div>
+                  {Object.entries(results).map(([panel, fields]) => {
+                    const cfg = resultFields?.[panel] || {};
+                    return (
+                      <div key={panel} className="rounded-md border p-4">
+                        <div className="font-medium mb-2">{panel}</div>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                          {Object.entries(fields).map(([name, value]) => {
+                            const c = cfg[name];
+                            const abnormal = isAbnormal(value, c);
+                            return (
+                              <div key={name} className="flex items-center justify-between border-b py-1">
+                                <span className="text-muted-foreground">{name}</span>
+                                <span className={abnormal ? "font-semibold text-red-600" : "font-semibold"}>
+                                  {value} {c?.unit ? c.unit : ""}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {cfg && Object.keys(cfg).length > 0 && (
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            Normal ranges may vary by age, gender, and laboratory standards
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Clinical Interpretation - SHOW AT END AS REFERENCE */}
               {(() => {
                 const criticalFindings: string[] = [];
                 const warnings: string[] = [];
@@ -433,36 +467,6 @@ export default function ResultDrawer(props: {
                   </div>
                 ) : null;
               })()}
-
-              {/* Pretty results */}
-              {results && Object.keys(results).length > 0 && (
-                <div className="space-y-5">
-                  <div className="font-semibold">Laboratory Results</div>
-                  {Object.entries(results).map(([panel, fields]) => {
-                    const cfg = resultFields?.[panel] || {};
-                    return (
-                      <div key={panel} className="rounded-md border p-4">
-                        <div className="font-medium mb-2">{panel}</div>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                          {Object.entries(fields).map(([name, value]) => {
-                            const c = cfg[name];
-                            const abnormal = isAbnormal(value, c);
-                            return (
-                              <div key={name} className="flex items-center justify-between border-b py-1">
-                                <span className="text-muted-foreground">{name}</span>
-                                <span className={abnormal ? "font-semibold text-red-600" : "font-semibold"}>
-                                  {value} {c?.unit ? c.unit : ""}
-                                  {c?.range ? <span className="ml-2 text-xs text-muted-foreground">[{c.range}]</span> : null}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
 
               {!results || Object.keys(results).length === 0 ? (
                 <div className="rounded-md border bg-muted p-3 text-sm">No result values recorded yet.</div>

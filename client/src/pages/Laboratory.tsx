@@ -1519,7 +1519,43 @@ export default function Laboratory() {
               </div>
             </div>
 
-            {/* Clinical Interpretation */}
+            {/* Laboratory Results - SHOW DATA FIRST */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">Laboratory Results</h2>
+              {(() => {
+                const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
+                return Object.entries(results).map(([testName, testData]) => {
+                  const fields = resultFields[testName];
+                  return (
+                    <div key={testName} className="mb-6 border border-gray-300 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-blue-700 mb-3">{testName}</h3>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                        {Object.entries(testData).map(([fieldName, value]) => {
+                          const config = fields?.[fieldName];
+                          const isNormal = config?.normal === value;
+                          const isAbnormal = config?.normal && config.normal !== value;
+                          
+                          return (
+                            <div key={fieldName} className="flex justify-between items-center border-b border-gray-200 py-1">
+                              <span className="font-medium text-gray-700">{fieldName}:</span>
+                              <span className={cx(
+                                "font-semibold",
+                                isNormal && "text-green-600",
+                                isAbnormal && value && value !== "Not seen" && value !== "Negative" && "text-red-600"
+                              )}>
+                                {value} {config?.unit || ""}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Clinical Interpretation - SHOW AT END AS REFERENCE */}
             {(() => {
               const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
               const criticalFindings: string[] = [];
@@ -1843,42 +1879,6 @@ export default function Laboratory() {
                 </div>
               ) : null;
             })()}
-
-            {/* Laboratory Results */}
-            <div className="mb-6">
-              <h2 className="text-xl font-bold mb-4 text-gray-900">Laboratory Results</h2>
-              {(() => {
-                const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
-                return Object.entries(results).map(([testName, testData]) => {
-                  const fields = resultFields[testName];
-                  return (
-                    <div key={testName} className="mb-6 border border-gray-300 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-blue-700 mb-3">{testName}</h3>
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                        {Object.entries(testData).map(([fieldName, value]) => {
-                          const config = fields?.[fieldName];
-                          const isNormal = config?.normal === value;
-                          const isAbnormal = config?.normal && config.normal !== value;
-                          
-                          return (
-                            <div key={fieldName} className="flex justify-between items-center border-b border-gray-200 py-1">
-                              <span className="font-medium text-gray-700">{fieldName}:</span>
-                              <span className={cx(
-                                "font-semibold",
-                                isNormal && "text-green-600",
-                                isAbnormal && value && value !== "Not seen" && value !== "Negative" && "text-red-600"
-                              )}>
-                                {value} {config?.unit || ""}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
 
             {/* Footer */}
             <div className="mt-8 pt-4 border-t-2 border-gray-300 text-sm text-gray-600">
