@@ -407,11 +407,10 @@ export default function XRay() {
     return (
       <Card
         className={cx(
-          "transition-shadow cursor-pointer shadow-sm",
-          exam.status === 'pending' && !isPaid && "border-red-200 bg-red-50 dark:bg-red-900/10",
-          exam.status === 'pending' && isPaid && "border-green-200 bg-green-50 dark:bg-green-900/10",
-          exam.status === 'completed' && "border-blue-200 bg-blue-50 dark:bg-blue-900/10",
-          canPerform && "hover:shadow-lg",
+          "transition-all cursor-pointer shadow-md hover:shadow-xl border",
+          exam.status === 'pending' && !isPaid && "border-red-300 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-900/10",
+          exam.status === 'pending' && isPaid && "border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10",
+          exam.status === 'completed' && "border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-900/10",
           !canPerform && "opacity-75"
         )}
         onClick={() => canPerform && handleXrayExamSelect(exam)}
@@ -429,8 +428,8 @@ export default function XRay() {
                   variant={exam.status === 'pending' ? 'secondary' : 'default'}
                   className={
                     exam.status === 'pending'
-                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 font-semibold shadow-sm border border-orange-200 dark:border-orange-800'
+                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-semibold shadow-sm border border-green-200 dark:border-green-800'
                   }
                   data-testid={`badge-status-${exam.examId}`}
                 >
@@ -451,8 +450,8 @@ export default function XRay() {
                     variant={isPaid ? 'default' : 'destructive'}
                     className={
                       isPaid
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-semibold shadow-sm border border-emerald-200 dark:border-emerald-800'
+                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 font-semibold shadow-sm border border-rose-200 dark:border-rose-800'
                     }
                     data-testid={`badge-payment-${exam.examId}`}
                   >
