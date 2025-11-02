@@ -145,39 +145,39 @@ export default function ReportsDailyCash() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border bg-white shadow-lg hover:shadow-xl transition-shadow">
         <div className="overflow-x-auto">
           <table className="min-w-[720px] w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600">
+            <thead className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-200">
               <tr>
-                <th className="px-3 py-2 text-left font-medium">Department</th>
-                <th className="px-3 py-2 text-right font-medium"># Receipts</th>
-                <th className="px-3 py-2 text-right font-medium">Total Cash</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700">Department</th>
+                <th className="px-4 py-3 text-right font-bold text-gray-700"># Receipts</th>
+                <th className="px-4 py-3 text-right font-bold text-gray-700">Total Cash</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {loading ? (
                 [...Array(4)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-3 py-3">
+                    <td className="px-4 py-3">
                       <div className="h-3 w-28 rounded bg-gray-200" />
                     </td>
-                    <td className="px-3 py-3 text-right">
+                    <td className="px-4 py-3 text-right">
                       <div className="ml-auto h-3 w-10 rounded bg-gray-200" />
                     </td>
-                    <td className="px-3 py-3 text-right">
+                    <td className="px-4 py-3 text-right">
                       <div className="ml-auto h-3 w-16 rounded bg-gray-200" />
                     </td>
                   </tr>
                 ))
               ) : (
                 rows.map((r) => (
-                  <tr key={r.department} className="hover:bg-gray-50/60">
-                    <td className="px-3 py-2 capitalize">{r.department}</td>
-                    <td className="px-3 py-2 text-right">
+                  <tr key={r.department} className="hover:bg-blue-50/50 transition-colors">
+                    <td className="px-4 py-3 capitalize font-medium">{r.department}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">
                       {Number(r.receipt_count).toLocaleString()}
                     </td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-4 py-3 text-right tabular-nums font-semibold">
                       {Number(r.total_amount).toLocaleString()}
                     </td>
                   </tr>
@@ -185,13 +185,13 @@ export default function ReportsDailyCash() {
               )}
             </tbody>
             {!loading && (
-              <tfoot className="bg-gray-50 font-semibold">
+              <tfoot className="bg-gradient-to-r from-gray-50 to-white border-t-2 border-gray-200">
                 <tr>
-                  <td className="px-3 py-2">Total</td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-4 py-3 font-bold text-gray-900">Total</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-900">
                     {Number(totals.receipt_count).toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-900">
                     {Number(totals.total_amount).toLocaleString()}
                   </td>
                 </tr>
