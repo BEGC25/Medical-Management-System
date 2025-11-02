@@ -926,11 +926,71 @@ router.post("/api/payments", async (req: any, res) => {
         });
       }
 
+      // Group lab_test_item payments by parent lab order
+      const labTestItemsByParent = new Map<string, Set<number>>();
+      
+      for (const item of items) {
+        if (item.relatedType === "lab_test_item" && item.relatedId) {
+          // Extract parent ID from "BGC-LAB21-0" -> "BGC-LAB21"
+          // Split by "-", take first 2 parts for BGC-LAB21, ignore index
+          const parts = item.relatedId.split("-");
+          const parentId = parts.slice(0, parts.length - 1).join("-");
+          const testIndex = parseInt(parts[parts.length - 1]);
+          
+          if (!labTestItemsByParent.has(parentId)) {
+            labTestItemsByParent.set(parentId, new Set());
+          }
+          labTestItemsByParent.get(parentId)!.add(testIndex);
+        }
+      }
+
+      // Update payment status for each order type
       for (const item of items) {
         if (item.relatedId && item.relatedType) {
           try {
             if (item.relatedType === "lab_test") {
               await storage.updateLabTest(item.relatedId, { paymentStatus: "paid" });
+            } else if (item.relatedType === "lab_test_item") {
+              // For individual lab test items, check if ALL tests from parent order are paid
+              const parts = item.relatedId.split("-");
+              const parentId = parts.slice(0, parts.length - 1).join("-");
+              
+              // Get the parent lab test to see total number of tests
+              const allLabTests = await storage.getLabTests();
+              const labTest = allLabTests.find(t => t.testId === parentId);
+              if (labTest) {
+                const totalTests = JSON.parse(labTest.tests).length;
+                
+                // Check how many tests have been paid (current + previous payments)
+                // Get all payment_items for this lab order by querying all payments
+                const allPayments = await storage.getPayments();
+                const paidTestIndices = new Set<number>();
+                
+                for (const payment of allPayments) {
+                  const paymentItemsList = await storage.getPaymentItems(payment.paymentId);
+                  paymentItemsList.forEach(pi => {
+                    if (pi.relatedType === "lab_test_item" && pi.relatedId) {
+                      const piParts = pi.relatedId.split("-");
+                      const piParentId = piParts.slice(0, piParts.length - 1).join("-");
+                      if (piParentId === parentId) {
+                        const testIndex = parseInt(piParts[piParts.length - 1]);
+                        paidTestIndices.add(testIndex);
+                      }
+                    }
+                  });
+                }
+                
+                // Add current transaction items
+                const currentItems = labTestItemsByParent.get(parentId);
+                if (currentItems) {
+                  currentItems.forEach(idx => paidTestIndices.add(idx));
+                }
+                
+                // Only mark parent as paid if ALL tests are now paid
+                if (paidTestIndices.size === totalTests) {
+                  await storage.updateLabTest(parentId, { paymentStatus: "paid" });
+                }
+              }
             } else if (item.relatedType === "xray_exam") {
               await storage.updateXrayExam(item.relatedId, { paymentStatus: "paid" });
             } else if (item.relatedType === "ultrasound_exam") {
@@ -981,18 +1041,50 @@ router.get("/api/payments", async (req, res) => {
       payments = payments.slice(0, parseInt(limit as string));
     }
 
-    // Fetch patient info for each payment
+    // Fetch patient info and payment items for each payment
     const patientsMap = new Map();
-    const uniquePatientIds = [...new Set(payments.map(p => p.patientId))];
+    const uniquePatientIds = Array.from(new Set(payments.map(p => p.patientId)));
     const allPatients = await storage.getPatients();
     allPatients.forEach(p => patientsMap.set(p.patientId, p));
 
-    const paymentsWithPatients = payments.map(payment => ({
-      ...payment,
-      patient: patientsMap.get(payment.patientId) || null,
-    }));
+    // Fetch payment items and services for breakdown
+    const allServices = await storage.getServices();
+    const servicesMap = new Map(allServices.map(s => [s.id, s]));
 
-    res.json(paymentsWithPatients);
+    const paymentsWithDetails = await Promise.all(
+      payments.map(async (payment) => {
+        const items = await storage.getPaymentItems(payment.paymentId);
+        
+        // Group items by category for summary
+        const breakdown = items.reduce((acc: any, item) => {
+          const service = servicesMap.get(item.serviceId);
+          const category = service?.category || 'other';
+          const categoryName = 
+            category === 'laboratory' ? 'Lab Tests' :
+            category === 'radiology' ? 'X-Ray' :
+            category === 'ultrasound' ? 'Ultrasound' :
+            category === 'pharmacy' ? 'Pharmacy' :
+            category === 'consultation' ? 'Consultation' :
+            'Other';
+          
+          if (!acc[categoryName]) {
+            acc[categoryName] = { count: 0, amount: 0 };
+          }
+          acc[categoryName].count += item.quantity;
+          acc[categoryName].amount += item.amount;
+          return acc;
+        }, {});
+
+        return {
+          ...payment,
+          patient: patientsMap.get(payment.patientId) || null,
+          items,
+          breakdown,
+        };
+      })
+    );
+
+    res.json(paymentsWithDetails);
   } catch (error) {
     console.error("Error fetching payments:", error);
     res.status(500).json({ error: "Failed to fetch payments" });

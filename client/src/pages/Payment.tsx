@@ -678,6 +678,20 @@ export default function Payment() {
                         <span>{new Date(payment.paymentDate).toLocaleDateString()}</span>
                         <span>{new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
+                      {/* Service Breakdown */}
+                      {payment.breakdown && Object.keys(payment.breakdown).length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {Object.entries(payment.breakdown).map(([category, details]: [string, any]) => (
+                            <Badge 
+                              key={category} 
+                              variant="outline" 
+                              className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300"
+                            >
+                              {category} {details.count > 1 ? `(${details.count})` : ''}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                       <p className="text-xs text-gray-500 mt-1">
                         Received by: {payment.receivedBy}
                       </p>
