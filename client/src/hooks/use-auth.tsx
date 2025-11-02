@@ -36,10 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: async (user: SafeUser) => {
-      // Set query data AND invalidate to force refetch
+    onSuccess: (user: SafeUser) => {
+      // Set query data (no need to invalidate since we just got fresh data)
       queryClient.setQueryData(["/api/user"], user);
-      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
     },
     onError: (error: Error) => {
       toast({
