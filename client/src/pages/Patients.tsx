@@ -484,7 +484,7 @@ export default function Patients() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <Card>
+          <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0 bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -495,12 +495,14 @@ export default function Patients() {
                     {countsLoading ? "..." : todayCount}
                   </p>
                 </div>
-                <Calendar className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                  <Calendar className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0 bg-gradient-to-br from-white to-green-50/30 dark:from-gray-800 dark:to-green-900/10">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -511,23 +513,27 @@ export default function Patients() {
                     {countsLoading ? "..." : allCount}
                   </p>
                 </div>
-                <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                  <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0 bg-gradient-to-br from-white to-gray-50/30 dark:from-gray-800 dark:to-gray-900/10">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Last Updated
                   </p>
-                  <p className="text-sm font-bold text-gray-600 dark:text-gray-300">
+                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
                     {lastRefresh.toLocaleTimeString()}
                   </p>
                 </div>
-                <Clock className="w-8 h-8 text-gray-600 dark:text-gray-300" />
+                <div className="p-3 bg-gray-100 dark:bg-gray-700/30 rounded-xl">
+                  <Clock className="w-8 h-8 text-gray-600 dark:text-gray-300" />
+                </div>
               </div>
             </CardContent>
           </Card>
