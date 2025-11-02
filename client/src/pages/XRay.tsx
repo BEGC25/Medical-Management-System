@@ -158,6 +158,19 @@ function usePatientSearch(term: string) {
   });
 }
 
+function useRadiologyServices() {
+  return useQuery<Array<{ id: number; name: string; price: number }>>({
+    queryKey: ['/api/services', { category: 'radiology' }],
+    queryFn: async () => {
+      const url = new URL('/api/services', window.location.origin);
+      url.searchParams.set('category', 'radiology');
+      const res = await fetch(url.toString());
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
@@ -221,6 +234,7 @@ export default function XRay() {
   /* ----------------------------- Data ----------------------------- */
 
   const { data: allXrayExams = [] } = useXrayExams();
+  const { data: radiologyServices = [] } = useRadiologyServices();
   const pendingExams = allXrayExams.filter((e) => e.status === 'pending');
   const completedExams = allXrayExams.filter((e) => e.status === 'completed');
 
@@ -729,12 +743,15 @@ export default function XRay() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="chest">Chest X-Ray</SelectItem>
-                          <SelectItem value="abdomen">Abdomen X-Ray</SelectItem>
-                          <SelectItem value="spine">Spine X-Ray</SelectItem>
-                          <SelectItem value="extremities">Extremities X-Ray</SelectItem>
-                          <SelectItem value="pelvis">Pelvis X-Ray</SelectItem>
-                          <SelectItem value="skull">Skull X-Ray</SelectItem>
+                          {radiologyServices.length > 0 ? (
+                            radiologyServices.map((service) => (
+                              <SelectItem key={service.id} value={service.name}>
+                                {service.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="chest">Chest X-Ray</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />

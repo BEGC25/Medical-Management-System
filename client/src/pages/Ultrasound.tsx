@@ -157,6 +157,19 @@ function usePatientSearch(term: string) {
   });
 }
 
+function useUltrasoundServices() {
+  return useQuery<Array<{ id: number; name: string; price: number }>>({
+    queryKey: ['/api/services', { category: 'ultrasound' }],
+    queryFn: async () => {
+      const url = new URL('/api/services', window.location.origin);
+      url.searchParams.set('category', 'ultrasound');
+      const res = await fetch(url.toString());
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
@@ -214,6 +227,7 @@ export default function Ultrasound() {
   /* ----------------------------- Data ----------------------------- */
 
   const { data: allUltrasoundExams = [] } = useUltrasoundExams();
+  const { data: ultrasoundServices = [] } = useUltrasoundServices();
   const pendingExams = allUltrasoundExams.filter((e) => e.status === 'pending');
   const completedExams = allUltrasoundExams.filter((e) => e.status === 'completed');
 
@@ -713,13 +727,15 @@ export default function Ultrasound() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="abdominal">Abdominal Ultrasound</SelectItem>
-                        <SelectItem value="pelvic">Pelvic Ultrasound</SelectItem>
-                        <SelectItem value="obstetric">Obstetric Ultrasound</SelectItem>
-                        <SelectItem value="cardiac">Cardiac Echo</SelectItem>
-                        <SelectItem value="renal">Renal Ultrasound</SelectItem>
-                        <SelectItem value="thyroid">Thyroid Ultrasound</SelectItem>
-                        <SelectItem value="vascular">Vascular Doppler</SelectItem>
+                        {ultrasoundServices.length > 0 ? (
+                          ultrasoundServices.map((service) => (
+                            <SelectItem key={service.id} value={service.name}>
+                              {service.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="abdominal">Abdominal Ultrasound</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
