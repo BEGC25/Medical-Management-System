@@ -1112,6 +1112,24 @@ export default function Treatment() {
                                   // --- NEW: Parse results for inline display ---
                                   const parsedResults = parseJSON<Record<string, Record<string, string>>>(test.results, {});
                                   const testsOrdered = parseJSON<string[]>(test.tests, []);
+                                  
+                                  // Create professional title showing test count and preview
+                                  const getTestTitle = () => {
+                                    if (testsOrdered.length === 0) {
+                                      return test.category 
+                                        ? test.category.charAt(0).toUpperCase() + test.category.slice(1)
+                                        : "Laboratory Test";
+                                    }
+                                    
+                                    const count = testsOrdered.length;
+                                    const testLabel = count === 1 ? "Lab Test" : "Lab Tests";
+                                    
+                                    // Show first 2 tests with ellipsis if more
+                                    const preview = testsOrdered.slice(0, 2).join(", ");
+                                    const hasMore = testsOrdered.length > 2;
+                                    
+                                    return `${count} ${testLabel} (${preview}${hasMore ? "..." : ""})`;
+                                  };
                                   // --- End NEW ---
                                   
                                   return (
@@ -1120,9 +1138,7 @@ export default function Treatment() {
                                         <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                                           <div className="flex-1 min-w-0 w-full sm:w-auto">
                                             <CardTitle className="text-sm sm:text-base mb-1">
-                                              {test.category 
-                                                ? test.category.charAt(0).toUpperCase() + test.category.slice(1)
-                                                : "Laboratory Test"}
+                                              {getTestTitle()}
                                             </CardTitle>
                                              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
                                               <Badge variant={test.status === "completed" ? "default" : "secondary"} className="text-xs">
