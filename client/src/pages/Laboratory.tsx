@@ -728,13 +728,13 @@ export default function Laboratory() {
   // Small chip component
   const Chip = ({ children, tone = "slate" }: { children: React.ReactNode; tone?: "slate" | "blue" | "emerald" | "amber" | "rose" }) => {
     const tones: Record<string, string> = {
-      slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
-      blue: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-      emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-      amber: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-      rose: "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
+      slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700",
+      blue: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800",
+      emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
+      amber: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
+      rose: "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border border-rose-200 dark:border-rose-800",
     };
-    return <span className={cx("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", tones[tone])}>{children}</span>;
+    return <span className={cx("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm", tones[tone])}>{children}</span>;
   };
 
   const TestsRow = ({ tests }: { tests: string[] }) =>
@@ -752,16 +752,17 @@ export default function Laboratory() {
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests (Always Visible) */}
-        <Card>
-          <CardHeader>
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-amber-50 to-white dark:from-amber-900/20 dark:to-gray-900 border-b">
             <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
                 <Clock className="w-5 h-5 text-amber-600" />
                 Pending Test Requests
               </span>
               <Button
                 type="button"
                 onClick={() => setRequestOpen(true)}
+                className="bg-medical-blue hover:bg-blue-700 text-white font-semibold shadow-md transition-all"
                 data-testid="button-new-request"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -783,10 +784,10 @@ export default function Laboratory() {
                       key={test.testId}
                       data-testid={`card-pending-test-${test.testId}`}
                       className={cx(
-                        "rounded-lg p-3 cursor-pointer transition-colors border",
+                        "rounded-lg p-3 cursor-pointer transition-all border shadow-md hover:shadow-xl",
                         isPaid
-                          ? "border-green-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
-                          : "border-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30",
+                          ? "border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 hover:from-green-100 hover:to-green-200/50 dark:hover:from-green-900/30 dark:hover:to-green-900/20"
+                          : "border-red-300 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-900/10 hover:from-red-100 hover:to-red-200/50 dark:hover:from-red-900/30 dark:hover:to-red-900/20",
                         !canPerform && "opacity-75"
                       )}
                       onClick={() => canPerform && handleLabTestSelect(test)}
@@ -825,9 +826,9 @@ export default function Laboratory() {
         </Card>
 
         {/* RIGHT – Completed Tests */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-white dark:from-green-900/20 dark:to-gray-900 border-b">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
               <Check className="w-5 h-5 text-green-600" />
               Completed Tests
             </CardTitle>
@@ -842,7 +843,7 @@ export default function Laboratory() {
                     <div
                       key={test.testId}
                       data-testid={`card-completed-test-${test.testId}`}
-                      className="rounded-lg p-3 cursor-pointer transition-colors border border-green-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
+                      className="rounded-lg p-3 cursor-pointer transition-all border border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 hover:from-green-100 hover:to-green-200/50 dark:hover:from-green-900/30 dark:hover:to-green-900/20 shadow-md hover:shadow-xl"
                       onClick={() => handleLabTestSelect(test)}
                     >
                       <div className="flex items-center justify-between">
