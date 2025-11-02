@@ -18,23 +18,33 @@ import {
 } from "lucide-react";
 
 const navItems = [
+  // OVERVIEW
   { path: "/", label: "Dashboard", icon: LayoutDashboard, category: "Overview" },
+  
+  // MANAGEMENT
   { path: "/patients", label: "Patients", icon: Users, category: "Management" },
+  { path: "/payment", label: "Payment", icon: DollarSign, category: "Management" },
+  
+  // DIAGNOSTICS
   { path: "/laboratory", label: "Laboratory", icon: TestTube, category: "Diagnostics" },
   { path: "/xray", label: "X-Ray", icon: Scan, category: "Diagnostics" },
   { path: "/ultrasound", label: "Ultrasound", icon: MonitorSpeaker, category: "Diagnostics" },
+  
+  // CLINICAL
   { path: "/treatment", label: "Treatment", icon: Stethoscope, category: "Clinical" },
   { path: "/pharmacy", label: "Pharmacy", icon: Pill, category: "Clinical" },
-  { path: "/payment", label: "Payment", icon: DollarSign, category: "Administration" },
-  { path: "/billing", label: "Billing", icon: Receipt, category: "Administration" },
-  { path: "/service-management", label: "Service Management", icon: Tag, category: "Administration" },
-  { path: "/users", label: "User Management", icon: UserCog, category: "Administration" },
-  { path: "/billing-settings", label: "Billing Settings", icon: Settings, category: "Administration" },
-  { path: "/all-results", label: "All Results", icon: FileSearch, category: "Reports" },
-
-  // ✅ NEW: Daily Cash report (manager)
-  { path: "/reports/daily-cash", label: "Daily Cash", icon: BarChart3, category: "Reports" },
-
+  
+  // FINANCIAL
+  { path: "/reports/daily-cash", label: "Daily Cash Report", icon: BarChart3, category: "Financial" },
+  { path: "/billing", label: "Billing & Invoices", icon: Receipt, category: "Financial" },
+  { path: "/all-results", label: "All Results Report", icon: FileSearch, category: "Financial" },
+  
+  // SETTINGS
+  { path: "/service-management", label: "Service Management", icon: Tag, category: "Settings" },
+  { path: "/users", label: "User Management", icon: UserCog, category: "Settings" },
+  { path: "/billing-settings", label: "Billing Settings", icon: Settings, category: "Settings" },
+  
+  // REPORTS
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },
 ];
 
