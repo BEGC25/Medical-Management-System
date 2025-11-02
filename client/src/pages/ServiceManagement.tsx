@@ -316,6 +316,12 @@ export default function ServiceManagement() {
                     disabled={createMutation.isPending || updateMutation.isPending}
                     className="bg-medical-blue hover:bg-blue-700"
                     data-testid="button-save-service"
+                    onClick={(e) => {
+                      console.log("Save button clicked!");
+                      console.log("Form state:", form.formState);
+                      console.log("Form values:", form.getValues());
+                      console.log("Form errors:", form.formState.errors);
+                    }}
                   >
                     {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Service"}
                   </Button>
