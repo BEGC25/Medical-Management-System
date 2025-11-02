@@ -103,37 +103,37 @@ export default function Dashboard() {
           <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b">
             <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Today's Statistics</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 sm:space-y-3">
+          <CardContent className="space-y-1">
             {stats ? (
               <>
                 <Link href="/patients?filter=today">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2.5 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">New Patients</span>
-                    <span className="font-semibold text-base sm:text-lg text-medical-blue">{stats.newPatients}</span>
+                    <span className="font-bold text-base sm:text-lg text-medical-blue tabular-nums text-right min-w-[3rem]">{stats.newPatients}</span>
                   </div>
                 </Link>
                 <Link href="/treatment?filter=today">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2.5 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Total Visits</span>
-                    <span className="font-semibold text-base sm:text-lg text-health-green">{stats.totalVisits}</span>
+                    <span className="font-bold text-base sm:text-lg text-health-green tabular-nums text-right min-w-[3rem]">{stats.totalVisits}</span>
                   </div>
                 </Link>
                 <Link href="/laboratory">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2.5 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Lab Tests</span>
-                    <span className="font-semibold text-base sm:text-lg text-attention-orange">{stats.labTests}</span>
+                    <span className="font-bold text-base sm:text-lg text-attention-orange tabular-nums text-right min-w-[3rem]">{stats.labTests}</span>
                   </div>
                 </Link>
                 <Link href="/xray">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2.5 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">X-Rays</span>
-                    <span className="font-semibold text-base sm:text-lg text-purple-600">{stats.xrays}</span>
+                    <span className="font-bold text-base sm:text-lg text-purple-600 tabular-nums text-right min-w-[3rem]">{stats.xrays}</span>
                   </div>
                 </Link>
                 <Link href="/ultrasound">
-                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 p-2.5 sm:p-3 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[44px]">
+                  <div className="flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2.5 rounded cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 h-12">
                     <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Ultrasounds</span>
-                    <span className="font-semibold text-base sm:text-lg text-blue-600">{stats.ultrasounds}</span>
+                    <span className="font-bold text-base sm:text-lg text-blue-600 tabular-nums text-right min-w-[3rem]">{stats.ultrasounds}</span>
                   </div>
                 </Link>
               </>
