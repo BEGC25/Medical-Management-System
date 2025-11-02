@@ -22,49 +22,165 @@ import {
   ObjectStorageService,
   ObjectNotFoundError,
 } from "./objectStorage";
+import { hasRoutePermission, ROLES, type UserRole } from "@shared/auth-roles";
+import {
+  hashPassword,
+  verifyPassword,
+  toSafeUser,
+  toSessionUser,
+  type SessionUser,
+} from "./auth-service";
 
 const router = express.Router();
 
 /* ----------------------------- Auth guards ----------------------------- */
 
+/**
+ * Require authentication - checks if user has valid session
+ */
 const requireAuth = (req: any, res: any, next: any) => {
-  // Optional bypass during local dev if ever needed:
-  // if (process.env.SKIP_AUTH === "1") return next();
-  try {
-    if (req.isAuthenticated && req.isAuthenticated()) return next();
-  } catch {}
-  return res.status(401).json({ error: "Not authenticated" });
+  if (!req.session?.user) {
+    console.log("[AUTH] Denied: No session found");
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  
+  // Attach user to request for convenience
+  req.user = req.session.user;
+  next();
 };
 
-const requireRole =
-  (...roles: string[]) =>
-  (req: any, res: any, next: any) => {
-    console.log("[requireRole] Checking role access:", {
-      hasUser: !!req.user,
-      userRole: req.user?.role,
-      requiredRoles: roles,
-      isAuthenticated: req.isAuthenticated?.(),
-    });
+/**
+ * Require specific role(s) - checks if user has any of the allowed roles
+ * Admin always has access
+ */
+const requireRole = (...roles: UserRole[]) => {
+  return (req: any, res: any, next: any) => {
+    const user: SessionUser | undefined = req.session?.user;
     
-    if (!req.user || !req.user.role) {
-      console.log("[requireRole] DENIED - No user or role");
+    if (!user) {
+      console.log("[RBAC] Denied: No user in session");
       return res.status(401).json({ error: "Not authenticated" });
     }
-    if (roles.includes(req.user.role) || req.user.role === "admin") {
-      console.log("[requireRole] ALLOWED - User has required role");
+    
+    // Admin always has access
+    if (user.role === ROLES.ADMIN) {
+      console.log(`[RBAC] Allowed: ${user.username} is admin`);
       return next();
     }
-    console.log("[requireRole] DENIED - Insufficient privileges");
-    return res.status(403).json({ error: "Insufficient role" });
+    
+    // Check if user has one of the required roles
+    if (roles.includes(user.role)) {
+      console.log(`[RBAC] Allowed: ${user.username} (${user.role}) accessing with role permission`);
+      return next();
+    }
+    
+    console.log(`[RBAC] Denied: ${user.username} (${user.role}) needs one of [${roles.join(', ')}]`);
+    return res.status(403).json({ error: "Insufficient permissions", requiredRoles: roles });
   };
+};
 
-// Admin-only helper
-const requireAdmin = requireRole("admin");
+/**
+ * Automatically check route permissions based on ROUTE_PERMISSIONS mapping
+ */
+const checkRoutePermission = (req: any, res: any, next: any) => {
+  const user: SessionUser | undefined = req.session?.user;
+  const path = req.path;
+  
+  if (!user) {
+    console.log(`[RBAC] Denied: No user for ${path}`);
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  
+  // Check if route requires specific permissions
+  if (hasRoutePermission(user.role, path)) {
+    console.log(`[RBAC] Allowed: ${user.username} (${user.role}) can access ${path}`);
+    return next();
+  }
+  
+  console.log(`[RBAC] Denied: ${user.username} (${user.role}) cannot access ${path}`);
+  return res.status(403).json({ error: "Insufficient permissions for this resource" });
+};
 
-// 🔒 AUTHENTICATION DISABLED FOR TROUBLESHOOTING
-// To re-enable authentication, uncomment the line below:
-// router.use("/api", requireAuth);
-console.log("⚠️  WARNING: Authentication is DISABLED - all API routes are publicly accessible");
+// Role-specific helpers
+const requireAdmin = requireRole(ROLES.ADMIN);
+const requireDoctor = requireRole(ROLES.DOCTOR);
+const requireLab = requireRole(ROLES.LAB);
+const requireRadiology = requireRole(ROLES.RADIOLOGY);
+
+/* ----------------------------- Public Authentication Routes ----------------------------- */
+// ⚠️ IMPORTANT: These routes MUST be defined BEFORE the global requireAuth middleware
+// so they remain accessible without authentication
+
+// Login endpoint (public - no auth required)
+router.post("/api/login", async (req, res) => {
+  try {
+    const schema = z.object({
+      username: z.string().min(1, "Username is required"),
+      password: z.string().min(1, "Password is required"),
+    });
+
+    const { username, password } = schema.parse(req.body);
+
+    // Find user by username
+    const user = await storage.getUserByUsername(username);
+    if (!user) {
+      console.log(`[AUTH] Login failed: User '${username}' not found`);
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    // Verify password
+    const isValid = await verifyPassword(password, user.password);
+    if (!isValid) {
+      console.log(`[AUTH] Login failed: Invalid password for user '${username}'`);
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    // Create session
+    const sessionUser = toSessionUser(user);
+    req.session.user = sessionUser;
+    
+    console.log(`[AUTH] Login successful: ${username} (${user.role})`);
+    
+    // Return safe user data (no password)
+    res.json(toSafeUser(user));
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid login data", details: error.errors });
+    }
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// Logout endpoint (public - doesn't require auth)
+router.post("/api/logout", (req, res) => {
+  const username = req.session.user?.username || "unknown";
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Logout error:", err);
+      return res.status(500).json({ error: "Logout failed" });
+    }
+    console.log(`[AUTH] Logout successful: ${username}`);
+    res.json({ message: "Logged out successfully" });
+  });
+});
+
+// Get current user (public - returns 401 if not authenticated)
+router.get("/api/user", (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  
+  // Return session user data
+  const user: SessionUser = req.session.user;
+  res.json(user);
+});
+
+// 🔒 GLOBAL AUTHENTICATION MIDDLEWARE
+// Everything below this point requires a valid session
+// To DISABLE authentication for troubleshooting, comment out the line below:
+router.use("/api", requireAuth);
+console.log("✅ Authentication is ENABLED - all API routes require valid session");
 
 /* ------------------------------ Users (admin) ------------------------------ */
 

@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { canSeeNavItem, ROLES } from "@shared/auth-roles";
 import { 
   BarChart3, 
   Stethoscope, 
@@ -52,11 +53,14 @@ export default function Navigation() {
   const [location] = useLocation();
   const { user } = useAuth();
 
-  // Show all items since auth is disabled
-  const allItems = navItems;
+  // Filter navigation items based on user role
+  const visibleItems = navItems.filter((item) => {
+    if (!user) return false; // No user logged in, show nothing
+    return canSeeNavItem(user.role as any, item.path);
+  });
 
   // Group navigation items by category
-  const groupedItems = allItems.reduce((acc, item) => {
+  const groupedItems = visibleItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }

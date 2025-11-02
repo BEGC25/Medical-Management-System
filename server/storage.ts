@@ -2138,7 +2138,7 @@ async function seedDefaultAdminUser() {
   try {
     const existingUsers = await storage.getAllUsers();
     if (existingUsers.length === 0) {
-      console.log("No users found. Creating default admin user...");
+      console.log("No users found. Creating default test users for all roles...");
       
       // Create default admin: username=admin, password=admin123
       await storage.createUser({
@@ -2148,10 +2148,35 @@ async function seedDefaultAdminUser() {
         role: "admin",
       });
       
-      console.log("✓ Default admin user created successfully");
-      console.log("  Username: admin");
-      console.log("  Password: admin123");
-      console.log("  ⚠️  IMPORTANT: Change this password immediately after first login!");
+      // Create doctor user
+      await storage.createUser({
+        username: "doctor",
+        password: "doctor123",
+        fullName: "Dr. James Malual",
+        role: "doctor",
+      });
+      
+      // Create lab technician user
+      await storage.createUser({
+        username: "lab",
+        password: "lab123",
+        fullName: "Sarah Johnson - Lab Tech",
+        role: "lab",
+      });
+      
+      // Create radiology technician user
+      await storage.createUser({
+        username: "radiology",
+        password: "radio123",
+        fullName: "Michael Deng - Radiology Tech",
+        role: "radiology",
+      });
+      
+      console.log("✓ Default test users created successfully:");
+      console.log("  Admin:     username=admin, password=admin123");
+      console.log("  Doctor:    username=doctor, password=doctor123");
+      console.log("  Lab:       username=lab, password=lab123");
+      console.log("  Radiology: username=radiology, password=radio123");
     }
   } catch (error) {
     console.log("Error seeding default admin user:", error);

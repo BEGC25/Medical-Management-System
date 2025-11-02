@@ -17,7 +17,8 @@ import Billing from "@/pages/Billing";
 import BillingSettings from "@/pages/BillingSettings";
 import ServiceManagement from "@/pages/ServiceManagement";
 import UserManagement from "@/pages/UserManagement";
-import AuthPage from "@/pages/AuthPage";
+import Auth from "@/pages/Auth";
+import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
@@ -25,6 +26,7 @@ import OfflineIndicator from "@/components/OfflineIndicator";
 import { queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { ROLES } from "@shared/auth-roles";
 
 // ✅ NEW: Daily Cash page
 import ReportsDailyCash from "@/pages/ReportsDailyCash";
@@ -37,7 +39,11 @@ function App() {
           <OfflineIndicator />
 
           <Switch>
-            <Route path="/auth" component={AuthPage} />
+            {/* Public Routes */}
+            <Route path="/auth" component={Auth} />
+            <Route path="/unauthorized" component={Unauthorized} />
+            
+            {/* Protected Routes */}
             <Route>
               <Header />
               <Navigation />
@@ -45,26 +51,38 @@ function App() {
               <main className="ml-64 pt-16 min-h-screen">
                 <div className="px-6 py-6">
                   <Switch>
-                    {/* 🔒 AUTHENTICATION DISABLED - using Route instead of ProtectedRoute */}
-                    <Route path="/" component={Dashboard} />
-                    <Route path="/patients" component={Patients} />
-                    <Route path="/treatment/new" component={VisitRedirector} />
-                    <Route path="/treatment/:visitId" component={Treatment} />
-                    <Route path="/treatment" component={Treatment} />
-                    <Route path="/laboratory" component={Laboratory} />
-                    <Route path="/xray" component={XRay} />
-                    <Route path="/ultrasound" component={Ultrasound} />
-                    <Route path="/pharmacy" component={Pharmacy} />
-                    <Route path="/pharmacy-inventory" component={PharmacyInventory} />
-                    <Route path="/payment" component={Payment} />
-                    <Route path="/billing" component={Billing} />
-                    <Route path="/billing-settings" component={BillingSettings} />
-                    <Route path="/service-management" component={ServiceManagement} />
-                    <Route path="/reports" component={Reports} />
-                    {/* ✅ NEW route for Daily Cash */}
-                    <Route path="/reports/daily-cash" component={ReportsDailyCash} />
-                    <Route path="/all-results" component={AllResults} />
-                    <Route path="/users" component={UserManagement} />
+                    {/* Dashboard - All roles */}
+                    <ProtectedRoute path="/" component={Dashboard} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
+                    
+                    {/* Patient Management - All roles */}
+                    <ProtectedRoute path="/patients" component={Patients} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
+                    
+                    {/* Treatment - Admin & Doctor */}
+                    <ProtectedRoute path="/treatment/new" component={VisitRedirector} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+                    <ProtectedRoute path="/treatment/:visitId" component={Treatment} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+                    <ProtectedRoute path="/treatment" component={Treatment} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+                    
+                    {/* Diagnostics */}
+                    <ProtectedRoute path="/laboratory" component={Laboratory} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB]} />
+                    <ProtectedRoute path="/xray" component={XRay} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.RADIOLOGY]} />
+                    <ProtectedRoute path="/ultrasound" component={Ultrasound} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.RADIOLOGY]} />
+                    
+                    {/* Pharmacy - Admin & Doctor */}
+                    <ProtectedRoute path="/pharmacy" component={Pharmacy} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+                    <ProtectedRoute path="/pharmacy-inventory" component={PharmacyInventory} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+                    
+                    {/* Financial - Admin Only */}
+                    <ProtectedRoute path="/payment" component={Payment} allowedRoles={[ROLES.ADMIN]} />
+                    <ProtectedRoute path="/billing" component={Billing} allowedRoles={[ROLES.ADMIN]} />
+                    <ProtectedRoute path="/reports/daily-cash" component={ReportsDailyCash} allowedRoles={[ROLES.ADMIN]} />
+                    <ProtectedRoute path="/all-results" component={AllResults} allowedRoles={[ROLES.ADMIN]} />
+                    
+                    {/* Settings - Admin Only */}
+                    <ProtectedRoute path="/billing-settings" component={BillingSettings} allowedRoles={[ROLES.ADMIN]} />
+                    <ProtectedRoute path="/service-management" component={ServiceManagement} allowedRoles={[ROLES.ADMIN]} />
+                    <ProtectedRoute path="/users" component={UserManagement} allowedRoles={[ROLES.ADMIN]} />
+                    <ProtectedRoute path="/reports" component={Reports} allowedRoles={[ROLES.ADMIN]} />
+                    
                     <Route component={NotFound} />
                   </Switch>
                 </div>
