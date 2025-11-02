@@ -54,8 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       return await res.json();
     },
-    onSuccess: (user: SafeUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: () => {
+      // Don't set the new user as the current user - admin should stay logged in
+      // The newly created user is just added to the database
     },
     onError: (error: Error) => {
       toast({
