@@ -78,15 +78,15 @@ export default function Dashboard() {
           const Icon = action.icon;
           return (
             <Link key={action.title} href={action.href}>
-              <Card className="shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.98]">
+              <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer hover:scale-[1.03] hover:-translate-y-1.5 active:scale-[0.98] border-0 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50">
                 <CardContent className="p-4 sm:p-5 md:p-6">
                   <div className="flex items-center gap-3 sm:gap-4">
-                    <div className={`${action.color} bg-opacity-10 p-2.5 sm:p-3 rounded-lg transition-transform hover:scale-110 flex-shrink-0`}>
+                    <div className={`${action.color} bg-opacity-15 p-3 sm:p-3.5 rounded-xl transition-all hover:scale-110 hover:rotate-3 flex-shrink-0 shadow-md`}>
                       <Icon className={`w-5 h-5 sm:w-6 sm:h-6`} style={{ color: `var(--${action.color.replace('bg-', '')}` }} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-gray-200">{action.title}</h3>
-                      <p className="text-gray-600 text-xs sm:text-sm dark:text-gray-400">{action.description}</p>
+                      <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">{action.title}</h3>
+                      <p className="text-gray-600 text-xs sm:text-sm dark:text-gray-400 font-medium">{action.description}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -99,9 +99,9 @@ export default function Dashboard() {
       {/* Today's Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* Statistics */}
-        <Card className="md:col-span-1">
-          <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg">Today's Statistics</CardTitle>
+        <Card className="md:col-span-1 shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b">
+            <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Today's Statistics</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 sm:space-y-3">
             {stats ? (
@@ -151,9 +151,9 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent Patients */}
-        <Card className="md:col-span-1">
-          <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg">Recent Patients</CardTitle>
+        <Card className="md:col-span-1 shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b">
+            <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Recent Patients</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 sm:space-y-3">
@@ -200,9 +200,9 @@ export default function Dashboard() {
         </Card>
 
         {/* Pending Items */}
-        <Card className="md:col-span-2 lg:col-span-1">
-          <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg">Pending Items</CardTitle>
+        <Card className="md:col-span-2 lg:col-span-1 shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b">
+            <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Pending Items</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 sm:space-y-3">
@@ -216,8 +216,8 @@ export default function Dashboard() {
                         <TestTube className="text-attention-orange w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                         <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 truncate">Lab Results</span>
                       </div>
-                      <Badge className={`bg-attention-orange text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 ${
-                        stats.pending.labResults >= 10 ? 'ring-2 ring-attention-orange ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110' : ''
+                      <Badge className={`bg-attention-orange text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 shadow-lg ${
+                        stats.pending.labResults >= 10 ? 'ring-2 ring-attention-orange ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110 shadow-xl' : ''
                       }`}>
                         {stats.pending.labResults}
                       </Badge>
@@ -231,8 +231,8 @@ export default function Dashboard() {
                         <Scan className="text-purple-600 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                         <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 truncate">X-Ray Reports</span>
                       </div>
-                      <Badge className={`bg-purple-600 text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 ${
-                        stats.pending.xrayReports >= 10 ? 'ring-2 ring-purple-600 ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110' : ''
+                      <Badge className={`bg-purple-600 text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 shadow-lg ${
+                        stats.pending.xrayReports >= 10 ? 'ring-2 ring-purple-600 ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110 shadow-xl' : ''
                       }`}>
                         {stats.pending.xrayReports}
                       </Badge>
@@ -246,8 +246,8 @@ export default function Dashboard() {
                         <MonitorSpeaker className="text-blue-600 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                         <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 truncate">Ultrasound Reports</span>
                       </div>
-                      <Badge className={`bg-blue-600 text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 ${
-                        stats.pending.ultrasoundReports >= 10 ? 'ring-2 ring-blue-600 ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110' : ''
+                      <Badge className={`bg-blue-600 text-white font-bold min-w-[2rem] sm:min-w-[2.5rem] justify-center text-sm flex-shrink-0 shadow-lg ${
+                        stats.pending.ultrasoundReports >= 10 ? 'ring-2 ring-blue-600 ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110 shadow-xl' : ''
                       }`}>
                         {stats.pending.ultrasoundReports}
                       </Badge>
