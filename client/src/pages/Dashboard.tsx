@@ -85,8 +85,8 @@ export default function Dashboard() {
                       <Icon className={`w-5 h-5 sm:w-6 sm:h-6`} style={{ color: `var(--${action.color.replace('bg-', '')}` }} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-gray-200 truncate">{action.title}</h3>
-                      <p className="text-gray-600 text-xs sm:text-sm dark:text-gray-400 truncate">{action.description}</p>
+                      <h3 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-gray-200">{action.title}</h3>
+                      <p className="text-gray-600 text-xs sm:text-sm dark:text-gray-400">{action.description}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -161,7 +161,7 @@ export default function Dashboard() {
                 recentPatients.map((patient: any) => (
                   <div key={patient.id} className="flex items-start sm:items-center justify-between py-2.5 sm:py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 min-h-[60px] sm:min-h-[56px]">
                     <div className="flex-1 min-w-0 pr-2">
-                      <p className="font-medium text-sm sm:text-base text-gray-800 dark:text-gray-200 truncate">
+                      <p className="font-medium text-sm sm:text-base text-gray-800 dark:text-gray-200 break-words">
                         {patient.firstName} {patient.lastName}
                       </p>
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">

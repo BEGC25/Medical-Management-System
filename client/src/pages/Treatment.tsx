@@ -1116,37 +1116,37 @@ export default function Treatment() {
                                   
                                   return (
                                     <Card key={test.testId || test.orderId} className="overflow-hidden">
-                                      <CardHeader className="bg-gray-50 dark:bg-gray-800 p-4 border-b">
-                                        <div className="flex justify-between items-start gap-3">
-                                          <div className="flex-1">
-                                            <CardTitle className="text-base mb-1">
+                                      <CardHeader className="bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 border-b">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                                          <div className="flex-1 min-w-0 w-full sm:w-auto">
+                                            <CardTitle className="text-sm sm:text-base mb-1">
                                               {test.category 
                                                 ? test.category.charAt(0).toUpperCase() + test.category.slice(1)
                                                 : "Laboratory Test"}
                                             </CardTitle>
-                                             <div className="flex items-center gap-2 mb-2">
-                                              <Badge variant={test.status === "completed" ? "default" : "secondary"}>
+                                             <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+                                              <Badge variant={test.status === "completed" ? "default" : "secondary"} className="text-xs">
                                                 {test.status}
                                               </Badge>
                                               {!test.isPaid && (
-                                                <Badge variant="destructive" className="bg-red-600">UNPAID</Badge>
+                                                <Badge variant="destructive" className="bg-red-600 text-xs">UNPAID</Badge>
                                               )}
                                               {test.orderLine?.acknowledgedBy && (
-                                                <Badge variant="outline" className="text-green-600 border-green-600">Acknowledged</Badge>
+                                                <Badge variant="outline" className="text-green-600 border-green-600 text-xs">Acknowledged</Badge>
                                               )}
                                             </div>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                               Requested: {fmt(test.requestedDate)}
                                             </p>
                                           </div>
-                                          <div className="flex flex-col items-end gap-2">
+                                          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto justify-between sm:justify-start">
                                               {test.status === "completed" && (
-                                                <Button variant="outline" size="sm" onClick={() => openResult("lab", test)}>
-                                                  View Details {/* Changed text */}
+                                                <Button variant="outline" size="sm" onClick={() => openResult("lab", test)} className="text-xs sm:text-sm flex-1 sm:flex-initial min-h-[36px]" data-testid={`view-details-lab-${test.id}`}>
+                                                  View Details
                                                 </Button>
                                               )}
                                               {test.orderLine && (
-                                                  <div className="flex items-center gap-2">
+                                                  <div className="flex items-center gap-2 min-h-[36px]">
                                                     <Checkbox
                                                       id={`ack-lab-${test.id}`}
                                                       checked={!!test.orderLine.acknowledgedBy}
@@ -1159,7 +1159,7 @@ export default function Treatment() {
                                                       }
                                                       data-testid={`ack-lab-${test.id}`}
                                                     />
-                                                    <label htmlFor={`ack-lab-${test.id}`} className="text-sm cursor-pointer">
+                                                    <label htmlFor={`ack-lab-${test.id}`} className="text-xs sm:text-sm cursor-pointer whitespace-nowrap">
                                                       Acknowledge
                                                     </label>
                                                   </div>
@@ -1167,13 +1167,13 @@ export default function Treatment() {
                                           </div>
                                         </div>
                                       </CardHeader>
-                                      <CardContent className="p-4 space-y-4">
+                                      <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                                         {/* --- NEW: Inline Results Display --- */}
                                         {testsOrdered.length > 0 && (
                                           <div>
-                                            <h5 className="font-medium text-sm mb-1">Tests Ordered:</h5>
+                                            <h5 className="font-medium text-xs sm:text-sm mb-1.5">Tests Ordered:</h5>
                                             <div className="flex flex-wrap gap-1">
-                                              {testsOrdered.map((t, i) => <Badge key={i} variant="secondary">{t}</Badge>)}
+                                              {testsOrdered.map((t, i) => <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>)}
                                             </div>
                                           </div>
                                         )}
