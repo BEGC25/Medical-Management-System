@@ -1,0 +1,22 @@
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.Understand this error
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'ambient-light-sensor'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'battery'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'execution-while-not-rendered'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'layout-animations'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'legacy-image-formats'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'navigation-override'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'oversized-images'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'publickey-credentials'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'speaker-selection'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'unoptimized-images'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Unrecognized feature: 'unsized-media'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Allow attribute will take precedence over 'allowfullscreen'.Understand this warning
+workspace_iframe.html?initialPath=%2F&id=%3Ar2n%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.Understand this warning
+71c16c74-c00e-4969-9a8c-2ef65f12f5f6-00-eo5mhi4lb0tw.worf.replit.dev/api/user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+injected.js:27 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ injected.js:27Understand this warning
+injected.js:27 Save button clicked!
+injected.js:27 Form state: ObjectdefaultValues: {code: '', name: 'Complete Blood Count (CBC)', category: 'laboratory', description: 'Full blood analysis including RBC, WBC, platelets', price: 25, …}dirtyFields: (...)disabled: (...)errors: (...)isDirty: (...)isLoading: (...)isReady: (...)isSubmitSuccessful: (...)isSubmitted: (...)isSubmitting: (...)isValid: (...)isValidating: (...)name: (...)submitCount: (...)touchedFields: (...)type: (...)validatingFields: (...)values: (...)get dirtyFields: () => {…}get disabled: () => {…}get errors: () => {…}get isDirty: () => {…}get isLoading: () => {…}get isReady: () => {…}get isSubmitSuccessful: () => {…}get isSubmitted: () => {…}get isSubmitting: () => {…}get isValid: () => {…}get isValidating: () => {…}get name: () => {…}get submitCount: () => {…}get touchedFields: () => {…}get type: () => {…}get validatingFields: () => {…}get values: () => {…}[[Prototype]]: Object
+injected.js:27 Form values: Objectcategory: "laboratory"code: ""description: "Full blood analysis including RBC, WBC, platelets"isActive: truename: "Complete Blood Count (CBC)"price: 250[[Prototype]]: Object
+injected.js:27 Form errors: Object[[Prototype]]: Object

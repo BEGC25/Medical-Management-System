@@ -18,6 +18,7 @@ import { z } from "zod";
 
 const serviceFormSchema = insertServiceSchema.extend({
   price: z.number().min(0, "Price must be 0 or greater"),
+  isActive: z.union([z.number(), z.boolean()]).transform(val => typeof val === 'boolean' ? (val ? 1 : 0) : val),
 });
 
 type ServiceFormData = z.infer<typeof serviceFormSchema>;
@@ -109,11 +110,12 @@ export default function ServiceManagement() {
     console.log("Form errors:", form.formState.errors);
     console.log("Editing service:", editingService);
     
-    // Convert empty strings to null for optional fields
+    // Convert empty strings to null for optional fields and ensure isActive is a number
     const formattedData = {
       ...data,
       code: data.code?.trim() || null,
       description: data.description?.trim() || null,
+      isActive: data.isActive ? 1 : 0, // Ensure isActive is 0 or 1
     };
     
     console.log("Formatted data:", formattedData);
