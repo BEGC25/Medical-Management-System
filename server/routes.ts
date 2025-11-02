@@ -1,6 +1,7 @@
 // Medical-Management-System/server/routes.ts
 
 import express from "express";
+import session from "express-session";
 import { z } from "zod";
 import { storage } from "./storage";
 import {
@@ -30,6 +31,13 @@ import {
   toSessionUser,
   type SessionUser,
 } from "./auth-service";
+
+// Extend express-session types to include our user
+declare module "express-session" {
+  interface SessionData {
+    user?: SessionUser;
+  }
+}
 
 const router = express.Router();
 
@@ -167,6 +175,12 @@ router.post("/api/logout", (req, res) => {
 
 // Get current user (public - returns 401 if not authenticated)
 router.get("/api/user", (req, res) => {
+  // Check if session exists
+  if (!req.session) {
+    console.error("[AUTH] ERROR: req.session is undefined - session middleware not working!");
+    return res.status(500).json({ error: "Session not configured" });
+  }
+  
   if (!req.session.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -1966,7 +1980,11 @@ import dailyCashCsvRouter from "./reports.daily-cash.csv";
 
 // Function to register routes with the express app
 export async function registerRoutes(app: any) {
-  setupAuth(app);
+  // ⚠️ OLD AUTH DISABLED - Using new scrypt-based authentication instead
+  // setupAuth(app);  // This was the old Passport.js auth system
+  
+  // Note: Session middleware is set up in server/index.ts BEFORE this function is called
+  
   app.use(router);
   app.use(dailyCashRouter);
   app.use(dailyCashCsvRouter);

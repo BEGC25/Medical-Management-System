@@ -1,6 +1,7 @@
 // Medical-Management-System/server/index.ts
 
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -54,6 +55,26 @@ if (isDevelopment) {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// ✅ Setup session middleware BEFORE routes
+const sessionSecret = process.env.SESSION_SECRET || "dev-secret-change-in-production";
+app.set("trust proxy", 1); // Trust Render/Cloudflare proxy for secure cookies
+
+const sessionSettings: session.SessionOptions = {
+  name: "sid",
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  },
+};
+
+app.use(session(sessionSettings));
+console.log("✅ Session middleware configured");
 
 // Simple API request logger (captures JSON responses)
 app.use((req, res, next) => {
