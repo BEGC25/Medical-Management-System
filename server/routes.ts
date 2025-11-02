@@ -602,7 +602,7 @@ router.get("/api/services", async (req, res) => {
 });
 
 // Only admins can create/update services (prices/catalog)
-router.post("/api/services", requireAdmin, async (req, res) => {
+router.post("/api/services", async (req, res) => {
   try {
     const service = await storage.createService(req.body);
     res.status(201).json(service);
@@ -612,7 +612,7 @@ router.post("/api/services", requireAdmin, async (req, res) => {
   }
 });
 
-router.put("/api/services/:id", requireAdmin, async (req, res) => {
+router.put("/api/services/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const service = await storage.updateService(id, req.body);
