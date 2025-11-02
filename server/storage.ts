@@ -3,6 +3,7 @@ import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
+import { hashPassword } from "./auth-service";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
@@ -311,8 +312,13 @@ export class MemStorage implements IStorage {
 
   async createUser(data: schema.InsertUser): Promise<schema.User> {
     const now = new Date().toISOString();
+    
+    // Hash the password before storing
+    const hashedPassword = await hashPassword(data.password);
+    
     const insertData: any = {
       ...data,
+      password: hashedPassword, // Store hashed password
       createdAt: now,
     };
 
