@@ -271,11 +271,11 @@ export default function AllResults() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        return 'bg-green-100 text-green-800 border border-green-200 font-semibold shadow-sm dark:bg-green-900 dark:text-green-200';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-200 font-semibold shadow-sm dark:bg-yellow-900 dark:text-yellow-200';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+        return 'bg-gray-100 text-gray-800 border border-gray-200 font-semibold shadow-sm dark:bg-gray-900 dark:text-gray-200';
     }
   };
 
@@ -1419,68 +1419,76 @@ export default function AllResults() {
       {/* Results Summary - Clickable for filtering */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'all' ? 'ring-2 ring-gray-400' : ''}`}
+          className={`cursor-pointer transition-all shadow-lg hover:shadow-2xl bg-gradient-to-br from-gray-50 to-white ${typeFilter === 'all' ? 'ring-2 ring-gray-400' : ''}`}
           onClick={() => setTypeFilter('all')}
           data-testid="card-all-results"
         >
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Results</p>
-                <p className="text-2xl font-bold">{allResults.length}</p>
+                <p className="text-sm font-semibold text-gray-700">Total Results</p>
+                <p className="text-3xl font-bold tabular-nums text-gray-900 mt-2">{allResults.length}</p>
               </div>
-              <FileText className="h-8 w-8 text-gray-400" />
+              <div className="rounded-lg bg-gray-100 p-2.5 shadow-md">
+                <FileText className="h-6 w-6 text-gray-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'lab' ? 'ring-2 ring-blue-400' : ''}`}
+          className={`cursor-pointer transition-all shadow-lg hover:shadow-2xl bg-gradient-to-br from-blue-50 to-white ${typeFilter === 'lab' ? 'ring-2 ring-blue-400' : ''}`}
           onClick={() => setTypeFilter('lab')}
           data-testid="card-lab-tests"
         >
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Lab Tests</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-sm font-semibold text-gray-700">Lab Tests</p>
+                <p className="text-3xl font-bold tabular-nums text-blue-600 mt-2">
                   {allResults.filter(r => r.type === 'lab').length}
                 </p>
               </div>
-              <Microscope className="h-8 w-8 text-blue-400" />
+              <div className="rounded-lg bg-blue-100 p-2.5 shadow-md">
+                <Microscope className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'xray' ? 'ring-2 ring-amber-400' : ''}`}
+          className={`cursor-pointer transition-all shadow-lg hover:shadow-2xl bg-gradient-to-br from-amber-50 to-white ${typeFilter === 'xray' ? 'ring-2 ring-amber-400' : ''}`}
           onClick={() => setTypeFilter('xray')}
           data-testid="card-xrays"
         >
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">X-Rays</p>
-                <p className="text-2xl font-bold text-amber-600">
+                <p className="text-sm font-semibold text-gray-700">X-Rays</p>
+                <p className="text-3xl font-bold tabular-nums text-amber-600 mt-2">
                   {allResults.filter(r => r.type === 'xray').length}
                 </p>
               </div>
-              <FileText className="h-8 w-8 text-amber-400" />
+              <div className="rounded-lg bg-amber-100 p-2.5 shadow-md">
+                <FileText className="h-6 w-6 text-amber-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'ultrasound' ? 'ring-2 ring-teal-400' : ''}`}
+          className={`cursor-pointer transition-all shadow-lg hover:shadow-2xl bg-gradient-to-br from-teal-50 to-white ${typeFilter === 'ultrasound' ? 'ring-2 ring-teal-400' : ''}`}
           onClick={() => setTypeFilter('ultrasound')}
           data-testid="card-ultrasounds"
         >
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Ultrasounds</p>
-                <p className="text-2xl font-bold text-teal-600">
+                <p className="text-sm font-semibold text-gray-700">Ultrasounds</p>
+                <p className="text-3xl font-bold tabular-nums text-teal-600 mt-2">
                   {allResults.filter(r => r.type === 'ultrasound').length}
                 </p>
               </div>
-              <Stethoscope className="h-8 w-8 text-teal-400" />
+              <div className="rounded-lg bg-teal-100 p-2.5 shadow-md">
+                <Stethoscope className="h-6 w-6 text-teal-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
