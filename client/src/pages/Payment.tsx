@@ -502,28 +502,28 @@ export default function Payment() {
           <CardContent className="pt-6">
             <Tabs defaultValue="laboratory" className="w-full">
               <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1">
-                <TabsTrigger value="laboratory" className="flex items-center gap-2 font-semibold data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="laboratory" className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-300 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
                   <TestTube className="h-4 w-4" />
                   Laboratory
                   {allUnpaidOrders.laboratory.length > 0 && (
                     <Badge variant="destructive" className="ml-1 shadow-sm font-semibold">{allUnpaidOrders.laboratory.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="xray" className="flex items-center gap-2 font-semibold data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="xray" className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-300 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
                   <XRayIcon className="h-4 w-4" />
                   X-Ray
                   {allUnpaidOrders.xray.length > 0 && (
                     <Badge variant="destructive" className="ml-1 shadow-sm font-semibold">{allUnpaidOrders.xray.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="ultrasound" className="flex items-center gap-2 font-semibold data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="ultrasound" className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-300 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
                   <ActivitySquare className="h-4 w-4" />
                   Ultrasound
                   {allUnpaidOrders.ultrasound.length > 0 && (
                     <Badge variant="destructive" className="ml-1 shadow-sm font-semibold">{allUnpaidOrders.ultrasound.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="pharmacy" className="flex items-center gap-2 font-semibold data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="pharmacy" className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-300 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
                   <Pill className="h-4 w-4" />
                   Pharmacy
                   {allUnpaidOrders.pharmacy.length > 0 && (
@@ -599,8 +599,8 @@ export default function Payment() {
           <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
             <Tabs value={paymentHistoryTab} onValueChange={(v) => setPaymentHistoryTab(v as "today" | "all")} className="w-full sm:w-auto">
               <TabsList className="grid w-full sm:w-auto grid-cols-2 bg-gray-100 dark:bg-gray-800 p-1">
-                <TabsTrigger value="today" className="font-semibold data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">Today's Payments</TabsTrigger>
-                <TabsTrigger value="all" className="font-semibold data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">All Payments</TabsTrigger>
+                <TabsTrigger value="today" className="font-bold text-gray-700 dark:text-gray-300 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">Today's Payments</TabsTrigger>
+                <TabsTrigger value="all" className="font-bold text-gray-700 dark:text-gray-300 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">All Payments</TabsTrigger>
               </TabsList>
             </Tabs>
             
