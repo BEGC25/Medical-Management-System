@@ -1490,35 +1490,6 @@ export default function Treatment() {
                                             </div>
                                           ) : null;
                                         })()}
-
-                                        {Object.entries(parsedResults).length > 0 ? (
-                                          Object.entries(parsedResults).map(([panel, fields]) => {
-                                            const panelConfig = resultFields?.[panel] || {};
-                                            return (
-                                              <div key={panel}>
-                                                <h5 className="font-medium text-sm mb-2 text-blue-700">{panel}</h5>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm border rounded p-3">
-                                                  {Object.entries(fields).map(([name, value]) => {
-                                                    const fieldConfig = panelConfig[name];
-                                                    const abnormal = isAbnormal(value, fieldConfig);
-                                                    return (
-                                                      <div key={name} className="flex justify-between items-baseline py-1 border-b border-dashed">
-                                                        <span className="text-muted-foreground mr-2">{name}</span>
-                                                        <span className={`text-right ${abnormal ? "font-semibold text-red-600" : ""}`}>
-                                                          {value} {fieldConfig?.unit || ""}
-                                                          {fieldConfig?.range && <span className="ml-1 text-xs text-gray-400">[{fieldConfig.range}]</span>}
-                                                        </span>
-                                                      </div>
-                                                    );
-                                                  })}
-                                                </div>
-                                              </div>
-                                            );
-                                          })
-                                        ) : (
-                                          test.status === 'completed' && <p className="text-sm text-muted-foreground">No result values recorded.</p>
-                                        )}
-                                        {/* --- End NEW --- */}
                                       </CardContent>
                                     </Card>
                                   );
