@@ -741,7 +741,7 @@ export default function Laboratory() {
     tests.length ? (
       <div className="mt-2 flex flex-wrap gap-1">
         {tests.map((t, i) => (
-          <span key={i} className="rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-700 dark:text-gray-200">
+          <span key={i} className="rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-200 shadow-sm">
             {t}
           </span>
         ))}
