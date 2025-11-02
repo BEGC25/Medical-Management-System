@@ -208,6 +208,74 @@ router.get("/api/users", async (_req, res) => {
   }
 });
 
+// Create user (admin only) - also available as /api/register for compatibility
+router.post("/api/users", requireAdmin, async (req, res) => {
+  try {
+    const schema = z.object({
+      username: z.string().min(3, "Username must be at least 3 characters"),
+      password: z.string().min(6, "Password must be at least 6 characters"),
+      fullName: z.string().optional(),
+      role: z.enum(["admin", "doctor", "lab", "radiology", "pharmacy", "reception"]),
+    });
+
+    const data = schema.parse(req.body);
+
+    // Check if username already exists
+    const existingUser = await storage.getUserByUsername(data.username);
+    if (existingUser) {
+      return res.status(400).json({ error: "Username already exists" });
+    }
+
+    // Create user with hashed password
+    const user = await storage.createUser(data);
+    
+    // Return user without password
+    const { password, ...userWithoutPassword } = user;
+    console.log(`[USER_MGT] User created: ${user.username} by ${req.session.user?.username}`);
+    res.status(201).json(userWithoutPassword);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid user data", details: error.errors });
+    }
+    console.error("Error creating user:", error);
+    res.status(500).json({ error: "Failed to create user" });
+  }
+});
+
+// Alias for backward compatibility
+router.post("/api/register", requireAdmin, async (req, res) => {
+  try {
+    const schema = z.object({
+      username: z.string().min(3, "Username must be at least 3 characters"),
+      password: z.string().min(6, "Password must be at least 6 characters"),
+      fullName: z.string().optional(),
+      role: z.enum(["admin", "doctor", "lab", "radiology", "pharmacy", "reception"]),
+    });
+
+    const data = schema.parse(req.body);
+
+    // Check if username already exists
+    const existingUser = await storage.getUserByUsername(data.username);
+    if (existingUser) {
+      return res.status(400).json({ error: "Username already exists" });
+    }
+
+    // Create user with hashed password
+    const user = await storage.createUser(data);
+    
+    // Return user without password
+    const { password, ...userWithoutPassword } = user;
+    console.log(`[USER_MGT] User created: ${user.username} by ${req.session.user?.username}`);
+    res.status(201).json(userWithoutPassword);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid user data", details: error.errors });
+    }
+    console.error("Error creating user:", error);
+    res.status(500).json({ error: "Failed to create user" });
+  }
+});
+
 // Delete user (admin only)
 router.delete("/api/users/:id", requireAdmin, async (req, res) => {
   try {
