@@ -78,14 +78,16 @@ export default function ReportsDailyCash() {
         <div className="flex gap-2">
           <a
             href={csvUrl}
-            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#0066CC] text-white px-4 py-2 text-sm font-semibold shadow-md hover:bg-[#0052A3] hover:shadow-lg transition-all"
+            data-testid="button-download-csv"
           >
             <Download className="h-4 w-4" />
             Download CSV
           </a>
           <button
             onClick={load}
-            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#0066CC] text-white px-4 py-2 text-sm font-semibold shadow-md hover:bg-[#0052A3] hover:shadow-lg transition-all"
+            data-testid="button-refresh"
           >
             <RefreshCcw className="h-4 w-4" />
             Refresh
@@ -118,21 +120,25 @@ export default function ReportsDailyCash() {
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
+        <div className="rounded-xl border bg-gradient-to-br from-green-50 to-white p-6 shadow-lg hover:shadow-2xl transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">Total Cash</span>
-            <CircleDollarSign className="h-5 w-5 text-gray-400" />
+            <span className="text-sm font-semibold text-gray-700">Total Cash</span>
+            <div className="rounded-lg bg-green-100 p-2.5 shadow-md">
+              <CircleDollarSign className="h-5 w-5 text-green-600" />
+            </div>
           </div>
-          <div className="mt-2 text-2xl font-semibold">
+          <div className="mt-3 text-3xl font-bold tabular-nums text-gray-900">
             {Number(totals.total_amount).toLocaleString()}
           </div>
         </div>
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
+        <div className="rounded-xl border bg-gradient-to-br from-blue-50 to-white p-6 shadow-lg hover:shadow-2xl transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500"># Receipts</span>
-            <Receipt className="h-5 w-5 text-gray-400" />
+            <span className="text-sm font-semibold text-gray-700"># Receipts</span>
+            <div className="rounded-lg bg-blue-100 p-2.5 shadow-md">
+              <Receipt className="h-5 w-5 text-blue-600" />
+            </div>
           </div>
-          <div className="mt-2 text-2xl font-semibold">
+          <div className="mt-3 text-3xl font-bold tabular-nums text-gray-900">
             {Number(totals.receipt_count).toLocaleString()}
           </div>
         </div>
