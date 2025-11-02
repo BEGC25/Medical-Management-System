@@ -41,6 +41,8 @@ export default function Auth() {
     setError('');
     try {
       await loginMutation.mutateAsync(data);
+      // Small delay to ensure query cache is updated before redirect
+      await new Promise(resolve => setTimeout(resolve, 100));
       setLocation('/');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
