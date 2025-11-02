@@ -8,9 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, DollarSign, Receipt, AlertCircle, Users, TestTube, XCircle as XRayIcon, ActivitySquare, Pill, X } from "lucide-react";
+import { Search, DollarSign, Receipt, AlertCircle, Users, TestTube, XCircle as XRayIcon, ActivitySquare, Pill, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Patient {
   id: number;
@@ -60,6 +71,10 @@ export default function Payment() {
   const [receivedBy, setReceivedBy] = useState("");
   const [notes, setNotes] = useState("");
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showReceiptPreview, setShowReceiptPreview] = useState(false);
+  const [serviceSearchQuery, setServiceSearchQuery] = useState("");
+  const [openServiceCategories, setOpenServiceCategories] = useState<string[]>(["consultation"]);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -145,6 +160,20 @@ export default function Payment() {
   };
 
   const addServiceToPayment = (service: Service, relatedOrder?: UnpaidOrder) => {
+    // Check if item already added
+    const alreadyAdded = paymentItems.some(item => 
+      item.relatedId === relatedOrder?.id && relatedOrder?.id
+    );
+    
+    if (alreadyAdded) {
+      toast({
+        title: "Already Added",
+        description: "This item is already in your payment list",
+        variant: "default",
+      });
+      return;
+    }
+
     const newItem = {
       serviceId: service.id,
       serviceName: service.name,
@@ -156,6 +185,56 @@ export default function Payment() {
     };
     
     setPaymentItems([...paymentItems, newItem]);
+    
+    toast({
+      title: "Item Added",
+      description: `${service.name} added to payment`,
+    });
+  };
+
+  const addAllUnpaidItems = () => {
+    if (!unpaidOrders || unpaidOrders.length === 0) return;
+    
+    const newItems: any[] = [];
+    
+    unpaidOrders.forEach(order => {
+      // Skip if already added
+      const alreadyAdded = paymentItems.some(item => item.relatedId === order.id);
+      if (alreadyAdded) return;
+      
+      // Find matching service
+      const matchingService = services.find(s => 
+        (order.type === 'lab_test' && s.category === 'laboratory') ||
+        (order.type === 'xray_exam' && s.category === 'radiology') ||
+        (order.type === 'ultrasound_exam' && s.category === 'ultrasound') ||
+        (order.type === 'pharmacy_order' && s.category === 'pharmacy')
+      );
+      
+      if (matchingService) {
+        newItems.push({
+          serviceId: matchingService.id,
+          serviceName: matchingService.name,
+          unitPrice: matchingService.price,
+          quantity: 1,
+          relatedId: order.id,
+          relatedType: order.type,
+          description: order.description,
+        });
+      }
+    });
+    
+    if (newItems.length > 0) {
+      setPaymentItems([...paymentItems, ...newItems]);
+      toast({
+        title: "All Unpaid Items Added",
+        description: `Added ${newItems.length} item(s) to payment`,
+      });
+    } else {
+      toast({
+        title: "No New Items",
+        description: "All unpaid items are already added or need manual selection",
+      });
+    }
   };
 
   const removePaymentItem = (index: number) => {
@@ -194,6 +273,13 @@ export default function Payment() {
       return;
     }
 
+    // Show confirmation dialog
+    setShowConfirmDialog(true);
+  };
+
+  const confirmAndProcessPayment = () => {
+    if (!selectedPatient) return;
+
     createPaymentMutation.mutate({
       patientId: selectedPatient.patientId,
       items: paymentItems,
@@ -201,6 +287,26 @@ export default function Payment() {
       receivedBy: receivedBy.trim(),
       notes: notes.trim(),
     });
+    
+    setShowConfirmDialog(false);
+  };
+
+  const toggleServiceCategory = (category: string) => {
+    setOpenServiceCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const getFilteredServices = () => {
+    if (!serviceSearchQuery.trim()) return services;
+    
+    const query = serviceSearchQuery.toLowerCase();
+    return services.filter(service => 
+      service.name.toLowerCase().includes(query) ||
+      service.category.toLowerCase().includes(query)
+    );
   };
 
   const getServiceByCategory = (category: string) => {
@@ -450,209 +556,411 @@ export default function Payment() {
         </Card>
       )}
 
-      {/* Payment Processing Modal */}
+      {/* Payment Processing Modal - Redesigned for Mobile */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
+            <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Receipt className="h-6 w-6 text-blue-600" />
-                <span>Process Payment</span>
+                <Receipt className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
+                <span className="text-lg sm:text-xl">Process Payment</span>
               </div>
               {selectedPatient && (
-                <div className="text-sm font-normal text-blue-600">
-                  Patient: {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
+                <div className="text-sm sm:text-base font-normal text-blue-600 bg-blue-50 px-3 py-1.5 rounded-md">
+                  {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
                 </div>
               )}
             </DialogTitle>
           </DialogHeader>
 
           {selectedPatient && (
-            <div className="grid lg:grid-cols-2 gap-6 mt-4">
-              {/* Unpaid Orders */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <AlertCircle className="h-5 w-5 text-red-500" />
-                    Unpaid Orders
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4">
+              {/* SECTION 1: Unpaid Orders */}
+              <Card className="lg:col-span-1 border-red-200">
+                <CardHeader className="bg-red-50 dark:bg-red-950 pb-3">
+                  <CardTitle className="flex items-center justify-between text-sm sm:text-base">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                      <span>Unpaid Orders</span>
+                    </div>
+                    {unpaidOrders.length > 0 && (
+                      <Badge variant="destructive" className="text-xs">{unpaidOrders.length}</Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4 px-3 sm:px-6">
                   {unpaidOrders.length === 0 ? (
-                    <p className="text-green-600 font-semibold">No unpaid orders found! ✓</p>
-                  ) : (
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {unpaidOrders.map((order) => {
-                        const matchingService = services.find(s => 
-                          (order.type === 'lab_test' && s.category === 'laboratory') ||
-                          (order.type === 'xray_exam' && s.category === 'radiology') ||
-                          (order.type === 'ultrasound_exam' && s.category === 'ultrasound') ||
-                          (order.type === 'pharmacy_order' && s.category === 'pharmacy')
-                        );
-                        
-                        return (
-                          <div key={order.id} className="p-3 border rounded-lg bg-red-50">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-red-800">{order.description}</h4>
-                                <p className="text-sm text-red-600">Date: {order.date}</p>
-                                {order.bodyPart && (
-                                  <p className="text-sm text-red-600">Body Part: {order.bodyPart}</p>
-                                )}
-                                {order.dosage && (
-                                  <p className="text-sm text-red-600">Dosage: {order.dosage}</p>
-                                )}
-                                {order.quantity && (
-                                  <p className="text-sm text-red-600">Quantity: {order.quantity}</p>
-                                )}
-                              </div>
-                              <Badge variant="destructive">UNPAID</Badge>
-                            </div>
-                            {matchingService ? (
-                              <Button
-                                size="sm"
-                                className="mt-2"
-                                onClick={() => addServiceToPayment(matchingService, order)}
-                                data-testid={`button-add-service-${order.id}`}
-                              >
-                                Add to Payment (SSP {matchingService.price})
-                              </Button>
-                            ) : order.type === 'pharmacy_order' ? (
-                              <p className="text-xs text-orange-600 mt-2 italic">
-                                → Manually add pharmacy services from the list below
-                              </p>
-                            ) : null}
-                          </div>
-                        );
-                      })}
+                    <div className="text-center py-8">
+                      <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-2" />
+                      <p className="text-green-600 font-semibold">All Paid!</p>
+                      <p className="text-sm text-gray-500 mt-1">No unpaid orders</p>
                     </div>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={addAllUnpaidItems}
+                        className="w-full mb-4 bg-blue-600 hover:bg-blue-700 min-h-[44px]"
+                        size="lg"
+                        data-testid="button-add-all-unpaid"
+                      >
+                        <Plus className="h-5 w-5 mr-2" />
+                        Add All Unpaid Items
+                      </Button>
+                      
+                      <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                        {unpaidOrders.map((order) => {
+                          const matchingService = services.find(s => 
+                            (order.type === 'lab_test' && s.category === 'laboratory') ||
+                            (order.type === 'xray_exam' && s.category === 'radiology') ||
+                            (order.type === 'ultrasound_exam' && s.category === 'ultrasound') ||
+                            (order.type === 'pharmacy_order' && s.category === 'pharmacy')
+                          );
+                          
+                          const isAdded = paymentItems.some(item => item.relatedId === order.id);
+                          
+                          return (
+                            <div 
+                              key={order.id} 
+                              className={`p-3 border-2 rounded-lg transition-all ${
+                                isAdded 
+                                  ? 'bg-green-50 border-green-300 dark:bg-green-950' 
+                                  : 'bg-red-50 border-red-200 dark:bg-red-950'
+                              }`}
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1 min-w-0 pr-2">
+                                  <h4 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 break-words">
+                                    {order.description}
+                                  </h4>
+                                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                                    {order.date}
+                                  </p>
+                                  {order.bodyPart && (
+                                    <p className="text-xs text-gray-500">Body Part: {order.bodyPart}</p>
+                                  )}
+                                </div>
+                                <Badge variant={isAdded ? "default" : "destructive"} className="text-xs flex-shrink-0">
+                                  {isAdded ? "ADDED" : "UNPAID"}
+                                </Badge>
+                              </div>
+                              {matchingService && !isAdded && (
+                                <Button
+                                  size="sm"
+                                  className="w-full mt-2 min-h-[36px] text-xs sm:text-sm"
+                                  onClick={() => addServiceToPayment(matchingService, order)}
+                                  data-testid={`button-add-service-${order.id}`}
+                                >
+                                  <Plus className="h-4 w-4 mr-1" />
+                                  Add (SSP {matchingService.price})
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Payment Items */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Receipt className="h-5 w-5" />
-                    Payment Items
+              {/* SECTION 2: Selected Items to Pay */}
+              <Card className="lg:col-span-1 border-green-200">
+                <CardHeader className="bg-green-50 dark:bg-green-950 pb-3">
+                  <CardTitle className="flex items-center justify-between text-sm sm:text-base">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <span>Selected Items to Pay</span>
+                    </div>
+                    {paymentItems.length > 0 && (
+                      <Badge className="bg-green-600 text-xs">{paymentItems.length}</Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Add services manually */}
-                    <div>
-                      <h4 className="font-semibold mb-2">Add Services:</h4>
-                      <div className="grid gap-2 max-h-64 overflow-y-auto">
-                        {["consultation", "laboratory", "radiology", "ultrasound", "pharmacy"].map(category => (
-                          <div key={category}>
-                            <h5 className="text-sm font-medium text-gray-600 mb-1 capitalize">{category}</h5>
-                            {getServiceByCategory(category).map(service => (
-                              <Button
-                                key={service.id}
-                                variant="outline"
-                                size="sm"
-                                className="mr-2 mb-1"
-                                onClick={() => addServiceToPayment(service)}
-                                data-testid={`button-add-service-manual-${service.id}`}
-                              >
-                                {service.name} (SSP {service.price})
-                              </Button>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
+                <CardContent className="pt-4 px-3 sm:px-6">
+                  {paymentItems.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Receipt className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                      <p className="text-gray-500 font-medium">No items selected</p>
+                      <p className="text-xs text-gray-400 mt-1">Add items from unpaid orders or services below</p>
                     </div>
-
-                    {/* Payment items list */}
-                    {paymentItems.length > 0 && (
-                      <div className="border-t pt-4">
-                        <h4 className="font-semibold mb-2">Items to Pay:</h4>
+                  ) : (
+                    <>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto mb-4">
                         {paymentItems.map((item, index) => (
-                          <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded mb-2">
-                            <div>
-                              <div className="font-medium">{item.serviceName}</div>
-                              <div className="text-sm text-gray-600">{item.description}</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">SSP {item.unitPrice}</span>
+                          <div key={index} className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 rounded-lg">
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 break-words">
+                                  {item.serviceName}
+                                </div>
+                                {item.description !== item.serviceName && (
+                                  <div className="text-xs text-gray-600 dark:text-gray-400 break-words">
+                                    {item.description}
+                                  </div>
+                                )}
+                                <div className="text-sm font-bold text-green-700 dark:text-green-400 mt-1">
+                                  SSP {item.unitPrice.toLocaleString()}
+                                </div>
+                              </div>
                               <Button
                                 size="sm"
-                                variant="destructive"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                                 onClick={() => removePaymentItem(index)}
                                 data-testid={`button-remove-item-${index}`}
                               >
-                                Remove
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
                         ))}
+                      </div>
+                      
+                      <div className="border-t-2 border-green-600 pt-3 bg-green-100 dark:bg-green-900 -mx-3 sm:-mx-6 px-3 sm:px-6 py-3 sticky bottom-0">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-base sm:text-lg">Total Amount:</span>
+                          <span className="font-bold text-lg sm:text-2xl text-green-700 dark:text-green-400">
+                            SSP {Math.round(getTotalAmount()).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Add More Services - Collapsible */}
+                  <div className="mt-4 border-t pt-4">
+                    <h4 className="font-semibold mb-3 text-sm sm:text-base">Add More Services:</h4>
+                    
+                    {/* Service Search */}
+                    <Input
+                      placeholder="Search services..."
+                      value={serviceSearchQuery}
+                      onChange={(e) => setServiceSearchQuery(e.target.value)}
+                      className="mb-3 text-sm"
+                      data-testid="input-search-services"
+                    />
+                    
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {["consultation", "laboratory", "radiology", "ultrasound", "pharmacy"].map(category => {
+                        const categoryServices = getServiceByCategory(category).filter(s => 
+                          !serviceSearchQuery || 
+                          s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())
+                        );
                         
-                        <div className="border-t pt-2 mt-2">
-                          <div className="flex justify-between items-center font-bold text-lg">
+                        if (categoryServices.length === 0) return null;
+                        
+                        const isOpen = openServiceCategories.includes(category);
+                        
+                        return (
+                          <Collapsible key={category} open={isOpen} onOpenChange={() => toggleServiceCategory(category)}>
+                            <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-left">
+                              <span className="font-medium text-sm capitalize">{category}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">{categoryServices.length}</Badge>
+                                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="pt-2 pl-2 space-y-1">
+                              {categoryServices.map(service => (
+                                <Button
+                                  key={service.id}
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full justify-between text-xs sm:text-sm min-h-[36px]"
+                                  onClick={() => addServiceToPayment(service)}
+                                  data-testid={`button-add-service-manual-${service.id}`}
+                                >
+                                  <span className="truncate">{service.name}</span>
+                                  <span className="font-semibold ml-2 flex-shrink-0">SSP {service.price}</span>
+                                </Button>
+                              ))}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* SECTION 3: Payment Details & Summary */}
+              <Card className="lg:col-span-1 border-blue-200">
+                <CardHeader className="bg-blue-50 dark:bg-blue-950 pb-3">
+                  <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                    <span>Payment Details</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 px-3 sm:px-6">
+                  {paymentItems.length === 0 ? (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                      <p className="text-gray-500 font-medium">Add items to continue</p>
+                      <p className="text-xs text-gray-400 mt-1">Select items to pay before entering payment details</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Payment Summary */}
+                      <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold mb-3 text-sm sm:text-base">Payment Summary</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-700 dark:text-gray-300">Number of Items:</span>
+                            <span className="font-semibold">{paymentItems.length}</span>
+                          </div>
+                          <div className="flex justify-between text-lg font-bold border-t pt-2">
                             <span>Total Amount:</span>
-                            <span className="text-green-600">SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
+                            <span className="text-blue-700 dark:text-blue-400">SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
-                    )}
 
-                    {/* Payment details */}
-                    {paymentItems.length > 0 && (
-                      <div className="border-t pt-4 space-y-4">
+                      {/* Receipt Preview Button */}
+                      <Button
+                        variant="outline"
+                        className="w-full min-h-[44px]"
+                        onClick={() => setShowReceiptPreview(!showReceiptPreview)}
+                        data-testid="button-toggle-receipt-preview"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        {showReceiptPreview ? "Hide" : "Show"} Receipt Preview
+                      </Button>
+
+                      {/* Receipt Preview */}
+                      {showReceiptPreview && (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white dark:bg-gray-950 text-sm">
+                          <div className="text-center mb-4">
+                            <h3 className="font-bold text-lg">Bahr El Ghazal Clinic</h3>
+                            <p className="text-xs text-gray-600">Payment Receipt</p>
+                          </div>
+                          <div className="border-b pb-2 mb-2">
+                            <p><strong>Patient:</strong> {selectedPatient?.firstName} {selectedPatient?.lastName}</p>
+                            <p><strong>ID:</strong> {selectedPatient?.patientId}</p>
+                            <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                          </div>
+                          <div className="border-b pb-2 mb-2">
+                            <p className="font-semibold mb-1">Services:</p>
+                            {paymentItems.map((item, idx) => (
+                              <div key={idx} className="flex justify-between text-xs mb-1">
+                                <span>{item.serviceName}</span>
+                                <span>SSP {item.unitPrice.toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="font-bold flex justify-between">
+                            <span>TOTAL:</span>
+                            <span>SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
+                          </div>
+                          <div className="mt-2 text-xs text-gray-600">
+                            <p>Payment Method: {paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'mobile_money' ? 'Mobile Money' : 'Bank Transfer'}</p>
+                            <p>Received By: {receivedBy || '(Not entered yet)'}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Payment Form */}
+                      <div className="space-y-4 border-t pt-4">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Payment Method</label>
+                          <label className="block text-sm font-medium mb-2">Payment Method *</label>
                           <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <SelectTrigger data-testid="select-payment-method">
+                            <SelectTrigger className="min-h-[44px]" data-testid="select-payment-method">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="cash">Cash</SelectItem>
-                              <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                              <SelectItem value="cash">💵 Cash</SelectItem>
+                              <SelectItem value="mobile_money">📱 Mobile Money</SelectItem>
+                              <SelectItem value="bank_transfer">🏦 Bank Transfer</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Received By *</label>
+                          <label className="block text-sm font-medium mb-2">Received By *</label>
                           <Input
-                            placeholder="Enter staff name who received payment"
+                            placeholder="Enter your name"
                             value={receivedBy}
                             onChange={(e) => setReceivedBy(e.target.value)}
+                            className="min-h-[44px]"
                             data-testid="input-received-by"
                           />
+                          <p className="text-xs text-gray-500 mt-1">Who is receiving this payment?</p>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Notes</label>
+                          <label className="block text-sm font-medium mb-2">Notes (Optional)</label>
                           <Textarea
-                            placeholder="Additional notes (optional)"
+                            placeholder="Any additional notes..."
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             rows={2}
+                            className="text-sm"
                             data-testid="textarea-notes"
                           />
                         </div>
 
                         <Button
                           onClick={handleProcessPayment}
-                          disabled={createPaymentMutation.isPending}
-                          className="w-full"
+                          disabled={createPaymentMutation.isPending || !receivedBy.trim()}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold min-h-[50px] text-base sm:text-lg"
                           size="lg"
                           data-testid="button-process-payment"
                         >
-                          {createPaymentMutation.isPending ? "Processing..." : `Process Payment (SSP ${Math.round(getTotalAmount()).toLocaleString()})`}
+                          {createPaymentMutation.isPending ? (
+                            <>Processing...</>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-5 w-5 mr-2" />
+                              Complete Payment (SSP {Math.round(getTotalAmount()).toLocaleString()})
+                            </>
+                          )}
                         </Button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+              Confirm Payment
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 pt-2">
+              <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg text-sm">
+                <p className="font-semibold mb-2">Please confirm payment details:</p>
+                <div className="space-y-1 text-xs">
+                  <p><strong>Patient:</strong> {selectedPatient?.firstName} {selectedPatient?.lastName} ({selectedPatient?.patientId})</p>
+                  <p><strong>Total Amount:</strong> <span className="text-green-600 font-bold text-base">SSP {Math.round(getTotalAmount()).toLocaleString()}</span></p>
+                  <p><strong>Items:</strong> {paymentItems.length} service(s)</p>
+                  <p><strong>Payment Method:</strong> {paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'mobile_money' ? 'Mobile Money' : 'Bank Transfer'}</p>
+                  <p><strong>Received By:</strong> {receivedBy}</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                Once confirmed, this payment will be recorded and cannot be easily undone. Make sure all details are correct.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-payment">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmAndProcessPayment}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="button-confirm-payment"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Confirm & Process
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
