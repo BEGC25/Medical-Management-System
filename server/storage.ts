@@ -143,6 +143,9 @@ export interface IStorage {
   getUser(id: number): Promise<schema.User | null>;
   getUserByUsername(username: string): Promise<schema.User | null>;
   getAllUsers(): Promise<schema.User[]>;
+  deleteUser(id: number): Promise<void>;
+  updateUserPassword(id: number, hashedPassword: string): Promise<void>;
+  updateUser(id: number, updates: { fullName?: string; role?: string }): Promise<void>;
   sessionStore: any;
 
   // Patients
@@ -344,6 +347,18 @@ export class MemStorage implements IStorage {
       role: users.role,
       createdAt: users.createdAt,
     }).from(users).orderBy(desc(users.createdAt));
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async updateUserPassword(id: number, hashedPassword: string): Promise<void> {
+    await db.update(users).set({ password: hashedPassword }).where(eq(users.id, id));
+  }
+
+  async updateUser(id: number, updates: { fullName?: string; role?: string }): Promise<void> {
+    await db.update(users).set(updates).where(eq(users.id, id));
   }
 
   async createPatient(data: schema.InsertPatient): Promise<schema.Patient> {

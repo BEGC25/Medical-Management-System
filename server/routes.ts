@@ -208,6 +208,71 @@ router.get("/api/users", async (_req, res) => {
   }
 });
 
+// Delete user (admin only)
+router.delete("/api/users/:id", requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const currentUser = req.session.user;
+    
+    // Prevent self-deletion
+    if (currentUser?.id === userId) {
+      return res.status(400).json({ error: "Cannot delete your own account" });
+    }
+    
+    await storage.deleteUser(userId);
+    console.log(`[USER_MGT] User ${userId} deleted by ${currentUser?.username}`);
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+});
+
+// Reset user password (admin only)
+router.put("/api/users/:id/reset-password", requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const schema = z.object({
+      newPassword: z.string().min(6, "Password must be at least 6 characters"),
+    });
+    
+    const { newPassword } = schema.parse(req.body);
+    const hashedPassword = await hashPassword(newPassword);
+    
+    await storage.updateUserPassword(userId, hashedPassword);
+    console.log(`[USER_MGT] Password reset for user ${userId} by ${req.session.user?.username}`);
+    res.json({ message: "Password reset successfully" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid password data", details: error.errors });
+    }
+    console.error("Error resetting password:", error);
+    res.status(500).json({ error: "Failed to reset password" });
+  }
+});
+
+// Update user details (admin only)
+router.put("/api/users/:id", requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const schema = z.object({
+      fullName: z.string().optional(),
+      role: z.enum(["admin", "doctor", "lab", "radiology", "pharmacy", "reception"]).optional(),
+    });
+    
+    const updates = schema.parse(req.body);
+    await storage.updateUser(userId, updates);
+    console.log(`[USER_MGT] User ${userId} updated by ${req.session.user?.username}`);
+    res.json({ message: "User updated successfully" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid user data", details: error.errors });
+    }
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Failed to update user" });
+  }
+});
+
 /* ----------------------------- Patient counts ----------------------------- */
 
 router.get("/api/patients/counts", async (req, res) => {
