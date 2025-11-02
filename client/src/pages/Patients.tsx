@@ -630,9 +630,9 @@ export default function Patients() {
       </div>
 
       {/* Patients Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
+      <Card className="shadow-md border-0">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b">
+          <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
             {viewMode === "today" && `Patients Registered Today`}
             {viewMode === "date" && `Patients on ${new Date(selectedDate).toLocaleDateString()}`}
             {viewMode === "search" && searchQuery && `Search Results for "${searchQuery}"`}
@@ -652,27 +652,27 @@ export default function Patients() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                <thead className="bg-gray-50 dark:bg-gray-800/50">
+                  <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       Patient
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       ID
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       Age/Gender
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       Contact
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       Registered
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       Consultation
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <th className="px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                       Actions
                     </th>
                   </tr>
@@ -727,7 +727,7 @@ export default function Patients() {
                           ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
                             <Badge 
                               variant="outline" 
-                              className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800"
+                              className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold shadow-sm"
                               data-testid={`badge-consultation-due-${patient.patientId}`}
                             >
                               {money(patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance)} Due
@@ -735,7 +735,7 @@ export default function Patients() {
                           ) : (
                             <Badge 
                               variant="outline" 
-                              className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
+                              className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800 font-semibold shadow-sm"
                               data-testid={`badge-consultation-paid-${patient.patientId}`}
                             >
                               Paid
@@ -753,6 +753,7 @@ export default function Patients() {
                             e.stopPropagation();
                             handleViewPatient(patient);
                           }}
+                          className="font-semibold hover:bg-medical-blue hover:text-white hover:border-medical-blue transition-all"
                           data-testid={`button-view-${patient.patientId}`}
                         >
                           View
