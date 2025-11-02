@@ -613,15 +613,9 @@ router.post("/api/services", async (req, res) => {
 });
 
 router.put("/api/services/:id", async (req, res) => {
-  console.log("PUT /api/services/:id called", {
-    id: req.params.id,
-    body: req.body,
-    hasUser: !!req.user,
-  });
   try {
     const id = parseInt(req.params.id);
     const service = await storage.updateService(id, req.body);
-    console.log("Service updated successfully:", service);
     res.json(service);
   } catch (error) {
     console.error("Error updating service:", error);

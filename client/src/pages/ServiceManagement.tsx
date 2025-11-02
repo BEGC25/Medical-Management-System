@@ -23,11 +23,109 @@ const serviceFormSchema = insertServiceSchema.extend({
 
 type ServiceFormData = z.infer<typeof serviceFormSchema>;
 
+// Predefined service names by category
+const PREDEFINED_SERVICES = {
+  laboratory: [
+    "Complete Blood Count (CBC)",
+    "Blood Sugar (Glucose)",
+    "Malaria Test (RDT)",
+    "Malaria Microscopy",
+    "Hemoglobin",
+    "Urinalysis",
+    "Urine Pregnancy Test",
+    "Stool Analysis",
+    "Stool for Ova and Parasites",
+    "Blood Group & Rh",
+    "HIV Test",
+    "Hepatitis B Test",
+    "Hepatitis C Test",
+    "Syphilis (VDRL/RPR)",
+    "Tuberculosis (TB) Test",
+    "Widal Test (Typhoid)",
+    "Liver Function Test (LFT)",
+    "Kidney Function Test (RFT)",
+    "Lipid Profile",
+    "Electrolytes (Na, K, Cl)",
+    "ESR (Erythrocyte Sedimentation Rate)",
+    "Thyroid Function Test (TFT)",
+    "Uric Acid",
+    "Total Protein",
+    "Albumin",
+    "Bilirubin",
+    "AST/ALT",
+    "Creatinine",
+    "Urea/BUN",
+    "HbA1c (Diabetes)",
+    "Culture & Sensitivity (Blood)",
+    "Culture & Sensitivity (Urine)",
+    "Culture & Sensitivity (Stool)",
+  ],
+  radiology: [
+    "Chest X-Ray",
+    "Abdomen X-Ray",
+    "Pelvis X-Ray",
+    "Skull X-Ray",
+    "Spine X-Ray (Cervical)",
+    "Spine X-Ray (Thoracic)",
+    "Spine X-Ray (Lumbar)",
+    "Hand X-Ray",
+    "Foot X-Ray",
+    "Shoulder X-Ray",
+    "Hip X-Ray",
+    "Knee X-Ray",
+    "Ankle X-Ray",
+    "Forearm X-Ray",
+    "Elbow X-Ray",
+  ],
+  ultrasound: [
+    "Obstetric Ultrasound (Early Pregnancy)",
+    "Obstetric Ultrasound (Dating Scan)",
+    "Obstetric Ultrasound (Anomaly Scan)",
+    "Obstetric Ultrasound (Growth Scan)",
+    "Abdominal Ultrasound",
+    "Pelvic Ultrasound",
+    "Renal Ultrasound (Kidneys)",
+    "Hepatobiliary Ultrasound (Liver/Gallbladder)",
+    "Cardiac Echo",
+    "Thyroid Ultrasound",
+    "Breast Ultrasound",
+    "Scrotal Ultrasound",
+    "Prostate Ultrasound",
+    "Vascular Doppler",
+  ],
+  consultation: [
+    "General Consultation",
+    "Follow-up Visit",
+    "Antenatal Care (ANC) Visit",
+    "Postnatal Care (PNC) Visit",
+    "Child Wellness Visit",
+    "Immunization Visit",
+    "Emergency Consultation",
+    "Specialist Consultation",
+  ],
+  procedure: [
+    "Wound Dressing",
+    "Suturing (Small Wound)",
+    "Suturing (Large Wound)",
+    "Abscess Drainage",
+    "Foreign Body Removal",
+    "Minor Surgery",
+    "Injection (IM/IV)",
+    "IV Cannulation",
+    "Catheterization",
+    "Nasogastric Tube Insertion",
+    "Ear Syringing",
+  ],
+  pharmacy: [],
+};
+
 export default function ServiceManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("laboratory");
+  const [useCustomName, setUseCustomName] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -106,25 +204,17 @@ export default function ServiceManagement() {
   });
 
   const handleSubmit = (data: ServiceFormData) => {
-    console.log("Form submitted with data:", data);
-    console.log("Form errors:", form.formState.errors);
-    console.log("Editing service:", editingService);
-    
     // Convert empty strings to null for optional fields and ensure isActive is a number
     const formattedData = {
       ...data,
       code: data.code?.trim() || null,
       description: data.description?.trim() || null,
-      isActive: data.isActive ? 1 : 0, // Ensure isActive is 0 or 1
+      isActive: data.isActive ? 1 : 0,
     };
     
-    console.log("Formatted data:", formattedData);
-    
     if (editingService) {
-      console.log("Calling updateMutation with:", { id: editingService.id, data: formattedData });
       updateMutation.mutate({ id: editingService.id, data: formattedData });
     } else {
-      console.log("Calling createMutation with:", formattedData);
       createMutation.mutate(formattedData);
     }
   };
@@ -144,6 +234,8 @@ export default function ServiceManagement() {
 
   const handleAddNew = () => {
     setEditingService(null);
+    setSelectedCategory("laboratory");
+    setUseCustomName(false);
     form.reset({
       code: "",
       name: "",
@@ -223,7 +315,18 @@ export default function ServiceManagement() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedCategory(value);
+                            // Reset service name when category changes (for new services only)
+                            if (!editingService) {
+                              form.setValue("name", "");
+                              setUseCustomName(false);
+                            }
+                          }} 
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-service-category">
                               <SelectValue placeholder="Select category" />
@@ -250,9 +353,56 @@ export default function ServiceManagement() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Service Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="e.g., Complete Blood Count (CBC)" data-testid="input-service-name" />
-                      </FormControl>
+                      {!editingService && PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES]?.length > 0 && !useCustomName ? (
+                        <div className="space-y-2">
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-service-name">
+                                <SelectValue placeholder="Select a service" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="max-h-[300px]">
+                              {PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES].map((serviceName) => (
+                                <SelectItem key={serviceName} value={serviceName}>
+                                  {serviceName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="sm"
+                            onClick={() => {
+                              setUseCustomName(true);
+                              form.setValue("name", "");
+                            }}
+                            className="text-xs p-0 h-auto"
+                          >
+                            + Use custom service name
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <FormControl>
+                            <Input {...field} value={field.value || ""} placeholder="e.g., Complete Blood Count (CBC)" data-testid="input-service-name" />
+                          </FormControl>
+                          {!editingService && PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES]?.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="link"
+                              size="sm"
+                              onClick={() => {
+                                setUseCustomName(false);
+                                form.setValue("name", "");
+                              }}
+                              className="text-xs p-0 h-auto"
+                            >
+                              ← Choose from predefined services
+                            </Button>
+                          )}
+                        </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -318,12 +468,6 @@ export default function ServiceManagement() {
                     disabled={createMutation.isPending || updateMutation.isPending}
                     className="bg-medical-blue hover:bg-blue-700"
                     data-testid="button-save-service"
-                    onClick={(e) => {
-                      console.log("Save button clicked!");
-                      console.log("Form state:", form.formState);
-                      console.log("Form values:", form.getValues());
-                      console.log("Form errors:", form.formState.errors);
-                    }}
                   >
                     {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Service"}
                   </Button>
