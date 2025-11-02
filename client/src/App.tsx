@@ -22,43 +22,16 @@ import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
-import BottomNav from "@/components/BottomNav";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ROLES } from "@shared/auth-roles";
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
 
 // ✅ NEW: Daily Cash page
 import ReportsDailyCash from "@/pages/ReportsDailyCash";
 
 function App() {
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [location] = useLocation();
-
-  // Close mobile nav when route changes
-  useEffect(() => {
-    setIsMobileNavOpen(false);
-  }, [location]);
-
-  // Close mobile nav on ESC key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMobileNavOpen) {
-        setIsMobileNavOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isMobileNavOpen]);
-
-  // Toggle hamburger menu (close if already open)
-  const toggleMobileNav = () => {
-    setIsMobileNavOpen(prev => !prev);
-  };
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -72,15 +45,11 @@ function App() {
             
             {/* Protected Routes */}
             <Route>
-              <Header onMenuClick={toggleMobileNav} />
-              <Navigation 
-                isMobileOpen={isMobileNavOpen} 
-                onMobileClose={() => setIsMobileNavOpen(false)} 
-              />
-              <BottomNav />
+              <Header />
+              <Navigation />
 
-              <main className="lg:ml-64 pt-16 pb-20 lg:pb-6 min-h-screen">
-                <div className="px-4 sm:px-6 py-6">
+              <main className="ml-64 pt-16 min-h-screen">
+                <div className="px-6 py-6">
                   <Switch>
                     {/* Dashboard - All roles */}
                     <ProtectedRoute path="/" component={Dashboard} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
