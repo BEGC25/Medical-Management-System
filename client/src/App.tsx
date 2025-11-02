@@ -48,7 +48,7 @@ function App() {
               <Header />
               <Navigation />
 
-              <main className="ml-64 pt-16 min-h-screen">
+              <main className="ml-64 min-h-screen">
                 <div className="px-6 py-6">
                   <Switch>
                     {/* Dashboard - All roles */}
