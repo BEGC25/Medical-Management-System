@@ -192,7 +192,7 @@ export default function UserManagement() {
         
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-create-user">
+            <Button className="shadow-md hover:shadow-lg font-semibold transition-all" data-testid="button-create-user">
               <UserPlus className="w-4 h-4 mr-2" />
               Create User
             </Button>
@@ -356,7 +356,7 @@ export default function UserManagement() {
         </DialogContent>
       </Dialog>
 
-      <Card>
+      <Card className="shadow-lg hover:shadow-xl transition-shadow">
         <CardHeader>
           <CardTitle>All Users</CardTitle>
           <CardDescription>
@@ -368,26 +368,26 @@ export default function UserManagement() {
             <div className="text-center py-8 text-gray-500">Loading users...</div>
           ) : (
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gradient-to-r from-gray-50 to-white dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700">
                 <TableRow>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Full Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="font-bold text-gray-700 dark:text-gray-400">Username</TableHead>
+                  <TableHead className="font-bold text-gray-700 dark:text-gray-400">Full Name</TableHead>
+                  <TableHead className="font-bold text-gray-700 dark:text-gray-400">Role</TableHead>
+                  <TableHead className="font-bold text-gray-700 dark:text-gray-400">Created</TableHead>
+                  <TableHead className="text-right font-bold text-gray-700 dark:text-gray-400">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users?.map((u: any) => (
-                  <TableRow key={u.id} data-testid={`user-row-${u.id}`}>
+                  <TableRow key={u.id} data-testid={`user-row-${u.id}`} className="hover:bg-blue-50/50 dark:hover:bg-gray-800 transition-colors">
                     <TableCell className="font-medium">{u.username}</TableCell>
                     <TableCell>{u.fullName || "-"}</TableCell>
                     <TableCell>
-                      <span className="capitalize inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      <span className="capitalize inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200 shadow-sm dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800">
                         {u.role}
                       </span>
                     </TableCell>
-                    <TableCell className="text-gray-500">
+                    <TableCell className="text-gray-500 tabular-nums">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
