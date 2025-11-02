@@ -38,10 +38,10 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   '/api/logout': [],
   
   // Patient management
-  '/api/patients': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY],
+  '/api/patients': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY, ROLES.RECEPTION],
   
   // Treatment & Encounters (Clinical)
-  '/api/encounters': [ROLES.ADMIN, ROLES.DOCTOR],
+  '/api/encounters': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.RECEPTION],
   '/api/treatments': [ROLES.ADMIN, ROLES.DOCTOR],
   '/api/encounter-services': [ROLES.ADMIN, ROLES.DOCTOR],
   
@@ -58,19 +58,21 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   '/api/pharmacy-orders': [ROLES.ADMIN, ROLES.DOCTOR],
   
   // Payment & Billing
-  '/api/payments': [ROLES.ADMIN],
-  '/api/invoices': [ROLES.ADMIN],
-  '/api/billing': [ROLES.ADMIN],
+  '/api/payments': [ROLES.ADMIN, ROLES.RECEPTION],
+  '/api/invoices': [ROLES.ADMIN, ROLES.RECEPTION],
+  '/api/billing': [ROLES.ADMIN, ROLES.RECEPTION],
+  '/api/order-lines': [ROLES.ADMIN, ROLES.RECEPTION],
+  '/api/payment-items': [ROLES.ADMIN, ROLES.RECEPTION],
   
   // Service Management (Admin only)
-  '/api/services': [ROLES.ADMIN],
+  '/api/services': [ROLES.ADMIN, ROLES.RECEPTION],
   
   // User Management (Admin only)
   '/api/users': [ROLES.ADMIN],
   
   // Dashboard & Reports
-  '/api/dashboard': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY],
-  '/api/reports': [ROLES.ADMIN],
+  '/api/dashboard': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY, ROLES.RECEPTION],
+  '/api/reports': [ROLES.ADMIN, ROLES.RECEPTION],
   '/api/all-results': [ROLES.ADMIN],
 };
 
@@ -125,8 +127,15 @@ export const ROLE_NAV_MAP: Record<UserRole, string[]> = {
     '/ultrasound',
   ],
   
+  // Reception: Front desk - patients, payments, and daily cash report
+  [ROLES.RECEPTION]: [
+    '/',
+    '/patients',
+    '/payment',
+    '/reports/daily-cash',
+  ],
+  
   // Future roles (placeholders)
-  [ROLES.RECEPTION]: ['/'],
   [ROLES.PHARMACY]: ['/'],
   [ROLES.BILLING]: ['/'],
 };
@@ -141,10 +150,10 @@ export const ROLE_NAV_MAP: Record<UserRole, string[]> = {
  */
 export const PAGE_PERMISSIONS: Record<string, UserRole[]> = {
   // Dashboard - everyone
-  '/': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY],
+  '/': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY, ROLES.RECEPTION],
   
   // Patient management
-  '/patients': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY],
+  '/patients': [ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY, ROLES.RECEPTION],
   
   // Clinical pages
   '/treatment': [ROLES.ADMIN, ROLES.DOCTOR],
@@ -157,10 +166,10 @@ export const PAGE_PERMISSIONS: Record<string, UserRole[]> = {
   // Pharmacy
   '/pharmacy': [ROLES.ADMIN, ROLES.DOCTOR],
   
-  // Financial (Admin only)
-  '/payment': [ROLES.ADMIN],
+  // Financial
+  '/payment': [ROLES.ADMIN, ROLES.RECEPTION],
   '/billing': [ROLES.ADMIN],
-  '/reports/daily-cash': [ROLES.ADMIN],
+  '/reports/daily-cash': [ROLES.ADMIN, ROLES.RECEPTION],
   '/all-results': [ROLES.ADMIN],
   
   // Settings (Admin only)
