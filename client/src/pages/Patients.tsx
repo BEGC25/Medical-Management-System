@@ -544,7 +544,11 @@ export default function Patients() {
           <Button
             variant={viewMode === "today" ? "default" : "outline"}
             onClick={() => handleViewModeChange("today")}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 font-semibold transition-all ${
+              viewMode === "today" 
+                ? "bg-medical-blue hover:bg-blue-700 shadow-md" 
+                : "hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-medical-blue hover:border-medical-blue"
+            }`}
             data-testid="button-view-today"
           >
             <Calendar className="w-4 h-4" />
@@ -554,7 +558,11 @@ export default function Patients() {
           <Button
             variant={viewMode === "date" ? "default" : "outline"}
             onClick={() => handleViewModeChange("date")}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 font-semibold transition-all ${
+              viewMode === "date" 
+                ? "bg-medical-blue hover:bg-blue-700 shadow-md" 
+                : "hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-medical-blue hover:border-medical-blue"
+            }`}
             data-testid="button-view-date"
           >
             <Calendar className="w-4 h-4" />
@@ -564,7 +572,11 @@ export default function Patients() {
           <Button
             variant={viewMode === "search" ? "default" : "outline"}
             onClick={() => handleViewModeChange("search")}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 font-semibold transition-all ${
+              viewMode === "search" 
+                ? "bg-medical-blue hover:bg-blue-700 shadow-md" 
+                : "hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-medical-blue hover:border-medical-blue"
+            }`}
             data-testid="button-view-search"
           >
             <Search className="w-4 h-4" />
@@ -574,7 +586,11 @@ export default function Patients() {
           <Button
             variant={viewMode === "all" ? "default" : "outline"}
             onClick={() => handleViewModeChange("all")}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 font-semibold transition-all ${
+              viewMode === "all" 
+                ? "bg-medical-blue hover:bg-blue-700 shadow-md" 
+                : "hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-medical-blue hover:border-medical-blue"
+            }`}
             data-testid="button-view-all"
           >
             <Users className="w-4 h-4" />
