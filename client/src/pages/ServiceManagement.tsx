@@ -107,6 +107,7 @@ export default function ServiceManagement() {
   const handleSubmit = (data: ServiceFormData) => {
     console.log("Form submitted with data:", data);
     console.log("Form errors:", form.formState.errors);
+    console.log("Editing service:", editingService);
     
     // Convert empty strings to null for optional fields
     const formattedData = {
@@ -115,9 +116,13 @@ export default function ServiceManagement() {
       description: data.description?.trim() || null,
     };
     
+    console.log("Formatted data:", formattedData);
+    
     if (editingService) {
+      console.log("Calling updateMutation with:", { id: editingService.id, data: formattedData });
       updateMutation.mutate({ id: editingService.id, data: formattedData });
     } else {
+      console.log("Calling createMutation with:", formattedData);
       createMutation.mutate(formattedData);
     }
   };
