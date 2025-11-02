@@ -75,6 +75,10 @@ export default function Payment() {
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [openServiceCategories, setOpenServiceCategories] = useState<string[]>(["consultation"]);
+  const [paymentHistoryTab, setPaymentHistoryTab] = useState<"today" | "all">("today");
+  const [paymentSearchQuery, setPaymentSearchQuery] = useState("");
+  const [selectedPaymentForView, setSelectedPaymentForView] = useState<any | null>(null);
+  const [isReceiptViewOpen, setIsReceiptViewOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -110,6 +114,31 @@ export default function Payment() {
     },
   });
 
+  // Get payment history
+  const today = new Date().toISOString().split('T')[0];
+  const { data: paymentHistory = [], isLoading: historyLoading, refetch: refetchHistory } = useQuery<any[]>({
+    queryKey: ["/api/payments", paymentHistoryTab, paymentSearchQuery],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (paymentHistoryTab === "today") {
+        params.append('date', today);
+      }
+      if (paymentSearchQuery) {
+        params.append('patientId', paymentSearchQuery);
+      }
+      
+      const response = await fetch(`/api/payments?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to load payment history');
+      return response.json();
+    },
+  });
+
+  // Get selected payment details for receipt view
+  const { data: paymentDetails } = useQuery({
+    queryKey: [`/api/payments/${selectedPaymentForView?.paymentId}`],
+    enabled: !!selectedPaymentForView,
+  });
+
   // Get unpaid orders for selected patient with better error handling
   const { data: unpaidOrders = [], refetch: refetchUnpaidOrders, isLoading: unpaidLoading, error: unpaidError } = useQuery<UnpaidOrder[]>({
     queryKey: [`/api/patients/${selectedPatient?.patientId}/unpaid-orders`],
@@ -137,6 +166,7 @@ export default function Payment() {
       setSearchQuery("");
       refetchUnpaidOrders();
       refetchAllUnpaid();
+      refetchHistory(); // Refresh payment history
       queryClient.invalidateQueries({ queryKey: ["/api/payments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/unpaid-orders/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
@@ -556,6 +586,127 @@ export default function Payment() {
         </Card>
       )}
 
+      {/* Payment History Section */}
+      <Card>
+        <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="h-5 w-5 text-green-600" />
+            Payment History
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {/* Tabs and Search */}
+          <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+            <Tabs value={paymentHistoryTab} onValueChange={(v) => setPaymentHistoryTab(v as "today" | "all")} className="w-full sm:w-auto">
+              <TabsList className="grid w-full sm:w-auto grid-cols-2">
+                <TabsTrigger value="today">Today's Payments</TabsTrigger>
+                <TabsTrigger value="all">All Payments</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by Patient ID..."
+                value={paymentSearchQuery}
+                onChange={(e) => setPaymentSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-payment-history"
+              />
+            </div>
+          </div>
+
+          {/* Quick Stats for Today */}
+          {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200">
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Payments</div>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{paymentHistory.length}</div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200">
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Amount</div>
+                <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                  SSP {paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0).toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200">
+                <div className="text-sm text-gray-600 dark:text-gray-400">Avg. Payment</div>
+                <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  SSP {Math.round(paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0) / paymentHistory.length).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payment List */}
+          {historyLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <span className="ml-3 text-gray-600">Loading payment history...</span>
+            </div>
+          ) : paymentHistory.length === 0 ? (
+            <div className="text-center py-12">
+              <Receipt className="h-16 w-16 mx-auto text-gray-300 mb-3" />
+              <p className="text-gray-500 font-medium">No payments found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {paymentHistoryTab === "today" ? "No payments processed today yet" : "No payment history available"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {paymentHistory.map((payment) => (
+                <div key={payment.id} className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-950 transition-all">
+                  <div className="flex flex-col sm:flex-row justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                          {payment.patient ? `${payment.patient.firstName} ${payment.patient.lastName}` : payment.patientId}
+                        </h4>
+                        <Badge variant="outline" className="text-xs">{payment.patientId}</Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />
+                          SSP {payment.totalAmount.toLocaleString()}
+                        </span>
+                        <span>•</span>
+                        <span className="capitalize">
+                          {payment.paymentMethod === 'cash' ? '💵 Cash' : 
+                           payment.paymentMethod === 'mobile_money' ? '📱 Mobile Money' : 
+                           '🏦 Bank Transfer'}
+                        </span>
+                        <span>•</span>
+                        <span>{new Date(payment.paymentDate).toLocaleDateString()}</span>
+                        <span>{new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Received by: {payment.receivedBy}
+                      </p>
+                    </div>
+                    <div className="flex sm:flex-col gap-2 items-end">
+                      <Badge className="bg-green-600 text-white">PAID</Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPaymentForView(payment);
+                          setIsReceiptViewOpen(true);
+                        }}
+                        className="min-h-[36px]"
+                        data-testid={`button-view-receipt-${payment.paymentId}`}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Receipt
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Payment Processing Modal - Redesigned for Mobile */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
         <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-3 sm:p-6">
@@ -961,6 +1112,127 @@ export default function Payment() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Receipt View Dialog */}
+      <Dialog open={isReceiptViewOpen} onOpenChange={setIsReceiptViewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-green-600" />
+              Payment Receipt
+            </DialogTitle>
+          </DialogHeader>
+
+          {paymentDetails && (
+            <div className="space-y-6">
+              {/* Formatted Receipt */}
+              <div className="border-2 border-gray-200 rounded-lg p-6 bg-white dark:bg-gray-950">
+                <div className="text-center mb-6 pb-4 border-b-2 border-dashed">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Bahr El Ghazal Clinic</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Payment Receipt</p>
+                  <p className="text-xs text-gray-500 mt-2">Receipt #: {paymentDetails.paymentId}</p>
+                </div>
+
+                {/* Patient Information */}
+                <div className="grid grid-cols-2 gap-4 mb-6 pb-4 border-b">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Patient Name</p>
+                    <p className="font-semibold">
+                      {paymentDetails.patient ? `${paymentDetails.patient.firstName} ${paymentDetails.patient.lastName}` : paymentDetails.patientId}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Patient ID</p>
+                    <p className="font-semibold">{paymentDetails.patientId}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Payment Date</p>
+                    <p className="font-semibold">{new Date(paymentDetails.paymentDate).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Payment Time</p>
+                    <p className="font-semibold">
+                      {new Date(paymentDetails.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Services */}
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-3 text-gray-700 dark:text-gray-300">Services Paid</h3>
+                  <div className="space-y-2">
+                    {paymentDetails.items.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                        <div className="flex-1">
+                          <p className="font-medium">{item.serviceName}</p>
+                          {item.relatedId && (
+                            <p className="text-xs text-gray-500">Ref: {item.relatedId}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">SSP {item.unitPrice.toLocaleString()}</p>
+                          {item.quantity > 1 && (
+                            <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold">TOTAL PAID:</span>
+                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      SSP {paymentDetails.totalAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Payment Details */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Payment Method</p>
+                    <p className="font-semibold capitalize">
+                      {paymentDetails.paymentMethod === 'cash' ? '💵 Cash' : 
+                       paymentDetails.paymentMethod === 'mobile_money' ? '📱 Mobile Money' : 
+                       '🏦 Bank Transfer'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Received By</p>
+                    <p className="font-semibold">{paymentDetails.receivedBy}</p>
+                  </div>
+                </div>
+
+                {paymentDetails.notes && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Notes</p>
+                    <p className="text-sm">{paymentDetails.notes}</p>
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="mt-6 pt-4 border-t text-center text-xs text-gray-500">
+                  <p>Thank you for your payment!</p>
+                  <p className="mt-1">For questions, please contact the clinic reception</p>
+                </div>
+              </div>
+
+              {/* Print Button */}
+              <Button
+                className="w-full"
+                onClick={() => window.print()}
+                data-testid="button-print-receipt"
+              >
+                <Receipt className="h-4 w-4 mr-2" />
+                Print Receipt
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

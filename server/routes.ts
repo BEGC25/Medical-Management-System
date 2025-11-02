@@ -695,13 +695,84 @@ router.post("/api/payments", async (req: any, res) => {
 
 router.get("/api/payments", async (req, res) => {
   try {
-    const patientId = req.query.patientId as string;
-    const payments = patientId
-      ? await storage.getPaymentsByPatient(patientId)
+    const { patientId, date, receivedBy, limit } = req.query;
+    
+    let payments = patientId
+      ? await storage.getPaymentsByPatient(patientId as string)
       : await storage.getPayments();
-    res.json(payments);
+
+    // Filter by date if provided
+    if (date) {
+      payments = payments.filter(p => p.paymentDate === date);
+    }
+
+    // Filter by receivedBy if provided
+    if (receivedBy) {
+      payments = payments.filter(p => 
+        p.receivedBy.toLowerCase().includes((receivedBy as string).toLowerCase())
+      );
+    }
+
+    // Limit results if provided
+    if (limit) {
+      payments = payments.slice(0, parseInt(limit as string));
+    }
+
+    // Fetch patient info for each payment
+    const patientsMap = new Map();
+    const uniquePatientIds = [...new Set(payments.map(p => p.patientId))];
+    const allPatients = await storage.getPatients();
+    allPatients.forEach(p => patientsMap.set(p.patientId, p));
+
+    const paymentsWithPatients = payments.map(payment => ({
+      ...payment,
+      patient: patientsMap.get(payment.patientId) || null,
+    }));
+
+    res.json(paymentsWithPatients);
   } catch (error) {
+    console.error("Error fetching payments:", error);
     res.status(500).json({ error: "Failed to fetch payments" });
+  }
+});
+
+router.get("/api/payments/:paymentId", async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    
+    // Get payment
+    const allPayments = await storage.getPayments();
+    const payment = allPayments.find(p => p.paymentId === paymentId);
+    
+    if (!payment) {
+      return res.status(404).json({ error: "Payment not found" });
+    }
+
+    // Get payment items
+    const items = await storage.getPaymentItems(paymentId);
+
+    // Get patient info
+    const allPatients = await storage.getPatients();
+    const patient = allPatients.find(p => p.patientId === payment.patientId);
+
+    // Get services for item names
+    const services = await storage.getServices();
+    const servicesMap = new Map();
+    services.forEach(s => servicesMap.set(s.id, s));
+
+    const itemsWithDetails = items.map(item => ({
+      ...item,
+      serviceName: servicesMap.get(item.serviceId)?.name || 'Unknown Service',
+    }));
+
+    res.json({
+      ...payment,
+      patient,
+      items: itemsWithDetails,
+    });
+  } catch (error) {
+    console.error("Error fetching payment details:", error);
+    res.status(500).json({ error: "Failed to fetch payment details" });
   }
 });
 
