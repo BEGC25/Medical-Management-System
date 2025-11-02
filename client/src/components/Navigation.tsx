@@ -27,6 +27,8 @@ const navItems = [
   { path: "/pharmacy", label: "Pharmacy", icon: Pill, category: "Clinical" },
   { path: "/payment", label: "Payment", icon: DollarSign, category: "Administration" },
   { path: "/billing", label: "Billing", icon: Receipt, category: "Administration" },
+  { path: "/service-management", label: "Service Management", icon: Tag, category: "Administration" },
+  { path: "/users", label: "User Management", icon: UserCog, category: "Administration" },
   { path: "/billing-settings", label: "Billing Settings", icon: Settings, category: "Administration" },
   { path: "/all-results", label: "All Results", icon: FileSearch, category: "Reports" },
 
@@ -36,19 +38,12 @@ const navItems = [
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },
 ];
 
-const adminOnlyItems = [
-  { path: "/service-management", label: "Service Management", icon: Tag, category: "Administration" },
-  { path: "/users", label: "User Management", icon: UserCog, category: "Administration" },
-];
-
 export default function Navigation() {
   const [location] = useLocation();
   const { user } = useAuth();
 
-  // Combine regular items with admin-only items if user is admin
-  const allItems = user?.role === 'admin' 
-    ? [...navItems, ...adminOnlyItems]
-    : navItems;
+  // Show all items since auth is disabled
+  const allItems = navItems;
 
   // Group navigation items by category
   const groupedItems = allItems.reduce((acc, item) => {
