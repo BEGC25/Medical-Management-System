@@ -357,7 +357,7 @@ export default function Payment() {
     const patient = order.patient;
 
     return (
-      <div key={order.id} className="p-5 border-2 border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 hover:border-red-300 dark:hover:border-red-700 transition-all cursor-pointer shadow-sm hover:shadow-md" 
+      <div key={order.id} className="p-4 border rounded-lg bg-red-50 hover:bg-red-100 transition-colors cursor-pointer" 
            data-testid={`unpaid-order-${order.id}`}
            onClick={() => {
              if (patient) {
@@ -366,27 +366,27 @@ export default function Payment() {
            }}>
         <div className="flex justify-between items-start mb-2">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               {patient ? (
                 <>
-                  <span className="font-bold text-gray-900 dark:text-white">
+                  <span className="font-semibold text-gray-900">
                     {patient.firstName} {patient.lastName}
                   </span>
-                  <Badge variant="outline" className="text-xs font-semibold">{patient.patientId}</Badge>
+                  <Badge variant="outline" className="text-xs">{patient.patientId}</Badge>
                 </>
               ) : (
-                <span className="font-bold text-gray-900 dark:text-white">{order.patientId}</span>
+                <span className="font-semibold text-gray-900">{order.patientId}</span>
               )}
             </div>
-            <h4 className="font-bold text-red-800 dark:text-red-400 mb-1">{order.description}</h4>
-            <p className="text-sm font-medium text-red-700 dark:text-red-300">Date: {new Date(order.date).toLocaleDateString()}</p>
-            {order.bodyPart && <p className="text-sm font-medium text-red-700 dark:text-red-300">Body Part: {order.bodyPart}</p>}
-            {order.dosage && <p className="text-sm font-medium text-red-700 dark:text-red-300">Dosage: {order.dosage}</p>}
-            {order.quantity && <p className="text-sm font-medium text-red-700 dark:text-red-300">Quantity: {order.quantity}</p>}
+            <h4 className="font-medium text-red-800">{order.description}</h4>
+            <p className="text-sm text-red-600">Date: {new Date(order.date).toLocaleDateString()}</p>
+            {order.bodyPart && <p className="text-sm text-red-600">Body Part: {order.bodyPart}</p>}
+            {order.dosage && <p className="text-sm text-red-600">Dosage: {order.dosage}</p>}
+            {order.quantity && <p className="text-sm text-red-600">Quantity: {order.quantity}</p>}
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <Badge variant="destructive" className="font-bold shadow-md">UNPAID</Badge>
-            <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Click to process</span>
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="destructive">UNPAID</Badge>
+            <span className="text-xs text-gray-500 mt-1">Click to process</span>
           </div>
         </div>
       </div>
@@ -401,16 +401,16 @@ export default function Payment() {
           <h1 className="text-3xl font-bold">Payment Processing</h1>
         </div>
         {allUnpaidOrders && (
-          <Badge variant="destructive" className="text-lg px-4 py-2 font-bold shadow-lg">
+          <Badge variant="destructive" className="text-lg px-4 py-2">
             {getTotalUnpaidCount()} Pending Payments
           </Badge>
         )}
       </div>
 
       {/* Quick Patient Search - Moved to TOP */}
-      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-b">
-          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100 font-bold">
+      <Card className="border-2 border-blue-200 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardTitle className="flex items-center gap-2 text-blue-900">
             <Search className="h-6 w-6" />
             Quick Patient Search
           </CardTitle>
@@ -483,7 +483,7 @@ export default function Payment() {
 
       {/* Pending Payments Overview */}
       {allUnpaidLoading ? (
-        <Card className="shadow-md border-0">
+        <Card>
           <CardContent className="p-8">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -492,42 +492,42 @@ export default function Payment() {
           </CardContent>
         </Card>
       ) : allUnpaidOrders && getTotalUnpaidCount() > 0 ? (
-        <Card className="shadow-md border-0">
-          <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-b">
-            <CardTitle className="flex items-center gap-2 font-bold text-gray-900 dark:text-white">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-red-500" />
               Patients with Pending Payments
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent>
             <Tabs defaultValue="laboratory" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1">
-                <TabsTrigger value="laboratory" className="flex items-center gap-2 font-bold text-gray-900 dark:text-gray-100 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="laboratory" className="flex items-center gap-2">
                   <TestTube className="h-4 w-4" />
                   Laboratory
                   {allUnpaidOrders.laboratory.length > 0 && (
-                    <Badge variant="destructive" className="ml-1 shadow-sm font-semibold">{allUnpaidOrders.laboratory.length}</Badge>
+                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.laboratory.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="xray" className="flex items-center gap-2 font-bold text-gray-900 dark:text-gray-100 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="xray" className="flex items-center gap-2">
                   <XRayIcon className="h-4 w-4" />
                   X-Ray
                   {allUnpaidOrders.xray.length > 0 && (
-                    <Badge variant="destructive" className="ml-1 shadow-sm font-semibold">{allUnpaidOrders.xray.length}</Badge>
+                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.xray.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="ultrasound" className="flex items-center gap-2 font-bold text-gray-900 dark:text-gray-100 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="ultrasound" className="flex items-center gap-2">
                   <ActivitySquare className="h-4 w-4" />
                   Ultrasound
                   {allUnpaidOrders.ultrasound.length > 0 && (
-                    <Badge variant="destructive" className="ml-1 shadow-sm font-semibold">{allUnpaidOrders.ultrasound.length}</Badge>
+                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.ultrasound.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="pharmacy" className="flex items-center gap-2 font-bold text-gray-900 dark:text-gray-100 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="pharmacy" className="flex items-center gap-2">
                   <Pill className="h-4 w-4" />
                   Pharmacy
                   {allUnpaidOrders.pharmacy.length > 0 && (
-                    <Badge variant="destructive" className="ml-1 shadow-sm font-semibold">{allUnpaidOrders.pharmacy.length}</Badge>
+                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.pharmacy.length}</Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
@@ -587,9 +587,9 @@ export default function Payment() {
       )}
 
       {/* Payment History Section */}
-      <Card className="shadow-md border-0">
-        <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b">
-          <CardTitle className="flex items-center gap-2 font-bold text-gray-900 dark:text-white">
+      <Card>
+        <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+          <CardTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-green-600" />
             Payment History
           </CardTitle>
@@ -598,9 +598,9 @@ export default function Payment() {
           {/* Tabs and Search */}
           <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
             <Tabs value={paymentHistoryTab} onValueChange={(v) => setPaymentHistoryTab(v as "today" | "all")} className="w-full sm:w-auto">
-              <TabsList className="grid w-full sm:w-auto grid-cols-2 bg-gray-100 dark:bg-gray-800 p-1">
-                <TabsTrigger value="today" className="font-bold text-gray-900 dark:text-gray-100 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">Today's Payments</TabsTrigger>
-                <TabsTrigger value="all" className="font-bold text-gray-900 dark:text-gray-100 data-[state=active]:bg-medical-blue data-[state=active]:text-white data-[state=active]:shadow-md transition-all">All Payments</TabsTrigger>
+              <TabsList className="grid w-full sm:w-auto grid-cols-2">
+                <TabsTrigger value="today">Today's Payments</TabsTrigger>
+                <TabsTrigger value="all">All Payments</TabsTrigger>
               </TabsList>
             </Tabs>
             
@@ -619,28 +619,22 @@ export default function Payment() {
           {/* Quick Stats for Today */}
           {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-5">
-                  <div className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Total Payments</div>
-                  <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 tabular-nums">{paymentHistory.length}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-5">
-                  <div className="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">Total Amount</div>
-                  <div className="text-3xl font-bold text-green-900 dark:text-green-100 tabular-nums">
-                    SSP {paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0).toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-5">
-                  <div className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">Avg. Payment</div>
-                  <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 tabular-nums">
-                    SSP {Math.round(paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0) / paymentHistory.length).toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200">
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Payments</div>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{paymentHistory.length}</div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200">
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Amount</div>
+                <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                  SSP {paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0).toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200">
+                <div className="text-sm text-gray-600 dark:text-gray-400">Avg. Payment</div>
+                <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  SSP {Math.round(paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0) / paymentHistory.length).toLocaleString()}
+                </div>
+              </div>
             </div>
           )}
 
@@ -661,21 +655,21 @@ export default function Payment() {
           ) : (
             <div className="space-y-3">
               {paymentHistory.map((payment) => (
-                <div key={payment.id} className="p-5 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-all shadow-sm hover:shadow-md">
+                <div key={payment.id} className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-950 transition-all">
                   <div className="flex flex-col sm:flex-row justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-bold text-gray-900 dark:text-gray-100">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">
                           {payment.patient ? `${payment.patient.firstName} ${payment.patient.lastName}` : payment.patientId}
                         </h4>
-                        <Badge variant="outline" className="text-xs font-semibold">{payment.patientId}</Badge>
+                        <Badge variant="outline" className="text-xs">{payment.patientId}</Badge>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-bold text-green-700 dark:text-green-400">
+                        <span className="font-semibold">
                           SSP {payment.totalAmount.toLocaleString()}
                         </span>
                         <span>•</span>
-                        <span className="capitalize font-medium">
+                        <span className="capitalize">
                           {payment.paymentMethod === 'cash' ? '💵 Cash' : 
                            payment.paymentMethod === 'mobile_money' ? '📱 Mobile Money' : 
                            '🏦 Bank Transfer'}
@@ -691,19 +685,19 @@ export default function Payment() {
                             <Badge 
                               key={category} 
                               variant="outline" 
-                              className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 font-semibold shadow-sm"
+                              className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300"
                             >
                               {category} {details.count > 1 ? `(${details.count})` : ''}
                             </Badge>
                           ))}
                         </div>
                       )}
-                      <p className="text-xs text-gray-500 mt-1 font-medium">
+                      <p className="text-xs text-gray-500 mt-1">
                         Received by: {payment.receivedBy}
                       </p>
                     </div>
                     <div className="flex sm:flex-col gap-2 items-end">
-                      <Badge className="bg-green-600 text-white font-semibold shadow-md">PAID</Badge>
+                      <Badge className="bg-green-600 text-white">PAID</Badge>
                       <Button
                         variant="outline"
                         size="sm"
@@ -711,7 +705,7 @@ export default function Payment() {
                           setSelectedPaymentForView(payment);
                           setIsReceiptViewOpen(true);
                         }}
-                        className="min-h-[36px] font-semibold hover:bg-medical-blue hover:text-white hover:border-medical-blue transition-all"
+                        className="min-h-[36px]"
                         data-testid={`button-view-receipt-${payment.paymentId}`}
                       >
                         <Eye className="h-4 w-4 mr-1" />
