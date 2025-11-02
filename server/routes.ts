@@ -1563,7 +1563,7 @@ router.get("/api/pharmacy/drugs/:id", async (req, res) => {
   }
 });
 
-router.post("/api/pharmacy/drugs", requireAdmin, async (req, res) => {
+router.post("/api/pharmacy/drugs", async (req, res) => {
   try {
     const data = insertDrugSchema.parse(req.body);
     const drug = await storage.createDrug(data);
@@ -1579,7 +1579,7 @@ router.post("/api/pharmacy/drugs", requireAdmin, async (req, res) => {
   }
 });
 
-router.put("/api/pharmacy/drugs/:id", requireAdmin, async (req, res) => {
+router.put("/api/pharmacy/drugs/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const drug = await storage.updateDrug(id, req.body);
@@ -1614,7 +1614,7 @@ router.get("/api/pharmacy/batches/:batchId", async (req, res) => {
   }
 });
 
-router.post("/api/pharmacy/batches", requireAdmin, async (req, res) => {
+router.post("/api/pharmacy/batches", async (req, res) => {
   try {
     const data = insertDrugBatchSchema.parse(req.body);
     const batch = await storage.createDrugBatch(data);
@@ -1653,7 +1653,7 @@ router.get("/api/pharmacy/ledger", async (req, res) => {
   }
 });
 
-router.post("/api/pharmacy/ledger", requireAdmin, async (req, res) => {
+router.post("/api/pharmacy/ledger", async (req, res) => {
   try {
     const data = insertInventoryLedgerSchema.parse(req.body);
     const entry = await storage.createInventoryLedger(data);
