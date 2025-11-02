@@ -665,8 +665,7 @@ export default function Payment() {
                         <Badge variant="outline" className="text-xs">{payment.patientId}</Badge>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
+                        <span className="font-semibold">
                           SSP {payment.totalAmount.toLocaleString()}
                         </span>
                         <span>•</span>
