@@ -45,6 +45,7 @@ import PatientSearch from "@/components/PatientSearch";
 
 import RightRailCart from "@/components/RightRailCart";
 import ResultDrawer from "@/components/ResultDrawer";
+import { DischargeSummary } from "@/components/DischargeSummary";
 
 import {
   insertTreatmentSchema,
@@ -896,6 +897,15 @@ export default function Treatment() {
             </div>
           )}
 
+          {/* Discharge Summary Button */}
+          {selectedPatient && currentEncounter && (
+            <div className="flex justify-end mb-4">
+              <DischargeSummary 
+                encounterId={currentEncounter.encounterId} 
+                patientId={selectedPatient.patientId} 
+              />
+            </div>
+          )}
 
           {/* ---------- TWO-COLUMN COCKPIT LAYOUT ---------- */}
           {selectedPatient && currentEncounter && (
