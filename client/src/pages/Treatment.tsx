@@ -1167,11 +1167,11 @@ export default function Treatment() {
                           </h3>
                           
                           {/* Labs */}
-                          {(qoTab === "all" || qoTab === "lab") && labTests.length > 0 && (
+                          {(qoTab === "all" || qoTab === "lab") && labTests.filter((t: LabTest) => t.status === "completed").length > 0 && (
                             <div>
                               <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Laboratory Tests</h4>
                               <div className="space-y-4"> {/* Increased spacing */}
-                                {labTests.map((test: LabTest) => {
+                                {labTests.filter((t: LabTest) => t.status === "completed").map((test: LabTest) => {
                                   // --- NEW: Parse results for inline display ---
                                   const parsedResults = parseJSON<Record<string, Record<string, string>>>(test.results, {});
                                   const testsOrdered = parseJSON<string[]>(test.tests, []);
@@ -1266,11 +1266,11 @@ export default function Treatment() {
 
                           {/* X-rays */}
                           {/* ... (Keep X-ray rendering logic, maybe wrap in Card like labs for consistency) ... */}
-                           {(qoTab === "all" || qoTab === "xray") && xrays.length > 0 && (
+                           {(qoTab === "all" || qoTab === "xray") && xrays.filter((x: any) => x.status === "completed").length > 0 && (
                             <div>
                               <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">X-Ray Examinations</h4>
                               <div className="space-y-2">
-                                {xrays.map((x: any) => ( /* Consider wrapping in Card */
+                                {xrays.filter((x: any) => x.status === "completed").map((x: any) => ( /* Consider wrapping in Card */
                                   <div key={x.examId || x.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
                                     <div className="flex justify-between items-start gap-3">
                                       {/* ... existing X-ray content ... */}
@@ -1303,11 +1303,11 @@ export default function Treatment() {
 
                           {/* Ultrasound */}
                           {/* ... (Keep Ultrasound rendering logic, maybe wrap in Card) ... */}
-                          {(qoTab === "all" || qoTab === "ultrasound") && ultrasounds.length > 0 && (
+                          {(qoTab === "all" || qoTab === "ultrasound") && ultrasounds.filter((u: any) => u.status === "completed").length > 0 && (
                              <div>
                               <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Ultrasound Examinations</h4>
                               <div className="space-y-2">
-                                {ultrasounds.map((u: any) => ( /* Consider wrapping in Card */
+                                {ultrasounds.filter((u: any) => u.status === "completed").map((u: any) => ( /* Consider wrapping in Card */
                                   <div key={u.examId || u.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
                                     <div className="flex justify-between items-start gap-3">
                                         {/* ... existing Ultrasound content ... */}
@@ -1339,16 +1339,16 @@ export default function Treatment() {
                           )}
 
                           {/* Empty State */}
-                          {qoTab !== 'all' && labTests.length === 0 && xrays.length === 0 && ultrasounds.length === 0 && (
+                          {qoTab !== 'all' && labTests.filter((t: LabTest) => t.status === "completed").length === 0 && xrays.filter((x: any) => x.status === "completed").length === 0 && ultrasounds.filter((u: any) => u.status === "completed").length === 0 && (
                              <div className="text-center py-6 text-gray-500 border rounded-lg">
                               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                              <p>No existing {qoTab} results for this visit yet.</p>
+                              <p>No completed {qoTab} results for this visit yet.</p>
                             </div>
                           )}
-                           {qoTab === 'all' && labTests.length === 0 && xrays.length === 0 && ultrasounds.length === 0 && (
+                           {qoTab === 'all' && labTests.filter((t: LabTest) => t.status === "completed").length === 0 && xrays.filter((x: any) => x.status === "completed").length === 0 && ultrasounds.filter((u: any) => u.status === "completed").length === 0 && (
                             <div className="text-center py-6 text-gray-500 border rounded-lg">
                               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                              <p>No orders or results yet for this visit.</p>
+                              <p>No completed results yet for this visit.</p>
                             </div>
                           )}
                         </div>
