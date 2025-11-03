@@ -1509,6 +1509,19 @@ export default function Laboratory() {
               </div>
             </div>
 
+            {/* Patient Information - Comes First */}
+            <div className="mb-4">
+              <h2 className="text-base font-bold mb-2 text-gray-900">Patient Information</h2>
+              <div className="text-xs">
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <span><strong>Patient Name:</strong> {fullName(reportPatient)}</span>
+                  <span><strong>Patient ID:</strong> {selectedLabTest.patientId}</span>
+                  <span><strong>Age:</strong> {reportPatient?.age}</span>
+                  <span><strong>Gender:</strong> {reportPatient?.gender}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Test Information - Compact Inline */}
             <div className="mb-4">
               <h2 className="text-base font-bold mb-2 text-gray-900">Test Information</h2>
@@ -1517,8 +1530,6 @@ export default function Laboratory() {
                   <span><strong>Category:</strong> {selectedLabTest.category}</span>
                   <span><strong>Priority:</strong> {selectedLabTest.priority}</span>
                   <span><strong>Test ID:</strong> {selectedLabTest.testId}</span>
-                  <span><strong>Patient ID:</strong> {selectedLabTest.patientId}</span>
-                  <span><strong>Patient Name:</strong> {fullName(reportPatient)}</span>
                 </div>
                 <div>
                   <strong>Tests Ordered:</strong>
