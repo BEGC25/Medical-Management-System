@@ -458,7 +458,7 @@ export default function Dashboard() {
                     <div>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Collected</p>
                       <p className="text-2xl font-bold text-health-green" data-testid="revenue-total-collected">
-                        {revenueData.totalCollected.toLocaleString()} SSP
+                        {(revenueData.totalCollected || 0).toLocaleString()} SSP
                       </p>
                     </div>
                     <CheckCircle2 className="w-8 h-8 text-health-green" />
@@ -471,7 +471,7 @@ export default function Dashboard() {
                     <div>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Outstanding</p>
                       <p className="text-2xl font-bold text-amber-700 dark:text-amber-400" data-testid="revenue-outstanding">
-                        {revenueData.totalOutstanding.toLocaleString()} SSP
+                        {(revenueData.totalOutstanding || 0).toLocaleString()} SSP
                       </p>
                     </div>
                     <Clock className="w-8 h-8 text-amber-600" />
@@ -484,19 +484,19 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-cash">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Cash</span>
                     <span className="font-bold text-sm text-gray-900 dark:text-white">
-                      {revenueData.byCashMethod.cash.toLocaleString()} SSP
+                      {(revenueData.byCashMethod.cash || 0).toLocaleString()} SSP
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-mobile">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Mobile Money</span>
                     <span className="font-bold text-sm text-gray-900 dark:text-white">
-                      {revenueData.byCashMethod.mobileMoney.toLocaleString()} SSP
+                      {(revenueData.byCashMethod.mobileMoney || 0).toLocaleString()} SSP
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-insurance">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Insurance</span>
                     <span className="font-bold text-sm text-gray-900 dark:text-white">
-                      {revenueData.byCashMethod.insurance.toLocaleString()} SSP
+                      {(revenueData.byCashMethod.insurance || 0).toLocaleString()} SSP
                     </span>
                   </div>
                 </div>

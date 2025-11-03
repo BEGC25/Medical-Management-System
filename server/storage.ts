@@ -1278,7 +1278,7 @@ export class MemStorage implements IStorage {
       let transactionCount = todaysPayments.length;
       
       todaysPayments.forEach(payment => {
-        const amount = payment.amount;
+        const amount = payment.amount || 0; // Handle null/undefined amounts
         switch (payment.paymentMethod) {
           case 'cash':
             cashTotal += amount;
