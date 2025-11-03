@@ -34,7 +34,7 @@ export const patients = sqliteTable("patients", {
 export const treatments = sqliteTable("treatments", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   treatmentId: text("treatment_id").unique().notNull(),
-  encounterId: text("encounter_id").notNull(),
+  encounterId: text("encounter_id"),
   patientId: text("patient_id").notNull(),
   visitDate: text("visit_date").notNull(),
   visitType: text("visit_type").$type<"consultation" | "follow-up" | "emergency" | "preventive">().notNull(),
