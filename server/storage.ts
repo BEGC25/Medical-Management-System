@@ -275,9 +275,15 @@ export interface IStorage {
   
   getOutstandingPayments(limit?: number): Promise<any[]>;
   
-  getPharmacyAlerts(): Promise<{
-    lowStock: any[];
-    expiringSoon: any[];
+  getRevenueSummary(): Promise<{
+    totalCollected: number;
+    totalOutstanding: number;
+    byCashMethod: {
+      cash: number;
+      mobileMoney: number;
+      insurance: number;
+    };
+    transactionCount: number;
   }>;
 
   // Today filters
@@ -1256,20 +1262,54 @@ export class MemStorage implements IStorage {
     }
   }
   
-  async getPharmacyAlerts() {
+  async getRevenueSummary() {
     try {
-      // Get low stock drugs (reorderLevel exists and stock is below it)
-      const lowStockDrugs = await this.getLowStockDrugs();
+      const today = new Date().toISOString().split('T')[0];
       
-      // Get drugs expiring in next 90 days
-      const expiringSoonDrugs = await this.getExpiringSoonDrugs(90);
+      // Get all payments from today using proper date filtering for PostgreSQL
+      const todaysPayments = await db.select()
+        .from(payments)
+        .where(sql`DATE(${payments.createdAt}) = ${today}`);
+      
+      // Calculate totals by payment method
+      let cashTotal = 0;
+      let mobileMoneyTotal = 0;
+      let insuranceTotal = 0;
+      let transactionCount = todaysPayments.length;
+      
+      todaysPayments.forEach(payment => {
+        const amount = payment.amount;
+        switch (payment.paymentMethod) {
+          case 'cash':
+            cashTotal += amount;
+            break;
+          case 'mobile_money':
+            mobileMoneyTotal += amount;
+            break;
+          case 'insurance':
+            insuranceTotal += amount;
+            break;
+        }
+      });
+      
+      const totalCollected = cashTotal + mobileMoneyTotal + insuranceTotal;
+      
+      // Calculate outstanding - get unpaid services from today
+      const outstandingPayments = await this.getOutstandingPayments(100); // Get all unpaid items
+      const totalOutstanding = outstandingPayments.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
       
       return {
-        lowStock: lowStockDrugs.slice(0, 5), // Top 5 low stock items
-        expiringSoon: expiringSoonDrugs.slice(0, 5), // Top 5 expiring soon
+        totalCollected,
+        totalOutstanding,
+        byCashMethod: {
+          cash: cashTotal,
+          mobileMoney: mobileMoneyTotal,
+          insurance: insuranceTotal,
+        },
+        transactionCount,
       };
     } catch (error) {
-      console.error("getPharmacyAlerts error:", error);
+      console.error("getRevenueSummary error:", error);
       throw error;
     }
   }

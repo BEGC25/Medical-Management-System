@@ -44,8 +44,8 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/outstanding-payments"],
   });
 
-  const { data: pharmacyAlerts } = useQuery({
-    queryKey: ["/api/dashboard/pharmacy-alerts"],
+  const { data: revenueData } = useQuery({
+    queryKey: ["/api/dashboard/revenue-summary"],
   });
 
   const quickActions = [
@@ -400,7 +400,7 @@ export default function Dashboard() {
                         </div>
                         <div className="flex flex-col items-end ml-2">
                           <Badge className="bg-alert-red text-white font-bold">
-                            ${payment.amount}
+                            {payment.amount} SSP
                           </Badge>
                           <Badge variant="outline" className="text-xs mt-1">
                             {payment.orderType}
@@ -439,81 +439,84 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Pharmacy Alerts Widget */}
+        {/* Today's Revenue Summary Widget */}
         <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
-          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-orange-50 to-white dark:from-orange-950 dark:to-gray-900 border-b">
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-emerald-50 to-white dark:from-emerald-950 dark:to-gray-900 border-b">
             <div className="flex items-center gap-2">
-              <Pill className="w-5 h-5 text-attention-orange" />
+              <BarChart3 className="w-5 h-5 text-health-green" />
               <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                Pharmacy Alerts
+                Today's Revenue
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="pt-4">
-            {pharmacyAlerts ? (
-              <div className="space-y-3">
-                {pharmacyAlerts.lowStock.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-alert-red uppercase mb-2 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />
-                      Low Stock ({pharmacyAlerts.lowStock.length})
-                    </h4>
-                    <div className="space-y-1">
-                      {pharmacyAlerts.lowStock.map((drug: any, idx: number) => (
-                        <Link key={idx} href="/pharmacy">
-                          <div className="flex items-center justify-between p-2 rounded hover:bg-red-50 dark:hover:bg-red-950 cursor-pointer border border-red-200 dark:border-red-800" data-testid={`low-stock-${drug.drugCode}`}>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{drug.brandName}</p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400">{drug.drugCode}</p>
-                            </div>
-                            <Badge className="bg-alert-red text-white font-bold">
-                              {drug.stockOnHand} left
-                            </Badge>
-                          </div>
-                        </Link>
-                      ))}
+            {revenueData ? (
+              <div className="space-y-4">
+                {/* Total Collected */}
+                <div className="bg-health-green bg-opacity-10 dark:bg-opacity-20 rounded-lg p-3 border border-health-green border-opacity-30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Collected</p>
+                      <p className="text-2xl font-bold text-health-green" data-testid="revenue-total-collected">
+                        {revenueData.totalCollected.toLocaleString()} SSP
+                      </p>
                     </div>
+                    <CheckCircle2 className="w-8 h-8 text-health-green" />
                   </div>
-                )}
-                {pharmacyAlerts.expiringSoon.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-attention-orange uppercase mb-2 flex items-center gap-1">
-                      <CalendarClock className="w-3 h-3" />
-                      Expiring Soon ({pharmacyAlerts.expiringSoon.length})
-                    </h4>
-                    <div className="space-y-1">
-                      {pharmacyAlerts.expiringSoon.map((batch: any, idx: number) => (
-                        <Link key={idx} href="/pharmacy">
-                          <div className="flex items-center justify-between p-2 rounded hover:bg-orange-50 dark:hover:bg-orange-950 cursor-pointer border border-orange-200 dark:border-orange-800" data-testid={`expiring-${batch.batchId}`}>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{batch.drugName}</p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400">Batch: {batch.lotNumber || 'N/A'}</p>
-                            </div>
-                            <Badge className="bg-attention-orange text-white text-xs">
-                              {new Date(batch.expiryDate).toLocaleDateString()}
-                            </Badge>
-                          </div>
-                        </Link>
-                      ))}
+                </div>
+
+                {/* Outstanding Balance */}
+                <div className="bg-amber-50 dark:bg-amber-950 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Outstanding</p>
+                      <p className="text-2xl font-bold text-amber-700 dark:text-amber-400" data-testid="revenue-outstanding">
+                        {revenueData.totalOutstanding.toLocaleString()} SSP
+                      </p>
                     </div>
+                    <Clock className="w-8 h-8 text-amber-600" />
                   </div>
-                )}
-                {pharmacyAlerts.lowStock.length === 0 && pharmacyAlerts.expiringSoon.length === 0 && (
-                  <div className="text-center py-8">
-                    <Package className="w-12 h-12 mx-auto text-health-green mb-2" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">All pharmacy stock healthy!</p>
+                </div>
+
+                {/* Payment Method Breakdown */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Payment Methods</h4>
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-cash">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Cash</span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-white">
+                      {revenueData.byCashMethod.cash.toLocaleString()} SSP
+                    </span>
                   </div>
-                )}
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-mobile">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Mobile Money</span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-white">
+                      {revenueData.byCashMethod.mobileMoney.toLocaleString()} SSP
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-insurance">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Insurance</span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-white">
+                      {revenueData.byCashMethod.insurance.toLocaleString()} SSP
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="pt-3 border-t">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600 dark:text-gray-400">Total Transactions</span>
+                    <Badge variant="outline" className="font-bold" data-testid="revenue-transaction-count">
+                      {revenueData.transactionCount}
+                    </Badge>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
+                {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex justify-between items-center p-2">
-                    <div>
-                      <div className="h-4 bg-gray-200 rounded w-24 mb-1 animate-pulse"></div>
-                      <div className="h-3 bg-gray-200 rounded w-16 animate-pulse"></div>
-                    </div>
-                    <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
                   </div>
                 ))}
               </div>

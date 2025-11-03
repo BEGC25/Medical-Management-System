@@ -829,14 +829,14 @@ router.get("/api/dashboard/outstanding-payments", async (req, res) => {
   }
 });
 
-router.get("/api/dashboard/pharmacy-alerts", async (req, res) => {
+router.get("/api/dashboard/revenue-summary", async (req, res) => {
   try {
-    const alerts = await storage.getPharmacyAlerts();
-    res.json(alerts);
+    const revenueSummary = await storage.getRevenueSummary();
+    res.json(revenueSummary);
   } catch (error) {
-    console.error("Pharmacy alerts error:", error);
+    console.error("Revenue summary error:", error);
     res.status(500).json({
-      error: "Failed to fetch pharmacy alerts",
+      error: "Failed to fetch revenue summary",
       details: error instanceof Error ? error.message : "Unknown error",
     });
   }
