@@ -232,19 +232,13 @@ export default function Payment() {
       const alreadyAdded = paymentItems.some(item => item.relatedId === order.id);
       if (alreadyAdded) return;
       
-      // Find matching service
-      const matchingService = services.find(s => 
-        (order.type === 'lab_test' && s.category === 'laboratory') ||
-        (order.type === 'xray_exam' && s.category === 'radiology') ||
-        (order.type === 'ultrasound_exam' && s.category === 'ultrasound') ||
-        (order.type === 'pharmacy_order' && s.category === 'pharmacy')
-      );
-      
-      if (matchingService) {
+      // Use the service information already in the order
+      // The backend already provides serviceId, serviceName, and price
+      if (order.serviceId && order.price > 0) {
         newItems.push({
-          serviceId: matchingService.id,
-          serviceName: matchingService.name,
-          unitPrice: matchingService.price,
+          serviceId: order.serviceId,
+          serviceName: order.serviceName,
+          unitPrice: order.price,
           quantity: 1,
           relatedId: order.id,
           relatedType: order.type,
