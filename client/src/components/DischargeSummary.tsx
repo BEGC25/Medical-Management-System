@@ -132,33 +132,36 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             body { margin: 0; }
             .summary-container {
               width: 210mm;
-              min-height: 297mm;
-              padding: 20mm;
+              padding: 12mm 15mm;
               box-sizing: border-box;
             }
           }
           body {
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: #111;
-            line-height: 1.6;
+            line-height: 1.4;
+            font-size: 11pt;
           }
-          h1, h2, h3 { margin-top: 1.5rem; margin-bottom: 0.5rem; }
-          h1 { font-size: 1.75rem; border-bottom: 2px solid #0066CC; padding-bottom: 0.5rem; }
-          h2 { font-size: 1.25rem; color: #0066CC; }
-          h3 { font-size: 1.1rem; font-weight: 600; }
-          .header { text-align: center; margin-bottom: 2rem; }
+          h1 { font-size: 16pt; margin: 0 0 8px 0; border-bottom: 2px solid #0066CC; padding-bottom: 4px; }
+          h2 { font-size: 12pt; color: #0066CC; margin: 10px 0 4px 0; font-weight: 600; }
+          h3 { font-size: 11pt; font-weight: 600; margin: 6px 0 3px 0; }
+          .header { text-align: center; margin-bottom: 12px; }
           .header h1 { border: none; }
-          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-          .info-item { padding: 0.5rem; background: #f8f9fa; border-radius: 4px; }
-          .info-label { font-weight: 600; color: #555; font-size: 0.875rem; }
-          .info-value { color: #111; }
-          .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
-          .medication-item { padding: 0.75rem; background: #f8f9fa; border-left: 3px solid #0066CC; margin-bottom: 0.5rem; }
-          .warning-box { background: #fff3cd; border: 2px solid #ffc107; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
-          .test-result { padding: 0.5rem; margin-bottom: 0.5rem; border-left: 3px solid #28a745; background: #f8f9fa; }
-          .signature-line { margin-top: 3rem; border-top: 1px solid #000; width: 300px; padding-top: 0.5rem; }
-          ul { margin: 0.5rem 0; padding-left: 1.5rem; }
-          li { margin-bottom: 0.25rem; }
+          .header p { font-size: 10pt; color: #666; margin: 0; }
+          .info-row { margin: 3px 0; font-size: 10pt; }
+          .info-row strong { font-weight: 600; color: #333; }
+          .section { margin-bottom: 10px; page-break-inside: avoid; }
+          .medication-item { padding: 6px; background: #f8f9fa; border-left: 2px solid #0066CC; margin-bottom: 4px; font-size: 10pt; }
+          .medication-item strong { font-weight: 600; }
+          .warning-box { background: #fff3cd; border: 1px solid #ffc107; padding: 8px; margin: 8px 0; border-radius: 3px; }
+          .warning-box strong { font-weight: 600; margin-bottom: 4px; display: block; }
+          .test-result { padding: 4px; margin-bottom: 3px; border-left: 2px solid #28a745; background: #f8f9fa; font-size: 10pt; }
+          .signature-line { margin-top: 15px; border-top: 1px solid #000; width: 250px; padding-top: 4px; font-size: 10pt; }
+          ul { margin: 4px 0; padding-left: 20px; }
+          li { margin-bottom: 2px; font-size: 10pt; }
+          .compact-grid { display: flex; flex-wrap: wrap; gap: 15px; margin: 6px 0; }
+          .compact-item { font-size: 10pt; }
+          .footer-note { margin-top: 12px; padding-top: 6px; border-top: 1px solid #ddd; text-align: center; font-size: 9pt; color: #666; }
         </style>
       </head>
       <body>
@@ -208,68 +211,39 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
           </DialogTitle>
         </DialogHeader>
 
-        <div id="discharge-summary-print" className="space-y-4">
+        <div id="discharge-summary-print" className="space-y-2">
           {/* Header */}
           <div className="header">
             <h1>Bahr El Ghazal Clinic</h1>
-            <p style={{ fontSize: "0.875rem", color: "#666" }}>Patient Discharge Summary</p>
+            <p>Patient Discharge Summary</p>
           </div>
 
-          {/* Patient Information */}
+          {/* Patient Information - Compact Inline */}
           <div className="section">
             <h2>Patient Information</h2>
-            <div className="info-grid">
-              <div className="info-item">
-                <div className="info-label">Patient Name</div>
-                <div className="info-value">{patient?.firstName} {patient?.lastName}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Patient ID</div>
-                <div className="info-value">{patient?.patientId}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Age</div>
-                <div className="info-value">{patient?.age || "Not recorded"}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Gender</div>
-                <div className="info-value">{patient?.gender || "Not recorded"}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Village</div>
-                <div className="info-value">{patient?.village || "Not recorded"}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Phone</div>
-                <div className="info-value">{patient?.phoneNumber || "Not recorded"}</div>
-              </div>
+            <div className="compact-grid">
+              <span className="compact-item"><strong>Name:</strong> {patient?.firstName} {patient?.lastName}</span>
+              <span className="compact-item"><strong>ID:</strong> {patient?.patientId}</span>
+              <span className="compact-item"><strong>Age:</strong> {patient?.age || "N/A"}</span>
+              <span className="compact-item"><strong>Gender:</strong> {patient?.gender || "N/A"}</span>
+              {patient?.village && <span className="compact-item"><strong>Village:</strong> {patient.village}</span>}
+              {patient?.phoneNumber && <span className="compact-item"><strong>Phone:</strong> {patient.phoneNumber}</span>}
             </div>
           </div>
 
-          {/* Visit Information */}
+          {/* Visit Information - Compact Inline */}
           <div className="section">
             <h2>Visit Details</h2>
-            <div className="info-grid">
-              <div className="info-item">
-                <div className="info-label">Visit Date</div>
-                <div className="info-value">
-                  {encounter?.visitDate ? new Date(encounter.visitDate).toLocaleDateString() : "Today"}
-                </div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Attending Doctor</div>
-                <div className="info-value">{encounter?.attendingClinician || treatment?.createdAt || "Not recorded"}</div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Visit Type</div>
-                <div className="info-value" style={{ textTransform: "capitalize" }}>
-                  {treatment?.visitType || "Consultation"}
-                </div>
-              </div>
-              <div className="info-item">
-                <div className="info-label">Clinic Location</div>
-                <div className="info-value">Bahr El Ghazal, South Sudan</div>
-              </div>
+            <div className="compact-grid">
+              <span className="compact-item">
+                <strong>Date:</strong> {encounter?.visitDate ? new Date(encounter.visitDate).toLocaleDateString() : "Today"}
+              </span>
+              <span className="compact-item" style={{ textTransform: "capitalize" }}>
+                <strong>Type:</strong> {treatment?.visitType || "Consultation"}
+              </span>
+              <span className="compact-item">
+                <strong>Location:</strong> Bahr El Ghazal, South Sudan
+              </span>
             </div>
           </div>
 
@@ -454,22 +428,22 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
           </div>
 
           {/* Signature */}
-          <div className="section" style={{ marginTop: "3rem" }}>
+          <div className="section" style={{ marginTop: "15px" }}>
             <div className="signature-line">
-              <div style={{ fontSize: "0.875rem", color: "#555" }}>Doctor's Signature</div>
-              <div style={{ marginTop: "0.5rem" }}>
+              <div style={{ fontSize: "10pt", color: "#555" }}>Doctor's Signature</div>
+              <div style={{ marginTop: "4px", fontWeight: "500" }}>
                 {encounter?.attendingClinician || "Medical Officer"}
               </div>
-              <div style={{ fontSize: "0.875rem", color: "#555" }}>
+              <div style={{ fontSize: "10pt", color: "#555" }}>
                 {new Date().toLocaleDateString()}
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid #e0e0e0", textAlign: "center", fontSize: "0.75rem", color: "#666" }}>
-            <p>Keep this document for your records. Bring it with you on your next visit.</p>
-            <p>Document ID: {encounterId} | Patient ID: {patient?.patientId}</p>
+          <div className="footer-note">
+            <p style={{ margin: "0 0 3px 0" }}>Keep this document for your records. Bring it with you on your next visit.</p>
+            <p style={{ margin: 0 }}>Document ID: {encounterId} | Patient ID: {patient?.patientId}</p>
           </div>
         </div>
       </DialogContent>
