@@ -1035,8 +1035,16 @@ export default function Ultrasound() {
 
       {/* Print Report (hidden) */}
       {showUltrasoundReport && selectedUltrasoundExam && reportPatient && (
-        <div className="hidden print:block">
-          <div className="p-8">
+        <div className="print-only">
+          <style>{`
+            @media print {
+              body * { visibility: hidden; }
+              .print-only, .print-only * { visibility: visible; }
+              .print-only { position: absolute; left: 0; top: 0; width: 100%; }
+              @page { margin: 1cm; }
+            }
+          `}</style>
+          <div className="bg-white p-6 max-w-4xl mx-auto">
             <div className="mb-6 pb-4 border-b-2 border-blue-600">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
