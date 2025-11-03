@@ -1871,7 +1871,7 @@ router.put("/api/orders/:orderId/cart", async (req, res) => {
 
 /* --------------------------------- Order lines -------------------------------- */
 
-router.post("/api/order-lines", async (req, res) => {
+router.post("/api/order-lines", async (req: any, res) => {
   try {
     const result = insertOrderLineSchema.safeParse(req.body);
     if (!result.success) {
@@ -1881,6 +1881,59 @@ router.post("/api/order-lines", async (req, res) => {
     }
 
     const orderLine = await storage.createOrderLine(result.data);
+
+    // WORKFLOW FIX: Auto-create pending lab/xray/ultrasound records so they appear in Laboratory and Payment pages
+    const encounter = await storage.getEncounterById(result.data.encounterId);
+    if (!encounter) {
+      return res.status(404).json({ error: "Encounter not found" });
+    }
+
+    let relatedId = null;
+
+    if (result.data.relatedType === "lab") {
+      // Create pending lab test
+      const labTest = await storage.createLabTest({
+        patientId: encounter.patientId,
+        category: "general",
+        tests: JSON.stringify([result.data.description]),
+        priority: "routine",
+        requestedBy: req.user?.username || req.user?.email || "Doctor",
+        requestedDate: new Date().toISOString(),
+        status: "pending",
+        paymentStatus: "unpaid",
+      });
+      relatedId = labTest.testId;
+    } else if (result.data.relatedType === "xray") {
+      // Create pending X-ray exam
+      const xrayExam = await storage.createXrayExam({
+        patientId: encounter.patientId,
+        examType: result.data.description,
+        bodyPart: result.data.description,
+        requestedBy: req.user?.username || req.user?.email || "Doctor",
+        requestedDate: new Date().toISOString(),
+        status: "pending",
+        paymentStatus: "unpaid",
+      });
+      relatedId = xrayExam.examId;
+    } else if (result.data.relatedType === "ultrasound") {
+      // Create pending ultrasound exam
+      const ultrasoundExam = await storage.createUltrasoundExam({
+        patientId: encounter.patientId,
+        examType: result.data.description,
+        examinationType: result.data.description,
+        requestedBy: req.user?.username || req.user?.email || "Doctor",
+        requestedDate: new Date().toISOString(),
+        status: "pending",
+        paymentStatus: "unpaid",
+      });
+      relatedId = ultrasoundExam.examId;
+    }
+
+    // Update order line with relatedId
+    if (relatedId) {
+      await storage.updateOrderLine(orderLine.id, { relatedId });
+    }
+
     res.status(201).json(orderLine);
   } catch (error) {
     console.error("Error creating order line:", error);
