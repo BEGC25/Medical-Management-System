@@ -1342,11 +1342,16 @@ export default function Treatment() {
                      <Card>
                        <CardHeader><CardTitle>Patient History</CardTitle></CardHeader>
                        <CardContent>
-                         <p className="text-sm text-muted-foreground mb-4">Recent visit history for this patient. Click the Discharge Summary button to print patient-friendly documentation.</p>
-                         <h4 className="font-semibold mb-2">Recent Visits</h4>
-                         {recentTreatments.length > 0 ? (
+                         <p className="text-sm text-muted-foreground mb-4">Past visit history for this patient. Current visit is not shown here.</p>
+                         <h4 className="font-semibold mb-2">Previous Visits</h4>
+                         {/* Filter out current encounter to avoid duplication */}
+                         {(() => {
+                           const pastVisits = recentTreatments.filter(tx => 
+                             tx.encounterId !== currentEncounter?.encounterId
+                           );
+                           return pastVisits.length > 0 ? (
                            <div className="space-y-3">
-                             {recentTreatments.map((tx) => (
+                             {pastVisits.map((tx) => (
                                <div 
                                  key={tx.treatmentId} 
                                  className="p-4 border rounded-lg bg-gradient-to-r from-blue-50/50 to-white dark:from-gray-800 dark:to-gray-900 hover:shadow-lg transition-all border-blue-200 dark:border-blue-800"
@@ -1424,7 +1429,8 @@ export default function Treatment() {
                              <p className="text-sm font-medium">No previous visits found for this patient.</p>
                              <p className="text-xs mt-1">Visit history will appear here after saving treatment notes.</p>
                            </div>
-                         )}
+                         );
+                         })()}
                        </CardContent>
                      </Card>
                   </TabsContent>
