@@ -26,8 +26,8 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-gradient-to-r from-cyan-600 to-cyan-700">
-      <div className="pl-16 pr-4 py-3 sm:px-6 md:pl-72 md:pr-6">
+    <header className="sticky top-0 left-0 right-0 z-40 bg-gradient-to-r from-cyan-600 to-cyan-700">
+      <div className="px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img 
