@@ -11,7 +11,17 @@ import {
   Users,
   BarChart3,
   Clock,
-  MonitorSpeaker
+  MonitorSpeaker,
+  Activity,
+  DollarSign,
+  Pill,
+  ArrowRight,
+  CalendarClock,
+  UserCheck,
+  FlaskConical,
+  RadioTower,
+  Package,
+  CheckCircle2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +34,18 @@ export default function Dashboard() {
 
   const { data: recentPatients } = useQuery({
     queryKey: ["/api/dashboard/recent-patients"],
+  });
+
+  const { data: patientFlow } = useQuery({
+    queryKey: ["/api/dashboard/patient-flow"],
+  });
+
+  const { data: outstandingPayments } = useQuery({
+    queryKey: ["/api/dashboard/outstanding-payments"],
+  });
+
+  const { data: pharmacyAlerts } = useQuery({
+    queryKey: ["/api/dashboard/pharmacy-alerts"],
   });
 
   const quickActions = [
@@ -268,6 +290,234 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* New Dashboard Widgets Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+        
+        {/* Patient Flow & Queue Widget */}
+        <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950 dark:to-gray-900 border-b">
+            <div className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-medical-blue" />
+              <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Patient Flow
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {patientFlow ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="flow-waiting-doctor">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Doctor</span>
+                  </div>
+                  <Badge className="bg-amber-600 text-white font-bold">{patientFlow.waitingForDoctor}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="flow-in-treatment">
+                  <div className="flex items-center gap-2">
+                    <Stethoscope className="w-4 h-4 text-medical-blue" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">In Treatment</span>
+                  </div>
+                  <Badge className="bg-medical-blue text-white font-bold">{patientFlow.inTreatment}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="flow-waiting-lab">
+                  <div className="flex items-center gap-2">
+                    <FlaskConical className="w-4 h-4 text-attention-orange" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Lab</span>
+                  </div>
+                  <Badge className="bg-attention-orange text-white font-bold">{patientFlow.waitingForLab}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="flow-waiting-xray">
+                  <div className="flex items-center gap-2">
+                    <RadioTower className="w-4 h-4 text-purple-600" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for X-ray</span>
+                  </div>
+                  <Badge className="bg-purple-600 text-white font-bold">{patientFlow.waitingForXray}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="flow-waiting-ultrasound">
+                  <div className="flex items-center gap-2">
+                    <MonitorSpeaker className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Ultrasound</span>
+                  </div>
+                  <Badge className="bg-blue-600 text-white font-bold">{patientFlow.waitingForUltrasound}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="flow-waiting-pharmacy">
+                  <div className="flex items-center gap-2">
+                    <Pill className="w-4 h-4 text-health-green" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Pharmacy</span>
+                  </div>
+                  <Badge className="bg-health-green text-white font-bold">{patientFlow.waitingForPharmacy}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 border-t mt-2 pt-3" data-testid="flow-ready-checkout">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-health-green" />
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Ready for Checkout</span>
+                  </div>
+                  <Badge className="bg-health-green text-white font-bold text-base">{patientFlow.readyForCheckout}</Badge>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {[...Array(7)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-2">
+                    <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded w-8 animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Outstanding Payments Widget */}
+        <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-green-50 to-white dark:from-green-950 dark:to-gray-900 border-b">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-health-green" />
+              <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Outstanding Payments
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {outstandingPayments ? (
+              outstandingPayments.length > 0 ? (
+                <div className="space-y-2">
+                  {outstandingPayments.slice(0, 6).map((payment: any, idx: number) => (
+                    <Link key={idx} href="/payment">
+                      <div className="flex items-start justify-between p-2 rounded hover:bg-amber-50 dark:hover:bg-amber-950 cursor-pointer border border-amber-200 dark:border-amber-800 transition-colors" data-testid={`payment-${payment.patientId}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-gray-800 dark:text-gray-200 truncate">
+                            {payment.patientName}
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                            {payment.serviceDescription}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end ml-2">
+                          <Badge className="bg-alert-red text-white font-bold">
+                            ${payment.amount}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {payment.orderType}
+                          </Badge>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                  {outstandingPayments.length > 6 && (
+                    <Link href="/payment">
+                      <Button variant="outline" size="sm" className="w-full mt-2" data-testid="view-all-payments">
+                        View All ({outstandingPayments.length}) <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="w-12 h-12 mx-auto text-health-green mb-2" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">All payments collected!</p>
+                </div>
+              )
+            ) : (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-2">
+                    <div>
+                      <div className="h-4 bg-gray-200 rounded w-24 mb-1 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-32 animate-pulse"></div>
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded w-12 animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pharmacy Alerts Widget */}
+        <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-orange-50 to-white dark:from-orange-950 dark:to-gray-900 border-b">
+            <div className="flex items-center gap-2">
+              <Pill className="w-5 h-5 text-attention-orange" />
+              <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Pharmacy Alerts
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {pharmacyAlerts ? (
+              <div className="space-y-3">
+                {pharmacyAlerts.lowStock.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-alert-red uppercase mb-2 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      Low Stock ({pharmacyAlerts.lowStock.length})
+                    </h4>
+                    <div className="space-y-1">
+                      {pharmacyAlerts.lowStock.map((drug: any, idx: number) => (
+                        <Link key={idx} href="/pharmacy">
+                          <div className="flex items-center justify-between p-2 rounded hover:bg-red-50 dark:hover:bg-red-950 cursor-pointer border border-red-200 dark:border-red-800" data-testid={`low-stock-${drug.drugCode}`}>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{drug.brandName}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{drug.drugCode}</p>
+                            </div>
+                            <Badge className="bg-alert-red text-white font-bold">
+                              {drug.stockOnHand} left
+                            </Badge>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {pharmacyAlerts.expiringSoon.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-attention-orange uppercase mb-2 flex items-center gap-1">
+                      <CalendarClock className="w-3 h-3" />
+                      Expiring Soon ({pharmacyAlerts.expiringSoon.length})
+                    </h4>
+                    <div className="space-y-1">
+                      {pharmacyAlerts.expiringSoon.map((batch: any, idx: number) => (
+                        <Link key={idx} href="/pharmacy">
+                          <div className="flex items-center justify-between p-2 rounded hover:bg-orange-50 dark:hover:bg-orange-950 cursor-pointer border border-orange-200 dark:border-orange-800" data-testid={`expiring-${batch.batchId}`}>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{batch.drugName}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">Batch: {batch.lotNumber || 'N/A'}</p>
+                            </div>
+                            <Badge className="bg-attention-orange text-white text-xs">
+                              {new Date(batch.expiryDate).toLocaleDateString()}
+                            </Badge>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {pharmacyAlerts.lowStock.length === 0 && pharmacyAlerts.expiringSoon.length === 0 && (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 mx-auto text-health-green mb-2" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400">All pharmacy stock healthy!</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-2">
+                    <div>
+                      <div className="h-4 bg-gray-200 rounded w-24 mb-1 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,4 +1,4 @@
-import { eq, like, ilike, desc, and, count, or, sql, gte, lte } from "drizzle-orm";
+import { eq, like, ilike, desc, and, count, or, sql, gte, lte, isNull } from "drizzle-orm";
 import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -1141,28 +1141,115 @@ export class MemStorage implements IStorage {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Get unpaid order lines from today
-      const unpaidOrders = await db.select({
-        patientId: orderLines.patientId,
+      // Helper to calculate lab test total cost
+      const calculateLabCost = (testsJson: string) => {
+        try {
+          const tests = JSON.parse(testsJson);
+          // Each lab test typically costs 50-200 SSP depending on complexity
+          // This is a simplified estimate - in production, join with services table
+          return Array.isArray(tests) ? tests.length * 100 : 100;
+        } catch {
+          return 100; // Default cost if parsing fails
+        }
+      };
+      
+      // Get unpaid lab tests from today
+      const unpaidLabs = await db.select({
+        patientId: labTests.patientId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
-        serviceDescription: orderLines.description,
-        amount: orderLines.unitPrice,
-        orderType: orderLines.type,
-        createdAt: orderLines.createdAt,
+        serviceDescription: sql<string>`'Lab: ' || ${labTests.category}`,
+        tests: labTests.tests,
+        orderType: sql<string>`'lab'`,
+        createdAt: labTests.requestedDate,
+        testId: labTests.testId,
       })
-      .from(orderLines)
+      .from(labTests)
       .innerJoin(patients, and(
-        eq(orderLines.patientId, patients.patientId),
+        eq(labTests.patientId, patients.patientId),
         eq(patients.isDeleted, 0)
       ))
       .where(and(
-        eq(orderLines.isPaid, false),
-        like(orderLines.createdAt, `${today}%`)
+        eq(labTests.paymentStatus, 'unpaid'),
+        like(labTests.requestedDate, `${today}%`)
       ))
-      .orderBy(desc(orderLines.createdAt))
-      .limit(limit);
+      .limit(10);
       
-      return unpaidOrders;
+      // Get unpaid X-rays from today
+      const unpaidXrays = await db.select({
+        patientId: xrayExams.patientId,
+        patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
+        serviceDescription: sql<string>`'X-Ray: ' || ${xrayExams.examType}`,
+        orderType: sql<string>`'xray'`,
+        createdAt: xrayExams.requestedDate,
+        examId: xrayExams.examId,
+      })
+      .from(xrayExams)
+      .innerJoin(patients, and(
+        eq(xrayExams.patientId, patients.patientId),
+        eq(patients.isDeleted, 0)
+      ))
+      .where(and(
+        eq(xrayExams.paymentStatus, 'unpaid'),
+        like(xrayExams.requestedDate, `${today}%`)
+      ))
+      .limit(10);
+      
+      // Get unpaid ultrasounds from today
+      const unpaidUltrasounds = await db.select({
+        patientId: ultrasoundExams.patientId,
+        patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
+        serviceDescription: sql<string>`'Ultrasound: ' || ${ultrasoundExams.examType}`,
+        orderType: sql<string>`'ultrasound'`,
+        createdAt: ultrasoundExams.requestedDate,
+        examId: ultrasoundExams.examId,
+      })
+      .from(ultrasoundExams)
+      .innerJoin(patients, and(
+        eq(ultrasoundExams.patientId, patients.patientId),
+        eq(patients.isDeleted, 0)
+      ))
+      .where(and(
+        eq(ultrasoundExams.paymentStatus, 'unpaid'),
+        like(ultrasoundExams.requestedDate, `${today}%`)
+      ))
+      .limit(10);
+      
+      // Get all services to map names to prices
+      const allServices = await db.select().from(services).where(eq(services.isActive, 1));
+      const serviceMap = new Map(allServices.map(s => [s.name.toLowerCase(), s.price]));
+      
+      // Calculate amounts and combine
+      const labsWithAmounts = unpaidLabs.map(lab => ({
+        ...lab,
+        amount: calculateLabCost(lab.tests || '[]'),
+        id: lab.testId,
+      }));
+      
+      const xraysWithAmounts = unpaidXrays.map(xray => {
+        // Try to find price in services by exam type
+        const price = serviceMap.get(xray.serviceDescription.toLowerCase()) || 150;
+        return {
+          ...xray,
+          amount: price,
+          id: xray.examId,
+        };
+      });
+      
+      const ultrasoundsWithAmounts = unpaidUltrasounds.map(us => {
+        const price = serviceMap.get(us.serviceDescription.toLowerCase()) || 200;
+        return {
+          ...us,
+          amount: price,
+          id: us.examId,
+        };
+      });
+      
+      // Combine and sort by date, then limit
+      const allUnpaid = [...labsWithAmounts, ...xraysWithAmounts, ...ultrasoundsWithAmounts]
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, limit);
+      
+      return allUnpaid;
     } catch (error) {
       console.error("getOutstandingPayments error:", error);
       throw error;
