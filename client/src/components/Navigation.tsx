@@ -115,14 +115,14 @@ export default function Navigation() {
       <button
         ref={hamburgerRef}
         onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        className="md:hidden fixed top-3 left-3 z-40 p-2.5 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         aria-label="Toggle menu"
         data-testid="button-hamburger-menu"
       >
         {isDrawerOpen ? (
-          <X className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+          <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
         ) : (
-          <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+          <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
         )}
       </button>
 
@@ -137,7 +137,7 @@ export default function Navigation() {
 
       {/* Sidebar/Drawer */}
       <aside className={`
-        fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700 z-40 pt-16
+        fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700 z-40 pt-20
         transition-transform duration-300 ease-in-out
         ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}
         md:translate-x-0
