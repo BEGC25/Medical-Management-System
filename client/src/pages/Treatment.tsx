@@ -1043,12 +1043,16 @@ export default function Treatment() {
                         {/* --- NEW: Accordion for Ordering --- */}
                         {qoTab !== "all" && (
                           <Accordion type="single" collapsible className="w-full mb-6">
-                            <AccordionItem value="item-1">
-                              <AccordionTrigger className="text-base font-semibold px-4 py-3 bg-muted/30 rounded-t-lg hover:no-underline">
-                                <Plus className="h-4 w-4 mr-2"/>
-                                Add New {qoTab.charAt(0).toUpperCase() + qoTab.slice(1)} Order
+                            <AccordionItem value="item-1" className="border-2 border-blue-200 rounded-lg">
+                              <AccordionTrigger className="text-base font-semibold px-4 py-3 bg-blue-50 dark:bg-blue-950 rounded-t-lg hover:no-underline hover:bg-blue-100 dark:hover:bg-blue-900">
+                                <div className="flex items-center gap-2">
+                                  <Plus className="h-5 w-5 text-blue-600 dark:text-blue-400"/>
+                                  <span className="text-blue-700 dark:text-blue-300">
+                                    Order New {qoTab.charAt(0).toUpperCase() + qoTab.slice(1)} Tests
+                                  </span>
+                                </div>
                               </AccordionTrigger>
-                              <AccordionContent className="border border-t-0 rounded-b-lg p-4">
+                              <AccordionContent className="border-t-2 border-blue-200 rounded-b-lg p-4 bg-white dark:bg-gray-900">
                                 {/* Service Catalog (from OmniOrderBar logic) */}
                                 {(() => {
                                   // ... (Keep the existing catalog rendering logic here, using the clearer button style) ...
@@ -1115,11 +1119,51 @@ export default function Treatment() {
                           </Accordion>
                         )}
 
+                        {/* --- Pending Orders (Just Ordered, Not Processed Yet) --- */}
+                        {(() => {
+                          const pendingOrders = orders.filter((order: any) => {
+                            // Show orders that match current tab and don't have results yet
+                            if (qoTab === 'all') return order.status === 'pending';
+                            if (qoTab === 'lab') return order.relatedType === 'lab' && order.status === 'pending';
+                            if (qoTab === 'xray') return order.relatedType === 'xray' && order.status === 'pending';
+                            if (qoTab === 'ultrasound') return order.relatedType === 'ultrasound' && order.status === 'pending';
+                            if (qoTab === 'consult') return order.relatedType === 'consult' && order.status === 'pending';
+                            return false;
+                          });
+
+                          if (pendingOrders.length === 0) return null;
+
+                          return (
+                            <div className="mb-6">
+                              <h3 className="font-semibold text-base mb-3 text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Pending Orders (Awaiting Processing)
+                              </h3>
+                              <div className="space-y-2">
+                                {pendingOrders.map((order: any) => (
+                                  <div key={order.id} className="p-3 bg-amber-50 dark:bg-amber-950 border-2 border-amber-200 dark:border-amber-800 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="font-medium text-sm">{order.description}</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                          Ordered just now • Awaiting {order.department} processing
+                                        </p>
+                                      </div>
+                                      <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">
+                                        Pending
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* --- Existing Results (Filtered + Enhanced Lab View) --- */}
                         <div className="space-y-4">
                           <h3 className="font-semibold text-base">
-                            Existing Results for this Visit {qoTab !== 'all' ? `(${qoTab})` : ''}
+                            Completed Results for this Visit {qoTab !== 'all' ? `(${qoTab})` : ''}
                           </h3>
                           
                           {/* Labs */}
