@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { canSeeNavItem, ROLES } from "@shared/auth-roles";
+import { useState, useEffect, useRef } from "react";
 import { 
   BarChart3, 
   Stethoscope, 
@@ -15,7 +16,9 @@ import {
   Settings,
   Receipt,
   UserCog,
-  Tag
+  Tag,
+  Menu,
+  X
 } from "lucide-react";
 
 const navItems = [
@@ -52,6 +55,8 @@ const navItems = [
 export default function Navigation() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   // Filter navigation items based on user role
   const visibleItems = navItems.filter((item) => {
@@ -68,8 +73,75 @@ export default function Navigation() {
     return acc;
   }, {} as Record<string, typeof navItems>);
 
+  // Close drawer on route change (mobile)
+  useEffect(() => {
+    setIsDrawerOpen(false);
+  }, [location]);
+
+  // Handle Esc key to close drawer
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDrawerOpen) {
+        setIsDrawerOpen(false);
+        // Return focus to hamburger button
+        setTimeout(() => hamburgerRef.current?.focus(), 100);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isDrawerOpen]);
+
+  // Prevent body scroll when drawer is open on mobile
+  useEffect(() => {
+    if (isDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isDrawerOpen]);
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    // Return focus to hamburger button
+    setTimeout(() => hamburgerRef.current?.focus(), 100);
+  };
+
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700 z-30 pt-16">
+    <>
+      {/* Hamburger Menu Button - Mobile Only */}
+      <button
+        ref={hamburgerRef}
+        onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        aria-label="Toggle menu"
+        data-testid="button-hamburger-menu"
+      >
+        {isDrawerOpen ? (
+          <X className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+        ) : (
+          <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+        )}
+      </button>
+
+      {/* Overlay - Mobile Only */}
+      {isDrawerOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+          onClick={closeDrawer}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar/Drawer */}
+      <aside className={`
+        fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700 z-40 pt-16
+        transition-transform duration-300 ease-in-out
+        ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0
+      `}>
       <nav className="h-full overflow-y-auto px-4 py-6 pb-20">
         <div className="space-y-8">
           {Object.entries(groupedItems).map(([category, items]) => (
@@ -121,5 +193,6 @@ export default function Navigation() {
         </div>
       </nav>
     </aside>
+    </>
   );
 }
