@@ -172,6 +172,7 @@ export interface IStorage {
   // Treatments
   createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment>;
   getTreatmentsByPatient(patientId: string): Promise<schema.Treatment[]>;
+  getTreatmentsByEncounter(encounterId: string): Promise<schema.Treatment[]>;
   getTreatments(limit?: number): Promise<schema.Treatment[]>;
 
   // Lab Tests
@@ -695,6 +696,12 @@ export class MemStorage implements IStorage {
   async getTreatmentsByPatient(patientId: string): Promise<schema.Treatment[]> {
     return await db.select().from(treatments)
       .where(eq(treatments.patientId, patientId))
+      .orderBy(desc(treatments.visitDate));
+  }
+
+  async getTreatmentsByEncounter(encounterId: string): Promise<schema.Treatment[]> {
+    return await db.select().from(treatments)
+      .where(eq(treatments.encounterId, encounterId))
       .orderBy(desc(treatments.visitDate));
   }
 

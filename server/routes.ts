@@ -524,7 +524,24 @@ router.get("/api/treatments", async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
     const today = req.query.today;
+    const patientId = req.query.patientId as string;
+    const encounterId = req.query.encounterId as string;
 
+    // Filter by encounterId if provided
+    if (encounterId) {
+      const treatments = await storage.getTreatmentsByEncounter(encounterId);
+      res.json(treatments);
+      return;
+    }
+
+    // Filter by patientId if provided
+    if (patientId) {
+      const treatments = await storage.getTreatmentsByPatient(patientId);
+      res.json(treatments);
+      return;
+    }
+
+    // Otherwise, return today's or all treatments
     if (today === "true" || req.path.includes("today")) {
       const treatments = await storage.getTodaysTreatments();
       res.json(treatments);
@@ -1526,8 +1543,8 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
   try {
     const { encounterId } = req.params;
 
-    const treatments = await storage.getTreatments();
-    const treatment = treatments.find((t: any) => t.encounterId === encounterId);
+    const treatments = await storage.getTreatmentsByEncounter(encounterId);
+    const treatment = treatments[0]; // Get the first treatment for this encounter
     if (!treatment || !treatment.diagnosis || treatment.diagnosis.trim() === "") {
       return res.status(400).json({ error: "Cannot close visit: Diagnosis is required" });
     }
