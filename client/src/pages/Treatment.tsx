@@ -32,7 +32,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 // NEW: Import Accordion components
 import {
   Accordion,
@@ -43,7 +42,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import PatientSearch from "@/components/PatientSearch";
 
-import RightRailCart from "@/components/RightRailCart";
 import ResultDrawer from "@/components/ResultDrawer";
 import { DischargeSummary } from "@/components/DischargeSummary";
 
@@ -71,6 +69,24 @@ function parseJSON<T = any>(v: any, fallback: T): T {
     return fallback;
   }
 }
+
+// Type for orders returned from /api/visits/:visitId/orders
+// These have additional properties beyond the base LabTest/XRay/Ultrasound types
+type VisitOrder = {
+  orderId: string | number;
+  visitId: string;
+  type: string;
+  name: string;
+  status: string;
+  isPaid: boolean;
+  orderLine?: {
+    id: number;
+    acknowledgedAt?: string | null;
+    acknowledgedBy?: string | null;
+    addToCart?: boolean;
+  };
+  [key: string]: any; // Allow other properties
+};
 
 const fmt = (d?: string | number | Date) => (d ? new Date(d).toLocaleString() : "—");
 
@@ -355,8 +371,8 @@ export default function Treatment() {
 
   // unified orders for this visit
   const activeEncounterId = visitId ? loadedVisit?.encounter?.encounterId : currentEncounter?.encounterId;
-  // Specify LabTest type for better type safety
-  const { data: orders = [] } = useQuery<Array<any | LabTest>>({
+  // Type as any[] since orders contain mixed types with additional backend properties
+  const { data: orders = [] } = useQuery<any[]>({
     queryKey: ["/api/visits", activeEncounterId, "orders"],
     queryFn: async () => {
       if (!activeEncounterId) return [];
@@ -367,14 +383,9 @@ export default function Treatment() {
     enabled: !!activeEncounterId,
   });
 
-  // visit cart (aka summary)
-  const cartItems = useMemo(
-    () => orders.filter(o => !!o.addToCart),
-    [orders]
-  );
 
-  // Ensure labTests are typed as LabTest[]
-  const labTests = useMemo(() => orders.filter((o): o is LabTest => o.type === "lab"), [orders]);
+  // Filter orders by type (keep as any to preserve backend properties like orderId, isPaid)
+  const labTests = useMemo(() => orders.filter((o) => o.type === "lab"), [orders]);
   const xrays = useMemo(() => orders.filter((o) => o.type === "xray"), [orders]);
   const ultrasounds = useMemo(() => orders.filter((o) => o.type === "ultrasound"), [orders]);
 
@@ -565,52 +576,6 @@ export default function Treatment() {
     },
   });
 
-  const acknowledgeMutation = useMutation({
-    mutationFn: async ({ orderLineId, acknowledgedBy, acknowledged }: { orderLineId: number; acknowledgedBy: string; acknowledged: boolean }) => {
-      const r = await apiRequest("PUT", `/api/order-lines/${orderLineId}/acknowledge`, { acknowledgedBy, acknowledged });
-      return r.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
-      toast({ title: "Updated", description: "Result acknowledgment updated" });
-    },
-    onError: () => toast({ title: "Error", description: "Failed to update acknowledgment", variant: "destructive" }),
-  });
-
-  const addToCartMutation = useMutation({
-    mutationFn: async ({ orderLineId, addToCart }: { orderLineId: number; addToCart: boolean }) => {
-      const r = await apiRequest("PUT", `/api/order-lines/${orderLineId}/add-to-cart`, { addToCart });
-      return r.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
-      toast({ title: "Updated", description: "Visit summary updated" });
-    },
-    onError: () => toast({ title: "Error", description: "Failed to update summary", variant: "destructive" }),
-  });
-
-  // acknowledge + keep cart in sync
-  function toggleAcknowledgeAndCart(opts: {
-    orderLineId: number;
-    acknowledged: boolean;
-    alreadyInCart?: boolean;
-  }) {
-    const { orderLineId, acknowledged, alreadyInCart } = opts;
-
-    acknowledgeMutation.mutate({
-      orderLineId,
-      acknowledgedBy: "Dr. System",
-      acknowledged
-    });
-
-    // auto-sync summary
-    if (acknowledged && !alreadyInCart) {
-      addToCartMutation.mutate({ orderLineId, addToCart: true });
-    } else if (!acknowledged && alreadyInCart) {
-      // This logic could be debated, but for now, un-acknowledging removes it.
-      addToCartMutation.mutate({ orderLineId, addToCart: false });
-    }
-  }
 
   const submitMedicationsMutation = useMutation({
     mutationFn: async (meds: typeof medications) => {
@@ -687,22 +652,13 @@ export default function Treatment() {
   });
 
   // ---------- behavior wiring ----------
-  // ... (keep useEffect for auto-consult and auto-cart) ...
-    // auto-add consultation (once per visit)
+  // auto-add consultation (once per visit)
   useEffect(() => {
     if (!currentEncounter || !services.length) return;
     const hasConsult = orders.some((o: any) => o.type === "consultation");
     if (!hasConsult) addConsultationMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEncounter?.encounterId, services.length, JSON.stringify(orders)]);
-
-  // auto-cart: any completed + paid + acknowledged result
-  useEffect(() => {
-    orders
-      .filter((o: any) => o.status === "completed" && o.isPaid && o.orderLine?.acknowledgedBy && !o.addToCart)
-      .forEach((o: any) => addToCartMutation.mutate({ orderLineId: o.orderLine.id, addToCart: true }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(orders)]);
 
   // ---------- handlers ----------
   // ... (keep handlers: handleCloseVisit, handleSubmit, handlePatientSelect, etc.) ...
@@ -713,20 +669,6 @@ export default function Treatment() {
     const hasDx = (persistedDx && persistedDx.trim() !== "") || (currentDx && currentDx.trim() !== "");
     if (!hasDx) {
       toast({ title: "Validation", description: "Enter and save a diagnosis before closing", variant: "destructive" });
-      return;
-    }
-    const completedDiagnostics = [
-      ...labTests.filter((t: any) => t.status === "completed" && t.orderLine),
-      ...xrays.filter((x: any) => x.status === "completed" && x.orderLine),
-      ...ultrasounds.filter((u: any) => u.status === "completed" && u.orderLine),
-    ];
-    const unack = completedDiagnostics.filter((d: any) => !d.orderLine.acknowledgedBy);
-    if (unack.length > 0) {
-      toast({
-        title: "Validation",
-        description: `Acknowledge all ${unack.length} completed diagnostic result(s) before closing`,
-        variant: "destructive",
-      });
       return;
     }
     closeVisitMutation.mutate(currentEncounter.encounterId);
@@ -1134,22 +1076,22 @@ export default function Treatment() {
                           if (pendingOrders.length === 0) return null;
 
                           return (
-                            <div className="mb-6">
-                              <h3 className="font-semibold text-base mb-3 text-amber-700 dark:text-amber-400 flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
+                            <div className="mb-8 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-950 border-l-4 border-amber-500 rounded-lg shadow-sm">
+                              <h3 className="font-bold text-lg mb-4 text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                                <Clock className="h-5 w-5" />
                                 Pending Orders (Awaiting Processing)
                               </h3>
-                              <div className="space-y-2">
+                              <div className="space-y-3">
                                 {pendingOrders.map((order: any) => (
-                                  <div key={order.orderId} className="p-3 bg-amber-50 dark:bg-amber-950 border-2 border-amber-200 dark:border-amber-800 rounded-lg">
+                                  <div key={order.orderId} className="p-4 bg-white dark:bg-gray-900 border-2 border-amber-300 dark:border-amber-700 rounded-lg shadow-sm">
                                     <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="font-medium text-sm">{order.name || order.description}</p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        <p className="font-semibold text-base text-gray-900 dark:text-white">{order.name || order.description}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                           Ordered just now • Awaiting {order.department || order.type} processing
                                         </p>
                                       </div>
-                                      <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">
+                                      <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-400 dark:border-amber-600 font-semibold px-3 py-1">
                                         Pending
                                       </Badge>
                                     </div>
@@ -1161,17 +1103,18 @@ export default function Treatment() {
                         })()}
 
                         {/* --- Existing Results (Filtered + Enhanced Lab View) --- */}
-                        <div className="space-y-4">
-                          <h3 className="font-semibold text-base">
+                        <div className="space-y-4 mt-8 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border-l-4 border-green-600 rounded-lg shadow-sm">
+                          <h3 className="font-bold text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
+                            <FileText className="h-5 w-5" />
                             Completed Results for this Visit {qoTab !== 'all' ? `(${qoTab})` : ''}
                           </h3>
                           
                           {/* Labs */}
-                          {(qoTab === "all" || qoTab === "lab") && labTests.filter((t: LabTest) => t.status === "completed").length > 0 && (
+                          {(qoTab === "all" || qoTab === "lab") && labTests.filter((t: any) => t.status === "completed").length > 0 && (
                             <div>
                               <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Laboratory Tests</h4>
                               <div className="space-y-4"> {/* Increased spacing */}
-                                {labTests.filter((t: LabTest) => t.status === "completed").map((test: LabTest) => {
+                                {labTests.filter((t: any) => t.status === "completed").map((test: any) => {
                                   // --- NEW: Parse results for inline display ---
                                   const parsedResults = parseJSON<Record<string, Record<string, string>>>(test.results, {});
                                   const testsOrdered = parseJSON<string[]>(test.tests, []);
@@ -1210,9 +1153,6 @@ export default function Treatment() {
                                               {!test.isPaid && (
                                                 <Badge variant="destructive" className="bg-red-600 text-xs">UNPAID</Badge>
                                               )}
-                                              {test.orderLine?.acknowledgedBy && (
-                                                <Badge variant="outline" className="text-green-600 border-green-600 text-xs">Acknowledged</Badge>
-                                              )}
                                             </div>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                               Requested: {fmt(test.requestedDate)}
@@ -1223,25 +1163,6 @@ export default function Treatment() {
                                                 <Button variant="outline" size="sm" onClick={() => openResult("lab", test)} className="text-xs sm:text-sm flex-1 sm:flex-initial min-h-[36px]" data-testid={`view-details-lab-${test.id}`}>
                                                   View Details
                                                 </Button>
-                                              )}
-                                              {test.orderLine && (
-                                                  <div className="flex items-center gap-2 min-h-[36px]">
-                                                    <Checkbox
-                                                      id={`ack-lab-${test.id}`}
-                                                      checked={!!test.orderLine.acknowledgedBy}
-                                                      onCheckedChange={(checked) =>
-                                                        toggleAcknowledgeAndCart({
-                                                          orderLineId: test.orderLine.id,
-                                                          acknowledged: !!checked,
-                                                          alreadyInCart: !!test.orderLine.addToCart
-                                                        })
-                                                      }
-                                                      data-testid={`ack-lab-${test.id}`}
-                                                    />
-                                                    <label htmlFor={`ack-lab-${test.id}`} className="text-xs sm:text-sm cursor-pointer whitespace-nowrap">
-                                                      Acknowledge
-                                                    </label>
-                                                  </div>
                                               )}
                                           </div>
                                         </div>
@@ -1279,7 +1200,6 @@ export default function Treatment() {
                                         <div className="flex items-center gap-2 my-1">
                                            <Badge variant={x.status === "completed" ? "default" : "secondary"}>{x.status}</Badge>
                                            {!x.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
-                                           {x.orderLine?.acknowledgedBy && (<Badge variant="outline" className="text-green-600 border-green-600">Acknowledged</Badge>)}
                                         </div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
                                           {fmt(x.completedAt || x.resultDate || x.requestDate)}
@@ -1287,12 +1207,6 @@ export default function Treatment() {
                                       </div>
                                       <div className="flex flex-col items-end gap-2">
                                         {x.status === "completed" && (<Button variant="outline" size="sm" onClick={() => openResult("xray", x)}>View Report</Button>)}
-                                        {x.orderLine && (
-                                          <div className="flex items-center gap-2">
-                                            <Checkbox id={`ack-xray-${x.id}`} checked={!!x.orderLine.acknowledgedBy} onCheckedChange={(checked) => toggleAcknowledgeAndCart({ orderLineId: x.orderLine.id, acknowledged: !!checked, alreadyInCart: !!x.orderLine.addToCart })} data-testid={`ack-xray-${x.id}`} />
-                                            <label htmlFor={`ack-xray-${x.id}`} className="text-sm cursor-pointer">Acknowledge</label>
-                                          </div>
-                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -1316,7 +1230,6 @@ export default function Treatment() {
                                          <div className="flex items-center gap-2 my-1">
                                            <Badge variant={u.status === "completed" ? "default" : "secondary"}>{u.status}</Badge>
                                            {!u.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
-                                           {u.orderLine?.acknowledgedBy && (<Badge variant="outline" className="text-green-600 border-green-600">Acknowledged</Badge>)}
                                         </div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
                                           {fmt(u.completedAt || u.resultDate || u.requestDate)}
@@ -1324,12 +1237,6 @@ export default function Treatment() {
                                       </div>
                                       <div className="flex flex-col items-end gap-2">
                                          {u.status === "completed" && (<Button variant="outline" size="sm" onClick={() => openResult("ultrasound", u)}>View Report</Button>)}
-                                         {u.orderLine && (
-                                            <div className="flex items-center gap-2">
-                                              <Checkbox id={`ack-ultrasound-${u.id}`} checked={!!u.orderLine.acknowledgedBy} onCheckedChange={(checked) => toggleAcknowledgeAndCart({ orderLineId: u.orderLine.id, acknowledged: !!checked, alreadyInCart: !!u.orderLine.addToCart })} data-testid={`ack-ultrasound-${u.id}`} />
-                                              <label htmlFor={`ack-ultrasound-${u.id}`} className="text-sm cursor-pointer">Acknowledge</label>
-                                            </div>
-                                          )}
                                       </div>
                                     </div>
                                   </div>
@@ -1482,14 +1389,11 @@ export default function Treatment() {
               </div>
 
               {/* === RIGHT "CONTEXT" RAIL === */}
-              {/* ... (Keep Vitals, Alerts, Visit Cart as is) ... */}
               <div className="space-y-4">
                 {/* Vitals Card */}
                 <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-5 w-5" />Vitals (Today)</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-3 text-sm"><div><div className="text-muted-foreground">Temp</div><div className="font-medium">{watchedVitals[0] ? `${watchedVitals[0]} °C` : "—"}</div></div><div><div className="text-muted-foreground">BP</div><div className="font-medium">{watchedVitals[1] || "—"}</div></div><div><div className="text-muted-foreground">Heart Rate</div><div className="font-medium">{watchedVitals[2] ? `${watchedVitals[2]} bpm` : "—"}</div></div><div><div className="text-muted-foreground">Weight</div><div className="font-medium">{watchedVitals[3] ? `${watchedVitals[3]} kg` : "—"}</div></div></div></CardContent></Card>
                 {/* Alerts Card */}
                 <Card className="border-red-500/50"><CardHeader><CardTitle className="flex items-center gap-2 text-base text-red-600"><AlertTriangle className="h-5 w-5" />Alerts & Allergies</CardTitle></CardHeader><CardContent><p className="font-medium text-red-700">No known drug allergies</p><p className="text-sm text-muted-foreground mt-2">(Placeholder for alerts API)</p></CardContent></Card>
-                 {/* Visit Cart */}
-                <RightRailCart orders={cartItems} onRemove={(orderId) => addToCartMutation.mutate({ orderLineId: orderId, addToCart: false })} onPrint={() => window.print()} />
               </div>
             </div>
           )}
@@ -1500,7 +1404,7 @@ export default function Treatment() {
       {/* Edit Prescription Dialog */}
       <Dialog open={!!editingPrescription} onOpenChange={(open) => !open && setEditingPrescription(null)}> {/* ... content ... */} </Dialog>
       {/* Universal Result Drawer */}
-      <ResultDrawer open={resultDrawer.open} onOpenChange={(open) => (open ? null : closeResult())} kind={resultDrawer.kind} data={resultDrawer.data} patient={selectedPatient ?? undefined} resultFields={resultFields} onAcknowledge={(orderLineId, acknowledged) => toggleAcknowledgeAndCart({ orderLineId, acknowledged, alreadyInCart: !!resultDrawer.data?.orderLine?.addToCart, })} onCopyToNotes={(txt) => form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())} />
+      <ResultDrawer open={resultDrawer.open} onOpenChange={(open) => (open ? null : closeResult())} kind={resultDrawer.kind} data={resultDrawer.data} patient={selectedPatient ?? undefined} resultFields={resultFields} onCopyToNotes={(txt) => form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())} />
       {/* Prescription print sheet */}
       {showPrescription && selectedPatient && ( <div> {/* ... content ... */} </div> )}
       {/* Queue modal */}
