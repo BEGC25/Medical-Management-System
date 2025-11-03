@@ -1124,10 +1124,10 @@ export default function Treatment() {
                           const pendingOrders = orders.filter((order: any) => {
                             // Show orders that match current tab and don't have results yet
                             if (qoTab === 'all') return order.status === 'pending';
-                            if (qoTab === 'lab') return order.relatedType === 'lab' && order.status === 'pending';
-                            if (qoTab === 'xray') return order.relatedType === 'xray' && order.status === 'pending';
-                            if (qoTab === 'ultrasound') return order.relatedType === 'ultrasound' && order.status === 'pending';
-                            if (qoTab === 'consult') return order.relatedType === 'consult' && order.status === 'pending';
+                            if (qoTab === 'lab') return order.type === 'lab' && order.status === 'pending';
+                            if (qoTab === 'xray') return order.type === 'xray' && order.status === 'pending';
+                            if (qoTab === 'ultrasound') return order.type === 'ultrasound' && order.status === 'pending';
+                            if (qoTab === 'consult') return order.type === 'consult' && order.status === 'pending';
                             return false;
                           });
 
@@ -1141,12 +1141,12 @@ export default function Treatment() {
                               </h3>
                               <div className="space-y-2">
                                 {pendingOrders.map((order: any) => (
-                                  <div key={order.id} className="p-3 bg-amber-50 dark:bg-amber-950 border-2 border-amber-200 dark:border-amber-800 rounded-lg">
+                                  <div key={order.orderId} className="p-3 bg-amber-50 dark:bg-amber-950 border-2 border-amber-200 dark:border-amber-800 rounded-lg">
                                     <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="font-medium text-sm">{order.description}</p>
+                                        <p className="font-medium text-sm">{order.name || order.description}</p>
                                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                          Ordered just now • Awaiting {order.department} processing
+                                          Ordered just now • Awaiting {order.department || order.type} processing
                                         </p>
                                       </div>
                                       <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">

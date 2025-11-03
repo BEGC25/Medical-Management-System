@@ -1749,7 +1749,40 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
         isPaid: ol.addToCart === 0, // If not in cart, it's paid
       }));
 
-    const allOrders = [...consultationOrders, ...labOrders, ...xrayOrders, ...ultrasoundOrders];
+    // Add orphan order lines (ordered but not yet processed by lab/xray/ultrasound departments)
+    const processedIds = new Set([
+      ...labTests.map((t: any) => t.testId),
+      ...xrays.map((x: any) => x.examId),
+      ...ultrasounds.map((u: any) => u.examId),
+    ]);
+
+    const orphanOrders = orderLines
+      .filter((ol: any) => {
+        // Only include lab/xray/ultrasound orders that don't have a related record yet
+        if (ol.relatedType === "consultation") return false;
+        if (!ol.relatedId) return true; // No related ID = definitely pending
+        return !processedIds.has(ol.relatedId); // Related ID but no record = pending
+      })
+      .map((ol: any) => ({
+        orderId: ol.id,
+        visitId,
+        type: ol.relatedType || "unknown",
+        name: ol.description || "Pending Order",
+        status: "pending",
+        department: ol.relatedType === "lab" ? "Laboratory" : 
+                    ol.relatedType === "xray" ? "X-Ray" : 
+                    ol.relatedType === "ultrasound" ? "Ultrasound" : "Unknown",
+        description: ol.description,
+        totalPrice: ol.totalPrice,
+        orderLine: ol,
+        requestedDate: ol.createdAt,
+        acknowledgedAt: ol.acknowledgedAt || null,
+        acknowledgedBy: ol.acknowledgedBy || null,
+        addToCart: ol.addToCart || 0,
+        isPaid: false, // Pending orders are not paid yet
+      }));
+
+    const allOrders = [...consultationOrders, ...orphanOrders, ...labOrders, ...xrayOrders, ...ultrasoundOrders];
 
     res.json(allOrders);
   } catch (error) {
