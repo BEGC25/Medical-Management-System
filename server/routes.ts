@@ -1677,12 +1677,26 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
 
     const labOrders = labTests.map((test: any) => {
       const orderLine = orderLineMap.get(test.testId);
+      
+      // Parse test names from JSON array
+      let testNames = [];
+      try {
+        testNames = JSON.parse(test.tests || "[]");
+      } catch (e) {
+        testNames = [];
+      }
+      
+      // Create display name from test names
+      const displayName = testNames.length > 0 
+        ? testNames.join(", ") 
+        : (test.category || "Lab Test");
+      
       return {
         ...test,
         orderId: orderLine?.id || `lab-${test.testId}`,
         visitId,
         type: "lab",
-        name: test.category || "Lab Test",
+        name: displayName,
         flags: test.clinicalSignificance || null,
         snippet: test.criticalFindings || test.interpretation || null,
         resultUrl: `/api/lab-tests/${test.testId}`,
