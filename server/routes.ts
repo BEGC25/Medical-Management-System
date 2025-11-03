@@ -829,14 +829,14 @@ router.get("/api/dashboard/outstanding-payments", async (req, res) => {
   }
 });
 
-router.get("/api/dashboard/revenue-summary", async (req, res) => {
+router.get("/api/dashboard/results-ready", async (req, res) => {
   try {
-    const revenueSummary = await storage.getRevenueSummary();
-    res.json(revenueSummary);
+    const results = await storage.getResultsReadyForReview(10);
+    res.json(results);
   } catch (error) {
-    console.error("Revenue summary error:", error);
+    console.error("Results ready error:", error);
     res.status(500).json({
-      error: "Failed to fetch revenue summary",
+      error: "Failed to fetch results ready for review",
       details: error instanceof Error ? error.message : "Unknown error",
     });
   }

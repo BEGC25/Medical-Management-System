@@ -44,8 +44,8 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/outstanding-payments"],
   });
 
-  const { data: revenueData } = useQuery({
-    queryKey: ["/api/dashboard/revenue-summary"],
+  const { data: resultsReady } = useQuery({
+    queryKey: ["/api/dashboard/results-ready"],
   });
 
   const quickActions = [
@@ -439,84 +439,78 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Today's Revenue Summary Widget */}
+        {/* Results Ready for Review Widget */}
         <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
-          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-emerald-50 to-white dark:from-emerald-950 dark:to-gray-900 border-b">
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950 dark:to-gray-900 border-b">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-health-green" />
+              <FileText className="w-5 h-5 text-purple-600" />
               <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                Today's Revenue
+                Results Ready to Review
               </CardTitle>
             </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              Lab/X-ray/Ultrasound results ready for doctor review
+            </p>
           </CardHeader>
           <CardContent className="pt-4">
-            {revenueData ? (
-              <div className="space-y-4">
-                {/* Total Collected */}
-                <div className="bg-health-green bg-opacity-10 dark:bg-opacity-20 rounded-lg p-3 border border-health-green border-opacity-30">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Collected</p>
-                      <p className="text-2xl font-bold text-health-green" data-testid="revenue-total-collected">
-                        {(revenueData.totalCollected || 0).toLocaleString()} SSP
-                      </p>
-                    </div>
-                    <CheckCircle2 className="w-8 h-8 text-health-green" />
-                  </div>
-                </div>
-
-                {/* Outstanding Balance */}
-                <div className="bg-amber-50 dark:bg-amber-950 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Outstanding</p>
-                      <p className="text-2xl font-bold text-amber-700 dark:text-amber-400" data-testid="revenue-outstanding">
-                        {(revenueData.totalOutstanding || 0).toLocaleString()} SSP
-                      </p>
-                    </div>
-                    <Clock className="w-8 h-8 text-amber-600" />
-                  </div>
-                </div>
-
-                {/* Payment Method Breakdown */}
+            {resultsReady ? (
+              resultsReady.length > 0 ? (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Payment Methods</h4>
-                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-cash">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Cash</span>
-                    <span className="font-bold text-sm text-gray-900 dark:text-white">
-                      {(revenueData.byCashMethod.cash || 0).toLocaleString()} SSP
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-mobile">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Mobile Money</span>
-                    <span className="font-bold text-sm text-gray-900 dark:text-white">
-                      {(revenueData.byCashMethod.mobileMoney || 0).toLocaleString()} SSP
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800" data-testid="revenue-insurance">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Insurance</span>
-                    <span className="font-bold text-sm text-gray-900 dark:text-white">
-                      {(revenueData.byCashMethod.insurance || 0).toLocaleString()} SSP
-                    </span>
-                  </div>
+                  {resultsReady.slice(0, 5).map((result: any, index: number) => (
+                    <Link key={result.id || index} href={`/patients`}>
+                      <div 
+                        className="flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-purple-900 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors cursor-pointer group"
+                        data-testid={`result-ready-${result.patientId}`}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                              {result.firstName} {result.lastName}
+                            </p>
+                            <Badge 
+                              variant="outline" 
+                              className="text-[10px] px-1.5 py-0 bg-purple-50 dark:bg-purple-950 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300"
+                            >
+                              {result.patientId}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className="text-[10px] bg-purple-600 text-white">
+                              {result.resultType}
+                            </Badge>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                              {result.testType}
+                            </p>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-purple-600 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      </div>
+                    </Link>
+                  ))}
+                  {resultsReady.length > 5 && (
+                    <div className="text-center pt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        + {resultsReady.length - 5} more results ready
+                      </p>
+                    </div>
+                  )}
                 </div>
-
-                {/* Quick Stats */}
-                <div className="pt-3 border-t">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600 dark:text-gray-400">Total Transactions</span>
-                    <Badge variant="outline" className="font-bold" data-testid="revenue-transaction-count">
-                      {revenueData.transactionCount}
-                    </Badge>
-                  </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="w-12 h-12 mx-auto text-health-green mb-2" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">All results reviewed!</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No pending results</p>
                 </div>
-              </div>
+              )
             ) : (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex justify-between items-center p-2">
-                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    </div>
+                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
                   </div>
                 ))}
               </div>

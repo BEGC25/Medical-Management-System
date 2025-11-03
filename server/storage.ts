@@ -275,16 +275,7 @@ export interface IStorage {
   
   getOutstandingPayments(limit?: number): Promise<any[]>;
   
-  getRevenueSummary(): Promise<{
-    totalCollected: number;
-    totalOutstanding: number;
-    byCashMethod: {
-      cash: number;
-      mobileMoney: number;
-      insurance: number;
-    };
-    transactionCount: number;
-  }>;
+  getResultsReadyForReview(limit?: number): Promise<any[]>;
 
   // Today filters
   getTodaysPatients(): Promise<schema.Patient[]>;
@@ -1262,54 +1253,79 @@ export class MemStorage implements IStorage {
     }
   }
   
-  async getRevenueSummary() {
+  async getResultsReadyForReview(limit: number = 10) {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Get completed lab tests where encounter is still active
+      const completedLabs = await db.select({
+        id: labTests.id,
+        patientId: patients.patientId,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        testType: labTests.testType,
+        resultType: sql<string>`'Lab Test'`,
+        createdAt: labTests.createdAt,
+      })
+      .from(labTests)
+      .innerJoin(treatments, eq(labTests.encounterId, treatments.id))
+      .innerJoin(patients, eq(treatments.patientId, patients.id))
+      .where(
+        and(
+          eq(labTests.status, 'completed'),
+          eq(patients.isDeleted, 0)
+        )
+      )
+      .orderBy(desc(labTests.createdAt));
       
-      // Get all payments from today using proper date filtering for PostgreSQL
-      const todaysPayments = await db.select()
-        .from(payments)
-        .where(sql`DATE(${payments.createdAt}) = ${today}`);
+      // Get X-rays with findings entered
+      const completedXrays = await db.select({
+        id: xrays.id,
+        patientId: patients.patientId,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        testType: xrays.examination,
+        resultType: sql<string>`'X-Ray'`,
+        createdAt: xrays.createdAt,
+      })
+      .from(xrays)
+      .innerJoin(treatments, eq(xrays.encounterId, treatments.id))
+      .innerJoin(patients, eq(treatments.patientId, patients.id))
+      .where(
+        and(
+          eq(xrays.status, 'completed'),
+          eq(patients.isDeleted, 0)
+        )
+      )
+      .orderBy(desc(xrays.createdAt));
       
-      // Calculate totals by payment method
-      let cashTotal = 0;
-      let mobileMoneyTotal = 0;
-      let insuranceTotal = 0;
-      let transactionCount = todaysPayments.length;
+      // Get ultrasounds with findings entered
+      const completedUltrasounds = await db.select({
+        id: ultrasounds.id,
+        patientId: patients.patientId,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        testType: ultrasounds.examinationType,
+        resultType: sql<string>`'Ultrasound'`,
+        createdAt: ultrasounds.createdAt,
+      })
+      .from(ultrasounds)
+      .innerJoin(treatments, eq(ultrasounds.encounterId, treatments.id))
+      .innerJoin(patients, eq(treatments.patientId, patients.id))
+      .where(
+        and(
+          eq(ultrasounds.status, 'completed'),
+          eq(patients.isDeleted, 0)
+        )
+      )
+      .orderBy(desc(ultrasounds.createdAt));
       
-      todaysPayments.forEach(payment => {
-        const amount = payment.amount || 0; // Handle null/undefined amounts
-        switch (payment.paymentMethod) {
-          case 'cash':
-            cashTotal += amount;
-            break;
-          case 'mobile_money':
-            mobileMoneyTotal += amount;
-            break;
-          case 'insurance':
-            insuranceTotal += amount;
-            break;
-        }
-      });
+      // Combine all results and sort by date
+      const allResults = [...completedLabs, ...completedXrays, ...completedUltrasounds]
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, limit);
       
-      const totalCollected = cashTotal + mobileMoneyTotal + insuranceTotal;
-      
-      // Calculate outstanding - get unpaid services from today
-      const outstandingPayments = await this.getOutstandingPayments(100); // Get all unpaid items
-      const totalOutstanding = outstandingPayments.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
-      
-      return {
-        totalCollected,
-        totalOutstanding,
-        byCashMethod: {
-          cash: cashTotal,
-          mobileMoney: mobileMoneyTotal,
-          insurance: insuranceTotal,
-        },
-        transactionCount,
-      };
+      return allResults;
     } catch (error) {
-      console.error("getRevenueSummary error:", error);
+      console.error("getResultsReadyForReview error:", error);
       throw error;
     }
   }
