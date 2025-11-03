@@ -906,6 +906,16 @@ export default function Treatment() {
             </div>
           )}
 
+          {/* Discharge Summary Button for Current Visit */}
+          {selectedPatient && currentEncounter && (
+            <div className="flex justify-end mb-4">
+              <DischargeSummary 
+                encounterId={currentEncounter.encounterId} 
+                patientId={selectedPatient.patientId} 
+              />
+            </div>
+          )}
+
           {/* ---------- TWO-COLUMN COCKPIT LAYOUT ---------- */}
           {selectedPatient && currentEncounter && (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
