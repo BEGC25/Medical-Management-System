@@ -1329,14 +1329,69 @@ export default function Treatment() {
 
 
                   {/* === TAB 4: PATIENT HISTORY === */}
-                  {/* ... (Keep Patient History tab content as is) ... */}
                   <TabsContent value="history">
                      <Card>
                        <CardHeader><CardTitle>Patient History</CardTitle></CardHeader>
                        <CardContent>
-                         <p className="text-sm text-muted-foreground mb-4">Showing recent visit history. Full historical data would be added here.</p>
+                         <p className="text-sm text-muted-foreground mb-4">Recent visit history for this patient. Click on any visit to print discharge summary.</p>
                          <h4 className="font-semibold mb-2">Recent Visits</h4>
-                         {recentTreatments.length > 0 ? ( <div className="space-y-2">{recentTreatments.map((tx) => ( <div key={tx.treatmentId} className="p-3 border rounded-lg bg-muted/50"><div className="flex justify-between items-center"><span className="font-medium">{tx.visitDate}</span><Badge variant="outline">{tx.visitType}</Badge></div><p className="text-sm text-muted-foreground mt-1 truncate">Diagnosis: {tx.diagnosis || "N/A"}</p></div> ))}</div> ) : ( <p className="text-sm text-muted-foreground">No recent visits found.</p> )}
+                         {recentTreatments.length > 0 ? (
+                           <div className="space-y-3">
+                             {recentTreatments.map((tx) => (
+                               <div 
+                                 key={tx.treatmentId} 
+                                 className="p-4 border rounded-lg bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 hover:shadow-md transition-shadow"
+                                 data-testid={`history-visit-${tx.treatmentId}`}
+                               >
+                                 <div className="flex justify-between items-start gap-3 mb-3">
+                                   <div className="flex-1">
+                                     <div className="flex items-center gap-2 mb-1">
+                                       <span className="font-semibold text-gray-900 dark:text-white">
+                                         {new Date(tx.visitDate).toLocaleDateString()}
+                                       </span>
+                                       <Badge variant="outline" className="capitalize">{tx.visitType}</Badge>
+                                       <Badge className="bg-blue-600 text-white text-xs">{tx.treatmentId}</Badge>
+                                     </div>
+                                     <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                                       <span className="font-medium">Diagnosis:</span> {tx.diagnosis || "N/A"}
+                                     </p>
+                                     {tx.chiefComplaint && (
+                                       <p className="text-sm text-gray-500 dark:text-gray-500 mt-1 line-clamp-1">
+                                         <span className="font-medium">Chief Complaint:</span> {tx.chiefComplaint}
+                                       </p>
+                                     )}
+                                   </div>
+                                   <div className="flex gap-2">
+                                     <DischargeSummary 
+                                       encounterId={currentEncounter?.encounterId || ""} 
+                                       patientId={selectedPatient?.patientId || ""} 
+                                     />
+                                   </div>
+                                 </div>
+                                 
+                                 {/* Quick Stats */}
+                                 <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-2 border-t">
+                                   {tx.temperature && (
+                                     <span>🌡️ {tx.temperature}°C</span>
+                                   )}
+                                   {tx.bloodPressure && (
+                                     <span>💓 {tx.bloodPressure}</span>
+                                   )}
+                                   {tx.followUpDate && (
+                                     <span className="text-orange-600 dark:text-orange-400">
+                                       ⏰ Follow-up: {new Date(tx.followUpDate).toLocaleDateString()}
+                                     </span>
+                                   )}
+                                 </div>
+                               </div>
+                             ))}
+                           </div>
+                         ) : (
+                           <div className="text-center py-8 text-gray-500">
+                             <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                             <p className="text-sm">No previous visits found for this patient.</p>
+                           </div>
+                         )}
                        </CardContent>
                      </Card>
                   </TabsContent>
