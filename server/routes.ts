@@ -802,6 +802,46 @@ router.get("/api/dashboard/recent-patients", async (req, res) => {
   }
 });
 
+router.get("/api/dashboard/patient-flow", async (req, res) => {
+  try {
+    const flowData = await storage.getPatientFlowData();
+    res.json(flowData);
+  } catch (error) {
+    console.error("Patient flow error:", error);
+    res.status(500).json({
+      error: "Failed to fetch patient flow data",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+router.get("/api/dashboard/outstanding-payments", async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    const outstandingPayments = await storage.getOutstandingPayments(limit);
+    res.json(outstandingPayments);
+  } catch (error) {
+    console.error("Outstanding payments error:", error);
+    res.status(500).json({
+      error: "Failed to fetch outstanding payments",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+router.get("/api/dashboard/pharmacy-alerts", async (req, res) => {
+  try {
+    const alerts = await storage.getPharmacyAlerts();
+    res.json(alerts);
+  } catch (error) {
+    console.error("Pharmacy alerts error:", error);
+    res.status(500).json({
+      error: "Failed to fetch pharmacy alerts",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
 /* ---------------------------- Object Storage API --------------------------- */
 
 // Upload (🔒 keep authenticated)

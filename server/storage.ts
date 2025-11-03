@@ -262,6 +262,23 @@ export interface IStorage {
   }>;
 
   getRecentPatients(limit?: number): Promise<(schema.Patient & { lastVisit?: string; status: string })[]>;
+  
+  getPatientFlowData(): Promise<{
+    waitingForDoctor: number;
+    inTreatment: number;
+    waitingForLab: number;
+    waitingForXray: number;
+    waitingForUltrasound: number;
+    waitingForPharmacy: number;
+    readyForCheckout: number;
+  }>;
+  
+  getOutstandingPayments(limit?: number): Promise<any[]>;
+  
+  getPharmacyAlerts(): Promise<{
+    lowStock: any[];
+    expiringSoon: any[];
+  }>;
 
   // Today filters
   getTodaysPatients(): Promise<schema.Patient[]>;
@@ -1048,6 +1065,128 @@ export class MemStorage implements IStorage {
       throw error;
     }
   }
+  
+  async getPatientFlowData() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Count open encounters with no treatments yet (waiting for doctor)
+      const waitingForDoctor = await db.select({ count: sql<number>`count(*)` })
+        .from(encounters)
+        .leftJoin(treatments, eq(encounters.encounterId, treatments.encounterId))
+        .where(and(
+          eq(encounters.status, 'open'),
+          isNull(treatments.id)
+        ));
+      
+      // Count open encounters with treatments (in treatment/consultation)
+      const inTreatment = await db.select({ count: sql<number>`count(distinct ${encounters.encounterId})` })
+        .from(encounters)
+        .innerJoin(treatments, eq(encounters.encounterId, treatments.encounterId))
+        .where(eq(encounters.status, 'open'));
+      
+      // Count pending lab tests ordered today
+      const waitingForLab = await db.select({ count: sql<number>`count(*)` })
+        .from(labTests)
+        .where(and(
+          eq(labTests.status, 'pending'),
+          like(labTests.requestedDate, `${today}%`)
+        ));
+      
+      // Count pending X-rays ordered today
+      const waitingForXray = await db.select({ count: sql<number>`count(*)` })
+        .from(xrayExams)
+        .where(and(
+          eq(xrayExams.status, 'pending'),
+          like(xrayExams.requestedDate, `${today}%`)
+        ));
+      
+      // Count pending ultrasounds ordered today
+      const waitingForUltrasound = await db.select({ count: sql<number>`count(*)` })
+        .from(ultrasoundExams)
+        .where(and(
+          eq(ultrasoundExams.status, 'pending'),
+          like(ultrasoundExams.requestedDate, `${today}%`)
+        ));
+      
+      // Count pending pharmacy orders
+      const waitingForPharmacy = await db.select({ count: sql<number>`count(*)` })
+        .from(pharmacyOrders)
+        .where(eq(pharmacyOrders.status, 'pending'));
+      
+      // Count encounters ready for checkout (completed status or billed)
+      const readyForCheckout = await db.select({ count: sql<number>`count(*)` })
+        .from(encounters)
+        .where(or(
+          eq(encounters.status, 'completed'),
+          eq(encounters.status, 'ready_to_bill')
+        ));
+      
+      return {
+        waitingForDoctor: Number(waitingForDoctor[0]?.count || 0),
+        inTreatment: Number(inTreatment[0]?.count || 0),
+        waitingForLab: Number(waitingForLab[0]?.count || 0),
+        waitingForXray: Number(waitingForXray[0]?.count || 0),
+        waitingForUltrasound: Number(waitingForUltrasound[0]?.count || 0),
+        waitingForPharmacy: Number(waitingForPharmacy[0]?.count || 0),
+        readyForCheckout: Number(readyForCheckout[0]?.count || 0),
+      };
+    } catch (error) {
+      console.error("getPatientFlowData error:", error);
+      throw error;
+    }
+  }
+  
+  async getOutstandingPayments(limit = 10) {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get unpaid order lines from today
+      const unpaidOrders = await db.select({
+        patientId: orderLines.patientId,
+        patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
+        serviceDescription: orderLines.description,
+        amount: orderLines.unitPrice,
+        orderType: orderLines.type,
+        createdAt: orderLines.createdAt,
+      })
+      .from(orderLines)
+      .innerJoin(patients, and(
+        eq(orderLines.patientId, patients.patientId),
+        eq(patients.isDeleted, 0)
+      ))
+      .where(and(
+        eq(orderLines.isPaid, false),
+        like(orderLines.createdAt, `${today}%`)
+      ))
+      .orderBy(desc(orderLines.createdAt))
+      .limit(limit);
+      
+      return unpaidOrders;
+    } catch (error) {
+      console.error("getOutstandingPayments error:", error);
+      throw error;
+    }
+  }
+  
+  async getPharmacyAlerts() {
+    try {
+      // Get low stock drugs (reorderLevel exists and stock is below it)
+      const lowStockDrugs = await this.getLowStockDrugs();
+      
+      // Get drugs expiring in next 90 days
+      const expiringSoonDrugs = await this.getExpiringSoonDrugs(90);
+      
+      return {
+        lowStock: lowStockDrugs.slice(0, 5), // Top 5 low stock items
+        expiringSoon: expiringSoonDrugs.slice(0, 5), // Top 5 expiring soon
+      };
+    } catch (error) {
+      console.error("getPharmacyAlerts error:", error);
+      throw error;
+    }
+  }
+  
   // Today filter methods
   async getTodaysPatients(): Promise<schema.Patient[]> {
     const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
