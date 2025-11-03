@@ -418,17 +418,6 @@ export default function Treatment() {
     enabled: !!selectedPatient?.patientId,
   });
 
-  // fetch patient encounters to match with treatments for discharge summary
-  const { data: patientEncounters = [] } = useQuery<Encounter[]>({
-    queryKey: ["/api/encounters", "patient", selectedPatient?.patientId],
-    queryFn: async () => {
-      if (!selectedPatient?.patientId) return [];
-      const r = await fetch(`/api/encounters?patientId=${selectedPatient.patientId}`);
-      if (!r.ok) return [];
-      return r.json();
-    },
-    enabled: !!selectedPatient?.patientId,
-  });
 
 
   // ... (keep useEffect for syncing/checks and populating form) ...
@@ -748,7 +737,15 @@ export default function Treatment() {
       toast({ title: "Error", description: "Please select a patient first", variant: "destructive" });
       return;
     }
-    createTreatmentMutation.mutate({ ...data, patientId: selectedPatient.patientId });
+    if (!currentEncounter) {
+      toast({ title: "Error", description: "No active encounter found", variant: "destructive" });
+      return;
+    }
+    createTreatmentMutation.mutate({ 
+      ...data, 
+      patientId: selectedPatient.patientId,
+      encounterId: currentEncounter.encounterId
+    });
   });
 
   const handlePatientSelect = (patient: Patient) => {
@@ -1349,84 +1346,77 @@ export default function Treatment() {
                          <h4 className="font-semibold mb-2">Recent Visits</h4>
                          {recentTreatments.length > 0 ? (
                            <div className="space-y-3">
-                             {recentTreatments.map((tx) => {
-                               // Find matching encounter by visitDate
-                               const matchingEncounter = patientEncounters.find(
-                                 (enc) => enc.visitDate === tx.visitDate && enc.patientId === tx.patientId
-                               );
-                               
-                               return (
-                                 <div 
-                                   key={tx.treatmentId} 
-                                   className="p-4 border rounded-lg bg-gradient-to-r from-blue-50/50 to-white dark:from-gray-800 dark:to-gray-900 hover:shadow-lg transition-all border-blue-200 dark:border-blue-800"
-                                   data-testid={`history-visit-${tx.treatmentId}`}
-                                 >
-                                   <div className="flex justify-between items-start gap-3 mb-3">
-                                     <div className="flex-1">
-                                       <div className="flex items-center gap-2 mb-2">
-                                         <span className="font-bold text-gray-900 dark:text-white text-base">
-                                           {new Date(tx.visitDate).toLocaleDateString("en-US", { 
-                                             weekday: 'short', 
-                                             year: 'numeric', 
-                                             month: 'short', 
-                                             day: 'numeric' 
-                                           })}
-                                         </span>
-                                         <Badge variant="outline" className="capitalize font-semibold">{tx.visitType}</Badge>
-                                         <Badge className="bg-blue-600 text-white text-xs font-mono">{tx.treatmentId}</Badge>
-                                       </div>
-                                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
-                                         <span className="font-semibold">Diagnosis:</span> {tx.diagnosis || "Not recorded"}
+                             {recentTreatments.map((tx) => (
+                               <div 
+                                 key={tx.treatmentId} 
+                                 className="p-4 border rounded-lg bg-gradient-to-r from-blue-50/50 to-white dark:from-gray-800 dark:to-gray-900 hover:shadow-lg transition-all border-blue-200 dark:border-blue-800"
+                                 data-testid={`history-visit-${tx.treatmentId}`}
+                               >
+                                 <div className="flex justify-between items-start gap-3 mb-3">
+                                   <div className="flex-1">
+                                     <div className="flex items-center gap-2 mb-2">
+                                       <span className="font-bold text-gray-900 dark:text-white text-base">
+                                         {new Date(tx.visitDate).toLocaleDateString("en-US", { 
+                                           weekday: 'short', 
+                                           year: 'numeric', 
+                                           month: 'short', 
+                                           day: 'numeric' 
+                                         })}
+                                       </span>
+                                       <Badge variant="outline" className="capitalize font-semibold">{tx.visitType}</Badge>
+                                       <Badge className="bg-blue-600 text-white text-xs font-mono">{tx.treatmentId}</Badge>
+                                     </div>
+                                     <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                                       <span className="font-semibold">Diagnosis:</span> {tx.diagnosis || "Not recorded"}
+                                     </p>
+                                     {tx.chiefComplaint && (
+                                       <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                                         <span className="font-medium">Complaint:</span> {tx.chiefComplaint}
                                        </p>
-                                       {tx.chiefComplaint && (
-                                         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                                           <span className="font-medium">Complaint:</span> {tx.chiefComplaint}
-                                         </p>
-                                       )}
-                                     </div>
-                                     <div className="flex flex-col gap-2">
-                                       {matchingEncounter && (
-                                         <DischargeSummary 
-                                           encounterId={matchingEncounter.encounterId} 
-                                           patientId={selectedPatient?.patientId || ""} 
-                                         />
-                                       )}
-                                       {!matchingEncounter && (
-                                         <span className="text-xs text-gray-400 italic">No encounter data</span>
-                                       )}
-                                     </div>
+                                     )}
                                    </div>
-                                   
-                                   {/* Quick Stats */}
-                                   <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                     {tx.temperature && (
-                                       <span className="flex items-center gap-1">
-                                         <span>🌡️</span>
-                                         <span className="font-medium">{tx.temperature}°C</span>
-                                       </span>
+                                   <div className="flex flex-col gap-2">
+                                     {tx.encounterId && (
+                                       <DischargeSummary 
+                                         encounterId={tx.encounterId} 
+                                         patientId={selectedPatient?.patientId || ""} 
+                                       />
                                      )}
-                                     {tx.bloodPressure && (
-                                       <span className="flex items-center gap-1">
-                                         <span>💓</span>
-                                         <span className="font-medium">{tx.bloodPressure}</span>
-                                       </span>
-                                     )}
-                                     {tx.weight && (
-                                       <span className="flex items-center gap-1">
-                                         <span>⚖️</span>
-                                         <span className="font-medium">{tx.weight} kg</span>
-                                       </span>
-                                     )}
-                                     {tx.followUpDate && (
-                                       <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-medium">
-                                         <span>⏰</span>
-                                         <span>Follow-up: {new Date(tx.followUpDate).toLocaleDateString()}</span>
-                                       </span>
+                                     {!tx.encounterId && (
+                                       <span className="text-xs text-gray-400 italic">No encounter linked</span>
                                      )}
                                    </div>
                                  </div>
-                               );
-                             })}
+                                 
+                                 {/* Quick Stats */}
+                                 <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                   {tx.temperature && (
+                                     <span className="flex items-center gap-1">
+                                       <span>🌡️</span>
+                                       <span className="font-medium">{tx.temperature}°C</span>
+                                     </span>
+                                   )}
+                                   {tx.bloodPressure && (
+                                     <span className="flex items-center gap-1">
+                                       <span>💓</span>
+                                       <span className="font-medium">{tx.bloodPressure}</span>
+                                     </span>
+                                   )}
+                                   {tx.weight && (
+                                     <span className="flex items-center gap-1">
+                                       <span>⚖️</span>
+                                       <span className="font-medium">{tx.weight} kg</span>
+                                     </span>
+                                   )}
+                                   {tx.followUpDate && (
+                                     <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-medium">
+                                       <span>⏰</span>
+                                       <span>Follow-up: {new Date(tx.followUpDate).toLocaleDateString()}</span>
+                                     </span>
+                                   )}
+                                 </div>
+                               </div>
+                             ))}
                            </div>
                          ) : (
                            <div className="text-center py-8 text-gray-500">
