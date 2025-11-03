@@ -14,6 +14,7 @@ import {
   Save,
   ChevronRight,
 } from 'lucide-react';
+import clinicLogo from '@assets/stock_images/medical_clinic_logo,_479b83cf.jpg';
 
 import { ObjectUploader } from '@/components/ObjectUploader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1118,9 +1119,20 @@ export default function XRay() {
       {showXrayReport && selectedXrayExam && reportPatient && (
         <div className="hidden print:block">
           <div className="p-8">
-            <div className="text-center mb-8 border-b-2 border-blue-600 pb-4">
-              <h1 className="text-2xl font-bold text-blue-600">BAHR EL GHAZAL CLINIC</h1>
-              <p className="text-sm text-gray-600">X-Ray Examination Report</p>
+            <div className="mb-6 pb-4 border-b-2 border-blue-600">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <img src={clinicLogo} alt="Clinic Logo" className="h-20 w-20 object-contain" />
+                  <div>
+                    <h1 className="text-3xl font-bold text-blue-600 mb-1">Bahr El Ghazal Clinic</h1>
+                    <p className="text-sm text-gray-600">Comprehensive Healthcare Services</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-semibold text-gray-800">X-Ray Examination Report</p>
+                  <p className="text-sm text-gray-500">{new Date().toLocaleString()}</p>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">

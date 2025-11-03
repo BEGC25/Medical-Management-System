@@ -17,6 +17,7 @@ import {
   BadgeInfo,
   ChevronRight,
 } from "lucide-react";
+import clinicLogo from "@assets/stock_images/medical_clinic_logo,_479b83cf.jpg";
 
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1491,11 +1492,21 @@ export default function Laboratory() {
             }
           `}</style>
           <div className="bg-white p-6 max-w-4xl mx-auto">
-            {/* Header - Compact */}
-            <div className="text-center mb-4 border-b border-gray-300 pb-2">
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">Bahr El Ghazal Clinic</h1>
-              <p className="text-xs text-gray-600">Laboratory Test Report</p>
-              <p className="text-xs text-gray-500">Generated: {new Date().toLocaleString()}</p>
+            {/* Header - Modern Professional with Logo */}
+            <div className="mb-4 pb-3 border-b-2 border-blue-600">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={clinicLogo} alt="Clinic Logo" className="h-16 w-16 object-contain" />
+                  <div>
+                    <h1 className="text-2xl font-bold text-blue-600 mb-0.5">Bahr El Ghazal Clinic</h1>
+                    <p className="text-xs text-gray-600">Comprehensive Healthcare Services</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-gray-800">Laboratory Test Report</p>
+                  <p className="text-xs text-gray-500">Generated: {new Date().toLocaleString()}</p>
+                </div>
+              </div>
             </div>
 
             {/* Test Information - Compact Inline */}

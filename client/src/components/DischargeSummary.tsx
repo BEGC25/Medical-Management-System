@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, Printer } from "lucide-react";
+import clinicLogo from "@assets/stock_images/medical_clinic_logo,_479b83cf.jpg";
 
 type Patient = any;
 type Encounter = any;
@@ -212,10 +213,21 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
         </DialogHeader>
 
         <div id="discharge-summary-print" className="space-y-2">
-          {/* Header */}
-          <div className="header">
-            <h1>Bahr El Ghazal Clinic</h1>
-            <p>Patient Discharge Summary</p>
+          {/* Header - Modern Professional with Logo */}
+          <div className="header" style={{ borderBottom: "2px solid #0066CC", paddingBottom: "12px", marginBottom: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <img src={clinicLogo} alt="Clinic Logo" style={{ height: "60px", width: "60px", objectFit: "contain" }} />
+                <div>
+                  <h1 style={{ margin: 0, color: "#0066CC", fontSize: "20pt" }}>Bahr El Ghazal Clinic</h1>
+                  <p style={{ margin: 0, fontSize: "9pt", color: "#666" }}>Comprehensive Healthcare Services</p>
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ margin: 0, fontSize: "14pt", fontWeight: "600", color: "#333" }}>Patient Discharge Summary</p>
+                <p style={{ margin: 0, fontSize: "9pt", color: "#666" }}>{new Date().toLocaleString()}</p>
+              </div>
+            </div>
           </div>
 
           {/* Patient Information - Compact Inline */}
