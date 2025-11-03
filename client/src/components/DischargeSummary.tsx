@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, Printer } from "lucide-react";
-import clinicLogo from "@assets/stock_images/medical_clinic_logo,_479b83cf.jpg";
+import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 
 type Patient = any;
 type Encounter = any;

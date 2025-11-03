@@ -17,7 +17,7 @@ import {
   BadgeInfo,
   ChevronRight,
 } from "lucide-react";
-import clinicLogo from "@assets/stock_images/medical_clinic_logo,_479b83cf.jpg";
+import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
