@@ -1490,28 +1490,30 @@ export default function Laboratory() {
               @page { margin: 1cm; }
             }
           `}</style>
-          <div className="bg-white p-8 max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="text-center mb-6 border-b-2 border-gray-300 pb-4">
-              <h1 className="text-3xl font-bold text-gray-900">Bahr El Ghazal Clinic</h1>
-              <p className="text-sm text-gray-600">Laboratory Test Report</p>
-              <p className="text-xs text-gray-500 mt-1">Generated: {new Date().toLocaleString()}</p>
+          <div className="bg-white p-6 max-w-4xl mx-auto">
+            {/* Header - Compact */}
+            <div className="text-center mb-4 border-b border-gray-300 pb-2">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">Bahr El Ghazal Clinic</h1>
+              <p className="text-xs text-gray-600">Laboratory Test Report</p>
+              <p className="text-xs text-gray-500">Generated: {new Date().toLocaleString()}</p>
             </div>
 
-            {/* Test Information */}
-            <div className="mb-6">
-              <h2 className="text-xl font-bold mb-3 text-gray-900">Test Information</h2>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><strong>Category:</strong> {selectedLabTest.category}</div>
-                <div><strong>Priority:</strong> {selectedLabTest.priority}</div>
-                <div><strong>Test ID:</strong> {selectedLabTest.testId}</div>
-                <div><strong>Patient ID:</strong> {selectedLabTest.patientId}</div>
-                <div className="col-span-2"><strong>Patient Name:</strong> {fullName(reportPatient)}</div>
-                <div className="col-span-2">
+            {/* Test Information - Compact Inline */}
+            <div className="mb-4">
+              <h2 className="text-base font-bold mb-2 text-gray-900">Test Information</h2>
+              <div className="text-xs space-y-1">
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <span><strong>Category:</strong> {selectedLabTest.category}</span>
+                  <span><strong>Priority:</strong> {selectedLabTest.priority}</span>
+                  <span><strong>Test ID:</strong> {selectedLabTest.testId}</span>
+                  <span><strong>Patient ID:</strong> {selectedLabTest.patientId}</span>
+                  <span><strong>Patient Name:</strong> {fullName(reportPatient)}</span>
+                </div>
+                <div>
                   <strong>Tests Ordered:</strong>
-                  <div className="mt-1 flex flex-wrap gap-2">
+                  <div className="mt-1 inline-flex flex-wrap gap-1 ml-1">
                     {parseJSON<string[]>(selectedLabTest.tests, []).map((test, i) => (
-                      <span key={i} className="inline-block bg-gray-100 px-3 py-1 rounded text-xs font-medium">
+                      <span key={i} className="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs">
                         {test}
                       </span>
                     ))}
@@ -1521,16 +1523,16 @@ export default function Laboratory() {
             </div>
 
             {/* Laboratory Results - SHOW DATA FIRST */}
-            <div className="mb-6">
-              <h2 className="text-xl font-bold mb-4 text-gray-900">Laboratory Results</h2>
+            <div className="mb-4">
+              <h2 className="text-base font-bold mb-2 text-gray-900">Laboratory Results</h2>
               {(() => {
                 const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
                 return Object.entries(results).map(([testName, testData]) => {
                   const fields = resultFields[testName];
                   return (
-                    <div key={testName} className="mb-6 border border-gray-300 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-blue-700 mb-3">{testName}</h3>
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    <div key={testName} className="mb-3 border border-gray-300 rounded p-3">
+                      <h3 className="text-sm font-semibold text-blue-700 mb-2">{testName}</h3>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                         {Object.entries(testData).map(([fieldName, value]) => {
                           const config = fields?.[fieldName];
                           const isNormal = config?.normal === value;
@@ -1852,16 +1854,16 @@ export default function Laboratory() {
               });
 
               return (criticalFindings.length > 0 || warnings.length > 0) ? (
-                <div className="mb-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
-                  <h2 className="text-lg font-bold mb-2 text-yellow-900 flex items-center">
-                    <span className="text-2xl mr-2">ℹ️</span> Clinical Interpretation
+                <div className="mb-3 bg-yellow-50 border border-yellow-300 rounded p-3">
+                  <h2 className="text-sm font-bold mb-1 text-yellow-900 flex items-center">
+                    <span className="text-base mr-1">ℹ️</span> Clinical Interpretation
                   </h2>
                   {criticalFindings.length > 0 && (
-                    <div className="mb-3">
-                      <p className="font-semibold text-red-800 mb-2">Critical Findings Requiring Attention:</p>
-                      <div className="space-y-1">
+                    <div className="mb-2">
+                      <p className="font-semibold text-red-800 mb-1 text-xs">Critical Findings Requiring Attention:</p>
+                      <div className="space-y-0.5">
                         {criticalFindings.map((finding, i) => (
-                          <div key={i} className="bg-red-100 border-l-4 border-red-600 p-2 text-sm">
+                          <div key={i} className="bg-red-100 border-l-2 border-red-600 p-1.5 text-xs">
                             {finding}
                           </div>
                         ))}
@@ -1869,9 +1871,9 @@ export default function Laboratory() {
                     </div>
                   )}
                   {warnings.length > 0 && (
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       {warnings.map((warning, i) => (
-                        <div key={i} className="bg-yellow-100 border-l-4 border-yellow-600 p-2 text-sm">
+                        <div key={i} className="bg-yellow-100 border-l-2 border-yellow-600 p-1.5 text-xs">
                           {warning}
                         </div>
                       ))}
