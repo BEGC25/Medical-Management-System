@@ -37,6 +37,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Checkbox } from "@/components/ui/checkbox";
 // NEW: Import Accordion components
 import {
   Accordion,
@@ -179,6 +180,50 @@ const resultFields: Record< // Keep this config for metadata
   // ... (keep other resultFields definitions) ...
 };
 
+// Lab test categories (from Laboratory page)
+const commonTests = {
+  hematology: [
+    "Blood Film for Malaria (BFFM)",
+    "Complete Blood Count (CBC)",
+    "Hemoglobin (HB)",
+    "Total White Blood Count (TWBC)",
+    "Blood Group & Rh",
+    "ESR (Erythrocyte Sedimentation Rate)",
+    "Rheumatoid Factor",
+  ],
+  serology: [
+    "Widal Test (Typhoid)",
+    "Brucella Test (B.A.T)",
+    "Hepatitis B Test (HBsAg)",
+    "Hepatitis C Test (HCV)",
+    "H. Pylori Test",
+    "VDRL Test (Syphilis)",
+  ],
+  reproductive: [
+    "Pregnancy Test (HCG)",
+    "Gonorrhea Test",
+    "Chlamydia Test",
+    "Reproductive Hormones",
+  ],
+  parasitology: [
+    "Toxoplasma Test",
+    "Filariasis Tests",
+    "Schistosomiasis Test",
+    "Leishmaniasis Test",
+  ],
+  hormones: ["Thyroid Hormones", "Reproductive Hormones", "Cardiac & Other Markers"],
+  tuberculosis: ["Tuberculosis Tests"],
+  emergency: ["Meningitis Tests", "Yellow Fever Test", "Typhus Test"],
+  urine: ["Urine Analysis", "Urine Microscopy"],
+  biochemistry: [
+    "Renal Function Test (RFT)",
+    "Liver Function Test (LFT)",
+    "Random Blood Sugar (RBS)",
+    "Fasting Blood Sugar (FBS)",
+  ],
+  stool: ["Stool Examination"],
+};
+
 // ---------- component ----------
 export default function Treatment() {
   // ... (keep existing state variables: selectedPatient, showPrescription, etc.) ...
@@ -239,6 +284,12 @@ export default function Treatment() {
   const [queueOpen, setQueueOpen] = useState(false);
   const [queueDate, setQueueDate] = useState(new Date().toISOString().slice(0, 10));
   const [queueFilter, setQueueFilter] = useState("");
+
+  // Lab test selection state (for category-based ordering)
+  const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
+  const [currentLabCategory, setCurrentLabCategory] = useState<keyof typeof commonTests>("hematology");
+  const [labPriority, setLabPriority] = useState<"routine" | "urgent" | "stat">("routine");
+  const [labClinicalInfo, setLabClinicalInfo] = useState("");
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -575,6 +626,48 @@ export default function Treatment() {
       // The orderMutation's onSuccess already handles this
     },
   });
+
+  // Lab test submission mutation (submits multiple tests together)
+  const submitLabTestsMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedPatient) throw new Error("No patient selected");
+      if (selectedLabTests.length === 0) throw new Error("Please select at least one test");
+      
+      const data = {
+        patientId: selectedPatient.patientId,
+        encounterId: currentEncounter?.encounterId,
+        category: currentLabCategory,
+        tests: JSON.stringify(selectedLabTests),
+        priority: labPriority,
+        clinicalInfo: labClinicalInfo,
+        requestedDate: new Date().toISOString().split("T")[0],
+        status: "pending",
+        paymentStatus: "unpaid",
+      };
+      
+      const res = await apiRequest("POST", "/api/lab-tests", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: `${selectedLabTests.length} lab test(s) ordered successfully` });
+      setSelectedLabTests([]);
+      setLabClinicalInfo("");
+      setLabPriority("routine");
+      queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to submit lab tests", variant: "destructive" });
+    },
+  });
+
+  // Helper to toggle test selection
+  const handleLabTestToggle = (test: string) => {
+    setSelectedLabTests((prev) => 
+      prev.includes(test) ? prev.filter((t) => t !== test) : [...prev, test]
+    );
+  };
 
   const createTreatmentMutation = useMutation({
     mutationFn: async (data: InsertTreatment): Promise<Treatment> => {
@@ -1230,67 +1323,163 @@ export default function Treatment() {
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className="border-t-2 border-blue-200 rounded-b-lg p-4 bg-white dark:bg-gray-900">
-                                {/* Service Catalog (from OmniOrderBar logic) */}
-                                {(() => {
-                                  // ... (Keep the existing catalog rendering logic here, using the clearer button style) ...
-                                  const rows = (qoTab === 'pharmacy' ? drugs : services)
-                                  .filter((s: any) => {
-                                    if (qoTab === 'pharmacy') return true;
-                                    return matchesCategory(s, qoTab as any);
-                                  })
-                                  .filter((s: any) => {
-                                    if (!qoSearch) return true;
-                                    const needle = qoSearch.toLowerCase();
-                                    const name = s.name || s.genericName || "";
-                                    return (
-                                      (name).toLowerCase().includes(needle) ||
-                                      (s.description ?? "").toLowerCase().includes(needle)
-                                    );
-                                  })
-                                  .slice(0, 50);
+                                {/* LAB TESTS: Category-based dropdown + checkboxes */}
+                                {qoTab === "lab" ? (
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {/* Category Dropdown */}
+                                      <div className="space-y-2">
+                                        <label className="text-sm font-medium">Test Category</label>
+                                        <Select
+                                          value={currentLabCategory}
+                                          onValueChange={(v) => setCurrentLabCategory(v as keyof typeof commonTests)}
+                                        >
+                                          <SelectTrigger data-testid="select-lab-category">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="hematology">Hematology</SelectItem>
+                                            <SelectItem value="serology">Serology</SelectItem>
+                                            <SelectItem value="reproductive">Reproductive</SelectItem>
+                                            <SelectItem value="parasitology">Parasitology</SelectItem>
+                                            <SelectItem value="hormones">Hormones</SelectItem>
+                                            <SelectItem value="tuberculosis">Tuberculosis</SelectItem>
+                                            <SelectItem value="emergency">Emergency</SelectItem>
+                                            <SelectItem value="urine">Urine Analysis</SelectItem>
+                                            <SelectItem value="biochemistry">Biochemistry</SelectItem>
+                                            <SelectItem value="stool">Stool</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
 
-                                  if (rows.length === 0) {
-                                    return <div className="text-sm text-muted-foreground p-4 text-center">No matching services found.</div>;
-                                  }
-
-                                  return (
-                                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                      {rows.map((svc: any) => (
-                                        <div key={svc.id} className="flex items-center justify-between rounded border p-3 bg-white">
-                                          <div className="min-w-0 pr-2">
-                                            <div className="font-medium truncate">{svc.genericName || svc.name}</div>
-                                            <div className="text-xs text-gray-500 truncate">
-                                              {svc.description ? svc.description : (svc.strength ? `Strength: ${svc.strength}` : (typeof svc.price === 'number' ? `Fee: ${svc.price}` : ''))}
-                                            </div>
-                                          </div>
-                                          {qoTab === 'pharmacy' ? (
-                                            <Button size="sm" onClick={() => {
-                                              setSelectedDrugId(String(svc.id));
-                                              setSelectedDrugName(svc.genericName || svc.name);
-                                              setActiveTab("medications");
-                                              toast({ title: "Medication Selected", description: "Please complete dosage and quantity." });
-                                            }}>
-                                              <Plus className="h-4 w-4 mr-1"/> Queue
-                                            </Button>
-                                          ) : (
-                                            <Button
-                                              size="sm"
-                                              onClick={() => orderMutation.mutate({ serviceId: svc.id, kind: qoTab, name: svc.name, price: svc.price || 0 })}
-                                              disabled={orderMutation.isPending && orderMutation.variables?.serviceId === svc.id}
-                                            >
-                                              {orderMutation.isPending && orderMutation.variables?.serviceId === svc.id ?
-                                                <Loader2 className="h-4 w-4 animate-spin"/> :
-                                                <Plus className="h-4 w-4 mr-1"/>
-                                              }
-                                              Add
-                                            </Button>
-                                          )}
-                                        </div>
-                                      ))}
+                                      {/* Priority Dropdown */}
+                                      <div className="space-y-2">
+                                        <label className="text-sm font-medium">Priority</label>
+                                        <Select value={labPriority} onValueChange={(v: any) => setLabPriority(v)}>
+                                          <SelectTrigger data-testid="select-lab-priority">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="routine">Routine</SelectItem>
+                                            <SelectItem value="urgent">Urgent</SelectItem>
+                                            <SelectItem value="stat">STAT</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
                                     </div>
-                                  );
 
-                                })()}
+                                    {/* Test Selection Checkboxes */}
+                                    <div>
+                                      <label className="text-sm font-medium mb-2 block">Select Tests</label>
+                                      <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                                        {commonTests[currentLabCategory].map((test) => (
+                                          <label key={test} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
+                                            <Checkbox
+                                              checked={selectedLabTests.includes(test)}
+                                              onCheckedChange={() => handleLabTestToggle(test)}
+                                              data-testid={`checkbox-lab-test-${test}`}
+                                            />
+                                            <span className="text-sm">{test}</span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                      {selectedLabTests.length > 0 && (
+                                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                            Selected ({selectedLabTests.length}): {selectedLabTests.join(", ")}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Clinical Information */}
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-medium">Clinical Information</label>
+                                      <Textarea
+                                        placeholder="Symptoms, suspected diagnosis, relevant clinical information..."
+                                        rows={3}
+                                        value={labClinicalInfo}
+                                        onChange={(e) => setLabClinicalInfo(e.target.value)}
+                                        data-testid="textarea-lab-clinical-info"
+                                      />
+                                    </div>
+
+                                    {/* Submit Button */}
+                                    <Button
+                                      type="button"
+                                      onClick={() => submitLabTestsMutation.mutate()}
+                                      disabled={submitLabTestsMutation.isPending || selectedLabTests.length === 0}
+                                      className="w-full bg-medical-blue hover:bg-blue-700"
+                                      data-testid="btn-submit-lab-tests"
+                                    >
+                                      <Plus className="w-4 h-4 mr-2" />
+                                      {submitLabTestsMutation.isPending 
+                                        ? "Submitting..." 
+                                        : `Submit ${selectedLabTests.length} Lab Test${selectedLabTests.length !== 1 ? 's' : ''}`
+                                      }
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  /* Other Services: Grid layout */
+                                  (() => {
+                                    const rows = (qoTab === 'pharmacy' ? drugs : services)
+                                    .filter((s: any) => {
+                                      if (qoTab === 'pharmacy') return true;
+                                      return matchesCategory(s, qoTab as any);
+                                    })
+                                    .filter((s: any) => {
+                                      if (!qoSearch) return true;
+                                      const needle = qoSearch.toLowerCase();
+                                      const name = s.name || s.genericName || "";
+                                      return (
+                                        (name).toLowerCase().includes(needle) ||
+                                        (s.description ?? "").toLowerCase().includes(needle)
+                                      );
+                                    })
+                                    .slice(0, 50);
+
+                                    if (rows.length === 0) {
+                                      return <div className="text-sm text-muted-foreground p-4 text-center">No matching services found.</div>;
+                                    }
+
+                                    return (
+                                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                        {rows.map((svc: any) => (
+                                          <div key={svc.id} className="flex items-center justify-between rounded border p-3 bg-white">
+                                            <div className="min-w-0 pr-2">
+                                              <div className="font-medium truncate">{svc.genericName || svc.name}</div>
+                                              <div className="text-xs text-gray-500 truncate">
+                                                {svc.description ? svc.description : (svc.strength ? `Strength: ${svc.strength}` : (typeof svc.price === 'number' ? `Fee: ${svc.price}` : ''))}
+                                              </div>
+                                            </div>
+                                            {qoTab === 'pharmacy' ? (
+                                              <Button size="sm" onClick={() => {
+                                                setSelectedDrugId(String(svc.id));
+                                                setSelectedDrugName(svc.genericName || svc.name);
+                                                setActiveTab("medications");
+                                                toast({ title: "Medication Selected", description: "Please complete dosage and quantity." });
+                                              }}>
+                                                <Plus className="h-4 w-4 mr-1"/> Queue
+                                              </Button>
+                                            ) : (
+                                              <Button
+                                                size="sm"
+                                                onClick={() => orderMutation.mutate({ serviceId: svc.id, kind: qoTab, name: svc.name, price: svc.price || 0 })}
+                                                disabled={orderMutation.isPending && orderMutation.variables?.serviceId === svc.id}
+                                              >
+                                                {orderMutation.isPending && orderMutation.variables?.serviceId === svc.id ?
+                                                  <Loader2 className="h-4 w-4 animate-spin"/> :
+                                                  <Plus className="h-4 w-4 mr-1"/>
+                                                }
+                                                Add
+                                              </Button>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    );
+                                  })()
+                                )}
                               </AccordionContent>
                             </AccordionItem>
                           </Accordion>
