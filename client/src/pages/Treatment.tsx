@@ -388,6 +388,9 @@ export default function Treatment() {
   const labTests = useMemo(() => orders.filter((o) => o.type === "lab"), [orders]);
   const xrays = useMemo(() => orders.filter((o) => o.type === "xray"), [orders]);
   const ultrasounds = useMemo(() => orders.filter((o) => o.type === "ultrasound"), [orders]);
+  
+  // Count only diagnostic tests (lab + xray + ultrasound) for badge
+  const diagnosticTestCount = useMemo(() => labTests.length + xrays.length + ultrasounds.length, [labTests, xrays, ultrasounds]);
 
 
   // ... (keep existing treatment query, pharmacy orders query, recent treatments query) ...
@@ -873,7 +876,7 @@ export default function Treatment() {
                     <TabsTrigger value="orders">
                       <FileText className="h-4 w-4 mr-2" />
                       Orders & Results
-                      {orders.length > 0 && <Badge className="ml-2">{orders.length}</Badge>}
+                      {diagnosticTestCount > 0 && <Badge className="ml-2">{diagnosticTestCount}</Badge>}
                     </TabsTrigger>
                     <TabsTrigger value="medications">
                       <Pill className="h-4 w-4 mr-2" />
@@ -1148,7 +1151,7 @@ export default function Treatment() {
                                             </CardTitle>
                                              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
                                               <Badge variant={test.status === "completed" ? "default" : "secondary"} className="text-xs">
-                                                {test.status}
+                                                {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
                                               </Badge>
                                               {!test.isPaid && (
                                                 <Badge variant="destructive" className="bg-red-600 text-xs">UNPAID</Badge>
@@ -1198,7 +1201,7 @@ export default function Treatment() {
                                       <div className="flex-1">
                                         <p className="font-medium">{x.bodyPart}</p>
                                         <div className="flex items-center gap-2 my-1">
-                                           <Badge variant={x.status === "completed" ? "default" : "secondary"}>{x.status}</Badge>
+                                           <Badge variant={x.status === "completed" ? "default" : "secondary"}>{x.status.charAt(0).toUpperCase() + x.status.slice(1)}</Badge>
                                            {!x.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
                                         </div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1228,7 +1231,7 @@ export default function Treatment() {
                                       <div className="flex-1">
                                         <p className="font-medium">{u.examType}</p>
                                          <div className="flex items-center gap-2 my-1">
-                                           <Badge variant={u.status === "completed" ? "default" : "secondary"}>{u.status}</Badge>
+                                           <Badge variant={u.status === "completed" ? "default" : "secondary"}>{u.status.charAt(0).toUpperCase() + u.status.slice(1)}</Badge>
                                            {!u.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
                                         </div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
