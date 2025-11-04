@@ -26,6 +26,9 @@ import {
   Users,
   ClipboardList,
   AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -781,42 +784,109 @@ export default function Treatment() {
           </div>
         </div>
         
-        {/* Statistics Cards - Compact */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Patients Treated Today */}
-          <div className="group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-lg p-3 border border-emerald-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between mb-1">
-              <div className="h-8 w-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
-                <Users className="h-4 w-4 text-white" />
+        {/* Enterprise Statistics Cards with Trend Indicators */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Patients Today - Enhanced */}
+          <div className="group relative bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                    <div className="relative h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <Users className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Patients Today</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">{todayPatients}</span>
+                      {todayPatients > 0 && (
+                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                          <TrendingUp className="h-3.5 w-3.5" />
+                          <span className="text-xs font-semibold">Active</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{todayPatients}</span>
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700/50">
+                <span className="text-xs text-gray-600 dark:text-gray-400">Total visits registered</span>
+                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              </div>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Patients Today</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">Total visits registered</p>
           </div>
 
-          {/* Active Visits */}
-          <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800/50 shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between mb-1">
-              <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
-                <Activity className="h-4 w-4 text-white" />
+          {/* Active Visits - Enhanced */}
+          <div className="group relative bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 dark:from-blue-500/10 dark:to-indigo-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                    <div className="relative h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <Activity className="h-6 w-6 text-white animate-pulse" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Active Visits</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">{activeEncountersCount}</span>
+                      {activeEncountersCount > 0 && (
+                        <div className="flex items-center gap-0.5">
+                          <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
+                          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">Live</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="text-xl font-bold text-blue-700 dark:text-blue-400">{activeEncountersCount}</span>
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700/50">
+                <span className="text-xs text-gray-600 dark:text-gray-400">In-progress treatments</span>
+                {activeEncountersCount > 2 && (
+                  <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">Busy</span>
+                )}
+              </div>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Active Visits</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">Patients being treated</p>
           </div>
 
-          {/* Pending Orders */}
-          <div className="group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-800/50 shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between mb-1">
-              <div className="h-8 w-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center shadow-sm">
-                <ClipboardList className="h-4 w-4 text-white" />
+          {/* Pending Orders - Enhanced */}
+          <div className="group relative bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02] sm:col-span-2 lg:col-span-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                    <div className="relative h-12 w-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <ClipboardList className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Pending Orders</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold bg-gradient-to-br from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">{pendingOrdersCount}</span>
+                      {pendingOrdersCount > 5 && (
+                        <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5" />
+                          <span className="text-xs font-semibold">High</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="text-xl font-bold text-amber-700 dark:text-amber-400">{pendingOrdersCount}</span>
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700/50">
+                <span className="text-xs text-gray-600 dark:text-gray-400">Awaiting payment</span>
+                {pendingOrdersCount > 0 && (
+                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Requires attention</span>
+                )}
+              </div>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Pending Orders</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">Unpaid services</p>
           </div>
         </div>
       </div>
