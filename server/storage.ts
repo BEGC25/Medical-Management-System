@@ -1270,6 +1270,9 @@ export class MemStorage implements IStorage {
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .slice(0, limit);
       
+      console.log(`Outstanding Payments DEBUG: Found ${unpaidLabs.length} labs, ${unpaidXrays.length} xrays, ${unpaidUltrasounds.length} ultrasounds for TODAY (${today})`);
+      console.log('Outstanding Payments Results:', JSON.stringify(allUnpaid, null, 2));
+      
       return allUnpaid;
     } catch (error) {
       console.error("getOutstandingPayments error:", error);
