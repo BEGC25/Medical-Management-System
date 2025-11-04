@@ -1285,12 +1285,12 @@ export class MemStorage implements IStorage {
       }
       
       // Get completed X-rays
-      const xrayExams = await db.select().from(xrays)
-        .where(eq(xrays.status, 'completed'))
-        .orderBy(desc(xrays.createdAt))
+      const xrays = await db.select().from(xrayExams)
+        .where(eq(xrayExams.status, 'completed'))
+        .orderBy(desc(xrayExams.createdAt))
         .limit(limit);
       
-      for (const xray of xrayExams) {
+      for (const xray of xrays) {
         const patient = await db.select().from(patients)
           .where(and(
             eq(patients.patientId, xray.patientId),
@@ -1312,9 +1312,9 @@ export class MemStorage implements IStorage {
       }
       
       // Get completed ultrasounds
-      const ultrasoundExams = await db.select().from(ultrasounds)
-        .where(eq(ultrasounds.status, 'completed'))
-        .orderBy(desc(ultrasounds.createdAt))
+      const ultrasounds = await db.select().from(ultrasoundExams)
+        .where(eq(ultrasoundExams.status, 'completed'))
+        .orderBy(desc(ultrasoundExams.createdAt))
         .limit(limit);
       
       for (const us of ultrasoundExams) {
