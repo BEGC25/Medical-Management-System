@@ -172,52 +172,82 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Patients */}
+        {/* Results Ready for Review Widget */}
         <Card className="md:col-span-1 shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
-          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b">
-            <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Recent Patients</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 sm:space-y-3">
-              {recentPatients ? (
-                recentPatients.map((patient: any) => (
-                  <div key={patient.id} className="flex items-start sm:items-center justify-between py-2.5 sm:py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 min-h-[60px] sm:min-h-[56px]">
-                    <div className="flex-1 min-w-0 pr-2">
-                      <p className="font-medium text-sm sm:text-base text-gray-800 dark:text-gray-200 break-words">
-                        {patient.firstName} {patient.lastName}
-                      </p>
-                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">ID: {patient.patientId}</p>
-                        {patient.lastVisit && (
-                          <>
-                            <span className="text-gray-400 hidden sm:inline">•</span>
-                            <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center">
-                              <Clock className="w-3 h-3 mr-0.5 sm:mr-1" />
-                              {new Date(patient.lastVisit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      {getStatusBadge(patient.status)}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center justify-between py-2">
-                      <div>
-                        <div className="h-4 bg-gray-200 rounded w-24 mb-1 animate-pulse"></div>
-                        <div className="h-3 bg-gray-200 rounded w-16 animate-pulse"></div>
-                      </div>
-                      <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950 dark:to-gray-900 border-b">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-600" />
+              <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Results Ready to Review
+              </CardTitle>
             </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              Lab/X-ray/Ultrasound results ready for doctor review
+            </p>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {resultsReady ? (
+              resultsReady.length > 0 ? (
+                <div className="space-y-2">
+                  {resultsReady.slice(0, 5).map((result: any, index: number) => (
+                    <Link key={result.id || index} href={`/patients`}>
+                      <div 
+                        className="flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-purple-900 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors cursor-pointer group"
+                        data-testid={`result-ready-${result.patientId}`}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                              {result.firstName} {result.lastName}
+                            </p>
+                            <Badge 
+                              variant="outline" 
+                              className="text-[10px] px-1.5 py-0 bg-purple-50 dark:bg-purple-950 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300"
+                            >
+                              {result.patientId}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className="text-[10px] bg-purple-600 text-white">
+                              {result.resultType}
+                            </Badge>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                              {result.testType}
+                            </p>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-purple-600 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      </div>
+                    </Link>
+                  ))}
+                  {resultsReady.length > 5 && (
+                    <div className="text-center pt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        + {resultsReady.length - 5} more results ready
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="w-12 h-12 mx-auto text-health-green mb-2" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">All results reviewed!</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No pending results</p>
+                </div>
+              )
+            ) : (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    </div>
+                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -439,82 +469,52 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Results Ready for Review Widget */}
+        {/* Recent Patients */}
         <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0">
-          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950 dark:to-gray-900 border-b">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-purple-600" />
-              <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                Results Ready to Review
-              </CardTitle>
-            </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Lab/X-ray/Ultrasound results ready for doctor review
-            </p>
+          <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b">
+            <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Recent Patients</CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
-            {resultsReady ? (
-              resultsReady.length > 0 ? (
-                <div className="space-y-2">
-                  {resultsReady.slice(0, 5).map((result: any, index: number) => (
-                    <Link key={result.id || index} href={`/patients`}>
-                      <div 
-                        className="flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-purple-900 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors cursor-pointer group"
-                        data-testid={`result-ready-${result.patientId}`}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                              {result.firstName} {result.lastName}
-                            </p>
-                            <Badge 
-                              variant="outline" 
-                              className="text-[10px] px-1.5 py-0 bg-purple-50 dark:bg-purple-950 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300"
-                            >
-                              {result.patientId}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className="text-[10px] bg-purple-600 text-white">
-                              {result.resultType}
-                            </Badge>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                              {result.testType}
-                            </p>
-                          </div>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-purple-600 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-                      </div>
-                    </Link>
-                  ))}
-                  {resultsReady.length > 5 && (
-                    <div className="text-center pt-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        + {resultsReady.length - 5} more results ready
+          <CardContent>
+            <div className="space-y-2 sm:space-y-3">
+              {recentPatients ? (
+                recentPatients.map((patient: any) => (
+                  <div key={patient.id} className="flex items-start sm:items-center justify-between py-2.5 sm:py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 min-h-[60px] sm:min-h-[56px]">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="font-medium text-sm sm:text-base text-gray-800 dark:text-gray-200 break-words">
+                        {patient.firstName} {patient.lastName}
                       </p>
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">ID: {patient.patientId}</p>
+                        {patient.lastVisit && (
+                          <>
+                            <span className="text-gray-400 hidden sm:inline">•</span>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center">
+                              <Clock className="w-3 h-3 mr-0.5 sm:mr-1" />
+                              {new Date(patient.lastVisit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </p>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <CheckCircle2 className="w-12 h-12 mx-auto text-health-green mb-2" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">All results reviewed!</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No pending results</p>
-                </div>
-              )
-            ) : (
-              <div className="space-y-2">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex justify-between items-center p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
-                      <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    <div className="flex-shrink-0">
+                      {getStatusBadge(patient.status)}
                     </div>
-                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
                   </div>
-                ))}
-              </div>
-            )}
+                ))
+              ) : (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between py-2">
+                      <div>
+                        <div className="h-4 bg-gray-200 rounded w-24 mb-1 animate-pulse"></div>
+                        <div className="h-3 bg-gray-200 rounded w-16 animate-pulse"></div>
+                      </div>
+                      <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

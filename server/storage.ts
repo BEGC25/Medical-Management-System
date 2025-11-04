@@ -1267,7 +1267,7 @@ export class MemStorage implements IStorage {
       })
       .from(labTests)
       .innerJoin(treatments, eq(labTests.encounterId, treatments.id))
-      .innerJoin(patients, eq(treatments.patientId, patients.id))
+      .innerJoin(patients, eq(treatments.patientId, patients.patientId))
       .where(
         and(
           eq(labTests.status, 'completed'),
@@ -1288,7 +1288,7 @@ export class MemStorage implements IStorage {
       })
       .from(xrays)
       .innerJoin(treatments, eq(xrays.encounterId, treatments.id))
-      .innerJoin(patients, eq(treatments.patientId, patients.id))
+      .innerJoin(patients, eq(treatments.patientId, patients.patientId))
       .where(
         and(
           eq(xrays.status, 'completed'),
@@ -1309,7 +1309,7 @@ export class MemStorage implements IStorage {
       })
       .from(ultrasounds)
       .innerJoin(treatments, eq(ultrasounds.encounterId, treatments.id))
-      .innerJoin(patients, eq(treatments.patientId, patients.id))
+      .innerJoin(patients, eq(treatments.patientId, patients.patientId))
       .where(
         and(
           eq(ultrasounds.status, 'completed'),
