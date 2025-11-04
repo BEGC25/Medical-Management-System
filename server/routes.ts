@@ -2047,10 +2047,7 @@ router.post("/api/order-lines", async (req: any, res) => {
         category: "general",
         tests: JSON.stringify([result.data.description]),
         priority: "routine",
-        requestedBy: req.user?.username || req.user?.email || "Doctor",
         requestedDate: new Date().toISOString(),
-        status: "pending",
-        paymentStatus: "unpaid",
       });
       relatedId = labTest.testId;
     } else if (result.data.relatedType === "xray") {
@@ -2059,10 +2056,7 @@ router.post("/api/order-lines", async (req: any, res) => {
         patientId: encounter.patientId,
         examType: result.data.description,
         bodyPart: result.data.description,
-        requestedBy: req.user?.username || req.user?.email || "Doctor",
         requestedDate: new Date().toISOString(),
-        status: "pending",
-        paymentStatus: "unpaid",
       });
       relatedId = xrayExam.examId;
     } else if (result.data.relatedType === "ultrasound") {
@@ -2070,11 +2064,7 @@ router.post("/api/order-lines", async (req: any, res) => {
       const ultrasoundExam = await storage.createUltrasoundExam({
         patientId: encounter.patientId,
         examType: result.data.description,
-        examinationType: result.data.description,
-        requestedBy: req.user?.username || req.user?.email || "Doctor",
         requestedDate: new Date().toISOString(),
-        status: "pending",
-        paymentStatus: "unpaid",
       });
       relatedId = ultrasoundExam.examId;
     }

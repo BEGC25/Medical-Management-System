@@ -767,6 +767,21 @@ export default function Laboratory() {
     setEditTests(tests);
     setEditPriority(test.priority);
     setEditClinicalInfo(test.clinicalInfo || "");
+    
+    // Set the correct category so checkboxes show the right tests
+    if (test.category && test.category in commonTests) {
+      setEditCategory(test.category as keyof typeof commonTests);
+    } else if (tests.length > 0) {
+      // Fallback: Find category by checking which category contains the first test
+      const firstTest = tests[0];
+      for (const [category, testList] of Object.entries(commonTests)) {
+        if (testList.includes(firstTest)) {
+          setEditCategory(category as keyof typeof commonTests);
+          break;
+        }
+      }
+    }
+    
     setEditModalOpen(true);
   };
 
