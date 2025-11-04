@@ -656,6 +656,8 @@ export default function Patients() {
             <div className="text-center py-8 text-gray-500">
               {showSearch && searchQuery
                 ? "No patients found matching your search"
+                : dateFilter === "custom" && !customStartDate && !customEndDate
+                ? "📅 Select start and end dates above to view patients in custom range"
                 : "No patients found for this date range"}
             </div>
           ) : (

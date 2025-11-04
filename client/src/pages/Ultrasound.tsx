@@ -686,7 +686,11 @@ export default function Ultrasound() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No pending ultrasound examinations</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  {dateFilter === "custom" && !customStartDate && !customEndDate
+                    ? "📅 Select start and end dates above to view exams in custom range"
+                    : "No pending ultrasound examinations"}
+                </p>
               )}
             </div>
           </CardContent>
@@ -732,7 +736,11 @@ export default function Ultrasound() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No completed ultrasound examinations</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  {dateFilter === "custom" && !customStartDate && !customEndDate
+                    ? "📅 Select start and end dates above to view exams in custom range"
+                    : "No completed ultrasound examinations"}
+                </p>
               )}
             </div>
           </CardContent>

@@ -970,7 +970,11 @@ export default function Laboratory() {
                   );
                 })
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No pending tests</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  {dateFilter === "custom" && !customStartDate && !customEndDate
+                    ? "📅 Select start and end dates above to view tests in custom range"
+                    : "No pending tests"}
+                </p>
               )}
             </div>
           </CardContent>
@@ -1091,7 +1095,11 @@ export default function Laboratory() {
                   );
                 })
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No completed lab tests</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  {dateFilter === "custom" && !customStartDate && !customEndDate
+                    ? "📅 Select start and end dates above to view tests in custom range"
+                    : "No completed lab tests"}
+                </p>
               )}
             </div>
           </CardContent>

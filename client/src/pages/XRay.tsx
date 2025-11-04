@@ -696,7 +696,11 @@ export default function XRay() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No pending X-ray examinations</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  {dateFilter === "custom" && !customStartDate && !customEndDate
+                    ? "📅 Select start and end dates above to view exams in custom range"
+                    : "No pending X-ray examinations"}
+                </p>
               )}
             </div>
           </CardContent>
@@ -742,7 +746,11 @@ export default function XRay() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No completed X-ray examinations</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  {dateFilter === "custom" && !customStartDate && !customEndDate
+                    ? "📅 Select start and end dates above to view exams in custom range"
+                    : "No completed X-ray examinations"}
+                </p>
               )}
             </div>
           </CardContent>
