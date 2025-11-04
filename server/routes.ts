@@ -661,6 +661,82 @@ router.put("/api/lab-tests/:testId", async (req, res) => {
   }
 });
 
+// Cancel pending lab test (soft delete for audit trail)
+router.delete("/api/lab-tests/:testId", async (req, res) => {
+  try {
+    const { testId } = req.params;
+    
+    // Get all lab tests and find this one
+    const allTests = await storage.getLabTests();
+    const labTest = allTests.find(t => t.testId === testId);
+    
+    if (!labTest) {
+      return res.status(404).json({ error: "Lab test not found" });
+    }
+    
+    // Only allow cancelling pending tests
+    if (labTest.status !== "pending") {
+      return res.status(400).json({ error: "Can only cancel pending tests" });
+    }
+    
+    // Check permissions: admin or doctor only
+    const allowedRoles = ["admin", "doctor"];
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Only doctors and admins can cancel lab tests" });
+    }
+    
+    // Mark as cancelled instead of hard delete
+    const cancelledTest = await storage.updateLabTest(testId, {
+      status: "cancelled",
+    });
+    
+    res.json({ message: "Lab test cancelled successfully", labTest: cancelledTest });
+  } catch (error) {
+    console.error("Error cancelling lab test:", error);
+    res.status(500).json({ error: "Failed to cancel lab test" });
+  }
+});
+
+// Edit pending lab test (modify test selections)
+router.patch("/api/lab-tests/:testId", async (req, res) => {
+  try {
+    const { testId } = req.params;
+    const { tests, priority, clinicalInfo } = req.body;
+    
+    // Get all lab tests and find this one
+    const allTests = await storage.getLabTests();
+    const labTest = allTests.find(t => t.testId === testId);
+    
+    if (!labTest) {
+      return res.status(404).json({ error: "Lab test not found" });
+    }
+    
+    // Only allow editing pending tests
+    if (labTest.status !== "pending") {
+      return res.status(400).json({ error: "Can only edit pending tests" });
+    }
+    
+    // Check permissions: admin or doctor only
+    const allowedRoles = ["admin", "doctor"];
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Only doctors and admins can edit lab tests" });
+    }
+    
+    // Update the test
+    const updateData: any = {};
+    if (tests !== undefined) updateData.tests = tests;
+    if (priority !== undefined) updateData.priority = priority;
+    if (clinicalInfo !== undefined) updateData.clinicalInfo = clinicalInfo;
+    
+    const updatedTest = await storage.updateLabTest(testId, updateData);
+    
+    res.json(updatedTest);
+  } catch (error) {
+    console.error("Error editing lab test:", error);
+    res.status(500).json({ error: "Failed to edit lab test" });
+  }
+});
+
 /* -------------------------------- X-Ray Exams ------------------------------- */
 
 router.get("/api/xray-exams", async (req, res) => {
