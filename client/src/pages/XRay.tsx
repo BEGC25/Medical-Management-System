@@ -401,110 +401,64 @@ export default function XRay() {
 
   /* --------------------------- Render ---------------------------- */
 
+  const Chip = ({ tone, children }: { tone: string; children: React.ReactNode }) => (
+    <span className={cx(
+      "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+      tone === "slate" && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+      tone === "emerald" && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+    )}>
+      {children}
+    </span>
+  );
+
   const ExamCard = ({ exam, patient }: { exam: XrayExam; patient?: Patient | null }) => {
     const isPaid = exam.paymentStatus === 'paid';
     const canPerform = exam.status === 'completed' || isPaid;
+    const isCompleted = exam.status === 'completed';
     
     return (
-      <Card
+      <div
         className={cx(
-          "transition-all cursor-pointer shadow-md hover:shadow-xl border",
-          exam.status === 'pending' && !isPaid && "border-red-300 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-900/10",
-          exam.status === 'pending' && isPaid && "border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10",
-          exam.status === 'completed' && "border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-900/10",
+          "rounded-lg p-3 cursor-pointer transition-all border shadow-md hover:shadow-xl",
+          isPaid && !isCompleted && "border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 hover:from-green-100 hover:to-green-200/50 dark:hover:from-green-900/30 dark:hover:to-green-900/20",
+          !isPaid && !isCompleted && "border-red-300 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-900/10 hover:from-red-100 hover:to-red-200/50 dark:hover:from-red-900/30 dark:hover:to-red-900/20",
+          isCompleted && "border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 hover:from-green-100 hover:to-green-200/50 dark:hover:from-green-900/30 dark:hover:to-green-900/20",
           !canPerform && "opacity-75"
         )}
         onClick={() => canPerform && handleXrayExamSelect(exam)}
         style={!canPerform ? { cursor: "not-allowed" } : {}}
         data-testid={`card-xray-${exam.examId}`}
       >
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <h3 className="font-semibold text-gray-900 dark:text-white" data-testid={`text-exam-id-${exam.examId}`}>
-                  {exam.examId}
-                </h3>
-                <Badge
-                  variant={exam.status === 'pending' ? 'secondary' : 'default'}
-                  className={
-                    exam.status === 'pending'
-                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 font-semibold shadow-sm border border-orange-200 dark:border-orange-800'
-                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-semibold shadow-sm border border-green-200 dark:border-green-800'
-                  }
-                  data-testid={`badge-status-${exam.examId}`}
-                >
-                  {exam.status === 'pending' ? (
-                    <>
-                      <Clock className="w-3 h-3 mr-1" />
-                      Pending
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-3 h-3 mr-1" />
-                      Completed
-                    </>
-                  )}
-                </Badge>
-                {exam.status === 'pending' && (
-                  <Badge
-                    variant={isPaid ? 'default' : 'destructive'}
-                    className={
-                      isPaid
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-semibold shadow-sm border border-emerald-200 dark:border-emerald-800'
-                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 font-semibold shadow-sm border border-rose-200 dark:border-rose-800'
-                    }
-                    data-testid={`badge-payment-${exam.examId}`}
-                  >
-                    {isPaid ? 'Paid' : 'UNPAID'}
-                  </Badge>
-                )}
-              </div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300" data-testid={`text-patient-name-${exam.examId}`}>
-                {patient ? fullName(patient) : exam.patientId}
-              </p>
-              {patient && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {patient.age} • {patient.gender}
-                </p>
-              )}
-              {exam.status === 'pending' && !isPaid && (
-                <p className="text-xs text-red-700 dark:text-red-400 mt-2">
-                  ⚠️ Patient must pay at reception before exam can be performed
-                </p>
+        <div className="flex items-center justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-semibold truncate">{patient ? fullName(patient) : exam.patientId}</div>
+              <Chip tone="slate">{exam.examId}</Chip>
+            </div>
+            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              {timeAgo(exam.requestedDate)}
+              {isCompleted && (exam as any).reportDate && (
+                <> • Completed {timeAgo((exam as any).reportDate)}</>
               )}
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </div>
-
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Exam Type:</span>
-              <span className="font-medium text-gray-900 dark:text-white capitalize">
-                {exam.examType} X-Ray
-              </span>
+            <div className="mt-1 text-xs text-gray-700 dark:text-gray-300">
+              <span className="font-medium">Exam Type:</span> {exam.examType}
+              {exam.bodyPart && <> • <span className="font-medium">Body Part:</span> {exam.bodyPart}</>}
             </div>
-            {exam.bodyPart && (
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Body Part:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{exam.bodyPart}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Requested:</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {new Date(exam.requestedDate).toLocaleDateString()}
-              </span>
-            </div>
-            {exam.status === 'pending' && (
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Waiting:</span>
-                <span className="font-medium text-orange-600 dark:text-orange-400">{timeAgo(exam.createdAt)}</span>
+            {!isPaid && !isCompleted && (
+              <div className="text-xs text-red-700 mt-2">
+                ⚠️ Patient must pay at reception before exam can be performed
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+          <div className="shrink-0 flex items-center gap-2">
+            {isCompleted && <Chip tone="emerald">Completed</Chip>}
+            {!isCompleted && isPaid && <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800">Pending</Badge>}
+            {!isCompleted && !isPaid && <Badge variant="destructive">UNPAID</Badge>}
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </div>
+        </div>
+      </div>
     );
   };
 
