@@ -474,11 +474,16 @@ export default function Laboratory() {
         const monthAgo = new Date(today.getTime() - 30 * 86400000);
         return { start: monthAgo, end: new Date() };
       }
-      case "custom":
+      case "custom": {
+        // Default to today if no dates selected yet
+        if (!customStartDate && !customEndDate) {
+          return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+        }
         return {
-          start: customStartDate || new Date(0),
+          start: customStartDate || today,
           end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
         };
+      }
       default:
         return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
     }
