@@ -455,47 +455,55 @@ export default function Laboratory() {
 
   const { data: allLabTests = [] } = useLabTests();
   
-  // Calculate date range based on filter
+  // Helper to format date as YYYY-MM-DD
+  const formatDate = (d: Date): string => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+  
+  // Calculate date range based on filter (returns date strings for comparison)
   const getDateRange = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     switch (dateFilter) {
       case "today":
-        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+        return { start: formatDate(today), end: formatDate(today) };
       case "yesterday": {
         const yesterday = new Date(today.getTime() - 86400000);
-        return { start: yesterday, end: new Date(yesterday.getTime() + 86400000 - 1) };
+        return { start: formatDate(yesterday), end: formatDate(yesterday) };
       }
       case "last7days": {
         const weekAgo = new Date(today.getTime() - 7 * 86400000);
-        return { start: weekAgo, end: new Date() };
+        return { start: formatDate(weekAgo), end: formatDate(today) };
       }
       case "last30days": {
         const monthAgo = new Date(today.getTime() - 30 * 86400000);
-        return { start: monthAgo, end: new Date() };
+        return { start: formatDate(monthAgo), end: formatDate(today) };
       }
       case "custom": {
         // Default to today if no dates selected yet
         if (!customStartDate && !customEndDate) {
-          return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+          return { start: formatDate(today), end: formatDate(today) };
         }
         return {
-          start: customStartDate || today,
-          end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
+          start: formatDate(customStartDate || today),
+          end: formatDate(customEndDate || today),
         };
       }
       default:
-        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+        return { start: formatDate(today), end: formatDate(today) };
     }
   };
   
   const dateRange = getDateRange();
   
-  // First filter by date only
+  // First filter by date only (compare date strings to avoid timezone issues)
   const dateFilteredTests = allLabTests.filter((t) => {
-    const testDate = new Date(t.requestedDate);
-    return testDate >= dateRange.start && testDate <= dateRange.end;
+    const testDateStr = t.requestedDate?.split("T")[0] || ""; // Extract YYYY-MM-DD
+    return testDateStr >= dateRange.start && testDateStr <= dateRange.end;
   });
   
   const dateFilteredPending = dateFilteredTests.filter((t) => t.status === "pending");
