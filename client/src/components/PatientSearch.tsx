@@ -156,7 +156,7 @@ export default function PatientSearch({
                 const displayDate = (effectiveMode === "date" || effectiveMode === "today") && selectedDate
                   ? selectedDate
                   : effectiveMode === "dateRange"
-                  ? (p.lastVisit || p.lastEncounterDate)
+                  ? (p.dateOfService || p.lastVisit || p.lastEncounterDate)
                   : (p.lastVisit || p.lastEncounterDate || p.updatedAt || p.createdAt);
 
                 return (
