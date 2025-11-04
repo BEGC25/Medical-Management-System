@@ -1165,19 +1165,7 @@ export class MemStorage implements IStorage {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Helper to calculate lab test total cost
-      const calculateLabCost = (testsJson: string) => {
-        try {
-          const tests = JSON.parse(testsJson);
-          // Each lab test typically costs 50-200 SSP depending on complexity
-          // This is a simplified estimate - in production, join with services table
-          return Array.isArray(tests) ? tests.length * 100 : 100;
-        } catch {
-          return 100; // Default cost if parsing fails
-        }
-      };
-      
-      // Get unpaid lab tests from today
+      // Get unpaid lab tests from today WITH ACTUAL PRICES from order_lines
       const unpaidLabs = await db.select({
         patientId: labTests.patientId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
@@ -1186,19 +1174,24 @@ export class MemStorage implements IStorage {
         orderType: sql<string>`'lab'`,
         createdAt: labTests.requestedDate,
         testId: labTests.testId,
+        amount: orderLines.totalPrice,
       })
       .from(labTests)
       .innerJoin(patients, and(
         eq(labTests.patientId, patients.patientId),
         eq(patients.isDeleted, 0)
       ))
+      .leftJoin(orderLines, and(
+        eq(orderLines.relatedId, labTests.testId),
+        sql`${orderLines.relatedType} IN ('lab', 'lab_test')`
+      ))
       .where(and(
         eq(labTests.paymentStatus, 'unpaid'),
-        like(labTests.requestedDate, `${today}%`)
+        sql`DATE(${labTests.requestedDate}) = ${today}`
       ))
       .limit(10);
       
-      // Get unpaid X-rays from today
+      // Get unpaid X-rays from today WITH ACTUAL PRICES from order_lines
       const unpaidXrays = await db.select({
         patientId: xrayExams.patientId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
@@ -1206,19 +1199,24 @@ export class MemStorage implements IStorage {
         orderType: sql<string>`'xray'`,
         createdAt: xrayExams.requestedDate,
         examId: xrayExams.examId,
+        amount: orderLines.totalPrice,
       })
       .from(xrayExams)
       .innerJoin(patients, and(
         eq(xrayExams.patientId, patients.patientId),
         eq(patients.isDeleted, 0)
       ))
+      .leftJoin(orderLines, and(
+        eq(orderLines.relatedId, xrayExams.examId),
+        sql`${orderLines.relatedType} IN ('xray', 'xray_exam')`
+      ))
       .where(and(
         eq(xrayExams.paymentStatus, 'unpaid'),
-        like(xrayExams.requestedDate, `${today}%`)
+        sql`DATE(${xrayExams.requestedDate}) = ${today}`
       ))
       .limit(10);
       
-      // Get unpaid ultrasounds from today
+      // Get unpaid ultrasounds from today WITH ACTUAL PRICES from order_lines
       const unpaidUltrasounds = await db.select({
         patientId: ultrasoundExams.patientId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
@@ -1226,47 +1224,43 @@ export class MemStorage implements IStorage {
         orderType: sql<string>`'ultrasound'`,
         createdAt: ultrasoundExams.requestedDate,
         examId: ultrasoundExams.examId,
+        amount: orderLines.totalPrice,
       })
       .from(ultrasoundExams)
       .innerJoin(patients, and(
         eq(ultrasoundExams.patientId, patients.patientId),
         eq(patients.isDeleted, 0)
       ))
+      .leftJoin(orderLines, and(
+        eq(orderLines.relatedId, ultrasoundExams.examId),
+        sql`${orderLines.relatedType} IN ('ultrasound', 'ultrasound_exam')`
+      ))
       .where(and(
         eq(ultrasoundExams.paymentStatus, 'unpaid'),
-        like(ultrasoundExams.requestedDate, `${today}%`)
+        sql`DATE(${ultrasoundExams.requestedDate}) = ${today}`
       ))
       .limit(10);
       
-      // Get all services to map names to prices
-      const allServices = await db.select().from(services).where(eq(services.isActive, 1));
-      const serviceMap = new Map(allServices.map(s => [s.name.toLowerCase(), s.price]));
-      
-      // Calculate amounts and combine
+      // Format labs with real prices
       const labsWithAmounts = unpaidLabs.map(lab => ({
         ...lab,
-        amount: calculateLabCost(lab.tests || '[]'),
+        amount: lab.amount || 0,
         id: lab.testId,
       }));
       
-      const xraysWithAmounts = unpaidXrays.map(xray => {
-        // Try to find price in services by exam type
-        const price = serviceMap.get(xray.serviceDescription.toLowerCase()) || 150;
-        return {
-          ...xray,
-          amount: price,
-          id: xray.examId,
-        };
-      });
+      // Format X-rays with real prices
+      const xraysWithAmounts = unpaidXrays.map(xray => ({
+        ...xray,
+        amount: xray.amount || 0,
+        id: xray.examId,
+      }));
       
-      const ultrasoundsWithAmounts = unpaidUltrasounds.map(us => {
-        const price = serviceMap.get(us.serviceDescription.toLowerCase()) || 200;
-        return {
-          ...us,
-          amount: price,
-          id: us.examId,
-        };
-      });
+      // Format ultrasounds with real prices
+      const ultrasoundsWithAmounts = unpaidUltrasounds.map(us => ({
+        ...us,
+        amount: us.amount || 0,
+        id: us.examId,
+      }));
       
       // Combine and sort by date, then limit
       const allUnpaid = [...labsWithAmounts, ...xraysWithAmounts, ...ultrasoundsWithAmounts]
