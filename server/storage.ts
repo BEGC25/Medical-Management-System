@@ -1424,20 +1424,68 @@ export class MemStorage implements IStorage {
         );
       }
       
-      // Convert to array and sort by most recent result
-      const sortedResults = Array.from(patientResults.values())
-        .map(entry => ({
+      // For each patient, count TOTAL ORDERED tests vs COMPLETED tests
+      const resultsWithProgress = Array.from(patientResults.values()).map(entry => {
+        const patientId = entry.patientId;
+        
+        // Count ordered diagnostic tests for this patient TODAY
+        const orderedTests = allOrderLines.filter(ol => {
+          if (!ol.relatedType || !ol.relatedId) return false;
+          
+          // Get the patient from the related test
+          let testPatientId = null;
+          if (ol.relatedType === 'lab' || ol.relatedType === 'lab_test') {
+            const lab = completedLabs.find(l => l.testId === ol.relatedId);
+            if (!lab) {
+              // Check pending labs too
+              const allLabs = [...completedLabs];
+              const found = allLabs.find(l => l.testId === ol.relatedId);
+              testPatientId = found?.patientId;
+            } else {
+              testPatientId = lab.patientId;
+            }
+          } else if (ol.relatedType === 'xray' || ol.relatedType === 'xray_exam') {
+            const xray = completedXrays.find(x => x.examId === ol.relatedId);
+            testPatientId = xray?.patientId;
+          } else if (ol.relatedType === 'ultrasound' || ol.relatedType === 'ultrasound_exam') {
+            const us = completedUltrasounds.find(u => u.examId === ol.relatedId);
+            testPatientId = us?.patientId;
+          }
+          
+          return testPatientId === patientId && 
+                 ['lab', 'lab_test', 'xray', 'xray_exam', 'ultrasound', 'ultrasound_exam'].includes(ol.relatedType);
+        });
+        
+        const totalOrdered = orderedTests.length || entry.results.length; // Fallback to completed count if no orders
+        const completedCount = entry.results.length;
+        const allComplete = completedCount >= totalOrdered;
+        
+        return {
           encounterId: entry.encounterId,
           patientId: entry.patientId,
           firstName: entry.firstName,
           lastName: entry.lastName,
-          resultCount: entry.results.length,
+          resultCount: completedCount,
+          totalOrdered: totalOrdered,
+          allComplete: allComplete,
+          completionStatus: allComplete ? 'complete' : 'partial',
           resultTypes: [...new Set(entry.results.map(r => r.type))],
           resultSummary: entry.results.map(r => r.testName).slice(0, 3).join(', '),
           hasMoreResults: entry.results.length > 3,
           latestTime: entry.latestTime,
-        }))
-        .sort((a, b) => b.latestTime - a.latestTime)
+        };
+      });
+      
+      // Sort: All complete first, then by most recent
+      const sortedResults = resultsWithProgress
+        .sort((a, b) => {
+          // Priority 1: All complete comes first
+          if (a.allComplete !== b.allComplete) {
+            return a.allComplete ? -1 : 1;
+          }
+          // Priority 2: Most recent
+          return b.latestTime - a.latestTime;
+        })
         .slice(0, limit);
       
       return sortedResults;

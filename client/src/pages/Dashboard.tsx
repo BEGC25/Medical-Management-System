@@ -240,9 +240,16 @@ export default function Dashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <Badge variant="outline" className="text-[10px] font-bold">
-                              {result.resultCount} {result.resultCount === 1 ? 'test' : 'tests'}
-                            </Badge>
+                            {result.allComplete ? (
+                              <Badge className="text-[10px] font-bold bg-health-green text-white flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                All {result.totalOrdered} complete
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] font-bold text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700">
+                                {result.resultCount} of {result.totalOrdered} {result.totalOrdered === 1 ? 'test' : 'tests'}
+                              </Badge>
+                            )}
                             <ArrowRight className={`w-4 h-4 ${iconInfo.color} group-hover:translate-x-1 transition-transform`} />
                           </div>
                         </div>
