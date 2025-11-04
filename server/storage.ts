@@ -965,20 +965,43 @@ export class MemStorage implements IStorage {
           )
         : undefined;
 
-      // --- MODIFIED: Add isDeleted filter to patient count ---
-      const totalPatients = await db.select({ count: count() }).from(patients).where(eq(patients.isDeleted, 0));
-      const totalTreatments = treatmentDateFilter
-        ? await db.select({ count: count() }).from(treatments).where(treatmentDateFilter)
-        : await db.select({ count: count() }).from(treatments);
-      const totalLabTests = labDateFilter
-        ? await db.select({ count: count() }).from(labTests).where(labDateFilter)
-        : await db.select({ count: count() }).from(labTests);
-      const totalXrays = xrayDateFilter
-        ? await db.select({ count: count() }).from(xrayExams).where(xrayDateFilter)
-        : await db.select({ count: count() }).from(xrayExams);
-      const totalUltrasounds = ultrasoundDateFilter
-        ? await db.select({ count: count() }).from(ultrasoundExams).where(ultrasoundDateFilter)
-        : await db.select({ count: count() }).from(ultrasoundExams);
+      // DEFAULT TO TODAY if no date range provided
+      const today = new Date().toISOString().split('T')[0];
+      const actualFromDate = fromDate || today;
+      const actualToDate = toDate || today;
+      
+      // Count patients created today (or in date range)
+      const patientDateFilter = and(
+        eq(patients.isDeleted, 0),
+        sql`DATE(${patients.createdAt}) >= ${actualFromDate}`,
+        sql`DATE(${patients.createdAt}) <= ${actualToDate}`
+      );
+      
+      const totalPatients = await db.select({ count: count() }).from(patients).where(patientDateFilter);
+      const totalTreatments = await db.select({ count: count() }).from(treatments).where(
+        and(
+          gte(treatments.visitDate, actualFromDate),
+          lte(treatments.visitDate, actualToDate)
+        )
+      );
+      const totalLabTests = await db.select({ count: count() }).from(labTests).where(
+        and(
+          sql`DATE(${labTests.requestedDate}) >= ${actualFromDate}`,
+          sql`DATE(${labTests.requestedDate}) <= ${actualToDate}`
+        )
+      );
+      const totalXrays = await db.select({ count: count() }).from(xrayExams).where(
+        and(
+          sql`DATE(${xrayExams.requestedDate}) >= ${actualFromDate}`,
+          sql`DATE(${xrayExams.requestedDate}) <= ${actualToDate}`
+        )
+      );
+      const totalUltrasounds = await db.select({ count: count() }).from(ultrasoundExams).where(
+        and(
+          sql`DATE(${ultrasoundExams.requestedDate}) >= ${actualFromDate}`,
+          sql`DATE(${ultrasoundExams.requestedDate}) <= ${actualToDate}`
+        )
+      );
 
       // Get pending counts (always unfiltered for current pending items)
       const pendingLabTests = await db.select({ count: count() }).from(labTests)
@@ -1067,20 +1090,24 @@ export class MemStorage implements IStorage {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Count open encounters with no treatments yet (waiting for doctor)
+      // Count TODAY's open encounters with no treatments yet (waiting for doctor)
       const waitingForDoctor = await db.select({ count: sql<number>`count(*)` })
         .from(encounters)
         .leftJoin(treatments, eq(encounters.encounterId, treatments.encounterId))
         .where(and(
           eq(encounters.status, 'open'),
-          isNull(treatments.id)
+          isNull(treatments.id),
+          sql`DATE(${encounters.createdAt}) = ${today}`
         ));
       
-      // Count open encounters with treatments (in treatment/consultation)
+      // Count TODAY's open encounters with treatments (in treatment/consultation)
       const inTreatment = await db.select({ count: sql<number>`count(distinct ${encounters.encounterId})` })
         .from(encounters)
         .innerJoin(treatments, eq(encounters.encounterId, treatments.encounterId))
-        .where(eq(encounters.status, 'open'));
+        .where(and(
+          eq(encounters.status, 'open'),
+          sql`DATE(${encounters.createdAt}) = ${today}`
+        ));
       
       // Count pending lab tests ordered today
       const waitingForLab = await db.select({ count: sql<number>`count(*)` })
@@ -1255,6 +1282,8 @@ export class MemStorage implements IStorage {
   
   async getResultsReadyForReview(limit: number = 10) {
     try {
+      const today = new Date().toISOString().split('T')[0];
+      
       // Get all non-deleted patients as a lookup map
       const allPatients = await db.select().from(patients).where(eq(patients.isDeleted, 0));
       const patientMap = new Map();
@@ -1262,39 +1291,34 @@ export class MemStorage implements IStorage {
         patientMap.set(p.patientId, p);
       }
       
-      // Get all open encounters (not closed) - these are active patient visits
-      const openEncounters = await db.select()
-        .from(encounters)
-        .where(or(
-          eq(encounters.status, 'open'),
-          eq(encounters.status, 'ready_to_bill')
-        ));
-      
-      console.log('[RESULTS_READY] Open encounters:', openEncounters.length);
-      
-      const openEncounterIds = new Set(openEncounters.map(e => e.encounterId));
-      
-      // Get ALL completed lab tests (not just today)
+      // Get TODAY's completed lab tests
       const completedLabs = await db.select()
         .from(labTests)
-        .where(eq(labTests.status, 'completed'));
+        .where(and(
+          eq(labTests.status, 'completed'),
+          sql`DATE(${labTests.completedDate}) = ${today}`
+        ));
       
-      console.log('[RESULTS_READY] All completed labs:', completedLabs.length);
-      
-      // Get ALL completed X-rays (not just today)
+      // Get TODAY's completed X-rays
       const completedXrays = await db.select()
         .from(xrayExams)
-        .where(eq(xrayExams.status, 'completed'));
+        .where(and(
+          eq(xrayExams.status, 'completed'),
+          sql`DATE(${xrayExams.reportDate}) = ${today}`
+        ));
       
-      // Get ALL completed ultrasounds (not just today)
+      // Get TODAY's completed ultrasounds
       const completedUltrasounds = await db.select()
         .from(ultrasoundExams)
-        .where(eq(ultrasoundExams.status, 'completed'));
+        .where(and(
+          eq(ultrasoundExams.status, 'completed'),
+          sql`DATE(${ultrasoundExams.reportDate}) = ${today}`
+        ));
       
-      // Get all order lines to link tests to encounters
+      // Get all order lines to link tests to encounters (if available)
       const allOrderLines = await db.select().from(orderLines);
       
-      // Create mappings: testId -> encounterId
+      // Create mappings: testId -> encounterId (some tests may not have order lines)
       const labTestToEncounter = new Map();
       const xrayToEncounter = new Map();
       const ultrasoundToEncounter = new Map();
@@ -1309,112 +1333,115 @@ export class MemStorage implements IStorage {
         }
       }
       
-      // Group results by encounter to show one entry per patient visit
-      const encounterResults = new Map();
+      // Group results by patient (not encounter, since some tests may not have encounters)
+      const patientResults = new Map();
       
       // Process labs
       for (const lab of completedLabs) {
-        const encId = labTestToEncounter.get(lab.testId);
-        if (!encId || !openEncounterIds.has(encId)) continue;
-        
         const patient = patientMap.get(lab.patientId);
         if (!patient) continue;
         
-        if (!encounterResults.has(encId)) {
-          encounterResults.set(encId, {
+        const encId = labTestToEncounter.get(lab.testId) || null;
+        const key = `${lab.patientId}`;
+        
+        if (!patientResults.has(key)) {
+          patientResults.set(key, {
             encounterId: encId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
             results: [],
-            latestTime: new Date(lab.createdAt).getTime(),
+            latestTime: new Date(lab.completedDate || lab.createdAt).getTime(),
           });
         }
         
         const testNames = JSON.parse(lab.tests);
-        encounterResults.get(encId).results.push({
-          type: 'Lab Test',
+        patientResults.get(key).results.push({
+          type: 'Lab',
+          icon: 'TestTube',
           testName: testNames.join(', '),
-          time: lab.createdAt,
+          time: lab.completedDate || lab.createdAt,
         });
-        encounterResults.get(encId).latestTime = Math.max(
-          encounterResults.get(encId).latestTime,
-          new Date(lab.createdAt).getTime()
+        patientResults.get(key).latestTime = Math.max(
+          patientResults.get(key).latestTime,
+          new Date(lab.completedDate || lab.createdAt).getTime()
         );
       }
       
       // Process X-rays
       for (const xray of completedXrays) {
-        const encId = xrayToEncounter.get(xray.examId);
-        if (!encId || !openEncounterIds.has(encId)) continue;
-        
         const patient = patientMap.get(xray.patientId);
         if (!patient) continue;
         
-        if (!encounterResults.has(encId)) {
-          encounterResults.set(encId, {
+        const encId = xrayToEncounter.get(xray.examId) || null;
+        const key = `${xray.patientId}`;
+        
+        if (!patientResults.has(key)) {
+          patientResults.set(key, {
             encounterId: encId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
             results: [],
-            latestTime: new Date(xray.createdAt).getTime(),
+            latestTime: new Date(xray.reportDate || xray.createdAt).getTime(),
           });
         }
         
-        encounterResults.get(encId).results.push({
+        patientResults.get(key).results.push({
           type: 'X-Ray',
-          testName: xray.examination,
-          time: xray.createdAt,
+          icon: 'Scan',
+          testName: xray.examType || 'X-Ray',
+          time: xray.reportDate || xray.createdAt,
         });
-        encounterResults.get(encId).latestTime = Math.max(
-          encounterResults.get(encId).latestTime,
-          new Date(xray.createdAt).getTime()
+        patientResults.get(key).latestTime = Math.max(
+          patientResults.get(key).latestTime,
+          new Date(xray.reportDate || xray.createdAt).getTime()
         );
       }
       
       // Process ultrasounds
       for (const us of completedUltrasounds) {
-        const encId = ultrasoundToEncounter.get(us.examId);
-        if (!encId || !openEncounterIds.has(encId)) continue;
-        
         const patient = patientMap.get(us.patientId);
         if (!patient) continue;
         
-        if (!encounterResults.has(encId)) {
-          encounterResults.set(encId, {
+        const encId = ultrasoundToEncounter.get(us.examId) || null;
+        const key = `${us.patientId}`;
+        
+        if (!patientResults.has(key)) {
+          patientResults.set(key, {
             encounterId: encId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
             results: [],
-            latestTime: new Date(us.createdAt).getTime(),
+            latestTime: new Date(us.reportDate || us.createdAt).getTime(),
           });
         }
         
-        encounterResults.get(encId).results.push({
+        patientResults.get(key).results.push({
           type: 'Ultrasound',
-          testName: us.examinationType,
-          time: us.createdAt,
+          icon: 'MonitorSpeaker',
+          testName: us.examType || 'Ultrasound',
+          time: us.reportDate || us.createdAt,
         });
-        encounterResults.get(encId).latestTime = Math.max(
-          encounterResults.get(encId).latestTime,
-          new Date(us.createdAt).getTime()
+        patientResults.get(key).latestTime = Math.max(
+          patientResults.get(key).latestTime,
+          new Date(us.reportDate || us.createdAt).getTime()
         );
       }
       
       // Convert to array and sort by most recent result
-      const sortedResults = Array.from(encounterResults.values())
-        .map(encounter => ({
-          encounterId: encounter.encounterId,
-          patientId: encounter.patientId,
-          firstName: encounter.firstName,
-          lastName: encounter.lastName,
-          resultCount: encounter.results.length,
-          resultTypes: [...new Set(encounter.results.map(r => r.type))],
-          resultSummary: encounter.results.map(r => r.testName).slice(0, 3).join(', '),
-          hasMoreResults: encounter.results.length > 3,
-          latestTime: encounter.latestTime,
+      const sortedResults = Array.from(patientResults.values())
+        .map(entry => ({
+          encounterId: entry.encounterId,
+          patientId: entry.patientId,
+          firstName: entry.firstName,
+          lastName: entry.lastName,
+          resultCount: entry.results.length,
+          resultTypes: [...new Set(entry.results.map(r => r.type))],
+          resultSummary: entry.results.map(r => r.testName).slice(0, 3).join(', '),
+          hasMoreResults: entry.results.length > 3,
+          latestTime: entry.latestTime,
         }))
         .sort((a, b) => b.latestTime - a.latestTime)
         .slice(0, limit);
