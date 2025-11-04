@@ -138,11 +138,10 @@ export default function PatientSearch({
               {patients.map((p: any, i: number) => {
                 const s = p.serviceStatus || {};
                 const due = (s.balanceToday ?? s.balance ?? 0) as number;
-                const last =
-                  p.lastVisit ||
-                  p.lastEncounterDate ||
-                  p.updatedAt ||
-                  p.createdAt;
+                // When filtering by date, show the filtered date; otherwise show last visit
+                const displayDate = (effectiveMode === "date" || effectiveMode === "today") && selectedDate
+                  ? selectedDate
+                  : (p.lastVisit || p.lastEncounterDate || p.updatedAt || p.createdAt);
 
                 return (
                   <tr
@@ -202,7 +201,7 @@ export default function PatientSearch({
                     </td>
 
                     <td className="px-4 py-3 text-sm text-right hidden lg:table-cell">
-                      {formatDate(last)}
+                      {formatDate(displayDate)}
                     </td>
 
                     {showActions && (
