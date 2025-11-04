@@ -1163,9 +1163,8 @@ export class MemStorage implements IStorage {
   
   async getOutstandingPayments(limit = 10) {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get unpaid lab tests from today WITH ACTUAL PRICES from order_lines
+      // Get ALL unpaid lab tests (not just today) WITH ACTUAL PRICES from order_lines
+      // ONLY show pending/in_progress (exclude completed)
       const unpaidLabs = await db.select({
         patientId: labTests.patientId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
@@ -1174,7 +1173,7 @@ export class MemStorage implements IStorage {
         orderType: sql<string>`'lab'`,
         createdAt: labTests.requestedDate,
         testId: labTests.testId,
-        amount: orderLines.totalPrice,
+        amount: sql<number>`COALESCE(${orderLines.totalPrice}, ${orderLines.unitPriceSnapshot} * ${orderLines.quantity}, 0)`,
       })
       .from(labTests)
       .innerJoin(patients, and(
@@ -1187,11 +1186,12 @@ export class MemStorage implements IStorage {
       ))
       .where(and(
         eq(labTests.paymentStatus, 'unpaid'),
-        sql`DATE(${labTests.requestedDate}) = ${today}`
+        sql`${labTests.status} IN ('pending', 'in_progress')`
       ))
       .limit(10);
       
-      // Get unpaid X-rays from today WITH ACTUAL PRICES from order_lines
+      // Get ALL unpaid X-rays (not just today) WITH ACTUAL PRICES from order_lines
+      // ONLY show pending/in_progress (exclude completed)
       const unpaidXrays = await db.select({
         patientId: xrayExams.patientId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
@@ -1199,7 +1199,7 @@ export class MemStorage implements IStorage {
         orderType: sql<string>`'xray'`,
         createdAt: xrayExams.requestedDate,
         examId: xrayExams.examId,
-        amount: orderLines.totalPrice,
+        amount: sql<number>`COALESCE(${orderLines.totalPrice}, ${orderLines.unitPriceSnapshot} * ${orderLines.quantity}, 0)`,
       })
       .from(xrayExams)
       .innerJoin(patients, and(
@@ -1212,11 +1212,12 @@ export class MemStorage implements IStorage {
       ))
       .where(and(
         eq(xrayExams.paymentStatus, 'unpaid'),
-        sql`DATE(${xrayExams.requestedDate}) = ${today}`
+        sql`${xrayExams.status} IN ('pending', 'in_progress')`
       ))
       .limit(10);
       
-      // Get unpaid ultrasounds from today WITH ACTUAL PRICES from order_lines
+      // Get ALL unpaid ultrasounds (not just today) WITH ACTUAL PRICES from order_lines
+      // ONLY show pending/in_progress (exclude completed)
       const unpaidUltrasounds = await db.select({
         patientId: ultrasoundExams.patientId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
@@ -1224,7 +1225,7 @@ export class MemStorage implements IStorage {
         orderType: sql<string>`'ultrasound'`,
         createdAt: ultrasoundExams.requestedDate,
         examId: ultrasoundExams.examId,
-        amount: orderLines.totalPrice,
+        amount: sql<number>`COALESCE(${orderLines.totalPrice}, ${orderLines.unitPriceSnapshot} * ${orderLines.quantity}, 0)`,
       })
       .from(ultrasoundExams)
       .innerJoin(patients, and(
@@ -1237,28 +1238,25 @@ export class MemStorage implements IStorage {
       ))
       .where(and(
         eq(ultrasoundExams.paymentStatus, 'unpaid'),
-        sql`DATE(${ultrasoundExams.requestedDate}) = ${today}`
+        sql`${ultrasoundExams.status} IN ('pending', 'in_progress')`
       ))
       .limit(10);
       
-      // Format labs with real prices
+      // Format labs (amount already calculated via COALESCE)
       const labsWithAmounts = unpaidLabs.map(lab => ({
         ...lab,
-        amount: lab.amount || 0,
         id: lab.testId,
       }));
       
-      // Format X-rays with real prices
+      // Format X-rays (amount already calculated via COALESCE)
       const xraysWithAmounts = unpaidXrays.map(xray => ({
         ...xray,
-        amount: xray.amount || 0,
         id: xray.examId,
       }));
       
-      // Format ultrasounds with real prices
+      // Format ultrasounds (amount already calculated via COALESCE)
       const ultrasoundsWithAmounts = unpaidUltrasounds.map(us => ({
         ...us,
-        amount: us.amount || 0,
         id: us.examId,
       }));
       
