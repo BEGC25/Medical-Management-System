@@ -1,7 +1,7 @@
 # Bahr El Ghazal Clinic Management System
 
 ## Overview
-This full-stack web application is an offline-capable healthcare management system for the Bahr El Ghazal Clinic in rural South Sudan. It digitalizes patient management, treatment tracking, laboratory testing with automated clinical interpretation, X-ray/ultrasound examinations, pharmacy inventory with FEFO batch tracking, service pricing, billing with granular per-test payment support, payment processing, financial reporting, and patient discharge documentation. The project aims to provide a professional, world-class enterprise healthcare solution that is also simple and clear for rural clinic staff, ultimately improving healthcare delivery in the region.
+This full-stack web application is an offline-capable healthcare management system designed for the Bahr El Ghazal Clinic in rural South Sudan. Its primary purpose is to digitalize and streamline patient management, treatment tracking, laboratory testing with automated clinical interpretation, radiology (X-ray/ultrasound) examinations, pharmacy inventory with FEFO batch tracking, service pricing, billing with granular payment support, and financial reporting. The system aims to provide a professional, enterprise-grade healthcare solution that remains simple and clear for local clinic staff, ultimately enhancing healthcare delivery in the region.
 
 ## User Preferences
 - **Communication Style**: Simple, everyday language (non-technical)
@@ -24,7 +24,7 @@ This full-stack web application is an offline-capable healthcare management syst
 ## System Architecture
 
 ### Design Philosophy
-Professional, world-class enterprise healthcare design with a medical blue theme, optimized for simplicity and clarity for rural clinic staff. The dashboard explicitly displays only today's data.
+The system features a professional, world-class enterprise healthcare design with a medical blue theme, optimized for simplicity and clarity. The dashboard explicitly displays only today's data.
 
 ### Tech Stack
 -   **Frontend**: React 18, TypeScript, Wouter, TanStack Query v5, Tailwind CSS, Radix UI, shadcn/ui, Lucide React, React Hook Form, Zod, Vite.
@@ -33,36 +33,194 @@ Professional, world-class enterprise healthcare design with a medical blue theme
 -   **Deployment**: Backend on Render, Frontend on Vercel, Database on Neon. All systems operate in UTC timezone.
 
 ### Feature Specifications
--   **Role-Based Access Control (RBAC)**: Admin, Reception, Doctor, Lab, Radiology, Pharmacy roles with specific permissions for navigation and API routes.
--   **Patient Management**: Registration, search, update, soft delete, age-centric design.
--   **Encounter/Visit Management**: Create, close, track visits.
--   **Treatment Tracking**: SOAP notes, vitals, diagnosis, treatment plans, follow-ups.
--   **Laboratory Management**: Grouped test ordering, results entry, clinical interpretation, status tracking, editing/cancelling tests from the Treatment page.
--   **Radiology (X-Ray/Ultrasound)**: Requesting exams, findings, impression entry, multi-type ultrasound support.
--   **Pharmacy Management**: Drug catalog, FEFO batch tracking, inventory, dispensing workflow, low stock alerts.
--   **Billing & Payments**: Service pricing, multi-item payment processing, receipt generation, tracking unpaid orders, payment status integration.
--   **Financial Reporting**: Dashboard statistics for daily operations, including a "Results Ready to Review" widget showing today's completed results grouped by patient/visit.
--   **Discharge Documentation**: Printable patient-friendly summaries.
--   **Offline Capability**: Local storage caching and pending sync queue.
+-   **Role-Based Access Control (RBAC)**: Supports Admin, Reception, Doctor, Lab, Radiology, Pharmacy roles with specific permissions for navigation and API routes.
+-   **Patient Management**: Comprehensive workflow for registration, search, updates, and soft deletion.
+-   **Encounter/Visit Management**: Creation, tracking, and closure of patient visits.
+-   **Treatment Tracking**: Includes SOAP notes, vitals, diagnosis, and treatment plans.
+-   **Laboratory Management**: Grouped test ordering, results entry, clinical interpretation, and status tracking.
+-   **Radiology (X-Ray/Ultrasound)**: Supports requesting exams, entering findings, and managing multi-type ultrasound reports.
+-   **Pharmacy Management**: Features drug catalog, FEFO batch tracking, inventory, dispensing, and low stock alerts.
+-   **Billing & Payments**: Manages service pricing, multi-item payment processing, receipt generation, and tracking.
+-   **Financial Reporting**: Provides dashboard statistics for daily operations, including a "Results Ready to Review" widget.
+-   **Discharge Documentation**: Generates printable patient summaries.
+-   **Offline Capability**: Utilizes local storage caching and a pending sync queue for resilience in low-connectivity environments.
 
 ### UI/UX Decisions
--   **Color Scheme**: Primary medical blue with distinct secondary colors for departments. Dark mode support.
--   **Component Library**: `shadcn/ui` for components and `Radix UI` for unstyled primitives, built on Tailwind CSS.
--   **Dashboard**: Compact, clickable stat cards (Patients Today, Active Visits, Pending Orders), patient flow monitor, outstanding payments, results ready, recent patients.
--   **Date Handling**: Dates stored as ISO strings, displayed as needed, and compared as strings for timezone robustness.
--   **Lab Test Ordering UI**: Category dropdown with checkboxes for grouping multiple tests.
+-   **Color Scheme**: Medical blue primary theme with distinct secondary colors and dark mode support.
+-   **Component Library**: `shadcn/ui` and `Radix UI` built on Tailwind CSS.
+-   **Dashboard**: Features compact, clickable stat cards, patient flow monitor, and a "Results Ready to Review" widget that strictly shows today's completed results, grouped by patient/visit.
+-   **Date Handling**: Dates are stored as ISO strings and compared as strings for timezone robustness.
+-   **Lab Test Ordering UI**: Uses a category dropdown with checkboxes for ordering multiple tests.
 
 ### System Design Choices
--   **Authentication**: Passport.js with local strategy, scrypt for password hashing, `express-session` with httpOnly cookies.
--   **Data Validation**: Zod schemas for both frontend and backend.
--   **Error Handling**: Consistent API error responses with appropriate HTTP status codes.
--   **Database**: Drizzle ORM for interactions. Custom ID generation (e.g., BGC###) for business entities.
+-   **Authentication**: Passport.js with local strategy, scrypt for password hashing, and `express-session` for secure session management.
+-   **Data Validation**: Zod schemas enforce data integrity on both frontend and backend.
+-   **Error Handling**: Standardized API error responses with appropriate HTTP status codes.
+-   **Database**: Drizzle ORM for database interactions. Custom business ID generation (e.g., BGC###) is used for key entities.
 -   **Soft Delete**: Implemented for patients and cancelled lab tests.
--   **State Management (Frontend)**: TanStack Query for data fetching, caching, and synchronization.
+-   **State Management (Frontend)**: TanStack Query manages data fetching, caching, and synchronization.
 -   **Form Management (Frontend)**: React Hook Form with Zod validation.
--   **Entity Relationships**: `order_lines` table serves as the single source of truth for linking tests/exams to encounters. Joins primarily use business IDs (`patientId`, `testId`, `examId`).
+-   **Entity Relationships**: The `order_lines` table is the single source of truth for linking tests/exams to encounters, primarily using business IDs for joins.
 
 ## External Dependencies
 -   **Backend Deployment**: Render
 -   **Frontend Deployment**: Vercel
 -   **Database**: Neon (PostgreSQL)
+---
+
+## APPENDIX A: Entity Relationship Diagram (ERD)
+
+### Quick Table Reference with Keys
+
+| Table | Primary Key | Business ID | Patient Link | Encounter Link | Notes |
+|-------|------------|-------------|--------------|----------------|-------|
+| **patients** | `id` (serial) | `patientId` (varchar, BGC###) | - | - | Soft delete via `isDeleted` |
+| **encounters** | `id` (serial) | `encounterId` (varchar, BGC-ENC###) | `patientId` | - | status: active/closed |
+| **treatments** | `id` (serial) | `treatmentId` (varchar) | `patientId` | `encounterId` (nullable) | SOAP notes |
+| **lab_tests** | `id` (serial) | `testId` (varchar, BGC-LAB###) | `patientId` | via `order_lines` | `tests` is JSON array |
+| **xray_exams** | `id` (serial) | `examId` (varchar) | `patientId` | via `order_lines` | Uses `examId` not `xrayId` |
+| **ultrasound_exams** | `id` (serial) | `examId` (varchar) | `patientId` | via `order_lines` | Uses `examId` not `ultrasoundId` |
+| **order_lines** | `id` (serial) | - | - | `encounterId` | Links tests/exams to visits |
+| **payments** | `id` (serial) | `paymentId` (varchar) | `patientId` | `encounterId` (nullable) | Receipt number |
+| **payment_items** | `id` (serial) | - | - | - | Links payments to services |
+| **pharmacy_orders** | `id` (serial) | `orderId` (varchar) | `patientId` | `encounterId` (nullable) | Drug dispensing |
+
+### Critical Join Patterns
+
+**1. Get Patient with Active Visit:**
+```sql
+SELECT p.*, e.encounterId, e.status
+FROM patients p
+LEFT JOIN encounters e ON e.patientId = p.patientId
+WHERE p.patientId = 'BGC001' AND e.status = 'active';
+```
+
+**2. Get All Orders for a Visit:**
+```sql
+SELECT ol.*, 
+       lt.tests as lab_tests,
+       xe.examType as xray_type,
+       ue.examType as ultrasound_type
+FROM order_lines ol
+LEFT JOIN lab_tests lt ON ol.relatedType = 'lab' AND ol.relatedId = lt.testId
+LEFT JOIN xray_exams xe ON ol.relatedType = 'xray' AND ol.relatedId = xe.examId
+LEFT JOIN ultrasound_exams ue ON ol.relatedType = 'ultrasound' AND ol.relatedId = ue.examId
+WHERE ol.encounterId = 'BGC-ENC001';
+```
+
+**3. Get Lab Tests with Patient Info:**
+```sql
+SELECT lt.*, p.firstName, p.lastName, p.patientId
+FROM lab_tests lt
+JOIN patients p ON lt.patientId = p.patientId
+WHERE lt.status = 'pending';
+```
+
+**Important Notes:**
+- Always join on **business IDs** (`patientId`, `testId`, `examId`), NOT serial `id`
+- `order_lines` is the **single source of truth** for linking tests/exams to encounters
+- `relatedType` uses lowercase: `'lab'`, `'xray'`, `'ultrasound'`
+- Both `xray_exams` and `ultrasound_exams` use field name `examId`
+
+---
+
+## APPENDIX B: Role-Based Access Control Matrix
+
+### Navigation Menu by Role
+
+| Route | Label | Admin | Doctor | Lab | Radiology | Reception |
+|-------|-------|:-----:|:------:|:---:|:---------:|:---------:|
+| `/` | Dashboard | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/patients` | Patients | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/treatment` | Treatment | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `/laboratory` | Laboratory | ✅ | ✅ | ✅ | ❌ | ❌ |
+| `/xray` | X-Ray | ✅ | ✅ | ❌ | ✅ | ❌ |
+| `/ultrasound` | Ultrasound | ✅ | ✅ | ❌ | ✅ | ❌ |
+| `/pharmacy` | Pharmacy | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `/payment` | Payment | ✅ | ❌ | ❌ | ❌ | ✅ |
+| `/reports/daily-cash` | Daily Cash | ✅ | ❌ | ❌ | ❌ | ✅ |
+| `/service-management` | Services | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `/users` | Users | ✅ | ❌ | ❌ | ❌ | ❌ |
+
+### API Route Permissions
+
+| Endpoint | Method | Admin | Doctor | Lab | Radiology | Reception | Notes |
+|----------|--------|:-----:|:------:|:---:|:---------:|:---------:|-------|
+| `/api/login` | POST | 🔓 | 🔓 | 🔓 | 🔓 | 🔓 | Public |
+| `/api/register` | POST | ✅ | ❌ | ❌ | ❌ | ❌ | Admin only |
+| `/api/patients/:id` | DELETE | ✅ | ❌ | ❌ | ❌ | ❌ | Soft delete |
+| `/api/lab-tests` | POST | ✅ | ✅ | ❌ | ❌ | ❌ | Order tests |
+| `/api/lab-tests/:id` | PATCH | ✅ | ✅ | ❌ | ❌ | ❌ | Edit pending |
+| `/api/lab-tests/:id` | DELETE | ✅ | ✅ | ❌ | ❌ | ❌ | Cancel pending |
+| `/api/lab-tests/:id` | PUT | ✅ | ❌ | ✅ | ❌ | ❌ | Enter results |
+| `/api/payments` | POST | ✅ | ❌ | ❌ | ❌ | ✅ | Process payment |
+
+**Legend:** ✅ = Allowed | ❌ = Forbidden | 🔓 = Public | 🔒 = Authenticated
+
+---
+
+## APPENDIX C: Environment Variables Matrix
+
+| Variable | Development | Production | Security |
+|----------|-------------|------------|----------|
+| `DATABASE_URL` | Auto (Replit) | Neon connection string | ✅ SENSITIVE |
+| `SESSION_SECRET` | dev-secret | Strong random (32+ chars) | ✅ CRITICAL - Rotate every 90 days |
+| `ALLOWED_ORIGINS` | localhost URLs | Your Vercel domain | ⚠️ Never use `*` |
+| `VITE_API_URL` | "" (same origin) | Render backend URL | ℹ️ Public (in bundle) |
+
+### Setup Instructions
+
+**Render (Backend):**
+```
+DATABASE_URL=postgresql://neondb_owner:***@ep-....neon.tech/neondb?sslmode=require
+SESSION_SECRET=7x9kL2mN8pQ4rT6vY1zA3bC5dF7gH9jK
+ALLOWED_ORIGINS=https://yourapp.vercel.app
+NODE_ENV=production
+```
+
+**Vercel (Frontend):**
+```
+VITE_API_URL=https://your-api.onrender.com
+```
+
+---
+
+## APPENDIX D: Results Ready Widget - Final Acceptance
+
+### ✅ CONFIRMED BEHAVIOR
+
+**1. Today-Only Filter:** ✅ VERIFIED
+- Widget shows ONLY results completed TODAY
+- Uses `DATE(completedDate) = ${today}` filter
+- Yesterday's results do NOT appear
+
+**2. Grouping by Visit/Patient:** ✅ VERIFIED
+- Groups by encounter (visit) when available
+- Falls back to patient grouping
+- Shows "3 Lab Tests, 1 X-Ray" not separate cards
+
+**3. Acceptance Criteria:**
+
+| Criterion | Status |
+|-----------|--------|
+| Shows only TODAY's results | ✅ PASS |
+| Groups by visit/patient | ✅ PASS |
+| Shows max 5 patients | ✅ PASS |
+| Links to treatment page | ✅ PASS |
+| Handles mixed types | ✅ PASS |
+
+### ✅ FINAL ACCEPTANCE
+
+**Status:** ACCEPTED - No changes required
+
+Implementation correctly:
+1. ✅ Follows "today only" dashboard rule
+2. ✅ Groups results by visit/patient
+3. ✅ Shows professional summary
+4. ✅ Provides navigation to treatment
+5. ✅ Handles all result types
+
+---
+
+## Last Updated
+November 4, 2025 - Added appendices: ERD, RBAC, environment vars, widget acceptance
