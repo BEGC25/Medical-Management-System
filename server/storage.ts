@@ -1255,13 +1255,6 @@ export class MemStorage implements IStorage {
   
   async getResultsReadyForReview(limit: number = 10) {
     try {
-      // Get today's date for filtering
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
-      
-      console.log('[RESULTS_READY] Today filter:', todayStr);
-      
       // Get all non-deleted patients as a lookup map
       const allPatients = await db.select().from(patients).where(eq(patients.isDeleted, 0));
       const patientMap = new Map();
@@ -1280,36 +1273,23 @@ export class MemStorage implements IStorage {
       console.log('[RESULTS_READY] Open encounters:', openEncounters.length);
       
       const openEncounterIds = new Set(openEncounters.map(e => e.encounterId));
-      const encountersByEncId = new Map();
-      for (const enc of openEncounters) {
-        encountersByEncId.set(enc.encounterId, enc);
-      }
       
-      // Get completed lab tests from today
+      // Get ALL completed lab tests (not just today)
       const completedLabs = await db.select()
         .from(labTests)
-        .where(and(
-          eq(labTests.status, 'completed'),
-          sql`DATE(${labTests.createdAt}) >= ${todayStr}`
-        ));
+        .where(eq(labTests.status, 'completed'));
       
-      console.log('[RESULTS_READY] Completed labs today:', completedLabs.length);
+      console.log('[RESULTS_READY] All completed labs:', completedLabs.length);
       
-      // Get completed X-rays from today
+      // Get ALL completed X-rays (not just today)
       const completedXrays = await db.select()
         .from(xrayExams)
-        .where(and(
-          eq(xrayExams.status, 'completed'),
-          sql`DATE(${xrayExams.createdAt}) >= ${todayStr}`
-        ));
+        .where(eq(xrayExams.status, 'completed'));
       
-      // Get completed ultrasounds from today
+      // Get ALL completed ultrasounds (not just today)
       const completedUltrasounds = await db.select()
         .from(ultrasoundExams)
-        .where(and(
-          eq(ultrasoundExams.status, 'completed'),
-          sql`DATE(${ultrasoundExams.createdAt}) >= ${todayStr}`
-        ));
+        .where(eq(ultrasoundExams.status, 'completed'));
       
       // Get all order lines to link tests to encounters
       const allOrderLines = await db.select().from(orderLines);
@@ -1320,11 +1300,11 @@ export class MemStorage implements IStorage {
       const ultrasoundToEncounter = new Map();
       
       for (const orderLine of allOrderLines) {
-        if (orderLine.relatedType === 'lab_test' && orderLine.relatedId) {
+        if ((orderLine.relatedType === 'lab_test' || orderLine.relatedType === 'lab') && orderLine.relatedId) {
           labTestToEncounter.set(orderLine.relatedId, orderLine.encounterId);
-        } else if (orderLine.relatedType === 'xray_exam' && orderLine.relatedId) {
+        } else if ((orderLine.relatedType === 'xray_exam' || orderLine.relatedType === 'xray') && orderLine.relatedId) {
           xrayToEncounter.set(orderLine.relatedId, orderLine.encounterId);
-        } else if (orderLine.relatedType === 'ultrasound_exam' && orderLine.relatedId) {
+        } else if ((orderLine.relatedType === 'ultrasound_exam' || orderLine.relatedType === 'ultrasound') && orderLine.relatedId) {
           ultrasoundToEncounter.set(orderLine.relatedId, orderLine.encounterId);
         }
       }

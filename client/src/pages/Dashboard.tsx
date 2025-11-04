@@ -182,7 +182,7 @@ export default function Dashboard() {
               </CardTitle>
             </div>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Today's completed results awaiting review
+              Completed results awaiting doctor review
             </p>
           </CardHeader>
           <CardContent className="pt-4">
