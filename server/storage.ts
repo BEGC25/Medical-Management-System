@@ -1,4 +1,4 @@
-import { eq, like, ilike, desc, and, count, or, sql, gte, lte, isNull } from "drizzle-orm";
+import { eq, like, ilike, desc, and, count, or, sql, gte, lte, isNull, inArray } from "drizzle-orm";
 import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -1165,109 +1165,132 @@ export class MemStorage implements IStorage {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Get unpaid lab tests from today WITH ACTUAL PRICES from order_lines
+      // Get unpaid lab tests from today's OPEN encounters via order_lines
       const unpaidLabs = await db.select({
-        patientId: labTests.patientId,
+        patientId: encounters.patientId,
+        encounterId: encounters.encounterId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
-        serviceDescription: sql<string>`'Lab: ' || ${labTests.category}`,
-        tests: labTests.tests,
+        serviceDescription: services.name,
         orderType: sql<string>`'lab'`,
-        createdAt: labTests.requestedDate,
+        createdAt: encounters.visitDate,
         testId: labTests.testId,
         amount: orderLines.totalPrice,
       })
-      .from(labTests)
+      .from(orderLines)
+      .innerJoin(encounters, eq(orderLines.encounterId, encounters.encounterId))
       .innerJoin(patients, and(
-        eq(labTests.patientId, patients.patientId),
+        eq(encounters.patientId, patients.patientId),
         eq(patients.isDeleted, 0)
       ))
-      .leftJoin(orderLines, and(
-        eq(orderLines.relatedId, labTests.testId),
-        sql`${orderLines.relatedType} IN ('lab', 'lab_test')`
-      ))
+      .innerJoin(labTests, eq(orderLines.relatedId, labTests.testId))
+      .leftJoin(services, eq(orderLines.serviceId, services.id))
       .where(and(
         eq(labTests.paymentStatus, 'unpaid'),
-        sql`DATE(${labTests.requestedDate}) = ${today}`
+        sql`DATE(${encounters.visitDate}) = ${today}`,
+        or(eq(encounters.status, 'open'), eq(encounters.status, 'ready_to_bill'))
       ))
-      .limit(10);
+      .limit(50);
       
-      // Get unpaid X-rays from today WITH ACTUAL PRICES from order_lines
+      // Get unpaid X-rays from today's OPEN encounters via order_lines
       const unpaidXrays = await db.select({
-        patientId: xrayExams.patientId,
+        patientId: encounters.patientId,
+        encounterId: encounters.encounterId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
-        serviceDescription: sql<string>`'X-Ray: ' || ${xrayExams.examType}`,
+        serviceDescription: services.name,
         orderType: sql<string>`'xray'`,
-        createdAt: xrayExams.requestedDate,
+        createdAt: encounters.visitDate,
         examId: xrayExams.examId,
         amount: orderLines.totalPrice,
       })
-      .from(xrayExams)
+      .from(orderLines)
+      .innerJoin(encounters, eq(orderLines.encounterId, encounters.encounterId))
       .innerJoin(patients, and(
-        eq(xrayExams.patientId, patients.patientId),
+        eq(encounters.patientId, patients.patientId),
         eq(patients.isDeleted, 0)
       ))
-      .leftJoin(orderLines, and(
-        eq(orderLines.relatedId, xrayExams.examId),
-        sql`${orderLines.relatedType} IN ('xray', 'xray_exam')`
-      ))
+      .innerJoin(xrayExams, eq(orderLines.relatedId, xrayExams.examId))
+      .leftJoin(services, eq(orderLines.serviceId, services.id))
       .where(and(
         eq(xrayExams.paymentStatus, 'unpaid'),
-        sql`DATE(${xrayExams.requestedDate}) = ${today}`
+        sql`DATE(${encounters.visitDate}) = ${today}`,
+        or(eq(encounters.status, 'open'), eq(encounters.status, 'ready_to_bill'))
       ))
-      .limit(10);
+      .limit(50);
       
-      // Get unpaid ultrasounds from today WITH ACTUAL PRICES from order_lines
+      // Get unpaid ultrasounds from today's OPEN encounters via order_lines
       const unpaidUltrasounds = await db.select({
-        patientId: ultrasoundExams.patientId,
+        patientId: encounters.patientId,
+        encounterId: encounters.encounterId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
-        serviceDescription: sql<string>`'Ultrasound: ' || ${ultrasoundExams.examType}`,
+        serviceDescription: services.name,
         orderType: sql<string>`'ultrasound'`,
-        createdAt: ultrasoundExams.requestedDate,
+        createdAt: encounters.visitDate,
         examId: ultrasoundExams.examId,
         amount: orderLines.totalPrice,
       })
-      .from(ultrasoundExams)
+      .from(orderLines)
+      .innerJoin(encounters, eq(orderLines.encounterId, encounters.encounterId))
       .innerJoin(patients, and(
-        eq(ultrasoundExams.patientId, patients.patientId),
+        eq(encounters.patientId, patients.patientId),
         eq(patients.isDeleted, 0)
       ))
-      .leftJoin(orderLines, and(
-        eq(orderLines.relatedId, ultrasoundExams.examId),
-        sql`${orderLines.relatedType} IN ('ultrasound', 'ultrasound_exam')`
-      ))
+      .innerJoin(ultrasoundExams, eq(orderLines.relatedId, ultrasoundExams.examId))
+      .leftJoin(services, eq(orderLines.serviceId, services.id))
       .where(and(
         eq(ultrasoundExams.paymentStatus, 'unpaid'),
-        sql`DATE(${ultrasoundExams.requestedDate}) = ${today}`
+        sql`DATE(${encounters.visitDate}) = ${today}`,
+        or(eq(encounters.status, 'open'), eq(encounters.status, 'ready_to_bill'))
       ))
-      .limit(10);
+      .limit(50);
       
-      // Format labs with real prices
-      const labsWithAmounts = unpaidLabs.map(lab => ({
-        ...lab,
-        amount: lab.amount || 0,
-        id: lab.testId,
-      }));
+      // Group by patient + encounter
+      const groupedByPatient = new Map<string, any>();
       
-      // Format X-rays with real prices
-      const xraysWithAmounts = unpaidXrays.map(xray => ({
-        ...xray,
-        amount: xray.amount || 0,
-        id: xray.examId,
-      }));
+      const allUnpaid = [...unpaidLabs, ...unpaidXrays, ...unpaidUltrasounds];
       
-      // Format ultrasounds with real prices
-      const ultrasoundsWithAmounts = unpaidUltrasounds.map(us => ({
-        ...us,
-        amount: us.amount || 0,
-        id: us.examId,
-      }));
+      for (const order of allUnpaid) {
+        const key = `${order.patientId}-${order.encounterId}`;
+        
+        if (!groupedByPatient.has(key)) {
+          groupedByPatient.set(key, {
+            patientId: order.patientId,
+            patientName: order.patientName,
+            encounterId: order.encounterId,
+            services: [],
+            totalAmount: 0,
+            createdAt: order.createdAt,
+            orderTypes: new Set<string>(),
+          });
+        }
+        
+        const group = groupedByPatient.get(key);
+        group.services.push(order.serviceDescription || order.orderType);
+        group.totalAmount += Number(order.amount || 0);
+        group.orderTypes.add(order.orderType);
+      }
       
-      // Combine and sort by date, then limit
-      const allUnpaid = [...labsWithAmounts, ...xraysWithAmounts, ...ultrasoundsWithAmounts]
+      // Convert to array and format
+      const result = Array.from(groupedByPatient.values()).map((group: any) => {
+        const primaryService = group.services[0] || '';
+        
+        return {
+          patientId: group.patientId,
+          patientName: group.patientName,
+          encounterId: group.encounterId,
+          serviceDescription: primaryService,
+          services: group.services,
+          orderType: Array.from(group.orderTypes)[0], // Primary type for badge
+          amount: group.totalAmount,
+          createdAt: group.createdAt,
+          id: group.encounterId,
+        };
+      });
+      
+      // Sort by date and limit
+      return result
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .slice(0, limit);
       
-      return allUnpaid;
     } catch (error) {
       console.error("getOutstandingPayments error:", error);
       throw error;

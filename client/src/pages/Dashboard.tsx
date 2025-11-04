@@ -455,32 +455,51 @@ export default function Dashboard() {
           <CardContent className="pt-4">
             {outstandingPayments ? (
               outstandingPayments.length > 0 ? (
-                <div className="space-y-2">
-                  {outstandingPayments.slice(0, 6).map((payment: any, idx: number) => (
-                    <Link key={idx} href="/payment">
-                      <div className="flex items-start justify-between p-2 rounded hover:bg-amber-50 dark:hover:bg-amber-950 cursor-pointer border border-amber-200 dark:border-amber-800 transition-colors" data-testid={`payment-${payment.patientId}`}>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-gray-800 dark:text-gray-200 truncate">
-                            {payment.patientName}
-                          </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                            {payment.serviceDescription}
-                          </p>
+                <div className="space-y-2.5">
+                  {outstandingPayments.slice(0, 6).map((payment: any, idx: number) => {
+                    // Get department color based on order type
+                    const getDepartmentColor = (type: string) => {
+                      switch(type) {
+                        case 'lab': return { bg: 'bg-orange-50 dark:bg-orange-950', border: 'border-orange-200 dark:border-orange-800', badge: 'bg-orange-600' };
+                        case 'xray': return { bg: 'bg-purple-50 dark:bg-purple-950', border: 'border-purple-200 dark:border-purple-800', badge: 'bg-purple-600' };
+                        case 'ultrasound': return { bg: 'bg-blue-50 dark:bg-blue-950', border: 'border-blue-200 dark:border-blue-800', badge: 'bg-blue-600' };
+                        default: return { bg: 'bg-gray-50 dark:bg-gray-800', border: 'border-gray-200 dark:border-gray-700', badge: 'bg-gray-600' };
+                      }
+                    };
+                    
+                    const colors = getDepartmentColor(payment.orderType);
+                    
+                    return (
+                      <Link key={idx} href="/payment">
+                        <div className={`flex items-start justify-between p-3 rounded-lg hover:shadow-md cursor-pointer border ${colors.border} ${colors.bg} transition-all`} data-testid={`payment-${payment.patientId}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1">
+                              {payment.patientName}
+                            </p>
+                            <p className="text-xs text-gray-700 dark:text-gray-300 mb-1.5 line-clamp-1">
+                              {payment.serviceDescription}
+                            </p>
+                            {payment.services && payment.services.length > 1 && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                +{payment.services.length - 1} more services
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end ml-3 gap-1.5">
+                            <Badge className={`${colors.badge} text-white font-bold text-sm px-2.5 py-1 shadow-sm`}>
+                              {Number(payment.amount).toLocaleString()} SSP
+                            </Badge>
+                            <Badge variant="outline" className="text-xs capitalize border-gray-300 dark:border-gray-600">
+                              {payment.orderType}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-end ml-2">
-                          <Badge className="bg-alert-red text-white font-bold">
-                            {payment.amount} SSP
-                          </Badge>
-                          <Badge variant="outline" className="text-xs mt-1">
-                            {payment.orderType}
-                          </Badge>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                   {outstandingPayments.length > 6 && (
                     <Link href="/payment">
-                      <Button variant="outline" size="sm" className="w-full mt-2" data-testid="view-all-payments">
+                      <Button variant="outline" size="sm" className="w-full mt-3 hover:bg-green-50 dark:hover:bg-green-950" data-testid="view-all-payments">
                         View All ({outstandingPayments.length}) <ArrowRight className="w-4 h-4 ml-1" />
                       </Button>
                     </Link>
