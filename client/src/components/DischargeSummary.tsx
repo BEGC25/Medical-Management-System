@@ -56,51 +56,21 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     enabled: open,
   });
 
-  // Fetch lab tests
-  const { data: labTests = [] } = useQuery<LabTest[]>({
-    queryKey: ["/api/lab-tests", patientId],
+  // Fetch ALL orders for this encounter (lab, xray, ultrasound) - this is the authoritative source
+  const { data: orders = [] } = useQuery<any[]>({
+    queryKey: ["/api/visits", encounterId, "orders"],
     queryFn: async () => {
-      const r = await fetch(`/api/lab-tests?patientId=${patientId}`);
+      const r = await fetch(`/api/visits/${encounterId}/orders`);
       if (!r.ok) return [];
-      const allTests = await r.json();
-      // Filter to only tests from today's visit
-      const visitDate = encounter?.visitDate || new Date().toISOString().split("T")[0];
-      return allTests.filter((t: LabTest) => 
-        t.requestedDate.startsWith(visitDate) || t.completedDate?.startsWith(visitDate)
-      );
+      return r.json();
     },
-    enabled: open && !!encounter,
+    enabled: open,
   });
 
-  // Fetch X-rays
-  const { data: xrays = [] } = useQuery<XrayExam[]>({
-    queryKey: ["/api/xrays", patientId],
-    queryFn: async () => {
-      const r = await fetch(`/api/xrays?patientId=${patientId}`);
-      if (!r.ok) return [];
-      const allXrays = await r.json();
-      const visitDate = encounter?.visitDate || new Date().toISOString().split("T")[0];
-      return allXrays.filter((x: XrayExam) => 
-        x.requestedDate.startsWith(visitDate) || x.reportDate?.startsWith(visitDate)
-      );
-    },
-    enabled: open && !!encounter,
-  });
-
-  // Fetch ultrasounds
-  const { data: ultrasounds = [] } = useQuery<UltrasoundExam[]>({
-    queryKey: ["/api/ultrasounds", patientId],
-    queryFn: async () => {
-      const r = await fetch(`/api/ultrasounds?patientId=${patientId}`);
-      if (!r.ok) return [];
-      const allUltrasounds = await r.json();
-      const visitDate = encounter?.visitDate || new Date().toISOString().split("T")[0];
-      return allUltrasounds.filter((u: UltrasoundExam) => 
-        u.requestedDate.startsWith(visitDate) || u.reportDate?.startsWith(visitDate)
-      );
-    },
-    enabled: open && !!encounter,
-  });
+  // Filter orders by type
+  const labTests = orders.filter((o) => o.type === "lab" && o.status === "completed");
+  const xrays = orders.filter((o) => o.type === "xray" && o.status === "completed");
+  const ultrasounds = orders.filter((o) => o.type === "ultrasound" && o.status === "completed");
 
   // Fetch pharmacy orders
   const { data: pharmacyOrders = [] } = useQuery<PharmacyOrder[]>({
@@ -178,18 +148,47 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     }, 250);
   };
 
-  // Helper to parse lab test results
+  // Helper to parse and format lab test results professionally
   const getLabSummary = (test: LabTest) => {
-    if (!test.results) return "Results pending";
+    if (!test.results) return null;
     
     try {
       const results = JSON.parse(test.results);
+      
+      // If results is an array of test objects
       if (Array.isArray(results)) {
-        return results.map((r: any) => `${r.test}: ${r.value} ${r.unit || ""}`).join(", ");
+        return results.map((r: any, idx: number) => (
+          <div key={idx} style={{ marginBottom: "4px", paddingLeft: "8px" }}>
+            <span style={{ fontWeight: "600" }}>{r.test}:</span>{" "}
+            <span>{r.value} {r.unit || ""}</span>
+            {r.interpretation && (
+              <span style={{ color: "#d32f2f", marginLeft: "4px" }}>({r.interpretation})</span>
+            )}
+          </div>
+        ));
       }
-      return test.results;
+      
+      // If results is an object (structured test results)
+      if (typeof results === "object" && !Array.isArray(results)) {
+        return Object.entries(results).map(([testName, testData]: [string, any], idx: number) => (
+          <div key={idx} style={{ marginBottom: "6px", paddingLeft: "8px" }}>
+            <div style={{ fontWeight: "600", color: "#0066CC", marginBottom: "2px" }}>{testName}</div>
+            {typeof testData === "object" ? (
+              Object.entries(testData).map(([key, value]: [string, any], subIdx: number) => (
+                <div key={subIdx} style={{ paddingLeft: "12px", fontSize: "0.875rem", marginBottom: "1px" }}>
+                  <span style={{ fontWeight: "500" }}>{key}:</span> <span>{String(value)}</span>
+                </div>
+              ))
+            ) : (
+              <div style={{ paddingLeft: "12px", fontSize: "0.875rem" }}>{String(testData)}</div>
+            )}
+          </div>
+        ));
+      }
+      
+      return <div>{test.results}</div>;
     } catch {
-      return test.results;
+      return <div>{test.results}</div>;
     }
   };
 
@@ -326,41 +325,56 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               
               {labTests.length > 0 && (
                 <div style={{ marginBottom: "1rem" }}>
-                  <h3>Laboratory Tests</h3>
-                  {labTests.map((test) => (
-                    <div key={test.id} className="test-result">
-                      <div style={{ fontWeight: "600" }}>
-                        {test.category.charAt(0).toUpperCase() + test.category.slice(1)} Tests
+                  <h3 style={{ color: "#ff8c00", borderBottom: "1px solid #ff8c00", paddingBottom: "2px", marginBottom: "8px" }}>
+                    Laboratory Tests
+                  </h3>
+                  {labTests.map((test) => {
+                    // Get list of test names ordered
+                    const testsOrdered = test.testsOrdered ? JSON.parse(test.testsOrdered) : [];
+                    
+                    return (
+                      <div key={test.id} className="test-result" style={{ borderLeft: "2px solid #ff8c00", marginBottom: "8px" }}>
+                        {testsOrdered.length > 0 && (
+                          <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                            {testsOrdered.join(", ")}
+                          </div>
+                        )}
+                        {test.status === "completed" && getLabSummary(test)}
+                        {test.interpretation && (
+                          <div style={{ fontSize: "0.875rem", color: "#d32f2f", marginTop: "4px", fontWeight: "500" }}>
+                            Clinical Interpretation: {test.interpretation}
+                          </div>
+                        )}
+                        {test.technicianNotes && (
+                          <div style={{ fontSize: "0.875rem", color: "#555", marginTop: "4px" }}>
+                            Note: {test.technicianNotes}
+                          </div>
+                        )}
                       </div>
-                      <div style={{ fontSize: "0.875rem" }}>
-                        {test.status === "completed" ? getLabSummary(test) : "Results pending"}
-                      </div>
-                      {test.technicianNotes && (
-                        <div style={{ fontSize: "0.875rem", color: "#555", marginTop: "0.25rem" }}>
-                          Note: {test.technicianNotes}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
               {xrays.length > 0 && (
                 <div style={{ marginBottom: "1rem" }}>
-                  <h3>X-Ray Results</h3>
+                  <h3 style={{ color: "#8b5cf6", borderBottom: "1px solid #8b5cf6", paddingBottom: "2px", marginBottom: "8px" }}>
+                    X-Ray Examinations
+                  </h3>
                   {xrays.map((xray) => (
-                    <div key={xray.id} className="test-result">
-                      <div style={{ fontWeight: "600" }}>
-                        {xray.examType.charAt(0).toUpperCase() + xray.examType.slice(1)} X-Ray
-                        {xray.bodyPart && ` - ${xray.bodyPart}`}
+                    <div key={xray.id} className="test-result" style={{ borderLeft: "2px solid #8b5cf6", marginBottom: "8px" }}>
+                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                        {xray.bodyPart || xray.examType}
                       </div>
-                      {xray.impression && (
-                        <div style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>
-                          <strong>Impression:</strong> {xray.impression}
+                      {xray.findings && (
+                        <div style={{ fontSize: "0.875rem", marginTop: "4px", marginBottom: "4px" }}>
+                          <strong>Findings:</strong> {xray.findings}
                         </div>
                       )}
-                      {xray.status === "pending" && (
-                        <div style={{ fontSize: "0.875rem", color: "#666" }}>Results pending</div>
+                      {xray.impression && (
+                        <div style={{ fontSize: "0.875rem", fontWeight: "500", color: "#0066CC" }}>
+                          <strong>Impression:</strong> {xray.impression}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -369,19 +383,23 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
 
               {ultrasounds.length > 0 && (
                 <div>
-                  <h3>Ultrasound Results</h3>
+                  <h3 style={{ color: "#0ea5e9", borderBottom: "1px solid #0ea5e9", paddingBottom: "2px", marginBottom: "8px" }}>
+                    Ultrasound Examinations
+                  </h3>
                   {ultrasounds.map((us) => (
-                    <div key={us.id} className="test-result">
-                      <div style={{ fontWeight: "600" }}>
-                        {us.examType.charAt(0).toUpperCase() + us.examType.slice(1)} Ultrasound
+                    <div key={us.id} className="test-result" style={{ borderLeft: "2px solid #0ea5e9", marginBottom: "8px" }}>
+                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                        {us.examType}
                       </div>
-                      {us.impression && (
-                        <div style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>
-                          <strong>Impression:</strong> {us.impression}
+                      {us.findings && (
+                        <div style={{ fontSize: "0.875rem", marginTop: "4px", marginBottom: "4px" }}>
+                          <strong>Findings:</strong> {us.findings}
                         </div>
                       )}
-                      {us.status === "pending" && (
-                        <div style={{ fontSize: "0.875rem", color: "#666" }}>Results pending</div>
+                      {us.impression && (
+                        <div style={{ fontSize: "0.875rem", fontWeight: "500", color: "#0066CC" }}>
+                          <strong>Impression:</strong> {us.impression}
+                        </div>
                       )}
                     </div>
                   ))}
