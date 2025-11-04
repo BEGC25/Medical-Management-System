@@ -197,6 +197,12 @@ export default function Ultrasound() {
   const [debounced, setDebounced] = useState('');
   const [page, setPage] = useState(1);
   const PER_PAGE = 20;
+
+  // Date range filtering and patient search
+  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [patientSearchTerm, setPatientSearchTerm] = useState("");
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
     return () => clearTimeout(id);
@@ -229,15 +235,73 @@ export default function Ultrasound() {
 
   const { data: allUltrasoundExams = [] } = useUltrasoundExams();
   const { data: ultrasoundServices = [] } = useUltrasoundServices();
-  const pendingExams = allUltrasoundExams.filter((e) => e.status === 'pending');
-  const completedExams = allUltrasoundExams.filter((e) => e.status === 'completed');
+  
+  // Calculate date range based on filter
+  const getDateRange = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    switch (dateFilter) {
+      case "today":
+        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+      case "yesterday": {
+        const yesterday = new Date(today.getTime() - 86400000);
+        return { start: yesterday, end: new Date(yesterday.getTime() + 86400000 - 1) };
+      }
+      case "last7days": {
+        const weekAgo = new Date(today.getTime() - 7 * 86400000);
+        return { start: weekAgo, end: new Date() };
+      }
+      case "last30days": {
+        const monthAgo = new Date(today.getTime() - 30 * 86400000);
+        return { start: monthAgo, end: new Date() };
+      }
+      case "custom":
+        return {
+          start: customStartDate ? new Date(customStartDate) : new Date(0),
+          end: customEndDate ? new Date(customEndDate + "T23:59:59") : new Date(),
+        };
+      default:
+        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+    }
+  };
+  
+  const dateRange = getDateRange();
+  
+  // First filter by date only
+  const dateFilteredExams = allUltrasoundExams.filter((e) => {
+    const examDate = new Date(e.requestedDate);
+    return examDate >= dateRange.start && examDate <= dateRange.end;
+  });
+  
+  const dateFilteredPending = dateFilteredExams.filter((e) => e.status === 'pending');
+  const dateFilteredCompleted = dateFilteredExams.filter((e) => e.status === 'completed');
 
   // Patient map for cards
   const patientIdsForMap = useMemo(
-    () => [...pendingExams, ...completedExams].map((e) => e.patientId),
-    [pendingExams, completedExams]
+    () => dateFilteredExams.map((e) => e.patientId),
+    [dateFilteredExams]
   );
   const patientsMap = usePatientsMap(patientIdsForMap);
+  
+  // Then filter by patient search (needs patientsMap loaded)
+  const filterByPatient = (exams: typeof allUltrasoundExams) => {
+    if (!patientSearchTerm.trim()) return exams;
+    
+    return exams.filter((e) => {
+      const patient = patientsMap.data?.[e.patientId];
+      if (!patient) return false;
+      
+      const searchLower = patientSearchTerm.toLowerCase();
+      const patientName = fullName(patient).toLowerCase();
+      const patientId = patient.patientId.toLowerCase();
+      
+      return patientName.includes(searchLower) || patientId.includes(searchLower);
+    });
+  };
+  
+  const pendingExams = filterByPatient(dateFilteredPending);
+  const completedExams = filterByPatient(dateFilteredCompleted);
 
   // Patient picker data: today's + search
   const todayPatients = useTodayPatients();
@@ -585,6 +649,31 @@ export default function Ultrasound() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Date Filter and Search Controls */}
+            <div className="mb-4 space-y-3 border-b pb-4">
+              <div className="flex flex-wrap gap-2">
+                <Button variant={dateFilter === "today" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("today")}>Today</Button>
+                <Button variant={dateFilter === "yesterday" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("yesterday")}>Yesterday</Button>
+                <Button variant={dateFilter === "last7days" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("last7days")}>Last 7 Days</Button>
+                <Button variant={dateFilter === "last30days" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("last30days")}>Last 30 Days</Button>
+                <Button variant={dateFilter === "custom" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("custom")}>Custom Range</Button>
+              </div>
+              {dateFilter === "custom" && (
+                <div className="flex gap-2 items-center">
+                  <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} placeholder="Start Date" className="w-40" />
+                  <span className="text-sm text-gray-500">to</span>
+                  <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} placeholder="End Date" className="w-40" />
+                </div>
+              )}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10" />
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Showing {pendingExams.length} pending exam{pendingExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
+              </div>
+            </div>
+            
             <div className="space-y-2">
               {pendingExams.length > 0 ? (
                 pendingExams.map((exam) => (
@@ -606,6 +695,31 @@ export default function Ultrasound() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Same filter controls for completed tests */}
+            <div className="mb-4 space-y-3 border-b pb-4">
+              <div className="flex flex-wrap gap-2">
+                <Button variant={dateFilter === "today" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("today")}>Today</Button>
+                <Button variant={dateFilter === "yesterday" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("yesterday")}>Yesterday</Button>
+                <Button variant={dateFilter === "last7days" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("last7days")}>Last 7 Days</Button>
+                <Button variant={dateFilter === "last30days" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("last30days")}>Last 30 Days</Button>
+                <Button variant={dateFilter === "custom" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("custom")}>Custom Range</Button>
+              </div>
+              {dateFilter === "custom" && (
+                <div className="flex gap-2 items-center">
+                  <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} placeholder="Start Date" className="w-40" />
+                  <span className="text-sm text-gray-500">to</span>
+                  <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} placeholder="End Date" className="w-40" />
+                </div>
+              )}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10" />
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Showing {completedExams.length} completed exam{completedExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
+              </div>
+            </div>
+            
             <div className="space-y-2">
               {completedExams.length > 0 ? (
                 completedExams.map((exam) => (
