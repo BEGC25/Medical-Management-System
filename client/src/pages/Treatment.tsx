@@ -1021,6 +1021,7 @@ export default function Treatment() {
                     onSearchTermChange={setSearchTerm}
                     shouldSearch={shouldSearch}
                     onShouldSearchChange={setShouldSearch}
+                    filterPendingOnly={quickFilter === "pending"}
                   />
                 </div>
               </>

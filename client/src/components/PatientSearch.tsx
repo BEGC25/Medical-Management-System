@@ -17,6 +17,7 @@ interface PatientSearchProps {
   onSearchTermChange?: (term: string) => void;
   shouldSearch?: boolean;
   onShouldSearchChange?: (should: boolean) => void;
+  filterPendingOnly?: boolean; // Filter to show only patients with unpaid orders
 }
 
 // Format date as "19 Oct 2025"
@@ -55,11 +56,12 @@ export default function PatientSearch({
   startDate,
   endDate,
   searchTerm,
+  filterPendingOnly = false,
 }: PatientSearchProps) {
   // Always-on search: if 3+ chars, force "search"
   const effectiveMode = searchTerm.trim().length >= 3 ? "search" : viewMode;
 
-  const { data: patients, isLoading } = useQuery({
+  const { data: rawPatients, isLoading } = useQuery({
     queryKey: [
       "/api/patients",
       effectiveMode,
@@ -108,6 +110,22 @@ export default function PatientSearch({
       return r.json();
     },
   });
+
+  // Filter patients with pending orders if requested
+  const patients = filterPendingOnly && rawPatients
+    ? rawPatients.filter((p: any) => {
+        const s = p.serviceStatus || {};
+        // Check if patient has any unpaid balance
+        const hasUnpaidBalance = (s.balance ?? 0) > 0 || (s.balanceToday ?? 0) > 0;
+        // Check if patient has any pending orders
+        const hasPendingOrders = 
+          (s.laboratory?.unpaid || 0) > 0 || 
+          (s.xray?.unpaid || 0) > 0 || 
+          (s.ultrasound?.unpaid || 0) > 0 || 
+          (s.pharmacy?.unpaid || 0) > 0;
+        return hasUnpaidBalance || hasPendingOrders;
+      })
+    : rawPatients;
 
   return (
     <div className="space-y-4">
