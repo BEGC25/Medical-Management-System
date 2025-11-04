@@ -1257,85 +1257,88 @@ export class MemStorage implements IStorage {
     try {
       const results: any[] = [];
       
-      // Get completed lab tests
-      const labs = await db.select().from(labTests)
-        .where(eq(labTests.status, 'completed'))
-        .orderBy(desc(labTests.createdAt))
-        .limit(limit);
+      // Get completed lab tests with patient info
+      const completedLabs = await db.select({
+        id: labTests.id,
+        patientId: patients.patientId,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        testType: labTests.testType,
+        createdAt: labTests.createdAt,
+      })
+        .from(labTests)
+        .innerJoin(patients, eq(labTests.patientId, patients.patientId))
+        .where(and(
+          eq(labTests.status, 'completed'),
+          eq(patients.isDeleted, 0)
+        ));
       
-      for (const lab of labs) {
-        const patient = await db.select().from(patients)
-          .where(and(
-            eq(patients.patientId, lab.patientId),
-            eq(patients.isDeleted, 0)
-          ))
-          .limit(1);
-        
-        if (patient.length > 0) {
-          results.push({
-            id: lab.id,
-            patientId: patient[0].patientId,
-            firstName: patient[0].firstName,
-            lastName: patient[0].lastName,
-            testType: lab.testType,
-            resultType: 'Lab Test',
-            createdAt: lab.createdAt,
-          });
-        }
+      for (const lab of completedLabs) {
+        results.push({
+          id: lab.id,
+          patientId: lab.patientId,
+          firstName: lab.firstName,
+          lastName: lab.lastName,
+          testType: lab.testType,
+          resultType: 'Lab Test',
+          createdAt: lab.createdAt,
+        });
       }
       
-      // Get completed X-rays
-      const xrays = await db.select().from(xrayExams)
-        .where(eq(xrayExams.status, 'completed'))
-        .orderBy(desc(xrayExams.createdAt))
-        .limit(limit);
+      // Get completed X-rays with patient info
+      const completedXrays = await db.select({
+        id: xrayExams.id,
+        patientId: patients.patientId,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        examination: xrayExams.examination,
+        createdAt: xrayExams.createdAt,
+      })
+        .from(xrayExams)
+        .innerJoin(patients, eq(xrayExams.patientId, patients.patientId))
+        .where(and(
+          eq(xrayExams.status, 'completed'),
+          eq(patients.isDeleted, 0)
+        ));
       
-      for (const xray of xrays) {
-        const patient = await db.select().from(patients)
-          .where(and(
-            eq(patients.patientId, xray.patientId),
-            eq(patients.isDeleted, 0)
-          ))
-          .limit(1);
-        
-        if (patient.length > 0) {
-          results.push({
-            id: xray.id,
-            patientId: patient[0].patientId,
-            firstName: patient[0].firstName,
-            lastName: patient[0].lastName,
-            testType: xray.examination,
-            resultType: 'X-Ray',
-            createdAt: xray.createdAt,
-          });
-        }
+      for (const xray of completedXrays) {
+        results.push({
+          id: xray.id,
+          patientId: xray.patientId,
+          firstName: xray.firstName,
+          lastName: xray.lastName,
+          testType: xray.examination,
+          resultType: 'X-Ray',
+          createdAt: xray.createdAt,
+        });
       }
       
-      // Get completed ultrasounds
-      const ultrasounds = await db.select().from(ultrasoundExams)
-        .where(eq(ultrasoundExams.status, 'completed'))
-        .orderBy(desc(ultrasoundExams.createdAt))
-        .limit(limit);
+      // Get completed ultrasounds with patient info
+      const completedUltrasounds = await db.select({
+        id: ultrasoundExams.id,
+        patientId: patients.patientId,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        examinationType: ultrasoundExams.examinationType,
+        createdAt: ultrasoundExams.createdAt,
+      })
+        .from(ultrasoundExams)
+        .innerJoin(patients, eq(ultrasoundExams.patientId, patients.patientId))
+        .where(and(
+          eq(ultrasoundExams.status, 'completed'),
+          eq(patients.isDeleted, 0)
+        ));
       
-      for (const us of ultrasoundExams) {
-        const patient = await db.select().from(patients)
-          .where(and(
-            eq(patients.patientId, us.patientId),
-            eq(patients.isDeleted, 0)
-          ))
-          .limit(1);
-        
-        if (patient.length > 0) {
-          results.push({
-            id: us.id,
-            patientId: patient[0].patientId,
-            firstName: patient[0].firstName,
-            lastName: patient[0].lastName,
-            testType: us.examinationType,
-            resultType: 'Ultrasound',
-            createdAt: us.createdAt,
-          });
-        }
+      for (const us of completedUltrasounds) {
+        results.push({
+          id: us.id,
+          patientId: us.patientId,
+          firstName: us.firstName,
+          lastName: us.lastName,
+          testType: us.examinationType,
+          resultType: 'Ultrasound',
+          createdAt: us.createdAt,
+        });
       }
       
       // Sort all results by date and limit
