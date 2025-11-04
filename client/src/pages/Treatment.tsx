@@ -278,6 +278,20 @@ export default function Treatment() {
     enabled: queueOpen,
   });
 
+  // ALWAYS-ON statistics queries for enterprise dashboard
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  // Active encounters - always fetched for accurate statistics
+  const { data: activeEncounters = [] } = useQuery<Treatment[]>({
+    queryKey: ["/api/treatments", { date: today }],
+  });
+
+  // Yesterday's count for trend calculation
+  const { data: yesterdayEncounters = [] } = useQuery<Treatment[]>({
+    queryKey: ["/api/treatments", { date: yesterday }],
+  });
+
   // filter out soft-deleted patients
   const activePatients = allPatients.filter((p: any) => !p.is_deleted);
   const activePatientIds = new Set(activePatients.map((p) => p.patientId));
@@ -756,15 +770,22 @@ export default function Treatment() {
     ? allPrescriptions.filter((rx) => rx.encounterId === currentEncounter.encounterId)
     : allPrescriptions;
 
-  // Statistics calculations
-  const todayPatients = patientCounts?.today || 0;
-  const activeEncountersCount = queueVisits.length;
+  // Enterprise Statistics with Real Trends
+  const todayPatients = activeEncounters.length; // Use real encounter count
+  const yesterdayPatients = yesterdayEncounters.length; // Use real yesterday count
+  const activeEncountersCount = activeEncounters.length; // Use always-on query
   const pendingOrdersCount = unpaidOrders 
     ? ((unpaidOrders as any).laboratory?.length || 0) + 
       ((unpaidOrders as any).xray?.length || 0) + 
       ((unpaidOrders as any).ultrasound?.length || 0) + 
       ((unpaidOrders as any).pharmacy?.length || 0)
     : 0;
+
+  // Calculate real trend deltas (today vs yesterday)
+  const patientTrend = todayPatients - yesterdayPatients;
+  const patientTrendPercent = yesterdayPatients > 0 
+    ? Math.round((patientTrend / yesterdayPatients) * 100) 
+    : 0; // Don't show % if no baseline
 
   // ---------- UI ----------
   return (
@@ -802,10 +823,17 @@ export default function Treatment() {
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Patients Today</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">{todayPatients}</span>
-                      {todayPatients > 0 && (
-                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                          <TrendingUp className="h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">Active</span>
+                      {yesterdayPatients > 0 && patientTrendPercent !== 0 && (
+                        <div className={`flex items-center gap-1 ${patientTrend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {patientTrend > 0 && <TrendingUp className="h-3.5 w-3.5" />}
+                          {patientTrend < 0 && <TrendingDown className="h-3.5 w-3.5" />}
+                          <span className="text-xs font-semibold">{Math.abs(patientTrendPercent)}%</span>
+                        </div>
+                      )}
+                      {yesterdayPatients > 0 && patientTrend === 0 && (
+                        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                          <Minus className="h-3.5 w-3.5" />
+                          <span className="text-xs font-semibold">0%</span>
                         </div>
                       )}
                     </div>
@@ -813,7 +841,13 @@ export default function Treatment() {
                 </div>
               </div>
               <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700/50">
-                <span className="text-xs text-gray-600 dark:text-gray-400">Total visits registered</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">
+                  {yesterdayPatients > 0 && patientTrend > 0 && `↑ ${patientTrend} more than yesterday`}
+                  {yesterdayPatients > 0 && patientTrend < 0 && `↓ ${Math.abs(patientTrend)} fewer than yesterday`}
+                  {yesterdayPatients > 0 && patientTrend === 0 && 'Same as yesterday'}
+                  {yesterdayPatients === 0 && todayPatients > 0 && 'First patients today'}
+                  {yesterdayPatients === 0 && todayPatients === 0 && 'No visits yet'}
+                </span>
                 <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
               </div>
             </div>
