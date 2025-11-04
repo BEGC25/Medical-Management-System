@@ -769,18 +769,18 @@ export default function Treatment() {
   // ---------- UI ----------
   return (
     <div className="space-y-6">
-      {/* World-Class Department Header */}
-      <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-6 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
-        <div className="flex items-center gap-4 mb-6">
+      {/* Enterprise Department Header */}
+      <div className="bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 rounded-2xl p-8 shadow-sm border border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-5 mb-8">
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl blur-sm opacity-75"></div>
-            <div className="relative h-16 w-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Stethoscope className="h-8 w-8 text-white" />
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl blur-lg opacity-30"></div>
+            <div className="relative h-20 w-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-xl">
+              <Stethoscope className="h-10 w-10 text-white" />
             </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Patient encounters, clinical documentation & care management</p>
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-2">Treatment Records</h1>
+            <p className="text-base text-gray-600 dark:text-gray-400 font-medium">Patient encounters, clinical documentation & care management</p>
           </div>
         </div>
         
@@ -891,24 +891,28 @@ export default function Treatment() {
         </div>
       </div>
 
-      <Card className="print:hidden">
-        <CardHeader>
-          <CardTitle>Patient Selection & Documentation</CardTitle>
+      <Card className="print:hidden shadow-sm border-gray-200 dark:border-gray-800">
+        <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-5">
+          <CardTitle className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Patient Selection & Documentation</CardTitle>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Choose a patient and document their visit</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {/* Patient selection / Header */}
           {/* ... (keep this section as is) ... */}
           {/* Patient selection */}
           {/* THIS CARD IS HIDDEN ONCE A PATIENT IS SELECTED */}
           {!selectedPatient && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 mb-6 shadow-sm border border-blue-100 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Activity className="h-5 w-5 text-white" />
+            <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-gray-800/50 dark:to-gray-850/50 rounded-2xl p-7 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl blur-md opacity-30"></div>
+                  <div className="relative h-14 w-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Activity className="h-7 w-7 text-white" />
+                  </div>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Choose a patient to begin documenting their visit</p>
+                  <h3 className="font-bold text-gray-900 dark:text-white text-xl tracking-tight">Select Patient for Treatment</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 font-medium">Choose a patient to begin documenting their visit</p>
                 </div>
               </div>
 
