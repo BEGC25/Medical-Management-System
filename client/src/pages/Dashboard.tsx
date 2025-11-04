@@ -224,11 +224,12 @@ export default function Dashboard() {
                                 {result.resultTypes.map((type: string, idx: number) => (
                                   <Badge 
                                     key={idx}
+                                    variant="outline"
                                     className={`text-[10px] ${
-                                      type === 'Lab Test' ? 'bg-attention-orange' :
-                                      type === 'X-Ray' ? 'bg-purple-600' :
-                                      'bg-blue-600'
-                                    } text-white`}
+                                      type === 'Lab' ? 'text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/30' :
+                                      type === 'X-Ray' ? 'text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/30' :
+                                      'text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30'
+                                    }`}
                                   >
                                     {type}
                                   </Badge>
@@ -241,13 +242,13 @@ export default function Dashboard() {
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {result.allComplete ? (
-                              <Badge className="text-[10px] font-bold bg-health-green text-white flex items-center gap-1">
+                              <Badge variant="outline" className="text-[10px] font-semibold text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/30 flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3" />
-                                All {result.totalOrdered} complete
+                                All {result.totalOrdered} ready
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] font-bold text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700">
-                                {result.resultCount} of {result.totalOrdered} {result.totalOrdered === 1 ? 'test' : 'tests'}
+                              <Badge variant="outline" className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/30">
+                                {result.resultCount} of {result.totalOrdered}
                               </Badge>
                             )}
                             <ArrowRight className={`w-4 h-4 ${iconInfo.color} group-hover:translate-x-1 transition-transform`} />
