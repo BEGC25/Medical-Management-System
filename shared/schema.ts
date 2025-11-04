@@ -148,6 +148,20 @@ export const encounters = sqliteTable("encounters", {
   closedAt: text("closed_at"),
 });
 
+// Results Routing - Track diagnostic results routing to doctors
+export const resultsRouting = sqliteTable("results_routing", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  encounterId: text("encounter_id").notNull(),
+  patientId: text("patient_id").notNull(),
+  routedBy: text("routed_by"),
+  routedAt: text("routed_at"),
+  reviewedBy: text("reviewed_by"),
+  reviewedAt: text("reviewed_at"),
+  status: text("status").$type<"pending" | "routed" | "reviewed">().notNull().default("pending"),
+  notes: text("notes"),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
+});
+
 // Order Lines - What was ordered in this encounter
 export const orderLines = sqliteTable("order_lines", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -373,6 +387,11 @@ export const insertEncounterSchema = createInsertSchema(encounters).omit({
   closedAt: true,
 });
 
+export const insertResultsRoutingSchema = createInsertSchema(resultsRouting).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertOrderLineSchema = createInsertSchema(orderLines).omit({
   id: true,
   status: true,
@@ -451,6 +470,7 @@ export type UltrasoundExam = typeof ultrasoundExams.$inferSelect;
 export type BillingSettings = typeof billingSettings.$inferSelect;
 export type Service = typeof services.$inferSelect;
 export type Encounter = typeof encounters.$inferSelect;
+export type ResultsRouting = typeof resultsRouting.$inferSelect;
 export type OrderLine = typeof orderLines.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;
 export type InvoiceLine = typeof invoiceLines.$inferSelect;
@@ -470,6 +490,7 @@ export type InsertUltrasoundExam = z.infer<typeof insertUltrasoundExamSchema>;
 export type InsertBillingSettings = z.infer<typeof insertBillingSettingsSchema>;
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type InsertEncounter = z.infer<typeof insertEncounterSchema>;
+export type InsertResultsRouting = z.infer<typeof insertResultsRoutingSchema>;
 export type InsertOrderLine = z.infer<typeof insertOrderLineSchema>;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;
