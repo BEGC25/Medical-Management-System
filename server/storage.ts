@@ -1802,25 +1802,63 @@ export class MemStorage implements IStorage {
     return patientsWithStatus;
   }
 
-  async getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
+  async getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any; dateOfService?: string; lastVisit?: string })[]> {
+    // Query encounters within the date range and join with patients
+    const encountersInRange = await db
+      .select({
+        patientId: encounters.patientId,
+        visitDate: encounters.visitDate,
+      })
+      .from(encounters)
+      .where(
+        and(
+          sql`DATE(${encounters.visitDate}) >= ${startDate}`,
+          sql`DATE(${encounters.visitDate}) <= ${endDate}`
+        )
+      )
+      .orderBy(desc(encounters.visitDate));
+
+    // Get unique patient IDs from encounters
+    const uniquePatientIds = Array.from(new Set(encountersInRange.map((e: any) => e.patientId)));
+
+    // Handle empty case
+    if (uniquePatientIds.length === 0) {
+      return [];
+    }
+
+    // Fetch patient details for those IDs
     const patientsData = await db.select().from(patients)
       .where(
         and(
           eq(patients.isDeleted, 0),
-          sql`${patients.createdAt} >= ${startDate}`,
-          sql`${patients.createdAt} <= ${endDate}`
+          sql`${patients.patientId} IN (${sql.join(uniquePatientIds.map((id: string) => sql`${id}`), sql`, `)})`
         )
-      )
-      .orderBy(desc(patients.createdAt));
+      );
 
+    // For each patient, find their encounters in the range and add service status
     const patientsWithStatus = await Promise.all(
-      patientsData.map(async (patient) => {
+      patientsData.map(async (patient: any) => {
+        const patientEncounters = encountersInRange.filter((e: any) => e.patientId === patient.patientId);
+        const mostRecentEncounter = patientEncounters[0]; // Already sorted by desc
+        const lastEncounterInRange = patientEncounters[0];
+
         const serviceStatus = await this.getPatientServiceStatus(patient.patientId);
-        return { ...patient, serviceStatus };
+        
+        return { 
+          ...patient, 
+          serviceStatus,
+          dateOfService: mostRecentEncounter?.visitDate,
+          lastVisit: lastEncounterInRange?.visitDate,
+        };
       })
     );
 
-    return patientsWithStatus;
+    // Sort by dateOfService descending
+    return patientsWithStatus.sort((a, b) => {
+      const dateA = a.dateOfService ? new Date(a.dateOfService).getTime() : 0;
+      const dateB = b.dateOfService ? new Date(b.dateOfService).getTime() : 0;
+      return dateB - dateA;
+    });
   }
 
   async getPatientServiceStatus(patientId: string) {
