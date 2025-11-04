@@ -1163,7 +1163,9 @@ export class MemStorage implements IStorage {
   
   async getOutstandingPayments(limit = 10) {
     try {
-      // Get ALL unpaid lab tests (not just today) WITH ACTUAL PRICES from order_lines
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get TODAY's unpaid lab tests WITH ACTUAL PRICES from order_lines
       // ONLY show pending/in_progress (exclude completed)
       const unpaidLabs = await db.select({
         patientId: labTests.patientId,
@@ -1186,11 +1188,12 @@ export class MemStorage implements IStorage {
       ))
       .where(and(
         eq(labTests.paymentStatus, 'unpaid'),
-        sql`${labTests.status} IN ('pending', 'in_progress')`
+        sql`${labTests.status} IN ('pending', 'in_progress')`,
+        sql`DATE(${labTests.requestedDate}) = ${today}`
       ))
       .limit(10);
       
-      // Get ALL unpaid X-rays (not just today) WITH ACTUAL PRICES from order_lines
+      // Get TODAY's unpaid X-rays WITH ACTUAL PRICES from order_lines
       // ONLY show pending/in_progress (exclude completed)
       const unpaidXrays = await db.select({
         patientId: xrayExams.patientId,
@@ -1212,11 +1215,12 @@ export class MemStorage implements IStorage {
       ))
       .where(and(
         eq(xrayExams.paymentStatus, 'unpaid'),
-        sql`${xrayExams.status} IN ('pending', 'in_progress')`
+        sql`${xrayExams.status} IN ('pending', 'in_progress')`,
+        sql`DATE(${xrayExams.requestedDate}) = ${today}`
       ))
       .limit(10);
       
-      // Get ALL unpaid ultrasounds (not just today) WITH ACTUAL PRICES from order_lines
+      // Get TODAY's unpaid ultrasounds WITH ACTUAL PRICES from order_lines
       // ONLY show pending/in_progress (exclude completed)
       const unpaidUltrasounds = await db.select({
         patientId: ultrasoundExams.patientId,
@@ -1238,7 +1242,8 @@ export class MemStorage implements IStorage {
       ))
       .where(and(
         eq(ultrasoundExams.paymentStatus, 'unpaid'),
-        sql`${ultrasoundExams.status} IN ('pending', 'in_progress')`
+        sql`${ultrasoundExams.status} IN ('pending', 'in_progress')`,
+        sql`DATE(${ultrasoundExams.requestedDate}) = ${today}`
       ))
       .limit(10);
       
