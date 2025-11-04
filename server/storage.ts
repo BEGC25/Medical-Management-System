@@ -1255,7 +1255,10 @@ export class MemStorage implements IStorage {
   
   async getResultsReadyForReview(limit: number = 10) {
     try {
-      const results: any[] = [];
+      // Get today's date at midnight for filtering
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
       
       // Get all non-deleted patients as a lookup map
       const allPatients = await db.select().from(patients).where(eq(patients.isDeleted, 0));
@@ -1264,60 +1267,141 @@ export class MemStorage implements IStorage {
         patientMap.set(p.patientId, p);
       }
       
-      // Get completed lab tests
-      const completedLabs = await db.select().from(labTests).where(eq(labTests.status, 'completed'));
+      // Get all active encounters (not completed)
+      const activeEncounters = await db.select()
+        .from(encounters)
+        .where(or(
+          eq(encounters.status, 'active'),
+          eq(encounters.status, 'pending')
+        ));
+      
+      const activeEncounterIds = new Set(activeEncounters.map(e => e.encounterId));
+      
+      // Get completed lab tests from today with active encounters
+      const completedLabs = await db.select()
+        .from(labTests)
+        .where(and(
+          eq(labTests.status, 'completed'),
+          sql`DATE(${labTests.createdAt}) >= ${todayStr}`
+        ));
+      
+      // Get completed X-rays from today
+      const completedXrays = await db.select()
+        .from(xrayExams)
+        .where(and(
+          eq(xrayExams.status, 'completed'),
+          sql`DATE(${xrayExams.createdAt}) >= ${todayStr}`
+        ));
+      
+      // Get completed ultrasounds from today
+      const completedUltrasounds = await db.select()
+        .from(ultrasoundExams)
+        .where(and(
+          eq(ultrasoundExams.status, 'completed'),
+          sql`DATE(${ultrasoundExams.createdAt}) >= ${todayStr}`
+        ));
+      
+      // Group results by encounter to show one entry per patient visit
+      const encounterResults = new Map();
+      
+      // Process labs
       for (const lab of completedLabs) {
+        if (!activeEncounterIds.has(lab.encounterId)) continue;
         const patient = patientMap.get(lab.patientId);
-        if (patient) {
-          results.push({
-            id: lab.id,
+        if (!patient) continue;
+        
+        const key = lab.encounterId;
+        if (!encounterResults.has(key)) {
+          encounterResults.set(key, {
+            encounterId: lab.encounterId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
-            testType: lab.testType,
-            resultType: 'Lab Test',
-            createdAt: lab.createdAt,
+            results: [],
+            latestTime: new Date(lab.createdAt).getTime(),
           });
         }
+        encounterResults.get(key).results.push({
+          type: 'Lab Test',
+          testName: lab.testType,
+          time: lab.createdAt,
+        });
+        encounterResults.get(key).latestTime = Math.max(
+          encounterResults.get(key).latestTime,
+          new Date(lab.createdAt).getTime()
+        );
       }
       
-      // Get completed X-rays
-      const completedXrays = await db.select().from(xrayExams).where(eq(xrayExams.status, 'completed'));
+      // Process X-rays
       for (const xray of completedXrays) {
+        if (!activeEncounterIds.has(xray.encounterId)) continue;
         const patient = patientMap.get(xray.patientId);
-        if (patient) {
-          results.push({
-            id: xray.id,
+        if (!patient) continue;
+        
+        const key = xray.encounterId;
+        if (!encounterResults.has(key)) {
+          encounterResults.set(key, {
+            encounterId: xray.encounterId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
-            testType: xray.examination,
-            resultType: 'X-Ray',
-            createdAt: xray.createdAt,
+            results: [],
+            latestTime: new Date(xray.createdAt).getTime(),
           });
         }
+        encounterResults.get(key).results.push({
+          type: 'X-Ray',
+          testName: xray.examination,
+          time: xray.createdAt,
+        });
+        encounterResults.get(key).latestTime = Math.max(
+          encounterResults.get(key).latestTime,
+          new Date(xray.createdAt).getTime()
+        );
       }
       
-      // Get completed ultrasounds
-      const completedUltrasounds = await db.select().from(ultrasoundExams).where(eq(ultrasoundExams.status, 'completed'));
+      // Process ultrasounds
       for (const us of completedUltrasounds) {
+        if (!activeEncounterIds.has(us.encounterId)) continue;
         const patient = patientMap.get(us.patientId);
-        if (patient) {
-          results.push({
-            id: us.id,
+        if (!patient) continue;
+        
+        const key = us.encounterId;
+        if (!encounterResults.has(key)) {
+          encounterResults.set(key, {
+            encounterId: us.encounterId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
-            testType: us.examinationType,
-            resultType: 'Ultrasound',
-            createdAt: us.createdAt,
+            results: [],
+            latestTime: new Date(us.createdAt).getTime(),
           });
         }
+        encounterResults.get(key).results.push({
+          type: 'Ultrasound',
+          testName: us.examinationType,
+          time: us.createdAt,
+        });
+        encounterResults.get(key).latestTime = Math.max(
+          encounterResults.get(key).latestTime,
+          new Date(us.createdAt).getTime()
+        );
       }
       
-      // Sort all results by date and limit
-      const sortedResults = results
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      // Convert to array and sort by most recent result
+      const sortedResults = Array.from(encounterResults.values())
+        .map(encounter => ({
+          encounterId: encounter.encounterId,
+          patientId: encounter.patientId,
+          firstName: encounter.firstName,
+          lastName: encounter.lastName,
+          resultCount: encounter.results.length,
+          resultTypes: [...new Set(encounter.results.map(r => r.type))],
+          resultSummary: encounter.results.map(r => r.testName).slice(0, 3).join(', '),
+          hasMoreResults: encounter.results.length > 3,
+          latestTime: encounter.latestTime,
+        }))
+        .sort((a, b) => b.latestTime - a.latestTime)
         .slice(0, limit);
       
       return sortedResults;

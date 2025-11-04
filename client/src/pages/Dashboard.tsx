@@ -182,57 +182,88 @@ export default function Dashboard() {
               </CardTitle>
             </div>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Lab/X-ray/Ultrasound results ready for doctor review
+              Today's completed results awaiting review
             </p>
           </CardHeader>
           <CardContent className="pt-4">
             {resultsReady ? (
               resultsReady.length > 0 ? (
                 <div className="space-y-2">
-                  {resultsReady.slice(0, 5).map((result: any, index: number) => (
-                    <Link key={result.id || index} href={`/patients`}>
-                      <div 
-                        className="flex items-center justify-between p-3 rounded-lg border border-purple-100 dark:border-purple-900 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors cursor-pointer group"
-                        data-testid={`result-ready-${result.patientId}`}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                              {result.firstName} {result.lastName}
-                            </p>
-                            <Badge 
-                              variant="outline" 
-                              className="text-[10px] px-1.5 py-0 bg-purple-50 dark:bg-purple-950 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300"
-                            >
-                              {result.patientId}
-                            </Badge>
+                  {resultsReady.slice(0, 5).map((result: any, index: number) => {
+                    // Get icon and color based on result types
+                    const getResultIcon = () => {
+                      if (result.resultTypes.includes('Lab Test')) return { icon: TestTube, color: 'text-attention-orange', bg: 'bg-orange-50 dark:bg-orange-950', border: 'border-orange-200 dark:border-orange-900' };
+                      if (result.resultTypes.includes('X-Ray')) return { icon: Scan, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950', border: 'border-purple-200 dark:border-purple-900' };
+                      if (result.resultTypes.includes('Ultrasound')) return { icon: MonitorSpeaker, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950', border: 'border-blue-200 dark:border-blue-900' };
+                      return { icon: FileText, color: 'text-gray-600', bg: 'bg-gray-50 dark:bg-gray-950', border: 'border-gray-200 dark:border-gray-900' };
+                    };
+                    const iconInfo = getResultIcon();
+                    const Icon = iconInfo.icon;
+                    
+                    return (
+                      <Link key={result.encounterId || index} href={`/treatment?patientId=${result.patientId}`}>
+                        <div 
+                          className={`flex items-center justify-between p-3 rounded-lg border ${iconInfo.border} hover:${iconInfo.bg} transition-colors cursor-pointer group`}
+                          data-testid={`result-ready-${result.patientId}`}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <Icon className={`${iconInfo.color} w-4 h-4 flex-shrink-0`} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                                  {result.firstName} {result.lastName}
+                                </p>
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-[10px] px-1.5 py-0"
+                                >
+                                  {result.patientId}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {result.resultTypes.map((type: string, idx: number) => (
+                                  <Badge 
+                                    key={idx}
+                                    className={`text-[10px] ${
+                                      type === 'Lab Test' ? 'bg-attention-orange' :
+                                      type === 'X-Ray' ? 'bg-purple-600' :
+                                      'bg-blue-600'
+                                    } text-white`}
+                                  >
+                                    {type}
+                                  </Badge>
+                                ))}
+                                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                                  {result.resultSummary}{result.hasMoreResults ? '...' : ''}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className="text-[10px] bg-purple-600 text-white">
-                              {result.resultType}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Badge variant="outline" className="text-[10px] font-bold">
+                              {result.resultCount} {result.resultCount === 1 ? 'test' : 'tests'}
                             </Badge>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                              {result.testType}
-                            </p>
+                            <ArrowRight className={`w-4 h-4 ${iconInfo.color} group-hover:translate-x-1 transition-transform`} />
                           </div>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-purple-600 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      </Link>
+                    );
+                  })}
+                  {resultsReady.length > 5 && (
+                    <Link href="/treatment">
+                      <div className="text-center pt-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/30 p-2 rounded transition-colors">
+                        <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                          + {resultsReady.length - 5} more patients with results ready
+                        </p>
                       </div>
                     </Link>
-                  ))}
-                  {resultsReady.length > 5 && (
-                    <div className="text-center pt-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        + {resultsReady.length - 5} more results ready
-                      </p>
-                    </div>
                   )}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <CheckCircle2 className="w-12 h-12 mx-auto text-health-green mb-2" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">All results reviewed!</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No pending results</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">All caught up!</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No pending results for today</p>
                 </div>
               )
             ) : (
