@@ -619,52 +619,60 @@ export default function XRay() {
         </Card>
       </div>
 
-      {/* Tabs */}
-      <div className="max-w-7xl mx-auto">
-        <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="pending" data-testid="tab-pending">
-              Pending ({pendingExams.length})
-            </TabsTrigger>
-            <TabsTrigger value="completed" data-testid="tab-completed">
-              Completed ({completedExams.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pending">
-            {pendingExams.length === 0 ? (
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-12 text-center">
-                  <Clock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No pending X-ray examinations</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingExams.map((exam) => (
+      {/* Pending and Completed Tests - 2 Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* LEFT – Pending Test Requests */}
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-white dark:from-purple-900/20 dark:to-gray-900 border-b">
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                <Clock className="w-5 h-5 text-purple-600" />
+                Pending Test Requests
+              </span>
+              <Button
+                type="button"
+                onClick={() => setRequestOpen(true)}
+                className="bg-medical-blue hover:bg-blue-700 text-white font-semibold shadow-md transition-all"
+                data-testid="button-new-request"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Request
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingExams.length > 0 ? (
+                pendingExams.map((exam) => (
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
+                ))
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No pending X-ray examinations</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="completed">
-            {completedExams.length === 0 ? (
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-12 text-center">
-                  <Check className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No completed X-ray examinations</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {completedExams.map((exam) => (
+        {/* RIGHT – Completed Tests */}
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-white dark:from-green-900/20 dark:to-gray-900 border-b">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+              <Check className="w-5 h-5 text-green-600" />
+              Completed Tests
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {completedExams.length > 0 ? (
+                completedExams.map((exam) => (
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                ))
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No completed X-ray examinations</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* New Request Dialog */}
