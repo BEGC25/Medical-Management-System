@@ -769,18 +769,24 @@ export default function Treatment() {
     setQuickFilter("today");
     setDateFilter("today");
     setShowDateFilter(false);
+    setSearchTerm(""); // Clear search when switching to today
   };
 
   const handleActiveVisitsClick = () => {
     setQuickFilter("active");
     setShowDateFilter(false);
+    setSearchTerm(""); // Clear search
     // Show queue modal to see active visits
     setQueueOpen(true);
   };
 
   const handlePendingOrdersClick = () => {
     setQuickFilter("pending");
-    setShowDateFilter(true); // Enable search mode to see all patients with pending orders
+    setDateFilter("today"); // Show today's patients by default
+    setShowDateFilter(true); // Enable search mode so all patients are visible
+    setSearchTerm(""); // Clear search to show all
+    // The patient list already shows payment badges, so doctors can see who has pending payments
+    // Users can then search for specific patients or use date filters
   };
 
   // ---------- UI ----------
@@ -805,6 +811,7 @@ export default function Treatment() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {/* Patients Today - Clickable */}
           <button
+            type="button"
             onClick={handleTodayClick}
             data-testid="stat-card-today"
             className={`group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-lg p-2 border ${
@@ -825,6 +832,7 @@ export default function Treatment() {
 
           {/* Active Visits - Clickable */}
           <button
+            type="button"
             onClick={handleActiveVisitsClick}
             data-testid="stat-card-active"
             className={`group bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-2 border ${
@@ -845,6 +853,7 @@ export default function Treatment() {
 
           {/* Pending Orders - Clickable */}
           <button
+            type="button"
             onClick={handlePendingOrdersClick}
             data-testid="stat-card-pending"
             className={`group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-2 border ${
