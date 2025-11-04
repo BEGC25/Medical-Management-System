@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Form,
   FormControl,
@@ -418,8 +419,8 @@ export default function Laboratory() {
 
   // Date range filtering and patient search
   const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
@@ -475,8 +476,8 @@ export default function Laboratory() {
       }
       case "custom":
         return {
-          start: customStartDate ? new Date(customStartDate) : new Date(0),
-          end: customEndDate ? new Date(customEndDate + "T23:59:59") : new Date(),
+          start: customStartDate || new Date(0),
+          end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
         };
       default:
         return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
@@ -883,22 +884,18 @@ export default function Laboratory() {
               
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
-                  <Input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
+                  <DatePicker
+                    date={customStartDate}
+                    onDateChange={setCustomStartDate}
                     placeholder="Start Date"
-                    className="w-40"
-                    data-testid="input-custom-start"
+                    className="w-48"
                   />
                   <span className="text-sm text-gray-500">to</span>
-                  <Input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
+                  <DatePicker
+                    date={customEndDate}
+                    onDateChange={setCustomEndDate}
                     placeholder="End Date"
-                    className="w-40"
-                    data-testid="input-custom-end"
+                    className="w-48"
                   />
                 </div>
               )}
@@ -1025,20 +1022,18 @@ export default function Laboratory() {
               
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
-                  <Input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
+                  <DatePicker
+                    date={customStartDate}
+                    onDateChange={setCustomStartDate}
                     placeholder="Start Date"
-                    className="w-40"
+                    className="w-48"
                   />
                   <span className="text-sm text-gray-500">to</span>
-                  <Input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
+                  <DatePicker
+                    date={customEndDate}
+                    onDateChange={setCustomEndDate}
                     placeholder="End Date"
-                    className="w-40"
+                    className="w-48"
                   />
                 </div>
               )}

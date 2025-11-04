@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -206,8 +207,8 @@ export default function XRay() {
 
   // Date range filtering and patient search
   const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
@@ -265,8 +266,8 @@ export default function XRay() {
       }
       case "custom":
         return {
-          start: customStartDate ? new Date(customStartDate) : new Date(0),
-          end: customEndDate ? new Date(customEndDate + "T23:59:59") : new Date(),
+          start: customStartDate || new Date(0),
+          end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
         };
       default:
         return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
@@ -670,9 +671,9 @@ export default function XRay() {
               </div>
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
-                  <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} placeholder="Start Date" className="w-40" />
+                  <DatePicker date={customStartDate} onDateChange={setCustomStartDate} placeholder="Start Date" className="w-48" />
                   <span className="text-sm text-gray-500">to</span>
-                  <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} placeholder="End Date" className="w-40" />
+                  <DatePicker date={customEndDate} onDateChange={setCustomEndDate} placeholder="End Date" className="w-48" />
                 </div>
               )}
               <div className="relative">
@@ -716,9 +717,9 @@ export default function XRay() {
               </div>
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
-                  <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} placeholder="Start Date" className="w-40" />
+                  <DatePicker date={customStartDate} onDateChange={setCustomStartDate} placeholder="Start Date" className="w-48" />
                   <span className="text-sm text-gray-500">to</span>
-                  <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} placeholder="End Date" className="w-40" />
+                  <DatePicker date={customEndDate} onDateChange={setCustomEndDate} placeholder="End Date" className="w-48" />
                 </div>
               )}
               <div className="relative">
