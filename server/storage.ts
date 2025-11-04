@@ -1255,75 +1255,95 @@ export class MemStorage implements IStorage {
   
   async getResultsReadyForReview(limit: number = 10) {
     try {
-      // Get completed lab tests where encounter is still active
-      const completedLabs = await db.select({
-        id: labTests.id,
-        patientId: patients.patientId,
-        firstName: patients.firstName,
-        lastName: patients.lastName,
-        testType: labTests.testType,
-        resultType: sql<string>`'Lab Test'`,
-        createdAt: labTests.createdAt,
-      })
-      .from(labTests)
-      .innerJoin(treatments, eq(labTests.encounterId, treatments.id))
-      .innerJoin(patients, eq(treatments.patientId, patients.patientId))
-      .where(
-        and(
-          eq(labTests.status, 'completed'),
-          eq(patients.isDeleted, 0)
-        )
-      )
-      .orderBy(desc(labTests.createdAt));
+      const results: any[] = [];
       
-      // Get X-rays with findings entered
-      const completedXrays = await db.select({
-        id: xrays.id,
-        patientId: patients.patientId,
-        firstName: patients.firstName,
-        lastName: patients.lastName,
-        testType: xrays.examination,
-        resultType: sql<string>`'X-Ray'`,
-        createdAt: xrays.createdAt,
-      })
-      .from(xrays)
-      .innerJoin(treatments, eq(xrays.encounterId, treatments.id))
-      .innerJoin(patients, eq(treatments.patientId, patients.patientId))
-      .where(
-        and(
-          eq(xrays.status, 'completed'),
-          eq(patients.isDeleted, 0)
-        )
-      )
-      .orderBy(desc(xrays.createdAt));
+      // Get completed lab tests
+      const labs = await db.select().from(labTests)
+        .where(eq(labTests.status, 'completed'))
+        .orderBy(desc(labTests.createdAt))
+        .limit(limit);
       
-      // Get ultrasounds with findings entered
-      const completedUltrasounds = await db.select({
-        id: ultrasounds.id,
-        patientId: patients.patientId,
-        firstName: patients.firstName,
-        lastName: patients.lastName,
-        testType: ultrasounds.examinationType,
-        resultType: sql<string>`'Ultrasound'`,
-        createdAt: ultrasounds.createdAt,
-      })
-      .from(ultrasounds)
-      .innerJoin(treatments, eq(ultrasounds.encounterId, treatments.id))
-      .innerJoin(patients, eq(treatments.patientId, patients.patientId))
-      .where(
-        and(
-          eq(ultrasounds.status, 'completed'),
-          eq(patients.isDeleted, 0)
-        )
-      )
-      .orderBy(desc(ultrasounds.createdAt));
+      for (const lab of labs) {
+        const patient = await db.select().from(patients)
+          .where(and(
+            eq(patients.patientId, lab.patientId),
+            eq(patients.isDeleted, 0)
+          ))
+          .limit(1);
+        
+        if (patient.length > 0) {
+          results.push({
+            id: lab.id,
+            patientId: patient[0].patientId,
+            firstName: patient[0].firstName,
+            lastName: patient[0].lastName,
+            testType: lab.testType,
+            resultType: 'Lab Test',
+            createdAt: lab.createdAt,
+          });
+        }
+      }
       
-      // Combine all results and sort by date
-      const allResults = [...completedLabs, ...completedXrays, ...completedUltrasounds]
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      // Get completed X-rays
+      const xrayExams = await db.select().from(xrays)
+        .where(eq(xrays.status, 'completed'))
+        .orderBy(desc(xrays.createdAt))
+        .limit(limit);
+      
+      for (const xray of xrayExams) {
+        const patient = await db.select().from(patients)
+          .where(and(
+            eq(patients.patientId, xray.patientId),
+            eq(patients.isDeleted, 0)
+          ))
+          .limit(1);
+        
+        if (patient.length > 0) {
+          results.push({
+            id: xray.id,
+            patientId: patient[0].patientId,
+            firstName: patient[0].firstName,
+            lastName: patient[0].lastName,
+            testType: xray.examination,
+            resultType: 'X-Ray',
+            createdAt: xray.createdAt,
+          });
+        }
+      }
+      
+      // Get completed ultrasounds
+      const ultrasoundExams = await db.select().from(ultrasounds)
+        .where(eq(ultrasounds.status, 'completed'))
+        .orderBy(desc(ultrasounds.createdAt))
+        .limit(limit);
+      
+      for (const us of ultrasoundExams) {
+        const patient = await db.select().from(patients)
+          .where(and(
+            eq(patients.patientId, us.patientId),
+            eq(patients.isDeleted, 0)
+          ))
+          .limit(1);
+        
+        if (patient.length > 0) {
+          results.push({
+            id: us.id,
+            patientId: patient[0].patientId,
+            firstName: patient[0].firstName,
+            lastName: patient[0].lastName,
+            testType: us.examinationType,
+            resultType: 'Ultrasound',
+            createdAt: us.createdAt,
+          });
+        }
+      }
+      
+      // Sort all results by date and limit
+      const sortedResults = results
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, limit);
       
-      return allResults;
+      return sortedResults;
     } catch (error) {
       console.error("getResultsReadyForReview error:", error);
       throw error;
