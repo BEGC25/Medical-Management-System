@@ -1255,7 +1255,7 @@ export class MemStorage implements IStorage {
   
   async getResultsReadyForReview(limit: number = 10) {
     try {
-      // Get today's date at midnight for filtering
+      // Get today's date for filtering
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayStr = today.toISOString().split('T')[0];
@@ -1267,17 +1267,21 @@ export class MemStorage implements IStorage {
         patientMap.set(p.patientId, p);
       }
       
-      // Get all active encounters (not completed)
-      const activeEncounters = await db.select()
+      // Get all open encounters (not closed) - these are active patient visits
+      const openEncounters = await db.select()
         .from(encounters)
         .where(or(
-          eq(encounters.status, 'active'),
-          eq(encounters.status, 'pending')
+          eq(encounters.status, 'open'),
+          eq(encounters.status, 'ready_to_bill')
         ));
       
-      const activeEncounterIds = new Set(activeEncounters.map(e => e.encounterId));
+      const openEncounterIds = new Set(openEncounters.map(e => e.encounterId));
+      const encountersByEncId = new Map();
+      for (const enc of openEncounters) {
+        encountersByEncId.set(enc.encounterId, enc);
+      }
       
-      // Get completed lab tests from today with active encounters
+      // Get completed lab tests from today
       const completedLabs = await db.select()
         .from(labTests)
         .where(and(
@@ -1301,19 +1305,38 @@ export class MemStorage implements IStorage {
           sql`DATE(${ultrasoundExams.createdAt}) >= ${todayStr}`
         ));
       
+      // Get all order lines to link tests to encounters
+      const allOrderLines = await db.select().from(orderLines);
+      
+      // Create mappings: testId -> encounterId
+      const labTestToEncounter = new Map();
+      const xrayToEncounter = new Map();
+      const ultrasoundToEncounter = new Map();
+      
+      for (const orderLine of allOrderLines) {
+        if (orderLine.relatedType === 'lab_test' && orderLine.relatedId) {
+          labTestToEncounter.set(orderLine.relatedId, orderLine.encounterId);
+        } else if (orderLine.relatedType === 'xray_exam' && orderLine.relatedId) {
+          xrayToEncounter.set(orderLine.relatedId, orderLine.encounterId);
+        } else if (orderLine.relatedType === 'ultrasound_exam' && orderLine.relatedId) {
+          ultrasoundToEncounter.set(orderLine.relatedId, orderLine.encounterId);
+        }
+      }
+      
       // Group results by encounter to show one entry per patient visit
       const encounterResults = new Map();
       
       // Process labs
       for (const lab of completedLabs) {
-        if (!activeEncounterIds.has(lab.encounterId)) continue;
+        const encId = labTestToEncounter.get(lab.testId);
+        if (!encId || !openEncounterIds.has(encId)) continue;
+        
         const patient = patientMap.get(lab.patientId);
         if (!patient) continue;
         
-        const key = lab.encounterId;
-        if (!encounterResults.has(key)) {
-          encounterResults.set(key, {
-            encounterId: lab.encounterId,
+        if (!encounterResults.has(encId)) {
+          encounterResults.set(encId, {
+            encounterId: encId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
@@ -1321,27 +1344,30 @@ export class MemStorage implements IStorage {
             latestTime: new Date(lab.createdAt).getTime(),
           });
         }
-        encounterResults.get(key).results.push({
+        
+        const testNames = JSON.parse(lab.tests);
+        encounterResults.get(encId).results.push({
           type: 'Lab Test',
-          testName: lab.testType,
+          testName: testNames.join(', '),
           time: lab.createdAt,
         });
-        encounterResults.get(key).latestTime = Math.max(
-          encounterResults.get(key).latestTime,
+        encounterResults.get(encId).latestTime = Math.max(
+          encounterResults.get(encId).latestTime,
           new Date(lab.createdAt).getTime()
         );
       }
       
       // Process X-rays
       for (const xray of completedXrays) {
-        if (!activeEncounterIds.has(xray.encounterId)) continue;
+        const encId = xrayToEncounter.get(xray.examId);
+        if (!encId || !openEncounterIds.has(encId)) continue;
+        
         const patient = patientMap.get(xray.patientId);
         if (!patient) continue;
         
-        const key = xray.encounterId;
-        if (!encounterResults.has(key)) {
-          encounterResults.set(key, {
-            encounterId: xray.encounterId,
+        if (!encounterResults.has(encId)) {
+          encounterResults.set(encId, {
+            encounterId: encId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
@@ -1349,27 +1375,29 @@ export class MemStorage implements IStorage {
             latestTime: new Date(xray.createdAt).getTime(),
           });
         }
-        encounterResults.get(key).results.push({
+        
+        encounterResults.get(encId).results.push({
           type: 'X-Ray',
           testName: xray.examination,
           time: xray.createdAt,
         });
-        encounterResults.get(key).latestTime = Math.max(
-          encounterResults.get(key).latestTime,
+        encounterResults.get(encId).latestTime = Math.max(
+          encounterResults.get(encId).latestTime,
           new Date(xray.createdAt).getTime()
         );
       }
       
       // Process ultrasounds
       for (const us of completedUltrasounds) {
-        if (!activeEncounterIds.has(us.encounterId)) continue;
+        const encId = ultrasoundToEncounter.get(us.examId);
+        if (!encId || !openEncounterIds.has(encId)) continue;
+        
         const patient = patientMap.get(us.patientId);
         if (!patient) continue;
         
-        const key = us.encounterId;
-        if (!encounterResults.has(key)) {
-          encounterResults.set(key, {
-            encounterId: us.encounterId,
+        if (!encounterResults.has(encId)) {
+          encounterResults.set(encId, {
+            encounterId: encId,
             patientId: patient.patientId,
             firstName: patient.firstName,
             lastName: patient.lastName,
@@ -1377,13 +1405,14 @@ export class MemStorage implements IStorage {
             latestTime: new Date(us.createdAt).getTime(),
           });
         }
-        encounterResults.get(key).results.push({
+        
+        encounterResults.get(encId).results.push({
           type: 'Ultrasound',
           testName: us.examinationType,
           time: us.createdAt,
         });
-        encounterResults.get(key).latestTime = Math.max(
-          encounterResults.get(key).latestTime,
+        encounterResults.get(encId).latestTime = Math.max(
+          encounterResults.get(encId).latestTime,
           new Date(us.createdAt).getTime()
         );
       }
