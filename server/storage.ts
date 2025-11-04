@@ -1260,6 +1260,8 @@ export class MemStorage implements IStorage {
       today.setHours(0, 0, 0, 0);
       const todayStr = today.toISOString().split('T')[0];
       
+      console.log('[RESULTS_READY] Today filter:', todayStr);
+      
       // Get all non-deleted patients as a lookup map
       const allPatients = await db.select().from(patients).where(eq(patients.isDeleted, 0));
       const patientMap = new Map();
@@ -1275,6 +1277,8 @@ export class MemStorage implements IStorage {
           eq(encounters.status, 'ready_to_bill')
         ));
       
+      console.log('[RESULTS_READY] Open encounters:', openEncounters.length);
+      
       const openEncounterIds = new Set(openEncounters.map(e => e.encounterId));
       const encountersByEncId = new Map();
       for (const enc of openEncounters) {
@@ -1288,6 +1292,8 @@ export class MemStorage implements IStorage {
           eq(labTests.status, 'completed'),
           sql`DATE(${labTests.createdAt}) >= ${todayStr}`
         ));
+      
+      console.log('[RESULTS_READY] Completed labs today:', completedLabs.length);
       
       // Get completed X-rays from today
       const completedXrays = await db.select()
