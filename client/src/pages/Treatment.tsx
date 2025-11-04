@@ -22,6 +22,10 @@ import {
   Search,
   Loader2,
   ChevronDown, // Icon for Accordion
+  Stethoscope,
+  Users,
+  ClipboardList,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -314,6 +318,15 @@ export default function Treatment() {
   // services & drugs
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
   const { data: drugs = [] } = useQuery<Drug[]>({ queryKey: ["/api/pharmacy/drugs"] });
+  
+  // Statistics for header
+  const { data: patientCounts } = useQuery<{ today: number; all: number }>({
+    queryKey: ["/api/patients/counts"],
+  });
+  
+  const { data: unpaidOrders } = useQuery({
+    queryKey: ["/api/unpaid-orders/all"],
+  });
 
   // visit via /treatment/:visitId
   const { data: loadedVisit } = useQuery({
@@ -733,13 +746,77 @@ export default function Treatment() {
     ? allPrescriptions.filter((rx) => rx.encounterId === currentEncounter.encounterId)
     : allPrescriptions;
 
+  // Statistics calculations
+  const todayPatients = patientCounts?.today || 0;
+  const activeEncountersCount = queueVisits.length;
+  const pendingOrdersCount = unpaidOrders 
+    ? ((unpaidOrders as any).laboratory?.length || 0) + 
+      ((unpaidOrders as any).xray?.length || 0) + 
+      ((unpaidOrders as any).ultrasound?.length || 0) + 
+      ((unpaidOrders as any).pharmacy?.length || 0)
+    : 0;
 
   // ---------- UI ----------
   return (
     <div className="space-y-6">
+      {/* World-Class Department Header */}
+      <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-6 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl blur-sm opacity-75"></div>
+            <div className="relative h-16 w-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Stethoscope className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Patient encounters, clinical documentation & care management</p>
+          </div>
+        </div>
+        
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Patients Treated Today */}
+          <div className="group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800/50 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <div className="h-10 w-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{todayPatients}</span>
+            </div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Patients Today</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total visits registered</p>
+          </div>
+
+          {/* Active Encounters */}
+          <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-800/50 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{activeEncountersCount}</span>
+            </div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Encounters</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">In progress visits</p>
+          </div>
+
+          {/* Pending Orders */}
+          <div className="group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl p-4 border border-amber-200 dark:border-amber-800/50 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-2">
+              <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center shadow-md">
+                <ClipboardList className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">{pendingOrdersCount}</span>
+            </div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Pending Orders</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Unpaid services</p>
+          </div>
+        </div>
+      </div>
+
       <Card className="print:hidden">
         <CardHeader>
-          <CardTitle>Treatment Records</CardTitle>
+          <CardTitle>Patient Selection & Documentation</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Patient selection / Header */}
