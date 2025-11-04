@@ -9,8 +9,10 @@ interface PatientSearchProps {
   onEditPatient?: (patient: Patient) => void;
   onViewPatient?: (patient: Patient) => void;
   showActions?: boolean;
-  viewMode: "today" | "date" | "search" | "all";
+  viewMode: "today" | "date" | "search" | "all" | "dateRange";
   selectedDate: string;
+  startDate?: string;
+  endDate?: string;
   searchTerm: string;
   onSearchTermChange?: (term: string) => void;
   shouldSearch?: boolean;
@@ -50,6 +52,8 @@ export default function PatientSearch({
   showActions = true,
   viewMode,
   selectedDate,
+  startDate,
+  endDate,
   searchTerm,
 }: PatientSearchProps) {
   // Always-on search: if 3+ chars, force "search"
@@ -60,14 +64,24 @@ export default function PatientSearch({
       "/api/patients",
       effectiveMode,
       selectedDate,
+      startDate,
+      endDate,
       searchTerm,
       "withStatus",
     ],
-    enabled: true,
+    enabled: effectiveMode !== "dateRange" || (!!startDate && !!endDate),
     queryFn: async () => {
       if (effectiveMode === "today") {
         const r = await fetch("/api/patients?today=true&withStatus=true");
         if (!r.ok) throw new Error("Failed to fetch today's patients");
+        return r.json();
+      }
+      if (effectiveMode === "dateRange" && startDate && endDate) {
+        const r = await fetch(
+          `/api/patients?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&withStatus=true`,
+        );
+        if (!r.ok)
+          throw new Error("Failed to fetch patients for date range");
         return r.json();
       }
       if (effectiveMode === "date") {
@@ -138,9 +152,11 @@ export default function PatientSearch({
               {patients.map((p: any, i: number) => {
                 const s = p.serviceStatus || {};
                 const due = (s.balanceToday ?? s.balance ?? 0) as number;
-                // When filtering by date, show the filtered date; otherwise show last visit
+                // When filtering by date/dateRange, show the appropriate date
                 const displayDate = (effectiveMode === "date" || effectiveMode === "today") && selectedDate
                   ? selectedDate
+                  : effectiveMode === "dateRange"
+                  ? (p.lastVisit || p.lastEncounterDate)
                   : (p.lastVisit || p.lastEncounterDate || p.updatedAt || p.createdAt);
 
                 return (
@@ -223,6 +239,17 @@ export default function PatientSearch({
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!isLoading && effectiveMode === "dateRange" && (!startDate || !endDate) && (
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
+              <Search className="w-6 h-6 text-gray-400" />
+            </div>
+            <p className="text-sm">📅 Select start and end dates above to view patients</p>
+          </div>
         </div>
       )}
 

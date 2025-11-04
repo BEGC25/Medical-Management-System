@@ -940,11 +940,30 @@ export default function Treatment() {
                     onSelectPatient={handlePatientSelect}
                     onViewPatient={handlePatientSelect}
                     showActions={false}
-                    viewMode={showDateFilter ? "all" : "date"}
-                    selectedDate={dateFilter === "today" ? new Date().toISOString().split('T')[0] : 
-                                 dateFilter === "yesterday" ? new Date(Date.now() - 86400000).toISOString().split('T')[0] :
-                                 dateFilter === "custom" && customStartDate ? customStartDate.toISOString().split('T')[0] :
-                                 new Date().toISOString().split('T')[0]}
+                    viewMode={
+                      showDateFilter ? "all" :
+                      dateFilter === "last7days" ? "dateRange" :
+                      dateFilter === "last30days" ? "dateRange" :
+                      dateFilter === "custom" ? "dateRange" :
+                      "date"
+                    }
+                    selectedDate={
+                      dateFilter === "today" ? new Date().toISOString().split('T')[0] : 
+                      dateFilter === "yesterday" ? new Date(Date.now() - 86400000).toISOString().split('T')[0] :
+                      new Date().toISOString().split('T')[0]
+                    }
+                    startDate={
+                      dateFilter === "last7days" ? new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0] :
+                      dateFilter === "last30days" ? new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0] :
+                      dateFilter === "custom" && customStartDate ? customStartDate.toISOString().split('T')[0] :
+                      undefined
+                    }
+                    endDate={
+                      dateFilter === "last7days" ? new Date().toISOString().split('T')[0] :
+                      dateFilter === "last30days" ? new Date().toISOString().split('T')[0] :
+                      dateFilter === "custom" && customEndDate ? customEndDate.toISOString().split('T')[0] :
+                      undefined
+                    }
                     searchTerm={searchTerm}
                     onSearchTermChange={setSearchTerm}
                     shouldSearch={shouldSearch}
