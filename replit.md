@@ -1,7 +1,7 @@
 # Bahr El Ghazal Clinic Management System
 
 ## Overview
-This full-stack, offline-capable web application is a healthcare management system for the Bahr El Ghazal Clinic in rural South Sudan. It digitalizes and streamlines patient management, treatment tracking, laboratory testing with automated clinical interpretation, radiology, pharmacy inventory (FEFO batch tracking), service pricing, billing, and financial reporting. The system aims to provide an enterprise-grade healthcare solution that is simple and clear for local staff, thereby enhancing healthcare delivery in the region.
+This full-stack, offline-capable web application provides a comprehensive healthcare management solution for the Bahr El Ghazal Clinic in rural South Sudan. Its core purpose is to digitalize and streamline patient management, treatment tracking, laboratory testing with automated interpretation, radiology examinations, pharmacy inventory (FEFO batch tracking), service pricing, billing, and financial reporting. The system aims to deliver a professional, enterprise-grade healthcare experience while maintaining simplicity and clarity for local clinic staff, thereby enhancing healthcare delivery in the region.
 
 ## User Preferences
 - **Communication Style**: Simple, everyday language (non-technical)
@@ -24,7 +24,7 @@ This full-stack, offline-capable web application is a healthcare management syst
 ## System Architecture
 
 ### Design Philosophy
-The system features a professional, enterprise healthcare design with a medical blue theme, optimized for simplicity and clarity. The dashboard explicitly displays only today's data.
+The system features a professional, enterprise-grade healthcare design with a medical blue theme, prioritizing simplicity and clarity. The dashboard exclusively displays today's data.
 
 ### Tech Stack
 -   **Frontend**: React 18, TypeScript, Wouter, TanStack Query v5, Tailwind CSS, Radix UI, shadcn/ui, Lucide React, React Hook Form, Zod, Vite.
@@ -32,17 +32,17 @@ The system features a professional, enterprise healthcare design with a medical 
 -   **Database**: Production: Neon (PostgreSQL); Local/Offline: Better SQLite3.
 
 ### Feature Specifications
--   **Role-Based Access Control (RBAC)**: Supports Admin, Reception, Doctor, Lab, Radiology, Pharmacy roles with specific permissions.
+-   **Role-Based Access Control (RBAC)**: Supports Admin, Reception, Doctor, Lab, Radiology, Pharmacy roles with granular permissions.
 -   **Patient Management**: Registration, search, updates, and soft deletion.
 -   **Encounter/Visit Management**: Creation, tracking, and closure of patient visits.
--   **Treatment Tracking**: Includes SOAP notes, vitals, diagnosis, and treatment plans.
+-   **Treatment Tracking**: SOAP notes, vitals, diagnosis, and treatment plans.
 -   **Laboratory Management**: Grouped test ordering, results entry, clinical interpretation, and status tracking.
--   **Radiology (X-Ray/Ultrasound)**: Requesting exams, entering findings, and managing multi-type ultrasound reports.
+-   **Radiology (X-Ray/Ultrasound)**: Exam requests, findings entry, and multi-type ultrasound reports.
 -   **Pharmacy Management**: Drug catalog, FEFO batch tracking, inventory, dispensing, and low stock alerts.
 -   **Billing & Payments**: Service pricing, multi-item payment processing, receipt generation, and tracking.
--   **Financial Reporting**: Dashboard statistics for daily operations, including a "Results Ready to Review" widget.
--   **Discharge Documentation**: Generates printable patient summaries.
--   **Offline Capability**: Utilizes local storage caching and a pending sync queue.
+-   **Financial Reporting**: Dashboard statistics and a "Results Ready to Review" widget.
+-   **Discharge Documentation**: Generation of printable patient summaries.
+-   **Offline Capability**: Local storage caching and a pending sync queue for low-connectivity environments.
 
 ### UI/UX Decisions
 -   **Color Scheme**: Medical blue primary theme with distinct secondary colors and dark mode support.
@@ -55,11 +55,11 @@ The system features a professional, enterprise healthcare design with a medical 
 -   **Authentication**: Passport.js with local strategy, scrypt for password hashing, and `express-session` for secure session management.
 -   **Data Validation**: Zod schemas enforce data integrity on both frontend and backend.
 -   **Error Handling**: Standardized API error responses with appropriate HTTP status codes.
--   **Database**: Drizzle ORM for database interactions. Custom business ID generation (e.g., BGC###) is used for key entities.
+-   **Database**: Drizzle ORM for database interactions, with custom business ID generation (e.g., BGC###).
 -   **Soft Delete**: Implemented for patients and cancelled lab tests.
 -   **State Management (Frontend)**: TanStack Query manages data fetching, caching, and synchronization.
 -   **Form Management (Frontend)**: React Hook Form with Zod validation.
--   **Entity Relationships**: The `order_lines` table is the single source of truth for linking tests/exams to encounters, primarily using business IDs for joins.
+-   **Entity Relationships**: The `order_lines` table serves as the single source of truth for linking tests/exams to encounters, primarily using business IDs for joins.
 
 ## External Dependencies
 -   **Backend Deployment**: Render
