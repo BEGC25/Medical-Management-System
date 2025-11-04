@@ -415,6 +415,12 @@ export default function Laboratory() {
   const [debounced, setDebounced] = useState("");
   const [page, setPage] = useState(1);
   const PER_PAGE = 20;
+
+  // Date range filtering and patient search
+  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [patientSearchTerm, setPatientSearchTerm] = useState("");
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
     return () => clearTimeout(id);
@@ -446,15 +452,73 @@ export default function Laboratory() {
   /* ----------------------------- Data ----------------------------- */
 
   const { data: allLabTests = [] } = useLabTests();
-  const pendingTests = allLabTests.filter((t) => t.status === "pending");
-  const completedTests = allLabTests.filter((t) => t.status === "completed");
+  
+  // Calculate date range based on filter
+  const getDateRange = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    switch (dateFilter) {
+      case "today":
+        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+      case "yesterday": {
+        const yesterday = new Date(today.getTime() - 86400000);
+        return { start: yesterday, end: new Date(yesterday.getTime() + 86400000 - 1) };
+      }
+      case "last7days": {
+        const weekAgo = new Date(today.getTime() - 7 * 86400000);
+        return { start: weekAgo, end: new Date() };
+      }
+      case "last30days": {
+        const monthAgo = new Date(today.getTime() - 30 * 86400000);
+        return { start: monthAgo, end: new Date() };
+      }
+      case "custom":
+        return {
+          start: customStartDate ? new Date(customStartDate) : new Date(0),
+          end: customEndDate ? new Date(customEndDate + "T23:59:59") : new Date(),
+        };
+      default:
+        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+    }
+  };
+  
+  const dateRange = getDateRange();
+  
+  // First filter by date only
+  const dateFilteredTests = allLabTests.filter((t) => {
+    const testDate = new Date(t.requestedDate);
+    return testDate >= dateRange.start && testDate <= dateRange.end;
+  });
+  
+  const dateFilteredPending = dateFilteredTests.filter((t) => t.status === "pending");
+  const dateFilteredCompleted = dateFilteredTests.filter((t) => t.status === "completed");
 
   // Patient map for cards
   const patientIdsForMap = useMemo(
-    () => [...pendingTests, ...completedTests].map((t) => t.patientId),
-    [pendingTests, completedTests]
+    () => dateFilteredTests.map((t) => t.patientId),
+    [dateFilteredTests]
   );
   const patientsMap = usePatientsMap(patientIdsForMap);
+  
+  // Then filter by patient search (needs patientsMap loaded)
+  const filterByPatient = (tests: LabTest[]) => {
+    if (!patientSearchTerm.trim()) return tests;
+    
+    return tests.filter((t) => {
+      const patient = patientsMap.data?.[t.patientId];
+      if (!patient) return false;
+      
+      const searchLower = patientSearchTerm.toLowerCase();
+      const patientName = fullName(patient).toLowerCase();
+      const patientId = patient.patientId.toLowerCase();
+      
+      return patientName.includes(searchLower) || patientId.includes(searchLower);
+    });
+  };
+  
+  const pendingTests = filterByPatient(dateFilteredPending);
+  const completedTests = filterByPatient(dateFilteredCompleted);
 
   // Patient picker data: today's + search
   const todayPatients = useTodayPatients();
@@ -772,6 +836,90 @@ export default function Laboratory() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Date Filter and Search Controls */}
+            <div className="mb-4 space-y-3 border-b pb-4">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={dateFilter === "today" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("today")}
+                  data-testid="filter-today"
+                >
+                  Today
+                </Button>
+                <Button
+                  variant={dateFilter === "yesterday" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("yesterday")}
+                  data-testid="filter-yesterday"
+                >
+                  Yesterday
+                </Button>
+                <Button
+                  variant={dateFilter === "last7days" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("last7days")}
+                  data-testid="filter-last7days"
+                >
+                  Last 7 Days
+                </Button>
+                <Button
+                  variant={dateFilter === "last30days" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("last30days")}
+                  data-testid="filter-last30days"
+                >
+                  Last 30 Days
+                </Button>
+                <Button
+                  variant={dateFilter === "custom" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("custom")}
+                  data-testid="filter-custom"
+                >
+                  Custom Range
+                </Button>
+              </div>
+              
+              {dateFilter === "custom" && (
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    placeholder="Start Date"
+                    className="w-40"
+                    data-testid="input-custom-start"
+                  />
+                  <span className="text-sm text-gray-500">to</span>
+                  <Input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    placeholder="End Date"
+                    className="w-40"
+                    data-testid="input-custom-end"
+                  />
+                </div>
+              )}
+              
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search by patient name or ID..."
+                  value={patientSearchTerm}
+                  onChange={(e) => setPatientSearchTerm(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-patient-search"
+                />
+              </div>
+              
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Showing {pendingTests.length} pending test{pendingTests.length !== 1 ? "s" : ""}
+                {patientSearchTerm && ` matching "${patientSearchTerm}"`}
+              </div>
+            </div>
+            
             <div className="space-y-2">
               {pendingTests.length ? (
                 pendingTests.map((test) => {
@@ -835,6 +983,82 @@ export default function Laboratory() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Same filter controls for completed tests */}
+            <div className="mb-4 space-y-3 border-b pb-4">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={dateFilter === "today" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("today")}
+                >
+                  Today
+                </Button>
+                <Button
+                  variant={dateFilter === "yesterday" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("yesterday")}
+                >
+                  Yesterday
+                </Button>
+                <Button
+                  variant={dateFilter === "last7days" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("last7days")}
+                >
+                  Last 7 Days
+                </Button>
+                <Button
+                  variant={dateFilter === "last30days" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("last30days")}
+                >
+                  Last 30 Days
+                </Button>
+                <Button
+                  variant={dateFilter === "custom" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("custom")}
+                >
+                  Custom Range
+                </Button>
+              </div>
+              
+              {dateFilter === "custom" && (
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    placeholder="Start Date"
+                    className="w-40"
+                  />
+                  <span className="text-sm text-gray-500">to</span>
+                  <Input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    placeholder="End Date"
+                    className="w-40"
+                  />
+                </div>
+              )}
+              
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search by patient name or ID..."
+                  value={patientSearchTerm}
+                  onChange={(e) => setPatientSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Showing {completedTests.length} completed test{completedTests.length !== 1 ? "s" : ""}
+                {patientSearchTerm && ` matching "${patientSearchTerm}"`}
+              </div>
+            </div>
+            
             <div className="space-y-2">
               {completedTests.length ? (
                 completedTests.map((test) => {
