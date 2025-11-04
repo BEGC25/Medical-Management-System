@@ -280,12 +280,14 @@ export interface IStorage {
   // Today filters
   getTodaysPatients(): Promise<schema.Patient[]>;
   getPatientsByDate(date: string): Promise<schema.Patient[]>;
+  getPatientsByDateRange(startDate: string, endDate: string): Promise<schema.Patient[]>;
   getTodaysTreatments(): Promise<schema.Treatment[]>;
 
   // Enhanced patient queries with service status
   getPatientsWithStatus(search?: string): Promise<(schema.Patient & { serviceStatus: any })[]>;
   getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]>;
   getPatientsByDateWithStatus(date: string): Promise<(schema.Patient & { serviceStatus: any })[]>;
+  getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any })[]>;
   getPatientServiceStatus(patientId: string): Promise<any>;
 
   // Pharmacy Inventory - Drugs
@@ -1530,6 +1532,18 @@ export class MemStorage implements IStorage {
       .orderBy(desc(patients.createdAt));
   }
 
+  async getPatientsByDateRange(startDate: string, endDate: string): Promise<schema.Patient[]> {
+    return await db.select().from(patients)
+      .where(
+        and(
+          eq(patients.isDeleted, 0),
+          sql`${patients.createdAt} >= ${startDate}`,
+          sql`${patients.createdAt} <= ${endDate}`
+        )
+      )
+      .orderBy(desc(patients.createdAt));
+  }
+
   async getTodaysTreatments(): Promise<schema.Treatment[]> {
     const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
 
@@ -1776,6 +1790,27 @@ export class MemStorage implements IStorage {
         eq(patients.isDeleted, 0), // Added filter
         sql`DATE(${patients.createdAt}) = ${date}`
       ))
+      .orderBy(desc(patients.createdAt));
+
+    const patientsWithStatus = await Promise.all(
+      patientsData.map(async (patient) => {
+        const serviceStatus = await this.getPatientServiceStatus(patient.patientId);
+        return { ...patient, serviceStatus };
+      })
+    );
+
+    return patientsWithStatus;
+  }
+
+  async getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
+    const patientsData = await db.select().from(patients)
+      .where(
+        and(
+          eq(patients.isDeleted, 0),
+          sql`${patients.createdAt} >= ${startDate}`,
+          sql`${patients.createdAt} <= ${endDate}`
+        )
+      )
       .orderBy(desc(patients.createdAt));
 
     const patientsWithStatus = await Promise.all(

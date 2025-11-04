@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -88,36 +89,45 @@ export default function Patients() {
   // Track newly registered patient for highlighting
   const [newlyRegisteredPatientId, setNewlyRegisteredPatientId] = useState<string | null>(null);
 
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toLocaleDateString("en-CA");
-  });
-
-  const [viewMode, setViewMode] = useState<"today" | "date" | "search" | "all">(
-    () => {
-      try {
-        const savedMode = localStorage.getItem("patient-view-mode");
-        if (
-          savedMode &&
-          ["today", "date", "search", "all"].includes(savedMode)
-        ) {
-          return savedMode as "today" | "date" | "search" | "all";
-        }
-      } catch {}
-      return "today";
-    },
-  );
-
-  const handleViewModeChange = (m: "today" | "date" | "search" | "all") => {
-    setViewMode(m);
-    try {
-      localStorage.setItem("patient-view-mode", m);
-    } catch {}
-  };
+  // Date range filtering and search
+  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
+  const [showSearch, setShowSearch] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Calculate date range based on filter
+  const getDateRange = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    switch (dateFilter) {
+      case "today":
+        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+      case "yesterday": {
+        const yesterday = new Date(today.getTime() - 86400000);
+        return { start: yesterday, end: new Date(yesterday.getTime() + 86400000 - 1) };
+      }
+      case "last7days": {
+        const weekAgo = new Date(today.getTime() - 7 * 86400000);
+        return { start: weekAgo, end: new Date() };
+      }
+      case "last30days": {
+        const monthAgo = new Date(today.getTime() - 30 * 86400000);
+        return { start: monthAgo, end: new Date() };
+      }
+      case "custom":
+        return {
+          start: customStartDate || new Date(0),
+          end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
+        };
+      default:
+        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+    }
+  };
 
   // Billing settings
   const { data: billingSettings } = useQuery({
@@ -144,18 +154,15 @@ export default function Patients() {
 
   // Counts
   const { data: patientCounts, isLoading: countsLoading } = useQuery({
-    queryKey: ["/api/patients/counts", viewMode, selectedDate],
+    queryKey: ["/api/patients/counts"],
     queryFn: () => {
-      const params = new URLSearchParams();
-      if (viewMode === "date") params.append("date", selectedDate);
-      return fetch(`/api/patients/counts?${params}`).then((r) => r.json());
+      return fetch(`/api/patients/counts`).then((r) => r.json());
     },
     refetchInterval: 30000,
   });
 
   const todayCount = patientCounts?.today || 0;
   const allCount = patientCounts?.all || 0;
-  const specificDateCount = patientCounts?.date || 0;
 
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
@@ -402,11 +409,13 @@ export default function Patients() {
 
   const { data: patientsListData, isLoading: patientsLoading } = useQuery<any[]>(
     {
-      queryKey: ["/api/patients", viewMode, selectedDate],
+      queryKey: ["/api/patients", dateFilter, customStartDate, customEndDate],
       queryFn: async () => {
         const params = new URLSearchParams();
-        if (viewMode === "date") params.append("date", selectedDate);
-        if (viewMode === "today") params.append("today", "true");
+        const { start, end } = getDateRange();
+        
+        params.append("startDate", start.toISOString());
+        params.append("endDate", end.toISOString());
         params.append("withStatus", "true"); // Include consultation payment status
 
         const response = await fetch(`/api/patients?${params}`);
@@ -424,19 +433,8 @@ export default function Patients() {
 
   const patientsList = patientsListData || [];
 
-  // Filter patients depending on the view mode
-  const filteredPatients = (() => {
-    if (viewMode === "search") {
-      return searchResults;
-    }
-    
-    // The API already filters for 'today', 'date', and 'all' based on query params.
-    // No need to re-filter on the client.
-    return patientsList;
-  })();
-
-  // For rendering - just show the patients
-  const patientsToDisplay = filteredPatients;
+  // Determine which patients to display
+  const patientsToDisplay = showSearch ? searchResults : patientsList;
 
   const jump = (path: string) => {
     window.location.href = path;
@@ -539,81 +537,85 @@ export default function Patients() {
           </Card>
         </div>
 
-        {/* View Mode Tabs */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Button
-            variant={viewMode === "today" ? "default" : "outline"}
-            onClick={() => handleViewModeChange("today")}
-            className={`flex items-center gap-2 font-semibold transition-all ${
-              viewMode === "today" 
-                ? "bg-medical-blue hover:bg-blue-700 shadow-md" 
-                : "hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-medical-blue hover:border-medical-blue"
-            }`}
-            data-testid="button-view-today"
-          >
-            <Calendar className="w-4 h-4" />
-            Today ({todayCount})
-          </Button>
-
-          <Button
-            variant={viewMode === "date" ? "default" : "outline"}
-            onClick={() => handleViewModeChange("date")}
-            className={`flex items-center gap-2 font-semibold transition-all ${
-              viewMode === "date" 
-                ? "bg-medical-blue hover:bg-blue-700 shadow-md" 
-                : "hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-medical-blue hover:border-medical-blue"
-            }`}
-            data-testid="button-view-date"
-          >
-            <Calendar className="w-4 h-4" />
-            By Date ({specificDateCount})
-          </Button>
-
-          <Button
-            variant={viewMode === "search" ? "default" : "outline"}
-            onClick={() => handleViewModeChange("search")}
-            className={`flex items-center gap-2 font-semibold transition-all ${
-              viewMode === "search" 
-                ? "bg-medical-blue hover:bg-blue-700 shadow-md" 
-                : "hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-medical-blue hover:border-medical-blue"
-            }`}
-            data-testid="button-view-search"
-          >
-            <Search className="w-4 h-4" />
-            Search
-          </Button>
-
-          <Button
-            variant={viewMode === "all" ? "default" : "outline"}
-            onClick={() => handleViewModeChange("all")}
-            className={`flex items-center gap-2 font-semibold transition-all ${
-              viewMode === "all" 
-                ? "bg-medical-blue hover:bg-blue-700 shadow-md" 
-                : "hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-medical-blue hover:border-medical-blue"
-            }`}
-            data-testid="button-view-all"
-          >
-            <Users className="w-4 h-4" />
-            All Patients ({allCount})
-          </Button>
-        </div>
-
-        {/* Date Picker for Date View */}
-        {viewMode === "date" && (
-          <div className="mb-4">
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="max-w-xs"
-              data-testid="input-date-picker"
-            />
+        {/* Date Range Filters */}
+        <div className="space-y-3 mb-4">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={dateFilter === "today" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("today")}
+              className={dateFilter === "today" ? "bg-medical-blue hover:bg-blue-700" : ""}
+              data-testid="button-filter-today"
+            >
+              Today
+            </Button>
+            <Button
+              variant={dateFilter === "yesterday" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("yesterday")}
+              className={dateFilter === "yesterday" ? "bg-medical-blue hover:bg-blue-700" : ""}
+              data-testid="button-filter-yesterday"
+            >
+              Yesterday
+            </Button>
+            <Button
+              variant={dateFilter === "last7days" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("last7days")}
+              className={dateFilter === "last7days" ? "bg-medical-blue hover:bg-blue-700" : ""}
+              data-testid="button-filter-last7"
+            >
+              Last 7 Days
+            </Button>
+            <Button
+              variant={dateFilter === "last30days" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("last30days")}
+              className={dateFilter === "last30days" ? "bg-medical-blue hover:bg-blue-700" : ""}
+              data-testid="button-filter-last30"
+            >
+              Last 30 Days
+            </Button>
+            <Button
+              variant={dateFilter === "custom" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("custom")}
+              className={dateFilter === "custom" ? "bg-medical-blue hover:bg-blue-700" : ""}
+              data-testid="button-filter-custom"
+            >
+              Custom Range
+            </Button>
+            <Button
+              variant={showSearch ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowSearch(!showSearch)}
+              className={`ml-auto ${showSearch ? "bg-medical-blue hover:bg-blue-700" : ""}`}
+              data-testid="button-toggle-search"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Search
+            </Button>
           </div>
-        )}
-
-        {/* Search Input */}
-        {viewMode === "search" && (
-          <div className="mb-4">
+          
+          {dateFilter === "custom" && (
+            <div className="flex gap-2 items-center">
+              <DatePicker
+                date={customStartDate}
+                onDateChange={setCustomStartDate}
+                placeholder="Start Date"
+                className="w-48"
+              />
+              <span className="text-sm text-gray-500">to</span>
+              <DatePicker
+                date={customEndDate}
+                onDateChange={setCustomEndDate}
+                placeholder="End Date"
+                className="w-48"
+              />
+            </div>
+          )}
+          
+          {showSearch && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
@@ -625,29 +627,31 @@ export default function Patients() {
                 data-testid="input-search"
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Patients Table */}
       <Card className="shadow-md border-0">
         <CardHeader className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b">
           <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
-            {viewMode === "today" && `Patients Registered Today`}
-            {viewMode === "date" && `Patients on ${new Date(selectedDate).toLocaleDateString()}`}
-            {viewMode === "search" && searchQuery && `Search Results for "${searchQuery}"`}
-            {viewMode === "search" && !searchQuery && "Enter search query"}
-            {viewMode === "all" && "All Patients"}
+            {showSearch && searchQuery && `Search Results for "${searchQuery}"`}
+            {showSearch && !searchQuery && "Enter search query"}
+            {!showSearch && dateFilter === "today" && `Patients Registered Today`}
+            {!showSearch && dateFilter === "yesterday" && `Patients Registered Yesterday`}
+            {!showSearch && dateFilter === "last7days" && `Patients from Last 7 Days`}
+            {!showSearch && dateFilter === "last30days" && `Patients from Last 30 Days`}
+            {!showSearch && dateFilter === "custom" && `Patients in Custom Range`}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {patientsLoading || (viewMode === "search" && searchLoading) ? (
+          {patientsLoading || (showSearch && searchLoading) ? (
             <div className="text-center py-8">Loading...</div>
           ) : patientsToDisplay.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {viewMode === "search" && searchQuery
+              {showSearch && searchQuery
                 ? "No patients found matching your search"
-                : "No patients found"}
+                : "No patients found for this date range"}
             </div>
           ) : (
             <div className="overflow-x-auto">
