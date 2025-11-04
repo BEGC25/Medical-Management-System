@@ -1802,7 +1802,30 @@ export class MemStorage implements IStorage {
     return patientsWithStatus;
   }
 
-  async getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any; dateOfService?: string; lastVisit?: string })[]> {
+  // Filter patients by REGISTRATION date range (patients.createdAt) - for Patients page
+  async getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
+    const patientsData = await db.select().from(patients)
+      .where(
+        and(
+          eq(patients.isDeleted, 0),
+          sql`DATE(${patients.createdAt}) >= ${startDate}`,
+          sql`DATE(${patients.createdAt}) <= ${endDate}`
+        )
+      )
+      .orderBy(desc(patients.createdAt));
+
+    const patientsWithStatus = await Promise.all(
+      patientsData.map(async (patient: any) => {
+        const serviceStatus = await this.getPatientServiceStatus(patient.patientId);
+        return { ...patient, serviceStatus };
+      })
+    );
+
+    return patientsWithStatus;
+  }
+
+  // Filter patients by ENCOUNTER/VISIT date range (encounters.visitDate) - for Treatment page
+  async getPatientsByEncounterDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any; dateOfService?: string; lastVisit?: string })[]> {
     // Query encounters within the date range and join with patients
     const encountersInRange = await db
       .select({

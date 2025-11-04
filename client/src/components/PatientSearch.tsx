@@ -78,7 +78,7 @@ export default function PatientSearch({
       }
       if (effectiveMode === "dateRange" && startDate && endDate) {
         const r = await fetch(
-          `/api/patients?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&withStatus=true`,
+          `/api/patients?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&withStatus=true&filterBy=encounters`,
         );
         if (!r.ok)
           throw new Error("Failed to fetch patients for date range");

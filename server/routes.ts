@@ -378,6 +378,7 @@ router.get("/api/patients", async (req, res) => {
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
     const withStatus = req.query.withStatus === "true";
+    const filterBy = req.query.filterBy as string; // "encounters" or "registration" (default)
 
     // Support both legacy params and new date range params
     const today = req.query.today;
@@ -385,9 +386,16 @@ router.get("/api/patients", async (req, res) => {
 
     if (withStatus) {
       if (startDate && endDate) {
-        // New date range filtering
-        const patients = await storage.getPatientsByDateRangeWithStatus(startDate, endDate);
-        res.json(patients);
+        // Date range filtering - check filterBy parameter
+        if (filterBy === "encounters") {
+          // Filter by encounter/visit dates (for Treatment page)
+          const patients = await storage.getPatientsByEncounterDateRangeWithStatus(startDate, endDate);
+          res.json(patients);
+        } else {
+          // Filter by registration dates (for Patients page - default)
+          const patients = await storage.getPatientsByDateRangeWithStatus(startDate, endDate);
+          res.json(patients);
+        }
       } else if (today === "true" || search === "today") {
         const patients = await storage.getTodaysPatientsWithStatus();
         res.json(patients);
