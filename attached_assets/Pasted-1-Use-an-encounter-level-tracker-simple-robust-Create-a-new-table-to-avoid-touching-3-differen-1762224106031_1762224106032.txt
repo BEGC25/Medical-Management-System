@@ -1,0 +1,134 @@
+1) Use an encounter-level tracker (simple + robust)
+
+Create a new table to avoid touching 3 different result tables:
+
+-- New table to track routing/review at the ENCOUNTER level
+CREATE TABLE IF NOT EXISTS results_routing (
+  id              SERIAL PRIMARY KEY,
+  encounter_id    TEXT NOT NULL,
+  routed_to_doctor      INT NOT NULL DEFAULT 0, -- 0/1
+  routed_at             TIMESTAMPTZ,
+  routed_by             TEXT,
+  reviewed_by_doctor    INT NOT NULL DEFAULT 0, -- 0/1
+  reviewed_at           TIMESTAMPTZ,
+  reviewed_by           TEXT
+);
+
+-- Helpful index
+CREATE INDEX IF NOT EXISTS idx_results_routing_enc
+  ON results_routing(encounter_id);
+
+
+Why this table?
+It avoids fragile joins and “wrong table name” bugs. We decide “encounter is ready” once all its ordered diagnostics are completed and then track routing/review at the encounter level.
+
+2) Define “all diagnostics completed” once (server utility or SQL view)
+
+Implement a server utility (or a SQL VIEW if you prefer) that computes, per encounter:
+
+total_ordered = count of all order_lines for types in {lab, xray, ultrasound}
+
+completed_count = how many of those have status=completed
+
+all_completed = completed_count = total_ordered AND total_ordered > 0
+
+Use the actual table/column names you already have:
+
+encounters(encounterId, status) ← status values in your DB are 'open' | 'ready_to_bill' | 'closed' (not “active/pending”).
+
+order_lines(encounter_id, related_type, related_id) with related_type values 'lab', 'xray', 'ultrasound' (match your real values).
+
+lab_tests(lab_test_id, status, completed_at) (or your actual camel/snake case)
+
+xray_exams(xray_exam_id, status, completed_at)
+
+ultrasound_exams(ultrasound_exam_id, status, completed_at)
+
+patients(patientId, fullName, isDeleted)
+
+Server pseudo (keep it simple; avoid complex ORM joins):
+
+// storage.getEncountersReadyForRouting()
+//
+// Steps:
+// 1) Load all open/ready_to_bill encounters.
+// 2) For each encounter, load its order_lines (lab/xray/ultrasound only).
+// 3) For each order_line, check the corresponding table for status='completed'.
+// 4) If total_ordered > 0 AND all are completed -> candidate.
+// 5) Join patient and check patients.isDeleted = 0.
+// 6) Left-join results_routing to exclude already routed/reviewed.
+// 7) (Default) Return all candidates. If you want "today only", add a flag to filter by completed_at >= (today midnight).
+
+// Return shape (array of cards):
+// { encounterId, patientId, patientName, completedCount, totalOrdered,
+//   types: ['lab','xray'], lastCompletedAt }
+// Sort: lastCompletedAt DESC
+
+
+Important details (avoid previous pitfalls):
+
+Use 'open' and 'ready_to_bill' as “active” statuses.
+
+Use exact related_type values your DB uses (you reported 'lab', not 'lab_test').
+
+Match by encounter_id in order_lines, then into result tables by related_id.
+
+3) API (server)
+
+Add minimal, clear endpoints:
+
+GET   /api/results/ready
+      -> returns the array from getEncountersReadyForRouting()
+
+POST  /api/results/route
+      body: { encounterId }
+      -> inserts/updates results_routing: routed_to_doctor=1, routed_at=now(), routed_by=req.user.username
+
+POST  /api/results/review
+      body: { encounterId }
+      -> updates results_routing: reviewed_by_doctor=1, reviewed_at=now(), reviewed_by=req.user.username
+
+
+RBAC:
+
+GET /api/results/ready → roles: reception, admin, doctor (doctor can see for awareness)
+
+POST /api/results/route → roles: reception, admin
+
+POST /api/results/review → roles: doctor, admin
+
+4) Dashboard (reception)
+
+Replace the Revenue card with a “Results ready to route” card:
+
+Big count (number of encounters ready).
+
+“View list” link → /results-to-route page.
+
+On /results-to-route list:
+
+Columns: Patient • Encounter • Tests (e.g., “Lab, X-ray”) • Completed (#/total) • Last completed time • Action
+
+Send to doctor button → POST /api/results/route (row disappears after success).
+
+Keep colors aligned to your UI tokens (no neon blues):
+Lab → amber, X-ray → purple, Ultrasound → blue (muted tones you’re already using).
+
+5) Doctor view
+
+Add a small button/badge “Awaiting review” in the doctor’s header or Treatment page.
+
+List routed encounters; “Mark reviewed” → POST /api/results/review (row disappears).
+
+6) “Today only” vs “All pending”
+
+Default: All pending (so nothing is missed overnight).
+
+Add optional filter switch on UI: [Today only] → back-end param ?scope=today.
+(Filter by lastCompletedAt >= today 00:00 in clinic timezone.)
+
+7) Remove “Today’s Revenue” safely
+
+Only hide/remove it on reception role.
+
+Keep the component/code for admin/finance dashboards if you need it elsewhere later.
