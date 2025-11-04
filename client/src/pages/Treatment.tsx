@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 // NEW: Import Accordion components
 import {
   Accordion,
@@ -226,6 +227,12 @@ export default function Treatment() {
   // Patient search
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
+
+  // Date filtering
+  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
+  const [showDateFilter, setShowDateFilter] = useState(false);
 
   // Queue modal
   const [queueOpen, setQueueOpen] = useState(false);
@@ -774,42 +781,42 @@ export default function Treatment() {
           </div>
         </div>
         
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Statistics Cards - Compact */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Patients Treated Today */}
-          <div className="group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800/50 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center justify-between mb-2">
-              <div className="h-10 w-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
-                <Users className="h-5 w-5 text-white" />
+          <div className="group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-lg p-3 border border-emerald-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <div className="h-8 w-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Users className="h-4 w-4 text-white" />
               </div>
-              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{todayPatients}</span>
+              <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{todayPatients}</span>
             </div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Patients Today</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total visits registered</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Patients Today</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">Total visits registered</p>
           </div>
 
-          {/* Active Encounters */}
-          <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-800/50 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center justify-between mb-2">
-              <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
-                <Activity className="h-5 w-5 text-white" />
+          {/* Active Visits */}
+          <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800/50 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Activity className="h-4 w-4 text-white" />
               </div>
-              <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{activeEncountersCount}</span>
+              <span className="text-xl font-bold text-blue-700 dark:text-blue-400">{activeEncountersCount}</span>
             </div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Encounters</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">In progress visits</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Active Visits</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">Patients being treated</p>
           </div>
 
           {/* Pending Orders */}
-          <div className="group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl p-4 border border-amber-200 dark:border-amber-800/50 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center justify-between mb-2">
-              <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center shadow-md">
-                <ClipboardList className="h-5 w-5 text-white" />
+          <div className="group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-800/50 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <div className="h-8 w-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center shadow-sm">
+                <ClipboardList className="h-4 w-4 text-white" />
               </div>
-              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">{pendingOrdersCount}</span>
+              <span className="text-xl font-bold text-amber-700 dark:text-amber-400">{pendingOrdersCount}</span>
             </div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Pending Orders</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Unpaid services</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Pending Orders</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">Unpaid services</p>
           </div>
         </div>
       </div>
@@ -836,22 +843,94 @@ export default function Treatment() {
               </div>
 
               <>
-                <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                  <div className="relative flex-1">
-                    <Input
-                      placeholder="Search patients by name, ID or phone…"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && setShouldSearch(true)}
-                      className="pl-9"
-                    />
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                {/* Date Filter and Search Controls */}
+                <div className="mb-4 space-y-3 border-b pb-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      variant={dateFilter === "today" ? "default" : "outline"} 
+                      size="sm" 
+                      onClick={() => { setDateFilter("today"); setShowDateFilter(false); }}
+                    >
+                      Today
+                    </Button>
+                    <Button 
+                      variant={dateFilter === "yesterday" ? "default" : "outline"} 
+                      size="sm" 
+                      onClick={() => { setDateFilter("yesterday"); setShowDateFilter(false); }}
+                    >
+                      Yesterday
+                    </Button>
+                    <Button 
+                      variant={dateFilter === "last7days" ? "default" : "outline"} 
+                      size="sm" 
+                      onClick={() => { setDateFilter("last7days"); setShowDateFilter(false); }}
+                    >
+                      Last 7 Days
+                    </Button>
+                    <Button 
+                      variant={dateFilter === "last30days" ? "default" : "outline"} 
+                      size="sm" 
+                      onClick={() => { setDateFilter("last30days"); setShowDateFilter(false); }}
+                    >
+                      Last 30 Days
+                    </Button>
+                    <Button 
+                      variant={dateFilter === "custom" ? "default" : "outline"} 
+                      size="sm" 
+                      onClick={() => { setDateFilter("custom"); setShowDateFilter(false); }}
+                    >
+                      Custom Range
+                    </Button>
+                    <Button 
+                      variant={showDateFilter ? "default" : "outline"} 
+                      size="sm" 
+                      onClick={() => setShowDateFilter(!showDateFilter)}
+                    >
+                      <Search className="w-3 h-3 mr-1" />
+                      Search
+                    </Button>
                   </div>
-                  <Button onClick={() => setShouldSearch(true)}>Search</Button>
-                  <Button variant="outline" onClick={() => { setSearchTerm(""); setShouldSearch(false); }}>
-                    Clear
-                  </Button>
-                  <Button variant="outline" onClick={() => setQueueOpen(true)}>
+                  
+                  {dateFilter === "custom" && (
+                    <div className="flex gap-2 items-center">
+                      <DatePicker 
+                        date={customStartDate} 
+                        onDateChange={setCustomStartDate} 
+                        placeholder="Start Date" 
+                        className="w-48" 
+                      />
+                      <span className="text-sm text-gray-500">to</span>
+                      <DatePicker 
+                        date={customEndDate} 
+                        onDateChange={setCustomEndDate} 
+                        placeholder="End Date" 
+                        className="w-48" 
+                      />
+                    </div>
+                  )}
+                  
+                  {showDateFilter && (
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input 
+                        placeholder="Search by patient name or ID..." 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)} 
+                        className="pl-10" 
+                      />
+                    </div>
+                  )}
+                  
+                  {dateFilter === "custom" && !customStartDate && !customEndDate && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                      📅 Select start and end dates above to view patients in custom range
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex justify-end mb-2">
+                  <Button variant="outline" size="sm" onClick={() => setQueueOpen(true)}>
+                    <Clock className="h-4 w-4 mr-2" />
                     Today&apos;s Queue
                   </Button>
                 </div>
@@ -861,8 +940,11 @@ export default function Treatment() {
                     onSelectPatient={handlePatientSelect}
                     onViewPatient={handlePatientSelect}
                     showActions={false}
-                    viewMode="all"
-                    selectedDate=""
+                    viewMode={showDateFilter ? "all" : "date"}
+                    selectedDate={dateFilter === "today" ? new Date().toISOString().split('T')[0] : 
+                                 dateFilter === "yesterday" ? new Date(Date.now() - 86400000).toISOString().split('T')[0] :
+                                 dateFilter === "custom" && customStartDate ? customStartDate.toISOString().split('T')[0] :
+                                 new Date().toISOString().split('T')[0]}
                     searchTerm={searchTerm}
                     onSearchTermChange={setSearchTerm}
                     shouldSearch={shouldSearch}

@@ -108,6 +108,9 @@ export default function PatientSearch({
           <table className="w-full">
             <thead className="sticky top-0 z-10 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
               <tr>
+                <th className="px-2 py-3 text-center text-sm font-medium text-gray-700 dark:text-gray-300 w-12">
+                  #
+                </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Patient
                 </th>
@@ -151,6 +154,9 @@ export default function PatientSearch({
                     } hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer`}
                     onClick={() => onViewPatient?.(p)}
                   >
+                    <td className="px-2 py-3 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">
+                      {i + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-3">
                         <div className={`h-8 w-8 rounded-full grid place-items-center text-xs font-semibold ${getAvatarColor(p.firstName, p.lastName)}`}>
