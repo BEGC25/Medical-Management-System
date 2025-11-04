@@ -16,6 +16,7 @@ import {
   Save,
   BadgeInfo,
   ChevronRight,
+  TestTube,
 } from "lucide-react";
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 
@@ -821,6 +822,56 @@ export default function Laboratory() {
 
   return (
     <>
+      {/* Department Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-lg">
+            <TestTube className="w-6 h-6 text-white" />
+          </div>
+          Laboratory Department
+        </h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Clinical laboratory testing and diagnostics</p>
+      </div>
+
+      {/* Statistics - Compact Modern Design */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wide">Pending</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-pending">{pendingTests.length}</p>
+            </div>
+            <div className="p-3 bg-amber-100 dark:bg-amber-900/40 rounded-lg">
+              <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Completed</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-completed">{completedTests.length}</p>
+            </div>
+            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
+              <Check className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wide">Total Exams</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-total">{allLabTests.length}</p>
+            </div>
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+              <TestTube className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests (Always Visible) */}
         <Card className="shadow-lg border-0">

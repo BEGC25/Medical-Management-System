@@ -566,7 +566,58 @@ export default function XRay() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Department Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow-lg">
+              <X className="w-6 h-6 text-white" />
+            </div>
+            X-Ray Department
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Radiological imaging and diagnostic services</p>
+        </div>
+
+        {/* Statistics - Compact Modern Design */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-purple-700 dark:text-purple-400 uppercase tracking-wide">Pending</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-pending">{pendingExams.length}</p>
+              </div>
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Completed</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-completed">{completedExams.length}</p>
+              </div>
+              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
+                <Check className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wide">Total Exams</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-total">{allXrayExams.length}</p>
+              </div>
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                <X className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-gradient-to-r from-purple-50 to-white dark:from-purple-900/20 dark:to-gray-900 border-b">
@@ -1196,6 +1247,7 @@ export default function XRay() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
