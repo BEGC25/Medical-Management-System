@@ -26,9 +26,6 @@ import {
   Users,
   ClipboardList,
   AlertCircle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -276,20 +273,6 @@ export default function Treatment() {
   const { data: queueVisits = [], isLoading: queueLoading } = useQuery<Treatment[]>({
     queryKey: ["/api/treatments", { date: queueDate }],
     enabled: queueOpen,
-  });
-
-  // ALWAYS-ON statistics queries for enterprise dashboard
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
-  // Active encounters - always fetched for accurate statistics
-  const { data: activeEncounters = [] } = useQuery<Treatment[]>({
-    queryKey: ["/api/treatments", { date: today }],
-  });
-
-  // Yesterday's count for trend calculation
-  const { data: yesterdayEncounters = [] } = useQuery<Treatment[]>({
-    queryKey: ["/api/treatments", { date: yesterday }],
   });
 
   // filter out soft-deleted patients
@@ -770,10 +753,9 @@ export default function Treatment() {
     ? allPrescriptions.filter((rx) => rx.encounterId === currentEncounter.encounterId)
     : allPrescriptions;
 
-  // Enterprise Statistics with Real Trends
-  const todayPatients = activeEncounters.length; // Use real encounter count
-  const yesterdayPatients = yesterdayEncounters.length; // Use real yesterday count
-  const activeEncountersCount = activeEncounters.length; // Use always-on query
+  // Statistics calculations
+  const todayPatients = patientCounts?.today || 0;
+  const activeEncountersCount = queueVisits.length;
   const pendingOrdersCount = unpaidOrders 
     ? ((unpaidOrders as any).laboratory?.length || 0) + 
       ((unpaidOrders as any).xray?.length || 0) + 
@@ -781,172 +763,82 @@ export default function Treatment() {
       ((unpaidOrders as any).pharmacy?.length || 0)
     : 0;
 
-  // Calculate real trend deltas (today vs yesterday)
-  const patientTrend = todayPatients - yesterdayPatients;
-  const patientTrendPercent = yesterdayPatients > 0 
-    ? Math.round((patientTrend / yesterdayPatients) * 100) 
-    : 0; // Don't show % if no baseline
-
   // ---------- UI ----------
   return (
     <div className="space-y-6">
-      {/* Enterprise Department Header */}
-      <div className="bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 rounded-2xl p-8 shadow-sm border border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-5 mb-8">
+      {/* World-Class Department Header */}
+      <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-6 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
+        <div className="flex items-center gap-4 mb-6">
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl blur-lg opacity-30"></div>
-            <div className="relative h-20 w-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-xl">
-              <Stethoscope className="h-10 w-10 text-white" />
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl blur-sm opacity-75"></div>
+            <div className="relative h-16 w-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Stethoscope className="h-8 w-8 text-white" />
             </div>
           </div>
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-2">Treatment Records</h1>
-            <p className="text-base text-gray-600 dark:text-gray-400 font-medium">Patient encounters, clinical documentation & care management</p>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Patient encounters, clinical documentation & care management</p>
           </div>
         </div>
         
-        {/* Enterprise Statistics Cards with Trend Indicators */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Patients Today - Enhanced */}
-          <div className="group relative bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                    <div className="relative h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <Users className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Patients Today</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">{todayPatients}</span>
-                      {yesterdayPatients > 0 && patientTrendPercent !== 0 && (
-                        <div className={`flex items-center gap-1 ${patientTrend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                          {patientTrend > 0 && <TrendingUp className="h-3.5 w-3.5" />}
-                          {patientTrend < 0 && <TrendingDown className="h-3.5 w-3.5" />}
-                          <span className="text-xs font-semibold">{Math.abs(patientTrendPercent)}%</span>
-                        </div>
-                      )}
-                      {yesterdayPatients > 0 && patientTrend === 0 && (
-                        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                          <Minus className="h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">0%</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+        {/* Statistics Cards - Compact */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Patients Treated Today */}
+          <div className="group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-lg p-3 border border-emerald-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <div className="h-8 w-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Users className="h-4 w-4 text-white" />
               </div>
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700/50">
-                <span className="text-xs text-gray-600 dark:text-gray-400">
-                  {yesterdayPatients > 0 && patientTrend > 0 && `↑ ${patientTrend} more than yesterday`}
-                  {yesterdayPatients > 0 && patientTrend < 0 && `↓ ${Math.abs(patientTrend)} fewer than yesterday`}
-                  {yesterdayPatients > 0 && patientTrend === 0 && 'Same as yesterday'}
-                  {yesterdayPatients === 0 && todayPatients > 0 && 'First patients today'}
-                  {yesterdayPatients === 0 && todayPatients === 0 && 'No visits yet'}
-                </span>
-                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-              </div>
+              <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{todayPatients}</span>
             </div>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Patients Today</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">Total visits registered</p>
           </div>
 
-          {/* Active Visits - Enhanced */}
-          <div className="group relative bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 dark:from-blue-500/10 dark:to-indigo-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                    <div className="relative h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <Activity className="h-6 w-6 text-white animate-pulse" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Active Visits</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">{activeEncountersCount}</span>
-                      {activeEncountersCount > 0 && (
-                        <div className="flex items-center gap-0.5">
-                          <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">Live</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+          {/* Active Visits */}
+          <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800/50 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Activity className="h-4 w-4 text-white" />
               </div>
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700/50">
-                <span className="text-xs text-gray-600 dark:text-gray-400">In-progress treatments</span>
-                {activeEncountersCount > 2 && (
-                  <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">Busy</span>
-                )}
-              </div>
+              <span className="text-xl font-bold text-blue-700 dark:text-blue-400">{activeEncountersCount}</span>
             </div>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Active Visits</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">Patients being treated</p>
           </div>
 
-          {/* Pending Orders - Enhanced */}
-          <div className="group relative bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02] sm:col-span-2 lg:col-span-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                    <div className="relative h-12 w-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <ClipboardList className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Pending Orders</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold bg-gradient-to-br from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">{pendingOrdersCount}</span>
-                      {pendingOrdersCount > 5 && (
-                        <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                          <AlertCircle className="h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">High</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+          {/* Pending Orders */}
+          <div className="group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-800/50 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <div className="h-8 w-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center shadow-sm">
+                <ClipboardList className="h-4 w-4 text-white" />
               </div>
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700/50">
-                <span className="text-xs text-gray-600 dark:text-gray-400">Awaiting payment</span>
-                {pendingOrdersCount > 0 && (
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Requires attention</span>
-                )}
-              </div>
+              <span className="text-xl font-bold text-amber-700 dark:text-amber-400">{pendingOrdersCount}</span>
             </div>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Pending Orders</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">Unpaid services</p>
           </div>
         </div>
       </div>
 
-      <Card className="print:hidden shadow-sm border-gray-200 dark:border-gray-800">
-        <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-5">
-          <CardTitle className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Patient Selection & Documentation</CardTitle>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Choose a patient and document their visit</p>
+      <Card className="print:hidden">
+        <CardHeader>
+          <CardTitle>Patient Selection & Documentation</CardTitle>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent>
           {/* Patient selection / Header */}
           {/* ... (keep this section as is) ... */}
           {/* Patient selection */}
           {/* THIS CARD IS HIDDEN ONCE A PATIENT IS SELECTED */}
           {!selectedPatient && (
-            <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-gray-800/50 dark:to-gray-850/50 rounded-2xl p-7 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl blur-md opacity-30"></div>
-                  <div className="relative h-14 w-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Activity className="h-7 w-7 text-white" />
-                  </div>
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 mb-6 shadow-sm border border-blue-100 dark:border-gray-700">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white text-xl tracking-tight">Select Patient for Treatment</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 font-medium">Choose a patient to begin documenting their visit</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Choose a patient to begin documenting their visit</p>
                 </div>
               </div>
 
