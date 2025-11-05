@@ -2038,40 +2038,43 @@ router.post("/api/order-lines", async (req: any, res) => {
       return res.status(404).json({ error: "Encounter not found" });
     }
 
-    let relatedId = null;
+    // Only auto-create test records if relatedId is not already provided
+    let relatedId = result.data.relatedId || null;
 
-    if (result.data.relatedType === "lab") {
-      // Create pending lab test
-      const labTest = await storage.createLabTest({
-        patientId: encounter.patientId,
-        category: "general",
-        tests: JSON.stringify([result.data.description]),
-        priority: "routine",
-        requestedDate: new Date().toISOString(),
-      });
-      relatedId = labTest.testId;
-    } else if (result.data.relatedType === "xray") {
-      // Create pending X-ray exam
-      const xrayExam = await storage.createXrayExam({
-        patientId: encounter.patientId,
-        examType: result.data.description,
-        bodyPart: result.data.description,
-        requestedDate: new Date().toISOString(),
-      });
-      relatedId = xrayExam.examId;
-    } else if (result.data.relatedType === "ultrasound") {
-      // Create pending ultrasound exam
-      const ultrasoundExam = await storage.createUltrasoundExam({
-        patientId: encounter.patientId,
-        examType: result.data.description,
-        requestedDate: new Date().toISOString(),
-      });
-      relatedId = ultrasoundExam.examId;
-    }
+    if (!relatedId) {
+      if (result.data.relatedType === "lab") {
+        // Create pending lab test
+        const labTest = await storage.createLabTest({
+          patientId: encounter.patientId,
+          category: "general",
+          tests: JSON.stringify([result.data.description]),
+          priority: "routine",
+          requestedDate: new Date().toISOString(),
+        });
+        relatedId = labTest.testId;
+      } else if (result.data.relatedType === "xray") {
+        // Create pending X-ray exam
+        const xrayExam = await storage.createXrayExam({
+          patientId: encounter.patientId,
+          examType: result.data.description,
+          bodyPart: result.data.description,
+          requestedDate: new Date().toISOString(),
+        });
+        relatedId = xrayExam.examId;
+      } else if (result.data.relatedType === "ultrasound") {
+        // Create pending ultrasound exam
+        const ultrasoundExam = await storage.createUltrasoundExam({
+          patientId: encounter.patientId,
+          examType: result.data.description,
+          requestedDate: new Date().toISOString(),
+        });
+        relatedId = ultrasoundExam.examId;
+      }
 
-    // Update order line with relatedId
-    if (relatedId) {
-      await storage.updateOrderLine(orderLine.id, { relatedId });
+      // Update order line with relatedId
+      if (relatedId) {
+        await storage.updateOrderLine(orderLine.id, { relatedId });
+      }
     }
 
     res.status(201).json(orderLine);

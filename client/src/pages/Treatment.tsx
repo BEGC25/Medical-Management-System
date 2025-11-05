@@ -640,11 +640,17 @@ export default function Treatment() {
   const submitLabTestsMutation = useMutation({
     mutationFn: async () => {
       if (!selectedPatient) throw new Error("No patient selected");
+      if (!currentEncounter) throw new Error("No active encounter");
       if (selectedLabTests.length === 0) throw new Error("Please select at least one test");
       
-      const data = {
+      // 1. Find lab service from catalog (similar to how consultation is found)
+      const labService = services.find((s) => s.category === "laboratory");
+      if (!labService) throw new Error("Laboratory service not found in catalog");
+      
+      // 2. Create the lab test record
+      const labTestData = {
         patientId: selectedPatient.patientId,
-        encounterId: currentEncounter?.encounterId,
+        encounterId: currentEncounter.encounterId,
         category: currentLabCategory,
         tests: JSON.stringify(selectedLabTests),
         priority: labPriority,
@@ -654,8 +660,27 @@ export default function Treatment() {
         paymentStatus: "unpaid",
       };
       
-      const res = await apiRequest("POST", "/api/lab-tests", data);
-      return res.json();
+      const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);
+      const createdLabTest = await labTestRes.json();
+      
+      // 3. Create corresponding order_lines entry (like X-ray/Ultrasound do)
+      const orderLineData = {
+        encounterId: currentEncounter.encounterId,
+        serviceId: labService.id,
+        relatedType: "lab",
+        relatedId: createdLabTest.testId,
+        description: `Lab Tests: ${currentLabCategory} - ${selectedLabTests.join(", ")}`,
+        quantity: 1,
+        unitPriceSnapshot: labService.price || 0,
+        totalPrice: labService.price || 0,
+        department: "laboratory",
+        orderedBy: "Dr. System",
+      };
+      
+      const orderLineRes = await apiRequest("POST", "/api/order-lines", orderLineData);
+      await orderLineRes.json();
+      
+      return createdLabTest;
     },
     onSuccess: () => {
       toast({ title: "Success", description: `${selectedLabTests.length} lab test(s) ordered successfully` });
