@@ -1169,6 +1169,7 @@ export class MemStorage implements IStorage {
       
       // Get TODAY's unpaid lab tests - fetch raw data without grouping
       // to properly parse individual tests from JSON array
+      // Limit at query level for performance
       const unpaidLabTestsRaw = await db.select({
         testId: labTests.testId,
         patientId: labTests.patientId,
@@ -1187,7 +1188,8 @@ export class MemStorage implements IStorage {
         eq(labTests.paymentStatus, 'unpaid'),
         sql`${labTests.status} IN ('pending', 'in_progress')`,
         sql`DATE(${labTests.requestedDate}) = ${today}`
-      ));
+      ))
+      .limit(limit * 3); // Fetch more than needed to account for multiple tests per order
       
       // Get all services to look up prices
       const allServices = await this.getServices();
@@ -1219,20 +1221,34 @@ export class MemStorage implements IStorage {
             continue;
           }
           
-          testNames.forEach((testName: string, index: number) => {
-            const service = servicesByName.get(testName.toLowerCase());
-            if (service && service.isActive) {
-              labTestItems.push({
-                testId: `${labTest.testId}-${index}`,
-                parentTestId: labTest.testId,
-                patientId: labTest.patientId,
-                patientName: `${labTest.patientFirstName} ${labTest.patientLastName}`,
-                testName: testName,
-                category: labTest.category,
-                requestedDate: labTest.requestedDate,
-                price: service.price,
-              });
+          testNames.forEach((testName: any, index: number) => {
+            // Validate testName is a string
+            if (typeof testName !== 'string') {
+              console.warn(`Invalid test name type for lab test ${labTest.testId}[${index}]: expected string, got ${typeof testName}`);
+              return;
             }
+            
+            const service = servicesByName.get(testName.toLowerCase());
+            if (!service) {
+              console.warn(`Service not found for test: "${testName}" in lab order ${labTest.testId}`);
+              return;
+            }
+            
+            if (!service.isActive) {
+              console.warn(`Service "${testName}" is inactive for lab order ${labTest.testId}`);
+              return;
+            }
+            
+            labTestItems.push({
+              testId: `${labTest.testId}-${index}`,
+              parentTestId: labTest.testId,
+              patientId: labTest.patientId,
+              patientName: `${labTest.patientFirstName} ${labTest.patientLastName}`,
+              testName: testName,
+              category: labTest.category,
+              requestedDate: labTest.requestedDate,
+              price: service.price,
+            });
           });
         } catch (error) {
           console.error(`Failed to parse tests JSON for lab test ${labTest.testId}:`, error);
