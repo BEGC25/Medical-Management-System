@@ -271,15 +271,11 @@ export default function Dashboard() {
                             <div className={`text-sm font-semibold ${statusStyles.textColor} flex items-center gap-2`}>
                               {isComplete ? (
                                 <>
-                                  <CheckCircle2 className={`w-4 h-4 ${statusStyles.iconColor}`} />
                                   <span>Patient ready for doctor</span>
                                   <ArrowRight className={`w-4 h-4 ${statusStyles.iconColor}`} />
                                 </>
                               ) : (
-                                <>
-                                  <Clock className={`w-4 h-4 ${statusStyles.iconColor}`} />
-                                  <span>Keep patient in waiting area</span>
-                                </>
+                                <span>Keep patient in waiting area</span>
                               )}
                             </div>
                             
