@@ -21,7 +21,8 @@ import {
   FlaskConical,
   RadioTower,
   Package,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -188,70 +189,108 @@ export default function Dashboard() {
           <CardContent className="pt-4">
             {resultsReady ? (
               resultsReady.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {resultsReady.slice(0, 5).map((result: any, index: number) => {
-                    // Get icon and color based on result types
-                    const getResultIcon = () => {
-                      if (result.resultTypes.includes('Lab Test')) return { icon: TestTube, color: 'text-attention-orange', bg: 'bg-orange-50 dark:bg-orange-950', border: 'border-orange-200 dark:border-orange-900' };
-                      if (result.resultTypes.includes('X-Ray')) return { icon: Scan, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950', border: 'border-purple-200 dark:border-purple-900' };
-                      if (result.resultTypes.includes('Ultrasound')) return { icon: MonitorSpeaker, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950', border: 'border-blue-200 dark:border-blue-900' };
-                      return { icon: FileText, color: 'text-gray-600', bg: 'bg-gray-50 dark:bg-gray-950', border: 'border-gray-200 dark:border-gray-900' };
-                    };
-                    const iconInfo = getResultIcon();
-                    const Icon = iconInfo.icon;
+                    // Determine status styling based on completeness
+                    const isComplete = result.allComplete;
+                    const isPartial = !isComplete;
+                    
+                    // Status-based styling
+                    const statusStyles = isComplete 
+                      ? {
+                          bg: 'bg-green-50 dark:bg-green-950/30',
+                          border: 'border-green-300 dark:border-green-700',
+                          textColor: 'text-green-800 dark:text-green-200',
+                          badgeBg: 'bg-green-100 dark:bg-green-900',
+                          badgeText: 'text-green-800 dark:text-green-200',
+                          icon: CheckCircle2,
+                          iconColor: 'text-green-600 dark:text-green-400'
+                        }
+                      : {
+                          bg: 'bg-amber-50 dark:bg-amber-950/30',
+                          border: 'border-amber-300 dark:border-amber-700',
+                          textColor: 'text-amber-800 dark:text-amber-200',
+                          badgeBg: 'bg-amber-100 dark:bg-amber-900',
+                          badgeText: 'text-amber-800 dark:text-amber-200',
+                          icon: Clock,
+                          iconColor: 'text-amber-600 dark:text-amber-400'
+                        };
+                    
+                    const StatusIcon = statusStyles.icon;
                     
                     return (
                       <Link key={result.encounterId || index} href={`/treatment?patientId=${result.patientId}`}>
                         <div 
-                          className={`flex items-center justify-between p-3 rounded-lg border ${iconInfo.border} hover:${iconInfo.bg} transition-colors cursor-pointer group`}
+                          className={`p-4 rounded-lg border-2 ${statusStyles.border} ${statusStyles.bg} hover:shadow-md transition-all cursor-pointer group`}
                           data-testid={`result-ready-${result.patientId}`}
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <Icon className={`${iconInfo.color} w-4 h-4 flex-shrink-0`} />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                                  {result.firstName} {result.lastName}
-                                </p>
-                                <Badge 
-                                  variant="outline" 
-                                  className="text-[10px] px-1.5 py-0"
-                                >
-                                  {result.patientId}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-1 flex-wrap">
-                                {result.resultTypes.map((type: string, idx: number) => (
-                                  <Badge 
-                                    key={idx}
-                                    variant="outline"
-                                    className={`text-[10px] ${
-                                      type === 'Lab' ? 'text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/30' :
-                                      type === 'X-Ray' ? 'text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/30' :
-                                      'text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30'
-                                    }`}
-                                  >
-                                    {type}
-                                  </Badge>
-                                ))}
-                                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                                  {result.resultSummary}{result.hasMoreResults ? '...' : ''}
-                                </p>
-                              </div>
+                          {/* Patient Info Header */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-base text-gray-900 dark:text-white">
+                                {result.firstName} {result.lastName}
+                              </p>
+                              <Badge 
+                                variant="outline" 
+                                className="text-[10px] px-2 py-0.5 bg-white/50 dark:bg-gray-900/50"
+                              >
+                                {result.patientId}
+                              </Badge>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {result.allComplete ? (
-                              <Badge variant="outline" className="text-[10px] font-semibold text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/30 flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" />
-                                All {result.totalOrdered} ready
+                          
+                          {/* Test Type Badges */}
+                          <div className="flex items-center gap-1 flex-wrap mb-3">
+                            {result.resultTypes.map((type: string, idx: number) => (
+                              <Badge 
+                                key={idx}
+                                variant="outline"
+                                className={`text-xs px-2 py-1 font-medium ${
+                                  type === 'Lab' ? 'text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700 bg-orange-100/50 dark:bg-orange-900/30' :
+                                  type === 'X-Ray' ? 'text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700 bg-purple-100/50 dark:bg-purple-900/30' :
+                                  'text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 bg-blue-100/50 dark:bg-blue-900/30'
+                                }`}
+                              >
+                                {type}
                               </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/30">
-                                {result.resultCount} of {result.totalOrdered}
-                              </Badge>
+                            ))}
+                          </div>
+                          
+                          {/* Status Badge and Message */}
+                          <div className={`p-3 rounded-md ${statusStyles.badgeBg} border ${statusStyles.border}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <StatusIcon className={`w-5 h-5 ${statusStyles.iconColor} flex-shrink-0`} />
+                              <span className={`font-bold text-sm ${statusStyles.badgeText}`}>
+                                {isComplete 
+                                  ? `All ${result.totalOrdered} Ready`
+                                  : `${result.resultCount} of ${result.totalOrdered} Ready`
+                                }
+                              </span>
+                            </div>
+                            
+                            {/* Action Message */}
+                            <div className={`text-sm font-semibold ${statusStyles.textColor} flex items-center gap-2`}>
+                              {isComplete ? (
+                                <>
+                                  <span className="text-base">✅</span>
+                                  <span>Patient ready for doctor →</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-base">⏳</span>
+                                  <span>Keep patient in waiting area</span>
+                                </>
+                              )}
+                            </div>
+                            
+                            {/* Pending Tests (only for partial results) */}
+                            {isPartial && result.pendingTestTypes && result.pendingTestTypes.length > 0 && (
+                              <div className={`mt-2 pt-2 border-t ${statusStyles.border}`}>
+                                <p className={`text-xs font-medium ${statusStyles.textColor}`}>
+                                  <span className="font-bold">Waiting for:</span> {result.pendingTestTypes.join(', ')}
+                                </p>
+                              </div>
                             )}
-                            <ArrowRight className={`w-4 h-4 ${iconInfo.color} group-hover:translate-x-1 transition-transform`} />
                           </div>
                         </div>
                       </Link>
