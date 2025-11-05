@@ -1568,6 +1568,18 @@ export class MemStorage implements IStorage {
                  ['lab', 'lab_test', 'xray', 'xray_exam', 'ultrasound', 'ultrasound_exam'].includes(ol.relatedType);
         });
         
+        // Map ordered tests to their types
+        const orderedTestTypes = orderedTests.map(ol => {
+          if (ol.relatedType === 'lab' || ol.relatedType === 'lab_test') return 'Lab';
+          if (ol.relatedType === 'xray' || ol.relatedType === 'xray_exam') return 'X-Ray';
+          if (ol.relatedType === 'ultrasound' || ol.relatedType === 'ultrasound_exam') return 'Ultrasound';
+          return null;
+        }).filter(Boolean);
+        
+        const uniqueOrderedTypes = [...new Set(orderedTestTypes)];
+        const completedTypes = [...new Set(entry.results.map(r => r.type))];
+        const pendingTypes = uniqueOrderedTypes.filter(type => !completedTypes.includes(type));
+        
         const totalOrdered = orderedTests.length || entry.results.length; // Fallback to completed count if no orders
         const completedCount = entry.results.length;
         const allComplete = completedCount >= totalOrdered;
@@ -1581,7 +1593,9 @@ export class MemStorage implements IStorage {
           totalOrdered: totalOrdered,
           allComplete: allComplete,
           completionStatus: allComplete ? 'complete' : 'partial',
-          resultTypes: [...new Set(entry.results.map(r => r.type))],
+          resultTypes: completedTypes,
+          orderedTestTypes: uniqueOrderedTypes,
+          pendingTestTypes: pendingTypes,
           resultSummary: entry.results.map(r => r.testName).slice(0, 3).join(', '),
           hasMoreResults: entry.results.length > 3,
           latestTime: entry.latestTime,
