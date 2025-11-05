@@ -479,6 +479,11 @@ export default function Dashboard() {
                             <p className="text-xs text-gray-700 dark:text-gray-300 mb-1.5 line-clamp-1">
                               {payment.serviceDescription}
                             </p>
+                            {payment.tests && payment.orderType === 'lab' && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                Categories: {payment.tests}
+                              </p>
+                            )}
                             {payment.services && payment.services.length > 1 && (
                               <p className="text-xs text-gray-500 dark:text-gray-400 italic">
                                 +{payment.services.length - 1} more services

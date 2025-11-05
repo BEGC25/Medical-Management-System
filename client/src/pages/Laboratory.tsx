@@ -413,13 +413,6 @@ export default function Laboratory() {
   const [reportPatient, setReportPatient] = useState<Patient | null>(null);
 
   // Edit modal state
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [testToEdit, setTestToEdit] = useState<LabTest | null>(null);
-  const [editTests, setEditTests] = useState<string[]>([]);
-  const [editCategory, setEditCategory] = useState<keyof typeof commonTests>("hematology");
-  const [editPriority, setEditPriority] = useState<"routine" | "urgent" | "stat">("routine");
-  const [editClinicalInfo, setEditClinicalInfo] = useState("");
-
   // Patient picker search/paging
   const [term, setTerm] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -684,50 +677,6 @@ export default function Laboratory() {
     },
   });
 
-  const deleteLabTestMutation = useMutation({
-    mutationFn: async (testId: string) => {
-      const response = await apiRequest("DELETE", `/api/lab-tests/${testId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Lab test cancelled successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to cancel lab test",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const editLabTestMutation = useMutation({
-    mutationFn: async ({ testId, tests, priority, clinicalInfo }: { testId: string; tests: string; priority: string; clinicalInfo: string }) => {
-      const response = await apiRequest("PATCH", `/api/lab-tests/${testId}`, {
-        tests,
-        priority,
-        clinicalInfo,
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Lab test updated successfully" });
-      setEditModalOpen(false);
-      setTestToEdit(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update lab test",
-        variant: "destructive",
-      });
-    },
-  });
-
   /* --------------------------- Handlers --------------------------- */
 
   const onSubmitRequest = (data: InsertLabTest) => {
@@ -759,54 +708,6 @@ export default function Laboratory() {
 
   const handleTestToggle = (test: string) => {
     setSelectedTests((prev) => (prev.includes(test) ? prev.filter((t) => t !== test) : [...prev, test]));
-  };
-
-  const handleEditTest = (test: LabTest) => {
-    setTestToEdit(test);
-    const tests = parseJSON<string[]>(test.tests, []);
-    setEditTests(tests);
-    setEditPriority(test.priority);
-    setEditClinicalInfo(test.clinicalInfo || "");
-    
-    // Set the correct category so checkboxes show the right tests
-    if (test.category && test.category in commonTests) {
-      setEditCategory(test.category as keyof typeof commonTests);
-    } else if (tests.length > 0) {
-      // Fallback: Find category by checking which category contains the first test
-      const firstTest = tests[0];
-      for (const [category, testList] of Object.entries(commonTests)) {
-        if (testList.includes(firstTest)) {
-          setEditCategory(category as keyof typeof commonTests);
-          break;
-        }
-      }
-    }
-    
-    setEditModalOpen(true);
-  };
-
-  const handleDeleteTest = (testId: string) => {
-    if (confirm("Are you sure you want to cancel this lab test request?")) {
-      deleteLabTestMutation.mutate(testId);
-    }
-  };
-
-  const handleEditTestToggle = (test: string) => {
-    setEditTests((prev) => (prev.includes(test) ? prev.filter((t) => t !== test) : [...prev, test]));
-  };
-
-  const handleSaveEdit = () => {
-    if (!testToEdit) return;
-    if (editTests.length === 0) {
-      toast({ title: "Error", description: "Please select at least one test", variant: "destructive" });
-      return;
-    }
-    editLabTestMutation.mutate({
-      testId: testToEdit.testId,
-      tests: JSON.stringify(editTests),
-      priority: editPriority,
-      clinicalInfo: editClinicalInfo,
-    });
   };
 
   const handleLabTestSelect = (labTest: LabTest) => {
@@ -1119,33 +1020,10 @@ export default function Laboratory() {
                             </div>
                           )}
                         </div>
-                        <div className="shrink-0 flex items-center gap-2">
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditTest(test);
-                              }}
-                              className="h-7 px-2"
-                              data-testid={`button-edit-test-${test.testId}`}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteTest(test.testId);
-                              }}
-                              className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                              data-testid={`button-delete-test-${test.testId}`}
-                            >
-                              Delete
-                            </Button>
-                          </div>
+                        <div className="shrink-0 flex flex-col items-end gap-2">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
+                            Ordered by Doctor
+                          </Badge>
                           <div className="flex items-center gap-2">
                             <Chip tone={isPaid ? "emerald" : "rose"}>{isPaid ? "Paid" : "UNPAID"}</Chip>
                             <Chip tone="amber">Pending</Chip>
@@ -1872,122 +1750,6 @@ export default function Laboratory() {
               </form>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Lab Test Dialog */}
-      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <TestTube className="w-5 h-5 text-amber-600" />
-              Edit Lab Test Request — {testToEdit?.testId}
-            </DialogTitle>
-            <DialogDescription>
-              Modify the tests, priority, or clinical information for this pending lab request
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {/* Test Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Test Category
-              </label>
-              <Select
-                value={editCategory}
-                onValueChange={(val) => setEditCategory(val as keyof typeof commonTests)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(commonTests).map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Tests ({editTests.length} selected)
-              </label>
-              <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
-                {commonTests[editCategory].map((test) => (
-                  <div key={test} className="flex items-center gap-2">
-                    <Checkbox
-                      checked={editTests.includes(test)}
-                      onCheckedChange={() => handleEditTestToggle(test)}
-                      id={`edit-test-${test}`}
-                    />
-                    <label
-                      htmlFor={`edit-test-${test}`}
-                      className="text-sm cursor-pointer flex-1"
-                    >
-                      {test}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Priority */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Priority
-              </label>
-              <Select
-                value={editPriority}
-                onValueChange={(val) => setEditPriority(val as "routine" | "urgent" | "stat")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="routine">Routine</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                  <SelectItem value="stat">STAT</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Clinical Info */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Clinical Information
-              </label>
-              <Textarea
-                value={editClinicalInfo}
-                onChange={(e) => setEditClinicalInfo(e.target.value)}
-                rows={3}
-                placeholder="Relevant clinical history, symptoms, or special instructions..."
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleSaveEdit}
-                disabled={editLabTestMutation.isPending || editTests.length === 0}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                data-testid="button-save-edit"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {editLabTestMutation.isPending ? "Saving..." : "Save Changes"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditModalOpen(false)}
-                data-testid="button-cancel-edit"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 
