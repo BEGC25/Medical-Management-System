@@ -1175,13 +1175,13 @@ export class MemStorage implements IStorage {
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
         serviceDescription: sql<string>`
           'Lab: ' || 
-          COUNT(DISTINCT ${labTests.testId}) || ' test' || 
+          COUNT(DISTINCT ${labTests.testId})::text || ' test' || 
           CASE WHEN COUNT(DISTINCT ${labTests.testId}) > 1 THEN 's' ELSE '' END
         `,
-        tests: sql<string>`GROUP_CONCAT(DISTINCT ${labTests.category}, ', ')`,
+        tests: sql<string>`STRING_AGG(DISTINCT ${labTests.category}, ', ')`,
         orderType: sql<string>`'lab'`,
         createdAt: sql<string>`MIN(${labTests.requestedDate})`,
-        testId: sql<string>`GROUP_CONCAT(${labTests.testId})`,
+        testId: sql<string>`STRING_AGG(${labTests.testId}, ',')`,
         amount: sql<number>`SUM(COALESCE(${orderLines.totalPrice}, ${orderLines.unitPriceSnapshot} * ${orderLines.quantity}, 0))`,
       })
       .from(labTests)
