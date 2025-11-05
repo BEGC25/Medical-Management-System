@@ -1167,39 +1167,98 @@ export class MemStorage implements IStorage {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Get TODAY's unpaid lab tests WITH ACTUAL PRICES from order_lines
-      // GROUP BY patient to combine multiple tests for same patient
-      // ONLY show pending/in_progress (exclude completed)
-      const unpaidLabs = await db.select({
+      // Get TODAY's unpaid lab tests - fetch raw data without grouping
+      // to properly parse individual tests from JSON array
+      const unpaidLabTestsRaw = await db.select({
+        testId: labTests.testId,
         patientId: labTests.patientId,
-        patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
-        serviceDescription: sql<string>`
-          'Lab: ' || 
-          COUNT(DISTINCT ${labTests.testId})::text || ' test' || 
-          CASE WHEN COUNT(DISTINCT ${labTests.testId}) > 1 THEN 's' ELSE '' END
-        `,
-        tests: sql<string>`STRING_AGG(DISTINCT ${labTests.category}, ', ')`,
-        orderType: sql<string>`'lab'`,
-        createdAt: sql<string>`MIN(${labTests.requestedDate})`,
-        testId: sql<string>`STRING_AGG(DISTINCT ${labTests.testId}, ', ')`,
-        amount: sql<number>`SUM(COALESCE(${orderLines.totalPrice}, ${orderLines.unitPriceSnapshot} * ${orderLines.quantity}, 0))`,
+        patientFirstName: patients.firstName,
+        patientLastName: patients.lastName,
+        tests: labTests.tests, // JSON array of test names
+        category: labTests.category,
+        requestedDate: labTests.requestedDate,
       })
       .from(labTests)
       .innerJoin(patients, and(
         eq(labTests.patientId, patients.patientId),
         eq(patients.isDeleted, 0)
       ))
-      .leftJoin(orderLines, and(
-        eq(orderLines.relatedId, labTests.testId),
-        sql`${orderLines.relatedType} IN ('lab', 'lab_test')`
-      ))
       .where(and(
         eq(labTests.paymentStatus, 'unpaid'),
         sql`${labTests.status} IN ('pending', 'in_progress')`,
         sql`DATE(${labTests.requestedDate}) = ${today}`
-      ))
-      .groupBy(labTests.patientId, patients.firstName, patients.lastName)
-      .limit(10);
+      ));
+      
+      // Get all services to look up prices
+      const allServices = await this.getServices();
+      const getServiceByName = (name: string) => {
+        return allServices.find((s) => s.name.toLowerCase() === name.toLowerCase() && s.isActive);
+      };
+      
+      // Process lab tests to break them into individual test items
+      const labTestItems: any[] = [];
+      for (const labTest of unpaidLabTestsRaw) {
+        const testNames = JSON.parse(labTest.tests);
+        testNames.forEach((testName: string, index: number) => {
+          const service = getServiceByName(testName);
+          if (service) {
+            labTestItems.push({
+              testId: `${labTest.testId}-${index}`,
+              parentTestId: labTest.testId,
+              patientId: labTest.patientId,
+              patientName: `${labTest.patientFirstName} ${labTest.patientLastName}`,
+              testName: testName,
+              category: labTest.category,
+              requestedDate: labTest.requestedDate,
+              price: service.price,
+            });
+          }
+        });
+      }
+      
+      // Group by patient to aggregate test counts and amounts
+      const labsByPatient = new Map<string, {
+        patientId: string;
+        patientName: string;
+        testCount: number;
+        totalAmount: number;
+        testIds: string[];
+        createdAt: string;
+      }>();
+      for (const item of labTestItems) {
+        if (!labsByPatient.has(item.patientId)) {
+          labsByPatient.set(item.patientId, {
+            patientId: item.patientId,
+            patientName: item.patientName,
+            testCount: 0,
+            totalAmount: 0,
+            testIds: [],
+            createdAt: item.requestedDate,
+          });
+        }
+        const patientData = labsByPatient.get(item.patientId)!;
+        patientData.testCount++;
+        patientData.totalAmount += item.price;
+        if (!patientData.testIds.includes(item.parentTestId)) {
+          patientData.testIds.push(item.parentTestId);
+        }
+        // Keep the earliest date
+        if (item.requestedDate < patientData.createdAt) {
+          patientData.createdAt = item.requestedDate;
+        }
+      }
+      
+      // Format the aggregated lab data
+      const unpaidLabs = Array.from(labsByPatient.values()).map((data) => ({
+        patientId: data.patientId,
+        patientName: data.patientName,
+        serviceDescription: `Lab: ${data.testCount} test${data.testCount > 1 ? 's' : ''}`,
+        tests: data.testCount.toString(),
+        orderType: 'lab',
+        createdAt: data.createdAt,
+        testId: data.testIds.join(', '),
+        amount: data.totalAmount,
+      }));
       
       // Get TODAY's unpaid X-rays WITH ACTUAL PRICES from order_lines
       // ONLY show pending/in_progress (exclude completed)
