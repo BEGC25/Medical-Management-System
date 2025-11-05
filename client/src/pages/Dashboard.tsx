@@ -21,8 +21,7 @@ import {
   FlaskConical,
   RadioTower,
   Package,
-  CheckCircle2,
-  AlertCircle
+  CheckCircle2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -272,12 +271,13 @@ export default function Dashboard() {
                             <div className={`text-sm font-semibold ${statusStyles.textColor} flex items-center gap-2`}>
                               {isComplete ? (
                                 <>
-                                  <span className="text-base">✅</span>
-                                  <span>Patient ready for doctor →</span>
+                                  <CheckCircle2 className={`w-4 h-4 ${statusStyles.iconColor}`} />
+                                  <span>Patient ready for doctor</span>
+                                  <ArrowRight className={`w-4 h-4 ${statusStyles.iconColor}`} />
                                 </>
                               ) : (
                                 <>
-                                  <span className="text-base">⏳</span>
+                                  <Clock className={`w-4 h-4 ${statusStyles.iconColor}`} />
                                   <span>Keep patient in waiting area</span>
                                 </>
                               )}
