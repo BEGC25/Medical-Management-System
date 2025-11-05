@@ -646,6 +646,9 @@ export default function Treatment() {
       // 1. Find lab service from catalog (similar to how consultation is found)
       const labService = services.find((s) => s.category === "laboratory");
       if (!labService) throw new Error("Laboratory service not found in catalog");
+      if (!labService.price) {
+        console.warn("Laboratory service has no price set in catalog");
+      }
       
       // 2. Create the lab test record
       const labTestData = {
