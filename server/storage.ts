@@ -1192,16 +1192,33 @@ export class MemStorage implements IStorage {
       // Get all services to look up prices
       const allServices = await this.getServices();
       // Create a Map for O(1) service lookup by name
-      const servicesByName = new Map<string, typeof allServices[0]>();
+      const servicesByName = new Map<string, schema.Service>();
       allServices.forEach(service => {
         servicesByName.set(service.name.toLowerCase(), service);
       });
       
       // Process lab tests to break them into individual test items
-      const labTestItems: any[] = [];
+      interface LabTestItem {
+        testId: string;
+        parentTestId: string;
+        patientId: string;
+        patientName: string;
+        testName: string;
+        category: string;
+        requestedDate: string;
+        price: number;
+      }
+      const labTestItems: LabTestItem[] = [];
+      
       for (const labTest of unpaidLabTestsRaw) {
         try {
           const testNames = JSON.parse(labTest.tests);
+          // Validate that testNames is an array
+          if (!Array.isArray(testNames)) {
+            console.error(`Invalid tests format for lab test ${labTest.testId}: expected array, got ${typeof testNames}`);
+            continue;
+          }
+          
           testNames.forEach((testName: string, index: number) => {
             const service = servicesByName.get(testName.toLowerCase());
             if (service && service.isActive) {
