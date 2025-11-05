@@ -1181,7 +1181,7 @@ export class MemStorage implements IStorage {
         tests: sql<string>`STRING_AGG(DISTINCT ${labTests.category}, ', ')`,
         orderType: sql<string>`'lab'`,
         createdAt: sql<string>`MIN(${labTests.requestedDate})`,
-        testId: sql<string>`STRING_AGG(${labTests.testId}, ',')`,
+        testId: sql<string>`STRING_AGG(${labTests.testId}, ', ')`,
         amount: sql<number>`SUM(COALESCE(${orderLines.totalPrice}, ${orderLines.unitPriceSnapshot} * ${orderLines.quantity}, 0))`,
       })
       .from(labTests)
