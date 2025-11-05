@@ -1191,29 +1191,37 @@ export class MemStorage implements IStorage {
       
       // Get all services to look up prices
       const allServices = await this.getServices();
-      const getServiceByName = (name: string) => {
-        return allServices.find((s) => s.name.toLowerCase() === name.toLowerCase() && s.isActive);
-      };
+      // Create a Map for O(1) service lookup by name
+      const servicesByName = new Map<string, typeof allServices[0]>();
+      allServices.forEach(service => {
+        servicesByName.set(service.name.toLowerCase(), service);
+      });
       
       // Process lab tests to break them into individual test items
       const labTestItems: any[] = [];
       for (const labTest of unpaidLabTestsRaw) {
-        const testNames = JSON.parse(labTest.tests);
-        testNames.forEach((testName: string, index: number) => {
-          const service = getServiceByName(testName);
-          if (service) {
-            labTestItems.push({
-              testId: `${labTest.testId}-${index}`,
-              parentTestId: labTest.testId,
-              patientId: labTest.patientId,
-              patientName: `${labTest.patientFirstName} ${labTest.patientLastName}`,
-              testName: testName,
-              category: labTest.category,
-              requestedDate: labTest.requestedDate,
-              price: service.price,
-            });
-          }
-        });
+        try {
+          const testNames = JSON.parse(labTest.tests);
+          testNames.forEach((testName: string, index: number) => {
+            const service = servicesByName.get(testName.toLowerCase());
+            if (service && service.isActive) {
+              labTestItems.push({
+                testId: `${labTest.testId}-${index}`,
+                parentTestId: labTest.testId,
+                patientId: labTest.patientId,
+                patientName: `${labTest.patientFirstName} ${labTest.patientLastName}`,
+                testName: testName,
+                category: labTest.category,
+                requestedDate: labTest.requestedDate,
+                price: service.price,
+              });
+            }
+          });
+        } catch (error) {
+          console.error(`Failed to parse tests JSON for lab test ${labTest.testId}:`, error);
+          // Skip this lab test if JSON parsing fails
+          continue;
+        }
       }
       
       // Group by patient to aggregate test counts and amounts
@@ -1222,7 +1230,7 @@ export class MemStorage implements IStorage {
         patientName: string;
         testCount: number;
         totalAmount: number;
-        testIds: string[];
+        testIds: Set<string>;
         createdAt: string;
       }>();
       for (const item of labTestItems) {
@@ -1232,16 +1240,14 @@ export class MemStorage implements IStorage {
             patientName: item.patientName,
             testCount: 0,
             totalAmount: 0,
-            testIds: [],
+            testIds: new Set<string>(),
             createdAt: item.requestedDate,
           });
         }
         const patientData = labsByPatient.get(item.patientId)!;
         patientData.testCount++;
         patientData.totalAmount += item.price;
-        if (!patientData.testIds.includes(item.parentTestId)) {
-          patientData.testIds.push(item.parentTestId);
-        }
+        patientData.testIds.add(item.parentTestId);
         // Keep the earliest date
         if (item.requestedDate < patientData.createdAt) {
           patientData.createdAt = item.requestedDate;
@@ -1256,7 +1262,7 @@ export class MemStorage implements IStorage {
         tests: data.testCount.toString(),
         orderType: 'lab',
         createdAt: data.createdAt,
-        testId: data.testIds.join(', '),
+        testId: Array.from(data.testIds).join(', '),
         amount: data.totalAmount,
       }));
       
