@@ -1168,16 +1168,21 @@ export class MemStorage implements IStorage {
       const today = new Date().toISOString().split('T')[0];
       
       // Get TODAY's unpaid lab tests WITH ACTUAL PRICES from order_lines
+      // GROUP BY patient to combine multiple tests for same patient
       // ONLY show pending/in_progress (exclude completed)
       const unpaidLabs = await db.select({
         patientId: labTests.patientId,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
-        serviceDescription: sql<string>`'Lab: ' || ${labTests.category}`,
-        tests: labTests.tests,
+        serviceDescription: sql<string>`
+          'Lab: ' || 
+          COUNT(DISTINCT ${labTests.testId}) || ' test' || 
+          CASE WHEN COUNT(DISTINCT ${labTests.testId}) > 1 THEN 's' ELSE '' END
+        `,
+        tests: sql<string>`GROUP_CONCAT(DISTINCT ${labTests.category}, ', ')`,
         orderType: sql<string>`'lab'`,
-        createdAt: labTests.requestedDate,
-        testId: labTests.testId,
-        amount: sql<number>`COALESCE(${orderLines.totalPrice}, ${orderLines.unitPriceSnapshot} * ${orderLines.quantity}, 0)`,
+        createdAt: sql<string>`MIN(${labTests.requestedDate})`,
+        testId: sql<string>`GROUP_CONCAT(${labTests.testId})`,
+        amount: sql<number>`SUM(COALESCE(${orderLines.totalPrice}, ${orderLines.unitPriceSnapshot} * ${orderLines.quantity}, 0))`,
       })
       .from(labTests)
       .innerJoin(patients, and(
@@ -1193,6 +1198,7 @@ export class MemStorage implements IStorage {
         sql`${labTests.status} IN ('pending', 'in_progress')`,
         sql`DATE(${labTests.requestedDate}) = ${today}`
       ))
+      .groupBy(labTests.patientId, patients.firstName, patients.lastName)
       .limit(10);
       
       // Get TODAY's unpaid X-rays WITH ACTUAL PRICES from order_lines
@@ -1250,19 +1256,19 @@ export class MemStorage implements IStorage {
       .limit(10);
       
       // Format labs (amount already calculated via COALESCE)
-      const labsWithAmounts = unpaidLabs.map(lab => ({
+      const labsWithAmounts = unpaidLabs.map((lab: any) => ({
         ...lab,
         id: lab.testId,
       }));
       
       // Format X-rays (amount already calculated via COALESCE)
-      const xraysWithAmounts = unpaidXrays.map(xray => ({
+      const xraysWithAmounts = unpaidXrays.map((xray: any) => ({
         ...xray,
         id: xray.examId,
       }));
       
       // Format ultrasounds (amount already calculated via COALESCE)
-      const ultrasoundsWithAmounts = unpaidUltrasounds.map(us => ({
+      const ultrasoundsWithAmounts = unpaidUltrasounds.map((us: any) => ({
         ...us,
         id: us.examId,
       }));
