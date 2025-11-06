@@ -493,7 +493,9 @@ export default function Laboratory() {
   
   // First filter by date only
   const dateFilteredTests = allLabTests.filter((t) => {
+    if (!t.requestedDate) return false;
     const testDate = new Date(t.requestedDate);
+    if (isNaN(testDate.getTime())) return false; // Check for invalid date
     return testDate >= dateRange.start && testDate <= dateRange.end;
   });
   
