@@ -420,7 +420,7 @@ export default function Laboratory() {
   const PER_PAGE = 20;
 
   // Date range filtering and patient search
-  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "yesterday" | "last7days" | "last30days" | "custom">("all");
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
@@ -470,6 +470,8 @@ export default function Laboratory() {
     today.setHours(0, 0, 0, 0);
     
     switch (dateFilter) {
+      case "all":
+        return { start: "", end: "" }; // Empty strings mean no date filtering
       case "today":
         return { start: formatDate(today), end: formatDate(today) };
       case "yesterday": {
@@ -502,10 +504,13 @@ export default function Laboratory() {
   const dateRange = getDateRange();
   
   // First filter by date only (compare date strings to avoid timezone issues)
-  const dateFilteredTests = allLabTests.filter((t) => {
-    const testDateStr = t.requestedDate?.split("T")[0] || ""; // Extract YYYY-MM-DD
-    return testDateStr >= dateRange.start && testDateStr <= dateRange.end;
-  });
+  // If dateFilter is "all", skip date filtering
+  const dateFilteredTests = dateFilter === "all" 
+    ? allLabTests 
+    : allLabTests.filter((t) => {
+        const testDateStr = t.requestedDate?.split("T")[0] || ""; // Extract YYYY-MM-DD
+        return testDateStr >= dateRange.start && testDateStr <= dateRange.end;
+      });
   
   const dateFilteredPending = dateFilteredTests.filter((t) => t.status === "pending");
   const dateFilteredCompleted = dateFilteredTests.filter((t) => t.status === "completed");
@@ -906,6 +911,14 @@ export default function Laboratory() {
             <div className="mb-4 space-y-3 border-b pb-4">
               <div className="flex flex-wrap gap-2">
                 <Button
+                  variant={dateFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("all")}
+                  data-testid="filter-all"
+                >
+                  All
+                </Button>
+                <Button
                   variant={dateFilter === "today" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setDateFilter("today")}
@@ -1057,6 +1070,13 @@ export default function Laboratory() {
             {/* Same filter controls for completed tests */}
             <div className="mb-4 space-y-3 border-b pb-4">
               <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={dateFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDateFilter("all")}
+                >
+                  All
+                </Button>
                 <Button
                   variant={dateFilter === "today" ? "default" : "outline"}
                   size="sm"
