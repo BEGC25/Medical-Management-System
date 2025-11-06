@@ -418,7 +418,7 @@ export default function Laboratory() {
   const PER_PAGE = 20;
 
   // Date range filtering and patient search
-  const [dateFilter, setDateFilter] = useState<"all" | "today" | "yesterday" | "last7days" | "last30days" | "custom">("all");
+  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
@@ -454,51 +454,50 @@ export default function Laboratory() {
 
   const { data: allLabTests = [] } = useLabTests();
   
-  // Helper to format date as YYYY-MM-DD
-  const formatDate = (d: Date): string => {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-  
-  // Calculate date range based on filter using timezone-aware utilities
-  // Returns date strings in YYYY-MM-DD format for client-side filtering
-  // Note: For consistency with backend, we use the shared date utilities
+  // Calculate date range based on filter
   const getDateRange = () => {
-    if (dateFilter === "all") {
-      return { start: "", end: "" }; // Empty strings mean no date filtering
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    switch (dateFilter) {
+      case "today":
+        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+      case "yesterday": {
+        const yesterday = new Date(today.getTime() - 86400000);
+        return { start: yesterday, end: new Date(yesterday.getTime() + 86400000 - 1) };
+      }
+      case "last7days": {
+        const weekAgo = new Date(today.getTime() - 7 * 86400000);
+        return { start: weekAgo, end: new Date() };
+      }
+      case "last30days": {
+        const monthAgo = new Date(today.getTime() - 30 * 86400000);
+        return { start: monthAgo, end: new Date() };
+      }
+      case "custom": {
+        // Default to today if no dates selected yet
+        if (!customStartDate && !customEndDate) {
+          return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+        }
+        return {
+          start: customStartDate || today,
+          end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
+        };
+      }
+      default:
+        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
     }
-    
-    // Use timezone-aware date range computation
-    const apiRange = getDateRangeForAPI(dateFilter, customStartDate, customEndDate);
-    
-    if (!apiRange) {
-      return { start: "", end: "" };
-    }
-    
-    // Extract YYYY-MM-DD from ISO strings for client-side comparison
-    const start = apiRange.startDate.split("T")[0];
-    const end = apiRange.endDate.split("T")[0];
-    
-    return { start, end };
   };
   
   const dateRange = getDateRange();
   
-  // First filter by date only (compare date strings to avoid timezone issues)
-  // If dateFilter is "all", skip date filtering
-  // Filter by requestedDate field (primary timestamp for lab tests)
-  const dateFilteredTests = dateFilter === "all" 
-    ? allLabTests 
-    : allLabTests.filter((t) => {
-        // Extract YYYY-MM-DD from requestedDate field
-        const testDateStr = t.requestedDate?.split("T")[0] || "";
-        // Use [start, end) range - inclusive start, exclusive end
-        // Since we're comparing YYYY-MM-DD strings, we check if date is >= start and < end
-        if (!testDateStr) return false;
-        return testDateStr >= dateRange.start && testDateStr < dateRange.end;
-      });
+  // First filter by date only
+  const dateFilteredTests = allLabTests.filter((t) => {
+    if (!t.requestedDate) return false;
+    const testDate = new Date(t.requestedDate);
+    if (isNaN(testDate.getTime())) return false; // Check for invalid date
+    return testDate >= dateRange.start && testDate <= dateRange.end;
+  });
   
   const dateFilteredPending = dateFilteredTests.filter((t) => t.status === "pending");
   const dateFilteredCompleted = dateFilteredTests.filter((t) => t.status === "completed");
@@ -899,14 +898,6 @@ export default function Laboratory() {
             <div className="mb-4 space-y-3 border-b pb-4">
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant={dateFilter === "all" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("all")}
-                  data-testid="filter-all"
-                >
-                  All
-                </Button>
-                <Button
                   variant={dateFilter === "today" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setDateFilter("today")}
@@ -1058,13 +1049,6 @@ export default function Laboratory() {
             {/* Same filter controls for completed tests */}
             <div className="mb-4 space-y-3 border-b pb-4">
               <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={dateFilter === "all" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("all")}
-                >
-                  All
-                </Button>
                 <Button
                   variant={dateFilter === "today" ? "default" : "outline"}
                   size="sm"
