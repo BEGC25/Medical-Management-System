@@ -1,4 +1,4 @@
-import { eq, like, ilike, desc, and, count, or, sql, gte, lte, isNull, inArray } from "drizzle-orm";
+import { eq, like, ilike, desc, and, count, or, sql, gte, lte, lt, isNull, inArray } from "drizzle-orm";
 import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -769,10 +769,11 @@ export class MemStorage implements IStorage {
     } else if (startDate && endDate) {
       // Date range filtering using requestedDate
       // Range is [start, end) - inclusive start, exclusive end
+      // Use parameterized queries to prevent SQL injection
       conditions.push(
         and(
-          sql`${labTests.requestedDate} >= ${startDate}`,
-          sql`${labTests.requestedDate} < ${endDate}`
+          gte(labTests.requestedDate, startDate),
+          lt(labTests.requestedDate, endDate)
         )
       );
     }

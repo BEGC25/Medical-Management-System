@@ -9,8 +9,8 @@
  * off-by-one errors at midnight boundaries.
  */
 
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { startOfDay, endOfDay, subDays, subMonths, startOfMonth } from 'date-fns';
+import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { startOfDay, endOfDay, subDays, subMonths, startOfMonth, addDays } from 'date-fns';
 
 /**
  * Default clinic timezone - Africa/Juba (UTC+3) for South Sudan
@@ -44,12 +44,15 @@ export function getZonedNow(tz?: string): Date {
  */
 export function startOfDayZoned(date: Date, tz?: string): Date {
   const timezone = tz || getClinicTimezone();
+  
+  // Get the date components in the clinic timezone
   const zonedDate = toZonedTime(date, timezone);
   const startOfDayInZone = startOfDay(zonedDate);
   
-  // Convert back to UTC
-  const isoString = formatInTimeZone(startOfDayInZone, timezone, "yyyy-MM-dd'T'HH:mm:ss");
-  return new Date(`${isoString}Z`);
+  // Convert the zoned time back to UTC
+  // fromZonedTime interprets the date as being in the specified timezone
+  // and returns the equivalent UTC date
+  return fromZonedTime(startOfDayInZone, timezone);
 }
 
 /**
@@ -58,15 +61,16 @@ export function startOfDayZoned(date: Date, tz?: string): Date {
  */
 export function endOfDayZonedExclusive(date: Date, tz?: string): Date {
   const timezone = tz || getClinicTimezone();
+  
+  // Get the date components in the clinic timezone
   const zonedDate = toZonedTime(date, timezone);
-  const endOfDayInZone = endOfDay(zonedDate);
+  const startOfDayInZone = startOfDay(zonedDate);
   
-  // Add 1 millisecond to make it exclusive (start of next day)
-  const nextDay = new Date(endOfDayInZone.getTime() + 1);
+  // Add one day to get start of next day (exclusive end)
+  const startOfNextDay = addDays(startOfDayInZone, 1);
   
-  // Convert back to UTC
-  const isoString = formatInTimeZone(nextDay, timezone, "yyyy-MM-dd'T'HH:mm:ss");
-  return new Date(`${isoString}Z`);
+  // Convert the zoned time back to UTC
+  return fromZonedTime(startOfNextDay, timezone);
 }
 
 /**
