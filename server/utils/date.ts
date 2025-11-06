@@ -28,10 +28,15 @@ export function parseDateFilter(params: {
   startDate?: string;
   endDate?: string;
 }): { start: Date; end: Date } | null {
-  const { preset, from, to, startDate, endDate } = params;
+  // Extract and validate parameters (handle potential arrays from query params)
+  const preset = Array.isArray(params.preset) ? params.preset[0] : params.preset;
+  const from = Array.isArray(params.from) ? params.from[0] : params.from;
+  const to = Array.isArray(params.to) ? params.to[0] : params.to;
+  const startDate = Array.isArray(params.startDate) ? params.startDate[0] : params.startDate;
+  const endDate = Array.isArray(params.endDate) ? params.endDate[0] : params.endDate;
   
   // Handle preset
-  if (preset) {
+  if (preset && typeof preset === 'string') {
     const presetUpper = preset.charAt(0).toUpperCase() + preset.slice(1);
     if (presetUpper === 'All') return null;
     
@@ -40,7 +45,7 @@ export function parseDateFilter(params: {
   }
   
   // Handle explicit from/to
-  if (from && to) {
+  if (from && to && typeof from === 'string' && typeof to === 'string') {
     return {
       start: new Date(from),
       end: new Date(to),
@@ -48,7 +53,7 @@ export function parseDateFilter(params: {
   }
   
   // Handle legacy startDate/endDate (used by current implementation)
-  if (startDate && endDate) {
+  if (startDate && endDate && typeof startDate === 'string' && typeof endDate === 'string') {
     return {
       start: new Date(startDate),
       end: new Date(endDate),
