@@ -31,6 +31,7 @@ import {
   toSessionUser,
   type SessionUser,
 } from "./auth-service";
+import { parseDateFilter } from "./utils/date";
 
 // Extend express-session types to include our user
 declare module "express-session" {
@@ -379,21 +380,34 @@ router.get("/api/patients", async (req, res) => {
     const endDate = req.query.endDate as string;
     const withStatus = req.query.withStatus === "true";
     const filterBy = req.query.filterBy as string; // "encounters" or "registration" (default)
+    const preset = req.query.preset as string;
 
     // Support both legacy params and new date range params
     const today = req.query.today;
     const date = req.query.date as string;
+    
+    // Parse timezone-aware date filter if preset is provided
+    let tzStartDate = startDate;
+    let tzEndDate = endDate;
+    
+    if (preset && !startDate && !endDate) {
+      const range = parseDateFilter({ preset });
+      if (range) {
+        tzStartDate = range.start.toISOString();
+        tzEndDate = range.end.toISOString();
+      }
+    }
 
     if (withStatus) {
-      if (startDate && endDate) {
+      if (tzStartDate && tzEndDate) {
         // Date range filtering - check filterBy parameter
         if (filterBy === "encounters") {
           // Filter by encounter/visit dates (for Treatment page)
-          const patients = await storage.getPatientsByEncounterDateRangeWithStatus(startDate, endDate);
+          const patients = await storage.getPatientsByEncounterDateRangeWithStatus(tzStartDate, tzEndDate);
           res.json(patients);
         } else {
           // Filter by registration dates (for Patients page - default)
-          const patients = await storage.getPatientsByDateRangeWithStatus(startDate, endDate);
+          const patients = await storage.getPatientsByDateRangeWithStatus(tzStartDate, tzEndDate);
           res.json(patients);
         }
       } else if (today === "true" || search === "today") {
@@ -407,9 +421,9 @@ router.get("/api/patients", async (req, res) => {
         res.json(patients);
       }
     } else {
-      if (startDate && endDate) {
+      if (tzStartDate && tzEndDate) {
         // New date range filtering
-        const patients = await storage.getPatientsByDateRange(startDate, endDate);
+        const patients = await storage.getPatientsByDateRange(tzStartDate, tzEndDate);
         res.json(patients);
       } else if (today === "true" || search === "today") {
         const patients = await storage.getTodaysPatients();
@@ -604,7 +618,25 @@ router.get("/api/lab-tests", async (req, res) => {
   try {
     const status = req.query.status as string;
     const date = req.query.date as string;
-    const labTests = await storage.getLabTests(status, date);
+    const preset = req.query.preset as string;
+    const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string;
+    
+    // Parse date filter using timezone-aware utilities
+    // Supports: preset (Today/Yesterday/etc), startDate/endDate, or exact date
+    let filterStartDate: string | undefined;
+    let filterEndDate: string | undefined;
+    
+    if (!date) {
+      // Use timezone-aware date filtering
+      const range = parseDateFilter({ preset, startDate, endDate });
+      if (range) {
+        filterStartDate = range.start.toISOString();
+        filterEndDate = range.end.toISOString();
+      }
+    }
+    
+    const labTests = await storage.getLabTests(status, date, filterStartDate, filterEndDate);
     res.json(labTests);
   } catch (error) {
     console.error("Error fetching lab tests:", error);

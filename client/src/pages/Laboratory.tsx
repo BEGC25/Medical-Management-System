@@ -61,6 +61,7 @@ import {
 
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
+import { getDateRangeForAPI } from "@/lib/date-utils";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -97,15 +98,7 @@ function fullName(p?: Patient | null) {
   return n || p.patientId || "";
 }
 
-function todayRange() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const start = `${yyyy}-${mm}-${dd}`;
-  const end = `${yyyy}-${mm}-${dd}`;
-  return { start, end };
-}
+// Note: todayRange() removed - now using shared timezone-aware date utilities
 
 /* ------------------------------------------------------------------ */
 /* Doctor order categories (kept exactly as in your file)              */
@@ -351,21 +344,26 @@ function usePatientsMap(ids: string[]) {
 }
 
 // 3) Today's patients (doctor's default list in New Request)
+// Now using timezone-aware date utilities for consistent "Today" filtering
 function useTodayPatients() {
-  const { start, end } = todayRange();
+  const dateRange = getDateRangeForAPI('today');
 
   return useQuery<Patient[]>({
-    queryKey: ["/api/patients", { today: true, start, end }],
+    queryKey: ["/api/patients", { preset: "today" }],
     queryFn: async () => {
-      // try ?today=1 first
-      try {
-        const r1 = await fetch("/api/patients?today=1");
-        if (r1.ok) return r1.json();
-      } catch {}
-      // fallback to date range
-      const r2 = await fetch(`/api/patients?from=${start}&to=${end}`);
-      if (!r2.ok) return [];
-      return r2.json();
+      // Use preset-based API call for timezone-aware filtering
+      if (dateRange) {
+        const params = new URLSearchParams({
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
+        });
+        const response = await fetch(`/api/patients?${params}`);
+        if (response.ok) return response.json();
+      }
+      
+      // Fallback to legacy today endpoint
+      const fallback = await fetch("/api/patients?today=1");
+      return fallback.ok ? fallback.json() : [];
     },
   });
 }
@@ -464,52 +462,42 @@ export default function Laboratory() {
     return `${yyyy}-${mm}-${dd}`;
   };
   
-  // Calculate date range based on filter (returns date strings for comparison)
+  // Calculate date range based on filter using timezone-aware utilities
+  // Returns date strings in YYYY-MM-DD format for client-side filtering
+  // Note: For consistency with backend, we use the shared date utilities
   const getDateRange = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    switch (dateFilter) {
-      case "all":
-        return { start: "", end: "" }; // Empty strings mean no date filtering
-      case "today":
-        return { start: formatDate(today), end: formatDate(today) };
-      case "yesterday": {
-        const yesterday = new Date(today.getTime() - 86400000);
-        return { start: formatDate(yesterday), end: formatDate(yesterday) };
-      }
-      case "last7days": {
-        const weekAgo = new Date(today.getTime() - 7 * 86400000);
-        return { start: formatDate(weekAgo), end: formatDate(today) };
-      }
-      case "last30days": {
-        const monthAgo = new Date(today.getTime() - 30 * 86400000);
-        return { start: formatDate(monthAgo), end: formatDate(today) };
-      }
-      case "custom": {
-        // Default to today if no dates selected yet
-        if (!customStartDate && !customEndDate) {
-          return { start: formatDate(today), end: formatDate(today) };
-        }
-        return {
-          start: formatDate(customStartDate || today),
-          end: formatDate(customEndDate || today),
-        };
-      }
-      default:
-        return { start: formatDate(today), end: formatDate(today) };
+    if (dateFilter === "all") {
+      return { start: "", end: "" }; // Empty strings mean no date filtering
     }
+    
+    // Use timezone-aware date range computation
+    const apiRange = getDateRangeForAPI(dateFilter, customStartDate, customEndDate);
+    
+    if (!apiRange) {
+      return { start: "", end: "" };
+    }
+    
+    // Extract YYYY-MM-DD from ISO strings for client-side comparison
+    const start = apiRange.startDate.split("T")[0];
+    const end = apiRange.endDate.split("T")[0];
+    
+    return { start, end };
   };
   
   const dateRange = getDateRange();
   
   // First filter by date only (compare date strings to avoid timezone issues)
   // If dateFilter is "all", skip date filtering
+  // Filter by requestedDate field (primary timestamp for lab tests)
   const dateFilteredTests = dateFilter === "all" 
     ? allLabTests 
     : allLabTests.filter((t) => {
-        const testDateStr = t.requestedDate?.split("T")[0] || ""; // Extract YYYY-MM-DD
-        return testDateStr >= dateRange.start && testDateStr <= dateRange.end;
+        // Extract YYYY-MM-DD from requestedDate field
+        const testDateStr = t.requestedDate?.split("T")[0] || "";
+        // Use [start, end) range - inclusive start, exclusive end
+        // Since we're comparing YYYY-MM-DD strings, we check if date is >= start and < end
+        if (!testDateStr) return false;
+        return testDateStr >= dateRange.start && testDateStr < dateRange.end;
       });
   
   const dateFilteredPending = dateFilteredTests.filter((t) => t.status === "pending");
