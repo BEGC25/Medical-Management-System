@@ -1,4 +1,4 @@
-import { eq, like, ilike, desc, and, count, or, sql, gte, lte, isNull, inArray } from "drizzle-orm";
+import { eq, like, ilike, desc, and, count, or, sql, gte, lte, lt, isNull, inArray } from "drizzle-orm";
 import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -177,7 +177,7 @@ export interface IStorage {
 
   // Lab Tests
   createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest>;
-  getLabTests(status?: string, date?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
+  getLabTests(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
   getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]>;
   updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest>;
   updateLabTestAttachments(testId: string, attachments: any[]): Promise<schema.LabTest>;
@@ -744,7 +744,7 @@ export class MemStorage implements IStorage {
     return labTest;
   }
 
-  async getLabTests(status?: string, date?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
+  async getLabTests(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
     const baseQuery = db.select({
       labTest: labTests,
       patient: patients // Select whole patient object
@@ -760,8 +760,22 @@ export class MemStorage implements IStorage {
     if (status) {
       conditions.push(eq(labTests.status, status as any));
     }
+    
+    // Date filtering - support both exact date and date range
+    // Filter by requestedDate field (primary) with fallback to createdAt if needed
     if (date) {
+      // Exact date match (for backward compatibility)
       conditions.push(eq(labTests.requestedDate, date));
+    } else if (startDate && endDate) {
+      // Date range filtering using requestedDate
+      // Range is [start, end) - inclusive start, exclusive end
+      // Use parameterized queries to prevent SQL injection
+      conditions.push(
+        and(
+          gte(labTests.requestedDate, startDate),
+          lt(labTests.requestedDate, endDate)
+        )
+      );
     }
 
     let query = baseQuery;

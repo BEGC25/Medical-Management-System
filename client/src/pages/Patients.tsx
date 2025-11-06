@@ -66,6 +66,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
+import { getDateRangeForAPI } from "@/lib/date-utils";
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
@@ -99,39 +100,26 @@ export default function Patients() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Calculate date range based on filter
+  // Calculate date range based on filter using timezone-aware utilities
+  // This ensures consistent "Today" filtering across all pages
   const getDateRange = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Use shared date utility for timezone-aware date ranges
+    const dateRange = getDateRangeForAPI(dateFilter, customStartDate, customEndDate);
     
-    switch (dateFilter) {
-      case "today":
-        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
-      case "yesterday": {
-        const yesterday = new Date(today.getTime() - 86400000);
-        return { start: yesterday, end: new Date(yesterday.getTime() + 86400000 - 1) };
-      }
-      case "last7days": {
-        const weekAgo = new Date(today.getTime() - 7 * 86400000);
-        return { start: weekAgo, end: new Date() };
-      }
-      case "last30days": {
-        const monthAgo = new Date(today.getTime() - 30 * 86400000);
-        return { start: monthAgo, end: new Date() };
-      }
-      case "custom": {
-        // Default to today if no dates selected yet
-        if (!customStartDate && !customEndDate) {
-          return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
-        }
-        return {
-          start: customStartDate || today,
-          end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
-        };
-      }
-      default:
-        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+    if (!dateRange) {
+      // Fallback to local dates if utility returns null
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return { 
+        start: today.toISOString(), 
+        end: new Date(today.getTime() + 86400000).toISOString() 
+      };
     }
+    
+    return {
+      start: dateRange.startDate,
+      end: dateRange.endDate,
+    };
   };
 
   // Billing settings
@@ -419,8 +407,9 @@ export default function Patients() {
         const params = new URLSearchParams();
         const { start, end } = getDateRange();
         
-        params.append("startDate", start.toISOString());
-        params.append("endDate", end.toISOString());
+        // startDate and endDate are already ISO strings from getDateRange()
+        params.append("startDate", start);
+        params.append("endDate", end);
         params.append("withStatus", "true"); // Include consultation payment status
 
         const response = await fetch(`/api/patients?${params}`);

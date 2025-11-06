@@ -12,7 +12,7 @@ This full-stack web application is an offline-capable healthcare management syst
   - Use "visits" instead of "encounters" for simplicity
   - Both professional design AND simple/clear interface
 - **Dashboard Filter**: Dashboard shows TODAY's data ONLY - do not remove this filter
-- **Date Handling**: Use string comparison (YYYY-MM-DD) for date filtering to avoid timezone issues
+- **Date Handling**: **NEW:** System now uses timezone-aware date handling with `CLINIC_TZ=Africa/Juba` (UTC+3) to ensure consistent "Today" filtering across all pages. See [TIMEZONE_CONFIGURATION.md](./TIMEZONE_CONFIGURATION.md) for details.
 - **Lab Test Grouping**: Multiple tests are stored as ONE record with JSON array in `tests` field
 - **Edit/Delete Location**: Lab test edit/delete buttons are in **Treatment page** (Pending Orders section), NOT in Lab page
 - **Soft Deletes**: Use `status='cancelled'` for lab tests, `isDeleted=1` for patients
@@ -30,7 +30,8 @@ The system features a professional, world-class enterprise healthcare design wit
 -   **Frontend**: React 18, TypeScript, Wouter, TanStack Query v5, Tailwind CSS, Radix UI, shadcn/ui, Lucide React, React Hook Form, Zod, Vite.
 -   **Backend**: Node.js, TypeScript, Express.js, Passport.js (local strategy), scrypt, express-session, Zod, Drizzle ORM.
 -   **Database**: Production: Neon (PostgreSQL); Local/Offline: Better SQLite3.
--   **Deployment**: Backend on Render, Frontend on Vercel, Database on Neon. All systems operate in UTC timezone.
+-   **Deployment**: Backend on Render, Frontend on Vercel, Database on Neon. Database stores timestamps in UTC; application converts to/from clinic timezone (Africa/Juba, UTC+3) for filtering and display.
+-   **Timezone**: Configurable via `CLINIC_TZ` environment variable (default: Africa/Juba UTC+3). See [TIMEZONE_CONFIGURATION.md](./TIMEZONE_CONFIGURATION.md).
 
 ### Feature Specifications
 -   **Role-Based Access Control (RBAC)**: Supports Admin, Reception, Doctor, Lab, Radiology, Pharmacy roles with specific permissions for navigation and API routes.
