@@ -101,11 +101,12 @@ function fullName(p?: Patient | null) {
 // Note: todayRange() removed - now using shared timezone-aware date utilities
 
 /* ------------------------------------------------------------------ */
-/* Doctor order categories (kept exactly as in your file)              */
+/* Doctor order categories (aligned with database schema)              */
 /* ------------------------------------------------------------------ */
 
+// Database schema expects: "blood", "urine", "stool", "microbiology", "chemistry", "hormonal", "other"
 const commonTests = {
-  hematology: [
+  blood: [
     "Blood Film for Malaria (BFFM)",
     "Complete Blood Count (CBC)",
     "Hemoglobin (HB)",
@@ -113,8 +114,6 @@ const commonTests = {
     "Blood Group & Rh",
     "ESR (Erythrocyte Sedimentation Rate)",
     "Rheumatoid Factor",
-  ],
-  serology: [
     "Widal Test (Typhoid)",
     "Brucella Test (B.A.T)",
     "Hepatitis B Test (HBsAg)",
@@ -122,29 +121,33 @@ const commonTests = {
     "H. Pylori Test",
     "VDRL Test (Syphilis)",
   ],
-  reproductive: [
+  hormonal: [
     "Pregnancy Test (HCG)",
     "Gonorrhea Test",
     "Chlamydia Test",
     "Reproductive Hormones",
+    "Thyroid Hormones",
+    "Cardiac & Other Markers",
   ],
-  parasitology: [
+  microbiology: [
     "Toxoplasma Test",
     "Filariasis Tests",
     "Schistosomiasis Test",
     "Leishmaniasis Test",
+    "Tuberculosis Tests",
+    "Meningitis Tests",
+    "Yellow Fever Test",
+    "Typhus Test",
   ],
-  hormones: ["Thyroid Hormones", "Reproductive Hormones", "Cardiac & Other Markers"],
-  tuberculosis: ["Tuberculosis Tests"],
-  emergency: ["Meningitis Tests", "Yellow Fever Test", "Typhus Test"],
   urine: ["Urine Analysis", "Urine Microscopy"],
-  biochemistry: [
+  chemistry: [
     "Renal Function Test (RFT)",
     "Liver Function Test (LFT)",
     "Random Blood Sugar (RBS)",
     "Fasting Blood Sugar (FBS)",
   ],
   stool: ["Stool Examination"],
+  other: ["Custom Test"],
 };
 
 /* ---------------------- Result field configs ---------------------- */
@@ -396,7 +399,7 @@ export default function Laboratory() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [currentCategory, setCurrentCategory] =
-    useState<keyof typeof commonTests>("hematology");
+    useState<keyof typeof commonTests>("blood");
 
   // Results state
   const [selectedLabTest, setSelectedLabTest] = useState<LabTest | null>(null);
@@ -432,7 +435,7 @@ export default function Laboratory() {
     resolver: zodResolver(insertLabTestSchema),
     defaultValues: {
       patientId: "",
-      category: "hematology",
+      category: "blood",
       tests: "",
       clinicalInfo: "",
       priority: "routine",
@@ -1292,12 +1295,13 @@ export default function Laboratory() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="hematology">Hematology</SelectItem>
-                          <SelectItem value="serology">Serology</SelectItem>
+                          <SelectItem value="blood">Blood Tests</SelectItem>
                           <SelectItem value="urine">Urine Analysis</SelectItem>
-                          <SelectItem value="parasitology">Parasitology</SelectItem>
-                          <SelectItem value="biochemistry">Biochemistry</SelectItem>
-                          <SelectItem value="hormones">Hormones</SelectItem>
+                          <SelectItem value="stool">Stool Examination</SelectItem>
+                          <SelectItem value="microbiology">Microbiology</SelectItem>
+                          <SelectItem value="chemistry">Biochemistry</SelectItem>
+                          <SelectItem value="hormonal">Hormonal Tests</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
