@@ -653,14 +653,11 @@ export default function Treatment() {
       // 2. Create the lab test record
       const labTestData = {
         patientId: selectedPatient.patientId,
-        encounterId: currentEncounter.encounterId,
         category: currentLabCategory,
         tests: JSON.stringify(selectedLabTests),
         priority: labPriority,
         clinicalInfo: labClinicalInfo,
         requestedDate: new Date().toISOString().split("T")[0],
-        status: "pending",
-        paymentStatus: "unpaid",
       };
       
       const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);
