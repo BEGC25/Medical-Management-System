@@ -316,37 +316,14 @@ const resultFields: Record<
 /* ------------------------------------------------------------------ */
 
 // 1) Lab tests (all -> split by status locally)
+// The API returns lab tests with patient data included via JOIN
 function useLabTests() {
-  return useQuery<LabTest[]>({
+  return useQuery<(LabTest & { patient?: Patient })[]>({
     queryKey: ["/api/lab-tests"],
   });
 }
 
-// 2) Build a small map of patientId -> patient for the lab cards
-function usePatientsMap(ids: string[]) {
-  const unique = Array.from(new Set(ids.filter(Boolean)));
-  return useQuery<Record<string, Patient>>({
-    queryKey: ["/api/patients/byIds", unique.sort().join(",")],
-    enabled: unique.length > 0,
-    queryFn: async () => {
-      const entries = await Promise.all(
-        unique.map(async (id) => {
-          try {
-            const res = await apiRequest("GET", `/api/patients/${id}`);
-            if (!res.ok) return [id, { patientId: id } as Patient] as const;
-            const p = await res.json();
-            return [id, p as Patient] as const;
-          } catch {
-            return [id, { patientId: id } as Patient] as const;
-          }
-        })
-      );
-      return Object.fromEntries(entries);
-    },
-  });
-}
-
-// 3) Today's patients (doctor's default list in New Request)
+// 2) Today's patients (doctor's default list in New Request)
 // Now using timezone-aware date utilities for consistent "Today" filtering
 function useTodayPatients() {
   const dateRange = getDateRangeForAPI('today');
@@ -371,7 +348,7 @@ function useTodayPatients() {
   });
 }
 
-// 4) Debounced search for the New Request patient picker
+// 3) Debounced search for the New Request patient picker
 function usePatientSearch(term: string) {
   return useQuery<Patient[]>({
     queryKey: ["/api/patients", { search: term }],
@@ -505,19 +482,12 @@ export default function Laboratory() {
   const dateFilteredPending = dateFilteredTests.filter((t) => t.status === "pending");
   const dateFilteredCompleted = dateFilteredTests.filter((t) => t.status === "completed");
 
-  // Patient map for cards
-  const patientIdsForMap = useMemo(
-    () => dateFilteredTests.map((t) => t.patientId),
-    [dateFilteredTests]
-  );
-  const patientsMap = usePatientsMap(patientIdsForMap);
-  
-  // Then filter by patient search (needs patientsMap loaded)
-  const filterByPatient = (tests: LabTest[]) => {
+  // Filter by patient search using the patient data already included in lab test results
+  const filterByPatient = (tests: (LabTest & { patient?: Patient })[]) => {
     if (!patientSearchTerm.trim()) return tests;
     
     return tests.filter((t) => {
-      const patient = patientsMap.data?.[t.patientId];
+      const patient = t.patient;
       if (!patient) return false;
       
       const searchLower = patientSearchTerm.toLowerCase();
@@ -981,7 +951,7 @@ export default function Laboratory() {
               {pendingTests.length ? (
                 pendingTests.map((test) => {
                   const tests = parseJSON<string[]>(test.tests, []);
-                  const p = patientsMap.data?.[test.patientId];
+                  const p = test.patient; // Use patient data from lab test result
                   const isPaid = test.paymentStatus === "paid";
                   const canPerform = isPaid;
 
@@ -1127,7 +1097,7 @@ export default function Laboratory() {
               {completedTests.length ? (
                 completedTests.map((test) => {
                   const tests = parseJSON<string[]>(test.tests, []);
-                  const p = patientsMap.data?.[test.patientId];
+                  const p = test.patient; // Use patient data from lab test result
                   return (
                     <div
                       key={test.testId}
