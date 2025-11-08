@@ -58,6 +58,7 @@ import {
 
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
+import { getDateRangeForAPI } from '@/lib/date-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -244,48 +245,30 @@ export default function XRay() {
   const { data: allXrayExams = [] } = useXrayExams();
   const { data: radiologyServices = [] } = useRadiologyServices();
   
-  // Calculate date range based on filter
-  const getDateRange = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    switch (dateFilter) {
-      case "today":
-        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
-      case "yesterday": {
-        const yesterday = new Date(today.getTime() - 86400000);
-        return { start: yesterday, end: new Date(yesterday.getTime() + 86400000 - 1) };
-      }
-      case "last7days": {
-        const weekAgo = new Date(today.getTime() - 7 * 86400000);
-        return { start: weekAgo, end: new Date() };
-      }
-      case "last30days": {
-        const monthAgo = new Date(today.getTime() - 30 * 86400000);
-        return { start: monthAgo, end: new Date() };
-      }
-      case "custom": {
-        // Default to today if no dates selected yet
-        if (!customStartDate && !customEndDate) {
-          return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
-        }
-        return {
-          start: customStartDate || today,
-          end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
-        };
-      }
-      default:
-        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
+  // Calculate timezone-aware date range based on filter
+  // Uses Africa/Juba (UTC+2) timezone for consistent filtering across all pages
+  const getDateRange = useMemo(() => {
+    const apiRange = getDateRangeForAPI(dateFilter, customStartDate, customEndDate);
+    if (!apiRange) {
+      // Fallback for 'all' filter
+      return null;
     }
-  };
+    return {
+      start: new Date(apiRange.startDate),
+      end: new Date(apiRange.endDate)
+    };
+  }, [dateFilter, customStartDate, customEndDate]);
   
-  const dateRange = getDateRange();
-  
-  // First filter by date only
-  const dateFilteredExams = allXrayExams.filter((e) => {
-    const examDate = new Date(e.requestedDate);
-    return examDate >= dateRange.start && examDate <= dateRange.end;
-  });
+  // Filter by date using timezone-aware date range
+  const dateFilteredExams = useMemo(() => {
+    if (!getDateRange) return allXrayExams;
+    
+    return allXrayExams.filter((e) => {
+      const examDate = new Date(e.requestedDate);
+      // Use [start, end) range - inclusive start, exclusive end
+      return examDate >= getDateRange.start && examDate < getDateRange.end;
+    });
+  }, [allXrayExams, getDateRange]);
   
   const dateFilteredPending = dateFilteredExams.filter((e) => e.status === 'pending');
   const dateFilteredCompleted = dateFilteredExams.filter((e) => e.status === 'completed');

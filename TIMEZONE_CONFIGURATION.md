@@ -8,7 +8,7 @@ The Medical Management System uses timezone-aware date handling to ensure consis
 
 The system uses the following approach:
 
-1. **Clinic Timezone**: All date computations use the configured clinic timezone (default: `Africa/Juba` UTC+3 for South Sudan)
+1. **Clinic Timezone**: All date computations use the configured clinic timezone (default: `Africa/Juba` UTC+2 for South Sudan)
 2. **UTC Storage**: All timestamps are stored in UTC in the database
 3. **Date Range Definition**: Date ranges use **[start, end)** format - inclusive start, exclusive end - to avoid off-by-one errors at midnight
 4. **Conversion**: Dates are converted to/from the clinic timezone only when:
@@ -17,9 +17,9 @@ The system uses the following approach:
 
 ### Example
 
-For a clinic in Juba (UTC+3), on 2025-01-15:
-- "Today" means: `[2025-01-15T00:00:00+03:00, 2025-01-16T00:00:00+03:00)`
-- In UTC, this is: `[2025-01-14T21:00:00Z, 2025-01-15T21:00:00Z)`
+For a clinic in Juba (UTC+2), on 2025-01-15:
+- "Today" means: `[2025-01-15T00:00:00+02:00, 2025-01-16T00:00:00+02:00)`
+- In UTC, this is: `[2025-01-14T22:00:00Z, 2025-01-15T22:00:00Z)`
 - Any record with a timestamp in this UTC range is included in "Today"
 
 ## Configuration
@@ -30,7 +30,8 @@ Set the clinic timezone in your `.env` file:
 
 ```bash
 # Clinic timezone (IANA timezone identifier)
-# Default: Africa/Juba (UTC+3) for South Sudan clinics
+# Default: Africa/Juba (UTC+2) - recommended for South Sudan clinics
+# Note: South Sudan switched from UTC+3 to UTC+2 on February 1, 2021
 CLINIC_TZ=Africa/Juba
 
 # Client-side timezone (must match CLINIC_TZ)
@@ -41,13 +42,13 @@ VITE_CLINIC_TZ=Africa/Juba
 
 Use IANA timezone identifiers. Examples:
 
-- `Africa/Juba` - South Sudan (UTC+3) ⭐ **Recommended for South Sudan**
+- `Africa/Juba` - South Sudan (UTC+2) ⭐ **Recommended for South Sudan**
+- `Africa/Khartoum` - Sudan (UTC+2)
+- `Africa/Cairo` - Egypt (UTC+2)
 - `Africa/Nairobi` - Kenya (UTC+3)
 - `Africa/Kampala` - Uganda (UTC+3)
-- `Africa/Cairo` - Egypt (UTC+2)
-- `Africa/Khartoum` - Sudan (UTC+2)
 
-> **Note**: If `Africa/Juba` is not supported by your runtime, the system will work with any UTC+3 timezone like `Africa/Nairobi`.
+> **Note**: South Sudan uses UTC+2 (Central Africa Time - CAT) since February 1, 2021.
 
 ## Date Filters
 

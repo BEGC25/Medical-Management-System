@@ -453,53 +453,10 @@ export default function Laboratory() {
 
   const { data: allLabTests = [] } = useLabTests(apiDateRange || undefined);
   
-  // Calculate date range based on filter
-  const getDateRange = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    switch (dateFilter) {
-      case "today":
-        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
-      case "yesterday": {
-        const yesterday = new Date(today.getTime() - 86400000);
-        return { start: yesterday, end: new Date(yesterday.getTime() + 86400000 - 1) };
-      }
-      case "last7days": {
-        const weekAgo = new Date(today.getTime() - 7 * 86400000);
-        return { start: weekAgo, end: new Date() };
-      }
-      case "last30days": {
-        const monthAgo = new Date(today.getTime() - 30 * 86400000);
-        return { start: monthAgo, end: new Date() };
-      }
-      case "custom": {
-        // Default to today if no dates selected yet
-        if (!customStartDate && !customEndDate) {
-          return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
-        }
-        return {
-          start: customStartDate || today,
-          end: customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : new Date(),
-        };
-      }
-      default:
-        return { start: today, end: new Date(today.getTime() + 86400000 - 1) };
-    }
-  };
-  
-  const dateRange = getDateRange();
-  
-  // First filter by date only
-  const dateFilteredTests = allLabTests.filter((t) => {
-    if (!t.requestedDate) return false;
-    const testDate = new Date(t.requestedDate);
-    if (isNaN(testDate.getTime())) return false; // Check for invalid date
-    return testDate >= dateRange.start && testDate <= dateRange.end;
-  });
-  
-  const dateFilteredPending = dateFilteredTests.filter((t) => t.status === "pending");
-  const dateFilteredCompleted = dateFilteredTests.filter((t) => t.status === "completed");
+  // Server already filters by date using timezone-aware utilities, no need for client-side filtering
+  // Just separate by status
+  const dateFilteredPending = allLabTests.filter((t) => t.status === "pending");
+  const dateFilteredCompleted = allLabTests.filter((t) => t.status === "completed");
 
   // Filter by patient search using the patient data already included in lab test results
   const filterByPatient = (tests: (LabTest & { patient?: Patient })[]) => {

@@ -65,6 +65,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
+import { getDateRangeForAPI, formatDateInZone, getZonedNow } from "@/lib/date-utils";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -280,6 +281,38 @@ export default function Treatment() {
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [quickFilter, setQuickFilter] = useState<"today" | "active" | "pending" | null>("today"); // Quick filter from stat cards
+
+  // Calculate timezone-aware date strings for PatientSearch component
+  // Uses Africa/Juba (UTC+2) timezone for consistent filtering
+  const { selectedDateStr, startDateStr, endDateStr } = useMemo(() => {
+    const apiRange = getDateRangeForAPI(dateFilter, customStartDate, customEndDate);
+    
+    if (!apiRange) {
+      // Fallback to today
+      const now = getZonedNow();
+      const todayStr = formatDateInZone(now);
+      return { selectedDateStr: todayStr, startDateStr: undefined, endDateStr: undefined };
+    }
+    
+    const start = new Date(apiRange.startDate);
+    const end = new Date(apiRange.endDate);
+    
+    // For single-day filters (today, yesterday), use selectedDate
+    if (dateFilter === "today" || dateFilter === "yesterday") {
+      return { 
+        selectedDateStr: formatDateInZone(start),
+        startDateStr: undefined,
+        endDateStr: undefined
+      };
+    }
+    
+    // For range filters (last7days, last30days, custom), use start/end dates
+    return {
+      selectedDateStr: formatDateInZone(start),
+      startDateStr: formatDateInZone(start),
+      endDateStr: formatDateInZone(end)
+    };
+  }, [dateFilter, customStartDate, customEndDate]);
 
   // Queue modal
   const [queueOpen, setQueueOpen] = useState(false);
@@ -1224,23 +1257,9 @@ export default function Treatment() {
                       dateFilter === "custom" ? "dateRange" :
                       "date"
                     }
-                    selectedDate={
-                      dateFilter === "today" ? new Date().toISOString().split('T')[0] : 
-                      dateFilter === "yesterday" ? new Date(Date.now() - 86400000).toISOString().split('T')[0] :
-                      new Date().toISOString().split('T')[0]
-                    }
-                    startDate={
-                      dateFilter === "last7days" ? new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0] :
-                      dateFilter === "last30days" ? new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0] :
-                      dateFilter === "custom" && customStartDate ? customStartDate.toISOString().split('T')[0] :
-                      undefined
-                    }
-                    endDate={
-                      dateFilter === "last7days" ? new Date().toISOString().split('T')[0] :
-                      dateFilter === "last30days" ? new Date().toISOString().split('T')[0] :
-                      dateFilter === "custom" && customEndDate ? customEndDate.toISOString().split('T')[0] :
-                      undefined
-                    }
+                    selectedDate={selectedDateStr}
+                    startDate={startDateStr}
+                    endDate={endDateStr}
                     searchTerm={searchTerm}
                     onSearchTermChange={setSearchTerm}
                     shouldSearch={shouldSearch}
