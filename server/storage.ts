@@ -178,20 +178,20 @@ export interface IStorage {
 
   // Lab Tests
   createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest>;
-  getLabTests(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
+  getLabTests(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
   getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]>;
   updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest>;
   updateLabTestAttachments(testId: string, attachments: any[]): Promise<schema.LabTest>;
 
   // X-Ray Exams
   createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam>;
-  getXrayExams(status?: string, date?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
+  getXrayExams(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
   getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]>;
   updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam>;
 
   // Ultrasound Exams
   createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam>;
-  getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]>;
+  getUltrasoundExams(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<schema.UltrasoundExam[]>;
   getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]>;
   updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam>;
 
@@ -746,7 +746,7 @@ export class MemStorage implements IStorage {
     return labTest;
   }
 
-  async getLabTests(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
+  async getLabTests(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
     const baseQuery = db.select({
       labTest: labTests,
       patient: patients // Select whole patient object
@@ -763,19 +763,18 @@ export class MemStorage implements IStorage {
       conditions.push(eq(labTests.status, status as any));
     }
     
-    // Date filtering - support both exact date and date range
-    // Filter by requestedDate field (primary) with fallback to createdAt if needed
+    // Date filtering using clinic day keys for date-only column (requestedDate)
+    // requestedDate stores YYYY-MM-DD strings in Africa/Juba timezone
     if (date) {
       // Exact date match (for backward compatibility)
       conditions.push(eq(labTests.requestedDate, date));
-    } else if (startDate && endDate) {
-      // Date range filtering using requestedDate
+    } else if (startDayKey && endDayKey) {
+      // Date range filtering using clinic day keys
       // Range is [start, end) - inclusive start, exclusive end
-      // Use parameterized queries to prevent SQL injection
       conditions.push(
         and(
-          gte(labTests.requestedDate, startDate),
-          lt(labTests.requestedDate, endDate)
+          gte(labTests.requestedDate, startDayKey),
+          lt(labTests.requestedDate, endDayKey)
         )
       );
     }
@@ -838,7 +837,7 @@ export class MemStorage implements IStorage {
     return xrayExam;
   }
 
-  async getXrayExams(status?: string, date?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]> {
+  async getXrayExams(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]> {
     const baseQuery = db.select({
       xrayExam: xrayExams,
       patient: patients
@@ -854,8 +853,17 @@ export class MemStorage implements IStorage {
     if (status) {
       conditions.push(eq(xrayExams.status, status as any));
     }
+    
+    // Date filtering using clinic day keys
     if (date) {
       conditions.push(eq(xrayExams.requestedDate, date));
+    } else if (startDayKey && endDayKey) {
+      conditions.push(
+        and(
+          gte(xrayExams.requestedDate, startDayKey),
+          lt(xrayExams.requestedDate, endDayKey)
+        )
+      );
     }
 
     let query = baseQuery;
@@ -909,7 +917,7 @@ export class MemStorage implements IStorage {
     return ultrasoundExam;
   }
 
-  async getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]> {
+  async getUltrasoundExams(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<schema.UltrasoundExam[]> {
     // --- MODIFIED: Join patients and filter ---
     const baseQuery = db.select({ ultrasoundExam: ultrasoundExams })
         .from(ultrasoundExams)
@@ -918,12 +926,29 @@ export class MemStorage implements IStorage {
             eq(patients.isDeleted, 0) // Only include exams for non-deleted patients
         ));
 
+    const conditions = [];
     if (status) {
-        const results = await baseQuery.where(eq(ultrasoundExams.status, status as any)).orderBy(desc(ultrasoundExams.requestedDate));
-        return results.map(r => r.ultrasoundExam);
+      conditions.push(eq(ultrasoundExams.status, status as any));
+    }
+    
+    // Date filtering using clinic day keys
+    if (date) {
+      conditions.push(eq(ultrasoundExams.requestedDate, date));
+    } else if (startDayKey && endDayKey) {
+      conditions.push(
+        and(
+          gte(ultrasoundExams.requestedDate, startDayKey),
+          lt(ultrasoundExams.requestedDate, endDayKey)
+        )
+      );
     }
 
-    const results = await baseQuery.orderBy(desc(ultrasoundExams.requestedDate));
+    let query = baseQuery;
+    if (conditions.length > 0) {
+      query = baseQuery.where(and(...conditions));
+    }
+
+    const results = await query.orderBy(desc(ultrasoundExams.requestedDate));
     return results.map(r => r.ultrasoundExam);
   }
 
