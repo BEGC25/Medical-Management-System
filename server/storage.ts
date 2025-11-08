@@ -4,7 +4,7 @@ import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { hashPassword } from "./auth-service";
-import { today } from "./utils/date";
+import { getClinicDayKey } from "@shared/clinic-date";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
@@ -429,7 +429,7 @@ export class MemStorage implements IStorage {
     // Use clinic timezone (Africa/Juba) for visitDate to ensure consistent day classification
     const encounter = await this.createEncounter({
       patientId: patient.patientId,
-      visitDate: today('date'),
+      visitDate: getClinicDayKey(),
       policy: "cash",
       attendingClinician: "", // Reception doesn't assign this
       notes: "Patient registered at reception.",
@@ -1010,7 +1010,7 @@ export class MemStorage implements IStorage {
 
       // DEFAULT TO TODAY if no date range provided
       // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-      const clinicToday = today('date');
+      const clinicToday = getClinicDayKey();
       const actualFromDate = fromDate || clinicToday;
       const actualToDate = toDate || clinicToday;
       
@@ -1133,7 +1133,7 @@ export class MemStorage implements IStorage {
   async getPatientFlowData() {
     try {
       // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-      const clinicToday = today('date');
+      const clinicToday = getClinicDayKey();
       
       // Count TODAY's open encounters with no treatments yet (waiting for doctor)
       const waitingForDoctor = await db.select({ count: sql<number>`count(*)` })
@@ -1209,7 +1209,7 @@ export class MemStorage implements IStorage {
   async getOutstandingPayments(limit = 10) {
     try {
       // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-      const clinicToday = today('date');
+      const clinicToday = getClinicDayKey();
       
       // Get TODAY's unpaid lab tests - fetch raw data without grouping
       // to properly parse individual tests from JSON array
@@ -1433,7 +1433,7 @@ export class MemStorage implements IStorage {
   async getResultsReadyForReview(limit: number = 10) {
     try {
       // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-      const clinicToday = today('date');
+      const clinicToday = getClinicDayKey();
       
       // Get all non-deleted patients as a lookup map
       const allPatients = await db.select().from(patients).where(eq(patients.isDeleted, 0));
@@ -1669,7 +1669,7 @@ export class MemStorage implements IStorage {
   // Today filter methods
   async getTodaysPatients(): Promise<schema.Patient[]> {
     // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-    const clinicToday = today('date'); // Get YYYY-MM-DD format
+    const clinicToday = getClinicDayKey(); // Get YYYY-MM-DD format
 
     // --- MODIFIED: Add isDeleted filter ---
     return await db.select().from(patients)
@@ -1710,7 +1710,7 @@ export class MemStorage implements IStorage {
 
   async getTodaysTreatments(): Promise<schema.Treatment[]> {
     // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-    const clinicToday = today('date'); // Get YYYY-MM-DD format
+    const clinicToday = getClinicDayKey(); // Get YYYY-MM-DD format
 
     // --- MODIFIED: Join patients and filter ---
     return await db.select({ treatment: treatments })
@@ -1929,7 +1929,7 @@ export class MemStorage implements IStorage {
 
   async getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]> {
     // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-    const clinicToday = today('date');
+    const clinicToday = getClinicDayKey();
 
     // --- MODIFIED: Add isDeleted filter ---
     const patientsData = await db.select().from(patients)
@@ -2611,7 +2611,7 @@ export class MemStorage implements IStorage {
 
   async getExpiringSoonDrugs(daysThreshold = 90): Promise<(schema.DrugBatch & { drugName: string })[]> {
     // Use clinic timezone (Africa/Juba) for consistent date comparison
-    const clinicToday = today('date');
+    const clinicToday = getClinicDayKey();
     const thresholdDate = new Date(clinicToday);
     thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
     // Format the threshold date in YYYY-MM-DD format for comparison with expiryDate field

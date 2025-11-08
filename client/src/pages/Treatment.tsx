@@ -65,7 +65,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from "@/lib/date-utils";
+import { getDateRangeForAPI, formatDateInZone, getClinicNow, getClinicDayKey } from "@/lib/date-utils";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -289,9 +289,7 @@ export default function Treatment() {
     
     if (!apiRange) {
       // Fallback to today
-      const now = getZonedNow();
-      const todayStr = formatDateInZone(now);
-      return { selectedDateStr: todayStr, startDateStr: undefined, endDateStr: undefined };
+      return { selectedDateStr: getClinicDayKey(), startDateStr: undefined, endDateStr: undefined };
     }
     
     const start = new Date(apiRange.startDate);
@@ -694,7 +692,7 @@ export default function Treatment() {
         tests: JSON.stringify(selectedLabTests),
         priority: labPriority,
         clinicalInfo: labClinicalInfo,
-        requestedDate: formatDateInZone(getZonedNow()),
+        requestedDate: getClinicDayKey(),
       };
       
       const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);
