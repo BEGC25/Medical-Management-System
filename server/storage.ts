@@ -4,6 +4,7 @@ import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { hashPassword } from "./auth-service";
+import { today } from "./utils/date";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
@@ -425,9 +426,10 @@ export class MemStorage implements IStorage {
     const patient = await this.createPatient(data);
 
     // 2. Create Encounter
+    // Use clinic timezone (Africa/Juba) for visitDate to ensure consistent day classification
     const encounter = await this.createEncounter({
       patientId: patient.patientId,
-      visitDate: new Date().toISOString().split("T")[0],
+      visitDate: today('date'),
       policy: "cash",
       attendingClinician: "", // Reception doesn't assign this
       notes: "Patient registered at reception.",
@@ -982,9 +984,10 @@ export class MemStorage implements IStorage {
         : undefined;
 
       // DEFAULT TO TODAY if no date range provided
-      const today = new Date().toISOString().split('T')[0];
-      const actualFromDate = fromDate || today;
-      const actualToDate = toDate || today;
+      // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
+      const clinicToday = today('date');
+      const actualFromDate = fromDate || clinicToday;
+      const actualToDate = toDate || clinicToday;
       
       // Count patients created today (or in date range)
       const patientDateFilter = and(
@@ -1104,7 +1107,8 @@ export class MemStorage implements IStorage {
   
   async getPatientFlowData() {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
+      const clinicToday = today('date');
       
       // Count TODAY's open encounters with no treatments yet (waiting for doctor)
       const waitingForDoctor = await db.select({ count: sql<number>`count(*)` })
@@ -1113,7 +1117,7 @@ export class MemStorage implements IStorage {
         .where(and(
           eq(encounters.status, 'open'),
           isNull(treatments.id),
-          sql`DATE(${encounters.createdAt}) = ${today}`
+          sql`DATE(${encounters.createdAt}) = ${clinicToday}`
         ));
       
       // Count TODAY's open encounters with treatments (in treatment/consultation)
@@ -1122,7 +1126,7 @@ export class MemStorage implements IStorage {
         .innerJoin(treatments, eq(encounters.encounterId, treatments.encounterId))
         .where(and(
           eq(encounters.status, 'open'),
-          sql`DATE(${encounters.createdAt}) = ${today}`
+          sql`DATE(${encounters.createdAt}) = ${clinicToday}`
         ));
       
       // Count pending lab tests ordered today
@@ -1130,7 +1134,7 @@ export class MemStorage implements IStorage {
         .from(labTests)
         .where(and(
           eq(labTests.status, 'pending'),
-          like(labTests.requestedDate, `${today}%`)
+          like(labTests.requestedDate, `${clinicToday}%`)
         ));
       
       // Count pending X-rays ordered today
@@ -1138,7 +1142,7 @@ export class MemStorage implements IStorage {
         .from(xrayExams)
         .where(and(
           eq(xrayExams.status, 'pending'),
-          like(xrayExams.requestedDate, `${today}%`)
+          like(xrayExams.requestedDate, `${clinicToday}%`)
         ));
       
       // Count pending ultrasounds ordered today
@@ -1146,7 +1150,7 @@ export class MemStorage implements IStorage {
         .from(ultrasoundExams)
         .where(and(
           eq(ultrasoundExams.status, 'pending'),
-          like(ultrasoundExams.requestedDate, `${today}%`)
+          like(ultrasoundExams.requestedDate, `${clinicToday}%`)
         ));
       
       // Count pending pharmacy orders
@@ -1179,7 +1183,8 @@ export class MemStorage implements IStorage {
   
   async getOutstandingPayments(limit = 10) {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
+      const clinicToday = today('date');
       
       // Get TODAY's unpaid lab tests - fetch raw data without grouping
       // to properly parse individual tests from JSON array
@@ -1201,7 +1206,7 @@ export class MemStorage implements IStorage {
       .where(and(
         eq(labTests.paymentStatus, 'unpaid'),
         sql`${labTests.status} IN ('pending', 'in_progress')`,
-        sql`DATE(${labTests.requestedDate}) = ${today}`
+        sql`DATE(${labTests.requestedDate}) = ${clinicToday}`
       ))
       .limit(limit * 3); // Fetch more than needed to account for multiple tests per order
       
@@ -1336,7 +1341,7 @@ export class MemStorage implements IStorage {
       .where(and(
         eq(xrayExams.paymentStatus, 'unpaid'),
         sql`${xrayExams.status} IN ('pending', 'in_progress')`,
-        sql`DATE(${xrayExams.requestedDate}) = ${today}`
+        sql`DATE(${xrayExams.requestedDate}) = ${clinicToday}`
       ))
       .limit(10);
       
@@ -1363,7 +1368,7 @@ export class MemStorage implements IStorage {
       .where(and(
         eq(ultrasoundExams.paymentStatus, 'unpaid'),
         sql`${ultrasoundExams.status} IN ('pending', 'in_progress')`,
-        sql`DATE(${ultrasoundExams.requestedDate}) = ${today}`
+        sql`DATE(${ultrasoundExams.requestedDate}) = ${clinicToday}`
       ))
       .limit(10);
       
@@ -1402,7 +1407,8 @@ export class MemStorage implements IStorage {
   
   async getResultsReadyForReview(limit: number = 10) {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
+      const clinicToday = today('date');
       
       // Get all non-deleted patients as a lookup map
       const allPatients = await db.select().from(patients).where(eq(patients.isDeleted, 0));
@@ -1416,7 +1422,7 @@ export class MemStorage implements IStorage {
         .from(labTests)
         .where(and(
           eq(labTests.status, 'completed'),
-          sql`DATE(${labTests.completedDate}) = ${today}`
+          sql`DATE(${labTests.completedDate}) = ${clinicToday}`
         ));
       
       // Get TODAY's completed X-rays
@@ -1424,7 +1430,7 @@ export class MemStorage implements IStorage {
         .from(xrayExams)
         .where(and(
           eq(xrayExams.status, 'completed'),
-          sql`DATE(${xrayExams.reportDate}) = ${today}`
+          sql`DATE(${xrayExams.reportDate}) = ${clinicToday}`
         ));
       
       // Get TODAY's completed ultrasounds
@@ -1432,7 +1438,7 @@ export class MemStorage implements IStorage {
         .from(ultrasoundExams)
         .where(and(
           eq(ultrasoundExams.status, 'completed'),
-          sql`DATE(${ultrasoundExams.reportDate}) = ${today}`
+          sql`DATE(${ultrasoundExams.reportDate}) = ${clinicToday}`
         ));
       
       // Get all order lines to link tests to encounters (if available)
@@ -1637,7 +1643,8 @@ export class MemStorage implements IStorage {
   
   // Today filter methods
   async getTodaysPatients(): Promise<schema.Patient[]> {
-    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+    // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
+    const clinicToday = today('date'); // Get YYYY-MM-DD format
 
     // --- MODIFIED: Add isDeleted filter ---
     return await db.select().from(patients)
@@ -1645,7 +1652,7 @@ export class MemStorage implements IStorage {
         and(
           eq(patients.isDeleted, 0), // Added filter
           // Check if created today by comparing the date part of the timestamp
-          like(patients.createdAt, `${today}%`)
+          like(patients.createdAt, `${clinicToday}%`)
         )
       )
       .orderBy(desc(patients.createdAt));
@@ -1677,7 +1684,8 @@ export class MemStorage implements IStorage {
   }
 
   async getTodaysTreatments(): Promise<schema.Treatment[]> {
-    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+    // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
+    const clinicToday = today('date'); // Get YYYY-MM-DD format
 
     // --- MODIFIED: Join patients and filter ---
     return await db.select({ treatment: treatments })
@@ -1689,8 +1697,8 @@ export class MemStorage implements IStorage {
       .where(
         // Check if visit date is today (exact match) or created today
         or(
-          eq(treatments.visitDate, today),
-          like(treatments.createdAt, `${today}%`)
+          eq(treatments.visitDate, clinicToday),
+          like(treatments.createdAt, `${clinicToday}%`)
         )
       )
       .orderBy(desc(treatments.createdAt))
@@ -1895,13 +1903,14 @@ export class MemStorage implements IStorage {
   }
 
   async getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]> {
-    const today = new Date().toISOString().split('T')[0];
+    // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
+    const clinicToday = today('date');
 
     // --- MODIFIED: Add isDeleted filter ---
     const patientsData = await db.select().from(patients)
       .where(and(
         eq(patients.isDeleted, 0), // Added filter
-        like(patients.createdAt, `${today}%`)
+        like(patients.createdAt, `${clinicToday}%`)
       ))
       .orderBy(desc(patients.createdAt));
 
@@ -2576,8 +2585,11 @@ export class MemStorage implements IStorage {
   }
 
   async getExpiringSoonDrugs(daysThreshold = 90): Promise<(schema.DrugBatch & { drugName: string })[]> {
-    const thresholdDate = new Date();
+    // Use clinic timezone (Africa/Juba) for consistent date comparison
+    const clinicToday = today('date');
+    const thresholdDate = new Date(clinicToday);
     thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
+    // Format the threshold date in YYYY-MM-DD format for comparison with expiryDate field
     const thresholdStr = thresholdDate.toISOString().split('T')[0];
 
     const batches = await db.select()

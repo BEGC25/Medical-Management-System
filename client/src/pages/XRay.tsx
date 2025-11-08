@@ -58,7 +58,7 @@ import {
 
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
-import { getDateRangeForAPI } from '@/lib/date-utils';
+import { getDateRangeForAPI, formatDateInZone, getZonedNow } from '@/lib/date-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -225,7 +225,10 @@ export default function XRay() {
       bodyPart: '',
       clinicalIndication: '',
       specialInstructions: '',
-      requestedDate: new Date().toISOString().split('T')[0],
+      // Use clinic timezone (Africa/Juba) for requestedDate to ensure consistent day classification
+      // across all pages (Treatment, X-Ray, Payments). Using UTC would cause records around
+      // midnight to be classified into wrong clinic day.
+      requestedDate: formatDateInZone(getZonedNow()),
     },
   });
 
@@ -235,7 +238,8 @@ export default function XRay() {
       impression: '',
       recommendations: '',
       imageQuality: 'good' as 'excellent' | 'good' | 'adequate' | 'limited',
-      reportDate: new Date().toISOString().split('T')[0],
+      // Use clinic timezone (Africa/Juba) for reportDate to ensure consistent day classification
+      reportDate: formatDateInZone(getZonedNow()),
       radiologist: '',
     },
   });
@@ -447,7 +451,8 @@ export default function XRay() {
       impression: exam.impression || '',
       recommendations: exam.recommendations || '',
       imageQuality: (exam as any).imageQuality || 'good',
-      reportDate: (exam as any).reportDate || new Date().toISOString().split('T')[0],
+      // Use clinic timezone (Africa/Juba) for reportDate fallback
+      reportDate: (exam as any).reportDate || formatDateInZone(getZonedNow()),
       radiologist: exam.radiologist || '',
     });
   };
