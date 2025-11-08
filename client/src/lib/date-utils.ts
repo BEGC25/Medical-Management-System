@@ -1,23 +1,28 @@
 /**
  * Client-side date utility functions
- * Re-exports shared date utilities for use in React components
+ * Uses shared/clinic-date.ts for all date operations
  */
 
 export {
+  getClinicNow,
+  getClinicDayKey,
   getPresetRange,
-  getPresetRangeStrings,
-  parseCustomRange,
-  getClinicTimezone,
+  parseRangeParams,
   formatDateInZone,
-  getZonedNow,
+  isInRange,
+  dayKeyToRange,
+  CLINIC_TZ,
   type DatePreset,
-} from '@shared/date-utils';
+  type ClinicDateRange,
+} from '@shared/clinic-date';
 
-import { getPresetRange, parseCustomRange } from '@shared/date-utils';
+import { getPresetRange, type DatePreset, type ClinicDateRange } from '@shared/clinic-date';
 
 /**
  * Get date range strings for API requests
  * Converts a preset or custom range to ISO strings for the API
+ * 
+ * @deprecated Use parseRangeParams directly and send preset/from/to params to API
  */
 export function getDateRangeForAPI(
   preset: string | undefined,
@@ -25,24 +30,17 @@ export function getDateRangeForAPI(
   customEnd?: Date
 ): { startDate: string; endDate: string } | null {
   
-  if (preset && preset !== 'custom') {
-    const presetUpper = preset.charAt(0).toUpperCase() + preset.slice(1);
-    const range = getPresetRange(presetUpper as any);
-    if (!range) return null;
-    return {
-      startDate: range.start.toISOString(),
-      endDate: range.end.toISOString(),
-    };
+  if (!preset || preset === 'all') {
+    return null;
   }
   
-  if (preset === 'custom') {
-    const range = parseCustomRange(customStart, customEnd);
-    if (!range) return null;
-    return {
-      startDate: range.start.toISOString(),
-      endDate: range.end.toISOString(),
-    };
-  }
+  const normalizedPreset = preset.toLowerCase() as DatePreset;
+  const range = getPresetRange(normalizedPreset, customStart, customEnd);
   
-  return null;
+  if (!range) return null;
+  
+  return {
+    startDate: range.startUtc.toISOString(),
+    endDate: range.endUtc.toISOString(),
+  };
 }

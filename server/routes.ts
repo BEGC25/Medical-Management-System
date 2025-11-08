@@ -2554,6 +2554,67 @@ import { setupAuth } from "./auth";
 import dailyCashRouter from "./reports.daily-cash";
 import dailyCashCsvRouter from "./reports.daily-cash.csv";
 
+/* ----------------------------- Debug Endpoints ----------------------------- */
+
+/**
+ * Debug endpoint for timezone diagnostics
+ * Returns current time information and computed ranges for presets
+ * Only available when DEBUG_TIMEZONE environment variable is set
+ */
+router.get("/api/debug/time", async (req, res) => {
+  // Check if debug mode is enabled
+  const isDebugMode = process.env.DEBUG_TIMEZONE === 'true';
+  
+  if (!isDebugMode) {
+    return res.status(404).json({ error: "Debug endpoint not available" });
+  }
+  
+  try {
+    const { getClinicNow, getClinicDayKey, formatDateInZone, CLINIC_TZ } = await import('./utils/date');
+    const { parseRangeParams } = await import('@shared/clinic-date');
+    
+    const now = new Date();
+    const clinicNow = getClinicNow();
+    
+    // Compute all preset ranges
+    const presets = ['today', 'yesterday', 'last7', 'last30'];
+    const ranges: Record<string, any> = {};
+    
+    for (const preset of presets) {
+      const range = parseRangeParams({ preset });
+      if (range) {
+        ranges[preset] = {
+          startUtc: range.startUtc.toISOString(),
+          endUtc: range.endUtc.toISOString(),
+          startClinicDayKey: range.startClinicDayKey,
+          endClinicDayKey: range.endClinicDayKey,
+        };
+      }
+    }
+    
+    res.json({
+      serverTime: {
+        utc: now.toISOString(),
+        clinicTime: formatDateInZone(now, 'yyyy-MM-dd HH:mm:ss zzz'),
+        clinicDayKey: getClinicDayKey(),
+        timezone: CLINIC_TZ,
+      },
+      ranges,
+      debug: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        env: {
+          CLINIC_TZ: process.env.CLINIC_TZ || 'not set',
+          DEBUG_TIMEZONE: process.env.DEBUG_TIMEZONE || 'not set',
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error in debug/time endpoint:", error);
+    res.status(500).json({ error: "Failed to generate debug info" });
+  }
+});
+
 // Function to register routes with the express app
 export async function registerRoutes(app: any) {
   // ⚠️ OLD AUTH DISABLED - Using new scrypt-based authentication instead
