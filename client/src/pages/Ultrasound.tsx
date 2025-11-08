@@ -57,7 +57,7 @@ import {
 
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
-import { getDateRangeForAPI, formatDateInZone, getZonedNow } from '@/lib/date-utils';
+import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from '@/lib/date-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -84,16 +84,6 @@ function fullName(p?: Patient | null) {
   if (!p) return '';
   const n = [p.firstName, p.lastName].filter(Boolean).join(' ').trim();
   return n || p.patientId || '';
-}
-
-function todayRange() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const start = `${yyyy}-${mm}-${dd}`;
-  const end = `${yyyy}-${mm}-${dd}`;
-  return { start, end };
 }
 
 /* ------------------------------------------------------------------ */
@@ -130,16 +120,16 @@ function usePatientsMap(ids: string[]) {
 }
 
 function useTodayPatients() {
-  const { start, end } = todayRange();
+  const today = getClinicDayKey();
 
   return useQuery<Patient[]>({
-    queryKey: ['/api/patients', { today: true, start, end }],
+    queryKey: ['/api/patients', { today: true, date: today }],
     queryFn: async () => {
       try {
         const r1 = await fetch('/api/patients?today=1');
         if (r1.ok) return r1.json();
       } catch {}
-      const r2 = await fetch(`/api/patients?from=${start}&to=${end}`);
+      const r2 = await fetch(`/api/patients?date=${today}`);
       if (!r2.ok) return [];
       return r2.json();
     },

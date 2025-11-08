@@ -27,6 +27,7 @@ import { queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ROLES } from "@shared/auth-roles";
+import { DebugTimeBanner } from "@/components/DebugTimeBanner";
 
 // ✅ NEW: Daily Cash page
 import ReportsDailyCash from "@/pages/ReportsDailyCash";
@@ -36,6 +37,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <DebugTimeBanner />
           <OfflineIndicator />
 
           <Switch>

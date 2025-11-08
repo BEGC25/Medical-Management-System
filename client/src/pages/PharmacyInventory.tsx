@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getClinicDayKey } from "@/lib/date-utils";
 
 // Common drugs list for quick selection
 const COMMON_DRUGS = [
@@ -91,7 +92,7 @@ export default function PharmacyInventory() {
     unitCost: 0,
     supplier: "",
     receivedBy: "Pharmacist",
-    receivedAt: new Date().toISOString().split('T')[0],
+    receivedAt: getClinicDayKey(),
   });
   const { toast } = useToast();
 
