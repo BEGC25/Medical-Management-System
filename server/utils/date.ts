@@ -8,6 +8,8 @@ import {
   getPresetRangeStrings,
   parseCustomRange,
   getClinicTimezone,
+  formatDateInZone,
+  getZonedNow,
   type DatePreset,
 } from '@shared/date-utils';
 
@@ -108,3 +110,23 @@ export function buildDateRangeConditions(
 }
 
 export { getClinicTimezone };
+
+/**
+ * Get today's date in the clinic timezone (Africa/Juba) as YYYY-MM-DD string
+ * 
+ * This replaces `new Date().toISOString().split('T')[0]` which returns UTC day.
+ * Using UTC day causes records created around midnight to be classified into wrong clinic day.
+ * 
+ * @param format - Format type (currently only 'date' supported)
+ * @param tz - Optional timezone override (defaults to clinic timezone)
+ * @returns Date string in YYYY-MM-DD format for the clinic's current day
+ * 
+ * @example
+ * // Get today's date in clinic timezone
+ * const clinicToday = today('date'); // e.g., "2025-11-08"
+ */
+export function today(format: 'date' = 'date', tz?: string): string {
+  // Get current time in clinic timezone and format as YYYY-MM-DD
+  const now = getZonedNow(tz);
+  return formatDateInZone(now, tz);
+}

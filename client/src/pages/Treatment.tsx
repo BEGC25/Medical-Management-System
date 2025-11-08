@@ -397,7 +397,10 @@ export default function Treatment() {
     resolver: zodResolver(insertTreatmentSchema),
     defaultValues: {
       patientId: "",
-      visitDate: new Date().toISOString().split("T")[0],
+      // Use clinic timezone (Africa/Juba) for visitDate to ensure consistent day classification.
+      // Using UTC `.toISOString().split("T")[0]` would cause records around midnight to be 
+      // classified into wrong clinic day.
+      visitDate: formatDateInZone(getZonedNow()),
       visitType: "consultation",
       priority: "routine",
       chiefComplaint: "",
@@ -684,13 +687,16 @@ export default function Treatment() {
       }
       
       // 2. Create the lab test record
+      // Use clinic timezone (Africa/Juba) for requestedDate to ensure consistent day classification
+      // across all pages (Treatment, Laboratory, Payments). Using UTC would cause records around
+      // midnight to be classified into wrong clinic day.
       const labTestData = {
         patientId: selectedPatient.patientId,
         category: currentLabCategory,
         tests: JSON.stringify(selectedLabTests),
         priority: labPriority,
         clinicalInfo: labClinicalInfo,
-        requestedDate: new Date().toISOString().split("T")[0],
+        requestedDate: formatDateInZone(getZonedNow()),
       };
       
       const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);
