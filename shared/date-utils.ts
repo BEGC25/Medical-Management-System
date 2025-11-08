@@ -1,7 +1,7 @@
 /**
  * Shared date utilities for consistent timezone-aware date handling across the application.
  * 
- * Uses Africa/Juba (UTC+3) as the default clinic timezone.
+ * Uses Africa/Juba (UTC+2) as the default clinic timezone.
  * All timestamps are stored in UTC in the database and converted to/from clinic timezone
  * only when computing date ranges or displaying.
  * 
@@ -13,7 +13,8 @@ import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { startOfDay, endOfDay, subDays, subMonths, startOfMonth, addDays } from 'date-fns';
 
 /**
- * Default clinic timezone - Africa/Juba (UTC+3) for South Sudan
+ * Default clinic timezone - Africa/Juba (UTC+2) for South Sudan
+ * Note: South Sudan switched from UTC+3 to UTC+2 on February 1, 2021
  * Can be overridden via CLINIC_TZ environment variable
  */
 export const DEFAULT_CLINIC_TZ = 'Africa/Juba';
