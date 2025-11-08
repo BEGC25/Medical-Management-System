@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getClinicDayKey } from '@/lib/date-utils';
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,7 +92,7 @@ export default function PharmacyInventory() {
     unitCost: 0,
     supplier: "",
     receivedBy: "Pharmacist",
-    receivedAt: new Date().toISOString().split('T')[0],
+    receivedAt: getClinicDayKey(),
   });
   const { toast } = useToast();
 
