@@ -258,17 +258,180 @@ This ensures:
 - Historical data may still have UTC day stamps (will be backfilled in Phase 2)
 - Pending counts and aggregations use different logic across pages (Phase 2)
 
-### Phase 2 (Planned) - Full Backend Unification
+### Phase 2 (Current) - Full Backend Unification
 
 **Objectives:**
-- Update all server routes to use `parseClinicRangeParams`
+- Update all server routes to use unified `parseClinicRangeParams`
 - Standardize query parameter handling (`preset`, `from`, `to`)
 - Unify pending count calculations across Lab/X-ray/Ultrasound
 - Run data migration/backfill to fix historical UTC day stamps
 - Consolidate backend range filtering logic
+- Add database indexes for efficient date-range queries
+
+**Changes Implemented:**
+
+#### A. Backend Infrastructure
+- Enhanced `server/utils/clinic-range.ts` with:
+  - `parseClinicRangeParams()` - Unified range parsing with legacy param support
+  - `rangeToDayKeys()` - Convert range to date keys for date-only columns
+  - `rangeToISOStrings()` - Convert range to ISO strings for timestamp columns
+  - `getClinicTimeInfo()` - Diagnostic information for debugging
+- Added debug endpoints:
+  - `/api/debug/time` - Current clinic time and preset boundaries
+  - `/api/debug/range` - Echo parsed range parameters
+- Legacy parameter support with deprecation warnings:
+  - `?today=1` → mapped to `preset=today`
+  - `?date=YYYY-MM-DD` → mapped to custom range
+  - `?startDate=X&endDate=Y` → mapped to `from/to`
+
+#### B. Database Schema
+- Added B-Tree indexes on date columns:
+  - `lab_tests(requestedDate)`
+  - `xray_exams(requestedDate)`
+  - `ultrasound_exams(requestedDate)`
+  - `treatments(visitDate)`
+  - `encounters(visitDate)`
+- Added unique partial index: `encounters(patientId, visitDate) WHERE status='open'`
+  - Prevents duplicate open encounters for same patient on same clinic day
+
+#### C. Server Route Refactors
+- **Lab Tests** (`/api/lab-tests`): Unified preset/range filtering
+- **X-ray Exams** (`/api/xray-exams`): Unified preset/range filtering
+- **Ultrasound Exams** (`/api/ultrasound-exams`): Unified preset/range filtering
+- **Patients** (`/api/patients`): Simplified logic, unified range parsing
+- **Dashboard Stats** (`/api/dashboard/stats`): 
+  - Now uses preset/range params
+  - **Critical fix**: Pending counts now respect date range filter
+  - Before: Pending counts were global (all-time)
+  - After: Pending counts filtered by same date range as total counts
+  - Ensures badge counts align with filtered list views
+
+#### D. Frontend Updates
+- **Laboratory Page**: Updated to use `preset` parameter instead of `startDate/endDate`
+  - Passes preset directly to API
+  - Custom ranges converted to clinic day keys
+  - Server handles all date filtering logic
+
+#### E. Data Migration
+- Created `server/migrations/backfill-clinic-days.ts`:
+  - Idempotent: Only updates mismatched records
+  - Dry-run mode: Preview changes without applying
+  - Configurable window: Default 60 days
+  - Progress reporting with examples
+- Usage: `tsx server/migrations/backfill-clinic-days.ts [--dry-run] [--days=60]`
+
+#### F. Query Parameter Standardization
+
+**Supported Parameters:**
+```
+preset: 'today' | 'yesterday' | 'last7' | 'last30' | 'all' | 'custom'
+from: YYYY-MM-DD (for custom range)
+to: YYYY-MM-DD (for custom range)
+```
+
+**Examples:**
+```bash
+# Today's records
+/api/lab-tests?preset=today
+
+# Last 7 days
+/api/lab-tests?preset=last7
+
+# Custom range
+/api/lab-tests?preset=custom&from=2025-11-01&to=2025-11-08
+
+# All records (no filtering)
+/api/lab-tests?preset=all
+
+# Legacy params still work (with deprecation warning)
+/api/lab-tests?today=1
+/api/lab-tests?date=2025-11-08
+/api/lab-tests?startDate=2025-11-01&endDate=2025-11-08
+```
+
+#### G. Date Column Types
+
+**Date-Only Columns** (use day keys):
+- `lab_tests.requestedDate`
+- `xray_exams.requestedDate`
+- `ultrasound_exams.requestedDate`
+- `treatments.visitDate`
+- `encounters.visitDate`
+
+Filtering: `WHERE requestedDate >= 'YYYY-MM-DD' AND requestedDate < 'YYYY-MM-DD'`
+
+**Timestamp Columns** (use ISO strings):
+- `patients.createdAt`
+- `lab_tests.createdAt`
+- `lab_tests.completedDate`
+- `xray_exams.reportDate`
+
+Filtering: `WHERE createdAt >= 'ISO_TIMESTAMP' AND createdAt < 'ISO_TIMESTAMP'`
 
 **Expected Outcome:**
 After Phase 2, filters on all pages will be fully consistent, and historical data will align with clinic days.
+
+### Testing Phase 2 Changes
+
+#### 1. Verify Preset Parsing
+```bash
+# Test different presets
+curl http://localhost:5000/api/debug/range?preset=today
+curl http://localhost:5000/api/debug/range?preset=last7
+curl http://localhost:5000/api/debug/range?preset=custom&from=2025-11-01&to=2025-11-08
+
+# Test legacy params
+curl http://localhost:5000/api/debug/range?today=1
+curl http://localhost:5000/api/debug/range?date=2025-11-08
+```
+
+#### 2. Verify Time Info
+```bash
+curl http://localhost:5000/api/debug/time
+```
+
+Should return:
+```json
+{
+  "serverTime": "2025-11-08T12:34:56.789Z",
+  "clinicDayKey": "2025-11-08",
+  "presets": {
+    "today": {
+      "start": "2025-11-07T22:00:00.000Z",
+      "end": "2025-11-08T22:00:00.000Z",
+      "startDayKey": "2025-11-08",
+      "endDayKey": "2025-11-09"
+    },
+    ...
+  }
+}
+```
+
+#### 3. Verify Pending Count Alignment
+1. Navigate to Laboratory page with Today filter
+2. Check pending count badge
+3. Verify it matches the number of pending items in the list
+4. Switch to Last 7 Days filter
+5. Verify count increases (superset property)
+
+#### 4. Run Data Migration (Dry Run)
+```bash
+cd /home/runner/work/Medical-Management-System/Medical-Management-System
+tsx server/migrations/backfill-clinic-days.ts --dry-run
+```
+
+Review output for any discrepancies in historical data.
+
+#### 5. Apply Migration
+```bash
+tsx server/migrations/backfill-clinic-days.ts
+```
+
+#### 6. Apply Database Indexes
+```sql
+-- Run the migration SQL
+sqlite3 clinic.db < migrations/0001_phase2_indexes.sql
+```
 
 ## Troubleshooting
 

@@ -61,7 +61,7 @@ import {
 
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI } from "@/lib/date-utils";
+import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -317,17 +317,24 @@ const resultFields: Record<
 
 // 1) Lab tests (all -> split by status locally)
 // The API returns lab tests with patient data included via JOIN
-function useLabTests(dateRange?: { startDate: string; endDate: string }) {
+function useLabTests(preset: string, customStart?: Date, customEnd?: Date) {
   return useQuery<(LabTest & { patient?: Patient })[]>({
-    queryKey: dateRange 
-      ? ["/api/lab-tests", { startDate: dateRange.startDate, endDate: dateRange.endDate }]
-      : ["/api/lab-tests"],
+    queryKey: ["/api/lab-tests", { preset, customStart, customEnd }],
     queryFn: async () => {
       const url = new URL("/api/lab-tests", window.location.origin);
-      if (dateRange) {
-        url.searchParams.set("startDate", dateRange.startDate);
-        url.searchParams.set("endDate", dateRange.endDate);
+      
+      // Use new preset-based API (Phase 2)
+      if (preset && preset !== 'custom') {
+        url.searchParams.set("preset", preset);
+      } else if (preset === 'custom' && customStart && customEnd) {
+        // For custom range, convert dates to clinic day keys
+        const fromKey = getClinicDayKey(customStart);
+        const toKey = getClinicDayKey(customEnd);
+        url.searchParams.set("preset", "custom");
+        url.searchParams.set("from", fromKey);
+        url.searchParams.set("to", toKey);
       }
+      
       const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error("Failed to fetch lab tests");
@@ -446,12 +453,8 @@ export default function Laboratory() {
 
   /* ----------------------------- Data ----------------------------- */
 
-  // Calculate API date range for fetching lab tests based on current filter
-  const apiDateRange = useMemo(() => {
-    return getDateRangeForAPI(dateFilter, customStartDate, customEndDate);
-  }, [dateFilter, customStartDate, customEndDate]);
-
-  const { data: allLabTests = [] } = useLabTests(apiDateRange || undefined);
+  // Use the date filter preset directly for API calls (Phase 2)
+  const { data: allLabTests = [] } = useLabTests(dateFilter, customStartDate, customEndDate);
   
   // Server already filters by date using timezone-aware utilities, no need for client-side filtering
   // Just separate by status
