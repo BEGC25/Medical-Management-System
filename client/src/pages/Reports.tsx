@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { getClinicDayKey } from "@/lib/date-utils";
 
 interface ReportFilters {
   reportType: string;
@@ -56,8 +57,8 @@ export default function Reports() {
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
   const [filters, setFilters] = useState<ReportFilters>({
     reportType: "daily",
-    fromDate: new Date().toISOString().split('T')[0],
-    toDate: new Date().toISOString().split('T')[0],
+    fromDate: getClinicDayKey(),
+    toDate: getClinicDayKey(),
   });
 
   const { data: stats } = useQuery<DashboardStats>({

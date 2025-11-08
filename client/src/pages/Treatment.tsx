@@ -65,7 +65,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, formatDateInZone, getZonedNow } from "@/lib/date-utils";
+import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from "@/lib/date-utils";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -316,7 +316,7 @@ export default function Treatment() {
 
   // Queue modal
   const [queueOpen, setQueueOpen] = useState(false);
-  const [queueDate, setQueueDate] = useState(new Date().toISOString().slice(0, 10));
+  const [queueDate, setQueueDate] = useState(getClinicDayKey());
   const [queueFilter, setQueueFilter] = useState("");
 
   // Lab test selection state (for category-based ordering)
@@ -598,7 +598,7 @@ export default function Treatment() {
     } else if (selectedPatient) {
       createEncounterMutation.mutate({
         patientId: selectedPatient.patientId,
-        visitDate: new Date().toISOString().split("T")[0],
+        visitDate: getClinicDayKey(),
         attendingClinician: "Dr. System",
       });
     }
