@@ -24,6 +24,7 @@ import {
   Plus
 } from "lucide-react";
 import { format } from "date-fns";
+import { getClinicDayKey } from "@/lib/date-utils";
 
 interface Patient {
   id: number;
@@ -97,10 +98,10 @@ export default function AllResults() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("today");
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getClinicDayKey());
 
-  // Get today's date for filtering
-  const today = new Date().toISOString().split('T')[0];
+  // Get today's date for filtering (using clinic timezone)
+  const today = getClinicDayKey();
 
   // Build query parameters based on filter selection
   const getQueryParams = (): Record<string, string> => {

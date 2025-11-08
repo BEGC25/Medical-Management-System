@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { getClinicDayKey } from "@/lib/date-utils";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
 
 interface EncounterWithPatient extends Encounter {
@@ -63,7 +64,7 @@ function BillingPatientSearch({ onPatientSelect }: { onPatientSelect: (patient: 
 export default function Billing() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getClinicDayKey());
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedEncounter, setSelectedEncounter] = useState<EncounterWithPatient | null>(null);
   const [showNewEncounterDialog, setShowNewEncounterDialog] = useState(false);

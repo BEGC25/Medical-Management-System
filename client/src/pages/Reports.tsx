@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getClinicDayKey } from '@/lib/date-utils';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -56,8 +57,8 @@ export default function Reports() {
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
   const [filters, setFilters] = useState<ReportFilters>({
     reportType: "daily",
-    fromDate: new Date().toISOString().split('T')[0],
-    toDate: new Date().toISOString().split('T')[0],
+    fromDate: getClinicDayKey(),
+    toDate: getClinicDayKey(),
   });
 
   const { data: stats } = useQuery<DashboardStats>({

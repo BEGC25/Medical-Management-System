@@ -4,7 +4,7 @@ import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { hashPassword } from "./auth-service";
-import { today } from "./utils/date";
+import { getClinicDayKey } from "@shared/clinic-date";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
@@ -178,20 +178,20 @@ export interface IStorage {
 
   // Lab Tests
   createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest>;
-  getLabTests(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
+  getLabTests(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
   getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]>;
   updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest>;
   updateLabTestAttachments(testId: string, attachments: any[]): Promise<schema.LabTest>;
 
   // X-Ray Exams
   createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam>;
-  getXrayExams(status?: string, date?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
+  getXrayExams(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
   getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]>;
   updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam>;
 
   // Ultrasound Exams
   createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam>;
-  getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]>;
+  getUltrasoundExams(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<schema.UltrasoundExam[]>;
   getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]>;
   updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam>;
 
@@ -429,7 +429,7 @@ export class MemStorage implements IStorage {
     // Use clinic timezone (Africa/Juba) for visitDate to ensure consistent day classification
     const encounter = await this.createEncounter({
       patientId: patient.patientId,
-      visitDate: today('date'),
+      visitDate: getClinicDayKey(),
       policy: "cash",
       attendingClinician: "", // Reception doesn't assign this
       notes: "Patient registered at reception.",
@@ -746,7 +746,7 @@ export class MemStorage implements IStorage {
     return labTest;
   }
 
-  async getLabTests(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
+  async getLabTests(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
     const baseQuery = db.select({
       labTest: labTests,
       patient: patients // Select whole patient object
@@ -763,19 +763,18 @@ export class MemStorage implements IStorage {
       conditions.push(eq(labTests.status, status as any));
     }
     
-    // Date filtering - support both exact date and date range
-    // Filter by requestedDate field (primary) with fallback to createdAt if needed
+    // Date filtering using clinic day keys for date-only column (requestedDate)
+    // requestedDate stores YYYY-MM-DD strings in Africa/Juba timezone
     if (date) {
       // Exact date match (for backward compatibility)
       conditions.push(eq(labTests.requestedDate, date));
-    } else if (startDate && endDate) {
-      // Date range filtering using requestedDate
+    } else if (startDayKey && endDayKey) {
+      // Date range filtering using clinic day keys
       // Range is [start, end) - inclusive start, exclusive end
-      // Use parameterized queries to prevent SQL injection
       conditions.push(
         and(
-          gte(labTests.requestedDate, startDate),
-          lt(labTests.requestedDate, endDate)
+          gte(labTests.requestedDate, startDayKey),
+          lt(labTests.requestedDate, endDayKey)
         )
       );
     }
@@ -838,7 +837,7 @@ export class MemStorage implements IStorage {
     return xrayExam;
   }
 
-  async getXrayExams(status?: string, date?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]> {
+  async getXrayExams(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]> {
     const baseQuery = db.select({
       xrayExam: xrayExams,
       patient: patients
@@ -854,8 +853,17 @@ export class MemStorage implements IStorage {
     if (status) {
       conditions.push(eq(xrayExams.status, status as any));
     }
+    
+    // Date filtering using clinic day keys
     if (date) {
       conditions.push(eq(xrayExams.requestedDate, date));
+    } else if (startDayKey && endDayKey) {
+      conditions.push(
+        and(
+          gte(xrayExams.requestedDate, startDayKey),
+          lt(xrayExams.requestedDate, endDayKey)
+        )
+      );
     }
 
     let query = baseQuery;
@@ -909,7 +917,7 @@ export class MemStorage implements IStorage {
     return ultrasoundExam;
   }
 
-  async getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]> {
+  async getUltrasoundExams(status?: string, date?: string, startDayKey?: string, endDayKey?: string): Promise<schema.UltrasoundExam[]> {
     // --- MODIFIED: Join patients and filter ---
     const baseQuery = db.select({ ultrasoundExam: ultrasoundExams })
         .from(ultrasoundExams)
@@ -918,12 +926,29 @@ export class MemStorage implements IStorage {
             eq(patients.isDeleted, 0) // Only include exams for non-deleted patients
         ));
 
+    const conditions = [];
     if (status) {
-        const results = await baseQuery.where(eq(ultrasoundExams.status, status as any)).orderBy(desc(ultrasoundExams.requestedDate));
-        return results.map(r => r.ultrasoundExam);
+      conditions.push(eq(ultrasoundExams.status, status as any));
+    }
+    
+    // Date filtering using clinic day keys
+    if (date) {
+      conditions.push(eq(ultrasoundExams.requestedDate, date));
+    } else if (startDayKey && endDayKey) {
+      conditions.push(
+        and(
+          gte(ultrasoundExams.requestedDate, startDayKey),
+          lt(ultrasoundExams.requestedDate, endDayKey)
+        )
+      );
     }
 
-    const results = await baseQuery.orderBy(desc(ultrasoundExams.requestedDate));
+    let query = baseQuery;
+    if (conditions.length > 0) {
+      query = baseQuery.where(and(...conditions));
+    }
+
+    const results = await query.orderBy(desc(ultrasoundExams.requestedDate));
     return results.map(r => r.ultrasoundExam);
   }
 
@@ -985,7 +1010,7 @@ export class MemStorage implements IStorage {
 
       // DEFAULT TO TODAY if no date range provided
       // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-      const clinicToday = today('date');
+      const clinicToday = getClinicDayKey();
       const actualFromDate = fromDate || clinicToday;
       const actualToDate = toDate || clinicToday;
       
@@ -1108,7 +1133,7 @@ export class MemStorage implements IStorage {
   async getPatientFlowData() {
     try {
       // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-      const clinicToday = today('date');
+      const clinicToday = getClinicDayKey();
       
       // Count TODAY's open encounters with no treatments yet (waiting for doctor)
       const waitingForDoctor = await db.select({ count: sql<number>`count(*)` })
@@ -1184,7 +1209,7 @@ export class MemStorage implements IStorage {
   async getOutstandingPayments(limit = 10) {
     try {
       // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-      const clinicToday = today('date');
+      const clinicToday = getClinicDayKey();
       
       // Get TODAY's unpaid lab tests - fetch raw data without grouping
       // to properly parse individual tests from JSON array
@@ -1408,7 +1433,7 @@ export class MemStorage implements IStorage {
   async getResultsReadyForReview(limit: number = 10) {
     try {
       // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-      const clinicToday = today('date');
+      const clinicToday = getClinicDayKey();
       
       // Get all non-deleted patients as a lookup map
       const allPatients = await db.select().from(patients).where(eq(patients.isDeleted, 0));
@@ -1644,7 +1669,7 @@ export class MemStorage implements IStorage {
   // Today filter methods
   async getTodaysPatients(): Promise<schema.Patient[]> {
     // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-    const clinicToday = today('date'); // Get YYYY-MM-DD format
+    const clinicToday = getClinicDayKey(); // Get YYYY-MM-DD format
 
     // --- MODIFIED: Add isDeleted filter ---
     return await db.select().from(patients)
@@ -1685,7 +1710,7 @@ export class MemStorage implements IStorage {
 
   async getTodaysTreatments(): Promise<schema.Treatment[]> {
     // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-    const clinicToday = today('date'); // Get YYYY-MM-DD format
+    const clinicToday = getClinicDayKey(); // Get YYYY-MM-DD format
 
     // --- MODIFIED: Join patients and filter ---
     return await db.select({ treatment: treatments })
@@ -1904,7 +1929,7 @@ export class MemStorage implements IStorage {
 
   async getTodaysPatientsWithStatus(): Promise<(schema.Patient & { serviceStatus: any })[]> {
     // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
-    const clinicToday = today('date');
+    const clinicToday = getClinicDayKey();
 
     // --- MODIFIED: Add isDeleted filter ---
     const patientsData = await db.select().from(patients)
@@ -2586,7 +2611,7 @@ export class MemStorage implements IStorage {
 
   async getExpiringSoonDrugs(daysThreshold = 90): Promise<(schema.DrugBatch & { drugName: string })[]> {
     // Use clinic timezone (Africa/Juba) for consistent date comparison
-    const clinicToday = today('date');
+    const clinicToday = getClinicDayKey();
     const thresholdDate = new Date(clinicToday);
     thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
     // Format the threshold date in YYYY-MM-DD format for comparison with expiryDate field

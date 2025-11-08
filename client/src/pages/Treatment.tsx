@@ -65,7 +65,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, formatDateInZone, getZonedNow } from "@/lib/date-utils";
+import { getDateRangeForAPI, formatDateInZone, getClinicNow, getClinicDayKey } from "@/lib/date-utils";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -289,9 +289,7 @@ export default function Treatment() {
     
     if (!apiRange) {
       // Fallback to today
-      const now = getZonedNow();
-      const todayStr = formatDateInZone(now);
-      return { selectedDateStr: todayStr, startDateStr: undefined, endDateStr: undefined };
+      return { selectedDateStr: getClinicDayKey(), startDateStr: undefined, endDateStr: undefined };
     }
     
     const start = new Date(apiRange.startDate);
@@ -397,10 +395,8 @@ export default function Treatment() {
     resolver: zodResolver(insertTreatmentSchema),
     defaultValues: {
       patientId: "",
-      // Use clinic timezone (Africa/Juba) for visitDate to ensure consistent day classification.
-      // Using UTC `.toISOString().split("T")[0]` would cause records around midnight to be 
-      // classified into wrong clinic day.
-      visitDate: formatDateInZone(getZonedNow()),
+      // Use clinic day key (Africa/Juba timezone) for consistent day classification
+      visitDate: getClinicDayKey(),
       visitType: "consultation",
       priority: "routine",
       chiefComplaint: "",
@@ -474,10 +470,10 @@ export default function Treatment() {
 
   // today's encounter (legacy flow)
   const { data: todayEncounter } = useQuery<Encounter | null>({
-    queryKey: ["/api/encounters", { pid: selectedPatient?.patientId, date: new Date().toISOString().split("T")[0] }],
+    queryKey: ["/api/encounters", { pid: selectedPatient?.patientId, date: getClinicDayKey() }],
     queryFn: async () => {
       if (!selectedPatient) return null;
-      const today = new Date().toISOString().split("T")[0];
+      const today = getClinicDayKey();
       const r = await fetch(`/api/encounters?date=${today}&patientId=${selectedPatient.patientId}`);
       if (!r.ok) return null;
       const encounters = await r.json();
@@ -598,7 +594,7 @@ export default function Treatment() {
     } else if (selectedPatient) {
       createEncounterMutation.mutate({
         patientId: selectedPatient.patientId,
-        visitDate: new Date().toISOString().split("T")[0],
+        visitDate: getClinicDayKey(),
         attendingClinician: "Dr. System",
       });
     }
@@ -696,7 +692,7 @@ export default function Treatment() {
         tests: JSON.stringify(selectedLabTests),
         priority: labPriority,
         clinicalInfo: labClinicalInfo,
-        requestedDate: formatDateInZone(getZonedNow()),
+        requestedDate: getClinicDayKey(),
       };
       
       const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);

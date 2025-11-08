@@ -57,7 +57,7 @@ import {
 
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
-import { getDateRangeForAPI, formatDateInZone, getZonedNow } from '@/lib/date-utils';
+import { getDateRangeForAPI, formatDateInZone, getClinicNow } from '@/lib/date-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -221,7 +221,7 @@ export default function Ultrasound() {
       // Use clinic timezone (Africa/Juba) for requestedDate to ensure consistent day classification
       // across all pages (Treatment, Ultrasound, Payments). Using UTC would cause records around
       // midnight to be classified into wrong clinic day.
-      requestedDate: formatDateInZone(getZonedNow()),
+      requestedDate: formatDateInZone(getClinicNow()),
     },
   });
 
@@ -232,7 +232,7 @@ export default function Ultrasound() {
       recommendations: '',
       imageQuality: 'good' as 'excellent' | 'good' | 'adequate' | 'limited',
       // Use clinic timezone (Africa/Juba) for reportDate to ensure consistent day classification
-      reportDate: formatDateInZone(getZonedNow()),
+      reportDate: formatDateInZone(getClinicNow()),
       sonographer: '',
     },
   });
@@ -443,7 +443,7 @@ export default function Ultrasound() {
       recommendations: exam.recommendations || '',
       imageQuality: (exam as any).imageQuality || 'good',
       // Use clinic timezone (Africa/Juba) for reportDate fallback
-      reportDate: (exam as any).reportDate || formatDateInZone(getZonedNow()),
+      reportDate: (exam as any).reportDate || formatDateInZone(getClinicNow()),
       sonographer: exam.sonographer || '',
     });
   };

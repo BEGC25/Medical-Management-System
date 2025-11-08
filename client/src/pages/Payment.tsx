@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { getClinicDayKey } from "@/lib/date-utils";
 import { Search, DollarSign, Receipt, AlertCircle, Users, TestTube, XCircle as XRayIcon, ActivitySquare, Pill, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -115,7 +116,7 @@ export default function Payment() {
   });
 
   // Get payment history
-  const today = new Date().toISOString().split('T')[0];
+  const today = getClinicDayKey();
   const { data: paymentHistory = [], isLoading: historyLoading, refetch: refetchHistory } = useQuery<any[]>({
     queryKey: ["/api/payments", paymentHistoryTab, paymentSearchQuery],
     queryFn: async () => {

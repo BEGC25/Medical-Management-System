@@ -61,7 +61,7 @@ import {
 
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI } from "@/lib/date-utils";
+import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -430,7 +430,7 @@ export default function Laboratory() {
       tests: "",
       clinicalInfo: "",
       priority: "routine",
-      requestedDate: new Date().toISOString().split("T")[0],
+      requestedDate: getClinicDayKey(),
     },
   });
 
@@ -439,7 +439,7 @@ export default function Laboratory() {
       results: "",
       normalValues: "",
       resultStatus: "normal" as "normal" | "abnormal" | "critical",
-      completedDate: new Date().toISOString().split("T")[0],
+      completedDate: getClinicDayKey(),
       technicianNotes: "",
     },
   });
@@ -680,7 +680,7 @@ export default function Laboratory() {
       results: readableSummary,
       normalValues: (labTest as any).normalValues || "",
       resultStatus: (labTest as any).resultStatus || "normal",
-      completedDate: (labTest as any).completedDate || new Date().toISOString().split("T")[0],
+      completedDate: (labTest as any).completedDate || getClinicDayKey(),
       technicianNotes: (labTest as any).technicianNotes || "",
     });
 

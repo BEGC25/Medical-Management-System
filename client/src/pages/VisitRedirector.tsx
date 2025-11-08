@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { getClinicDayKey } from '@/lib/date-utils';
 import { useLocation } from "wouter";
 
 export default function VisitRedirector() {
@@ -22,7 +23,7 @@ export default function VisitRedirector() {
 
     const findOrCreateVisit = async () => {
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getClinicDayKey();
         
         // Check for existing open visit today
         const response = await fetch(`/api/encounters?patientId=${patientId}&date=${today}&status=open`);

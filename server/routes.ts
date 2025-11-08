@@ -617,26 +617,30 @@ router.post("/api/treatments", async (req, res) => {
 router.get("/api/lab-tests", async (req, res) => {
   try {
     const status = req.query.status as string;
-    const date = req.query.date as string;
+    const date = req.query.date as string; // Exact date for backward compat
     const preset = req.query.preset as string;
+    const from = req.query.from as string; // Clinic day keys
+    const to = req.query.to as string;
+    
+    // For legacy support: startDate/endDate are ISO timestamps
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
     
     // Parse date filter using timezone-aware utilities
-    // Supports: preset (Today/Yesterday/etc), startDate/endDate, or exact date
-    let filterStartDate: string | undefined;
-    let filterEndDate: string | undefined;
+    let filterStartDayKey: string | undefined;
+    let filterEndDayKey: string | undefined;
     
     if (!date) {
-      // Use timezone-aware date filtering
-      const range = parseDateFilter({ preset, startDate, endDate });
+      // Use timezone-aware date filtering with clinic day keys
+      const range = parseDateFilter({ preset, from, to, startDate, endDate });
       if (range) {
-        filterStartDate = range.start.toISOString();
-        filterEndDate = range.end.toISOString();
+        // Use clinic day keys for date-only column (requestedDate)
+        filterStartDayKey = range.startClinicDayKey;
+        filterEndDayKey = range.endClinicDayKey;
       }
     }
     
-    const labTests = await storage.getLabTests(status, date, filterStartDate, filterEndDate);
+    const labTests = await storage.getLabTests(status, date, filterStartDayKey, filterEndDayKey);
     res.json(labTests);
   } catch (error) {
     console.error("Error fetching lab tests:", error);
@@ -775,7 +779,24 @@ router.get("/api/xray-exams", async (req, res) => {
   try {
     const status = req.query.status as string;
     const date = req.query.date as string;
-    const xrayExams = await storage.getXrayExams(status, date);
+    const preset = req.query.preset as string;
+    const from = req.query.from as string;
+    const to = req.query.to as string;
+    const startDate = req.query.startDate as string; // Legacy support
+    const endDate = req.query.endDate as string;
+    
+    let filterStartDayKey: string | undefined;
+    let filterEndDayKey: string | undefined;
+    
+    if (!date) {
+      const range = parseDateFilter({ preset, from, to, startDate, endDate });
+      if (range) {
+        filterStartDayKey = range.startClinicDayKey;
+        filterEndDayKey = range.endClinicDayKey;
+      }
+    }
+    
+    const xrayExams = await storage.getXrayExams(status, date, filterStartDayKey, filterEndDayKey);
     res.json(xrayExams);
   } catch (error) {
     console.error("Error fetching X-ray exams:", error);
@@ -830,9 +851,28 @@ router.put("/api/xray-exams/:examId", async (req, res) => {
 
 /* ------------------------------ Ultrasound Exams --------------------------- */
 
-router.get("/api/ultrasound-exams", async (_req, res) => {
+router.get("/api/ultrasound-exams", async (req, res) => {
   try {
-    const ultrasoundExams = await storage.getUltrasoundExams();
+    const status = req.query.status as string;
+    const date = req.query.date as string;
+    const preset = req.query.preset as string;
+    const from = req.query.from as string;
+    const to = req.query.to as string;
+    const startDate = req.query.startDate as string; // Legacy support
+    const endDate = req.query.endDate as string;
+    
+    let filterStartDayKey: string | undefined;
+    let filterEndDayKey: string | undefined;
+    
+    if (!date) {
+      const range = parseDateFilter({ preset, from, to, startDate, endDate });
+      if (range) {
+        filterStartDayKey = range.startClinicDayKey;
+        filterEndDayKey = range.endClinicDayKey;
+      }
+    }
+    
+    const ultrasoundExams = await storage.getUltrasoundExams(status, date, filterStartDayKey, filterEndDayKey);
     res.json(ultrasoundExams);
   } catch (error) {
     console.error("Error fetching ultrasound exams:", error);
@@ -2553,6 +2593,67 @@ import path from "path";
 import { setupAuth } from "./auth";
 import dailyCashRouter from "./reports.daily-cash";
 import dailyCashCsvRouter from "./reports.daily-cash.csv";
+
+/* ----------------------------- Debug Endpoints ----------------------------- */
+
+/**
+ * Debug endpoint for timezone diagnostics
+ * Returns current time information and computed ranges for presets
+ * Only available when DEBUG_TIMEZONE environment variable is set
+ */
+router.get("/api/debug/time", async (req, res) => {
+  // Check if debug mode is enabled
+  const isDebugMode = process.env.DEBUG_TIMEZONE === 'true';
+  
+  if (!isDebugMode) {
+    return res.status(404).json({ error: "Debug endpoint not available" });
+  }
+  
+  try {
+    const { getClinicNow, getClinicDayKey, formatDateInZone, CLINIC_TZ } = await import('./utils/date');
+    const { parseRangeParams } = await import('@shared/clinic-date');
+    
+    const now = new Date();
+    const clinicNow = getClinicNow();
+    
+    // Compute all preset ranges
+    const presets = ['today', 'yesterday', 'last7', 'last30'];
+    const ranges: Record<string, any> = {};
+    
+    for (const preset of presets) {
+      const range = parseRangeParams({ preset });
+      if (range) {
+        ranges[preset] = {
+          startUtc: range.startUtc.toISOString(),
+          endUtc: range.endUtc.toISOString(),
+          startClinicDayKey: range.startClinicDayKey,
+          endClinicDayKey: range.endClinicDayKey,
+        };
+      }
+    }
+    
+    res.json({
+      serverTime: {
+        utc: now.toISOString(),
+        clinicTime: formatDateInZone(now, 'yyyy-MM-dd HH:mm:ss zzz'),
+        clinicDayKey: getClinicDayKey(),
+        timezone: CLINIC_TZ,
+      },
+      ranges,
+      debug: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        env: {
+          CLINIC_TZ: process.env.CLINIC_TZ || 'not set',
+          DEBUG_TIMEZONE: process.env.DEBUG_TIMEZONE || 'not set',
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error in debug/time endpoint:", error);
+    res.status(500).json({ error: "Failed to generate debug info" });
+  }
+});
 
 // Function to register routes with the express app
 export async function registerRoutes(app: any) {

@@ -1,6 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
+import { TimezoneBanner } from "@/components/TimezoneBanner";
 import Dashboard from "@/pages/Dashboard";
 import Patients from "@/pages/Patients";
 import Treatment from "@/pages/Treatment";
@@ -50,6 +51,9 @@ function App() {
 
               <main className="ml-64 min-h-screen">
                 <div className="px-6 py-6">
+                  {/* Debug banner - only visible when VITE_DEBUG_TIMEZONE=true */}
+                  <TimezoneBanner />
+                  
                   <Switch>
                     {/* Dashboard - All roles */}
                     <ProtectedRoute path="/" component={Dashboard} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
