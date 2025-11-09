@@ -1691,41 +1691,116 @@ export class MemStorage implements IStorage {
     // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
     const clinicToday = today('date'); // Get YYYY-MM-DD format
 
-    // --- MODIFIED: Add isDeleted filter ---
-    return await db.select().from(patients)
-      .where(
-        and(
-          eq(patients.isDeleted, 0), // Added filter
-          // Check if created today by comparing the date part of the timestamp
-          like(patients.createdAt, `${clinicToday}%`)
+    try {
+      // Try using clinic_day column if it exists (preferred method after migration)
+      return await db.select().from(patients)
+        .where(
+          and(
+            eq(patients.isDeleted, 0),
+            sql`clinic_day = ${clinicToday}`
+          )
         )
-      )
-      .orderBy(desc(patients.createdAt));
+        .orderBy(desc(patients.createdAt));
+    } catch (error: any) {
+      // Fallback: If clinic_day doesn't exist or query fails, use safe casting approach
+      console.log('[patients] getTodaysPatients clinic_day query failed, using fallback casting');
+      try {
+        return await db.select().from(patients)
+          .where(
+            and(
+              eq(patients.isDeleted, 0),
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date = ${clinicToday}`
+            )
+          )
+          .orderBy(desc(patients.createdAt));
+      } catch (castError: any) {
+        // Final fallback: Use UTC date extraction
+        console.log('[patients] today fetch failed, using UTC fallback');
+        return await db.select().from(patients)
+          .where(
+            and(
+              eq(patients.isDeleted, 0),
+              sql`DATE(${patients.createdAt}) = ${clinicToday}`
+            )
+          )
+          .orderBy(desc(patients.createdAt));
+      }
+    }
   }
 
   async getPatientsByDate(date: string): Promise<schema.Patient[]> {
-    // --- MODIFIED: Add isDeleted filter ---
-    return await db.select().from(patients)
-      .where(
-        and(
-          eq(patients.isDeleted, 0), // Added filter
-          // Use DATE function to extract date part, avoiding timezone issues
-          sql`DATE(${patients.createdAt}) = ${date}`
+    try {
+      // Try using clinic_day column if it exists (preferred method after migration)
+      return await db.select().from(patients)
+        .where(
+          and(
+            eq(patients.isDeleted, 0),
+            sql`clinic_day = ${date}`
+          )
         )
-      )
-      .orderBy(desc(patients.createdAt));
+        .orderBy(desc(patients.createdAt));
+    } catch (error: any) {
+      // Fallback: Use safe casting approach
+      try {
+        return await db.select().from(patients)
+          .where(
+            and(
+              eq(patients.isDeleted, 0),
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date = ${date}`
+            )
+          )
+          .orderBy(desc(patients.createdAt));
+      } catch (castError: any) {
+        // Final fallback: Use UTC date extraction
+        return await db.select().from(patients)
+          .where(
+            and(
+              eq(patients.isDeleted, 0),
+              sql`DATE(${patients.createdAt}) = ${date}`
+            )
+          )
+          .orderBy(desc(patients.createdAt));
+      }
+    }
   }
 
   async getPatientsByDateRange(startDate: string, endDate: string): Promise<schema.Patient[]> {
-    return await db.select().from(patients)
-      .where(
-        and(
-          eq(patients.isDeleted, 0),
-          sql`${patients.createdAt} >= ${startDate}`,
-          sql`${patients.createdAt} <= ${endDate}`
+    try {
+      // Try using clinic_day column if it exists (preferred method after migration)
+      return await db.select().from(patients)
+        .where(
+          and(
+            eq(patients.isDeleted, 0),
+            sql`clinic_day >= ${startDate}`,
+            sql`clinic_day <= ${endDate}`
+          )
         )
-      )
-      .orderBy(desc(patients.createdAt));
+        .orderBy(desc(patients.createdAt));
+    } catch (error: any) {
+      // Fallback: Use safe casting approach on created_at
+      try {
+        return await db.select().from(patients)
+          .where(
+            and(
+              eq(patients.isDeleted, 0),
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date >= ${startDate}`,
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date <= ${endDate}`
+            )
+          )
+          .orderBy(desc(patients.createdAt));
+      } catch (castError: any) {
+        // Final fallback: Use simple timestamp comparison (less accurate for timezone boundaries)
+        return await db.select().from(patients)
+          .where(
+            and(
+              eq(patients.isDeleted, 0),
+              sql`${patients.createdAt} >= ${startDate}`,
+              sql`${patients.createdAt} <= ${endDate}`
+            )
+          )
+          .orderBy(desc(patients.createdAt));
+      }
+    }
   }
 
   async getTodaysTreatments(): Promise<schema.Treatment[]> {
@@ -1951,13 +2026,36 @@ export class MemStorage implements IStorage {
     // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
     const clinicToday = today('date');
 
-    // --- MODIFIED: Add isDeleted filter ---
-    const patientsData = await db.select().from(patients)
-      .where(and(
-        eq(patients.isDeleted, 0), // Added filter
-        like(patients.createdAt, `${clinicToday}%`)
-      ))
-      .orderBy(desc(patients.createdAt));
+    let patientsData: schema.Patient[] = [];
+    
+    try {
+      // Try using clinic_day column if it exists
+      patientsData = await db.select().from(patients)
+        .where(and(
+          eq(patients.isDeleted, 0),
+          sql`clinic_day = ${clinicToday}`
+        ))
+        .orderBy(desc(patients.createdAt));
+    } catch (error: any) {
+      // Fallback: Use safe casting approach
+      console.log('[patients] getTodaysPatientsWithStatus clinic_day query failed, using fallback');
+      try {
+        patientsData = await db.select().from(patients)
+          .where(and(
+            eq(patients.isDeleted, 0),
+            sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date = ${clinicToday}`
+          ))
+          .orderBy(desc(patients.createdAt));
+      } catch (castError: any) {
+        // Final fallback
+        patientsData = await db.select().from(patients)
+          .where(and(
+            eq(patients.isDeleted, 0),
+            sql`DATE(${patients.createdAt}) = ${clinicToday}`
+          ))
+          .orderBy(desc(patients.createdAt));
+      }
+    }
 
     const patientsWithStatus = await Promise.all(
       patientsData.map(async (patient) => {
@@ -1970,13 +2068,35 @@ export class MemStorage implements IStorage {
   }
 
   async getPatientsByDateWithStatus(date: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
-    // --- MODIFIED: Add isDeleted filter ---
-    const patientsData = await db.select().from(patients)
-      .where(and(
-        eq(patients.isDeleted, 0), // Added filter
-        sql`DATE(${patients.createdAt}) = ${date}`
-      ))
-      .orderBy(desc(patients.createdAt));
+    let patientsData: schema.Patient[] = [];
+    
+    try {
+      // Try using clinic_day column if it exists
+      patientsData = await db.select().from(patients)
+        .where(and(
+          eq(patients.isDeleted, 0),
+          sql`clinic_day = ${date}`
+        ))
+        .orderBy(desc(patients.createdAt));
+    } catch (error: any) {
+      // Fallback: Use safe casting approach
+      try {
+        patientsData = await db.select().from(patients)
+          .where(and(
+            eq(patients.isDeleted, 0),
+            sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date = ${date}`
+          ))
+          .orderBy(desc(patients.createdAt));
+      } catch (castError: any) {
+        // Final fallback
+        patientsData = await db.select().from(patients)
+          .where(and(
+            eq(patients.isDeleted, 0),
+            sql`DATE(${patients.createdAt}) = ${date}`
+          ))
+          .orderBy(desc(patients.createdAt));
+      }
+    }
 
     const patientsWithStatus = await Promise.all(
       patientsData.map(async (patient) => {
@@ -1990,15 +2110,44 @@ export class MemStorage implements IStorage {
 
   // Filter patients by REGISTRATION date range (patients.createdAt) - for Patients page
   async getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
-    const patientsData = await db.select().from(patients)
-      .where(
-        and(
-          eq(patients.isDeleted, 0),
-          sql`DATE(${patients.createdAt}) >= ${startDate}`,
-          sql`DATE(${patients.createdAt}) <= ${endDate}`
+    let patientsData: schema.Patient[] = [];
+    
+    try {
+      // Try using clinic_day column if it exists
+      patientsData = await db.select().from(patients)
+        .where(
+          and(
+            eq(patients.isDeleted, 0),
+            sql`clinic_day >= ${startDate}`,
+            sql`clinic_day <= ${endDate}`
+          )
         )
-      )
-      .orderBy(desc(patients.createdAt));
+        .orderBy(desc(patients.createdAt));
+    } catch (error: any) {
+      // Fallback: Use safe casting approach
+      try {
+        patientsData = await db.select().from(patients)
+          .where(
+            and(
+              eq(patients.isDeleted, 0),
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date >= ${startDate}`,
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date <= ${endDate}`
+            )
+          )
+          .orderBy(desc(patients.createdAt));
+      } catch (castError: any) {
+        // Final fallback
+        patientsData = await db.select().from(patients)
+          .where(
+            and(
+              eq(patients.isDeleted, 0),
+              sql`DATE(${patients.createdAt}) >= ${startDate}`,
+              sql`DATE(${patients.createdAt}) <= ${endDate}`
+            )
+          )
+          .orderBy(desc(patients.createdAt));
+      }
+    }
 
     const patientsWithStatus = await Promise.all(
       patientsData.map(async (patient: any) => {

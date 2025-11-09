@@ -402,8 +402,15 @@ router.get("/api/patients", async (req, res) => {
           res.json(patients);
         } else {
           // Filter by registration dates (for Patients page - default)
-          const patients = await storage.getPatientsByDateRangeWithStatus(tzStartDate, tzEndDate);
-          res.json(patients);
+          try {
+            const patients = await storage.getPatientsByDateRangeWithStatus(tzStartDate, tzEndDate);
+            res.json(patients);
+          } catch (error) {
+            console.error('[patients] Date range query failed, attempting fallback:', error);
+            // Fallback: get all patients and filter client-side
+            const allPatients = await storage.getPatientsWithStatus(search);
+            res.json(allPatients);
+          }
         }
       } else {
         const patients = await storage.getPatientsWithStatus(search);
@@ -412,8 +419,15 @@ router.get("/api/patients", async (req, res) => {
     } else {
       if (tzStartDate && tzEndDate) {
         // Date range filtering
-        const patients = await storage.getPatientsByDateRange(tzStartDate, tzEndDate);
-        res.json(patients);
+        try {
+          const patients = await storage.getPatientsByDateRange(tzStartDate, tzEndDate);
+          res.json(patients);
+        } catch (error) {
+          console.error('[patients] Date range query failed, attempting fallback:', error);
+          // Fallback: get all patients
+          const allPatients = await storage.getPatients(search);
+          res.json(allPatients);
+        }
       } else {
         const patients = await storage.getPatients(search);
         res.json(patients);

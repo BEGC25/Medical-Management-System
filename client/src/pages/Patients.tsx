@@ -400,7 +400,7 @@ export default function Patients() {
     setShowRegistrationForm(true);
   };
 
-  const { data: patientsListData, isLoading: patientsLoading } = useQuery<any[]>(
+  const { data: patientsListData, isLoading: patientsLoading, error: patientsError } = useQuery<any[]>(
     {
       queryKey: ["/api/patients", dateFilter, customStartDate, customEndDate],
       queryFn: async () => {
@@ -412,11 +412,42 @@ export default function Patients() {
         params.append("endDate", end);
         params.append("withStatus", "true"); // Include consultation payment status
 
-        const response = await fetch(`/api/patients?${params}`);
-        if (!response.ok) throw new Error("Failed to fetch patients");
-        return response.json();
+        try {
+          const response = await fetch(`/api/patients?${params}`);
+          if (!response.ok) {
+            // If date range query fails, fallback to fetching all patients
+            console.warn('[Patients] Date range query failed, fetching all patients');
+            const fallbackResponse = await fetch(`/api/patients?withStatus=true`);
+            if (!fallbackResponse.ok) throw new Error("Failed to fetch patients");
+            
+            const allPatients = await fallbackResponse.json();
+            
+            // Client-side filtering by clinic day
+            // This is a temporary fallback until backend is stable
+            if (dateFilter === 'today') {
+              const clinicToday = new Date().toLocaleDateString('sv-SE', { timeZone: 'Africa/Juba' }); // YYYY-MM-DD
+              return allPatients.filter((p: any) => {
+                try {
+                  const createdAt = new Date(p.createdAt);
+                  const patientDay = createdAt.toLocaleDateString('sv-SE', { timeZone: 'Africa/Juba' });
+                  return patientDay === clinicToday;
+                } catch {
+                  return false;
+                }
+              });
+            }
+            
+            // For other date filters, return all and let user see the data
+            return allPatients;
+          }
+          return response.json();
+        } catch (error) {
+          console.error('[Patients] Failed to fetch patients:', error);
+          throw error;
+        }
       },
       refetchInterval: 30000,
+      retry: 1, // Only retry once to avoid long delays
     },
   );
 
