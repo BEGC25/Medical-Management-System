@@ -69,6 +69,29 @@ export default function PatientSearch({
     ],
     enabled: effectiveMode !== "dateRange" || (!!startDate && !!endDate),
     queryFn: async () => {
+      // If preset is provided explicitly, use it for cleaner API calls
+      if (preset && effectiveMode !== "search") {
+        const params = new URLSearchParams();
+        params.append("withStatus", "true");
+        params.append("filterBy", "encounters");
+        
+        if (preset === "custom" && startDate && endDate) {
+          params.append("preset", "custom");
+          params.append("from", startDate);
+          params.append("to", endDate);
+        } else if (preset === "today" || preset === "yesterday" || preset === "last7days" || preset === "last30days") {
+          params.append("preset", preset);
+        } else {
+          // Fallback to default logic if preset is not recognized
+          params.append("preset", "all");
+        }
+        
+        const r = await fetch(`/api/patients?${params}`);
+        if (!r.ok) throw new Error(`Failed to fetch patients with preset ${preset}`);
+        return r.json();
+      }
+      
+      // Fallback to existing logic based on viewMode
       if (effectiveMode === "today") {
         const r = await fetch("/api/patients?preset=today&withStatus=true&filterBy=encounters");
         if (!r.ok) throw new Error("Failed to fetch today's patients");
