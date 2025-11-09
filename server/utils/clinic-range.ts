@@ -189,6 +189,80 @@ export function getCurrentClinicDayKey(): string {
 }
 
 /**
+ * Get inclusive clinic day keys for a preset (no timestamp conversion)
+ * 
+ * This function directly computes clinic day keys based on the preset,
+ * avoiding the off-by-one error that occurs when converting exclusive
+ * timestamp ranges to inclusive date ranges.
+ * 
+ * For single-day presets (today, yesterday), returns the same day key
+ * for both start and end (inclusive range).
+ * 
+ * For multi-day presets (last7, last30), returns an inclusive range
+ * of day keys.
+ * 
+ * @param preset - Standard preset name
+ * @returns Object with startDayKey and endDayKey (both inclusive), or null for 'all'
+ * 
+ * @example
+ * // On 2025-11-09 in Africa/Juba:
+ * getPresetDayKeys('today')    // { startDayKey: '2025-11-09', endDayKey: '2025-11-09' }
+ * getPresetDayKeys('yesterday') // { startDayKey: '2025-11-08', endDayKey: '2025-11-08' }
+ * getPresetDayKeys('last7')     // { startDayKey: '2025-11-03', endDayKey: '2025-11-09' }
+ * getPresetDayKeys('all')       // null
+ */
+export function getPresetDayKeys(
+  preset: string | undefined
+): { startDayKey: string; endDayKey: string } | null {
+  if (!preset || preset.toLowerCase() === 'all') {
+    return null;
+  }
+
+  // Normalize preset to lowercase for comparison
+  const presetLower = preset.toLowerCase();
+
+  // Import date utilities
+  const { getClinicNow } = require('@shared/clinic-date');
+  const { subDays } = require('date-fns');
+  
+  const now = getClinicNow();
+  const todayKey = getClinicDayKey(now);
+
+  switch (presetLower) {
+    case 'today': {
+      // Single day: start and end are the same
+      return { startDayKey: todayKey, endDayKey: todayKey };
+    }
+
+    case 'yesterday': {
+      const yesterday = subDays(now, 1);
+      const yesterdayKey = getClinicDayKey(yesterday);
+      return { startDayKey: yesterdayKey, endDayKey: yesterdayKey };
+    }
+
+    case 'last7':
+    case 'last7days': {
+      // Last 7 days inclusive: today - 6 days through today
+      const sevenDaysAgo = subDays(now, 6);
+      const startKey = getClinicDayKey(sevenDaysAgo);
+      return { startDayKey: startKey, endDayKey: todayKey };
+    }
+
+    case 'last30':
+    case 'last30days': {
+      // Last 30 days inclusive: today - 29 days through today
+      const thirtyDaysAgo = subDays(now, 29);
+      const startKey = getClinicDayKey(thirtyDaysAgo);
+      return { startDayKey: startKey, endDayKey: todayKey };
+    }
+
+    default:
+      // Unknown preset, default to today
+      return { startDayKey: todayKey, endDayKey: todayKey };
+  }
+}
+
+/**
  * Get diagnostic information about the current clinic time and range
  * Used for the /api/debug/time endpoint
  */
