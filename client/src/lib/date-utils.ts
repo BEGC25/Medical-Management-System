@@ -43,8 +43,42 @@ export function getZonedNow(tz?: string): Date {
 }
 
 /**
+ * Get clinic date range keys (YYYY-MM-DD format) for a preset
+ * Returns from/to date keys in Africa/Juba timezone
+ * 
+ * @param preset - Date preset (today, yesterday, last7days, last30days, etc.)
+ * @param customStart - Optional custom start date
+ * @param customEnd - Optional custom end date
+ * @returns Object with from and to date keys, or null
+ * 
+ * @example
+ * getClinicRangeKeys('last7days')
+ * // Returns: { from: '2025-11-02', to: '2025-11-08' }
+ */
+export function getClinicRangeKeys(
+  preset: string | undefined,
+  customStart?: Date,
+  customEnd?: Date
+): { from: string; to: string } | null {
+  const range = getDateRangeForAPI(preset, customStart, customEnd);
+  if (!range) return null;
+  
+  // Convert ISO timestamps to clinic day keys
+  const fromDate = new Date(range.startDate);
+  const toDate = new Date(range.endDate);
+  
+  return {
+    from: getClinicDayKey(fromDate),
+    to: getClinicDayKey(toDate),
+  };
+}
+
+/**
  * Get date range strings for API requests
  * Converts a preset or custom range to ISO strings for the API
+ * 
+ * Supports presets: today, yesterday, last7days, last30days, custom
+ * Uses Africa/Juba timezone for consistent clinic day calculation
  */
 export function getDateRangeForAPI(
   preset: string | undefined,
@@ -53,8 +87,19 @@ export function getDateRangeForAPI(
 ): { startDate: string; endDate: string } | null {
   
   if (preset && preset !== 'custom') {
-    const presetUpper = preset.charAt(0).toUpperCase() + preset.slice(1);
-    const range = getPresetRange(presetUpper as any);
+    // Normalize preset to match clinic-date.ts DatePreset type
+    const presetMap: Record<string, string> = {
+      'today': 'Today',
+      'yesterday': 'Yesterday',
+      'last7days': 'Last7Days',
+      'last30days': 'Last30Days',
+      'thismonth': 'ThisMonth',
+    };
+    
+    const normalizedPreset = presetMap[preset.toLowerCase()] || preset;
+    
+    // Use parseRangeParams from clinic-date.ts which has full Last7Days and Last30Days support
+    const range = parseRangeParams({ preset: normalizedPreset });
     if (!range) return null;
     return {
       startDate: range.start.toISOString(),

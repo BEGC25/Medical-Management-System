@@ -65,7 +65,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
+import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
