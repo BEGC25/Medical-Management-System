@@ -90,9 +90,30 @@ function fullName(p?: Patient | null) {
 /* Data hooks                                                          */
 /* ------------------------------------------------------------------ */
 
-function useUltrasoundExams() {
+function useUltrasoundExams(preset: string, customStart?: Date, customEnd?: Date) {
   return useQuery<UltrasoundExam[]>({
-    queryKey: ['/api/ultrasound-exams'],
+    queryKey: ['/api/ultrasound-exams', { preset, customStart, customEnd }],
+    queryFn: async () => {
+      const url = new URL("/api/ultrasound-exams", window.location.origin);
+      
+      // Use new preset-based API (Phase 2)
+      if (preset && preset !== 'custom') {
+        url.searchParams.set("preset", preset);
+      } else if (preset === 'custom' && customStart && customEnd) {
+        // For custom range, convert dates to clinic day keys
+        const fromKey = getClinicDayKey(customStart);
+        const toKey = getClinicDayKey(customEnd);
+        url.searchParams.set("preset", "custom");
+        url.searchParams.set("from", fromKey);
+        url.searchParams.set("to", toKey);
+      }
+      
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error("Failed to fetch ultrasound exams");
+      }
+      return response.json();
+    },
   });
 }
 
@@ -229,41 +250,18 @@ export default function Ultrasound() {
 
   /* ----------------------------- Data ----------------------------- */
 
-  const { data: allUltrasoundExams = [] } = useUltrasoundExams();
+  const { data: allUltrasoundExams = [] } = useUltrasoundExams(dateFilter, customStartDate, customEndDate);
   const { data: ultrasoundServices = [] } = useUltrasoundServices();
   
-  // Calculate timezone-aware date range based on filter
-  // Uses Africa/Juba (UTC+2) timezone for consistent filtering across all pages
-  const getDateRange = useMemo(() => {
-    const apiRange = getDateRangeForAPI(dateFilter, customStartDate, customEndDate);
-    if (!apiRange) {
-      // Fallback for 'all' filter
-      return null;
-    }
-    return {
-      start: new Date(apiRange.startDate),
-      end: new Date(apiRange.endDate)
-    };
-  }, [dateFilter, customStartDate, customEndDate]);
-  
-  // Filter by date using timezone-aware date range
-  const dateFilteredExams = useMemo(() => {
-    if (!getDateRange) return allUltrasoundExams;
-    
-    return allUltrasoundExams.filter((e) => {
-      const examDate = new Date(e.requestedDate);
-      // Use [start, end) range - inclusive start, exclusive end
-      return examDate >= getDateRange.start && examDate < getDateRange.end;
-    });
-  }, [allUltrasoundExams, getDateRange]);
-  
-  const dateFilteredPending = dateFilteredExams.filter((e) => e.status === 'pending');
-  const dateFilteredCompleted = dateFilteredExams.filter((e) => e.status === 'completed');
+  // Server now handles all date filtering - no need for client-side date filtering
+  // Split by status for the two tabs
+  const dateFilteredPending = allUltrasoundExams.filter((e) => e.status === 'pending');
+  const dateFilteredCompleted = allUltrasoundExams.filter((e) => e.status === 'completed');
 
   // Patient map for cards
   const patientIdsForMap = useMemo(
-    () => dateFilteredExams.map((e) => e.patientId),
-    [dateFilteredExams]
+    () => allUltrasoundExams.map((e) => e.patientId),
+    [allUltrasoundExams]
   );
   const patientsMap = usePatientsMap(patientIdsForMap);
   

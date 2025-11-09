@@ -312,9 +312,8 @@ export default function Treatment() {
     };
   }, [dateFilter, customStartDate, customEndDate]);
 
-  // Queue modal
+  // Queue modal - use preset 'today' for consistent filtering
   const [queueOpen, setQueueOpen] = useState(false);
-  const [queueDate, setQueueDate] = useState(getClinicDayKey());
   const [queueFilter, setQueueFilter] = useState("");
 
   // Lab test selection state (for category-based ordering)
@@ -361,9 +360,18 @@ export default function Treatment() {
     enabled: queueOpen || !visitId,
   });
 
-  // queue
+  // queue - using preset 'today' for consistent filtering
   const { data: queueVisits = [], isLoading: queueLoading } = useQuery<Treatment[]>({
-    queryKey: ["/api/treatments", { date: queueDate }],
+    queryKey: ["/api/treatments", { preset: 'today' }],
+    queryFn: async () => {
+      const url = new URL("/api/treatments", window.location.origin);
+      url.searchParams.set("preset", "today");
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error("Failed to fetch treatments");
+      }
+      return response.json();
+    },
     enabled: queueOpen,
   });
 
