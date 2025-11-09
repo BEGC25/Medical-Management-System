@@ -227,7 +227,7 @@ export interface IStorage {
 
   // Encounters
   createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter>;
-  getEncounters(status?: string, date?: string, patientId?: string): Promise<schema.Encounter[]>;
+  getEncounters(status?: string, date?: string, patientId?: string, startDayKey?: string, endDayKey?: string): Promise<schema.Encounter[]>;
   getEncounterById(encounterId: string): Promise<schema.Encounter | null>;
   getEncountersByPatient(patientId: string): Promise<schema.Encounter[]>;
   updateEncounter(encounterId: string, data: Partial<schema.Encounter>): Promise<schema.Encounter>;
@@ -2419,7 +2419,7 @@ export class MemStorage implements IStorage {
     return encounter;
   }
 
-  async getEncounters(status?: string, date?: string, patientId?: string): Promise<schema.Encounter[]> {
+  async getEncounters(status?: string, date?: string, patientId?: string, startDayKey?: string, endDayKey?: string): Promise<schema.Encounter[]> {
     // --- MODIFIED: Join patients and filter ---
     let query = db.select({ encounter: encounters })
         .from(encounters)
@@ -2437,6 +2437,12 @@ export class MemStorage implements IStorage {
     }
     if (patientId) {
       conditions.push(eq(encounters.patientId, patientId));
+    }
+    
+    // Add date range filtering by visitDate (clinic day keys)
+    if (startDayKey && endDayKey) {
+      conditions.push(sql`${encounters.visitDate} >= ${startDayKey}`);
+      conditions.push(sql`${encounters.visitDate} < ${endDayKey}`);
     }
 
     if (conditions.length > 0) {
