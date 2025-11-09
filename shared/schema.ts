@@ -50,6 +50,7 @@ export const treatments = sqliteTable("treatments", {
   treatmentPlan: text("treatment_plan"),
   followUpDate: text("follow_up_date"),
   followUpType: text("follow_up_type"),
+  clinicDay: text("clinic_day"), // Clinic day in YYYY-MM-DD format (Africa/Juba timezone)
   createdAt: text("created_at").notNull(),
 });
 
@@ -70,6 +71,7 @@ export const labTests = sqliteTable("lab_tests", {
   completedDate: text("completed_date"),
   technicianNotes: text("technician_notes"),
   attachments: text("attachments"), // JSON array of {url: string, name: string, type: string}
+  clinicDay: text("clinic_day"), // Clinic day in YYYY-MM-DD format (Africa/Juba timezone)
   createdAt: text("created_at").notNull(),
 });
 
@@ -89,6 +91,7 @@ export const xrayExams = sqliteTable("xray_exams", {
   recommendations: text("recommendations"),
   reportDate: text("report_date"),
   radiologist: text("radiologist"),
+  clinicDay: text("clinic_day"), // Clinic day in YYYY-MM-DD format (Africa/Juba timezone)
   createdAt: text("created_at").notNull(),
 });
 
@@ -108,6 +111,7 @@ export const ultrasoundExams = sqliteTable("ultrasound_exams", {
   reportStatus: text("report_status").$type<"normal" | "abnormal" | "urgent">(),
   reportDate: text("report_date"),
   sonographer: text("sonographer"),
+  clinicDay: text("clinic_day"), // Clinic day in YYYY-MM-DD format (Africa/Juba timezone)
   createdAt: text("created_at").notNull(),
 });
 
@@ -145,6 +149,7 @@ export const encounters = sqliteTable("encounters", {
   policy: text("policy").$type<"cash" | "insurance">().notNull().default("cash"),
   attendingClinician: text("attending_clinician"),
   notes: text("notes"),
+  clinicDay: text("clinic_day"), // Clinic day in YYYY-MM-DD format (Africa/Juba timezone)
   createdAt: text("created_at").notNull(),
   closedAt: text("closed_at"),
 });

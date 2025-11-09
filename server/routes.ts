@@ -561,14 +561,12 @@ router.delete("/api/patients/:patientId", requireAdmin, async (req: any, res) =>
 router.get("/api/treatments", async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const today = req.query.today;
     const patientId = req.query.patientId as string;
     const encounterId = req.query.encounterId as string;
-    const preset = req.query.preset as string;
 
-    if (preset) {
-      console.log(`[treatments] Preset filter: ${preset}`);
-    }
+    // Parse date range using unified clinic-range utilities
+    const range = parseClinicRangeParams(req.query, true);
+    const dayKeys = rangeToDayKeys(range);
 
     // Filter by encounterId if provided
     if (encounterId) {
@@ -584,9 +582,9 @@ router.get("/api/treatments", async (req, res) => {
       return;
     }
 
-    // Support preset-based filtering for today/yesterday/etc
-    if (preset === 'today' || today === "true" || req.path.includes("today")) {
-      const treatments = await storage.getTodaysTreatments();
+    // Apply date range filtering if provided
+    if (dayKeys) {
+      const treatments = await storage.getTreatments(limit, dayKeys.start, dayKeys.end);
       res.json(treatments);
       return;
     }

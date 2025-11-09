@@ -147,26 +147,45 @@ export function buildDateWhereClause(
 /**
  * Convert date range to date keys (YYYY-MM-DD) for filtering date-only columns
  * 
- * For date-only columns (requestedDate, visitDate), we need to filter by
+ * For date-only columns (clinic_day), we need to filter by
  * clinic day keys rather than UTC timestamps.
  * 
  * @param range - Date range or null
- * @returns Object with start and end date keys, or null
+ * @returns Object with start and end date keys (inclusive), or null
  * 
  * @example
  * const dateKeys = rangeToDayKeys(range);
  * // Returns: { start: '2025-11-08', end: '2025-11-09' }
- * // Use: WHERE requestedDate >= '2025-11-08' AND requestedDate < '2025-11-09'
+ * // Use: WHERE clinic_day >= '2025-11-08' AND clinic_day <= '2025-11-09'
+ * // (Both bounds are inclusive for date columns)
  */
 export function rangeToDayKeys(
   range: { start: Date; end: Date } | null
 ): { start: string; end: string } | null {
   if (!range) return null;
   
+  // For date-only columns, we want inclusive bounds
+  // range.end is exclusive in timestamp terms, so we subtract 1 day to get the last inclusive day
+  const startDayKey = getClinicDayKey(range.start);
+  const endDayKey = getClinicDayKey(new Date(range.end.getTime() - 1)); // Subtract 1ms to get previous day
+  
   return {
-    start: getClinicDayKey(range.start),
-    end: getClinicDayKey(range.end),
+    start: startDayKey,
+    end: endDayKey,
   };
+}
+
+/**
+ * Get the current clinic day key (YYYY-MM-DD) in Africa/Juba timezone
+ * 
+ * @returns Current clinic day key string
+ * 
+ * @example
+ * const today = getCurrentClinicDayKey();
+ * // Returns: '2025-11-09'
+ */
+export function getCurrentClinicDayKey(): string {
+  return getClinicDayKey(new Date());
 }
 
 /**
