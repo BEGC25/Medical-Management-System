@@ -31,6 +31,8 @@ npm run build
 
 The indexes improve query performance for date-range filtering and prevent duplicate open encounters.
 
+### For SQLite (Local Development)
+
 ```bash
 # Apply the migration
 sqlite3 clinic.db < migrations/0001_phase2_indexes.sql
@@ -39,7 +41,22 @@ sqlite3 clinic.db < migrations/0001_phase2_indexes.sql
 sqlite3 clinic.db "SELECT name, sql FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%' ORDER BY name;"
 ```
 
-Expected output should include:
+### For PostgreSQL/Neon (Production)
+
+```bash
+# Apply the migration using psql
+psql $DATABASE_URL -f migrations/0001_phase2_indexes.sql
+
+# Verify indexes were created
+psql $DATABASE_URL -c "SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND indexname LIKE 'idx_%' ORDER BY indexname;"
+```
+
+Or use the Neon SQL Editor:
+1. Go to your Neon dashboard
+2. Open SQL Editor
+3. Copy and run the contents of `migrations/0001_phase2_indexes.sql`
+
+Expected indexes:
 - `idx_lab_tests_requested_date`
 - `idx_treatments_visit_date`
 - `idx_encounters_visit_date`

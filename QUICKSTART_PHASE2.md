@@ -2,6 +2,8 @@
 
 This is a simplified guide for applying Phase 2 changes. For detailed information, see PHASE2_MIGRATION_GUIDE.md.
 
+> **📌 Database Type**: This guide is for **SQLite** (local development). If you're using **PostgreSQL/Neon**, see **QUICKSTART_PHASE2_POSTGRES.md** instead.
+
 ## Overview
 
 This migration adds:
