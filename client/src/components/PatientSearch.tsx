@@ -75,51 +75,55 @@ export default function PatientSearch({
     ],
     enabled: effectiveMode !== "dateRange" || (!!startDate && !!endDate),
     queryFn: async () => {
-      if (effectiveMode === "today") {
-        const r = await fetch("/api/patients?today=true&withStatus=true");
-        if (!r.ok) throw new Error("Failed to fetch today's patients");
-        return r.json();
-      }
-      if (effectiveMode === "dateRange" && startDate && endDate) {
-        // Build query string with startDate/endDate and optional preset
-        const params = new URLSearchParams({
-          startDate,
-          endDate,
-          withStatus: 'true',
-          filterBy: 'encounters',
-        });
-        
-        // Include preset if available for better backend logging/diagnostics
-        if (preset) {
-          params.append('preset', preset);
-        }
-        
-        const r = await fetch(`/api/patients?${params.toString()}`);
-        if (!r.ok)
-          throw new Error("Failed to fetch patients for date range");
-        return r.json();
-      }
-      if (effectiveMode === "date") {
+      // Search mode: use search parameter
+      if (effectiveMode === "search") {
         const r = await fetch(
-          `/api/patients?date=${encodeURIComponent(
-            selectedDate,
+          `/api/patients?search=${encodeURIComponent(
+            searchTerm,
           )}&withStatus=true`,
         );
-        if (!r.ok)
-          throw new Error("Failed to fetch patients for selected date");
+        if (!r.ok) throw new Error("Failed to search patients");
         return r.json();
       }
+      
+      // All mode: no filters
       if (effectiveMode === "all") {
         const r = await fetch("/api/patients?withStatus=true");
         if (!r.ok) throw new Error("Failed to fetch all patients");
         return r.json();
       }
-      const r = await fetch(
-        `/api/patients?search=${encodeURIComponent(
-          searchTerm,
-        )}&withStatus=true`,
-      );
-      if (!r.ok) throw new Error("Failed to search patients");
+      
+      // Date-based filtering: use preset-based API for consistency
+      const params = new URLSearchParams({
+        withStatus: 'true',
+        filterBy: 'encounters', // Treatment page filters by encounter dates
+      });
+      
+      if (effectiveMode === "dateRange" && startDate && endDate && preset) {
+        // Custom range or multi-day preset (last7, last30)
+        if (preset === "custom") {
+          params.append('preset', 'custom');
+          params.append('from', startDate);
+          params.append('to', endDate);
+        } else {
+          // Use preset directly (last7, last30)
+          params.append('preset', preset);
+        }
+      } else if (effectiveMode === "today") {
+        // Today preset
+        params.append('preset', 'today');
+      } else if (effectiveMode === "date" && preset) {
+        // Single day with preset (today, yesterday)
+        params.append('preset', preset);
+      } else if (effectiveMode === "date" && selectedDate) {
+        // Fallback: single date without preset (legacy)
+        params.append('preset', 'custom');
+        params.append('from', selectedDate);
+        params.append('to', selectedDate);
+      }
+      
+      const r = await fetch(`/api/patients?${params.toString()}`);
+      if (!r.ok) throw new Error("Failed to fetch patients");
       return r.json();
     },
   });

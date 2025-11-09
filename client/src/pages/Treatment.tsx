@@ -273,43 +273,24 @@ export default function Treatment() {
   const [searchTerm, setSearchTerm] = useState("");
   const [shouldSearch, setShouldSearch] = useState(false);
 
-  // Date filtering
-  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
+  // Date filtering - normalized preset values to match backend (today/yesterday/last7/last30/custom)
+  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7" | "last30" | "custom">("today");
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [quickFilter, setQuickFilter] = useState<"today" | "active" | "pending" | null>("today"); // Quick filter from stat cards
 
-  // Calculate timezone-aware date strings for PatientSearch component
-  // Uses Africa/Juba (UTC+2) timezone for consistent filtering
-  const { selectedDateStr, startDateStr, endDateStr } = useMemo(() => {
-    const apiRange = getDateRangeForAPI(dateFilter, customStartDate, customEndDate);
-    
-    if (!apiRange) {
-      // Fallback to today
-      const now = getZonedNow();
-      const todayStr = formatDateInZone(now);
-      return { selectedDateStr: todayStr, startDateStr: undefined, endDateStr: undefined };
-    }
-    
-    const start = new Date(apiRange.startDate);
-    const end = new Date(apiRange.endDate);
-    
-    // For single-day filters (today, yesterday), use selectedDate
-    if (dateFilter === "today" || dateFilter === "yesterday") {
-      return { 
-        selectedDateStr: formatDateInZone(start),
-        startDateStr: undefined,
-        endDateStr: undefined
+  // Build preset parameter for API calls - no more local date math
+  // Server handles all date range calculations using Africa/Juba timezone
+  const presetParams = useMemo(() => {
+    if (dateFilter === "custom" && customStartDate && customEndDate) {
+      return {
+        preset: "custom" as const,
+        from: getClinicDayKey(customStartDate),
+        to: getClinicDayKey(customEndDate),
       };
     }
-    
-    // For range filters (last7days, last30days, custom), use start/end dates
-    return {
-      selectedDateStr: formatDateInZone(start),
-      startDateStr: formatDateInZone(start),
-      endDateStr: formatDateInZone(end)
-    };
+    return { preset: dateFilter };
   }, [dateFilter, customStartDate, customEndDate]);
 
   // Queue modal - use preset 'today' for consistent filtering
@@ -1183,16 +1164,16 @@ export default function Treatment() {
                       Yesterday
                     </Button>
                     <Button 
-                      variant={dateFilter === "last7days" ? "default" : "outline"} 
+                      variant={dateFilter === "last7" ? "default" : "outline"} 
                       size="sm" 
-                      onClick={() => { setDateFilter("last7days"); setShowDateFilter(false); }}
+                      onClick={() => { setDateFilter("last7"); setShowDateFilter(false); }}
                     >
                       Last 7 Days
                     </Button>
                     <Button 
-                      variant={dateFilter === "last30days" ? "default" : "outline"} 
+                      variant={dateFilter === "last30" ? "default" : "outline"} 
                       size="sm" 
-                      onClick={() => { setDateFilter("last30days"); setShowDateFilter(false); }}
+                      onClick={() => { setDateFilter("last30"); setShowDateFilter(false); }}
                     >
                       Last 30 Days
                     </Button>
@@ -1264,20 +1245,18 @@ export default function Treatment() {
                     showActions={false}
                     viewMode={
                       showDateFilter ? "all" :
-                      dateFilter === "last7days" ? "dateRange" :
-                      dateFilter === "last30days" ? "dateRange" :
-                      dateFilter === "custom" ? "dateRange" :
+                      dateFilter === "last7" || dateFilter === "last30" || dateFilter === "custom" ? "dateRange" :
                       "date"
                     }
-                    selectedDate={selectedDateStr}
-                    startDate={startDateStr}
-                    endDate={endDateStr}
+                    selectedDate={getClinicDayKey()} // Current clinic day for single-day views
+                    startDate={presetParams.preset === "custom" ? presetParams.from : undefined}
+                    endDate={presetParams.preset === "custom" ? presetParams.to : undefined}
                     searchTerm={searchTerm}
                     onSearchTermChange={setSearchTerm}
                     shouldSearch={shouldSearch}
                     onShouldSearchChange={setShouldSearch}
                     filterPendingOnly={quickFilter === "pending"}
-                    preset={dateFilter} // Pass preset for cache key differentiation
+                    preset={presetParams.preset} // Pass preset for backend filtering and cache isolation
                   />
                 </div>
               </>
