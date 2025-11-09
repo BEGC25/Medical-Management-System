@@ -2139,19 +2139,20 @@ export class MemStorage implements IStorage {
   async getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
     let patientsData: schema.Patient[] = [];
     
-    // Convert ISO strings to YYYY-MM-DD format for clinic_day comparison
-    const { getClinicDayKey } = await import('@shared/clinic-date');
-    const startDayKey = getClinicDayKey(new Date(startDate));
-    const endDayKey = getClinicDayKey(new Date(endDate));
+    // Assume inputs are clinic day keys (YYYY-MM-DD) from getPresetDayKeys
+    // Use inclusive comparison for both start and end day keys
+    const startDayKey = startDate;
+    const endDayKey = endDate;
     
     try {
       // Try using clinic_day column if it exists (preferred method)
+      // Use inclusive end comparison (<=) for day-key ranges
       patientsData = await db.select().from(patients)
         .where(
           and(
             eq(patients.isDeleted, 0),
             sql`clinic_day >= ${startDayKey}`,
-            sql`clinic_day < ${endDayKey}` // Exclusive end
+            sql`clinic_day <= ${endDayKey}` // Inclusive end for day keys
           )
         )
         .orderBy(desc(patients.createdAt));
@@ -2163,18 +2164,21 @@ export class MemStorage implements IStorage {
             and(
               eq(patients.isDeleted, 0),
               sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date >= ${startDayKey}`,
-              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date < ${endDayKey}`
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date <= ${endDayKey}`
             )
           )
           .orderBy(desc(patients.createdAt));
       } catch (castError: any) {
-        // Final fallback - filter by timestamp range
+        // Final fallback - treat as timestamp range (should not happen with day keys)
+        const { getClinicDayKey } = await import('@shared/clinic-date');
+        const startTimestamp = new Date(`${startDayKey}T00:00:00Z`).toISOString();
+        const endTimestamp = new Date(`${endDayKey}T23:59:59.999Z`).toISOString();
         patientsData = await db.select().from(patients)
           .where(
             and(
               eq(patients.isDeleted, 0),
-              sql`${patients.createdAt} >= ${startDate}`,
-              sql`${patients.createdAt} < ${endDate}`
+              sql`${patients.createdAt} >= ${startTimestamp}`,
+              sql`${patients.createdAt} <= ${endTimestamp}`
             )
           )
           .orderBy(desc(patients.createdAt));

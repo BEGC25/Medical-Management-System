@@ -380,37 +380,56 @@ router.get("/api/patients", async (req, res) => {
     const withStatus = req.query.withStatus === "true";
     const filterBy = req.query.filterBy as string; // "encounters" or "registration" (default)
 
-    // Log preset for diagnosis
+    // Parse preset or custom range into clinic day keys
     const preset = req.query.preset as string;
-    if (preset) {
-      console.log(`[patients] Preset filter: ${preset}`);
+    const from = req.query.from as string;
+    const to = req.query.to as string;
+    
+    // Log legacy parameters with deprecation warning
+    if ((req.query.today || req.query.date || req.query.startDate) && preset) {
+      console.warn('[patients] DEPRECATED: Legacy date params ignored when preset is provided');
     }
-
-    // Parse date range using unified clinic-range utilities
-    // Supports: preset, from/to, and legacy params (today=1, date, startDate/endDate)
-    const range = parseClinicRangeParams(req.query, true);
-    const rangeISO = rangeToISOStrings(range);
     
-    let tzStartDate: string | undefined;
-    let tzEndDate: string | undefined;
+    let startDayKey: string | undefined;
+    let endDayKey: string | undefined;
     
-    if (rangeISO) {
-      tzStartDate = rangeISO.start;
-      tzEndDate = rangeISO.end;
-      console.log(`[patients] Date range: ${tzStartDate} to ${tzEndDate} (preset: ${preset || 'none'})`);
+    // Use direct day-key calculation for presets (avoids off-by-one errors)
+    if (preset) {
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys(preset);
+      
+      if (dayKeys) {
+        startDayKey = dayKeys.startDayKey;
+        endDayKey = dayKeys.endDayKey;
+        console.log(`[patients] Preset ${preset}: ${startDayKey} to ${endDayKey} (inclusive)`);
+      }
+    } else if (from && to) {
+      // Custom range from client
+      startDayKey = from;
+      endDayKey = to;
+      console.log(`[patients] Custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
+    } else if (req.query.today === '1' || req.query.today === 'true') {
+      // Legacy: today=1
+      console.warn('[patients] DEPRECATED: today=1 parameter. Use preset=today instead.');
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys('today');
+      if (dayKeys) {
+        startDayKey = dayKeys.startDayKey;
+        endDayKey = dayKeys.endDayKey;
+      }
     }
 
     if (withStatus) {
-      if (tzStartDate && tzEndDate) {
+      if (startDayKey && endDayKey) {
         // Date range filtering - check filterBy parameter
         if (filterBy === "encounters") {
           // Filter by encounter/visit dates (for Treatment page)
-          const patients = await storage.getPatientsByEncounterDateRangeWithStatus(tzStartDate, tzEndDate);
+          const patients = await storage.getPatientsByEncounterDateRangeWithStatus(startDayKey, endDayKey);
           res.json(patients);
         } else {
           // Filter by registration dates (for Patients page - default)
           try {
-            const patients = await storage.getPatientsByDateRangeWithStatus(tzStartDate, tzEndDate);
+            const patients = await storage.getPatientsByDateRangeWithStatus(startDayKey, endDayKey);
             res.json(patients);
           } catch (error) {
             console.error('[patients] Date range query failed, attempting fallback:', error);
@@ -424,10 +443,10 @@ router.get("/api/patients", async (req, res) => {
         res.json(patients);
       }
     } else {
-      if (tzStartDate && tzEndDate) {
+      if (startDayKey && endDayKey) {
         // Date range filtering
         try {
-          const patients = await storage.getPatientsByDateRange(tzStartDate, tzEndDate);
+          const patients = await storage.getPatientsByDateRange(startDayKey, endDayKey);
           res.json(patients);
         } catch (error) {
           console.error('[patients] Date range query failed, attempting fallback:', error);
@@ -564,9 +583,39 @@ router.get("/api/treatments", async (req, res) => {
     const patientId = req.query.patientId as string;
     const encounterId = req.query.encounterId as string;
 
-    // Parse date range using unified clinic-range utilities
-    const range = parseClinicRangeParams(req.query, true);
-    const dayKeys = rangeToDayKeys(range);
+    // Parse preset or custom range into clinic day keys
+    const preset = req.query.preset as string;
+    const from = req.query.from as string;
+    const to = req.query.to as string;
+    
+    let startDayKey: string | undefined;
+    let endDayKey: string | undefined;
+    
+    // Use direct day-key calculation for presets
+    if (preset) {
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys(preset);
+      
+      if (dayKeys) {
+        startDayKey = dayKeys.startDayKey;
+        endDayKey = dayKeys.endDayKey;
+        console.log(`[treatments] Preset ${preset}: ${startDayKey} to ${endDayKey} (inclusive)`);
+      }
+    } else if (from && to) {
+      // Custom range from client
+      startDayKey = from;
+      endDayKey = to;
+      console.log(`[treatments] Custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
+    } else if (req.query.today === '1' || req.query.today === 'true') {
+      // Legacy: today=1
+      console.warn('[treatments] DEPRECATED: today=1 parameter. Use preset=today instead.');
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys('today');
+      if (dayKeys) {
+        startDayKey = dayKeys.startDayKey;
+        endDayKey = dayKeys.endDayKey;
+      }
+    }
 
     // Filter by encounterId if provided
     if (encounterId) {
@@ -583,8 +632,8 @@ router.get("/api/treatments", async (req, res) => {
     }
 
     // Apply date range filtering if provided
-    if (dayKeys) {
-      const treatments = await storage.getTreatments(limit, dayKeys.start, dayKeys.end);
+    if (startDayKey && endDayKey) {
+      const treatments = await storage.getTreatments(limit, startDayKey, endDayKey);
       res.json(treatments);
       return;
     }
@@ -628,20 +677,44 @@ router.get("/api/lab-tests", async (req, res) => {
   try {
     const status = req.query.status as string;
     
-    // Parse date range using unified clinic-range utilities
-    // Supports: preset (today/yesterday/last7/all), from/to, legacy params (today=1, date=YYYY-MM-DD)
-    const range = parseClinicRangeParams(req.query, true); // Enable deprecation warnings
+    // Parse preset or custom range into clinic day keys
+    const preset = req.query.preset as string;
+    const from = req.query.from as string;
+    const to = req.query.to as string;
     
-    // Convert range to day keys for date-only column filtering
-    const dayKeys = rangeToDayKeys(range);
-    
-    // Get lab tests with date filtering
     let filterStartDate: string | undefined;
     let filterEndDate: string | undefined;
     
-    if (dayKeys) {
-      filterStartDate = dayKeys.start;
-      filterEndDate = dayKeys.end;
+    // Use direct day-key calculation for presets
+    if (preset) {
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys(preset);
+      
+      if (dayKeys) {
+        filterStartDate = dayKeys.startDayKey;
+        filterEndDate = dayKeys.endDayKey;
+        console.log(`[lab-tests] Preset ${preset}: ${filterStartDate} to ${filterEndDate} (inclusive)`);
+      }
+    } else if (from && to) {
+      // Custom range from client
+      filterStartDate = from;
+      filterEndDate = to;
+      console.log(`[lab-tests] Custom range: ${filterStartDate} to ${filterEndDate} (inclusive)`);
+    } else if (req.query.today === '1' || req.query.today === 'true') {
+      // Legacy: today=1
+      console.warn('[lab-tests] DEPRECATED: today=1 parameter. Use preset=today instead.');
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys('today');
+      if (dayKeys) {
+        filterStartDate = dayKeys.startDayKey;
+        filterEndDate = dayKeys.endDayKey;
+      }
+    } else if (req.query.date) {
+      // Legacy: date=YYYY-MM-DD
+      const dateParam = req.query.date as string;
+      console.warn(`[lab-tests] DEPRECATED: date=${dateParam} parameter. Use preset=custom&from=${dateParam}&to=${dateParam} instead.`);
+      filterStartDate = dateParam;
+      filterEndDate = dateParam;
     }
     
     // Pass null for exact date param (deprecated), use range instead
@@ -784,16 +857,44 @@ router.get("/api/xray-exams", async (req, res) => {
   try {
     const status = req.query.status as string;
     
-    // Parse date range using unified clinic-range utilities
-    const range = parseClinicRangeParams(req.query, true);
-    const dayKeys = rangeToDayKeys(range);
+    // Parse preset or custom range into clinic day keys
+    const preset = req.query.preset as string;
+    const from = req.query.from as string;
+    const to = req.query.to as string;
     
     let filterStartDate: string | undefined;
     let filterEndDate: string | undefined;
     
-    if (dayKeys) {
-      filterStartDate = dayKeys.start;
-      filterEndDate = dayKeys.end;
+    // Use direct day-key calculation for presets
+    if (preset) {
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys(preset);
+      
+      if (dayKeys) {
+        filterStartDate = dayKeys.startDayKey;
+        filterEndDate = dayKeys.endDayKey;
+        console.log(`[xray-exams] Preset ${preset}: ${filterStartDate} to ${filterEndDate} (inclusive)`);
+      }
+    } else if (from && to) {
+      // Custom range from client
+      filterStartDate = from;
+      filterEndDate = to;
+      console.log(`[xray-exams] Custom range: ${filterStartDate} to ${filterEndDate} (inclusive)`);
+    } else if (req.query.today === '1' || req.query.today === 'true') {
+      // Legacy: today=1
+      console.warn('[xray-exams] DEPRECATED: today=1 parameter. Use preset=today instead.');
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys('today');
+      if (dayKeys) {
+        filterStartDate = dayKeys.startDayKey;
+        filterEndDate = dayKeys.endDayKey;
+      }
+    } else if (req.query.date) {
+      // Legacy: date=YYYY-MM-DD
+      const dateParam = req.query.date as string;
+      console.warn(`[xray-exams] DEPRECATED: date=${dateParam} parameter. Use preset=custom&from=${dateParam}&to=${dateParam} instead.`);
+      filterStartDate = dateParam;
+      filterEndDate = dateParam;
     }
     
     // Pass null for exact date param (deprecated), use range instead
@@ -856,16 +957,38 @@ router.get("/api/ultrasound-exams", async (req, res) => {
   try {
     const status = req.query.status as string;
     
-    // Parse date range using unified clinic-range utilities
-    const range = parseClinicRangeParams(req.query, true);
-    const dayKeys = rangeToDayKeys(range);
+    // Parse preset or custom range into clinic day keys
+    const preset = req.query.preset as string;
+    const from = req.query.from as string;
+    const to = req.query.to as string;
     
     let filterStartDate: string | undefined;
     let filterEndDate: string | undefined;
     
-    if (dayKeys) {
-      filterStartDate = dayKeys.start;
-      filterEndDate = dayKeys.end;
+    // Use direct day-key calculation for presets
+    if (preset) {
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys(preset);
+      
+      if (dayKeys) {
+        filterStartDate = dayKeys.startDayKey;
+        filterEndDate = dayKeys.endDayKey;
+        console.log(`[ultrasound-exams] Preset ${preset}: ${filterStartDate} to ${filterEndDate} (inclusive)`);
+      }
+    } else if (from && to) {
+      // Custom range from client
+      filterStartDate = from;
+      filterEndDate = to;
+      console.log(`[ultrasound-exams] Custom range: ${filterStartDate} to ${filterEndDate} (inclusive)`);
+    } else if (req.query.today === '1' || req.query.today === 'true') {
+      // Legacy: today=1
+      console.warn('[ultrasound-exams] DEPRECATED: today=1 parameter. Use preset=today instead.');
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys('today');
+      if (dayKeys) {
+        filterStartDate = dayKeys.startDayKey;
+        filterEndDate = dayKeys.endDayKey;
+      }
     }
     
     const ultrasoundExams = await storage.getUltrasoundExams(status, filterStartDate, filterEndDate);
@@ -1698,20 +1821,49 @@ router.get("/api/encounters", async (req, res) => {
     const status = req.query.status as string;
     const patientId = req.query.patientId as string;
 
-    // Support both legacy date parameter and new preset parameter
+    // Parse preset or custom range into clinic day keys
     const preset = req.query.preset as string;
+    const from = req.query.from as string;
+    const to = req.query.to as string;
+    
+    let dayKey: string | undefined;
+    
+    // Use direct day-key calculation for presets
     if (preset) {
-      console.log(`[encounters] Preset filter: ${preset} (patientId: ${patientId || 'none'})`);
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys(preset);
+      
+      if (dayKeys) {
+        // For single-day presets, use the start day key
+        dayKey = dayKeys.startDayKey;
+        if (dayKeys.startDayKey !== dayKeys.endDayKey) {
+          // Multi-day preset - encounters route currently only supports single day filtering
+          // Log warning and use start day only
+          console.warn(`[encounters] Multi-day preset ${preset} not fully supported. Using start day: ${dayKey}`);
+        }
+        console.log(`[encounters] Preset ${preset}: filtering by day ${dayKey}`);
+      }
+    } else if (from && to) {
+      // Custom range - use from date only for single-day filter
+      dayKey = from;
+      if (from !== to) {
+        console.warn(`[encounters] Multi-day custom range not supported. Using from date: ${dayKey}`);
+      }
+    } else if (req.query.date) {
+      // Legacy: date=YYYY-MM-DD
+      dayKey = req.query.date as string;
+      console.log(`[encounters] Using date parameter: ${dayKey}`);
+    } else if (req.query.today === '1' || req.query.today === 'true') {
+      // Legacy: today=1
+      console.warn('[encounters] DEPRECATED: today=1 parameter. Use preset=today instead.');
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys('today');
+      if (dayKeys) {
+        dayKey = dayKeys.startDayKey;
+      }
     }
 
-    // Parse date range using unified clinic-range utilities
-    const range = parseClinicRangeParams(req.query, true);
-    const dayKeys = rangeToDayKeys(range);
-    
-    // For single-day queries, extract the start day key
-    const date = dayKeys ? dayKeys.start : (req.query.date as string);
-
-    const encounters = await storage.getEncounters(status, date, patientId);
+    const encounters = await storage.getEncounters(status, dayKey, patientId);
     res.json(encounters);
   } catch (error) {
     console.error("Error fetching encounters:", error);
