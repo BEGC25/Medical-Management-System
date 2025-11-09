@@ -459,6 +459,56 @@ sqlite3 clinic.db < migrations/0001_phase2_indexes.sql
 
 **Solution**: The system automatically converts date picker values to clinic timezone. Ensure you're using the shared `parseCustomRange()` function.
 
+## Production Optimization: clinic_day Column
+
+### Overview
+
+To improve performance and reliability of date filtering in production, the system supports an optional `clinic_day` column in the `patients` table. This column stores the pre-computed clinic day (Africa/Juba timezone) for each patient record.
+
+### Benefits
+
+1. **Performance**: Direct date comparison without repeated timezone conversions
+2. **Reliability**: Eliminates runtime errors from timezone casting on text columns
+3. **Simplicity**: Clear, indexed column for "Today" and date range queries
+
+### Schema
+
+```sql
+-- Add clinic_day column to patients table
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS clinic_day date;
+
+-- Backfill existing records
+UPDATE patients 
+SET clinic_day = (created_at::timestamptz AT TIME ZONE 'Africa/Juba')::date 
+WHERE clinic_day IS NULL;
+
+-- Index for fast filtering
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_patients_clinic_day ON patients (clinic_day);
+
+-- Auto-populate for new records
+ALTER TABLE patients 
+ALTER COLUMN clinic_day SET DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Africa/Juba')::date;
+```
+
+### Migration
+
+See `sql/2025-11-09_hotfix_patients_clinic_day.sql` for the complete migration script.
+
+Run with:
+```bash
+psql "$DATABASE_URL" < sql/2025-11-09_hotfix_patients_clinic_day.sql
+```
+
+### Query Behavior
+
+After migration, patient queries automatically use the `clinic_day` column with fallback to timezone casting if the column doesn't exist:
+
+1. **Primary**: Direct `clinic_day` comparison (fast, indexed)
+2. **Fallback 1**: Timezone casting on `created_at::timestamptz`
+3. **Fallback 2**: UTC date extraction (less accurate for timezone boundaries)
+
+This tiered approach ensures backward compatibility and graceful degradation.
+
 ## Migration Notes
 
 If you're upgrading from a version without timezone support:
