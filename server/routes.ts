@@ -1686,7 +1686,21 @@ router.get("/api/encounters", async (req, res) => {
     const date = req.query.date as string;
     const patientId = req.query.patientId as string;
 
-    const encounters = await storage.getEncounters(status, date, patientId);
+    // Parse date range using unified clinic-range utilities (same as /api/patients)
+    // Supports: preset, from/to, and legacy params
+    const range = parseClinicRangeParams(req.query, true);
+    const rangeDayKeys = rangeToDayKeys(range);
+    
+    let startDayKey: string | undefined;
+    let endDayKey: string | undefined;
+    
+    if (rangeDayKeys) {
+      startDayKey = rangeDayKeys.start;
+      endDayKey = rangeDayKeys.end;
+    }
+
+    // Use date range filtering if provided, otherwise use single date or all
+    const encounters = await storage.getEncounters(status, date, patientId, startDayKey, endDayKey);
     res.json(encounters);
   } catch (error) {
     console.error("Error fetching encounters:", error);

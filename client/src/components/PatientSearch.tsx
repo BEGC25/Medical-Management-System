@@ -3,6 +3,7 @@ import { Search, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
+import { formatClinicDay } from "@/lib/date-utils";
 
 interface PatientSearchProps {
   onSelectPatient?: (patient: Patient) => void;
@@ -18,14 +19,7 @@ interface PatientSearchProps {
   shouldSearch?: boolean;
   onShouldSearchChange?: (should: boolean) => void;
   filterPendingOnly?: boolean; // Filter to show only patients with unpaid orders
-}
-
-// Format date as "19 Oct 2025"
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return "—";
-  const date = new Date(dateStr);
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  preset?: string; // Optional preset parameter for cleaner API calls
 }
 
 // Generate consistent avatar colors based on initials
@@ -57,6 +51,7 @@ export default function PatientSearch({
   endDate,
   searchTerm,
   filterPendingOnly = false,
+  preset,
 }: PatientSearchProps) {
   // Always-on search: if 3+ chars, force "search"
   const effectiveMode = searchTerm.trim().length >= 3 ? "search" : viewMode;
@@ -70,41 +65,41 @@ export default function PatientSearch({
       endDate,
       searchTerm,
       "withStatus",
+      preset, // Include preset in query key for proper cache invalidation
     ],
     enabled: effectiveMode !== "dateRange" || (!!startDate && !!endDate),
     queryFn: async () => {
       if (effectiveMode === "today") {
-        const r = await fetch("/api/patients?today=true&withStatus=true");
+        const r = await fetch("/api/patients?preset=today&withStatus=true&filterBy=encounters");
         if (!r.ok) throw new Error("Failed to fetch today's patients");
         return r.json();
       }
       if (effectiveMode === "dateRange" && startDate && endDate) {
         const r = await fetch(
-          `/api/patients?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&withStatus=true&filterBy=encounters`,
+          `/api/patients?preset=custom&from=${encodeURIComponent(startDate)}&to=${encodeURIComponent(endDate)}&withStatus=true&filterBy=encounters`,
         );
         if (!r.ok)
           throw new Error("Failed to fetch patients for date range");
         return r.json();
       }
       if (effectiveMode === "date") {
+        // For single date selection, use preset=custom with same from/to
         const r = await fetch(
-          `/api/patients?date=${encodeURIComponent(
-            selectedDate,
-          )}&withStatus=true`,
+          `/api/patients?preset=custom&from=${encodeURIComponent(selectedDate)}&to=${encodeURIComponent(selectedDate)}&withStatus=true&filterBy=encounters`,
         );
         if (!r.ok)
           throw new Error("Failed to fetch patients for selected date");
         return r.json();
       }
       if (effectiveMode === "all") {
-        const r = await fetch("/api/patients?withStatus=true");
+        const r = await fetch("/api/patients?preset=all&withStatus=true&filterBy=encounters");
         if (!r.ok) throw new Error("Failed to fetch all patients");
         return r.json();
       }
       const r = await fetch(
         `/api/patients?search=${encodeURIComponent(
           searchTerm,
-        )}&withStatus=true`,
+        )}&withStatus=true&filterBy=encounters`,
       );
       if (!r.ok) throw new Error("Failed to search patients");
       return r.json();
@@ -235,7 +230,7 @@ export default function PatientSearch({
                     </td>
 
                     <td className="px-4 py-3 text-sm text-right hidden lg:table-cell">
-                      {formatDate(displayDate)}
+                      {formatClinicDay(displayDate)}
                     </td>
 
                     {showActions && (

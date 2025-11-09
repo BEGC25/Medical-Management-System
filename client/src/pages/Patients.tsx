@@ -403,43 +403,25 @@ export default function Patients() {
 
   const { data: patientsListData, isLoading: patientsLoading, error: patientsError } = useQuery<any[]>(
     {
-      queryKey: ["/api/patients", dateFilter, customStartDate, customEndDate],
+      queryKey: ["/api/patients", { preset: dateFilter, customStartDate, customEndDate }],
       queryFn: async () => {
         const params = new URLSearchParams();
-        const { start, end } = getDateRange();
         
-        // startDate and endDate are already ISO strings from getDateRange()
-        params.append("startDate", start);
-        params.append("endDate", end);
+        // Use preset parameter for cleaner API calls and better cache key differentiation
+        if (dateFilter === 'custom' && customStartDate && customEndDate) {
+          params.append("preset", "custom");
+          params.append("from", customStartDate.toISOString().split('T')[0]);
+          params.append("to", customEndDate.toISOString().split('T')[0]);
+        } else {
+          params.append("preset", dateFilter);
+        }
+        
         params.append("withStatus", "true"); // Include consultation payment status
 
         try {
           const response = await fetch(`/api/patients?${params}`);
           if (!response.ok) {
-            // If date range query fails, fallback to fetching all patients
-            console.warn('[Patients] Date range query failed, fetching all patients');
-            const fallbackResponse = await fetch(`/api/patients?withStatus=true`);
-            if (!fallbackResponse.ok) throw new Error("Failed to fetch patients");
-            
-            const allPatients = await fallbackResponse.json();
-            
-            // Client-side filtering by clinic day
-            // This is a temporary fallback until backend is stable
-            if (dateFilter === 'today') {
-              const clinicToday = new Date().toLocaleDateString('sv-SE', { timeZone: 'Africa/Juba' }); // YYYY-MM-DD
-              return allPatients.filter((p: any) => {
-                try {
-                  const createdAt = new Date(p.createdAt);
-                  const patientDay = createdAt.toLocaleDateString('sv-SE', { timeZone: 'Africa/Juba' });
-                  return patientDay === clinicToday;
-                } catch {
-                  return false;
-                }
-              });
-            }
-            
-            // For other date filters, return all and let user see the data
-            return allPatients;
+            throw new Error(`Failed to fetch patients: ${response.statusText}`);
           }
           return response.json();
         } catch (error) {
