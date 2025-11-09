@@ -81,9 +81,20 @@ export default function PatientSearch({
         return r.json();
       }
       if (effectiveMode === "dateRange" && startDate && endDate) {
-        const r = await fetch(
-          `/api/patients?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&withStatus=true&filterBy=encounters`,
-        );
+        // Build query string with startDate/endDate and optional preset
+        const params = new URLSearchParams({
+          startDate,
+          endDate,
+          withStatus: 'true',
+          filterBy: 'encounters',
+        });
+        
+        // Include preset if available for better backend logging/diagnostics
+        if (preset) {
+          params.append('preset', preset);
+        }
+        
+        const r = await fetch(`/api/patients?${params.toString()}`);
         if (!r.ok)
           throw new Error("Failed to fetch patients for date range");
         return r.json();
