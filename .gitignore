@@ -3,6 +3,9 @@ dist
 .DS_Store
 server/public
 vite.config.ts.*
-*.tar.gz# Test files
+*.tar.gz
+# Test files
 test-*.ts
 test-*.js
+# Archive directory (legacy backup files)
+archive/

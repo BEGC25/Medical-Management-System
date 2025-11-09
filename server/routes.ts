@@ -32,6 +32,7 @@ import {
   type SessionUser,
 } from "./auth-service";
 import { parseDateFilter } from "./utils/date";
+import { parseClinicRangeParams, rangeToISOStrings, rangeToDayKeys } from "./utils/clinic-range";
 
 // Extend express-session types to include our user
 declare module "express-session" {
@@ -376,26 +377,20 @@ router.get("/api/patients/counts", async (req, res) => {
 router.get("/api/patients", async (req, res) => {
   try {
     const search = req.query.search as string;
-    const startDate = req.query.startDate as string;
-    const endDate = req.query.endDate as string;
     const withStatus = req.query.withStatus === "true";
     const filterBy = req.query.filterBy as string; // "encounters" or "registration" (default)
-    const preset = req.query.preset as string;
 
-    // Support both legacy params and new date range params
-    const today = req.query.today;
-    const date = req.query.date as string;
+    // Parse date range using unified clinic-range utilities
+    // Supports: preset, from/to, and legacy params (today=1, date, startDate/endDate)
+    const range = parseClinicRangeParams(req.query, true);
+    const rangeISO = rangeToISOStrings(range);
     
-    // Parse timezone-aware date filter if preset is provided
-    let tzStartDate = startDate;
-    let tzEndDate = endDate;
+    let tzStartDate: string | undefined;
+    let tzEndDate: string | undefined;
     
-    if (preset && !startDate && !endDate) {
-      const range = parseDateFilter({ preset });
-      if (range) {
-        tzStartDate = range.start.toISOString();
-        tzEndDate = range.end.toISOString();
-      }
+    if (rangeISO) {
+      tzStartDate = rangeISO.start;
+      tzEndDate = rangeISO.end;
     }
 
     if (withStatus) {
@@ -410,26 +405,14 @@ router.get("/api/patients", async (req, res) => {
           const patients = await storage.getPatientsByDateRangeWithStatus(tzStartDate, tzEndDate);
           res.json(patients);
         }
-      } else if (today === "true" || search === "today") {
-        const patients = await storage.getTodaysPatientsWithStatus();
-        res.json(patients);
-      } else if (date) {
-        const patients = await storage.getPatientsByDateWithStatus(date);
-        res.json(patients);
       } else {
         const patients = await storage.getPatientsWithStatus(search);
         res.json(patients);
       }
     } else {
       if (tzStartDate && tzEndDate) {
-        // New date range filtering
+        // Date range filtering
         const patients = await storage.getPatientsByDateRange(tzStartDate, tzEndDate);
-        res.json(patients);
-      } else if (today === "true" || search === "today") {
-        const patients = await storage.getTodaysPatients();
-        res.json(patients);
-      } else if (date) {
-        const patients = await storage.getPatientsByDate(date);
         res.json(patients);
       } else {
         const patients = await storage.getPatients(search);
@@ -617,26 +600,25 @@ router.post("/api/treatments", async (req, res) => {
 router.get("/api/lab-tests", async (req, res) => {
   try {
     const status = req.query.status as string;
-    const date = req.query.date as string;
-    const preset = req.query.preset as string;
-    const startDate = req.query.startDate as string;
-    const endDate = req.query.endDate as string;
     
-    // Parse date filter using timezone-aware utilities
-    // Supports: preset (Today/Yesterday/etc), startDate/endDate, or exact date
+    // Parse date range using unified clinic-range utilities
+    // Supports: preset (today/yesterday/last7/all), from/to, legacy params (today=1, date=YYYY-MM-DD)
+    const range = parseClinicRangeParams(req.query, true); // Enable deprecation warnings
+    
+    // Convert range to day keys for date-only column filtering
+    const dayKeys = rangeToDayKeys(range);
+    
+    // Get lab tests with date filtering
     let filterStartDate: string | undefined;
     let filterEndDate: string | undefined;
     
-    if (!date) {
-      // Use timezone-aware date filtering
-      const range = parseDateFilter({ preset, startDate, endDate });
-      if (range) {
-        filterStartDate = range.start.toISOString();
-        filterEndDate = range.end.toISOString();
-      }
+    if (dayKeys) {
+      filterStartDate = dayKeys.start;
+      filterEndDate = dayKeys.end;
     }
     
-    const labTests = await storage.getLabTests(status, date, filterStartDate, filterEndDate);
+    // Pass null for exact date param (deprecated), use range instead
+    const labTests = await storage.getLabTests(status, undefined, filterStartDate, filterEndDate);
     res.json(labTests);
   } catch (error) {
     console.error("Error fetching lab tests:", error);
@@ -774,8 +756,21 @@ router.patch("/api/lab-tests/:testId", async (req, res) => {
 router.get("/api/xray-exams", async (req, res) => {
   try {
     const status = req.query.status as string;
-    const date = req.query.date as string;
-    const xrayExams = await storage.getXrayExams(status, date);
+    
+    // Parse date range using unified clinic-range utilities
+    const range = parseClinicRangeParams(req.query, true);
+    const dayKeys = rangeToDayKeys(range);
+    
+    let filterStartDate: string | undefined;
+    let filterEndDate: string | undefined;
+    
+    if (dayKeys) {
+      filterStartDate = dayKeys.start;
+      filterEndDate = dayKeys.end;
+    }
+    
+    // Pass null for exact date param (deprecated), use range instead
+    const xrayExams = await storage.getXrayExams(status, undefined, filterStartDate, filterEndDate);
     res.json(xrayExams);
   } catch (error) {
     console.error("Error fetching X-ray exams:", error);
@@ -830,9 +825,23 @@ router.put("/api/xray-exams/:examId", async (req, res) => {
 
 /* ------------------------------ Ultrasound Exams --------------------------- */
 
-router.get("/api/ultrasound-exams", async (_req, res) => {
+router.get("/api/ultrasound-exams", async (req, res) => {
   try {
-    const ultrasoundExams = await storage.getUltrasoundExams();
+    const status = req.query.status as string;
+    
+    // Parse date range using unified clinic-range utilities
+    const range = parseClinicRangeParams(req.query, true);
+    const dayKeys = rangeToDayKeys(range);
+    
+    let filterStartDate: string | undefined;
+    let filterEndDate: string | undefined;
+    
+    if (dayKeys) {
+      filterStartDate = dayKeys.start;
+      filterEndDate = dayKeys.end;
+    }
+    
+    const ultrasoundExams = await storage.getUltrasoundExams(status, filterStartDate, filterEndDate);
     res.json(ultrasoundExams);
   } catch (error) {
     console.error("Error fetching ultrasound exams:", error);
@@ -901,9 +910,19 @@ router.delete("/api/ultrasound-exams/:examId", async (req, res) => {
 
 router.get("/api/dashboard/stats", async (req, res) => {
   try {
-    const fromDate = req.query.fromDate as string;
-    const toDate = req.query.toDate as string;
-    console.log("Dashboard stats route called", { fromDate, toDate });
+    // Parse date range using unified clinic-range utilities
+    const range = parseClinicRangeParams(req.query, true);
+    const dayKeys = rangeToDayKeys(range);
+    
+    let fromDate: string | undefined;
+    let toDate: string | undefined;
+    
+    if (dayKeys) {
+      fromDate = dayKeys.start;
+      toDate = dayKeys.end;
+    }
+    
+    console.log("Dashboard stats route called", { fromDate, toDate, preset: req.query.preset });
     const stats = await storage.getDashboardStats(fromDate, toDate);
     console.log("Dashboard stats result:", stats);
     res.json(stats);
@@ -2542,6 +2561,66 @@ router.get("/api/reports/age-distribution", async (_req, res) => {
   } catch (error) {
     console.error("Error fetching age distribution:", error);
     res.status(500).json({ error: "Failed to fetch age distribution" });
+  }
+});
+
+/* -------------------------------- Debug Endpoints ----------------------------- */
+
+/**
+ * Debug endpoint: Get current clinic time and preset ranges
+ * 
+ * Returns diagnostic information about the current clinic day and
+ * computed UTC boundaries for various presets. Useful for validating
+ * that date range calculations are correct.
+ * 
+ * @example GET /api/debug/time
+ */
+router.get("/api/debug/time", async (_req, res) => {
+  try {
+    const { getClinicTimeInfo } = await import("./utils/clinic-range");
+    const timeInfo = getClinicTimeInfo();
+    res.json(timeInfo);
+  } catch (error) {
+    console.error("Error in debug/time endpoint:", error);
+    res.status(500).json({ error: "Failed to get time info" });
+  }
+});
+
+/**
+ * Debug endpoint: Echo parsed range parameters
+ * 
+ * Accepts the same query parameters as other endpoints (preset, from, to)
+ * and returns the parsed date range. Useful for validating that range
+ * parsing works as expected.
+ * 
+ * @example GET /api/debug/range?preset=today
+ * @example GET /api/debug/range?from=2025-11-01&to=2025-11-08
+ */
+router.get("/api/debug/range", async (req, res) => {
+  try {
+    const { parseClinicRangeParams, rangeToDayKeys } = await import("./utils/clinic-range");
+    const range = parseClinicRangeParams(req.query, true); // Enable deprecation warnings
+    
+    if (!range) {
+      return res.json({
+        range: null,
+        message: "No filtering (preset=all or no parameters)",
+      });
+    }
+    
+    const dayKeys = rangeToDayKeys(range);
+    
+    res.json({
+      range: {
+        start: range.start.toISOString(),
+        end: range.end.toISOString(),
+      },
+      dayKeys,
+      query: req.query,
+    });
+  } catch (error) {
+    console.error("Error in debug/range endpoint:", error);
+    res.status(500).json({ error: "Failed to parse range" });
   }
 });
 

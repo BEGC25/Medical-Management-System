@@ -185,13 +185,13 @@ export interface IStorage {
 
   // X-Ray Exams
   createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam>;
-  getXrayExams(status?: string, date?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
+  getXrayExams(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
   getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]>;
   updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam>;
 
   // Ultrasound Exams
   createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam>;
-  getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]>;
+  getUltrasoundExams(status?: string, startDate?: string, endDate?: string): Promise<schema.UltrasoundExam[]>;
   getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]>;
   updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam>;
 
@@ -838,7 +838,7 @@ export class MemStorage implements IStorage {
     return xrayExam;
   }
 
-  async getXrayExams(status?: string, date?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]> {
+  async getXrayExams(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]> {
     const baseQuery = db.select({
       xrayExam: xrayExams,
       patient: patients
@@ -854,8 +854,21 @@ export class MemStorage implements IStorage {
     if (status) {
       conditions.push(eq(xrayExams.status, status as any));
     }
+    
+    // Date filtering - support both exact date and date range
+    // Filter by requestedDate field (date-only column)
     if (date) {
+      // Exact date match (for backward compatibility)
       conditions.push(eq(xrayExams.requestedDate, date));
+    } else if (startDate && endDate) {
+      // Date range filtering using requestedDate (date keys)
+      // Range is [start, end) - inclusive start, exclusive end
+      conditions.push(
+        and(
+          gte(xrayExams.requestedDate, startDate),
+          lt(xrayExams.requestedDate, endDate)
+        )
+      );
     }
 
     let query = baseQuery;
@@ -909,7 +922,7 @@ export class MemStorage implements IStorage {
     return ultrasoundExam;
   }
 
-  async getUltrasoundExams(status?: string): Promise<schema.UltrasoundExam[]> {
+  async getUltrasoundExams(status?: string, startDate?: string, endDate?: string): Promise<schema.UltrasoundExam[]> {
     // --- MODIFIED: Join patients and filter ---
     const baseQuery = db.select({ ultrasoundExam: ultrasoundExams })
         .from(ultrasoundExams)
@@ -918,12 +931,28 @@ export class MemStorage implements IStorage {
             eq(patients.isDeleted, 0) // Only include exams for non-deleted patients
         ));
 
+    // Apply filters
+    const conditions = [];
     if (status) {
-        const results = await baseQuery.where(eq(ultrasoundExams.status, status as any)).orderBy(desc(ultrasoundExams.requestedDate));
-        return results.map(r => r.ultrasoundExam);
+      conditions.push(eq(ultrasoundExams.status, status as any));
+    }
+    
+    // Date range filtering using requestedDate (date keys)
+    if (startDate && endDate) {
+      conditions.push(
+        and(
+          gte(ultrasoundExams.requestedDate, startDate),
+          lt(ultrasoundExams.requestedDate, endDate)
+        )
+      );
     }
 
-    const results = await baseQuery.orderBy(desc(ultrasoundExams.requestedDate));
+    let query = baseQuery;
+    if (conditions.length > 0) {
+      query = baseQuery.where(and(...conditions));
+    }
+
+    const results = await query.orderBy(desc(ultrasoundExams.requestedDate));
     return results.map(r => r.ultrasoundExam);
   }
 
@@ -1022,13 +1051,29 @@ export class MemStorage implements IStorage {
         )
       );
 
-      // Get pending counts (always unfiltered for current pending items)
-      const pendingLabTests = await db.select({ count: count() }).from(labTests)
-        .where(eq(labTests.status, "pending"));
-      const pendingXrays = await db.select({ count: count() }).from(xrayExams)
-        .where(eq(xrayExams.status, "pending"));
-      const pendingUltrasounds = await db.select({ count: count() }).from(ultrasoundExams)
-        .where(eq(ultrasoundExams.status, "pending"));
+      // Get pending counts - PHASE 2: Apply same date range to pending counts
+      // This ensures pending counts align with the filtered list view
+      const pendingLabTests = await db.select({ count: count() }).from(labTests).where(
+        and(
+          eq(labTests.status, "pending"),
+          gte(labTests.requestedDate, actualFromDate),
+          lte(labTests.requestedDate, actualToDate)
+        )
+      );
+      const pendingXrays = await db.select({ count: count() }).from(xrayExams).where(
+        and(
+          eq(xrayExams.status, "pending"),
+          gte(xrayExams.requestedDate, actualFromDate),
+          lte(xrayExams.requestedDate, actualToDate)
+        )
+      );
+      const pendingUltrasounds = await db.select({ count: count() }).from(ultrasoundExams).where(
+        and(
+          eq(ultrasoundExams.status, "pending"),
+          gte(ultrasoundExams.requestedDate, actualFromDate),
+          lte(ultrasoundExams.requestedDate, actualToDate)
+        )
+      );
 
       console.log("Total counts:", {
         patients: totalPatients[0]?.count || 0,
