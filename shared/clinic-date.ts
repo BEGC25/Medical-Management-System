@@ -83,7 +83,7 @@ export function clinicDayKeyEndUtcExclusive(dayKey: string): Date {
 /**
  * Date range presets
  */
-export type DatePreset = 'Today' | 'Yesterday' | 'Last7Days' | 'ThisMonth' | 'All' | 'custom';
+export type DatePreset = 'Today' | 'Yesterday' | 'Last7Days' | 'Last30Days' | 'ThisMonth' | 'All' | 'custom';
 
 /**
  * Get date range for a preset or custom range
@@ -127,11 +127,21 @@ export function getPresetRange(
     }
     
     case 'Last7Days': {
-      const weekAgo = subDays(now, 7);
-      const weekAgoKey = getClinicDayKey(weekAgo);
+      const sevenDaysAgo = subDays(now, 6); // Last 7 days including today (today - 6 days ago)
+      const sevenDaysAgoKey = getClinicDayKey(sevenDaysAgo);
       const todayKey = getClinicDayKey(now);
       return {
-        start: clinicDayKeyStartUtc(weekAgoKey),
+        start: clinicDayKeyStartUtc(sevenDaysAgoKey),
+        end: clinicDayKeyEndUtcExclusive(todayKey),
+      };
+    }
+    
+    case 'Last30Days': {
+      const thirtyDaysAgo = subDays(now, 29); // Last 30 days including today (today - 29 days ago)
+      const thirtyDaysAgoKey = getClinicDayKey(thirtyDaysAgo);
+      const todayKey = getClinicDayKey(now);
+      return {
+        start: clinicDayKeyStartUtc(thirtyDaysAgoKey),
         end: clinicDayKeyEndUtcExclusive(todayKey),
       };
     }

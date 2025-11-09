@@ -92,8 +92,8 @@ export function parseClinicRangeParams(
       'yesterday': 'Yesterday',
       'last7': 'Last7Days',
       'last7days': 'Last7Days',
-      'last30': 'ThisMonth', // Map last30 to ThisMonth for now
-      'last30days': 'ThisMonth',
+      'last30': 'Last30Days',
+      'last30days': 'Last30Days',
       'thismonth': 'ThisMonth',
       'all': 'All',
       'custom': 'custom',
