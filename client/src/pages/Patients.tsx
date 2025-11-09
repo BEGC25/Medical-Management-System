@@ -67,7 +67,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, formatClinicDay } from "@/lib/date-utils";
+import { getDateRangeForAPI, formatClinicDay, getClinicDayKey } from "@/lib/date-utils";
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
@@ -415,10 +415,10 @@ export default function Patients() {
         
         // Use preset parameter for standard filters (today, yesterday, last7days, last30days)
         if (dateFilter === 'custom' && customStartDate && customEndDate) {
-          // Custom range: use from/to parameters
+          // Custom range: use from/to parameters with clinic day keys
           params.append("preset", "custom");
-          params.append("from", customStartDate.toISOString().split('T')[0]);
-          params.append("to", customEndDate.toISOString().split('T')[0]);
+          params.append("from", getClinicDayKey(customStartDate));
+          params.append("to", getClinicDayKey(customEndDate));
         } else {
           // Standard preset: map to backend preset format
           const presetMap: Record<string, string> = {
