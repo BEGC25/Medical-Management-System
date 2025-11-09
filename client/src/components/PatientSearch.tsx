@@ -3,6 +3,7 @@ import { Search, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
+import { formatClinicDay } from "@/lib/date-utils";
 
 interface PatientSearchProps {
   onSelectPatient?: (patient: Patient) => void;
@@ -18,14 +19,13 @@ interface PatientSearchProps {
   shouldSearch?: boolean;
   onShouldSearchChange?: (should: boolean) => void;
   filterPendingOnly?: boolean; // Filter to show only patients with unpaid orders
+  preset?: string; // Optional preset for cache key differentiation (e.g., "today", "yesterday", "last7", "last30")
 }
 
-// Format date as "19 Oct 2025"
+// Format date as "19 Oct 2025" in clinic timezone (Africa/Juba)
+// Handles both YYYY-MM-DD date keys and ISO timestamps
 function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return "—";
-  const date = new Date(dateStr);
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  return formatClinicDay(dateStr, 'd MMM yyyy');
 }
 
 // Generate consistent avatar colors based on initials
@@ -57,6 +57,7 @@ export default function PatientSearch({
   endDate,
   searchTerm,
   filterPendingOnly = false,
+  preset,
 }: PatientSearchProps) {
   // Always-on search: if 3+ chars, force "search"
   const effectiveMode = searchTerm.trim().length >= 3 ? "search" : viewMode;
@@ -70,6 +71,7 @@ export default function PatientSearch({
       endDate,
       searchTerm,
       "withStatus",
+      preset, // Include preset in cache key to avoid Today/Yesterday cache reuse
     ],
     enabled: effectiveMode !== "dateRange" || (!!startDate && !!endDate),
     queryFn: async () => {

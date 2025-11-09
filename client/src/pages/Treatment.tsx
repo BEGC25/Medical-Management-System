@@ -1269,6 +1269,7 @@ export default function Treatment() {
                     shouldSearch={shouldSearch}
                     onShouldSearchChange={setShouldSearch}
                     filterPendingOnly={quickFilter === "pending"}
+                    preset={dateFilter} // Pass preset for cache key differentiation
                   />
                 </div>
               </>
