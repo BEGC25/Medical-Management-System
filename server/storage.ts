@@ -5,6 +5,7 @@ import createMemoryStore from "memorystore";
 import session from "express-session";
 import { hashPassword } from "./auth-service";
 import { today } from "./utils/date";
+import { getClinicDayKey } from "@shared/clinic-date";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
@@ -174,7 +175,8 @@ export interface IStorage {
   createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment>;
   getTreatmentsByPatient(patientId: string): Promise<schema.Treatment[]>;
   getTreatmentsByEncounter(encounterId: string): Promise<schema.Treatment[]>;
-  getTreatments(limit?: number): Promise<schema.Treatment[]>;
+  getTreatments(limit?: number, startDate?: string, endDate?: string): Promise<schema.Treatment[]>;
+  getTodaysTreatments(): Promise<schema.Treatment[]>;
 
   // Lab Tests
   createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest>;
@@ -704,10 +706,12 @@ export class MemStorage implements IStorage {
   async createTreatment(data: schema.InsertTreatment): Promise<schema.Treatment> {
     const treatmentId = await generateTreatmentId();
     const now = new Date().toISOString();
+    const clinicDay = getClinicDayKey(new Date());
 
     const insertData: any = {
       ...data,
       treatmentId,
+      clinicDay, // Set clinic day for filtering
       createdAt: now,
     };
 
@@ -728,21 +732,35 @@ export class MemStorage implements IStorage {
       .orderBy(desc(treatments.visitDate));
   }
 
-  async getTreatments(limit = 50): Promise<schema.Treatment[]> {
-    return await db.select().from(treatments)
-      .orderBy(desc(treatments.visitDate))
+  async getTreatments(limit = 50, startDate?: string, endDate?: string): Promise<schema.Treatment[]> {
+    let query = db.select().from(treatments);
+    
+    // Apply date filtering if provided
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          gte(treatments.clinicDay, startDate),
+          lte(treatments.clinicDay, endDate)
+        )
+      );
+    }
+    
+    return await query
+      .orderBy(desc(treatments.createdAt))
       .limit(limit);
   }
 
   async createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest> {
     const testId = await generateLabId();
     const now = new Date().toISOString();
+    const clinicDay = getClinicDayKey(new Date());
 
     const insertData: any = {
       ...data,
       testId,
       status: "pending",
       paymentStatus: 'unpaid', // Ensure default
+      clinicDay, // Set clinic day for filtering
       createdAt: now,
     };
 
@@ -768,19 +786,18 @@ export class MemStorage implements IStorage {
       conditions.push(eq(labTests.status, status as any));
     }
     
-    // Date filtering - support both exact date and date range
-    // Filter by requestedDate field (primary) with fallback to createdAt if needed
+    // Date filtering - now use clinic_day instead of requestedDate
+    // Filter by clinic_day field (date when record was created in Africa/Juba)
     if (date) {
       // Exact date match (for backward compatibility)
-      conditions.push(eq(labTests.requestedDate, date));
+      conditions.push(eq(labTests.clinicDay, date));
     } else if (startDate && endDate) {
-      // Date range filtering using requestedDate
-      // Range is [start, end) - inclusive start, exclusive end
-      // Use parameterized queries to prevent SQL injection
+      // Date range filtering using clinic_day
+      // Range is [start, end] - both bounds inclusive for date columns
       conditions.push(
         and(
-          gte(labTests.requestedDate, startDate),
-          lt(labTests.requestedDate, endDate)
+          gte(labTests.clinicDay, startDate),
+          lte(labTests.clinicDay, endDate)
         )
       );
     }
@@ -790,7 +807,7 @@ export class MemStorage implements IStorage {
       query = baseQuery.where(and(...conditions));
     }
 
-    const results = await query.orderBy(desc(labTests.requestedDate));
+    const results = await query.orderBy(desc(labTests.createdAt));
 
     // Transform the results to match the expected format
     return results
@@ -829,12 +846,14 @@ export class MemStorage implements IStorage {
   async createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam> {
     const examId = await generateXrayId();
     const now = new Date().toISOString();
+    const clinicDay = getClinicDayKey(new Date());
 
     const insertData: any = {
       ...data,
       examId,
       status: "pending",
       paymentStatus: 'unpaid', // Ensure default
+      clinicDay, // Set clinic day for filtering
       createdAt: now,
     };
 
@@ -860,18 +879,18 @@ export class MemStorage implements IStorage {
       conditions.push(eq(xrayExams.status, status as any));
     }
     
-    // Date filtering - support both exact date and date range
-    // Filter by requestedDate field (date-only column)
+    // Date filtering - now use clinic_day instead of requestedDate
+    // Filter by clinic_day field (date when record was created in Africa/Juba)
     if (date) {
       // Exact date match (for backward compatibility)
-      conditions.push(eq(xrayExams.requestedDate, date));
+      conditions.push(eq(xrayExams.clinicDay, date));
     } else if (startDate && endDate) {
-      // Date range filtering using requestedDate (date keys)
-      // Range is [start, end) - inclusive start, exclusive end
+      // Date range filtering using clinic_day (date keys)
+      // Range is [start, end] - both bounds inclusive for date columns
       conditions.push(
         and(
-          gte(xrayExams.requestedDate, startDate),
-          lt(xrayExams.requestedDate, endDate)
+          gte(xrayExams.clinicDay, startDate),
+          lte(xrayExams.clinicDay, endDate)
         )
       );
     }
@@ -881,7 +900,7 @@ export class MemStorage implements IStorage {
       query = baseQuery.where(and(...conditions));
     }
 
-    const results = await query.orderBy(desc(xrayExams.requestedDate));
+    const results = await query.orderBy(desc(xrayExams.createdAt));
 
     // Transform the results to match the expected format
     return results
@@ -911,12 +930,14 @@ export class MemStorage implements IStorage {
   async createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam> {
     const examId = await generateUltrasoundId();
     const createdAt = new Date().toISOString();
+    const clinicDay = getClinicDayKey(new Date());
 
     const insertData: any = {
       ...data,
       examId,
       status: "pending",
       paymentStatus: 'unpaid', // Ensure default
+      clinicDay, // Set clinic day for filtering
       createdAt,
     };
 
@@ -942,12 +963,13 @@ export class MemStorage implements IStorage {
       conditions.push(eq(ultrasoundExams.status, status as any));
     }
     
-    // Date range filtering using requestedDate (date keys)
+    // Date range filtering - now use clinic_day instead of requestedDate
+    // Filter by clinic_day field (date when record was created in Africa/Juba)
     if (startDate && endDate) {
       conditions.push(
         and(
-          gte(ultrasoundExams.requestedDate, startDate),
-          lt(ultrasoundExams.requestedDate, endDate)
+          gte(ultrasoundExams.clinicDay, startDate),
+          lte(ultrasoundExams.clinicDay, endDate)
         )
       );
     }
@@ -957,7 +979,7 @@ export class MemStorage implements IStorage {
       query = baseQuery.where(and(...conditions));
     }
 
-    const results = await query.orderBy(desc(ultrasoundExams.requestedDate));
+    const results = await query.orderBy(desc(ultrasoundExams.createdAt));
     return results.map(r => r.ultrasoundExam);
   }
 
@@ -2407,11 +2429,13 @@ export class MemStorage implements IStorage {
   async createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter> {
     const encounterId = await generateEncounterId();
     const now = new Date().toISOString();
+    const clinicDay = getClinicDayKey(new Date());
 
     const insertData = {
       ...data,
       encounterId,
       status: 'open', // Ensure default
+      clinicDay, // Set clinic day for filtering
       createdAt: now,
     };
 
