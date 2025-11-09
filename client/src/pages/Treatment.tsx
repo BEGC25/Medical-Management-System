@@ -474,11 +474,11 @@ export default function Treatment() {
 
   // today's encounter (legacy flow)
   const { data: todayEncounter } = useQuery<Encounter | null>({
-    queryKey: ["/api/encounters", { pid: selectedPatient?.patientId, date: new Date().toISOString().split("T")[0] }],
+    queryKey: ["/api/encounters", { pid: selectedPatient?.patientId, preset: 'today' }],
     queryFn: async () => {
       if (!selectedPatient) return null;
-      const today = new Date().toISOString().split("T")[0];
-      const r = await fetch(`/api/encounters?date=${today}&patientId=${selectedPatient.patientId}`);
+      // Use preset=today instead of legacy date parameter for clinic timezone consistency
+      const r = await fetch(`/api/encounters?preset=today&patientId=${selectedPatient.patientId}`);
       if (!r.ok) return null;
       const encounters = await r.json();
       return encounters[0] || null;

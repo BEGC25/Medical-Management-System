@@ -146,6 +146,11 @@ export default function Patients() {
     }
   }, [billingSettings]);
 
+  // Invalidate patients query when preset changes to prevent cache reuse
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+  }, [dateFilter, customStartDate, customEndDate, queryClient]);
+
   // Counts
   const { data: patientCounts, isLoading: countsLoading } = useQuery({
     queryKey: ["/api/patients/counts"],
@@ -403,43 +408,34 @@ export default function Patients() {
 
   const { data: patientsListData, isLoading: patientsLoading, error: patientsError } = useQuery<any[]>(
     {
-      queryKey: ["/api/patients", dateFilter, customStartDate, customEndDate],
+      // Include preset in query key to prevent cache reuse between tabs
+      queryKey: ["/api/patients", { preset: dateFilter, customStart: customStartDate, customEnd: customEndDate }],
       queryFn: async () => {
         const params = new URLSearchParams();
-        const { start, end } = getDateRange();
         
-        // startDate and endDate are already ISO strings from getDateRange()
-        params.append("startDate", start);
-        params.append("endDate", end);
+        // Use preset parameter for standard filters (today, yesterday, last7days, last30days)
+        if (dateFilter === 'custom' && customStartDate && customEndDate) {
+          // Custom range: use from/to parameters
+          params.append("preset", "custom");
+          params.append("from", customStartDate.toISOString().split('T')[0]);
+          params.append("to", customEndDate.toISOString().split('T')[0]);
+        } else {
+          // Standard preset: map to backend preset format
+          const presetMap: Record<string, string> = {
+            'today': 'today',
+            'yesterday': 'yesterday',
+            'last7days': 'last7',
+            'last30days': 'last30',
+          };
+          params.append("preset", presetMap[dateFilter] || 'today');
+        }
+        
         params.append("withStatus", "true"); // Include consultation payment status
 
         try {
           const response = await fetch(`/api/patients?${params}`);
           if (!response.ok) {
-            // If date range query fails, fallback to fetching all patients
-            console.warn('[Patients] Date range query failed, fetching all patients');
-            const fallbackResponse = await fetch(`/api/patients?withStatus=true`);
-            if (!fallbackResponse.ok) throw new Error("Failed to fetch patients");
-            
-            const allPatients = await fallbackResponse.json();
-            
-            // Client-side filtering by clinic day
-            // This is a temporary fallback until backend is stable
-            if (dateFilter === 'today') {
-              const clinicToday = new Date().toLocaleDateString('sv-SE', { timeZone: 'Africa/Juba' }); // YYYY-MM-DD
-              return allPatients.filter((p: any) => {
-                try {
-                  const createdAt = new Date(p.createdAt);
-                  const patientDay = createdAt.toLocaleDateString('sv-SE', { timeZone: 'Africa/Juba' });
-                  return patientDay === clinicToday;
-                } catch {
-                  return false;
-                }
-              });
-            }
-            
-            // For other date filters, return all and let user see the data
-            return allPatients;
+            throw new Error("Failed to fetch patients");
           }
           return response.json();
         } catch (error) {
