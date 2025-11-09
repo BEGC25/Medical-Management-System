@@ -106,3 +106,56 @@ export function formatClinicDay(dayKeyOrTimestamp: string | undefined | null, fo
     return '—';
   }
 }
+
+/**
+ * Format a clinic day key (YYYY-MM-DD) for display
+ * Uses Africa/Juba timezone
+ * 
+ * @param dayKey - A YYYY-MM-DD clinic day key
+ * @param formatStr - Format string for date-fns (default: 'd MMM yyyy' -> "9 Nov 2025")
+ * @returns Formatted date string in Africa/Juba timezone
+ * 
+ * @example
+ * formatClinicDayKey('2025-11-09') // "9 Nov 2025"
+ */
+export function formatClinicDayKey(dayKey: string | undefined | null, formatStr: string = 'd MMM yyyy'): string {
+  if (!dayKey) return '—';
+  
+  try {
+    // Parse as date key in clinic timezone
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) {
+      const [year, month, day] = dayKey.split('-').map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      return formatInTimeZone(date, CLINIC_TZ, formatStr);
+    }
+    
+    return '—';
+  } catch (error) {
+    console.error('Error formatting clinic day key:', error);
+    return '—';
+  }
+}
+
+/**
+ * Format an ISO timestamp for display in clinic timezone
+ * Uses Africa/Juba timezone
+ * 
+ * @param iso - An ISO timestamp string
+ * @param formatStr - Format string for date-fns (default: 'd MMM yyyy' -> "9 Nov 2025")
+ * @returns Formatted date string in Africa/Juba timezone
+ * 
+ * @example
+ * formatClinicDateTime('2025-11-09T03:35:54.200Z') // "9 Nov 2025"
+ * formatClinicDateTime('2025-11-09T03:35:54.200Z', 'd MMM yyyy HH:mm') // "9 Nov 2025 05:35"
+ */
+export function formatClinicDateTime(iso: string | undefined | null, formatStr: string = 'd MMM yyyy'): string {
+  if (!iso) return '—';
+  
+  try {
+    const date = new Date(iso);
+    return formatInTimeZone(date, CLINIC_TZ, formatStr);
+  } catch (error) {
+    console.error('Error formatting clinic date time:', error);
+    return '—';
+  }
+}

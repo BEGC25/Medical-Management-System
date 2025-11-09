@@ -65,7 +65,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from "@/lib/date-utils";
+import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -95,8 +95,6 @@ type VisitOrder = {
   };
   [key: string]: any; // Allow other properties
 };
-
-const fmt = (d?: string | number | Date) => (d ? new Date(d).toLocaleString() : "—");
 
 // Helper to check if a lab value is abnormal based on resultFields config
 function isAbnormal(val: string | number | undefined | null, cfg?: { normal?: string; range?: string }) {
@@ -1761,7 +1759,7 @@ export default function Treatment() {
                                               )}
                                             </div>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              Requested: {fmt(test.requestedDate)}
+                                              Requested: {formatClinicDayKey(test.requestedDate)}
                                             </p>
                                           </div>
                                           <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto justify-between sm:justify-start">
@@ -1808,7 +1806,7 @@ export default function Treatment() {
                                            {!x.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
                                         </div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                                          {fmt(x.completedAt || x.resultDate || x.requestDate)}
+                                          {formatClinicDateTime(x.completedAt || x.resultDate || x.requestDate)}
                                         </p>
                                       </div>
                                       <div className="flex flex-col items-end gap-2">
@@ -1838,7 +1836,7 @@ export default function Treatment() {
                                            {!u.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
                                         </div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                                          {fmt(u.completedAt || u.resultDate || u.requestDate)}
+                                          {formatClinicDateTime(u.completedAt || u.resultDate || u.requestDate)}
                                         </p>
                                       </div>
                                       <div className="flex flex-col items-end gap-2">
@@ -1883,7 +1881,7 @@ export default function Treatment() {
                           {/* ... Select Drug, Dosage, Quantity, Instructions inputs ... */}
                           {/* ... Add to Order List button ... */}
                           {/* ... Medications to Order list and Submit button ... */}
-                           {prescriptions.length > 0 && ( <div className="mb-6"> <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4"> Prescribed Medications ({prescriptions.length}) </h3> <div className="space-y-2"> {prescriptions.map((rx) => ( <div key={rx.orderId} className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg" data-testid={`prescription-${rx.orderId}`}> <div className="flex items-start justify-between"> <div className="flex-1"> <div className="flex items-center gap-2 mb-2"> <p className="font-medium text-gray-900 dark:text-white">{rx.drugName || "Medication"}</p> <Badge variant={rx.status === "dispensed" ? "default" : "secondary"} className={rx.status === "dispensed" ? "bg-green-600" : ""}>{rx.status}</Badge> <Badge variant={rx.paymentStatus === "paid" ? "default" : "destructive"} className={rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"}>{rx.paymentStatus}</Badge> </div> <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {rx.dosage || "As prescribed"} | Quantity: {rx.quantity}</p> {rx.instructions && (<p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>)} <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Order ID: {rx.orderId} | Prescribed: {fmt(rx.createdAt)}</p> {rx.dispensedAt && (<p className="text-xs text-green-600 dark:text-green-400 mt-1">Dispensed: {fmt(rx.dispensedAt)} by {rx.dispensedBy}</p>)} </div> {rx.status === "prescribed" && rx.paymentStatus === "unpaid" && ( <div className="flex gap-2"> <Button type="button" variant="outline" size="sm" onClick={() => { setEditingPrescription(rx); setEditDosage(rx.dosage || ""); setEditQuantity(rx.quantity || 0); setEditInstructions(rx.instructions || ""); }} data-testid={`btn-edit-${rx.orderId}`}><Edit className="w-4 h-4 mr-1" />Edit</Button> <Button type="button" variant="destructive" size="sm" onClick={() => { if (window.confirm("Cancel this prescription?")) { cancelPrescriptionMutation.mutate(rx.orderId); } }} data-testid={`btn-cancel-${rx.orderId}`}><Trash2 className="w-4 h-4 mr-1" />Cancel</Button> </div> )} </div> </div> ))} </div> <div className="border-t pt-4 mt-4" /> </div> )}
+                           {prescriptions.length > 0 && ( <div className="mb-6"> <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4"> Prescribed Medications ({prescriptions.length}) </h3> <div className="space-y-2"> {prescriptions.map((rx) => ( <div key={rx.orderId} className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg" data-testid={`prescription-${rx.orderId}`}> <div className="flex items-start justify-between"> <div className="flex-1"> <div className="flex items-center gap-2 mb-2"> <p className="font-medium text-gray-900 dark:text-white">{rx.drugName || "Medication"}</p> <Badge variant={rx.status === "dispensed" ? "default" : "secondary"} className={rx.status === "dispensed" ? "bg-green-600" : ""}>{rx.status}</Badge> <Badge variant={rx.paymentStatus === "paid" ? "default" : "destructive"} className={rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"}>{rx.paymentStatus}</Badge> </div> <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {rx.dosage || "As prescribed"} | Quantity: {rx.quantity}</p> {rx.instructions && (<p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>)} <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Order ID: {rx.orderId} | Prescribed: {formatClinicDateTime(rx.createdAt)}</p> {rx.dispensedAt && (<p className="text-xs text-green-600 dark:text-green-400 mt-1">Dispensed: {formatClinicDateTime(rx.dispensedAt)} by {rx.dispensedBy}</p>)} </div> {rx.status === "prescribed" && rx.paymentStatus === "unpaid" && ( <div className="flex gap-2"> <Button type="button" variant="outline" size="sm" onClick={() => { setEditingPrescription(rx); setEditDosage(rx.dosage || ""); setEditQuantity(rx.quantity || 0); setEditInstructions(rx.instructions || ""); }} data-testid={`btn-edit-${rx.orderId}`}><Edit className="w-4 h-4 mr-1" />Edit</Button> <Button type="button" variant="destructive" size="sm" onClick={() => { if (window.confirm("Cancel this prescription?")) { cancelPrescriptionMutation.mutate(rx.orderId); } }} data-testid={`btn-cancel-${rx.orderId}`}><Trash2 className="w-4 h-4 mr-1" />Cancel</Button> </div> )} </div> </div> ))} </div> <div className="border-t pt-4 mt-4" /> </div> )}
                            <div className="flex items-center justify-between"> <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3> <p className="text-sm text-gray-600 dark:text-gray-400">Select drugs from inventory to create pharmacy orders</p> </div>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"> <div className="space-y-2"><label className="text-sm font-medium">Select Drug</label><Select value={selectedDrugId} onValueChange={(value) => { setSelectedDrugId(value); const drug = drugs.find((d) => d.id.toString() === value); if (drug) setSelectedDrugName(drug.genericName || drug.name); }}><SelectTrigger data-testid="select-drug"><SelectValue placeholder="Choose a medication..." /></SelectTrigger><SelectContent>{drugs.map((drug) => (<SelectItem key={drug.id} value={drug.id.toString()}>{drug.genericName || drug.name} - {drug.strength}</SelectItem>))}</SelectContent></Select></div> <div className="space-y-2"><label className="text-sm font-medium">Dosage Instructions</label><Input placeholder="e.g., 1 tablet twice daily" value={newMedDosage} onChange={(e) => setNewMedDosage(e.target.value)} data-testid="input-dosage" /></div> <div className="space-y-2"><label className="text-sm font-medium">Quantity</label><Input type="number" min="1" placeholder="e.g., 30" value={newMedQuantity} onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)} data-testid="input-quantity" /></div> <div className="space-y-2"><label className="text-sm font-medium">Additional Instructions</label><Input placeholder="e.g., Take with food" value={newMedInstructions} onChange={(e) => setNewMedInstructions(e.target.value)} data-testid="input-instructions" /></div> </div>
                            <Button type="button" onClick={() => { if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) { toast({ title: "Validation Error", description: "Please fill in drug, dosage, and quantity", variant: "destructive", }); return; } setMedications([...medications, { drugId: parseInt(selectedDrugId), drugName: selectedDrugName, dosage: newMedDosage, quantity: newMedQuantity, instructions: newMedInstructions, },]); setSelectedDrugId(""); setSelectedDrugName(""); setNewMedDosage(""); setNewMedQuantity(0); setNewMedInstructions(""); toast({ title: "Added", description: "Medication added to order list" }); }} data-testid="btn-add-medication"><Plus className="w-4 h-4 mr-2" />Add to Order List</Button>
@@ -1918,12 +1916,7 @@ export default function Treatment() {
                                    <div className="flex-1">
                                      <div className="flex items-center gap-2 mb-2">
                                        <span className="font-bold text-gray-900 dark:text-white text-base">
-                                         {new Date(tx.visitDate).toLocaleDateString("en-US", { 
-                                           weekday: 'short', 
-                                           year: 'numeric', 
-                                           month: 'short', 
-                                           day: 'numeric' 
-                                         })}
+                                         {formatClinicDayKey(tx.visitDate, 'EEE, d MMM yyyy')}
                                        </span>
                                        <Badge variant="outline" className="capitalize font-semibold">{tx.visitType}</Badge>
                                        <Badge className="bg-blue-600 text-white text-xs font-mono">{tx.treatmentId}</Badge>
