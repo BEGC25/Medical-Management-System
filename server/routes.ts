@@ -380,6 +380,12 @@ router.get("/api/patients", async (req, res) => {
     const withStatus = req.query.withStatus === "true";
     const filterBy = req.query.filterBy as string; // "encounters" or "registration" (default)
 
+    // Log preset for diagnosis
+    const preset = req.query.preset as string;
+    if (preset) {
+      console.log(`[patients] Preset filter: ${preset}`);
+    }
+
     // Parse date range using unified clinic-range utilities
     // Supports: preset, from/to, and legacy params (today=1, date, startDate/endDate)
     const range = parseClinicRangeParams(req.query, true);
@@ -391,6 +397,7 @@ router.get("/api/patients", async (req, res) => {
     if (rangeISO) {
       tzStartDate = rangeISO.start;
       tzEndDate = rangeISO.end;
+      console.log(`[patients] Date range: ${tzStartDate} to ${tzEndDate} (preset: ${preset || 'none'})`);
     }
 
     if (withStatus) {
@@ -557,6 +564,11 @@ router.get("/api/treatments", async (req, res) => {
     const today = req.query.today;
     const patientId = req.query.patientId as string;
     const encounterId = req.query.encounterId as string;
+    const preset = req.query.preset as string;
+
+    if (preset) {
+      console.log(`[treatments] Preset filter: ${preset}`);
+    }
 
     // Filter by encounterId if provided
     if (encounterId) {
@@ -572,15 +584,18 @@ router.get("/api/treatments", async (req, res) => {
       return;
     }
 
-    // Otherwise, return today's or all treatments
-    if (today === "true" || req.path.includes("today")) {
+    // Support preset-based filtering for today/yesterday/etc
+    if (preset === 'today' || today === "true" || req.path.includes("today")) {
       const treatments = await storage.getTodaysTreatments();
       res.json(treatments);
-    } else {
-      const treatments = await storage.getTreatments(limit);
-      res.json(treatments);
+      return;
     }
+
+    // Default: return all treatments with optional limit
+    const treatments = await storage.getTreatments(limit);
+    res.json(treatments);
   } catch (error) {
+    console.error("Error fetching treatments:", error);
     res.status(500).json({ error: "Failed to fetch treatments" });
   }
 });
@@ -1683,8 +1698,20 @@ router.put("/api/billing/settings", requireAdmin, async (req, res) => {
 router.get("/api/encounters", async (req, res) => {
   try {
     const status = req.query.status as string;
-    const date = req.query.date as string;
     const patientId = req.query.patientId as string;
+
+    // Support both legacy date parameter and new preset parameter
+    const preset = req.query.preset as string;
+    if (preset) {
+      console.log(`[encounters] Preset filter: ${preset} (patientId: ${patientId || 'none'})`);
+    }
+
+    // Parse date range using unified clinic-range utilities
+    const range = parseClinicRangeParams(req.query, true);
+    const dayKeys = rangeToDayKeys(range);
+    
+    // For single-day queries, extract the start day key
+    const date = dayKeys ? dayKeys.start : (req.query.date as string);
 
     const encounters = await storage.getEncounters(status, date, patientId);
     res.json(encounters);
