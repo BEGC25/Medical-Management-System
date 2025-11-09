@@ -22,8 +22,9 @@ export {
   parseRangeParams,
 } from '@shared/clinic-date';
 
+import { formatInTimeZone } from 'date-fns-tz';
 import { getPresetRange, parseCustomRange, formatDateInZone as sharedFormatDateInZone, getZonedNow as sharedGetZonedNow } from '@shared/date-utils';
-import { getClinicDayKey, getClinicNow } from '@shared/clinic-date';
+import { getClinicDayKey, getClinicNow, CLINIC_TZ } from '@shared/clinic-date';
 
 /**
  * Format a date in the clinic timezone (wrapper for backward compatibility)
@@ -71,4 +72,37 @@ export function getDateRangeForAPI(
   }
   
   return null;
+}
+
+/**
+ * Format a clinic day or timestamp for display
+ * Uses Africa/Juba timezone to ensure correct date display
+ * 
+ * @param dayKeyOrTimestamp - Either a YYYY-MM-DD clinic day key or an ISO timestamp
+ * @param formatStr - Format string for date-fns (default: 'd MMM yyyy' -> "9 Nov 2025")
+ * @returns Formatted date string in Africa/Juba timezone
+ * 
+ * @example
+ * formatClinicDay('2025-11-09') // "9 Nov 2025"
+ * formatClinicDay('2025-11-09T03:35:54.200Z') // "9 Nov 2025"
+ */
+export function formatClinicDay(dayKeyOrTimestamp: string | undefined | null, formatStr: string = 'd MMM yyyy'): string {
+  if (!dayKeyOrTimestamp) return '—';
+  
+  try {
+    // If it's a YYYY-MM-DD date key, parse it as local date in the clinic timezone
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dayKeyOrTimestamp)) {
+      // For date keys, create a date at noon UTC to avoid timezone issues
+      const [year, month, day] = dayKeyOrTimestamp.split('-').map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      return formatInTimeZone(date, CLINIC_TZ, formatStr);
+    }
+    
+    // Otherwise treat as ISO timestamp and convert to clinic timezone
+    const date = new Date(dayKeyOrTimestamp);
+    return formatInTimeZone(date, CLINIC_TZ, formatStr);
+  } catch (error) {
+    console.error('Error formatting clinic day:', error);
+    return '—';
+  }
 }

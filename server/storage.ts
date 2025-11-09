@@ -389,10 +389,15 @@ export class MemStorage implements IStorage {
 
     const patientId = generatePatientId();
     const now = new Date().toISOString();
+    
+    // Calculate clinic day in Africa/Juba timezone
+    const { getClinicDayKey } = await import('@shared/clinic-date');
+    const clinicDay = getClinicDayKey();
 
     const insertData: any = {
       ...data,
       patientId,
+      clinicDay, // Add clinic day
       createdAt: now,
       isDeleted: 0, // Ensure new patients are not deleted
     };
@@ -2112,37 +2117,42 @@ export class MemStorage implements IStorage {
   async getPatientsByDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any })[]> {
     let patientsData: schema.Patient[] = [];
     
+    // Convert ISO strings to YYYY-MM-DD format for clinic_day comparison
+    const { getClinicDayKey } = await import('@shared/clinic-date');
+    const startDayKey = getClinicDayKey(new Date(startDate));
+    const endDayKey = getClinicDayKey(new Date(endDate));
+    
     try {
-      // Try using clinic_day column if it exists
+      // Try using clinic_day column if it exists (preferred method)
       patientsData = await db.select().from(patients)
         .where(
           and(
             eq(patients.isDeleted, 0),
-            sql`clinic_day >= ${startDate}`,
-            sql`clinic_day <= ${endDate}`
+            sql`clinic_day >= ${startDayKey}`,
+            sql`clinic_day < ${endDayKey}` // Exclusive end
           )
         )
         .orderBy(desc(patients.createdAt));
     } catch (error: any) {
-      // Fallback: Use safe casting approach
+      // Fallback: Use safe casting approach with timestamp conversion
       try {
         patientsData = await db.select().from(patients)
           .where(
             and(
               eq(patients.isDeleted, 0),
-              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date >= ${startDate}`,
-              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date <= ${endDate}`
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date >= ${startDayKey}`,
+              sql`(${patients.createdAt}::timestamptz AT TIME ZONE 'Africa/Juba')::date < ${endDayKey}`
             )
           )
           .orderBy(desc(patients.createdAt));
       } catch (castError: any) {
-        // Final fallback
+        // Final fallback - filter by timestamp range
         patientsData = await db.select().from(patients)
           .where(
             and(
               eq(patients.isDeleted, 0),
-              sql`DATE(${patients.createdAt}) >= ${startDate}`,
-              sql`DATE(${patients.createdAt}) <= ${endDate}`
+              sql`${patients.createdAt} >= ${startDate}`,
+              sql`${patients.createdAt} < ${endDate}`
             )
           )
           .orderBy(desc(patients.createdAt));

@@ -28,6 +28,7 @@ export const patients = sqliteTable("patients", {
   deletedAt: text("deleted_at"),
   deletedBy: text("deleted_by"),
   deletionReason: text("deletion_reason"),
+  clinicDay: text("clinic_day"), // Clinic day in YYYY-MM-DD format (Africa/Juba timezone)
   createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 

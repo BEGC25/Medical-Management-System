@@ -15,6 +15,7 @@ import {
   Clock,
   Trash2,
   AlertTriangle,
+  Filter,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI } from "@/lib/date-utils";
+import { getDateRangeForAPI, formatClinicDay } from "@/lib/date-utils";
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
@@ -507,37 +508,39 @@ export default function Patients() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0 bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Registered Today
-                  </p>
-                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                    {countsLoading ? "..." : todayCount}
-                  </p>
+          {dateFilter === "today" && (
+            <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0 bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Registered Today
+                    </p>
+                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {countsLoading ? "..." : todayCount}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                    <Calendar className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </div>
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                  <Calendar className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-0 bg-gradient-to-br from-white to-green-50/30 dark:from-gray-800 dark:to-green-900/10">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total Patients
+                    Patients in Range
                   </p>
                   <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                    {countsLoading ? "..." : allCount}
+                    {patientsLoading ? "..." : patientsToDisplay.length}
                   </p>
                 </div>
                 <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                  <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
+                  <Filter className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </CardContent>
@@ -747,11 +750,7 @@ export default function Patients() {
                         {patient.phoneNumber || <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(patient.createdAt).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
                       </td>
                       <td className="px-4 py-3">
                         {patient.serviceStatus ? (
