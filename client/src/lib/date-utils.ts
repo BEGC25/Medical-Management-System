@@ -13,18 +13,18 @@ export {
 } from '@shared/date-utils';
 
 // Re-export from new clinic-date utilities (Phase 1)
+// NOTE: Do NOT re-export parseRangeParams from @shared/clinic-date as it's server-only
+// Use parsePresetOrRange from clinic-range-client.ts instead
 export {
   CLINIC_TZ,
   getClinicNow,
   getClinicDayKey,
-  clinicDayKeyStartUtc,
-  clinicDayKeyEndUtcExclusive,
-  parseRangeParams,
 } from '@shared/clinic-date';
 
 import { formatInTimeZone } from 'date-fns-tz';
 import { getPresetRange, parseCustomRange, formatDateInZone as sharedFormatDateInZone, getZonedNow as sharedGetZonedNow } from '@shared/date-utils';
 import { getClinicDayKey, getClinicNow, CLINIC_TZ } from '@shared/clinic-date';
+import { parsePresetOrRange as clientParsePresetOrRange } from './clinic-range-client';
 
 /**
  * Format a date in the clinic timezone (wrapper for backward compatibility)
@@ -54,23 +54,19 @@ export function getZonedNow(tz?: string): Date {
  * @example
  * getClinicRangeKeys('last7days')
  * // Returns: { from: '2025-11-02', to: '2025-11-08' }
+ * 
+ * NOTE: Uses client-side parsePresetOrRange instead of server-only parseRangeParams
  */
 export function getClinicRangeKeys(
   preset: string | undefined,
   customStart?: Date,
   customEnd?: Date
 ): { from: string; to: string } | null {
-  const range = getDateRangeForAPI(preset, customStart, customEnd);
-  if (!range) return null;
+  if (preset === 'custom') {
+    return clientParsePresetOrRange({ preset, from: customStart, to: customEnd });
+  }
   
-  // Convert ISO timestamps to clinic day keys
-  const fromDate = new Date(range.startDate);
-  const toDate = new Date(range.endDate);
-  
-  return {
-    from: getClinicDayKey(fromDate),
-    to: getClinicDayKey(toDate),
-  };
+  return clientParsePresetOrRange({ preset });
 }
 
 /**
@@ -79,6 +75,8 @@ export function getClinicRangeKeys(
  * 
  * Supports presets: today, yesterday, last7days, last30days, custom
  * Uses Africa/Juba timezone for consistent clinic day calculation
+ * 
+ * NOTE: Uses client-side parsePresetOrRange instead of server-only parseRangeParams
  */
 export function getDateRangeForAPI(
   preset: string | undefined,
@@ -87,23 +85,19 @@ export function getDateRangeForAPI(
 ): { startDate: string; endDate: string } | null {
   
   if (preset && preset !== 'custom') {
-    // Normalize preset to match clinic-date.ts DatePreset type
-    const presetMap: Record<string, string> = {
-      'today': 'Today',
-      'yesterday': 'Yesterday',
-      'last7days': 'Last7Days',
-      'last30days': 'Last30Days',
-      'thismonth': 'ThisMonth',
-    };
-    
-    const normalizedPreset = presetMap[preset.toLowerCase()] || preset;
-    
-    // Use parseRangeParams from clinic-date.ts which has full Last7Days and Last30Days support
-    const range = parseRangeParams({ preset: normalizedPreset });
+    // Use client-side utility that works in browser
+    const range = clientParsePresetOrRange({ preset });
     if (!range) return null;
+    
+    // Convert clinic day keys to start/end of day in UTC
+    // For date-only columns, the backend will use the day keys directly
+    // For timestamp columns, backend will use UTC bounds
+    const startDate = new Date(`${range.from}T00:00:00Z`);
+    const endDate = new Date(`${range.to}T23:59:59.999Z`);
+    
     return {
-      startDate: range.start.toISOString(),
-      endDate: range.end.toISOString(),
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     };
   }
   
