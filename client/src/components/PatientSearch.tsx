@@ -73,7 +73,12 @@ export default function PatientSearch({
       "withStatus",
       preset, // Include preset in cache key to avoid Today/Yesterday cache reuse
     ],
-    enabled: effectiveMode !== "dateRange" || (!!startDate && !!endDate),
+    enabled: (
+      effectiveMode !== 'dateRange'
+      || preset === 'last7'
+      || preset === 'last30'
+      || (preset === 'custom' && !!startDate && !!endDate)
+    ),
     queryFn: async () => {
       // Search mode: use search parameter
       if (effectiveMode === "search") {
@@ -99,14 +104,16 @@ export default function PatientSearch({
         filterBy: 'encounters', // Treatment page filters by encounter dates
       });
       
-      if (effectiveMode === "dateRange" && startDate && endDate && preset) {
-        // Custom range or multi-day preset (last7, last30)
-        if (preset === "custom") {
+      if (effectiveMode === 'dateRange' && preset) {
+        if (preset === 'custom') {
+          if (!startDate || !endDate) {
+            // Defer fetch (should not happen because enabled guards) but safety
+            return [];
+          }
           params.append('preset', 'custom');
           params.append('from', startDate);
           params.append('to', endDate);
-        } else {
-          // Use preset directly (last7, last30)
+        } else if (preset === 'last7' || preset === 'last30') {
           params.append('preset', preset);
         }
       } else if (effectiveMode === "today") {
