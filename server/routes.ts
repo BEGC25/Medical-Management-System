@@ -1826,44 +1826,41 @@ router.get("/api/encounters", async (req, res) => {
     const from = req.query.from as string;
     const to = req.query.to as string;
     
-    let dayKey: string | undefined;
+    let startDayKey: string | undefined;
+    let endDayKey: string | undefined;
     
-    // Use direct day-key calculation for presets
+    // Use direct day-key calculation for presets (supports multi-day ranges)
     if (preset) {
       const { getPresetDayKeys } = await import('./utils/clinic-range');
       const dayKeys = getPresetDayKeys(preset);
       
       if (dayKeys) {
-        // For single-day presets, use the start day key
-        dayKey = dayKeys.startDayKey;
-        if (dayKeys.startDayKey !== dayKeys.endDayKey) {
-          // Multi-day preset - encounters route currently only supports single day filtering
-          // Log warning and use start day only
-          console.warn(`[encounters] Multi-day preset ${preset} not fully supported. Using start day: ${dayKey}`);
-        }
-        console.log(`[encounters] Preset ${preset}: filtering by day ${dayKey}`);
+        startDayKey = dayKeys.startDayKey;
+        endDayKey = dayKeys.endDayKey;
+        console.log(`[encounters] Preset ${preset}: ${startDayKey} to ${endDayKey} (inclusive)`);
       }
     } else if (from && to) {
-      // Custom range - use from date only for single-day filter
-      dayKey = from;
-      if (from !== to) {
-        console.warn(`[encounters] Multi-day custom range not supported. Using from date: ${dayKey}`);
-      }
+      // Custom range from client
+      startDayKey = from;
+      endDayKey = to;
+      console.log(`[encounters] Custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
     } else if (req.query.date) {
-      // Legacy: date=YYYY-MM-DD
-      dayKey = req.query.date as string;
-      console.log(`[encounters] Using date parameter: ${dayKey}`);
+      // Legacy: date=YYYY-MM-DD (single day)
+      startDayKey = req.query.date as string;
+      endDayKey = req.query.date as string;
+      console.log(`[encounters] Legacy date parameter: ${startDayKey}`);
     } else if (req.query.today === '1' || req.query.today === 'true') {
       // Legacy: today=1
       console.warn('[encounters] DEPRECATED: today=1 parameter. Use preset=today instead.');
       const { getPresetDayKeys } = await import('./utils/clinic-range');
       const dayKeys = getPresetDayKeys('today');
       if (dayKeys) {
-        dayKey = dayKeys.startDayKey;
+        startDayKey = dayKeys.startDayKey;
+        endDayKey = dayKeys.endDayKey;
       }
     }
 
-    const encounters = await storage.getEncounters(status, dayKey, patientId);
+    const encounters = await storage.getEncounters(status, startDayKey, endDayKey, patientId);
     res.json(encounters);
   } catch (error) {
     console.error("Error fetching encounters:", error);
