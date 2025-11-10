@@ -187,12 +187,11 @@ export default function PatientSearch({
               {patients.map((p: any, i: number) => {
                 const s = p.serviceStatus || {};
                 const due = (s.balanceToday ?? s.balance ?? 0) as number;
-                // When filtering by date/dateRange, show the appropriate date
-                const displayDate = (effectiveMode === "date" || effectiveMode === "today") && selectedDate
-                  ? selectedDate
-                  : effectiveMode === "dateRange"
-                  ? (p.dateOfService || p.lastVisit || p.lastEncounterDate)
-                  : (p.lastVisit || p.lastEncounterDate || p.updatedAt || p.createdAt);
+                // ALWAYS use patient's actual dateOfService from API when available
+                const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
+                  ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
+                    ? selectedDate
+                    : (p.updatedAt || p.createdAt));
 
                 return (
                   <tr
