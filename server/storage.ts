@@ -229,7 +229,7 @@ export interface IStorage {
 
   // Encounters
   createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter>;
-  getEncounters(status?: string, date?: string, patientId?: string): Promise<schema.Encounter[]>;
+  getEncounters(status?: string, startDayKey?: string, endDayKey?: string, patientId?: string): Promise<schema.Encounter[]>;
   getEncounterById(encounterId: string): Promise<schema.Encounter | null>;
   getEncountersByPatient(patientId: string): Promise<schema.Encounter[]>;
   updateEncounter(encounterId: string, data: Partial<schema.Encounter>): Promise<schema.Encounter>;
@@ -2487,7 +2487,7 @@ export class MemStorage implements IStorage {
     return encounter;
   }
 
-  async getEncounters(status?: string, date?: string, patientId?: string): Promise<schema.Encounter[]> {
+  async getEncounters(status?: string, startDayKey?: string, endDayKey?: string, patientId?: string): Promise<schema.Encounter[]> {
     // --- MODIFIED: Join patients and filter ---
     let query = db.select({ encounter: encounters })
         .from(encounters)
@@ -2500,9 +2500,23 @@ export class MemStorage implements IStorage {
     if (status) {
       conditions.push(eq(encounters.status, status as any));
     }
-    if (date) {
-      conditions.push(eq(encounters.visitDate, date));
+    
+    // Date filtering using clinic_day field
+    if (startDayKey && endDayKey) {
+      // Multi-day range: inclusive on both ends
+      conditions.push(
+        and(
+          gte(encounters.clinicDay, startDayKey),
+          lte(encounters.clinicDay, endDayKey)
+        )
+      );
+      console.log(`[storage.getEncounters] Filtering by clinic_day range: ${startDayKey} to ${endDayKey} (inclusive)`);
+    } else if (startDayKey) {
+      // Single day: backward compatibility
+      conditions.push(eq(encounters.clinicDay, startDayKey));
+      console.log(`[storage.getEncounters] Filtering by single clinic_day: ${startDayKey}`);
     }
+    
     if (patientId) {
       conditions.push(eq(encounters.patientId, patientId));
     }
