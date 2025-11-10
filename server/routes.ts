@@ -1060,20 +1060,17 @@ router.delete("/api/ultrasound-exams/:examId", async (req, res) => {
 
 router.get("/api/dashboard/stats", async (req, res) => {
   try {
-    // Parse date range using unified clinic-range utilities
-    const range = parseClinicRangeParams(req.query, true);
-    const dayKeys = rangeToDayKeys(range);
+    // Dashboard always shows TODAY only - ignore any client-provided preset
+    // This ensures the dashboard remains focused on current day activity
+    const { parsePreset } = await import('./utils/preset');
+    const todayPreset = parsePreset('today');
     
-    let fromDate: string | undefined;
-    let toDate: string | undefined;
+    console.log("Dashboard stats route - hard-coded to TODAY", { 
+      startKey: todayPreset.startKey, 
+      endKey: todayPreset.endKey 
+    });
     
-    if (dayKeys) {
-      fromDate = dayKeys.start;
-      toDate = dayKeys.end;
-    }
-    
-    console.log("Dashboard stats route called", { fromDate, toDate, preset: req.query.preset });
-    const stats = await storage.getDashboardStats(fromDate, toDate);
+    const stats = await storage.getDashboardStats(todayPreset.startKey, todayPreset.endKey);
     console.log("Dashboard stats result:", stats);
     res.json(stats);
   } catch (error) {
