@@ -212,7 +212,7 @@ export interface IStorage {
 
   // Payments
   createPayment(data: schema.InsertPayment): Promise<schema.Payment>;
-  getPayments(): Promise<schema.Payment[]>;
+  getPayments(startDayKey?: string, endDayKey?: string): Promise<schema.Payment[]>;
   getPaymentsByPatient(patientId: string): Promise<schema.Payment[]>;
   getPaymentById(id: number): Promise<schema.Payment | null>;
 
@@ -1909,9 +1909,11 @@ export class MemStorage implements IStorage {
   async createPayment(data: schema.InsertPayment): Promise<schema.Payment> {
     const paymentId = await generatePaymentId();
     const now = new Date().toISOString();
+    const clinicDay = getClinicDayKey(); // Set clinic day using Africa/Juba timezone
     const insertData: any = {
       ...data,
       paymentId,
+      clinicDay,
       createdAt: now,
     };
 
@@ -1919,7 +1921,20 @@ export class MemStorage implements IStorage {
     return payment;
   }
 
-  async getPayments(): Promise<schema.Payment[]> {
+  async getPayments(startDayKey?: string, endDayKey?: string): Promise<schema.Payment[]> {
+    // If date range provided, filter by clinic_day
+    if (startDayKey && endDayKey) {
+      return await db.select().from(payments)
+        .where(
+          and(
+            gte(payments.clinicDay, startDayKey),
+            lte(payments.clinicDay, endDayKey)
+          )
+        )
+        .orderBy(desc(payments.createdAt));
+    }
+    
+    // No filter - return all payments
     return await db.select().from(payments).orderBy(desc(payments.createdAt));
   }
 

@@ -1479,14 +1479,51 @@ router.post("/api/payments", async (req: any, res) => {
 
 router.get("/api/payments", async (req, res) => {
   try {
-    const { patientId, date, receivedBy, limit } = req.query;
+    const { patientId, date, receivedBy, limit, preset, from, to } = req.query;
     
+    // Parse preset or custom range into clinic day keys
+    let startDayKey: string | undefined;
+    let endDayKey: string | undefined;
+    
+    // Use direct day-key calculation for presets
+    if (preset) {
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys(preset as string);
+      
+      if (dayKeys) {
+        startDayKey = dayKeys.startDayKey;
+        endDayKey = dayKeys.endDayKey;
+        console.log(`[payments] Preset ${preset}: ${startDayKey} to ${endDayKey} (inclusive)`);
+      }
+    } else if (from && to) {
+      // Custom range from client
+      startDayKey = from as string;
+      endDayKey = to as string;
+      console.log(`[payments] Custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
+    } else if (req.query.today === '1' || req.query.today === 'true') {
+      // Legacy: today=1
+      console.warn('[payments] DEPRECATED: today=1 parameter. Use preset=today instead.');
+      const { getPresetDayKeys } = await import('./utils/clinic-range');
+      const dayKeys = getPresetDayKeys('today');
+      if (dayKeys) {
+        startDayKey = dayKeys.startDayKey;
+        endDayKey = dayKeys.endDayKey;
+      }
+    } else if (date) {
+      // Legacy: date=YYYY-MM-DD (single day)
+      console.warn(`[payments] DEPRECATED: date=${date} parameter. Use preset=custom&from=${date}&to=${date} instead.`);
+      startDayKey = date as string;
+      endDayKey = date as string;
+    }
+    
+    // Get payments with optional date range filtering
     let payments = patientId
       ? await storage.getPaymentsByPatient(patientId as string)
-      : await storage.getPayments();
+      : await storage.getPayments(startDayKey, endDayKey);
 
-    // Filter by date if provided
-    if (date) {
+    // Apply legacy date filter if no clinic_day filtering was applied
+    // This provides backward compatibility for paymentDate filtering
+    if (!startDayKey && !endDayKey && date) {
       payments = payments.filter(p => p.paymentDate === date);
     }
 
@@ -1503,6 +1540,7 @@ router.get("/api/payments", async (req, res) => {
     }
 
     // Fetch patient info and payment items for each payment
+    // Note: We include soft-deleted patients for financial audit requirements
     const patientsMap = new Map();
     const uniquePatientIds = Array.from(new Set(payments.map(p => p.patientId)));
     const allPatients = await storage.getPatients();
