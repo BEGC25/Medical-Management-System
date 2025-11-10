@@ -2243,12 +2243,9 @@ export class MemStorage implements IStorage {
     // Build encounter filter conditions
     const encounterConditions: any[] = [];
     if (startDate && endDate) {
-      encounterConditions.push(
-        and(
-          gte(encounters.clinicDay, startDate),
-          lte(encounters.clinicDay, endDate)
-        )
-      );
+      // Push individual conditions, not wrapped in and()
+      encounterConditions.push(gte(encounters.clinicDay, startDate));
+      encounterConditions.push(lte(encounters.clinicDay, endDate));
     } else if (startDate) {
       encounterConditions.push(eq(encounters.clinicDay, startDate));
     }
