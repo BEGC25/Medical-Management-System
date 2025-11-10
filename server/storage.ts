@@ -2258,7 +2258,7 @@ export class MemStorage implements IStorage {
     const uniquePatientMap = new Map<string, { patientId: string; dateOfService?: string }>();
     for (const row of encounterRows) {
       if (!uniquePatientMap.has(row.patientId)) {
-        uniquePatientMap.set(row.patientId, { patientId: row.patientId, dateOfService: row.visitDate });
+        uniquePatientMap.set(row.patientId, { patientId: row.patientId, dateOfService: row.clinicDay });
       }
     }
 
