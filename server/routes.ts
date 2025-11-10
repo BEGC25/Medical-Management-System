@@ -2762,12 +2762,61 @@ router.get("/api/reports/age-distribution", async (_req, res) => {
  */
 router.get("/api/debug/time", async (_req, res) => {
   try {
-    const { getClinicTimeInfo } = await import("./utils/clinic-range");
+    const { getClinicTimeInfo } = await import("./utils/clinicDay");
     const timeInfo = getClinicTimeInfo();
     res.json(timeInfo);
   } catch (error) {
     console.error("Error in debug/time endpoint:", error);
     res.status(500).json({ error: "Failed to get time info" });
+  }
+});
+
+/**
+ * Debug endpoint: Comprehensive clinic time diagnostics
+ * 
+ * Returns detailed information about clinic time calculations, preset parsing,
+ * and day key generation. More comprehensive than /api/debug/time.
+ * 
+ * TODO: Remove this endpoint after validation
+ * 
+ * @example GET /api/debug/clinic-time
+ */
+router.get("/api/debug/clinic-time", async (_req, res) => {
+  try {
+    const { getClinicTimeInfo } = await import("./utils/clinicDay");
+    const { getPresetDayKeys } = await import("./utils/clinic-range");
+    const { parsePreset } = await import("./utils/preset");
+    
+    const timeInfo = getClinicTimeInfo();
+    
+    // Include preset day keys for comparison
+    const presetKeys = {
+      today: getPresetDayKeys('today'),
+      yesterday: getPresetDayKeys('yesterday'),
+      last7: getPresetDayKeys('last7'),
+      last30: getPresetDayKeys('last30'),
+    };
+    
+    // And parsed presets
+    const parsedPresets = {
+      today: parsePreset('today'),
+      yesterday: parsePreset('yesterday'),
+      last7: parsePreset('last7'),
+      last30: parsePreset('last30'),
+    };
+
+    res.json({
+      ...timeInfo,
+      presetDayKeys: presetKeys,
+      parsedPresets,
+      note: 'This is a temporary debug endpoint and will be removed after validation',
+    });
+  } catch (error) {
+    console.error('[debug-clinic-time] Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get clinic time info',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 });
 
