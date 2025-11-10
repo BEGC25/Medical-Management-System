@@ -192,6 +192,116 @@ router.get("/api/user", (req, res) => {
   res.json(user);
 });
 
+/* -------------------------------- Debug Endpoints (Public) ----------------------------- */
+// These debug endpoints are public (no auth required) for troubleshooting
+
+/**
+ * Debug endpoint: Get current clinic time and preset ranges
+ * 
+ * Returns diagnostic information about the current clinic day and
+ * computed UTC boundaries for various presets. Useful for validating
+ * that date range calculations are correct.
+ * 
+ * @example GET /api/debug/time
+ */
+router.get("/api/debug/time", async (_req, res) => {
+  try {
+    const { getClinicTimeInfo } = await import("./utils/clinicDay");
+    const timeInfo = getClinicTimeInfo();
+    res.json(timeInfo);
+  } catch (error) {
+    console.error("Error in debug/time endpoint:", error);
+    res.status(500).json({ error: "Failed to get time info" });
+  }
+});
+
+/**
+ * Debug endpoint: Comprehensive clinic time diagnostics
+ * 
+ * Returns detailed information about clinic time calculations, preset parsing,
+ * and day key generation. More comprehensive than /api/debug/time.
+ * 
+ * TODO: Remove this endpoint after validation
+ * 
+ * @example GET /api/debug/clinic-time
+ */
+router.get("/api/debug/clinic-time", async (_req, res) => {
+  try {
+    const { getClinicTimeInfo } = await import("./utils/clinicDay");
+    const { getPresetDayKeys } = await import("./utils/clinic-range");
+    const { parsePreset } = await import("./utils/preset");
+    
+    const timeInfo = getClinicTimeInfo();
+    
+    // Include preset day keys for comparison
+    const presetKeys = {
+      today: getPresetDayKeys('today'),
+      yesterday: getPresetDayKeys('yesterday'),
+      last7: getPresetDayKeys('last7'),
+      last30: getPresetDayKeys('last30'),
+    };
+    
+    // And parsed presets
+    const parsedPresets = {
+      today: parsePreset('today'),
+      yesterday: parsePreset('yesterday'),
+      last7: parsePreset('last7'),
+      last30: parsePreset('last30'),
+    };
+
+    res.json({
+      ...timeInfo,
+      presetDayKeys: presetKeys,
+      parsedPresets,
+      note: 'This is a temporary debug endpoint and will be removed after validation',
+    });
+  } catch (error) {
+    console.error('[debug-clinic-time] Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get clinic time info',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * Debug endpoint: Echo parsed range parameters
+ * 
+ * Accepts the same query parameters as other endpoints (preset, from, to)
+ * and returns the parsed date range. Useful for validating that range
+ * parsing works as expected.
+ * 
+ * @example GET /api/debug/range?preset=today
+ * @example GET /api/debug/range?from=2025-11-01&to=2025-11-08
+ */
+router.get("/api/debug/range", async (req, res) => {
+  try {
+    const { parseClinicRangeParams, rangeToDayKeys } = await import("./utils/clinic-range");
+    const range = parseClinicRangeParams(req.query, true); // Enable deprecation warnings
+    
+    if (!range) {
+      return res.json({
+        range: null,
+        message: "No filtering (preset=all or no parameters)",
+      });
+    }
+    
+    const dayKeys = rangeToDayKeys(range);
+    
+    res.json({
+      range: {
+        start: range.start.toISOString(),
+        end: range.end.toISOString(),
+      },
+      dayKeys,
+      query: req.query,
+    });
+  } catch (error) {
+    console.error("Error in debug/range endpoint:", error);
+    res.status(500).json({ error: "Failed to parse range" });
+  }
+});
+
 // 🔒 GLOBAL AUTHENTICATION MIDDLEWARE
 // Everything below this point requires a valid session
 // To DISABLE authentication for troubleshooting, comment out the line below:
@@ -2746,66 +2856,6 @@ router.get("/api/reports/age-distribution", async (_req, res) => {
   } catch (error) {
     console.error("Error fetching age distribution:", error);
     res.status(500).json({ error: "Failed to fetch age distribution" });
-  }
-});
-
-/* -------------------------------- Debug Endpoints ----------------------------- */
-
-/**
- * Debug endpoint: Get current clinic time and preset ranges
- * 
- * Returns diagnostic information about the current clinic day and
- * computed UTC boundaries for various presets. Useful for validating
- * that date range calculations are correct.
- * 
- * @example GET /api/debug/time
- */
-router.get("/api/debug/time", async (_req, res) => {
-  try {
-    const { getClinicTimeInfo } = await import("./utils/clinic-range");
-    const timeInfo = getClinicTimeInfo();
-    res.json(timeInfo);
-  } catch (error) {
-    console.error("Error in debug/time endpoint:", error);
-    res.status(500).json({ error: "Failed to get time info" });
-  }
-});
-
-/**
- * Debug endpoint: Echo parsed range parameters
- * 
- * Accepts the same query parameters as other endpoints (preset, from, to)
- * and returns the parsed date range. Useful for validating that range
- * parsing works as expected.
- * 
- * @example GET /api/debug/range?preset=today
- * @example GET /api/debug/range?from=2025-11-01&to=2025-11-08
- */
-router.get("/api/debug/range", async (req, res) => {
-  try {
-    const { parseClinicRangeParams, rangeToDayKeys } = await import("./utils/clinic-range");
-    const range = parseClinicRangeParams(req.query, true); // Enable deprecation warnings
-    
-    if (!range) {
-      return res.json({
-        range: null,
-        message: "No filtering (preset=all or no parameters)",
-      });
-    }
-    
-    const dayKeys = rangeToDayKeys(range);
-    
-    res.json({
-      range: {
-        start: range.start.toISOString(),
-        end: range.end.toISOString(),
-      },
-      dayKeys,
-      query: req.query,
-    });
-  } catch (error) {
-    console.error("Error in debug/range endpoint:", error);
-    res.status(500).json({ error: "Failed to parse range" });
   }
 });
 

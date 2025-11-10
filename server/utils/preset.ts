@@ -14,8 +14,7 @@
  * All dates are in Africa/Juba timezone and returned in YYYY-MM-DD format.
  */
 
-import { getClinicDayKey, getClinicNow } from '@shared/clinic-date';
-import { subDays } from 'date-fns';
+import { getClinicDayKey, getClinicDayKeyOffset } from './clinicDay';
 
 /**
  * Standard preset types supported by the system
@@ -48,8 +47,7 @@ export interface ParsedPreset {
 export function parsePreset(preset: string): ParsedPreset {
   const normalizedPreset = preset.toLowerCase().trim();
   
-  const now = getClinicNow();
-  const todayKey = getClinicDayKey(now);
+  const todayKey = getClinicDayKey();
 
   switch (normalizedPreset) {
     case 'today': {
@@ -61,8 +59,7 @@ export function parsePreset(preset: string): ParsedPreset {
     }
 
     case 'yesterday': {
-      const yesterday = subDays(now, 1);
-      const yesterdayKey = getClinicDayKey(yesterday);
+      const yesterdayKey = getClinicDayKeyOffset(-1);
       return {
         startKey: yesterdayKey,
         endKey: yesterdayKey,
@@ -73,8 +70,7 @@ export function parsePreset(preset: string): ParsedPreset {
     case 'last7':
     case 'last7days': {
       // Last 7 days inclusive: today - 6 days through today
-      const sevenDaysAgo = subDays(now, 6);
-      const startKey = getClinicDayKey(sevenDaysAgo);
+      const startKey = getClinicDayKeyOffset(-6);
       return {
         startKey,
         endKey: todayKey,
@@ -85,8 +81,7 @@ export function parsePreset(preset: string): ParsedPreset {
     case 'last30':
     case 'last30days': {
       // Last 30 days inclusive: today - 29 days through today
-      const thirtyDaysAgo = subDays(now, 29);
-      const startKey = getClinicDayKey(thirtyDaysAgo);
+      const startKey = getClinicDayKeyOffset(-29);
       return {
         startKey,
         endKey: todayKey,
@@ -109,9 +104,7 @@ export function parsePreset(preset: string): ParsedPreset {
  * // Returns: '2025-11-10'
  */
 export function getClinicDayKeyForOffset(daysOffset: number): string {
-  const now = getClinicNow();
-  const targetDate = daysOffset === 0 ? now : subDays(now, -daysOffset);
-  return getClinicDayKey(targetDate);
+  return getClinicDayKeyOffset(daysOffset);
 }
 
 /**

@@ -11,8 +11,8 @@
  * - Consistent date filtering at database query level
  */
 
-import { parseRangeParams, getClinicDayKey, getClinicNow, type DatePreset } from '@shared/clinic-date';
-import { subDays } from 'date-fns';
+import { parseRangeParams, type DatePreset } from '@shared/clinic-date';
+import { getClinicDayKey, getClinicDayKeyOffset } from './clinicDay';
 
 /**
  * Parse date range parameters from API request query
@@ -186,7 +186,7 @@ export function rangeToDayKeys(
  * // Returns: '2025-11-09'
  */
 export function getCurrentClinicDayKey(): string {
-  return getClinicDayKey(new Date());
+  return getClinicDayKey();
 }
 
 /**
@@ -222,8 +222,7 @@ export function getPresetDayKeys(
   // Normalize preset to lowercase for comparison
   const presetLower = preset.toLowerCase();
   
-  const now = getClinicNow();
-  const todayKey = getClinicDayKey(now);
+  const todayKey = getClinicDayKey();
 
   switch (presetLower) {
     case 'today': {
@@ -232,24 +231,21 @@ export function getPresetDayKeys(
     }
 
     case 'yesterday': {
-      const yesterday = subDays(now, 1);
-      const yesterdayKey = getClinicDayKey(yesterday);
+      const yesterdayKey = getClinicDayKeyOffset(-1);
       return { startDayKey: yesterdayKey, endDayKey: yesterdayKey };
     }
 
     case 'last7':
     case 'last7days': {
       // Last 7 days inclusive: today - 6 days through today
-      const sevenDaysAgo = subDays(now, 6);
-      const startKey = getClinicDayKey(sevenDaysAgo);
+      const startKey = getClinicDayKeyOffset(-6);
       return { startDayKey: startKey, endDayKey: todayKey };
     }
 
     case 'last30':
     case 'last30days': {
       // Last 30 days inclusive: today - 29 days through today
-      const thirtyDaysAgo = subDays(now, 29);
-      const startKey = getClinicDayKey(thirtyDaysAgo);
+      const startKey = getClinicDayKeyOffset(-29);
       return { startDayKey: startKey, endDayKey: todayKey };
     }
 
