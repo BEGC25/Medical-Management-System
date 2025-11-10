@@ -11,7 +11,8 @@
  * - Consistent date filtering at database query level
  */
 
-import { parseRangeParams, getClinicDayKey, type DatePreset } from '@shared/clinic-date';
+import { parseRangeParams, getClinicDayKey, getClinicNow, type DatePreset } from '@shared/clinic-date';
+import { subDays } from 'date-fns';
 
 /**
  * Parse date range parameters from API request query
@@ -220,10 +221,6 @@ export function getPresetDayKeys(
 
   // Normalize preset to lowercase for comparison
   const presetLower = preset.toLowerCase();
-
-  // Import date utilities
-  const { getClinicNow } = require('@shared/clinic-date');
-  const { subDays } = require('date-fns');
   
   const now = getClinicNow();
   const todayKey = getClinicDayKey(now);

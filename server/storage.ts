@@ -418,16 +418,56 @@ export class MemStorage implements IStorage {
     encounter: schema.Encounter;
   }> {
     // --- Fix for Red Flag #3: Use stable service code "CONS-GEN" ---
-    const [consultationService] = await db.select().from(services)
+    console.log("Looking up consultation service with code: CONS-GEN");
+    let consultationService = (await db.select().from(services)
       .where(and(
         eq(services.code, "CONS-GEN"), // Use stable code from seed script
         eq(services.isActive, 1)
       ))
-      .limit(1);
+      .limit(1))[0];
 
     if (!consultationService) {
-      throw new Error("Critical Error: Default 'CONS-GEN' consultation service not found or is inactive. Please check service management.");
+      // Log detailed error information
+      console.error("CRITICAL: Consultation service 'CONS-GEN' not found!");
+      
+      // Check if ANY services exist
+      const allServices = await db.select().from(services).limit(5);
+      console.error("Available services:", allServices.map((s: any) => ({ id: s.id, code: s.code, name: s.name, isActive: s.isActive })));
+      
+      // Try to create the consultation service as a fallback
+      console.error("Attempting to create default consultation service...");
+      try {
+        const newService = await this.createService({
+          code: "CONS-GEN",
+          name: "General Consultation",
+          category: "consultation",
+          description: "Basic medical consultation and examination",
+          price: 2000.00,
+          isActive: 1,
+        });
+        
+        console.log("Successfully created consultation service:", newService);
+        consultationService = newService;
+      } catch (createError) {
+        console.error("Failed to create consultation service:", createError);
+        throw new Error("Critical Error: Default 'CONS-GEN' consultation service not found and could not be created. Database may need manual initialization. Please contact system administrator.");
+      }
     }
+
+    console.log("Found consultation service:", { id: consultationService.id, name: consultationService.name, price: consultationService.price });
+    return this._registerPatientWithService(consultationService, data, collectConsultationFee, registeredBy);
+  }
+
+  // Helper method to complete patient registration with a service
+  private async _registerPatientWithService(
+    consultationService: schema.Service,
+    data: schema.InsertPatient,
+    collectConsultationFee: boolean,
+    registeredBy: string
+  ): Promise<{
+    patient: schema.Patient;
+    encounter: schema.Encounter;
+  }> {
 
     // 1. Create Patient
     const patient = await this.createPatient(data);
