@@ -1050,95 +1050,76 @@ export class MemStorage implements IStorage {
     try {
       console.log("Getting dashboard stats", { fromDate, toDate });
 
-      // Build date filter conditions
-      const treatmentDateFilter = fromDate && toDate
-        ? and(
-            gte(treatments.visitDate, fromDate),
-            lte(treatments.visitDate, toDate)
-          )
-        : undefined;
-
-      const labDateFilter = fromDate && toDate
-        ? and(
-            gte(labTests.requestedDate, fromDate),
-            lte(labTests.requestedDate, toDate)
-          )
-        : undefined;
-
-      const xrayDateFilter = fromDate && toDate
-        ? and(
-            gte(xrayExams.requestedDate, fromDate),
-            lte(xrayExams.requestedDate, toDate)
-          )
-        : undefined;
-
-      const ultrasoundDateFilter = fromDate && toDate
-        ? and(
-            gte(ultrasoundExams.requestedDate, fromDate),
-            lte(ultrasoundExams.requestedDate, toDate)
-          )
-        : undefined;
-
       // DEFAULT TO TODAY if no date range provided
-      // Use clinic timezone (Africa/Juba) to ensure records around midnight are classified into correct clinic day
+      // Use clinic_day for consistent filtering across all modules
       const clinicToday = today('date');
       const actualFromDate = fromDate || clinicToday;
       const actualToDate = toDate || clinicToday;
       
-      // Count patients created today (or in date range)
+      console.log("Dashboard stats using clinic_day filter", { actualFromDate, actualToDate });
+      
+      // Count patients created today (or in date range) using clinic_day
       const patientDateFilter = and(
         eq(patients.isDeleted, 0),
-        sql`DATE(${patients.createdAt}) >= ${actualFromDate}`,
-        sql`DATE(${patients.createdAt}) <= ${actualToDate}`
+        gte(patients.clinicDay, actualFromDate),
+        lte(patients.clinicDay, actualToDate)
       );
       
       const totalPatients = await db.select({ count: count() }).from(patients).where(patientDateFilter);
+      
+      // Count treatments by clinic_day (when created, not visit_date)
       const totalTreatments = await db.select({ count: count() }).from(treatments).where(
         and(
-          gte(treatments.visitDate, actualFromDate),
-          lte(treatments.visitDate, actualToDate)
+          gte(treatments.clinicDay, actualFromDate),
+          lte(treatments.clinicDay, actualToDate)
         )
       );
+      
+      // Count lab tests by clinic_day (when ordered, not requested_date)
       const totalLabTests = await db.select({ count: count() }).from(labTests).where(
         and(
-          sql`DATE(${labTests.requestedDate}) >= ${actualFromDate}`,
-          sql`DATE(${labTests.requestedDate}) <= ${actualToDate}`
+          gte(labTests.clinicDay, actualFromDate),
+          lte(labTests.clinicDay, actualToDate)
         )
       );
+      
+      // Count X-rays by clinic_day (when ordered, not requested_date)
       const totalXrays = await db.select({ count: count() }).from(xrayExams).where(
         and(
-          sql`DATE(${xrayExams.requestedDate}) >= ${actualFromDate}`,
-          sql`DATE(${xrayExams.requestedDate}) <= ${actualToDate}`
+          gte(xrayExams.clinicDay, actualFromDate),
+          lte(xrayExams.clinicDay, actualToDate)
         )
       );
+      
+      // Count ultrasounds by clinic_day (when ordered, not requested_date)
       const totalUltrasounds = await db.select({ count: count() }).from(ultrasoundExams).where(
         and(
-          sql`DATE(${ultrasoundExams.requestedDate}) >= ${actualFromDate}`,
-          sql`DATE(${ultrasoundExams.requestedDate}) <= ${actualToDate}`
+          gte(ultrasoundExams.clinicDay, actualFromDate),
+          lte(ultrasoundExams.clinicDay, actualToDate)
         )
       );
 
-      // Get pending counts - PHASE 2: Apply same date range to pending counts
+      // Get pending counts - Apply same clinic_day range to pending counts
       // This ensures pending counts align with the filtered list view
       const pendingLabTests = await db.select({ count: count() }).from(labTests).where(
         and(
           eq(labTests.status, "pending"),
-          gte(labTests.requestedDate, actualFromDate),
-          lte(labTests.requestedDate, actualToDate)
+          gte(labTests.clinicDay, actualFromDate),
+          lte(labTests.clinicDay, actualToDate)
         )
       );
       const pendingXrays = await db.select({ count: count() }).from(xrayExams).where(
         and(
           eq(xrayExams.status, "pending"),
-          gte(xrayExams.requestedDate, actualFromDate),
-          lte(xrayExams.requestedDate, actualToDate)
+          gte(xrayExams.clinicDay, actualFromDate),
+          lte(xrayExams.clinicDay, actualToDate)
         )
       );
       const pendingUltrasounds = await db.select({ count: count() }).from(ultrasoundExams).where(
         and(
           eq(ultrasoundExams.status, "pending"),
-          gte(ultrasoundExams.requestedDate, actualFromDate),
-          lte(ultrasoundExams.requestedDate, actualToDate)
+          gte(ultrasoundExams.clinicDay, actualFromDate),
+          lte(ultrasoundExams.clinicDay, actualToDate)
         )
       );
 
