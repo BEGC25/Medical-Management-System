@@ -2237,25 +2237,22 @@ export class MemStorage implements IStorage {
 
   // Filter patients by ENCOUNTER/VISIT date range (encounters.clinicDay) - for Treatment page
   async getPatientsByEncounterDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any; dateOfService?: string; lastVisit?: string })[]> {
-    // Use clinic_day (YYYY-MM-DD) for consistent date-only filtering
     console.log(`[storage] getPatientsByEncounterDateRangeWithStatus called with`, { startDate, endDate });
 
-    // Build encounter filter conditions
-    const encounterConditions: any[] = [];
-    if (startDate && endDate) {
-      // Push individual conditions, not wrapped in and()
-      encounterConditions.push(gte(encounters.clinicDay, startDate));
-      encounterConditions.push(lte(encounters.clinicDay, endDate));
-    } else if (startDate) {
-      encounterConditions.push(eq(encounters.clinicDay, startDate));
-    }
-
-    if (encounterConditions.length === 0) return [];
-
-    // Query encounters in range and collect unique patientIds and most recent visitDate per patient
-    const encounterRows = await db.select({ patientId: encounters.patientId, visitDate: encounters.visitDate, clinicDay: encounters.clinicDay })
+    // Query encounters using the SAME pattern as the working Patient page
+    // Use direct sql template strings (NOT Drizzle helpers like gte/lte)
+    const encounterRows = await db.select({ 
+        patientId: encounters.patientId, 
+        visitDate: encounters.visitDate,
+        clinicDay: encounters.clinicDay 
+      })
       .from(encounters)
-      .where(and(...encounterConditions))
+      .where(
+        and(
+          sql`${encounters.clinicDay} >= ${startDate}`,    // ✅ Direct sql - matches Patient page
+          sql`${encounters.clinicDay} <= ${endDate}`       // ✅ Direct sql - matches Patient page
+        )
+      )
       .orderBy(desc(encounters.visitDate));
 
     const uniquePatientMap = new Map<string, { patientId: string; dateOfService?: string }>();
