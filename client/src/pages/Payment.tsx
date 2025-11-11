@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getClinicDayKey } from "@/lib/date-utils";
 
 interface Patient {
   id: number;
@@ -115,14 +114,13 @@ export default function Payment() {
     },
   });
 
-  // Get payment history
-  const today = getClinicDayKey();
+  // Get payment history using preset-based filtering
   const { data: paymentHistory = [], isLoading: historyLoading, refetch: refetchHistory } = useQuery<any[]>({
-    queryKey: ["/api/payments", paymentHistoryTab, paymentSearchQuery],
+    queryKey: ["/api/payments", { preset: paymentHistoryTab === "today" ? "today" : undefined }, paymentSearchQuery],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (paymentHistoryTab === "today") {
-        params.append('date', today);
+        params.append('preset', 'today');
       }
       if (paymentSearchQuery) {
         params.append('patientId', paymentSearchQuery);

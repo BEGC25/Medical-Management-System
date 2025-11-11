@@ -226,6 +226,7 @@ export const payments = sqliteTable("payments", {
   paymentDate: text("payment_date").notNull(),
   receivedBy: text("received_by").notNull(),
   notes: text("notes"),
+  clinicDay: text("clinic_day"), // Clinic day in YYYY-MM-DD format (Africa/Juba timezone)
   createdAt: text("created_at").notNull(),
 });
 
