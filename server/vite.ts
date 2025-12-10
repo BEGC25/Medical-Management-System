@@ -56,11 +56,11 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
-      // In dev, we always read client/index.html from disk
-      // Folder structure (project root):
+      // In dev we always read client/index.html from disk.
+      // Project layout:
       //   /client/index.html
       //   /server/vite.ts
-      //   /dist/...
+      //   /server/index.ts
       const clientTemplate = path.resolve(
         __dirname,
         "..",
@@ -70,7 +70,7 @@ export async function setupVite(app: Express, server: Server) {
 
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
 
-      // Bust Vite HMR cache by appending a nanoid version
+      // Bust cache for main.tsx
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
@@ -87,28 +87,47 @@ export async function setupVite(app: Express, server: Server) {
 
 export function serveStatic(app: Express) {
   /**
-   * In production:
-   * - `vite build` outputs static assets to `public/` at the **project root**
-   * - `esbuild` bundles the server to `dist/index.js`
+   * In production, after bundling:
+   *   __dirname = <project-root>/dist
    *
-   * After bundling, this file lives in:  dist/vite.js
-   * So `__dirname` === `<project-root>/dist`
-   * Our static folder is one level up: `<project-root>/public`
+   * There are two common layouts we want to support:
+   *
+   * 1) Vite builds into /server/public
+   *    - outDir: "../server/public" from the /client config
+   *    => static path: <project-root>/server/public
+   *
+   * 2) Vite builds into /public at the project root
+   *    - outDir: "../public"
+   *    => static path: <project-root>/public
    */
-  const publicPath = path.resolve(__dirname, "..", "public");
+  const candidatePaths = [
+    // Most likely for your template: server/public
+    path.resolve(__dirname, "..", "server", "public"),
+    // Alternative layout: public at project root
+    path.resolve(__dirname, "..", "public"),
+  ];
 
-  if (!fs.existsSync(publicPath)) {
-    throw new Error(
-      `Could not find the build directory: ${publicPath}. ` +
-        `Make sure to run "vite build" from the project root before starting in production.`,
+  const staticRoot = candidatePaths.find((p) => fs.existsSync(p));
+
+  if (!staticRoot) {
+    // ⚠️ Important: DO NOT crash the process here.
+    // Let the API run even if the frontend hasn't been built yet.
+    log(
+      `⚠️ No static client build found. Checked: ${candidatePaths.join(
+        ", ",
+      )}. Backend API will still run, but UI assets are missing.`,
+      "static",
     );
+    return;
   }
 
-  // Serve all static assets (JS, CSS, images, etc.)
-  app.use(express.static(publicPath));
+  log(`Serving static assets from: ${staticRoot}`, "static");
 
-  // SPA fallback - always send index.html
+  // Serve JS/CSS/assets
+  app.use(express.static(staticRoot));
+
+  // SPA fallback
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(publicPath, "index.html"));
+    res.sendFile(path.resolve(staticRoot, "index.html"));
   });
 }
