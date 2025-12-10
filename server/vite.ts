@@ -7,8 +7,16 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
+import { fileURLToPath } from "url";
 
 const viteLogger = createLogger();
+
+/**
+ * ESM-safe __dirname / __filename
+ * Works in Node 18+ and after esbuild bundling.
+ */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -21,9 +29,6 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-/**
- * Development: attach Vite dev middlewares and serve client/index.html
- */
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
@@ -36,9 +41,9 @@ export async function setupVite(app: Express, server: Server) {
     configFile: false,
     customLogger: {
       ...viteLogger,
+      // In dev, just log the error; don't hard-exit.
       error: (msg, options) => {
         viteLogger.error(msg, options);
-        process.exit(1);
       },
     },
     server: serverOptions,
@@ -49,13 +54,23 @@ export async function setupVite(app: Express, server: Server) {
 
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
-    const rootDir = process.cwd();
 
     try {
-      const clientTemplate = path.resolve(rootDir, "client", "index.html");
+      // In dev, we always read client/index.html from disk
+      // Folder structure (project root):
+      //   /client/index.html
+      //   /server/vite.ts
+      //   /dist/...
+      const clientTemplate = path.resolve(
+        __dirname,
+        "..",
+        "client",
+        "index.html",
+      );
 
-      // Always reload index.html from disk in case it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
+
+      // Bust Vite HMR cache by appending a nanoid version
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
@@ -70,49 +85,30 @@ export async function setupVite(app: Express, server: Server) {
   });
 }
 
-/**
- * Production: serve pre-built static assets.
- *
- * We **do not** rely on import.meta.dirname (which becomes undefined in the
- * bundled dist/index.js). Instead we use process.cwd() and look for the
- * built client in a few common locations.
- */
 export function serveStatic(app: Express) {
-  const rootDir = process.cwd();
+  /**
+   * In production:
+   * - `vite build` outputs static assets to `public/` at the **project root**
+   * - `esbuild` bundles the server to `dist/index.js`
+   *
+   * After bundling, this file lives in:  dist/vite.js
+   * So `__dirname` === `<project-root>/dist`
+   * Our static folder is one level up: `<project-root>/public`
+   */
+  const publicPath = path.resolve(__dirname, "..", "public");
 
-  const candidates = [
-    // Preferred: Vite build outDir = "dist/public"
-    path.join(rootDir, "dist", "public"),
-    // Alternative: build outDir = "server/public"
-    path.join(rootDir, "server", "public"),
-    // Fallbacks
-    path.join(rootDir, "public"),
-    path.join(rootDir, "client", "dist"),
-  ];
-
-  let distPath: string | undefined;
-
-  for (const candidate of candidates) {
-    const indexFile = path.join(candidate, "index.html");
-    if (fs.existsSync(indexFile)) {
-      distPath = candidate;
-      break;
-    }
-  }
-
-  if (!distPath) {
+  if (!fs.existsSync(publicPath)) {
     throw new Error(
-      `Could not find built client index.html. Checked:\n` +
-        candidates.map((c) => ` - ${c}`).join("\n"),
+      `Could not find the build directory: ${publicPath}. ` +
+        `Make sure to run "vite build" from the project root before starting in production.`,
     );
   }
 
-  log(`Serving static client from: ${distPath}`, "vite");
+  // Serve all static assets (JS, CSS, images, etc.)
+  app.use(express.static(publicPath));
 
-  app.use(express.static(distPath));
-
-  // Fall through to index.html for client-side routing
+  // SPA fallback - always send index.html
   app.use("*", (_req, res) => {
-    res.sendFile(path.join(distPath!, "index.html"));
+    res.sendFile(path.resolve(publicPath, "index.html"));
   });
 }
