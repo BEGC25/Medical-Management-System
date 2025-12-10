@@ -1,3 +1,5 @@
+// Medical-Management-System/server/vite.ts
+
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
@@ -19,6 +21,9 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+/**
+ * Development: attach Vite dev middlewares and serve client/index.html
+ */
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
@@ -41,23 +46,21 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+    const rootDir = process.cwd();
 
     try {
-      const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html",
-      );
+      const clientTemplate = path.resolve(rootDir, "client", "index.html");
 
-      // always reload the index.html file from disk incase it changes
+      // Always reload index.html from disk in case it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
+
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
@@ -67,19 +70,49 @@ export async function setupVite(app: Express, server: Server) {
   });
 }
 
+/**
+ * Production: serve pre-built static assets.
+ *
+ * We **do not** rely on import.meta.dirname (which becomes undefined in the
+ * bundled dist/index.js). Instead we use process.cwd() and look for the
+ * built client in a few common locations.
+ */
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  const rootDir = process.cwd();
 
-  if (!fs.existsSync(distPath)) {
+  const candidates = [
+    // Preferred: Vite build outDir = "dist/public"
+    path.join(rootDir, "dist", "public"),
+    // Alternative: build outDir = "server/public"
+    path.join(rootDir, "server", "public"),
+    // Fallbacks
+    path.join(rootDir, "public"),
+    path.join(rootDir, "client", "dist"),
+  ];
+
+  let distPath: string | undefined;
+
+  for (const candidate of candidates) {
+    const indexFile = path.join(candidate, "index.html");
+    if (fs.existsSync(indexFile)) {
+      distPath = candidate;
+      break;
+    }
+  }
+
+  if (!distPath) {
     throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      `Could not find built client index.html. Checked:\n` +
+        candidates.map((c) => ` - ${c}`).join("\n"),
     );
   }
 
+  log(`Serving static client from: ${distPath}`, "vite");
+
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
+  // Fall through to index.html for client-side routing
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(path.join(distPath!, "index.html"));
   });
 }
