@@ -1,13 +1,22 @@
-// server/vite.ts
+// Medical-Management-System/server/vite.ts
+
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
+
+// Base paths (work in both dev + bundled prod)
+const __filename = fileURLToPath(import.meta.url);
+const THIS_DIR = path.dirname(__filename);
+// When running with tsx:  THIS_DIR ≈ /.../server
+// When running bundled:   THIS_DIR ≈ /.../dist
+const PROJECT_ROOT = path.resolve(THIS_DIR, "..");
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -20,6 +29,10 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+/**
+ * DEV: attach Vite middleware (tsx, hot reload).
+ * Only used when NODE_ENV=development.
+ */
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
@@ -42,22 +55,20 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
     try {
-      const clientTemplate = path.resolve(
-        process.cwd(),
-        "client",
-        "index.html",
-      );
+      // client/index.html in the repo root
+      const clientTemplate = path.resolve(PROJECT_ROOT, "client", "index.html");
 
-      // always reload the index.html file from disk in case it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
+
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
@@ -67,43 +78,60 @@ export async function setupVite(app: Express, server: Server) {
   });
 }
 
+/**
+ * PROD: serve the static Vite build.
+ * The Vite config builds to dist/public:
+ *   outDir: "dist/public"
+ */
 export function serveStatic(app: Express) {
-  // We’ll try the two most common locations:
-  //   1) public/        (root level)
-  //   2) client/dist/   (Vite default when root = client)
+  // Try a few possible locations, then pick the first that actually has index.html
   const candidates = [
-    path.resolve(process.cwd(), "public"),
-    path.resolve(process.cwd(), "client", "dist"),
+    // When THIS_DIR is dist (bundled server):
+    path.resolve(THIS_DIR, "public"),
+    // When THIS_DIR is server/ or project root:
+    path.resolve(PROJECT_ROOT, "dist/public"),
+    // Legacy / safety:
+    path.resolve(PROJECT_ROOT, "public"),
   ];
 
-  let distPath: string | null = null;
+  let staticRoot: string | null = null;
+  let indexPath = "";
 
-  for (const candidate of candidates) {
-    const indexHtml = path.join(candidate, "index.html");
-    if (fs.existsSync(indexHtml)) {
-      distPath = candidate;
+  for (const dir of candidates) {
+    const candidateIndex = path.join(dir, "index.html");
+    if (fs.existsSync(candidateIndex)) {
+      staticRoot = dir;
+      indexPath = candidateIndex;
       break;
     }
   }
 
-  if (!distPath) {
-    const msg =
-      '❌ Could not find a built client. Expected "public/index.html" or "client/dist/index.html". Make sure "npm run build" ran successfully.';
-    console.error(msg);
-    // Still mount a simple 500 handler so you don’t just see plain "Not Found"
+  if (!staticRoot) {
+    console.error(
+      [
+        "❌ Could not find a built client index.html.",
+        "Searched in:",
+        ...candidates.map((c) => `  - ${c}`),
+        'Make sure "npm run build" completed successfully and was pushed.',
+      ].join("\n"),
+    );
+
+    // Return a clear error instead of a generic 404
     app.get("*", (_req, res) => {
-      res.status(500).send(msg);
+      res
+        .status(500)
+        .send("Client build not found on the server. Please contact the admin.");
     });
     return;
   }
 
-  log(`[STATIC] Serving static assets from: ${distPath}`);
+  log(`Serving static client from ${staticRoot}`, "static");
 
-  // Serve JS/CSS/assets
-  app.use(express.static(distPath));
+  // Serve assets
+  app.use(express.static(staticRoot));
 
-  // SPA fallback for "/", "/patients", etc.
+  // SPA fallback: any unknown route -> index.html
   app.get("*", (_req, res) => {
-    res.sendFile(path.join(distPath!, "index.html"));
+    res.sendFile(indexPath);
   });
 }
