@@ -1,4 +1,4 @@
-// Medical-Management-System/server/vite.ts
+// server/vite.ts
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
@@ -52,6 +52,7 @@ export async function setupVite(app: Express, server: Server) {
         "index.html",
       );
 
+      // always reload the index.html file from disk in case it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
@@ -67,18 +68,42 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // ⬇️ this must match Vite's outDir in vite.config
-  // in your project: root: "client", build.outDir: "../public"
-  const distPath = path.resolve(process.cwd(), "public");
+  // We’ll try the two most common locations:
+  //   1) public/        (root level)
+  //   2) client/dist/   (Vite default when root = client)
+  const candidates = [
+    path.resolve(process.cwd(), "public"),
+    path.resolve(process.cwd(), "client", "dist"),
+  ];
+
+  let distPath: string | null = null;
+
+  for (const candidate of candidates) {
+    const indexHtml = path.join(candidate, "index.html");
+    if (fs.existsSync(indexHtml)) {
+      distPath = candidate;
+      break;
+    }
+  }
+
+  if (!distPath) {
+    const msg =
+      '❌ Could not find a built client. Expected "public/index.html" or "client/dist/index.html". Make sure "npm run build" ran successfully.';
+    console.error(msg);
+    // Still mount a simple 500 handler so you don’t just see plain "Not Found"
+    app.get("*", (_req, res) => {
+      res.status(500).send(msg);
+    });
+    return;
+  }
 
   log(`[STATIC] Serving static assets from: ${distPath}`);
 
-  // Serve static files (JS/CSS/assets)
+  // Serve JS/CSS/assets
   app.use(express.static(distPath));
 
-  // SPA fallback – handles "/", "/patients", etc.
+  // SPA fallback for "/", "/patients", etc.
   app.get("*", (_req, res) => {
-    const indexPath = path.join(distPath, "index.html");
-    res.sendFile(indexPath);
+    res.sendFile(path.join(distPath!, "index.html"));
   });
 }
