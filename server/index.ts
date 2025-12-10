@@ -16,7 +16,7 @@ function maskDbUrl(url?: string) {
   return url.replace(/:\/\/([^:]+):[^@]+@/, "://$1:***@");
 }
 
-// --- Boot-time diagnostics (prints once in Render logs)
+// --- Boot-time diagnostics (printed once in platform logs)
 console.log("[BOOT] NODE_ENV =", process.env.NODE_ENV);
 console.log("[BOOT] DATABASE_URL =", maskDbUrl(process.env.DATABASE_URL));
 console.log("[BOOT] DIRECT_DATABASE_URL =", maskDbUrl(process.env.DIRECT_DATABASE_URL));
@@ -58,7 +58,9 @@ app.use(express.urlencoded({ extended: false }));
 
 // ✅ Setup session middleware BEFORE routes
 const sessionSecret = process.env.SESSION_SECRET || "dev-secret-change-in-production";
-app.set("trust proxy", 1); // Trust Render/Cloudflare proxy for secure cookies
+
+// We're behind a proxy (Northflank / Render / Cloudflare, etc.)
+app.set("trust proxy", 1);
 
 const sessionSettings: session.SessionOptions = {
   name: "sid",
@@ -111,19 +113,19 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
 
   // ──────────────────────────────
-  // Robust health checks
+  // Health checks
   // ──────────────────────────────
 
-  // Simple uptime endpoint (for Render/ALB)
+  // Simple uptime endpoint (for Northflank health checks)
   app.get("/health", (_req, res) => res.status(200).send("ok"));
 
-  // DB-aware health endpoint (used by you and the client)
+  // DB-aware health endpoint (for you / diagnostics)
   app.get("/api/health", async (_req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
     try {
       if (typeof (storage as any).healthCheck !== "function") {
         throw new Error(
-          "storage.healthCheck() is not implemented. Add it to server/storage.ts as discussed."
+          "storage.healthCheck() is not implemented. Add it to server/storage.ts if you need this endpoint.",
         );
       }
       const row = await (storage as any).healthCheck();
@@ -135,7 +137,6 @@ app.use((req, res, next) => {
         billing_settings: Number(row.billing_settings || 0),
       });
     } catch (e: any) {
-      // Return structured error so 500s are actionable
       console.error("[/api/health] error:", e);
       return res.status(500).json({
         ok: false,
@@ -153,19 +154,19 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
-    // rethrow so it surfaces in Render logs
+    // rethrow so it surfaces in logs
     throw err;
   });
 
-  // Mount vite (dev) or serve built assets (prod)
+  // Mount Vite (dev) or serve built assets (prod)
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // Use Render's injected PORT; fallback for local dev
-  const port = Number(process.env.PORT) || 5000;
+  // Use platform-injected PORT; fallback for local dev
+  const port = Number(process.env.PORT) || 8080;
   const host = "0.0.0.0";
 
   server.listen(
