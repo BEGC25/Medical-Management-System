@@ -60,9 +60,9 @@ export function StatCard({
                 cy="24"
                 r="18"
                 fill="none"
-                stroke="currentColor"
                 strokeWidth="3"
                 className="text-gray-200 dark:text-gray-700"
+                style={{ stroke: 'currentColor' }}
               />
               {/* Progress circle */}
               <circle
@@ -70,7 +70,6 @@ export function StatCard({
                 cy="24"
                 r="18"
                 fill="none"
-                stroke={color}
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -93,8 +92,12 @@ export function StatCard({
         )}
         {icon && !showProgress && (
           <div
-            className="p-2 rounded-lg bg-opacity-10 transition-all duration-300 group-hover:scale-110"
-            style={{ backgroundColor: `${color}15` }}
+            className="p-2 rounded-lg transition-all duration-300 group-hover:scale-110"
+            style={{ 
+              backgroundColor: color.startsWith('hsl') || color.startsWith('var(') 
+                ? `${color.replace(')', ', 0.1)')}` 
+                : `${color}15` 
+            }}
           >
             {icon}
           </div>

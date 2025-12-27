@@ -122,7 +122,7 @@ export default function Dashboard() {
                                     ${action.color === 'bg-medical-blue' ? 'bg-gradient-to-br from-medical-blue/15 to-medical-blue/5 group-hover:from-medical-blue/25 group-hover:to-medical-blue/10 group-hover:shadow-[0_0_25px_rgba(66,99,122,0.2)]' : ''}
                                     ${action.color === 'bg-health-green' ? 'bg-gradient-to-br from-health-green/15 to-health-green/5 group-hover:from-health-green/25 group-hover:to-health-green/10 group-hover:shadow-[0_0_25px_rgba(90,134,115,0.2)]' : ''}
                                     ${action.color === 'bg-attention-orange' ? 'bg-gradient-to-br from-attention-orange/15 to-attention-orange/5 group-hover:from-attention-orange/25 group-hover:to-attention-orange/10 group-hover:shadow-[0_0_25px_rgba(192,133,94,0.2)]' : ''}
-                                    ${action.color === 'bg-alert-red' ? 'bg-gradient-to-br from-alert-red/15 to-alert-red/5 group-hover:from-alert-red/25 group-hover:to-alert-red/10 group-hover:shadow-[0_0_25px_rgba(220,38,38,0.2)]' : ''}`}>
+                                    ${action.color === 'bg-alert-red' ? 'bg-gradient-to-br from-alert-red/15 to-alert-red/5 group-hover:from-alert-red/25 group-hover:to-alert-red/10 group-hover:shadow-[0_0_25px_rgba(239,68,68,0.2)]' : ''}`}>
                       <Icon className="w-6 h-6 transition-transform duration-300" 
                             style={{ color: `var(--${action.color.replace('bg-', '')})` }} />
                     </div>
