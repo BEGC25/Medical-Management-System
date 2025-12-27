@@ -93,7 +93,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 md:space-y-8 px-2 sm:px-0">
+    <div className="space-y-8 px-2 sm:px-0">
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
         {quickActions.map((action) => {
@@ -119,7 +119,7 @@ export default function Dashboard() {
       </div>
 
       {/* Today's Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {/* Statistics */}
         <Card className="md:col-span-1 shadow-premium-md hover:shadow-premium-lg transition-all duration-300 border-gray-100 dark:border-gray-700">
           <CardHeader className="pb-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-100 dark:border-gray-700">
@@ -399,7 +399,7 @@ export default function Dashboard() {
       </div>
 
       {/* New Dashboard Widgets Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         
         {/* Patient Flow & Queue Widget */}
         <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-300 border-gray-100 dark:border-gray-700">
