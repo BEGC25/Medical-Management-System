@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Dashboard Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro', 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: -0.011em;
+            background: hsl(0, 0%, 100%);
+            color: hsl(222.2, 84%, 4.9%);
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: hsl(210, 18%, 18%);
+        }
+        
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+        
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        
+        .card {
+            background: linear-gradient(to bottom right, white, hsl(210, 20%, 98%));
+            border: 1px solid hsl(210, 17%, 95%);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease-out;
+            cursor: pointer;
+        }
+        
+        .card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            transform: scale(1.02) translateY(-4px);
+        }
+        
+        .quick-action {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .icon-wrapper {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+            transition: all 0.3s;
+        }
+        
+        .card:hover .icon-wrapper {
+            transform: scale(1.1) rotate(6deg);
+        }
+        
+        .icon {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        
+        .blue { background: hsla(210, 45%, 52%, 0.1); color: hsl(210, 45%, 52%); }
+        .green { background: hsla(158, 38%, 45%, 0.1); color: hsl(158, 38%, 45%); }
+        .orange { background: hsla(28, 85%, 60%, 0.1); color: hsl(28, 85%, 60%); }
+        .red { background: hsla(355, 65%, 55%, 0.1); color: hsl(355, 65%, 55%); }
+        
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: hsl(210, 18%, 18%);
+            margin-bottom: 0.25rem;
+        }
+        
+        .card-desc {
+            font-size: 0.875rem;
+            color: hsl(210, 12%, 48%);
+            font-weight: 500;
+        }
+        
+        .stats-card {
+            background: white;
+            border: 1px solid hsl(210, 17%, 95%);
+        }
+        
+        .stats-header {
+            background: linear-gradient(to right, hsl(210, 20%, 98%), white);
+            border-bottom: 1px solid hsl(210, 17%, 95%);
+            padding: 1rem 1.5rem;
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            border-radius: 0.75rem 0.75rem 0 0;
+        }
+        
+        .stats-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: hsl(210, 18%, 18%);
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease-in-out;
+            border-left: 2px solid transparent;
+        }
+        
+        .stat-row:hover {
+            background: hsl(210, 20%, 98%);
+            border-left-color: hsl(210, 45%, 52%);
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            color: hsl(210, 12%, 48%);
+        }
+        
+        .stat-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        }
+        
+        .badge.pulse {
+            animation: subtle-pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px currentColor, 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+            transform: scale(1.1);
+        }
+        
+        @keyframes subtle-pulse {
+            0%, 100% { 
+                opacity: 1;
+                transform: scale(1.1);
+            }
+            50% { 
+                opacity: 0.85;
+                transform: scale(1.12);
+            }
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem 0;
+            color: hsl(210, 18%, 18%);
+        }
+        
+        .pending-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .pending-item:hover {
+            background: hsl(210, 20%, 98%);
+            border-color: hsla(28, 85%, 60%, 0.3);
+        }
+        
+        .pending-item.high-priority {
+            background: hsla(28, 85%, 60%, 0.05);
+            border-color: hsla(28, 85%, 60%, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Premium Dashboard Design Preview</h1>
+        
+        <!-- Quick Actions -->
+        <div class="grid grid-4">
+            <div class="card">
+                <div class="quick-action">
+                    <div class="icon-wrapper blue">
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="card-title">Register Patient</div>
+                        <div class="card-desc">Add new patient</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="quick-action">
+                    <div class="icon-wrapper green">
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="card-title">Find Patient</div>
+                        <div class="card-desc">Search records</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="quick-action">
+                    <div class="icon-wrapper orange">
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="card-title">New Treatment</div>
+                        <div class="card-desc">Record visit</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="quick-action">
+                    <div class="icon-wrapper red">
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="card-title">Urgent Cases</div>
+                        <div class="card-desc">Priority patients</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h2 class="section-title">Today's Overview</h2>
+        
+        <!-- Statistics -->
+        <div class="grid grid-3">
+            <div class="card stats-card">
+                <div class="stats-header">
+                    <div class="stats-title">Today's Statistics</div>
+                </div>
+                <div>
+                    <div class="stat-row">
+                        <span class="stat-label">New Patients</span>
+                        <span class="stat-value blue">12</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Visits</span>
+                        <span class="stat-value green">45</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Lab Tests</span>
+                        <span class="stat-value orange">23</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">X-Rays</span>
+                        <span class="stat-value" style="color: #9333ea">8</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Ultrasounds</span>
+                        <span class="stat-value" style="color: #2563eb">5</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card stats-card">
+                <div class="stats-header" style="background: linear-gradient(to right, hsl(158, 38%, 97%), white);">
+                    <div class="stats-title">Pending Items</div>
+                </div>
+                <div>
+                    <div class="pending-item high-priority">
+                        <span class="stat-label">Lab Results</span>
+                        <span class="badge orange pulse">15</span>
+                    </div>
+                    <div class="pending-item">
+                        <span class="stat-label">X-Ray Reports</span>
+                        <span class="badge" style="background: #9333ea">6</span>
+                    </div>
+                    <div class="pending-item">
+                        <span class="stat-label">Ultrasound Reports</span>
+                        <span class="badge" style="background: #2563eb">3</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card stats-card">
+                <div class="stats-header" style="background: linear-gradient(to right, hsl(210, 45%, 97%), white);">
+                    <div class="stats-title">Patient Flow</div>
+                </div>
+                <div>
+                    <div class="stat-row">
+                        <span class="stat-label">Waiting for Doctor</span>
+                        <span class="badge" style="background: #d97706">8</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">In Treatment</span>
+                        <span class="badge blue" style="background: hsl(210, 45%, 52%)">5</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Waiting for Lab</span>
+                        <span class="badge orange" style="background: hsl(28, 85%, 60%)">12</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Ready for Checkout</span>
+                        <span class="badge green" style="background: hsl(158, 38%, 45%)">7</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
