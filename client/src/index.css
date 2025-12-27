@@ -300,6 +300,46 @@
 }
 
 @layer utilities {
+  /* Premium Card Styles */
+  .card-premium {
+    @apply shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)];
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .card-premium:hover {
+    @apply shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)];
+    @apply -translate-y-0.5;
+  }
+  
+  /* Glow Effects */
+  .glow-medical-blue {
+    box-shadow: 0 0 20px rgba(66, 99, 122, 0.15);
+  }
+  
+  .glow-health-green {
+    box-shadow: 0 0 20px rgba(90, 134, 115, 0.15);
+  }
+  
+  .glow-attention-orange {
+    box-shadow: 0 0 20px rgba(192, 133, 94, 0.15);
+  }
+  
+  /* Enhanced Pulse for High Priority */
+  @keyframes pulse-urgent {
+    0%, 100% { 
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% { 
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+  }
+  
+  .animate-pulse-urgent {
+    animation: pulse-urgent 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
   /* Premium Transitions */
   .transition-premium {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
