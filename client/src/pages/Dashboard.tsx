@@ -100,23 +100,25 @@ export default function Dashboard() {
           const Icon = action.icon;
           return (
             <Link key={action.title} href={action.href}>
-              <Card className="group relative overflow-hidden border border-gray-200/50 dark:border-gray-700/50 
-                               bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600
+              <Card className="group relative overflow-hidden 
+                               border border-gray-200/70 dark:border-gray-700/70 
+                               bg-white dark:bg-gray-900 
                                cursor-pointer transition-all duration-500 ease-out animate-slide-in-up
-                               shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.04)]
-                               hover:shadow-[0_12px_32px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.06)]
+                               shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.05)]
+                               hover:shadow-[0_16px_40px_rgba(15,23,42,0.16),0_4px_12px_rgba(15,23,42,0.1)]
+                               hover:border-gray-300/80 dark:hover:border-gray-600/80
                                hover:-translate-y-1.5 active:translate-y-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-gray-50/30 
-                                dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/30
+                <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-gray-50/40 
+                                dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/40
                                 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <CardContent className="relative p-6">
                   <div className="flex items-center gap-4">
                     <div className={`relative p-4 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3
                                     shadow-inner backdrop-blur-sm
-                                    ${action.color === 'bg-medical-blue' ? 'bg-gradient-to-br from-medical-blue/15 to-medical-blue/5 group-hover:from-medical-blue/25 group-hover:to-medical-blue/10 group-hover:shadow-[0_0_20px_rgba(66,99,122,0.15)]' : ''}
-                                    ${action.color === 'bg-health-green' ? 'bg-gradient-to-br from-health-green/15 to-health-green/5 group-hover:from-health-green/25 group-hover:to-health-green/10 group-hover:shadow-[0_0_20px_rgba(90,134,115,0.15)]' : ''}
-                                    ${action.color === 'bg-attention-orange' ? 'bg-gradient-to-br from-attention-orange/15 to-attention-orange/5 group-hover:from-attention-orange/25 group-hover:to-attention-orange/10 group-hover:shadow-[0_0_20px_rgba(192,133,94,0.15)]' : ''}
-                                    ${action.color === 'bg-alert-red' ? 'bg-gradient-to-br from-alert-red/15 to-alert-red/5 group-hover:from-alert-red/25 group-hover:to-alert-red/10 group-hover:shadow-[0_0_20px_rgba(173,102,107,0.15)]' : ''}`}>
+                                    ${action.color === 'bg-medical-blue' ? 'bg-gradient-to-br from-medical-blue/15 to-medical-blue/5 group-hover:from-medical-blue/25 group-hover:to-medical-blue/10 group-hover:shadow-[0_0_25px_rgba(66,99,122,0.2)]' : ''}
+                                    ${action.color === 'bg-health-green' ? 'bg-gradient-to-br from-health-green/15 to-health-green/5 group-hover:from-health-green/25 group-hover:to-health-green/10 group-hover:shadow-[0_0_25px_rgba(90,134,115,0.2)]' : ''}
+                                    ${action.color === 'bg-attention-orange' ? 'bg-gradient-to-br from-attention-orange/15 to-attention-orange/5 group-hover:from-attention-orange/25 group-hover:to-attention-orange/10 group-hover:shadow-[0_0_25px_rgba(192,133,94,0.2)]' : ''}
+                                    ${action.color === 'bg-alert-red' ? 'bg-gradient-to-br from-alert-red/15 to-alert-red/5 group-hover:from-alert-red/25 group-hover:to-alert-red/10 group-hover:shadow-[0_0_25px_rgba(220,38,38,0.2)]' : ''}`}>
                       <Icon className="w-6 h-6 transition-transform duration-300" 
                             style={{ color: `var(--${action.color.replace('bg-', '')})` }} />
                     </div>
@@ -135,12 +137,12 @@ export default function Dashboard() {
       {/* Today's Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {/* Statistics */}
-        <Card className="md:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
-                         transition-premium border border-gray-100 dark:border-gray-800 
+        <Card className="md:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.05)]
+                         hover:shadow-[0_12px_32px_rgba(15,23,42,0.14),0_4px_8px_rgba(15,23,42,0.08)]
+                         transition-premium border border-gray-200/70 dark:border-gray-800/70 
                          bg-white dark:bg-gray-900">
-          <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800 
-                                 bg-gradient-to-r from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 
+                                 bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
               Today's Statistics
             </CardTitle>
@@ -149,10 +151,10 @@ export default function Dashboard() {
             {stats ? (
               <>
                 <Link href="/patients?filter=today">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
                                   px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
                                   border-l-4 border-transparent hover:border-l-medical-blue 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
                                   hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">New Patients</span>
                     <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--medical-blue)' }}>
@@ -161,10 +163,10 @@ export default function Dashboard() {
                   </div>
                 </Link>
                 <Link href="/treatment?filter=today">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
                                   px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
                                   border-l-4 border-transparent hover:border-l-health-green 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
                                   hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Visits</span>
                     <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--health-green)' }}>
@@ -173,10 +175,10 @@ export default function Dashboard() {
                   </div>
                 </Link>
                 <Link href="/laboratory">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
                                   px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
                                   border-l-4 border-transparent hover:border-l-attention-orange 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
                                   hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Lab Tests</span>
                     <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--attention-orange)' }}>
@@ -185,10 +187,10 @@ export default function Dashboard() {
                   </div>
                 </Link>
                 <Link href="/xray">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
                                   px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
                                   border-l-4 border-transparent hover:border-l-purple-600 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
                                   hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">X-Rays</span>
                     <span className="font-bold text-xl text-purple-600 tabular-nums tracking-tight">
@@ -197,10 +199,10 @@ export default function Dashboard() {
                   </div>
                 </Link>
                 <Link href="/ultrasound">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
                                   px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
                                   border-l-4 border-transparent hover:border-l-blue-600 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
                                   hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ultrasounds</span>
                     <span className="font-bold text-xl text-blue-600 tabular-nums tracking-tight">
@@ -223,12 +225,12 @@ export default function Dashboard() {
         </Card>
 
         {/* Results Ready for Review Widget */}
-        <Card className="md:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+        <Card className="md:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.05)]
+                         hover:shadow-[0_12px_32px_rgba(15,23,42,0.14),0_4px_8px_rgba(15,23,42,0.08)]
                          transition-premium 
-                         border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
-                                 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900">
+                         border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-900">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
+                                 bg-gradient-to-r from-purple-50/80 to-white dark:from-purple-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -380,12 +382,12 @@ export default function Dashboard() {
         </Card>
 
         {/* Pending Items */}
-        <Card className="md:col-span-2 lg:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+        <Card className="md:col-span-2 lg:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.05)]
+                         hover:shadow-[0_12px_32px_rgba(15,23,42,0.14),0_4px_8px_rgba(15,23,42,0.08)]
                          transition-premium 
-                         border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
-                                 bg-gradient-to-r from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
+                         border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-900">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
+                                 bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
               Pending Items
             </CardTitle>
@@ -477,12 +479,12 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         
         {/* Patient Flow & Queue Widget */}
-        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.05)]
+                         hover:shadow-[0_12px_32px_rgba(15,23,42,0.14),0_4px_8px_rgba(15,23,42,0.08)]
                          transition-premium 
-                         border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
-                                 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900">
+                         border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-900">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
+                                 bg-gradient-to-r from-blue-50/80 to-white dark:from-blue-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
               <Activity className="w-5 h-5 text-medical-blue dark:text-blue-400" />
               <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -579,12 +581,12 @@ export default function Dashboard() {
         </Card>
 
         {/* Outstanding Payments Widget */}
-        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.05)]
+                         hover:shadow-[0_12px_32px_rgba(15,23,42,0.14),0_4px_8px_rgba(15,23,42,0.08)]
                          transition-premium 
-                         border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
-                                 bg-gradient-to-r from-green-50 to-white dark:from-green-950/30 dark:to-gray-900">
+                         border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-900">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
+                                 bg-gradient-to-r from-green-50/80 to-white dark:from-green-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-health-green dark:text-green-400" />
               <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -677,12 +679,12 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent Patients */}
-        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.05)]
+                         hover:shadow-[0_12px_32px_rgba(15,23,42,0.14),0_4px_8px_rgba(15,23,42,0.08)]
                          transition-premium 
-                         border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
-                                 bg-gradient-to-r from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
+                         border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-900">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
+                                 bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
               Recent Patients
             </CardTitle>
