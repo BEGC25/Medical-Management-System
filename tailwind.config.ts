@@ -26,6 +26,10 @@ export default {
         '3': '3px',
       },
       colors: {
+        'medical-blue': 'var(--medical-blue)',
+        'health-green': 'var(--health-green)',
+        'attention-orange': 'var(--attention-orange)',
+        'alert-red': 'var(--alert-red)',
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {

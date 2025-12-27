@@ -100,20 +100,23 @@ export default function Dashboard() {
           const Icon = action.icon;
           return (
             <Link key={action.title} href={action.href}>
-              <Card className="group relative overflow-hidden border border-gray-100 dark:border-gray-800 
-                               bg-white dark:bg-gray-900 hover:border-gray-200 dark:hover:border-gray-700
-                               hover-lift cursor-pointer transition-premium animate-slide-in-up
-                               shadow-md hover:shadow-xl dark:shadow-lg dark:hover:shadow-2xl">
+              <Card className="group relative overflow-hidden border border-gray-200/50 dark:border-gray-700/50 
+                               bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600
+                               cursor-pointer transition-all duration-500 ease-out animate-slide-in-up
+                               shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.04)]
+                               hover:shadow-[0_12px_32px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.06)]
+                               hover:-translate-y-1.5 active:translate-y-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-gray-50/30 
                                 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/30
                                 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <CardContent className="relative p-6">
                   <div className="flex items-center gap-4">
                     <div className={`relative p-4 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3
-                                    ${action.color === 'bg-medical-blue' ? 'bg-medical-blue/10 group-hover:bg-medical-blue/15 dark:bg-medical-blue/20 dark:group-hover:bg-medical-blue/25' : ''}
-                                    ${action.color === 'bg-health-green' ? 'bg-health-green/10 group-hover:bg-health-green/15 dark:bg-health-green/20 dark:group-hover:bg-health-green/25' : ''}
-                                    ${action.color === 'bg-attention-orange' ? 'bg-attention-orange/10 group-hover:bg-attention-orange/15 dark:bg-attention-orange/20 dark:group-hover:bg-attention-orange/25' : ''}
-                                    ${action.color === 'bg-alert-red' ? 'bg-alert-red/10 group-hover:bg-alert-red/15 dark:bg-alert-red/20 dark:group-hover:bg-alert-red/25' : ''}`}>
+                                    shadow-inner backdrop-blur-sm
+                                    ${action.color === 'bg-medical-blue' ? 'bg-gradient-to-br from-medical-blue/15 to-medical-blue/5 group-hover:from-medical-blue/25 group-hover:to-medical-blue/10 group-hover:shadow-[0_0_20px_rgba(66,99,122,0.15)]' : ''}
+                                    ${action.color === 'bg-health-green' ? 'bg-gradient-to-br from-health-green/15 to-health-green/5 group-hover:from-health-green/25 group-hover:to-health-green/10 group-hover:shadow-[0_0_20px_rgba(90,134,115,0.15)]' : ''}
+                                    ${action.color === 'bg-attention-orange' ? 'bg-gradient-to-br from-attention-orange/15 to-attention-orange/5 group-hover:from-attention-orange/25 group-hover:to-attention-orange/10 group-hover:shadow-[0_0_20px_rgba(192,133,94,0.15)]' : ''}
+                                    ${action.color === 'bg-alert-red' ? 'bg-gradient-to-br from-alert-red/15 to-alert-red/5 group-hover:from-alert-red/25 group-hover:to-alert-red/10 group-hover:shadow-[0_0_20px_rgba(173,102,107,0.15)]' : ''}`}>
                       <Icon className="w-6 h-6 transition-transform duration-300" 
                             style={{ color: `var(--${action.color.replace('bg-', '')})` }} />
                     </div>
@@ -132,7 +135,9 @@ export default function Dashboard() {
       {/* Today's Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {/* Statistics */}
-        <Card className="md:col-span-1 shadow-md hover:shadow-lg transition-premium border border-gray-100 dark:border-gray-800 
+        <Card className="md:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
+                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+                         transition-premium border border-gray-100 dark:border-gray-800 
                          bg-white dark:bg-gray-900">
           <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800 
                                  bg-gradient-to-r from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
@@ -140,55 +145,65 @@ export default function Dashboard() {
               Today's Statistics
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 pt-4">
+          <CardContent className="space-y-1 p-6">
             {stats ? (
               <>
                 <Link href="/patients?filter=today">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 
-                                  px-3 py-3 rounded-lg cursor-pointer transition-premium 
-                                  border-l-3 border-transparent hover:border-l-medical-blue h-12">
+                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
+                                  border-l-4 border-transparent hover:border-l-medical-blue 
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">New Patients</span>
-                    <span className="font-bold text-lg tabular-nums" style={{ color: 'var(--medical-blue)' }}>
+                    <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--medical-blue)' }}>
                       {stats.newPatients}
                     </span>
                   </div>
                 </Link>
                 <Link href="/treatment?filter=today">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 
-                                  px-3 py-3 rounded-lg cursor-pointer transition-premium 
-                                  border-l-3 border-transparent hover:border-l-health-green h-12">
+                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
+                                  border-l-4 border-transparent hover:border-l-health-green 
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Visits</span>
-                    <span className="font-bold text-lg tabular-nums" style={{ color: 'var(--health-green)' }}>
+                    <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--health-green)' }}>
                       {stats.totalVisits}
                     </span>
                   </div>
                 </Link>
                 <Link href="/laboratory">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 
-                                  px-3 py-3 rounded-lg cursor-pointer transition-premium 
-                                  border-l-3 border-transparent hover:border-l-attention-orange h-12">
+                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
+                                  border-l-4 border-transparent hover:border-l-attention-orange 
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Lab Tests</span>
-                    <span className="font-bold text-lg tabular-nums" style={{ color: 'var(--attention-orange)' }}>
+                    <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--attention-orange)' }}>
                       {stats.labTests}
                     </span>
                   </div>
                 </Link>
                 <Link href="/xray">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 
-                                  px-3 py-3 rounded-lg cursor-pointer transition-premium 
-                                  border-l-3 border-transparent hover:border-l-purple-600 h-12">
+                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
+                                  border-l-4 border-transparent hover:border-l-purple-600 
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">X-Rays</span>
-                    <span className="font-bold text-lg text-purple-600 tabular-nums">
+                    <span className="font-bold text-xl text-purple-600 tabular-nums tracking-tight">
                       {stats.xrays}
                     </span>
                   </div>
                 </Link>
                 <Link href="/ultrasound">
-                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800 
-                                  px-3 py-3 rounded-lg cursor-pointer transition-premium 
-                                  border-l-3 border-transparent hover:border-l-blue-600 h-12">
+                  <div className="group flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 
+                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
+                                  border-l-4 border-transparent hover:border-l-blue-600 
+                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.04)]
+                                  hover:translate-x-1">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ultrasounds</span>
-                    <span className="font-bold text-lg text-blue-600 tabular-nums">
+                    <span className="font-bold text-xl text-blue-600 tabular-nums tracking-tight">
                       {stats.ultrasounds}
                     </span>
                   </div>
@@ -208,7 +223,9 @@ export default function Dashboard() {
         </Card>
 
         {/* Results Ready for Review Widget */}
-        <Card className="md:col-span-1 shadow-md hover:shadow-lg transition-premium 
+        <Card className="md:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
+                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+                         transition-premium 
                          border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
           <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
                                  bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900">
@@ -222,7 +239,7 @@ export default function Dashboard() {
               Completed results awaiting doctor review
             </p>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="p-6">
             {resultsReady ? (
               resultsReady.length > 0 ? (
                 <div className="space-y-3">
@@ -363,7 +380,9 @@ export default function Dashboard() {
         </Card>
 
         {/* Pending Items */}
-        <Card className="md:col-span-2 lg:col-span-1 shadow-md hover:shadow-lg transition-premium 
+        <Card className="md:col-span-2 lg:col-span-1 shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
+                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+                         transition-premium 
                          border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
           <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
                                  bg-gradient-to-r from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
@@ -371,7 +390,7 @@ export default function Dashboard() {
               Pending Items
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="p-6">
             <div className="space-y-3">
               {stats ? (
                 <>
@@ -385,9 +404,9 @@ export default function Dashboard() {
                         <TestTube className="text-attention-orange w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Lab Results</span>
                       </div>
-                      <Badge className={`font-bold text-sm px-3 py-1.5 shadow-sm transition-premium ${
+                      <Badge className={`font-bold text-sm px-3.5 py-1.5 shadow-md transition-all duration-300 ${
                         stats.pending.labResults >= 10 
-                          ? 'animate-pulse-premium ring-2 ring-attention-orange/20 ring-offset-2 dark:ring-offset-gray-900' 
+                          ? 'animate-pulse-premium ring-4 ring-attention-orange/30 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-105' 
                           : ''
                       }`}
                              style={{ backgroundColor: 'var(--attention-orange)', color: 'white' }}>
@@ -405,9 +424,9 @@ export default function Dashboard() {
                         <Scan className="text-purple-600 w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">X-Ray Reports</span>
                       </div>
-                      <Badge className={`font-bold text-sm px-3 py-1.5 shadow-sm transition-premium ${
+                      <Badge className={`font-bold text-sm px-3.5 py-1.5 shadow-md transition-all duration-300 ${
                         stats.pending.xrayReports >= 10 
-                          ? 'animate-pulse-premium ring-2 ring-purple-600/20 ring-offset-2 dark:ring-offset-gray-900' 
+                          ? 'animate-pulse-premium ring-4 ring-purple-600/30 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-105' 
                           : ''
                       }`}
                              style={{ backgroundColor: 'hsl(270, 65%, 55%)', color: 'white' }}>
@@ -425,9 +444,9 @@ export default function Dashboard() {
                         <MonitorSpeaker className="text-blue-600 w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Ultrasound Reports</span>
                       </div>
-                      <Badge className={`font-bold text-sm px-3 py-1.5 shadow-sm transition-premium ${
+                      <Badge className={`font-bold text-sm px-3.5 py-1.5 shadow-md transition-all duration-300 ${
                         stats.pending.ultrasoundReports >= 10 
-                          ? 'animate-pulse-premium ring-2 ring-blue-600/20 ring-offset-2 dark:ring-offset-gray-900' 
+                          ? 'animate-pulse-premium ring-4 ring-blue-600/30 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-105' 
                           : ''
                       }`}
                              style={{ backgroundColor: 'hsl(210, 75%, 55%)', color: 'white' }}>
@@ -458,7 +477,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         
         {/* Patient Flow & Queue Widget */}
-        <Card className="shadow-md hover:shadow-lg transition-premium 
+        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
+                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+                         transition-premium 
                          border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
           <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
                                  bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900">
@@ -469,60 +490,74 @@ export default function Dashboard() {
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="p-6">
             {patientFlow ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 
-                                transition-premium border-l-2 border-transparent hover:border-amber-600" data-testid="flow-waiting-doctor">
+                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
+                                transition-all duration-300 border-l-3 border-transparent hover:border-l-amber-600 
+                                hover:shadow-[2px_0_8px_rgba(251,191,36,0.1)] hover:translate-x-1" 
+                     data-testid="flow-waiting-doctor">
                   <div className="flex items-center gap-2">
                     <UserCheck className="w-4 h-4 text-amber-600 dark:text-amber-500" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Doctor</span>
                   </div>
                   <Badge className="bg-amber-600 text-white font-semibold shadow-sm">{patientFlow.waitingForDoctor}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 
-                                transition-premium border-l-2 border-transparent hover:border-medical-blue" data-testid="flow-in-treatment">
+                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
+                                transition-all duration-300 border-l-3 border-transparent hover:border-l-medical-blue 
+                                hover:shadow-[2px_0_8px_rgba(66,99,122,0.1)] hover:translate-x-1" 
+                     data-testid="flow-in-treatment">
                   <div className="flex items-center gap-2">
                     <Stethoscope className="w-4 h-4 text-medical-blue dark:text-blue-400" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">In Treatment</span>
                   </div>
                   <Badge className="text-white font-semibold shadow-sm" style={{ backgroundColor: 'var(--medical-blue)' }}>{patientFlow.inTreatment}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 
-                                transition-premium border-l-2 border-transparent hover:border-attention-orange" data-testid="flow-waiting-lab">
+                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
+                                transition-all duration-300 border-l-3 border-transparent hover:border-l-attention-orange 
+                                hover:shadow-[2px_0_8px_rgba(192,133,94,0.1)] hover:translate-x-1" 
+                     data-testid="flow-waiting-lab">
                   <div className="flex items-center gap-2">
                     <FlaskConical className="w-4 h-4 text-attention-orange dark:text-orange-400" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Lab</span>
                   </div>
                   <Badge className="text-white font-semibold shadow-sm" style={{ backgroundColor: 'var(--attention-orange)' }}>{patientFlow.waitingForLab}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 
-                                transition-premium border-l-2 border-transparent hover:border-purple-600" data-testid="flow-waiting-xray">
+                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
+                                transition-all duration-300 border-l-3 border-transparent hover:border-l-purple-600 
+                                hover:shadow-[2px_0_8px_rgba(147,51,234,0.1)] hover:translate-x-1" 
+                     data-testid="flow-waiting-xray">
                   <div className="flex items-center gap-2">
                     <RadioTower className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for X-ray</span>
                   </div>
                   <Badge className="bg-purple-600 text-white font-semibold shadow-sm">{patientFlow.waitingForXray}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 
-                                transition-premium border-l-2 border-transparent hover:border-blue-600" data-testid="flow-waiting-ultrasound">
+                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
+                                transition-all duration-300 border-l-3 border-transparent hover:border-l-blue-600 
+                                hover:shadow-[2px_0_8px_rgba(37,99,235,0.1)] hover:translate-x-1" 
+                     data-testid="flow-waiting-ultrasound">
                   <div className="flex items-center gap-2">
                     <MonitorSpeaker className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Ultrasound</span>
                   </div>
                   <Badge className="bg-blue-600 text-white font-semibold shadow-sm">{patientFlow.waitingForUltrasound}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 
-                                transition-premium border-l-2 border-transparent hover:border-health-green" data-testid="flow-waiting-pharmacy">
+                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
+                                transition-all duration-300 border-l-3 border-transparent hover:border-l-health-green 
+                                hover:shadow-[2px_0_8px_rgba(90,134,115,0.1)] hover:translate-x-1" 
+                     data-testid="flow-waiting-pharmacy">
                   <div className="flex items-center gap-2">
                     <Pill className="w-4 h-4 text-health-green dark:text-green-400" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Pharmacy</span>
                   </div>
                   <Badge className="text-white font-semibold shadow-sm" style={{ backgroundColor: 'var(--health-green)' }}>{patientFlow.waitingForPharmacy}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 
-                                border-t border-gray-100 dark:border-gray-800 mt-2 pt-3 transition-premium 
-                                border-l-2 border-transparent hover:border-health-green" data-testid="flow-ready-checkout">
+                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
+                                border-t border-gray-100 dark:border-gray-800 mt-2 pt-3 transition-all duration-300 
+                                border-l-3 border-transparent hover:border-l-health-green 
+                                hover:shadow-[2px_0_8px_rgba(90,134,115,0.1)] hover:translate-x-1" 
+                     data-testid="flow-ready-checkout">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-health-green dark:text-green-400" />
                     <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Ready for Checkout</span>
@@ -544,7 +579,9 @@ export default function Dashboard() {
         </Card>
 
         {/* Outstanding Payments Widget */}
-        <Card className="shadow-md hover:shadow-lg transition-premium 
+        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
+                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+                         transition-premium 
                          border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
           <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
                                  bg-gradient-to-r from-green-50 to-white dark:from-green-950/30 dark:to-gray-900">
@@ -555,7 +592,7 @@ export default function Dashboard() {
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="p-6">
             {outstandingPayments ? (
               outstandingPayments.length > 0 ? (
                 <div className="space-y-2.5">
@@ -640,7 +677,9 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent Patients */}
-        <Card className="shadow-md hover:shadow-lg transition-premium 
+        <Card className="shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.03)]
+                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.1),0_2px_6px_rgba(15,23,42,0.04)]
+                         transition-premium 
                          border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
           <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800
                                  bg-gradient-to-r from-gray-50/50 to-white dark:from-gray-800/50 dark:to-gray-900">
@@ -648,7 +687,7 @@ export default function Dashboard() {
               Recent Patients
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="p-6">
             <div className="space-y-3">
               {recentPatients ? (
                 recentPatients.map((patient: any) => (
