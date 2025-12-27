@@ -459,6 +459,28 @@
     animation: slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
+  /* Fade in animation for page load */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  .animate-in {
+    animation-fill-mode: both;
+  }
+  
+  .fade-in {
+    animation-name: fade-in;
+  }
+  
+  .duration-500 {
+    animation-duration: 500ms;
+  }
+  
   /* Badge Number Flip */
   @keyframes number-flip {
     0% { transform: rotateX(0deg); }

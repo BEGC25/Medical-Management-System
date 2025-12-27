@@ -94,21 +94,24 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 px-2 sm:px-0">
+    <div className="space-y-8 px-2 sm:px-0 animate-in fade-in duration-500">
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
-        {quickActions.map((action) => {
+        {quickActions.map((action, index) => {
           const Icon = action.icon;
           return (
             <Link key={action.title} href={action.href}>
               <Card className="group relative overflow-hidden 
                                border border-gray-200/70 dark:border-gray-700/70 
                                bg-white dark:bg-gray-900 
-                               cursor-pointer transition-all duration-500 ease-out animate-slide-in-up
+                               cursor-pointer transition-all duration-500 ease-out
                                shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.05)]
                                hover:shadow-[0_16px_40px_rgba(15,23,42,0.16),0_4px_12px_rgba(15,23,42,0.1)]
                                hover:border-gray-300/80 dark:hover:border-gray-600/80
-                               hover:-translate-y-1.5 active:translate-y-0">
+                               hover:-translate-y-1.5 active:translate-y-0"
+                    style={{ 
+                      animation: `slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s backwards`
+                    }}>
                 <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-gray-50/40 
                                 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/40
                                 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
