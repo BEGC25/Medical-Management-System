@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,7 +12,7 @@
     --card-foreground: hsl(222.2, 84%, 4.9%);
     --popover: hsl(0, 0%, 100%);
     --popover-foreground: hsl(222.2, 84%, 4.9%);
-    --primary: hsl(207, 69%, 40%);
+    --primary: hsl(210, 45%, 52%);
     --primary-foreground: hsl(210, 40%, 98%);
     --secondary: hsl(210, 40%, 96%);
     --secondary-foreground: hsl(222.2, 84%, 4.9%);
@@ -20,19 +20,31 @@
     --muted-foreground: hsl(215.4, 16.3%, 46.9%);
     --accent: hsl(210, 40%, 96%);
     --accent-foreground: hsl(222.2, 84%, 4.9%);
-    --destructive: hsl(0, 84.2%, 60.2%);
+    --destructive: hsl(0, 65%, 55%);
     --destructive-foreground: hsl(210, 40%, 98%);
     --border: hsl(214.3, 31.8%, 91.4%);
     --input: hsl(214.3, 31.8%, 91.4%);
-    --ring: hsl(207, 69%, 40%);
-    --radius: 0.5rem;
+    --ring: hsl(210, 45%, 52%);
+    --radius: 0.75rem;
     
-    /* Medical Theme Colors */
-    --medical-blue: hsl(207, 69%, 40%);
-    --health-green: hsl(123, 43%, 37%);
-    --attention-orange: hsl(33, 100%, 48%);
-    --alert-red: hsl(0, 68%, 50%);
-    --success-green: hsl(120, 47%, 34%);
+    /* Premium Medical Theme Colors - Sophisticated & Muted Tones */
+    --medical-blue: hsl(210, 45%, 52%);
+    --health-green: hsl(158, 38%, 45%);
+    --attention-orange: hsl(28, 85%, 60%);
+    --alert-red: hsl(355, 65%, 55%);
+    --success-green: hsl(158, 38%, 45%);
+    
+    /* Neutral Grays - Warm Professional Tones */
+    --gray-50: hsl(210, 20%, 98%);
+    --gray-100: hsl(210, 17%, 95%);
+    --gray-200: hsl(210, 16%, 90%);
+    --gray-300: hsl(210, 14%, 83%);
+    --gray-400: hsl(210, 12%, 71%);
+    --gray-500: hsl(210, 11%, 61%);
+    --gray-600: hsl(210, 12%, 48%);
+    --gray-700: hsl(210, 14%, 38%);
+    --gray-800: hsl(210, 16%, 28%);
+    --gray-900: hsl(210, 18%, 18%);
   }
 
   .dark {
@@ -42,7 +54,7 @@
     --card-foreground: hsl(210, 40%, 98%);
     --popover: hsl(222.2, 84%, 4.9%);
     --popover-foreground: hsl(210, 40%, 98%);
-    --primary: hsl(207, 69%, 50%);
+    --primary: hsl(210, 45%, 62%);
     --primary-foreground: hsl(222.2, 84%, 4.9%);
     --secondary: hsl(217.2, 32.6%, 17.5%);
     --secondary-foreground: hsl(210, 40%, 98%);
@@ -50,11 +62,11 @@
     --muted-foreground: hsl(215, 20.2%, 65.1%);
     --accent: hsl(217.2, 32.6%, 17.5%);
     --accent-foreground: hsl(210, 40%, 98%);
-    --destructive: hsl(0, 62.8%, 30.6%);
+    --destructive: hsl(355, 65%, 45%);
     --destructive-foreground: hsl(210, 40%, 98%);
     --border: hsl(217.2, 32.6%, 17.5%);
     --input: hsl(217.2, 32.6%, 17.5%);
-    --ring: hsl(207, 69%, 50%);
+    --ring: hsl(210, 45%, 62%);
   }
 }
 
@@ -64,7 +76,10 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro', 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
   }
 }
 
@@ -186,5 +201,76 @@
   }
   50% {
     opacity: 0.7;
+  }
+}
+
+/* Premium Custom Animations */
+@keyframes shimmer {
+  0% { 
+    background-position: -1000px 0; 
+  }
+  100% { 
+    background-position: 1000px 0; 
+  }
+}
+
+@keyframes subtle-pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+  }
+  50% { 
+    transform: translateY(-4px); 
+  }
+}
+
+@keyframes slide-in-up {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* Animation utility classes */
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s ease-out;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
