@@ -2,6 +2,7 @@ import { Activity, Wifi, WifiOff, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import clinicLogo from "@assets/Logo-Clinic_1760859723870.jpeg";
 
 export default function Header() {
@@ -57,6 +58,8 @@ export default function Header() {
                     </div>
                   </div>
                 </div>
+                
+                <ThemeToggle />
                 
                 <Button
                   variant="outline"
