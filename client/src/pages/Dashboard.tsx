@@ -26,6 +26,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/ui/stat-card";
 
 export default function Dashboard() {
   const { data: stats } = useQuery({
@@ -82,13 +83,13 @@ export default function Dashboard() {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'treated':
-        return <Badge className="font-semibold text-sm text-white" style={{ backgroundColor: 'var(--health-green)' }}>Treated</Badge>;
+        return <Badge className="font-semibold text-sm text-white shadow-sm" style={{ backgroundColor: 'var(--health-green)' }}>Treated</Badge>;
       case 'waiting':
-        return <Badge className="font-semibold text-sm text-white" style={{ backgroundColor: 'var(--attention-orange)' }}>Waiting</Badge>;
+        return <Badge className="font-semibold text-sm text-white shadow-sm" style={{ backgroundColor: 'var(--attention-orange)' }}>Waiting</Badge>;
       case 'urgent':
-        return <Badge className="font-semibold text-sm text-white" style={{ backgroundColor: 'var(--alert-red)' }}>Urgent</Badge>;
+        return <Badge className="font-semibold text-sm text-white shadow-sm" style={{ backgroundColor: 'var(--alert-red)' }}>Urgent</Badge>;
       default:
-        return <Badge variant="outline" className="dark:border-gray-600">{status}</Badge>;
+        return <Badge variant="outline" className="dark:border-gray-600 shadow-sm">{status}</Badge>;
     }
   };
 
@@ -151,64 +152,54 @@ export default function Dashboard() {
             {stats ? (
               <>
                 <Link href="/patients?filter=today">
-                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
-                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
-                                  border-l-4 border-transparent hover:border-l-medical-blue 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
-                                  hover:translate-x-1">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">New Patients</span>
-                    <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--medical-blue)' }}>
-                      {stats.newPatients}
-                    </span>
-                  </div>
+                  <StatCard
+                    label="New Patients"
+                    value={stats.newPatients}
+                    color="var(--medical-blue)"
+                    showProgress={true}
+                    maxValue={20}
+                    icon={<Users className="w-4 h-4" style={{ color: 'var(--medical-blue)' }} />}
+                  />
                 </Link>
                 <Link href="/treatment?filter=today">
-                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
-                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
-                                  border-l-4 border-transparent hover:border-l-health-green 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
-                                  hover:translate-x-1">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Visits</span>
-                    <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--health-green)' }}>
-                      {stats.totalVisits}
-                    </span>
-                  </div>
+                  <StatCard
+                    label="Total Visits"
+                    value={stats.totalVisits}
+                    color="var(--health-green)"
+                    showProgress={true}
+                    maxValue={50}
+                    icon={<Activity className="w-4 h-4" style={{ color: 'var(--health-green)' }} />}
+                  />
                 </Link>
                 <Link href="/laboratory">
-                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
-                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
-                                  border-l-4 border-transparent hover:border-l-attention-orange 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
-                                  hover:translate-x-1">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Lab Tests</span>
-                    <span className="font-bold text-xl tabular-nums tracking-tight" style={{ color: 'var(--attention-orange)' }}>
-                      {stats.labTests}
-                    </span>
-                  </div>
+                  <StatCard
+                    label="Lab Tests"
+                    value={stats.labTests}
+                    color="var(--attention-orange)"
+                    showProgress={true}
+                    maxValue={30}
+                    icon={<TestTube className="w-4 h-4" style={{ color: 'var(--attention-orange)' }} />}
+                  />
                 </Link>
                 <Link href="/xray">
-                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
-                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
-                                  border-l-4 border-transparent hover:border-l-purple-600 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
-                                  hover:translate-x-1">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">X-Rays</span>
-                    <span className="font-bold text-xl text-purple-600 tabular-nums tracking-tight">
-                      {stats.xrays}
-                    </span>
-                  </div>
+                  <StatCard
+                    label="X-Rays"
+                    value={stats.xrays}
+                    color="hsl(270, 65%, 55%)"
+                    showProgress={true}
+                    maxValue={15}
+                    icon={<Scan className="w-4 h-4" style={{ color: 'hsl(270, 65%, 55%)' }} />}
+                  />
                 </Link>
                 <Link href="/ultrasound">
-                  <div className="group flex justify-between items-center hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
-                                  px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300
-                                  border-l-4 border-transparent hover:border-l-blue-600 
-                                  hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]
-                                  hover:translate-x-1">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ultrasounds</span>
-                    <span className="font-bold text-xl text-blue-600 tabular-nums tracking-tight">
-                      {stats.ultrasounds}
-                    </span>
-                  </div>
+                  <StatCard
+                    label="Ultrasounds"
+                    value={stats.ultrasounds}
+                    color="hsl(210, 75%, 55%)"
+                    showProgress={true}
+                    maxValue={10}
+                    icon={<MonitorSpeaker className="w-4 h-4" style={{ color: 'hsl(210, 75%, 55%)' }} />}
+                  />
                 </Link>
               </>
             ) : (
@@ -499,72 +490,86 @@ export default function Dashboard() {
                                 transition-all duration-300 border-l-3 border-transparent hover:border-l-amber-600 
                                 hover:shadow-[2px_0_8px_rgba(251,191,36,0.1)] hover:translate-x-1" 
                      data-testid="flow-waiting-doctor">
-                  <div className="flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-amber-600 dark:text-amber-500" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Doctor</span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+                      <UserCheck className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Waiting for Doctor</span>
                   </div>
-                  <Badge className="bg-amber-600 text-white font-semibold shadow-sm">{patientFlow.waitingForDoctor}</Badge>
+                  <Badge className="bg-amber-600 text-white font-semibold shadow-sm px-3 py-1">{patientFlow.waitingForDoctor}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
                                 transition-all duration-300 border-l-3 border-transparent hover:border-l-medical-blue 
                                 hover:shadow-[2px_0_8px_rgba(66,99,122,0.1)] hover:translate-x-1" 
                      data-testid="flow-in-treatment">
-                  <div className="flex items-center gap-2">
-                    <Stethoscope className="w-4 h-4 text-medical-blue dark:text-blue-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">In Treatment</span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">
+                      <Stethoscope className="w-4 h-4 text-medical-blue dark:text-blue-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">In Treatment</span>
                   </div>
-                  <Badge className="text-white font-semibold shadow-sm" style={{ backgroundColor: 'var(--medical-blue)' }}>{patientFlow.inTreatment}</Badge>
+                  <Badge className="text-white font-semibold shadow-sm px-3 py-1" style={{ backgroundColor: 'var(--medical-blue)' }}>{patientFlow.inTreatment}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
                                 transition-all duration-300 border-l-3 border-transparent hover:border-l-attention-orange 
                                 hover:shadow-[2px_0_8px_rgba(192,133,94,0.1)] hover:translate-x-1" 
                      data-testid="flow-waiting-lab">
-                  <div className="flex items-center gap-2">
-                    <FlaskConical className="w-4 h-4 text-attention-orange dark:text-orange-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Lab</span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-950/30">
+                      <FlaskConical className="w-4 h-4 text-attention-orange dark:text-orange-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Waiting for Lab</span>
                   </div>
-                  <Badge className="text-white font-semibold shadow-sm" style={{ backgroundColor: 'var(--attention-orange)' }}>{patientFlow.waitingForLab}</Badge>
+                  <Badge className="text-white font-semibold shadow-sm px-3 py-1" style={{ backgroundColor: 'var(--attention-orange)' }}>{patientFlow.waitingForLab}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
                                 transition-all duration-300 border-l-3 border-transparent hover:border-l-purple-600 
                                 hover:shadow-[2px_0_8px_rgba(147,51,234,0.1)] hover:translate-x-1" 
                      data-testid="flow-waiting-xray">
-                  <div className="flex items-center gap-2">
-                    <RadioTower className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for X-ray</span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/30">
+                      <RadioTower className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Waiting for X-ray</span>
                   </div>
-                  <Badge className="bg-purple-600 text-white font-semibold shadow-sm">{patientFlow.waitingForXray}</Badge>
+                  <Badge className="bg-purple-600 text-white font-semibold shadow-sm px-3 py-1">{patientFlow.waitingForXray}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
                                 transition-all duration-300 border-l-3 border-transparent hover:border-l-blue-600 
                                 hover:shadow-[2px_0_8px_rgba(37,99,235,0.1)] hover:translate-x-1" 
                      data-testid="flow-waiting-ultrasound">
-                  <div className="flex items-center gap-2">
-                    <MonitorSpeaker className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Ultrasound</span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">
+                      <MonitorSpeaker className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Waiting for Ultrasound</span>
                   </div>
-                  <Badge className="bg-blue-600 text-white font-semibold shadow-sm">{patientFlow.waitingForUltrasound}</Badge>
+                  <Badge className="bg-blue-600 text-white font-semibold shadow-sm px-3 py-1">{patientFlow.waitingForUltrasound}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
                                 transition-all duration-300 border-l-3 border-transparent hover:border-l-health-green 
                                 hover:shadow-[2px_0_8px_rgba(90,134,115,0.1)] hover:translate-x-1" 
                      data-testid="flow-waiting-pharmacy">
-                  <div className="flex items-center gap-2">
-                    <Pill className="w-4 h-4 text-health-green dark:text-green-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Waiting for Pharmacy</span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30">
+                      <Pill className="w-4 h-4 text-health-green dark:text-green-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Waiting for Pharmacy</span>
                   </div>
-                  <Badge className="text-white font-semibold shadow-sm" style={{ backgroundColor: 'var(--health-green)' }}>{patientFlow.waitingForPharmacy}</Badge>
+                  <Badge className="text-white font-semibold shadow-sm px-3 py-1" style={{ backgroundColor: 'var(--health-green)' }}>{patientFlow.waitingForPharmacy}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 
                                 border-t border-gray-100 dark:border-gray-800 mt-2 pt-3 transition-all duration-300 
                                 border-l-3 border-transparent hover:border-l-health-green 
                                 hover:shadow-[2px_0_8px_rgba(90,134,115,0.1)] hover:translate-x-1" 
                      data-testid="flow-ready-checkout">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-health-green dark:text-green-400" />
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Ready for Checkout</span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30">
+                      <CheckCircle2 className="w-4 h-4 text-health-green dark:text-green-400" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Ready for Checkout</span>
                   </div>
-                  <Badge className="text-white font-semibold text-base shadow-sm" style={{ backgroundColor: 'var(--health-green)' }}>{patientFlow.readyForCheckout}</Badge>
+                  <Badge className="text-white font-semibold text-base shadow-sm px-3 py-1.5" style={{ backgroundColor: 'var(--health-green)' }}>{patientFlow.readyForCheckout}</Badge>
                 </div>
               </div>
             ) : (
