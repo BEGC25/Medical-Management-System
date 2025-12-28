@@ -2978,18 +2978,19 @@ export class MemStorage implements IStorage {
       // Filter out empty/null diagnoses
       conditions.push(sql`${treatments.diagnosis} IS NOT NULL AND ${treatments.diagnosis} != ''`);
       
-      // Apply date range filtering on clinicDay if provided
+      // Apply date range filtering on visitDate if provided
+      // Use visitDate for compatibility (clinicDay may not exist in older schemas)
       if (fromDate && toDate) {
         conditions.push(
           and(
-            gte(treatments.clinicDay, fromDate),
-            lte(treatments.clinicDay, toDate)
+            gte(treatments.visitDate, fromDate),
+            lte(treatments.visitDate, toDate)
           )
         );
       } else if (fromDate) {
-        conditions.push(gte(treatments.clinicDay, fromDate));
+        conditions.push(gte(treatments.visitDate, fromDate));
       } else if (toDate) {
-        conditions.push(lte(treatments.clinicDay, toDate));
+        conditions.push(lte(treatments.visitDate, toDate));
       }
       
       // Execute the query with GROUP BY and COUNT
