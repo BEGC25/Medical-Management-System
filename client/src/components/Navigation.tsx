@@ -88,7 +88,7 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
               
               return (
                 <Link key={item.path} href={item.path}>
-                  <div onClick={closeOnClick ? onCloseMobileMenu : undefined}>
+                  <div onClick={closeOnClick && onCloseMobileMenu ? onCloseMobileMenu : undefined}>
                     {isActive ? (
                       <div 
                         className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-xl ml-[-4px] transition-all duration-300"
