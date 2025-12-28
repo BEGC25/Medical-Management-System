@@ -1,4 +1,4 @@
-import { eq, like, ilike, desc, and, count, or, sql, gte, lte, lt, isNull, inArray } from "drizzle-orm";
+import { eq, like, ilike, desc, and, count, or, sql, gte, lte, lt, isNull, isNotNull, ne, inArray } from "drizzle-orm";
 import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -321,6 +321,9 @@ export interface IStorage {
   dispenseDrug(orderId: string, batchId: string, quantity: number, dispensedBy: string): Promise<schema.PharmacyOrder>;
   getPaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
   getPharmacyOrdersWithPatients(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
+
+  // Reports
+  getDiagnosisStats(fromDate?: string, toDate?: string): Promise<Array<{ diagnosis: string; count: number }>>;
 }
 
 export class MemStorage implements IStorage {
@@ -2964,6 +2967,57 @@ export class MemStorage implements IStorage {
       .orderBy(desc(pharmacyOrders.createdAt));
 
     return orders.map(o => ({ ...o.order, patient: o.patient }));
+  }
+
+  // Reports
+  async getDiagnosisStats(fromDate?: string, toDate?: string): Promise<Array<{ diagnosis: string; count: number }>> {
+    try {
+      // Build the query to group by diagnosis and count occurrences
+      const conditions = [];
+      
+      // Filter out empty/null diagnoses using Drizzle helpers for type safety
+      conditions.push(isNotNull(treatments.diagnosis));
+      conditions.push(ne(treatments.diagnosis, ''));
+      // Also filter trimmed empty strings
+      conditions.push(sql`TRIM(${treatments.diagnosis}) != ''`);
+      
+      // Apply date range filtering on visitDate if provided
+      // Use visitDate for compatibility (clinicDay may not exist in older schemas)
+      if (fromDate && toDate) {
+        conditions.push(
+          and(
+            gte(treatments.visitDate, fromDate),
+            lte(treatments.visitDate, toDate)
+          )
+        );
+      } else if (fromDate) {
+        conditions.push(gte(treatments.visitDate, fromDate));
+      } else if (toDate) {
+        conditions.push(lte(treatments.visitDate, toDate));
+      }
+      
+      // Execute the query with GROUP BY and COUNT
+      const results = await db
+        .select({
+          diagnosis: treatments.diagnosis,
+          count: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(treatments)
+        .where(and(...conditions))
+        .groupBy(treatments.diagnosis)
+        .orderBy(desc(sql`count(*)`));
+      
+      // Return the results with proper typing
+      // diagnosis is guaranteed to be non-null and non-empty due to WHERE clause
+      // Using type assertion is safe here because of the filters above
+      return results.map(r => ({
+        diagnosis: r.diagnosis as string,
+        count: r.count,
+      }));
+    } catch (error) {
+      console.error("Error fetching diagnosis stats:", error);
+      throw error;
+    }
   }
 }
 

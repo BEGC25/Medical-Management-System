@@ -2815,34 +2815,14 @@ router.post("/api/pharmacy/dispense", async (req, res) => {
 router.get("/api/reports/diagnoses", async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
-    const treatments = await storage.getTreatments();
+    
+    // Use the new getDiagnosisStats method which performs the grouping and counting in SQL
+    const diagnosisStats = await storage.getDiagnosisStats(
+      fromDate as string | undefined,
+      toDate as string | undefined
+    );
 
-    let filteredTreatments = treatments;
-    if (fromDate || toDate) {
-      filteredTreatments = treatments.filter((t) => {
-        const visitDate = t.visitDate;
-        if (fromDate && visitDate < fromDate) return false;
-        if (toDate && visitDate > toDate) return false;
-        return true;
-      });
-    }
-
-    const diagnosisCounts: Record<string, number> = {};
-    filteredTreatments.forEach((t) => {
-      if (t.diagnosis && t.diagnosis.trim()) {
-        const diagnosis = t.diagnosis.trim();
-        diagnosisCounts[diagnosis] = (diagnosisCounts[diagnosis] || 0) + 1;
-      }
-    });
-
-    const diagnosisArray = Object.entries(diagnosisCounts)
-      .map(([diagnosis, count]) => ({
-        diagnosis,
-        count,
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    res.json(diagnosisArray);
+    res.json(diagnosisStats);
   } catch (error) {
     console.error("Error fetching diagnosis data:", error);
     res.status(500).json({ error: "Failed to fetch diagnosis data" });
