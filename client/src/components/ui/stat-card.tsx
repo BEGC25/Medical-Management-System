@@ -33,10 +33,11 @@ export function StatCard({
     <div
       className={cn(
         "group relative flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out",
-        "hover:bg-gray-50/80 dark:hover:bg-gray-800/60",
+        "hover:bg-blue-50/80 dark:hover:bg-blue-950/30",
         "border-l-4 border-transparent",
-        "hover:shadow-[2px_0_12px_rgba(59,130,246,0.08)]",
-        "hover:translate-x-1.5",
+        "hover:shadow-[3px_0_16px_rgba(59,130,246,0.12),1px_0_6px_rgba(59,130,246,0.08)]",
+        "dark:hover:shadow-[3px_0_20px_rgba(59,130,246,0.25),1px_0_8px_rgba(59,130,246,0.15)]",
+        "hover:translate-x-2",
         className
       )}
       style={{
@@ -44,9 +45,18 @@ export function StatCard({
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderLeftColor = color;
+        // Update hover background based on color
+        if (color.includes('green') || color === 'var(--health-green)') {
+          e.currentTarget.classList.add('!bg-green-50/80', 'dark:!bg-green-950/30');
+        } else if (color.includes('orange') || color === 'var(--attention-orange)') {
+          e.currentTarget.classList.add('!bg-orange-50/80', 'dark:!bg-orange-950/30');
+        } else if (color.includes('purple') || color.includes('270')) {
+          e.currentTarget.classList.add('!bg-purple-50/80', 'dark:!bg-purple-950/30');
+        }
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderLeftColor = "transparent";
+        e.currentTarget.classList.remove('!bg-green-50/80', 'dark:!bg-green-950/30', '!bg-orange-50/80', 'dark:!bg-orange-950/30', '!bg-purple-50/80', 'dark:!bg-purple-950/30');
       }}
       {...props}
     >
@@ -103,7 +113,7 @@ export function StatCard({
           </div>
         )}
         <div className="flex-1">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors duration-300 group-hover:text-blue-700 dark:group-hover:text-blue-300">
             {label}
           </span>
           {trend && (
