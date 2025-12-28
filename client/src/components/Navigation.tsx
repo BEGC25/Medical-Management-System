@@ -98,8 +98,8 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
                           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 20px rgba(255,255,255,0.3), 0 2px 8px rgba(255,255,255,0.2)'
                         }}
                       >
-                        <Icon className="w-5 h-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
-                        <span className="font-bold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{item.label}</span>
+                        <Icon className="w-5 h-5 text-white sidebar-active-shadow" />
+                        <span className="font-bold text-white tracking-tight sidebar-active-shadow">{item.label}</span>
                         
                         {/* Pulsing indicator */}
                         <div className="absolute right-3">

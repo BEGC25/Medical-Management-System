@@ -33,6 +33,10 @@ const CARD_SHADOW_DEFAULT = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rg
 const CARD_SHADOW_HOVER = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
 const ACTION_CARD_SHADOW_HOVER = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.18), 0 20px 48px -8px rgba(15,23,42,0.15), 0 32px 64px -12px rgba(15,23,42,0.12)';
 
+// Urgent card styling constants
+const URGENT_CARD_SHADOW_DEFAULT = '0 4px 12px rgba(239,68,68,0.3), 0 2px 6px rgba(239,68,68,0.2), 0 8px 24px rgba(239,68,68,0.2)';
+const URGENT_CARD_SHADOW_HOVER = '0 8px 24px rgba(239,68,68,0.4), 0 4px 12px rgba(239,68,68,0.3), 0 12px 32px rgba(239,68,68,0.25)';
+
 export default function Dashboard() {
   const { data: stats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -100,6 +104,14 @@ export default function Dashboard() {
     }
   };
 
+  const hasNoActivityToday = (stats: any) => {
+    return stats.newPatients === 0 && 
+           stats.totalVisits === 0 && 
+           stats.labTests === 0 && 
+           stats.xrays === 0 && 
+           stats.ultrasounds === 0;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 
                     px-2 sm:px-0 
@@ -117,23 +129,17 @@ export default function Dashboard() {
                 style={{ 
                   animation: `slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s backwards`,
                   border: '1px solid rgba(0,0,0,0.08)',
-                  boxShadow: action.isUrgent 
-                    ? '0 4px 12px rgba(239,68,68,0.3), 0 2px 6px rgba(239,68,68,0.2), 0 8px 24px rgba(239,68,68,0.2)'
-                    : CARD_SHADOW_DEFAULT,
+                  boxShadow: action.isUrgent ? URGENT_CARD_SHADOW_DEFAULT : CARD_SHADOW_DEFAULT,
                   borderLeft: action.color === 'bg-medical-blue' ? '4px solid #0ea5e9' :
                               action.color === 'bg-health-green' ? '4px solid #22c55e' :
                               action.color === 'bg-attention-orange' ? '4px solid #f97316' :
                               '4px solid #ef4444'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = action.isUrgent 
-                    ? '0 8px 24px rgba(239,68,68,0.4), 0 4px 12px rgba(239,68,68,0.3), 0 12px 32px rgba(239,68,68,0.25)'
-                    : ACTION_CARD_SHADOW_HOVER;
+                  e.currentTarget.style.boxShadow = action.isUrgent ? URGENT_CARD_SHADOW_HOVER : ACTION_CARD_SHADOW_HOVER;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = action.isUrgent 
-                    ? '0 4px 12px rgba(239,68,68,0.3), 0 2px 6px rgba(239,68,68,0.2), 0 8px 24px rgba(239,68,68,0.2)'
-                    : CARD_SHADOW_DEFAULT;
+                  e.currentTarget.style.boxShadow = action.isUrgent ? URGENT_CARD_SHADOW_DEFAULT : CARD_SHADOW_DEFAULT;
                 }}
               >
                 <CardContent className="p-6">
@@ -200,7 +206,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="pt-6 pb-6 px-5 space-y-1">
             {stats ? (
-              stats.newPatients === 0 && stats.totalVisits === 0 && stats.labTests === 0 && stats.xrays === 0 && stats.ultrasounds === 0 ? (
+              hasNoActivityToday(stats) ? (
                 <div className="text-center py-8">
                   <Activity className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-600" />
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No activity yet today</p>
@@ -487,12 +493,11 @@ export default function Dashboard() {
                         <TestTube className="text-attention-orange w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Lab Results</span>
                       </div>
-                      <Badge className={`font-bold text-sm px-3.5 py-1.5 transition-all duration-300
+                      <Badge className={`bg-attention-orange text-white font-bold text-sm px-3.5 py-1.5 transition-all duration-300
                                         shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)]
                                         ${stats.pending.labResults >= 10 
                                           ? 'animate-pulse-premium ring-4 ring-orange-400/40 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110 shadow-[0_4px_12px_rgba(249,115,22,0.3),0_2px_6px_rgba(249,115,22,0.2)]' 
-                                          : ''}`}
-                             style={{ backgroundColor: 'var(--attention-orange)', color: 'white' }}>
+                                          : ''}`}>
                         {stats.pending.labResults}
                       </Badge>
                     </div>
@@ -510,12 +515,11 @@ export default function Dashboard() {
                         <Scan className="text-purple-600 w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">X-Ray Reports</span>
                       </div>
-                      <Badge className={`font-bold text-sm px-3.5 py-1.5 transition-all duration-300
+                      <Badge className={`bg-purple-600 text-white font-bold text-sm px-3.5 py-1.5 transition-all duration-300
                                         shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)]
                                         ${stats.pending.xrayReports >= 10 
                                           ? 'animate-pulse-premium ring-4 ring-purple-400/40 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110 shadow-[0_4px_12px_rgba(147,51,234,0.3),0_2px_6px_rgba(147,51,234,0.2)]' 
-                                          : ''}`}
-                             style={{ backgroundColor: 'hsl(270, 65%, 55%)', color: 'white' }}>
+                                          : ''}`}>
                         {stats.pending.xrayReports}
                       </Badge>
                     </div>
@@ -533,12 +537,11 @@ export default function Dashboard() {
                         <MonitorSpeaker className="text-blue-600 w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Ultrasound Reports</span>
                       </div>
-                      <Badge className={`font-bold text-sm px-3.5 py-1.5 transition-all duration-300
+                      <Badge className={`bg-blue-600 text-white font-bold text-sm px-3.5 py-1.5 transition-all duration-300
                                         shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)]
                                         ${stats.pending.ultrasoundReports >= 10 
                                           ? 'animate-pulse-premium ring-4 ring-blue-400/40 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110 shadow-[0_4px_12px_rgba(37,99,235,0.3),0_2px_6px_rgba(37,99,235,0.2)]' 
-                                          : ''}`}
-                             style={{ backgroundColor: 'hsl(210, 75%, 55%)', color: 'white' }}>
+                                          : ''}`}>
                         {stats.pending.ultrasoundReports}
                       </Badge>
                     </div>
