@@ -120,7 +120,7 @@ export default function Dashboard() {
                                                   0_4px_16px_rgba(0,0,0,0.40),
                                                   0_2px_8px_rgba(0,0,0,0.30)]
                                transition-all duration-500 ease-out
-                               hover:-translate-y-3 hover:scale-[1.01]
+                               hover:-translate-y-2 hover:scale-[1.01]
                                active:translate-y-0 active:scale-[0.99]
                                cursor-pointer"
                     style={{ 
