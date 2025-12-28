@@ -321,6 +321,9 @@ export interface IStorage {
   dispenseDrug(orderId: string, batchId: string, quantity: number, dispensedBy: string): Promise<schema.PharmacyOrder>;
   getPaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
   getPharmacyOrdersWithPatients(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
+
+  // Reports
+  getDiagnosisStats(fromDate?: string, toDate?: string): Promise<Array<{ diagnosis: string; count: number }>>;
 }
 
 export class MemStorage implements IStorage {
@@ -2964,6 +2967,51 @@ export class MemStorage implements IStorage {
       .orderBy(desc(pharmacyOrders.createdAt));
 
     return orders.map(o => ({ ...o.order, patient: o.patient }));
+  }
+
+  // Reports
+  async getDiagnosisStats(fromDate?: string, toDate?: string): Promise<Array<{ diagnosis: string; count: number }>> {
+    try {
+      // Build the query to group by diagnosis and count occurrences
+      const conditions = [];
+      
+      // Filter out empty/null diagnoses
+      conditions.push(sql`${treatments.diagnosis} IS NOT NULL AND ${treatments.diagnosis} != ''`);
+      
+      // Apply date range filtering on clinicDay if provided
+      if (fromDate && toDate) {
+        conditions.push(
+          and(
+            gte(treatments.clinicDay, fromDate),
+            lte(treatments.clinicDay, toDate)
+          )
+        );
+      } else if (fromDate) {
+        conditions.push(gte(treatments.clinicDay, fromDate));
+      } else if (toDate) {
+        conditions.push(lte(treatments.clinicDay, toDate));
+      }
+      
+      // Execute the query with GROUP BY and COUNT
+      const results = await db
+        .select({
+          diagnosis: treatments.diagnosis,
+          count: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(treatments)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .groupBy(treatments.diagnosis)
+        .orderBy(desc(sql`count(*)`));
+      
+      // Return the results with proper typing
+      return results.map(r => ({
+        diagnosis: r.diagnosis || '',
+        count: r.count,
+      }));
+    } catch (error) {
+      console.error("Error fetching diagnosis stats:", error);
+      throw error;
+    }
   }
 }
 
