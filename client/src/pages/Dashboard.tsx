@@ -83,6 +83,7 @@ export default function Dashboard() {
       icon: AlertTriangle,
       href: "/reports",
       color: "bg-alert-red",
+      isUrgent: true,
     },
   ];
 
@@ -103,7 +104,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 
                     px-2 sm:px-0 
                     transition-colors duration-300
-                    space-y-4 sm:space-y-5 md:space-y-6 animate-in fade-in duration-500">
+                    space-y-4 sm:space-y-4 md:space-y-5 animate-in fade-in duration-500">
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
         {quickActions.map((action, index) => {
@@ -111,21 +112,28 @@ export default function Dashboard() {
           return (
             <Link key={action.title} href={action.href}>
               <Card 
-                className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl cursor-pointer transition-all duration-500 ease-out hover:-translate-y-3 hover:scale-[1.02] active:translate-y-0 active:scale-[0.99]"
+                className={`group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl cursor-pointer transition-all duration-500 ease-out hover:-translate-y-3 hover:scale-[1.02] active:translate-y-0 active:scale-[0.99]
+                  ${action.isUrgent ? 'ring-2 ring-red-400/50 dark:ring-red-500/50' : ''}`}
                 style={{ 
                   animation: `slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s backwards`,
                   border: '1px solid rgba(0,0,0,0.08)',
-                  boxShadow: CARD_SHADOW_DEFAULT,
+                  boxShadow: action.isUrgent 
+                    ? '0 4px 12px rgba(239,68,68,0.3), 0 2px 6px rgba(239,68,68,0.2), 0 8px 24px rgba(239,68,68,0.2)'
+                    : CARD_SHADOW_DEFAULT,
                   borderLeft: action.color === 'bg-medical-blue' ? '4px solid #0ea5e9' :
                               action.color === 'bg-health-green' ? '4px solid #22c55e' :
                               action.color === 'bg-attention-orange' ? '4px solid #f97316' :
                               '4px solid #ef4444'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = ACTION_CARD_SHADOW_HOVER;
+                  e.currentTarget.style.boxShadow = action.isUrgent 
+                    ? '0 8px 24px rgba(239,68,68,0.4), 0 4px 12px rgba(239,68,68,0.3), 0 12px 32px rgba(239,68,68,0.25)'
+                    : ACTION_CARD_SHADOW_HOVER;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = CARD_SHADOW_DEFAULT;
+                  e.currentTarget.style.boxShadow = action.isUrgent 
+                    ? '0 4px 12px rgba(239,68,68,0.3), 0 2px 6px rgba(239,68,68,0.2), 0 8px 24px rgba(239,68,68,0.2)'
+                    : CARD_SHADOW_DEFAULT;
                 }}
               >
                 <CardContent className="p-6">
@@ -141,7 +149,7 @@ export default function Dashboard() {
                       }}
                     >
                       <Icon 
-                        className="w-7 h-7" 
+                        className={`w-7 h-7 ${action.isUrgent ? 'animate-pulse-premium' : ''}`}
                         style={{ 
                           color: action.color === 'bg-medical-blue' ? '#3b82f6' :
                                  action.color === 'bg-health-green' ? '#10b981' :
@@ -151,8 +159,15 @@ export default function Dashboard() {
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100 tracking-tight">{action.title}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-0.5">{action.description}</p>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100 tracking-tight">{action.title}</h3>
+                        {action.isUrgent && (
+                          <Badge className="bg-red-600 text-white text-xs px-2 py-0.5 animate-pulse-premium">
+                            High Priority
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mt-0.5">{action.description}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -185,6 +200,13 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="pt-6 pb-6 px-5 space-y-1">
             {stats ? (
+              stats.newPatients === 0 && stats.totalVisits === 0 && stats.labTests === 0 && stats.xrays === 0 && stats.ultrasounds === 0 ? (
+                <div className="text-center py-8">
+                  <Activity className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-600" />
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No activity yet today</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Start by registering a patient or recording a visit</p>
+                </div>
+              ) : (
               <>
                 <Link href="/patients?filter=today">
                   <StatCard
@@ -237,7 +259,7 @@ export default function Dashboard() {
                   />
                 </Link>
               </>
-            ) : (
+            )) : (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex justify-between items-center p-2">
@@ -271,7 +293,7 @@ export default function Dashboard() {
                 Results Ready to Review
               </CardTitle>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
               Completed results awaiting doctor review
             </p>
           </CardHeader>
@@ -395,8 +417,8 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8">
                   <CheckCircle2 className="w-12 h-12 mx-auto mb-2" style={{ color: 'var(--health-green)' }} />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">All caught up!</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">No pending results for today</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">All caught up!</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">No pending results for today</p>
                 </div>
               )
             ) : (
@@ -433,6 +455,20 @@ export default function Dashboard() {
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
               Pending Items
             </CardTitle>
+            <p className="text-xs text-gray-700 dark:text-gray-300 mt-1.5 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--attention-orange)' }}></span>
+                <span>Lab</span>
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-purple-600"></span>
+                <span>X-Ray</span>
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                <span>Ultrasound</span>
+              </span>
+            </p>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-3">
@@ -760,7 +796,7 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8">
                   <CheckCircle2 className="w-12 h-12 mx-auto mb-2" style={{ color: 'var(--health-green)' }} />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">All payments collected!</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">All payments collected!</p>
                 </div>
               )
             ) : (
