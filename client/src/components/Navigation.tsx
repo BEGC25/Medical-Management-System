@@ -141,9 +141,9 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
         className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 overflow-y-auto transition-all duration-300 z-30
                    hidden lg:block"
         style={{
-          background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 25%, #14b8a6 50%, #0891b2 75%, #0ea5e9 100%)',
-          borderRight: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '4px 0 30px rgba(14, 165, 233, 0.3), 2px 0 15px rgba(6, 182, 212, 0.2)'
+          background: 'linear-gradient(160deg, #0ea5e9 0%, #06b6d4 20%, #14b8a6 40%, #0d9488 60%, #0891b2 80%, #0ea5e9 100%)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.25)',
+          boxShadow: '4px 0 35px rgba(14, 165, 233, 0.35), 2px 0 20px rgba(6, 182, 212, 0.25)'
         }}
       >
         {/* Glassmorphism overlay */}
@@ -175,8 +175,8 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
                     transform transition-transform duration-300 ease-out
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{
-          background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 25%, #14b8a6 50%, #0891b2 75%, #0ea5e9 100%)',
-          boxShadow: isMobileMenuOpen ? '4px 0 30px rgba(0,0,0,0.3)' : 'none'
+          background: 'linear-gradient(160deg, #0ea5e9 0%, #06b6d4 20%, #14b8a6 40%, #0d9488 60%, #0891b2 80%, #0ea5e9 100%)',
+          boxShadow: isMobileMenuOpen ? '4px 0 35px rgba(0,0,0,0.35)' : 'none'
         }}
       >
         {/* Mobile Header with Close Button */}
