@@ -74,7 +74,7 @@ import {
 } from "@/components/clinical";
 
 /* ------------------------------------------------------------------ */
-/* Small helpers                                                       */
+/* Small helpers                                                      */
 /* ------------------------------------------------------------------ */
 
 function cx(...cls: Array<string | false | null | undefined>) {
@@ -322,7 +322,7 @@ const resultFields: Record<
 };
 
 /* ------------------------------------------------------------------ */
-/* Data hooks                                                          */
+/* Data hooks                                                         */
 /* ------------------------------------------------------------------ */
 
 // 1) Lab tests (all -> split by status locally)
@@ -395,7 +395,7 @@ function usePatientSearch(term: string) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Main component                                                      */
+/* Main component                                                     */
 /* ------------------------------------------------------------------ */
 
 export default function Laboratory() {
@@ -784,7 +784,8 @@ export default function Laboratory() {
     ) : null;
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <PageHeader 
         title="Laboratory Department"
         subtitle="Clinical laboratory testing and diagnostics"
@@ -2170,6 +2171,7 @@ export default function Laboratory() {
           </div>
         </div>
         )}
+    </div>
     </>
   );
 }
