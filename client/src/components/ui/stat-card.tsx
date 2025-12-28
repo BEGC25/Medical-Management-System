@@ -32,11 +32,11 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "group relative flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-300",
+        "group relative flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out",
         "hover:bg-gray-50/80 dark:hover:bg-gray-800/60",
         "border-l-4 border-transparent",
-        "hover:shadow-[2px_0_8px_rgba(15,23,42,0.06)]",
-        "hover:translate-x-1",
+        "hover:shadow-[2px_0_12px_rgba(59,130,246,0.08)]",
+        "hover:translate-x-1.5",
         className
       )}
       style={{
@@ -128,7 +128,7 @@ export function StatCard({
       </div>
       <div className="text-right">
         <span
-          className="font-bold text-2xl tabular-nums tracking-tight transition-all duration-300 group-hover:scale-105 inline-block"
+          className="font-bold text-xl tabular-nums tracking-tight transition-all duration-300 group-hover:scale-105 inline-block"
           style={{ color }}
         >
           {value}
