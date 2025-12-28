@@ -93,13 +93,13 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
                       <div 
                         className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-xl ml-[-4px] transition-all duration-300"
                         style={{
-                          background: 'linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 100%)',
-                          borderLeft: '4px solid #ffffff',
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 15px rgba(255,255,255,0.2)'
+                          background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.2) 100%)',
+                          borderLeft: '5px solid #ffffff',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 20px rgba(255,255,255,0.3), 0 2px 8px rgba(255,255,255,0.2)'
                         }}
                       >
-                        <Icon className="w-5 h-5 text-white" />
-                        <span className="font-semibold text-white tracking-tight">{item.label}</span>
+                        <Icon className="w-5 h-5 text-white sidebar-active-shadow" />
+                        <span className="font-bold text-white tracking-tight sidebar-active-shadow">{item.label}</span>
                         
                         {/* Pulsing indicator */}
                         <div className="absolute right-3">
