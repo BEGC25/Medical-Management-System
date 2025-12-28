@@ -97,7 +97,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 
                     px-2 sm:px-0 
                     transition-colors duration-300
-                    space-y-4 sm:space-y-6 md:space-y-8 animate-in fade-in duration-500">
+                    space-y-4 sm:space-y-5 md:space-y-6 animate-in fade-in duration-500">
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
         {quickActions.map((action, index) => {
@@ -109,17 +109,17 @@ export default function Dashboard() {
                 style={{ 
                   animation: `slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s backwards`,
                   border: '1px solid rgba(0,0,0,0.08)',
-                  boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)',
+                  boxShadow: '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)',
                   borderLeft: action.color === 'bg-medical-blue' ? '4px solid #0ea5e9' :
                               action.color === 'bg-health-green' ? '4px solid #22c55e' :
                               action.color === 'bg-attention-orange' ? '4px solid #f97316' :
                               '4px solid #ef4444'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.20), 0 8px 25px rgba(15,23,42,0.15), 0 4px 10px rgba(15,23,42,0.10)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.18), 0 20px 48px -8px rgba(15,23,42,0.15), 0 32px 64px -12px rgba(15,23,42,0.12)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
                 }}
               >
                 <CardContent className="p-6">
@@ -127,19 +127,19 @@ export default function Dashboard() {
                     <div 
                       className="p-4 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
                       style={{
-                        background: action.color === 'bg-medical-blue' ? 'linear-gradient(135deg, rgba(14,165,233,0.2) 0%, rgba(6,182,212,0.15) 100%)' :
-                                    action.color === 'bg-health-green' ? 'linear-gradient(135deg, rgba(34,197,94,0.2) 0%, rgba(16,185,129,0.15) 100%)' :
-                                    action.color === 'bg-attention-orange' ? 'linear-gradient(135deg, rgba(249,115,22,0.2) 0%, rgba(245,158,11,0.15) 100%)' :
-                                    'linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(244,63,94,0.15) 100%)',
-                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 8px rgba(0,0,0,0.06)'
+                        background: action.color === 'bg-medical-blue' ? 'linear-gradient(135deg, rgba(96,165,250,0.15) 0%, rgba(59,130,246,0.12) 100%)' :
+                                    action.color === 'bg-health-green' ? 'linear-gradient(135deg, rgba(74,222,128,0.15) 0%, rgba(34,197,94,0.12) 100%)' :
+                                    action.color === 'bg-attention-orange' ? 'linear-gradient(135deg, rgba(251,146,60,0.15) 0%, rgba(249,115,22,0.12) 100%)' :
+                                    'linear-gradient(135deg, rgba(248,113,113,0.15) 0%, rgba(239,68,68,0.12) 100%)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15), 0 1px 6px rgba(0,0,0,0.04)'
                       }}
                     >
                       <Icon 
                         className="w-7 h-7" 
                         style={{ 
-                          color: action.color === 'bg-medical-blue' ? '#0ea5e9' :
-                                 action.color === 'bg-health-green' ? '#22c55e' :
-                                 action.color === 'bg-attention-orange' ? '#f97316' :
+                          color: action.color === 'bg-medical-blue' ? '#3b82f6' :
+                                 action.color === 'bg-health-green' ? '#10b981' :
+                                 action.color === 'bg-attention-orange' ? '#f59e0b' :
                                  '#ef4444'
                         }} 
                       />
@@ -162,13 +162,13 @@ export default function Dashboard() {
         <Card 
           className="md:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
           style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
+            boxShadow: '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
+            e.currentTarget.style.boxShadow = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
+            e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
           }}
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 
@@ -248,13 +248,13 @@ export default function Dashboard() {
         <Card 
           className="md:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
           style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
+            boxShadow: '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
+            e.currentTarget.style.boxShadow = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
+            e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
           }}
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
@@ -413,13 +413,13 @@ export default function Dashboard() {
         <Card 
           className="md:col-span-2 lg:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
           style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
+            boxShadow: '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
+            e.currentTarget.style.boxShadow = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
+            e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
           }}
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
@@ -527,13 +527,13 @@ export default function Dashboard() {
         <Card 
           className="bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
           style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
+            boxShadow: '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
+            e.currentTarget.style.boxShadow = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
+            e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
           }}
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
@@ -671,13 +671,13 @@ export default function Dashboard() {
         <Card 
           className="bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
           style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
+            boxShadow: '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
+            e.currentTarget.style.boxShadow = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
+            e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
           }}
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
@@ -777,13 +777,13 @@ export default function Dashboard() {
         <Card 
           className="bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
           style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
+            boxShadow: '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
+            e.currentTarget.style.boxShadow = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
+            e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
           }}
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
