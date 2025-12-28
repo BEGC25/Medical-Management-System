@@ -22,6 +22,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { 
+  PageHeader, 
+  StatCard, 
+  SectionCard, 
+  StatusChip, 
+  EmptyState,
+  SkeletonTable 
+} from "@/components/clinical";
 
 interface Patient {
   id: number;
@@ -350,36 +358,42 @@ export default function Payment() {
     const patient = order.patient;
 
     return (
-      <div key={order.id} className="p-4 border rounded-lg bg-red-50 hover:bg-red-100 transition-colors cursor-pointer" 
-           data-testid={`unpaid-order-${order.id}`}
-           onClick={() => {
-             if (patient) {
-               handleSelectPatient(patient);
-             }
-           }}>
+      <div 
+        key={order.id} 
+        className="p-4 rounded-lg bg-[hsl(var(--surface-white))] border border-[hsl(var(--border-light))] hover:border-[hsl(var(--border-medium))] hover:shadow-[var(--shadow-card-hover)] transition-all duration-[var(--transition-base)] cursor-pointer" 
+        style={{
+          borderLeft: '3px solid hsl(var(--status-error))'
+        }}
+        data-testid={`unpaid-order-${order.id}`}
+        onClick={() => {
+          if (patient) {
+            handleSelectPatient(patient);
+          }
+        }}
+      >
         <div className="flex justify-between items-start mb-2">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               {patient ? (
                 <>
-                  <span className="font-semibold text-gray-900">
+                  <span className="font-semibold text-[hsl(var(--text-primary))]">
                     {patient.firstName} {patient.lastName}
                   </span>
                   <Badge variant="outline" className="text-xs">{patient.patientId}</Badge>
                 </>
               ) : (
-                <span className="font-semibold text-gray-900">{order.patientId}</span>
+                <span className="font-semibold text-[hsl(var(--text-primary))]">{order.patientId}</span>
               )}
             </div>
-            <h4 className="font-medium text-red-800">{order.description}</h4>
-            <p className="text-sm text-red-600">Date: {new Date(order.date).toLocaleDateString()}</p>
-            {order.bodyPart && <p className="text-sm text-red-600">Body Part: {order.bodyPart}</p>}
-            {order.dosage && <p className="text-sm text-red-600">Dosage: {order.dosage}</p>}
-            {order.quantity && <p className="text-sm text-red-600">Quantity: {order.quantity}</p>}
+            <h4 className="font-medium text-[hsl(var(--text-primary))]">{order.description}</h4>
+            <p className="text-sm text-[hsl(var(--text-secondary))]">Date: {new Date(order.date).toLocaleDateString()}</p>
+            {order.bodyPart && <p className="text-sm text-[hsl(var(--text-secondary))]">Body Part: {order.bodyPart}</p>}
+            {order.dosage && <p className="text-sm text-[hsl(var(--text-secondary))]">Dosage: {order.dosage}</p>}
+            {order.quantity && <p className="text-sm text-[hsl(var(--text-secondary))]">Quantity: {order.quantity}</p>}
           </div>
           <div className="flex flex-col items-end gap-1">
-            <Badge variant="destructive">UNPAID</Badge>
-            <span className="text-xs text-gray-500 mt-1">Click to process</span>
+            <StatusChip status="unpaid" />
+            <span className="text-xs text-[hsl(var(--text-muted))] mt-1">Click to process</span>
           </div>
         </div>
       </div>
@@ -387,196 +401,206 @@ export default function Payment() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <DollarSign className="h-8 w-8 text-green-600" />
-          <h1 className="text-3xl font-bold">Payment Processing</h1>
-        </div>
-        {allUnpaidOrders && (
-          <Badge variant="destructive" className="text-lg px-4 py-2">
-            {getTotalUnpaidCount()} Pending Payments
-          </Badge>
-        )}
-      </div>
-
-      {/* Quick Patient Search - Moved to TOP */}
-      <Card className="border-2 border-blue-200 shadow-md">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-          <CardTitle className="flex items-center gap-2 text-blue-900">
-            <Search className="h-6 w-6" />
-            Quick Patient Search
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                placeholder="Search patients by name or ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 text-base border-2"
-                data-testid="input-search-patients"
-              />
+    <div className="space-y-6">
+      <PageHeader 
+        title="Payment Processing"
+        subtitle="Process patient payments and manage outstanding balances"
+        metadata={
+          allUnpaidOrders && getTotalUnpaidCount() > 0 && (
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-[hsl(var(--status-error))]" />
+              <span className="text-sm font-medium">
+                <span className="text-[hsl(var(--status-error))]">{getTotalUnpaidCount()}</span> pending payment{getTotalUnpaidCount() !== 1 ? 's' : ''}
+              </span>
             </div>
-            
-            {searchQuery.length >= 2 && (
-              <div className="grid gap-2 max-h-60 overflow-y-auto">
-                {patientsLoading && (
-                  <div className="flex items-center justify-center p-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-sm text-gray-600">Searching patients...</span>
-                  </div>
-                )}
-                {patientsError && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-red-800">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="text-sm">{patientsError.message}</span>
-                    </div>
-                  </div>
-                )}
-                {!patientsLoading && !patientsError && patients.length === 0 && (
-                  <div className="p-4 text-center text-gray-500">
-                    <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No patients found matching "{searchQuery}"</p>
-                    <p className="text-xs text-gray-400 mt-1">Try different search terms</p>
-                  </div>
-                )}
-                {!patientsLoading && !patientsError && patients.map((patient: Patient) => (
-                  <Button
-                    key={patient.id}
-                    variant="outline"
-                    className="justify-start h-auto p-4 hover:bg-blue-50 hover:border-blue-300 transition-all"
-                    onClick={() => handleSelectPatient(patient)}
-                    data-testid={`patient-result-${patient.patientId}`}
-                  >
-                    <div className="text-left">
-                      <div className="font-semibold">
-                        {patient.firstName} {patient.lastName} ({patient.patientId})
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {patient.age} years old • {patient.gender}
-                      </div>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            )}
-            
-            {searchQuery.length > 0 && searchQuery.length < 2 && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">Enter at least 2 characters to search for patients</p>
-              </div>
-            )}
+          )
+        }
+      />
+
+      {/* Quick Patient Search */}
+      <SectionCard 
+        icon={Search}
+        title="Quick Patient Search"
+      >
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[hsl(var(--text-muted))]" />
+            <Input
+              placeholder="Search patients by name or ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-12 text-base"
+              data-testid="input-search-patients"
+            />
           </div>
-        </CardContent>
-      </Card>
+          
+          {searchQuery.length >= 2 && (
+            <div className="grid gap-2 max-h-60 overflow-y-auto">
+              {patientsLoading && (
+                <div className="flex items-center justify-center p-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[hsl(var(--clinical-teal-500))]"></div>
+                  <span className="ml-2 text-sm text-[hsl(var(--text-secondary))]">Searching patients...</span>
+                </div>
+              )}
+              {patientsError && (
+                <div className="p-4 bg-[hsl(var(--status-error-bg))] border border-[hsl(var(--status-error-border))] rounded-lg">
+                  <div className="flex items-center gap-2 text-[hsl(var(--status-error))]">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">{patientsError.message}</span>
+                  </div>
+                </div>
+              )}
+              {!patientsLoading && !patientsError && patients.length === 0 && (
+                <EmptyState
+                  icon={Search}
+                  title="No patients found"
+                  description={`No patients matching "${searchQuery}". Try different search terms.`}
+                />
+              )}
+              {!patientsLoading && !patientsError && patients.map((patient: Patient) => (
+                <Button
+                  key={patient.id}
+                  variant="outline"
+                  className="justify-start h-auto p-4 hover:bg-[hsl(var(--surface-50))] hover:border-[hsl(var(--border-medium))] transition-all"
+                  onClick={() => handleSelectPatient(patient)}
+                  data-testid={`patient-result-${patient.patientId}`}
+                >
+                  <div className="text-left">
+                    <div className="font-semibold">
+                      {patient.firstName} {patient.lastName} ({patient.patientId})
+                    </div>
+                    <div className="text-sm text-[hsl(var(--text-secondary))]">
+                      {patient.age} years old • {patient.gender}
+                    </div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          )}
+          
+          {searchQuery.length > 0 && searchQuery.length < 2 && (
+            <div className="p-3 bg-[hsl(var(--status-info-bg))] border border-[hsl(var(--status-info-border))] rounded-lg">
+              <p className="text-sm text-[hsl(var(--status-info))]">Enter at least 2 characters to search for patients</p>
+            </div>
+          )}
+        </div>
+      </SectionCard>
 
       {/* Pending Payments Overview */}
       {allUnpaidLoading ? (
-        <Card>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading pending payments...</span>
-            </div>
-          </CardContent>
-        </Card>
+        <SectionCard title="Patients with Pending Payments" icon={Users}>
+          <SkeletonTable rows={3} />
+        </SectionCard>
       ) : allUnpaidOrders && getTotalUnpaidCount() > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-red-500" />
-              Patients with Pending Payments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="laboratory" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="laboratory" className="flex items-center gap-2">
-                  <TestTube className="h-4 w-4" />
-                  Laboratory
-                  {allUnpaidOrders.laboratory.length > 0 && (
-                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.laboratory.length}</Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="xray" className="flex items-center gap-2">
-                  <XRayIcon className="h-4 w-4" />
-                  X-Ray
-                  {allUnpaidOrders.xray.length > 0 && (
-                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.xray.length}</Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="ultrasound" className="flex items-center gap-2">
-                  <ActivitySquare className="h-4 w-4" />
-                  Ultrasound
-                  {allUnpaidOrders.ultrasound.length > 0 && (
-                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.ultrasound.length}</Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="pharmacy" className="flex items-center gap-2">
-                  <Pill className="h-4 w-4" />
-                  Pharmacy
-                  {allUnpaidOrders.pharmacy.length > 0 && (
-                    <Badge variant="destructive" className="ml-1">{allUnpaidOrders.pharmacy.length}</Badge>
-                  )}
-                </TabsTrigger>
-              </TabsList>
+        <SectionCard 
+          title="Patients with Pending Payments" 
+          icon={Users}
+        >
+          <Tabs defaultValue="laboratory" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="laboratory" className="flex items-center gap-2">
+                <TestTube className="h-4 w-4" />
+                Laboratory
+                {allUnpaidOrders.laboratory.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[hsl(var(--status-error-bg))] text-[hsl(var(--status-error))]">
+                    {allUnpaidOrders.laboratory.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="xray" className="flex items-center gap-2">
+                <XRayIcon className="h-4 w-4" />
+                X-Ray
+                {allUnpaidOrders.xray.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[hsl(var(--status-error-bg))] text-[hsl(var(--status-error))]">
+                    {allUnpaidOrders.xray.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="ultrasound" className="flex items-center gap-2">
+                <ActivitySquare className="h-4 w-4" />
+                Ultrasound
+                {allUnpaidOrders.ultrasound.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[hsl(var(--status-error-bg))] text-[hsl(var(--status-error))]">
+                    {allUnpaidOrders.ultrasound.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="pharmacy" className="flex items-center gap-2">
+                <Pill className="h-4 w-4" />
+                Pharmacy
+                {allUnpaidOrders.pharmacy.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[hsl(var(--status-error-bg))] text-[hsl(var(--status-error))]">
+                    {allUnpaidOrders.pharmacy.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="laboratory" className="mt-4">
-                <div className="space-y-3">
-                  {allUnpaidOrders.laboratory.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No pending laboratory payments</p>
-                  ) : (
-                    allUnpaidOrders.laboratory.map(order => renderOrderCard(order, 'laboratory'))
-                  )}
-                </div>
-              </TabsContent>
+            <TabsContent value="laboratory" className="mt-4">
+              <div className="space-y-3">
+                {allUnpaidOrders.laboratory.length === 0 ? (
+                  <EmptyState 
+                    icon={TestTube}
+                    title="No pending laboratory payments"
+                    description="All laboratory tests have been paid for."
+                  />
+                ) : (
+                  allUnpaidOrders.laboratory.map(order => renderOrderCard(order, 'laboratory'))
+                )}
+              </div>
+            </TabsContent>
 
-              <TabsContent value="xray" className="mt-4">
-                <div className="space-y-3">
-                  {allUnpaidOrders.xray.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No pending X-ray payments</p>
-                  ) : (
-                    allUnpaidOrders.xray.map(order => renderOrderCard(order, 'xray'))
-                  )}
-                </div>
-              </TabsContent>
+            <TabsContent value="xray" className="mt-4">
+              <div className="space-y-3">
+                {allUnpaidOrders.xray.length === 0 ? (
+                  <EmptyState 
+                    icon={XRayIcon}
+                    title="No pending X-ray payments"
+                    description="All X-ray exams have been paid for."
+                  />
+                ) : (
+                  allUnpaidOrders.xray.map(order => renderOrderCard(order, 'xray'))
+                )}
+              </div>
+            </TabsContent>
 
-              <TabsContent value="ultrasound" className="mt-4">
-                <div className="space-y-3">
-                  {allUnpaidOrders.ultrasound.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No pending ultrasound payments</p>
-                  ) : (
-                    allUnpaidOrders.ultrasound.map(order => renderOrderCard(order, 'ultrasound'))
-                  )}
-                </div>
-              </TabsContent>
+            <TabsContent value="ultrasound" className="mt-4">
+              <div className="space-y-3">
+                {allUnpaidOrders.ultrasound.length === 0 ? (
+                  <EmptyState 
+                    icon={ActivitySquare}
+                    title="No pending ultrasound payments"
+                    description="All ultrasound exams have been paid for."
+                  />
+                ) : (
+                  allUnpaidOrders.ultrasound.map(order => renderOrderCard(order, 'ultrasound'))
+                )}
+              </div>
+            </TabsContent>
 
-              <TabsContent value="pharmacy" className="mt-4">
-                <div className="space-y-3">
-                  {allUnpaidOrders.pharmacy.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No pending pharmacy payments</p>
-                  ) : (
-                    allUnpaidOrders.pharmacy.map(order => renderOrderCard(order, 'pharmacy'))
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+            <TabsContent value="pharmacy" className="mt-4">
+              <div className="space-y-3">
+                {allUnpaidOrders.pharmacy.length === 0 ? (
+                  <EmptyState 
+                    icon={Pill}
+                    title="No pending pharmacy payments"
+                    description="All pharmacy orders have been paid for."
+                  />
+                ) : (
+                  allUnpaidOrders.pharmacy.map(order => renderOrderCard(order, 'pharmacy'))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </SectionCard>
       ) : (
-        <Card>
-          <CardContent className="p-8">
-            <div className="text-center text-green-600">
-              <DollarSign className="h-16 w-16 mx-auto mb-3 opacity-50" />
-              <p className="text-xl font-semibold">All Payments Up to Date! ✓</p>
-              <p className="text-sm text-gray-500 mt-2">No pending payments at this time</p>
-            </div>
-          </CardContent>
-        </Card>
+        <SectionCard title="Payment Status" icon={CheckCircle}>
+          <EmptyState
+            icon={DollarSign}
+            title="All Payments Up to Date!"
+            description="No pending payments at this time. Great work!"
+          />
+        </SectionCard>
       )}
 
       {/* Payment History Section */}
