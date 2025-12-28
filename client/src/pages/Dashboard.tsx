@@ -97,7 +97,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 
                     px-2 sm:px-0 
                     transition-colors duration-300
-                    space-y-8 animate-in fade-in duration-500">
+                    space-y-4 sm:space-y-6 md:space-y-8 animate-in fade-in duration-500">
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
         {quickActions.map((action, index) => {

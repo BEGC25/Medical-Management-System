@@ -45,7 +45,7 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
       <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
       
       {/* Header content with relative positioning */}
-      <div className="relative px-6 py-3.5">
+      <div className="relative px-3 sm:px-6 py-2.5 sm:py-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {/* Hamburger Menu Button - Mobile Only */}
@@ -68,11 +68,12 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
               />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight
+              <h1 className="text-base sm:text-lg md:text-xl font-bold text-white tracking-tight
                              drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                Bahr El Ghazal Clinic
+                <span className="sm:hidden">BGC</span>
+                <span className="hidden sm:inline">Bahr El Ghazal Clinic</span>
               </h1>
-              <p className="text-xs sm:text-sm text-white/90 font-medium hidden sm:block">Medical Management System</p>
+              <p className="text-xs sm:text-sm text-white/90 font-medium hidden md:block">Medical Management System</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -96,7 +97,7 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
             
             {user && (
               <>
-                <button className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl
+                <button className="group relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl
                                    bg-white/10 dark:bg-gray-700/30
                                    hover:bg-white/20 dark:hover:bg-gray-600/40
                                    text-white font-medium
@@ -108,7 +109,7 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
                                    backdrop-blur-sm"
                         data-testid="user-info">
                   <User className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
-                  <span data-testid="user-fullname">{user.fullName || user.username}</span>
+                  <span data-testid="user-fullname" className="hidden sm:inline">{user.fullName || user.username}</span>
                 </button>
                 
                 <ThemeToggle />
@@ -118,7 +119,7 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
                   onClick={handleLogout}
                   disabled={logoutMutation.isPending}
                   data-testid="button-logout"
-                  className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl
+                  className="group relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl
                              bg-white/10 dark:bg-gray-700/30
                              hover:bg-red-500/90 dark:hover:bg-red-600/80
                              text-white font-medium
@@ -132,7 +133,7 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
                 >
                   <LogOut className="w-4 h-4 transition-all duration-300 
                                      group-hover:scale-110 group-hover:-translate-x-0.5" />
-                  <span className="transition-colors duration-300">Sign Out</span>
+                  <span className="hidden sm:inline transition-colors duration-300">Sign Out</span>
                 </Button>
               </>
             )}
