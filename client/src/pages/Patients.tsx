@@ -553,7 +553,7 @@ export default function Patients() {
       <div className="space-y-3">
         <FilterChips
           value={dateFilter}
-          onChange={(value) => setDateFilter(value as any)}
+          onChange={(value) => setDateFilter(value)}
         />
         
         {dateFilter === "custom" && (

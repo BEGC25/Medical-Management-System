@@ -360,10 +360,7 @@ export default function Payment() {
     return (
       <div 
         key={order.id} 
-        className="p-4 rounded-lg bg-[hsl(var(--surface-white))] border border-[hsl(var(--border-light))] hover:border-[hsl(var(--border-medium))] hover:shadow-[var(--shadow-card-hover)] transition-all duration-[var(--transition-base)] cursor-pointer" 
-        style={{
-          borderLeft: '3px solid hsl(var(--status-error))'
-        }}
+        className="p-4 rounded-lg bg-[hsl(var(--surface-white))] border-l-[3px] border-[hsl(var(--status-error))] border-r border-t border-b border-[hsl(var(--border-light))] hover:border-[hsl(var(--border-medium))] hover:shadow-[var(--shadow-card-hover)] transition-all duration-[var(--transition-base)] cursor-pointer" 
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
