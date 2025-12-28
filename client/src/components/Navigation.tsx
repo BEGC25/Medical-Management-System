@@ -98,20 +98,20 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
                           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 20px rgba(255,255,255,0.3), 0 2px 8px rgba(255,255,255,0.2)'
                         }}
                       >
-                        <Icon className="w-5 h-5 text-white sidebar-active-shadow" />
-                        <span className="font-bold text-white tracking-tight sidebar-active-shadow">{item.label}</span>
+                        <Icon className="w-5 h-5 text-white" />
+                        <span className="font-semibold text-white tracking-tight">{item.label}</span>
                         
-                        {/* Pulsing indicator */}
+                        {/* Active indicator dot */}
                         <div className="absolute right-3">
                           <div 
-                            className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"
-                            style={{ boxShadow: '0 0 15px rgba(255,255,255,0.9), 0 0 30px rgba(255,255,255,0.6)' }}
+                            className="w-2 h-2 rounded-full bg-white"
+                            style={{ boxShadow: '0 0 6px rgba(255,255,255,0.8)' }}
                           />
                         </div>
                       </div>
                     ) : (
-                      <div className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-xl ml-[-4px] text-white/85 hover:text-white hover:bg-white/15 border-l-4 border-transparent hover:border-white/60 transition-all duration-300 cursor-pointer hover:translate-x-1">
-                        <Icon className="w-5 h-5 transition-all duration-300 group-hover:scale-110" />
+                      <div className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-lg text-white/75 hover:text-white hover:bg-white/10 border-l-4 border-transparent hover:border-white/40 transition-all duration-[var(--transition-base)] cursor-pointer">
+                        <Icon className="w-5 h-5 transition-transform duration-[var(--transition-base)] group-hover:scale-105" />
                         <span className="font-medium">{item.label}</span>
                       </div>
                     )}
@@ -138,20 +138,17 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
     <>
       {/* Desktop Sidebar - Hidden on mobile */}
       <aside 
-        className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 overflow-y-auto transition-all duration-300 z-30
-                   hidden lg:block"
-        style={{
-          background: 'linear-gradient(160deg, #0ea5e9 0%, #06b6d4 20%, #14b8a6 40%, #0d9488 60%, #0891b2 80%, #0ea5e9 100%)',
-          borderRight: '1px solid rgba(255, 255, 255, 0.25)',
-          boxShadow: '4px 0 35px rgba(14, 165, 233, 0.35), 2px 0 20px rgba(6, 182, 212, 0.25)'
-        }}
+        className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 overflow-y-auto transition-all duration-[var(--transition-slow)] z-30
+                   hidden lg:block
+                   bg-[hsl(var(--clinical-teal-600))]
+                   border-r border-[hsl(var(--clinical-teal-700))]/30
+                   shadow-[var(--shadow-lg)]"
       >
-        {/* Glassmorphism overlay */}
+        {/* Subtle depth overlay */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.1) 100%)',
-            backdropFilter: 'blur(10px)'
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.03) 100%)',
           }}
         />
         
@@ -172,11 +169,11 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
       {/* Mobile Sidebar Drawer */}
       <aside 
         className={`fixed left-0 top-0 h-full w-72 z-50 lg:hidden
-                    transform transition-transform duration-300 ease-out
+                    transform transition-transform duration-[var(--transition-slow)] ease-out
+                    bg-[hsl(var(--clinical-teal-600))]
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{
-          background: 'linear-gradient(160deg, #0ea5e9 0%, #06b6d4 20%, #14b8a6 40%, #0d9488 60%, #0891b2 80%, #0ea5e9 100%)',
-          boxShadow: isMobileMenuOpen ? '4px 0 35px rgba(0,0,0,0.35)' : 'none'
+          boxShadow: isMobileMenuOpen ? 'var(--shadow-2xl)' : 'none'
         }}
       >
         {/* Mobile Header with Close Button */}

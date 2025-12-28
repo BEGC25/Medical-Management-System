@@ -32,17 +32,17 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
   };
 
   return (
-    <header className="sticky top-0 left-0 right-0 z-50 
+    <header className="sticky top-0 left-0 right-0 z-[var(--z-sticky)]
                        relative overflow-hidden
-                       bg-gradient-to-r from-cyan-600 via-cyan-600/95 to-cyan-700
+                       bg-gradient-to-r from-[hsl(var(--clinical-teal-500))] via-[hsl(var(--clinical-teal-600))] to-[hsl(var(--clinical-teal-700))]
                        dark:from-gray-800 dark:via-gray-850 dark:to-gray-900
-                       shadow-[0_2px_12px_rgba(15,23,42,0.12),0_1px_3px_rgba(15,23,42,0.08)]
+                       shadow-[var(--shadow-lg)]
                        dark:shadow-[0_2px_12px_rgba(0,0,0,0.4),0_1px_3px_rgba(0,0,0,0.3)]
-                       border-b border-cyan-700/30 dark:border-gray-700/50
+                       border-b border-[hsl(var(--clinical-teal-800))]/20 dark:border-gray-700/50
                        backdrop-blur-xl
-                       transition-all duration-300">
+                       transition-all duration-[var(--transition-slow)]">
       {/* Subtle overlay gradient for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none"></div>
       
       {/* Header content with relative positioning */}
       <div className="relative px-3 sm:px-6 py-2 sm:py-2.5">
