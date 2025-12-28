@@ -1,11 +1,16 @@
-import { Activity, Wifi, WifiOff, LogOut, User } from "lucide-react";
+import { Activity, Wifi, WifiOff, LogOut, User, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import clinicLogo from "@assets/Logo-Clinic_1760859723870.jpeg";
 
-export default function Header() {
+interface HeaderProps {
+  isMobileMenuOpen?: boolean;
+  onToggleMobileMenu?: () => void;
+}
+
+export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }: HeaderProps) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { user, logoutMutation } = useAuth();
 
@@ -27,7 +32,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 left-0 right-0 z-40 
+    <header className="sticky top-0 left-0 right-0 z-50 
                        relative overflow-hidden
                        bg-gradient-to-r from-cyan-600 via-cyan-600/95 to-cyan-700
                        dark:from-gray-800 dark:via-gray-850 dark:to-gray-900
@@ -43,6 +48,16 @@ export default function Header() {
       <div className="relative px-6 py-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
+            {/* Hamburger Menu Button - Mobile Only */}
+            {onToggleMobileMenu && (
+              <button 
+                className="lg:hidden p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                onClick={onToggleMobileMenu}
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
+              </button>
+            )}
             <div className="relative">
               <img 
                 src={clinicLogo} 
@@ -53,11 +68,11 @@ export default function Header() {
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight
+              <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight
                              drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                 Bahr El Ghazal Clinic
               </h1>
-              <p className="text-sm text-white/90 font-medium">Medical Management System</p>
+              <p className="text-xs sm:text-sm text-white/90 font-medium hidden sm:block">Medical Management System</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -76,7 +91,7 @@ export default function Header() {
                 )}
               </div>
               {isOnline ? <Wifi className="w-4 h-4 text-white" /> : <WifiOff className="w-4 h-4 text-white" />}
-              <span className="text-sm font-medium text-white">{isOnline ? 'Online' : 'Offline'}</span>
+              <span className="text-sm font-medium text-white hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
             </div>
             
             {user && (

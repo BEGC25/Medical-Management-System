@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Route, Switch } from "wouter";
+import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/Dashboard";
 import Patients from "@/pages/Patients";
@@ -32,6 +33,63 @@ import { DebugTimeBanner } from "@/components/DebugTimeBanner";
 // ✅ NEW: Daily Cash page
 import ReportsDailyCash from "@/pages/ReportsDailyCash";
 
+function AppLayout() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  return (
+    <>
+      <Header 
+        isMobileMenuOpen={isMobileMenuOpen} 
+        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+      />
+      <Navigation 
+        isMobileMenuOpen={isMobileMenuOpen}
+        onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
+      />
+
+      <main className="min-h-screen ml-0 lg:ml-64 pt-16 transition-all duration-300">
+        <div className="px-4 sm:px-6 py-6">
+          <Switch>
+            {/* Dashboard - All roles */}
+            <ProtectedRoute path="/" component={Dashboard} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
+            
+            {/* Patient Management - All roles */}
+            <ProtectedRoute path="/patients" component={Patients} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
+            
+            {/* Treatment - Admin & Doctor */}
+            <ProtectedRoute path="/treatment/new" component={VisitRedirector} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+            <ProtectedRoute path="/treatment/:visitId" component={Treatment} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+            <ProtectedRoute path="/treatment" component={Treatment} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+            
+            {/* Diagnostics */}
+            <ProtectedRoute path="/laboratory" component={Laboratory} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB]} />
+            <ProtectedRoute path="/xray" component={XRay} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.RADIOLOGY]} />
+            <ProtectedRoute path="/ultrasound" component={Ultrasound} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.RADIOLOGY]} />
+            
+            {/* Pharmacy - Admin & Doctor */}
+            <ProtectedRoute path="/pharmacy" component={Pharmacy} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+            <ProtectedRoute path="/pharmacy-inventory" component={PharmacyInventory} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
+            
+            {/* Financial - Admin Only */}
+            <ProtectedRoute path="/payment" component={Payment} allowedRoles={[ROLES.ADMIN]} />
+            <ProtectedRoute path="/billing" component={Billing} allowedRoles={[ROLES.ADMIN]} />
+            <ProtectedRoute path="/reports/daily-cash" component={ReportsDailyCash} allowedRoles={[ROLES.ADMIN]} />
+            <ProtectedRoute path="/all-results" component={AllResults} allowedRoles={[ROLES.ADMIN]} />
+            
+            {/* Settings - Admin Only */}
+            <ProtectedRoute path="/billing-settings" component={BillingSettings} allowedRoles={[ROLES.ADMIN]} />
+            <ProtectedRoute path="/service-management" component={ServiceManagement} allowedRoles={[ROLES.ADMIN]} />
+            <ProtectedRoute path="/users" component={UserManagement} allowedRoles={[ROLES.ADMIN]} />
+            <ProtectedRoute path="/reports" component={Reports} allowedRoles={[ROLES.ADMIN]} />
+            
+            <Route component={NotFound} />
+          </Switch>
+        </div>
+      </main>
+    </>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -47,48 +105,7 @@ function App() {
             
             {/* Protected Routes */}
             <Route>
-              <Header />
-              <Navigation />
-
-              <main className="ml-64 min-h-screen">
-                <div className="px-6 py-6">
-                  <Switch>
-                    {/* Dashboard - All roles */}
-                    <ProtectedRoute path="/" component={Dashboard} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
-                    
-                    {/* Patient Management - All roles */}
-                    <ProtectedRoute path="/patients" component={Patients} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
-                    
-                    {/* Treatment - Admin & Doctor */}
-                    <ProtectedRoute path="/treatment/new" component={VisitRedirector} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
-                    <ProtectedRoute path="/treatment/:visitId" component={Treatment} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
-                    <ProtectedRoute path="/treatment" component={Treatment} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
-                    
-                    {/* Diagnostics */}
-                    <ProtectedRoute path="/laboratory" component={Laboratory} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB]} />
-                    <ProtectedRoute path="/xray" component={XRay} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.RADIOLOGY]} />
-                    <ProtectedRoute path="/ultrasound" component={Ultrasound} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.RADIOLOGY]} />
-                    
-                    {/* Pharmacy - Admin & Doctor */}
-                    <ProtectedRoute path="/pharmacy" component={Pharmacy} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
-                    <ProtectedRoute path="/pharmacy-inventory" component={PharmacyInventory} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
-                    
-                    {/* Financial - Admin Only */}
-                    <ProtectedRoute path="/payment" component={Payment} allowedRoles={[ROLES.ADMIN]} />
-                    <ProtectedRoute path="/billing" component={Billing} allowedRoles={[ROLES.ADMIN]} />
-                    <ProtectedRoute path="/reports/daily-cash" component={ReportsDailyCash} allowedRoles={[ROLES.ADMIN]} />
-                    <ProtectedRoute path="/all-results" component={AllResults} allowedRoles={[ROLES.ADMIN]} />
-                    
-                    {/* Settings - Admin Only */}
-                    <ProtectedRoute path="/billing-settings" component={BillingSettings} allowedRoles={[ROLES.ADMIN]} />
-                    <ProtectedRoute path="/service-management" component={ServiceManagement} allowedRoles={[ROLES.ADMIN]} />
-                    <ProtectedRoute path="/users" component={UserManagement} allowedRoles={[ROLES.ADMIN]} />
-                    <ProtectedRoute path="/reports" component={Reports} allowedRoles={[ROLES.ADMIN]} />
-                    
-                    <Route component={NotFound} />
-                  </Switch>
-                </div>
-              </main>
+              <AppLayout />
             </Route>
           </Switch>
 
