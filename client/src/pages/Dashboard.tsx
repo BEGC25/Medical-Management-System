@@ -106,21 +106,19 @@ export default function Dashboard() {
             <Link key={action.title} href={action.href}>
               <Card className="group relative overflow-hidden
                                bg-white dark:bg-gray-800
-                               border-2 border-gray-200/80 dark:border-gray-700/60
-                               shadow-[0_6px_24px_rgba(15,23,42,0.12),
-                                       0_3px_12px_rgba(15,23,42,0.08),
-                                       0_1px_4px_rgba(15,23,42,0.05),
-                                       0_0_1px_rgba(15,23,42,0.03)]
-                               hover:shadow-[0_20px_60px_rgba(15,23,42,0.20),
-                                            0_8px_24px_rgba(15,23,42,0.14),
-                                            0_3px_10px_rgba(15,23,42,0.10),
-                                            0_0_2px_rgba(15,23,42,0.06)]
-                               dark:shadow-[0_6px_24px_rgba(0,0,0,0.35),
-                                            0_3px_12px_rgba(0,0,0,0.25),
+                               border border-gray-200/80 dark:border-gray-700/60
+                               shadow-[0_4px_20px_rgba(15,23,42,0.12),
+                                       0_2px_8px_rgba(15,23,42,0.08),
+                                       0_1px_3px_rgba(15,23,42,0.06)]
+                               hover:shadow-[0_12px_40px_rgba(15,23,42,0.18),
+                                            0_4px_16px_rgba(15,23,42,0.12),
+                                            0_2px_8px_rgba(15,23,42,0.08)]
+                               dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),
+                                            0_2px_10px_rgba(0,0,0,0.25),
                                             0_1px_4px_rgba(0,0,0,0.15)]
-                               dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.60),
-                                                  0_8px_24px_rgba(0,0,0,0.45),
-                                                  0_3px_10px_rgba(0,0,0,0.30)]
+                               dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.55),
+                                                  0_4px_16px_rgba(0,0,0,0.40),
+                                                  0_2px_8px_rgba(0,0,0,0.30)]
                                transition-all duration-500 ease-out
                                hover:-translate-y-3 hover:scale-[1.01]
                                active:translate-y-0 active:scale-[0.99]
@@ -160,18 +158,20 @@ export default function Dashboard() {
         {/* Statistics */}
         <Card className="md:col-span-1 
                          bg-white dark:bg-gray-800
-                         border-2 border-gray-200/80 dark:border-gray-700/60
-                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                 0_2px_10px_rgba(15,23,42,0.06),
-                                 0_1px_3px_rgba(15,23,42,0.04)]
-                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
-                                      0_4px_16px_rgba(15,23,42,0.10),
-                                      0_2px_6px_rgba(15,23,42,0.06)]
-                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
-                                      0_2px_10px_rgba(0,0,0,0.20)]
-                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
-                                            0_4px_16px_rgba(0,0,0,0.35)]
-                         transition-all duration-300">
+                         border border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.12),
+                                 0_2px_8px_rgba(15,23,42,0.08),
+                                 0_1px_3px_rgba(15,23,42,0.06)]
+                         hover:shadow-[0_12px_40px_rgba(15,23,42,0.18),
+                                      0_4px_16px_rgba(15,23,42,0.12),
+                                      0_2px_8px_rgba(15,23,42,0.08)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),
+                                      0_2px_10px_rgba(0,0,0,0.25),
+                                      0_1px_4px_rgba(0,0,0,0.15)]
+                         dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.55),
+                                            0_4px_16px_rgba(0,0,0,0.40),
+                                            0_2px_8px_rgba(0,0,0,0.30)]
+                         transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -248,18 +248,20 @@ export default function Dashboard() {
         {/* Results Ready for Review Widget */}
         <Card className="md:col-span-1 
                          bg-white dark:bg-gray-800
-                         border-2 border-gray-200/80 dark:border-gray-700/60
-                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                 0_2px_10px_rgba(15,23,42,0.06),
-                                 0_1px_3px_rgba(15,23,42,0.04)]
-                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
-                                      0_4px_16px_rgba(15,23,42,0.10),
-                                      0_2px_6px_rgba(15,23,42,0.06)]
-                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
-                                      0_2px_10px_rgba(0,0,0,0.20)]
-                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
-                                            0_4px_16px_rgba(0,0,0,0.35)]
-                         transition-all duration-300">
+                         border border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.12),
+                                 0_2px_8px_rgba(15,23,42,0.08),
+                                 0_1px_3px_rgba(15,23,42,0.06)]
+                         hover:shadow-[0_12px_40px_rgba(15,23,42,0.18),
+                                      0_4px_16px_rgba(15,23,42,0.12),
+                                      0_2px_8px_rgba(15,23,42,0.08)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),
+                                      0_2px_10px_rgba(0,0,0,0.25),
+                                      0_1px_4px_rgba(0,0,0,0.15)]
+                         dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.55),
+                                            0_4px_16px_rgba(0,0,0,0.40),
+                                            0_2px_8px_rgba(0,0,0,0.30)]
+                         transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-purple-50/80 to-white dark:from-purple-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
@@ -415,18 +417,20 @@ export default function Dashboard() {
         {/* Pending Items */}
         <Card className="md:col-span-2 lg:col-span-1 
                          bg-white dark:bg-gray-800
-                         border-2 border-gray-200/80 dark:border-gray-700/60
-                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                 0_2px_10px_rgba(15,23,42,0.06),
-                                 0_1px_3px_rgba(15,23,42,0.04)]
-                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
-                                      0_4px_16px_rgba(15,23,42,0.10),
-                                      0_2px_6px_rgba(15,23,42,0.06)]
-                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
-                                      0_2px_10px_rgba(0,0,0,0.20)]
-                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
-                                            0_4px_16px_rgba(0,0,0,0.35)]
-                         transition-all duration-300">
+                         border border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.12),
+                                 0_2px_8px_rgba(15,23,42,0.08),
+                                 0_1px_3px_rgba(15,23,42,0.06)]
+                         hover:shadow-[0_12px_40px_rgba(15,23,42,0.18),
+                                      0_4px_16px_rgba(15,23,42,0.12),
+                                      0_2px_8px_rgba(15,23,42,0.08)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),
+                                      0_2px_10px_rgba(0,0,0,0.25),
+                                      0_1px_4px_rgba(0,0,0,0.15)]
+                         dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.55),
+                                            0_4px_16px_rgba(0,0,0,0.40),
+                                            0_2px_8px_rgba(0,0,0,0.30)]
+                         transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -442,9 +446,10 @@ export default function Dashboard() {
                                      hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
                                      p-3.5 rounded-xl cursor-pointer 
                                      transition-all duration-300 ease-out
-                                     border border-transparent hover:border-orange-200/60 dark:hover:border-orange-700/40
-                                     hover:shadow-[0_2px_8px_rgba(249,115,22,0.08)]
-                                     ${stats.pending.labResults >= 10 ? 'bg-orange-50/80 dark:bg-orange-950/30 border-orange-300/60 dark:border-orange-700/50' : ''}`}>
+                                     border-l-4 border-transparent hover:border-l-orange-500 dark:hover:border-l-orange-400
+                                     hover:shadow-[4px_0_12px_rgba(249,115,22,0.12),2px_0_6px_rgba(249,115,22,0.08)]
+                                     hover:translate-x-1
+                                     ${stats.pending.labResults >= 10 ? 'bg-orange-50/80 dark:bg-orange-950/30 border-l-orange-500 dark:border-l-orange-400' : ''}`}>
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <TestTube className="text-attention-orange w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Lab Results</span>
@@ -464,9 +469,10 @@ export default function Dashboard() {
                                      hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
                                      p-3.5 rounded-xl cursor-pointer 
                                      transition-all duration-300 ease-out
-                                     border border-transparent hover:border-purple-200/60 dark:hover:border-purple-700/40
-                                     hover:shadow-[0_2px_8px_rgba(147,51,234,0.08)]
-                                     ${stats.pending.xrayReports >= 10 ? 'bg-purple-50/80 dark:bg-purple-950/30 border-purple-300/60 dark:border-purple-700/50' : ''}`}>
+                                     border-l-4 border-transparent hover:border-l-purple-500 dark:hover:border-l-purple-400
+                                     hover:shadow-[4px_0_12px_rgba(147,51,234,0.12),2px_0_6px_rgba(147,51,234,0.08)]
+                                     hover:translate-x-1
+                                     ${stats.pending.xrayReports >= 10 ? 'bg-purple-50/80 dark:bg-purple-950/30 border-l-purple-500 dark:border-l-purple-400' : ''}`}>
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <Scan className="text-purple-600 w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">X-Ray Reports</span>
@@ -486,9 +492,10 @@ export default function Dashboard() {
                                      hover:bg-gray-50/80 dark:hover:bg-gray-800/60 
                                      p-3.5 rounded-xl cursor-pointer 
                                      transition-all duration-300 ease-out
-                                     border border-transparent hover:border-blue-200/60 dark:hover:border-blue-700/40
-                                     hover:shadow-[0_2px_8px_rgba(37,99,235,0.08)]
-                                     ${stats.pending.ultrasoundReports >= 10 ? 'bg-blue-50/80 dark:bg-blue-950/30 border-blue-300/60 dark:border-blue-700/50' : ''}`}>
+                                     border-l-4 border-transparent hover:border-l-blue-500 dark:hover:border-l-blue-400
+                                     hover:shadow-[4px_0_12px_rgba(37,99,235,0.12),2px_0_6px_rgba(37,99,235,0.08)]
+                                     hover:translate-x-1
+                                     ${stats.pending.ultrasoundReports >= 10 ? 'bg-blue-50/80 dark:bg-blue-950/30 border-l-blue-500 dark:border-l-blue-400' : ''}`}>
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <MonitorSpeaker className="text-blue-600 w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Ultrasound Reports</span>
@@ -527,18 +534,20 @@ export default function Dashboard() {
         
         {/* Patient Flow & Queue Widget */}
         <Card className="bg-white dark:bg-gray-800
-                         border-2 border-gray-200/80 dark:border-gray-700/60
-                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                 0_2px_10px_rgba(15,23,42,0.06),
-                                 0_1px_3px_rgba(15,23,42,0.04)]
-                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
-                                      0_4px_16px_rgba(15,23,42,0.10),
-                                      0_2px_6px_rgba(15,23,42,0.06)]
-                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
-                                      0_2px_10px_rgba(0,0,0,0.20)]
-                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
-                                            0_4px_16px_rgba(0,0,0,0.35)]
-                         transition-all duration-300">
+                         border border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.12),
+                                 0_2px_8px_rgba(15,23,42,0.08),
+                                 0_1px_3px_rgba(15,23,42,0.06)]
+                         hover:shadow-[0_12px_40px_rgba(15,23,42,0.18),
+                                      0_4px_16px_rgba(15,23,42,0.12),
+                                      0_2px_8px_rgba(15,23,42,0.08)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),
+                                      0_2px_10px_rgba(0,0,0,0.25),
+                                      0_1px_4px_rgba(0,0,0,0.15)]
+                         dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.55),
+                                            0_4px_16px_rgba(0,0,0,0.40),
+                                            0_2px_8px_rgba(0,0,0,0.30)]
+                         transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-blue-50/80 to-white dark:from-blue-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
@@ -672,18 +681,20 @@ export default function Dashboard() {
 
         {/* Outstanding Payments Widget */}
         <Card className="bg-white dark:bg-gray-800
-                         border-2 border-gray-200/80 dark:border-gray-700/60
-                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                 0_2px_10px_rgba(15,23,42,0.06),
-                                 0_1px_3px_rgba(15,23,42,0.04)]
-                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
-                                      0_4px_16px_rgba(15,23,42,0.10),
-                                      0_2px_6px_rgba(15,23,42,0.06)]
-                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
-                                      0_2px_10px_rgba(0,0,0,0.20)]
-                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
-                                            0_4px_16px_rgba(0,0,0,0.35)]
-                         transition-all duration-300">
+                         border border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.12),
+                                 0_2px_8px_rgba(15,23,42,0.08),
+                                 0_1px_3px_rgba(15,23,42,0.06)]
+                         hover:shadow-[0_12px_40px_rgba(15,23,42,0.18),
+                                      0_4px_16px_rgba(15,23,42,0.12),
+                                      0_2px_8px_rgba(15,23,42,0.08)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),
+                                      0_2px_10px_rgba(0,0,0,0.25),
+                                      0_1px_4px_rgba(0,0,0,0.15)]
+                         dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.55),
+                                            0_4px_16px_rgba(0,0,0,0.40),
+                                            0_2px_8px_rgba(0,0,0,0.30)]
+                         transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-green-50/80 to-white dark:from-green-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
@@ -779,18 +790,20 @@ export default function Dashboard() {
 
         {/* Recent Patients */}
         <Card className="bg-white dark:bg-gray-800
-                         border-2 border-gray-200/80 dark:border-gray-700/60
-                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                 0_2px_10px_rgba(15,23,42,0.06),
-                                 0_1px_3px_rgba(15,23,42,0.04)]
-                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
-                                      0_4px_16px_rgba(15,23,42,0.10),
-                                      0_2px_6px_rgba(15,23,42,0.06)]
-                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
-                                      0_2px_10px_rgba(0,0,0,0.20)]
-                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
-                                            0_4px_16px_rgba(0,0,0,0.35)]
-                         transition-all duration-300">
+                         border border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.12),
+                                 0_2px_8px_rgba(15,23,42,0.08),
+                                 0_1px_3px_rgba(15,23,42,0.06)]
+                         hover:shadow-[0_12px_40px_rgba(15,23,42,0.18),
+                                      0_4px_16px_rgba(15,23,42,0.12),
+                                      0_2px_8px_rgba(15,23,42,0.08)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),
+                                      0_2px_10px_rgba(0,0,0,0.25),
+                                      0_1px_4px_rgba(0,0,0,0.15)]
+                         dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.55),
+                                            0_4px_16px_rgba(0,0,0,0.40),
+                                            0_2px_8px_rgba(0,0,0,0.30)]
+                         transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
