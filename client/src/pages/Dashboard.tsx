@@ -94,33 +94,52 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 px-2 sm:px-0 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 
+                    px-2 sm:px-0 
+                    transition-colors duration-300
+                    space-y-8 animate-in fade-in duration-500">
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
         {quickActions.map((action, index) => {
           const Icon = action.icon;
           return (
             <Link key={action.title} href={action.href}>
-              <Card className="group relative overflow-hidden border border-gray-200/60 dark:border-gray-700/60 
-                               bg-gradient-to-br from-white via-white to-gray-50/80 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900/80
-                               cursor-pointer transition-all duration-500 ease-out
-                               shadow-[0_4px_12px_rgba(15,23,42,0.08),0_1px_3px_rgba(15,23,42,0.04),0_0_1px_rgba(15,23,42,0.02)]
-                               hover:shadow-[0_16px_40px_rgba(15,23,42,0.14),0_4px_12px_rgba(15,23,42,0.08),0_0_2px_rgba(15,23,42,0.04)]
-                               hover:-translate-y-2 hover:scale-[1.01] active:translate-y-0 active:scale-[0.99]
-                               dark:shadow-[0_4px_12px_rgba(0,0,0,0.3),0_1px_3px_rgba(0,0,0,0.2)]
-                               dark:hover:shadow-[0_16px_40px_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.3)]"
+              <Card className="group relative overflow-hidden
+                               bg-white dark:bg-gray-800
+                               border-2 border-gray-200/80 dark:border-gray-700/60
+                               shadow-[0_6px_24px_rgba(15,23,42,0.12),
+                                       0_3px_12px_rgba(15,23,42,0.08),
+                                       0_1px_4px_rgba(15,23,42,0.05),
+                                       0_0_1px_rgba(15,23,42,0.03)]
+                               hover:shadow-[0_20px_60px_rgba(15,23,42,0.20),
+                                            0_8px_24px_rgba(15,23,42,0.14),
+                                            0_3px_10px_rgba(15,23,42,0.10),
+                                            0_0_2px_rgba(15,23,42,0.06)]
+                               dark:shadow-[0_6px_24px_rgba(0,0,0,0.35),
+                                            0_3px_12px_rgba(0,0,0,0.25),
+                                            0_1px_4px_rgba(0,0,0,0.15)]
+                               dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.60),
+                                                  0_8px_24px_rgba(0,0,0,0.45),
+                                                  0_3px_10px_rgba(0,0,0,0.30)]
+                               transition-all duration-500 ease-out
+                               hover:-translate-y-3 hover:scale-[1.01]
+                               active:translate-y-0 active:scale-[0.99]
+                               cursor-pointer"
                     style={{ 
                       animation: `slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s backwards`
                     }}>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className={`relative p-4 rounded-2xl transition-all duration-300
-                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_8px_rgba(0,0,0,0.06)]
+                    <div className={`relative p-4 rounded-2xl 
+                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.15),
+                                            inset_0_-1px_0_rgba(0,0,0,0.05),
+                                            0_3px_12px_rgba(0,0,0,0.08)]
+                                    transition-all duration-300
                                     group-hover:scale-110 group-hover:rotate-3
-                                    ${action.color === 'bg-medical-blue' ? 'bg-gradient-to-br from-blue-500/15 via-blue-400/10 to-blue-300/5 group-hover:from-blue-500/25 group-hover:via-blue-400/18 group-hover:to-blue-300/10 group-hover:shadow-[0_0_24px_8px_rgba(59,130,246,0.2)]' : ''}
-                                    ${action.color === 'bg-health-green' ? 'bg-gradient-to-br from-green-500/15 via-green-400/10 to-green-300/5 group-hover:from-green-500/25 group-hover:via-green-400/18 group-hover:to-green-300/10 group-hover:shadow-[0_0_24px_8px_rgba(34,197,94,0.2)]' : ''}
-                                    ${action.color === 'bg-attention-orange' ? 'bg-gradient-to-br from-orange-500/15 via-orange-400/10 to-orange-300/5 group-hover:from-orange-500/25 group-hover:via-orange-400/18 group-hover:to-orange-300/10 group-hover:shadow-[0_0_24px_8px_rgba(249,115,22,0.2)]' : ''}
-                                    ${action.color === 'bg-alert-red' ? 'bg-gradient-to-br from-red-500/15 via-red-400/10 to-red-300/5 group-hover:from-red-500/25 group-hover:via-red-400/18 group-hover:to-red-300/10 group-hover:shadow-[0_0_24px_8px_rgba(239,68,68,0.2)]' : ''}`}>
+                                    ${action.color === 'bg-medical-blue' ? 'bg-gradient-to-br from-blue-500/18 via-blue-400/12 to-blue-300/8 group-hover:from-blue-500/28 group-hover:via-blue-400/20 group-hover:to-blue-300/14 group-hover:shadow-[0_0_32px_10px_rgba(59,130,246,0.25),0_0_16px_4px_rgba(59,130,246,0.15)]' : ''}
+                                    ${action.color === 'bg-health-green' ? 'bg-gradient-to-br from-green-500/18 via-green-400/12 to-green-300/8 group-hover:from-green-500/28 group-hover:via-green-400/20 group-hover:to-green-300/14 group-hover:shadow-[0_0_32px_10px_rgba(34,197,94,0.25),0_0_16px_4px_rgba(34,197,94,0.15)]' : ''}
+                                    ${action.color === 'bg-attention-orange' ? 'bg-gradient-to-br from-orange-500/18 via-orange-400/12 to-orange-300/8 group-hover:from-orange-500/28 group-hover:via-orange-400/20 group-hover:to-orange-300/14 group-hover:shadow-[0_0_32px_10px_rgba(249,115,22,0.25),0_0_16px_4px_rgba(249,115,22,0.15)]' : ''}
+                                    ${action.color === 'bg-alert-red' ? 'bg-gradient-to-br from-red-500/18 via-red-400/12 to-red-300/8 group-hover:from-red-500/28 group-hover:via-red-400/20 group-hover:to-red-300/14 group-hover:shadow-[0_0_32px_10px_rgba(239,68,68,0.25),0_0_16px_4px_rgba(239,68,68,0.15)]' : ''}`}>
                       <Icon className="w-6 h-6 transition-transform duration-300" 
                             style={{ color: `var(--${action.color.replace('bg-', '')})` }} />
                     </div>
@@ -139,12 +158,20 @@ export default function Dashboard() {
       {/* Today's Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {/* Statistics */}
-        <Card className="md:col-span-1 border border-gray-200/60 dark:border-gray-700/60
-                         shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.12),0_2px_6px_rgba(15,23,42,0.06)]
-                         transition-all duration-300
-                         dark:shadow-[0_2px_8px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]
-                         dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4),0_2px_6px_rgba(0,0,0,0.25)]">
+        <Card className="md:col-span-1 
+                         bg-white dark:bg-gray-800
+                         border-2 border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                 0_2px_10px_rgba(15,23,42,0.06),
+                                 0_1px_3px_rgba(15,23,42,0.04)]
+                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
+                                      0_4px_16px_rgba(15,23,42,0.10),
+                                      0_2px_6px_rgba(15,23,42,0.06)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
+                                      0_2px_10px_rgba(0,0,0,0.20)]
+                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
+                                            0_4px_16px_rgba(0,0,0,0.35)]
+                         transition-all duration-300">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -219,12 +246,20 @@ export default function Dashboard() {
         </Card>
 
         {/* Results Ready for Review Widget */}
-        <Card className="md:col-span-1 border border-gray-200/60 dark:border-gray-700/60
-                         shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.12),0_2px_6px_rgba(15,23,42,0.06)]
-                         transition-all duration-300
-                         dark:shadow-[0_2px_8px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]
-                         dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4),0_2px_6px_rgba(0,0,0,0.25)]">
+        <Card className="md:col-span-1 
+                         bg-white dark:bg-gray-800
+                         border-2 border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                 0_2px_10px_rgba(15,23,42,0.06),
+                                 0_1px_3px_rgba(15,23,42,0.04)]
+                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
+                                      0_4px_16px_rgba(15,23,42,0.10),
+                                      0_2px_6px_rgba(15,23,42,0.06)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
+                                      0_2px_10px_rgba(0,0,0,0.20)]
+                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
+                                            0_4px_16px_rgba(0,0,0,0.35)]
+                         transition-all duration-300">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-purple-50/80 to-white dark:from-purple-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
@@ -378,12 +413,20 @@ export default function Dashboard() {
         </Card>
 
         {/* Pending Items */}
-        <Card className="md:col-span-2 lg:col-span-1 border border-gray-200/60 dark:border-gray-700/60
-                         shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.12),0_2px_6px_rgba(15,23,42,0.06)]
-                         transition-all duration-300
-                         dark:shadow-[0_2px_8px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]
-                         dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4),0_2px_6px_rgba(0,0,0,0.25)]">
+        <Card className="md:col-span-2 lg:col-span-1 
+                         bg-white dark:bg-gray-800
+                         border-2 border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                 0_2px_10px_rgba(15,23,42,0.06),
+                                 0_1px_3px_rgba(15,23,42,0.04)]
+                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
+                                      0_4px_16px_rgba(15,23,42,0.10),
+                                      0_2px_6px_rgba(15,23,42,0.06)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
+                                      0_2px_10px_rgba(0,0,0,0.20)]
+                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
+                                            0_4px_16px_rgba(0,0,0,0.35)]
+                         transition-all duration-300">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -483,12 +526,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         
         {/* Patient Flow & Queue Widget */}
-        <Card className="border border-gray-200/60 dark:border-gray-700/60
-                         shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.12),0_2px_6px_rgba(15,23,42,0.06)]
-                         transition-all duration-300
-                         dark:shadow-[0_2px_8px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]
-                         dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4),0_2px_6px_rgba(0,0,0,0.25)]">
+        <Card className="bg-white dark:bg-gray-800
+                         border-2 border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                 0_2px_10px_rgba(15,23,42,0.06),
+                                 0_1px_3px_rgba(15,23,42,0.04)]
+                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
+                                      0_4px_16px_rgba(15,23,42,0.10),
+                                      0_2px_6px_rgba(15,23,42,0.06)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
+                                      0_2px_10px_rgba(0,0,0,0.20)]
+                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
+                                            0_4px_16px_rgba(0,0,0,0.35)]
+                         transition-all duration-300">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-blue-50/80 to-white dark:from-blue-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
@@ -621,12 +671,19 @@ export default function Dashboard() {
         </Card>
 
         {/* Outstanding Payments Widget */}
-        <Card className="border border-gray-200/60 dark:border-gray-700/60
-                         shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.12),0_2px_6px_rgba(15,23,42,0.06)]
-                         transition-all duration-300
-                         dark:shadow-[0_2px_8px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]
-                         dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4),0_2px_6px_rgba(0,0,0,0.25)]">
+        <Card className="bg-white dark:bg-gray-800
+                         border-2 border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                 0_2px_10px_rgba(15,23,42,0.06),
+                                 0_1px_3px_rgba(15,23,42,0.04)]
+                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
+                                      0_4px_16px_rgba(15,23,42,0.10),
+                                      0_2px_6px_rgba(15,23,42,0.06)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
+                                      0_2px_10px_rgba(0,0,0,0.20)]
+                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
+                                            0_4px_16px_rgba(0,0,0,0.35)]
+                         transition-all duration-300">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-green-50/80 to-white dark:from-green-950/40 dark:to-gray-900">
             <div className="flex items-center gap-2">
@@ -721,12 +778,19 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent Patients */}
-        <Card className="border border-gray-200/60 dark:border-gray-700/60
-                         shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.03)]
-                         hover:shadow-[0_8px_24px_rgba(15,23,42,0.12),0_2px_6px_rgba(15,23,42,0.06)]
-                         transition-all duration-300
-                         dark:shadow-[0_2px_8px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]
-                         dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4),0_2px_6px_rgba(0,0,0,0.25)]">
+        <Card className="bg-white dark:bg-gray-800
+                         border-2 border-gray-200/80 dark:border-gray-700/60
+                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                 0_2px_10px_rgba(15,23,42,0.06),
+                                 0_1px_3px_rgba(15,23,42,0.04)]
+                         hover:shadow-[0_10px_40px_rgba(15,23,42,0.16),
+                                      0_4px_16px_rgba(15,23,42,0.10),
+                                      0_2px_6px_rgba(15,23,42,0.06)]
+                         dark:shadow-[0_4px_20px_rgba(0,0,0,0.30),
+                                      0_2px_10px_rgba(0,0,0,0.20)]
+                         dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.50),
+                                            0_4px_16px_rgba(0,0,0,0.35)]
+                         transition-all duration-300">
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
