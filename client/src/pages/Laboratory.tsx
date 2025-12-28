@@ -2169,7 +2169,7 @@ export default function Laboratory() {
             </div>
           </div>
         </div>
-            )}
-    </div>
+        )}
+    </>
   );
 }
