@@ -1,4 +1,4 @@
-import { eq, like, ilike, desc, and, count, or, sql, gte, lte, lt, isNull, inArray } from "drizzle-orm";
+import { eq, like, ilike, desc, and, count, or, sql, gte, lte, lt, isNull, isNotNull, ne, inArray } from "drizzle-orm";
 import { db } from './db';
 import * as schema from "@shared/schema";
 import createMemoryStore from "memorystore";
@@ -2975,8 +2975,11 @@ export class MemStorage implements IStorage {
       // Build the query to group by diagnosis and count occurrences
       const conditions = [];
       
-      // Filter out empty/null diagnoses using Drizzle helpers
-      conditions.push(sql`${treatments.diagnosis} IS NOT NULL AND TRIM(${treatments.diagnosis}) != ''`);
+      // Filter out empty/null diagnoses using Drizzle helpers for type safety
+      conditions.push(isNotNull(treatments.diagnosis));
+      conditions.push(ne(treatments.diagnosis, ''));
+      // Also filter trimmed empty strings
+      conditions.push(sql`TRIM(${treatments.diagnosis}) != ''`);
       
       // Apply date range filtering on visitDate if provided
       // Use visitDate for compatibility (clinicDay may not exist in older schemas)
@@ -3000,14 +3003,15 @@ export class MemStorage implements IStorage {
           count: sql<number>`count(*)`.mapWith(Number),
         })
         .from(treatments)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .where(and(...conditions))
         .groupBy(treatments.diagnosis)
         .orderBy(desc(sql`count(*)`));
       
       // Return the results with proper typing
       // diagnosis is guaranteed to be non-null and non-empty due to WHERE clause
+      // Using type assertion is safe here because of the filters above
       return results.map(r => ({
-        diagnosis: r.diagnosis!,
+        diagnosis: r.diagnosis as string,
         count: r.count,
       }));
     } catch (error) {
