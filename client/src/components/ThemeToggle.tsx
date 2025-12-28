@@ -1,5 +1,4 @@
 import { Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
@@ -22,18 +21,26 @@ export function ThemeToggle() {
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <button
       onClick={toggleTheme}
-      className="relative w-10 h-10 rounded-lg hover:bg-white/20 dark:hover:bg-white/10
-                 transition-premium group"
+      className="group relative p-2.5 rounded-xl
+                 bg-white/10 dark:bg-gray-700/30
+                 hover:bg-white/20 dark:hover:bg-gray-600/40
+                 text-white
+                 border border-white/30 dark:border-gray-500/30
+                 shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)]
+                 hover:shadow-[0_4px_12px_rgba(0,0,0,0.18),0_2px_4px_rgba(0,0,0,0.12)]
+                 transition-all duration-300 ease-out
+                 hover:scale-[1.05] hover:rotate-12
+                 backdrop-blur-sm"
       aria-label="Toggle theme"
     >
       <Sun className="h-5 w-5 rotate-0 scale-100 transition-all duration-300 
-                     dark:-rotate-90 dark:scale-0 text-white" />
-      <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all duration-300 
-                      dark:rotate-0 dark:scale-100 text-white" />
-    </Button>
+                     dark:-rotate-90 dark:scale-0 text-white
+                     group-hover:scale-110 group-hover:rotate-45" />
+      <Moon className="absolute top-2.5 left-2.5 h-5 w-5 rotate-90 scale-0 transition-all duration-300 
+                      dark:rotate-0 dark:scale-100 text-white
+                      group-hover:scale-110" />
+    </button>
   );
 }
