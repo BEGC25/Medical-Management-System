@@ -28,6 +28,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 
+// Premium shadow system constants
+const CARD_SHADOW_DEFAULT = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
+const CARD_SHADOW_HOVER = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
+const ACTION_CARD_SHADOW_HOVER = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.18), 0 20px 48px -8px rgba(15,23,42,0.15), 0 32px 64px -12px rgba(15,23,42,0.12)';
+
 export default function Dashboard() {
   const { data: stats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -48,11 +53,6 @@ export default function Dashboard() {
   const { data: resultsReady } = useQuery({
     queryKey: ["/api/dashboard/results-ready"],
   });
-
-  // Premium shadow system constants
-  const CARD_SHADOW_DEFAULT = '0 1px 3px 0 rgba(15,23,42,0.08), 0 4px 12px -2px rgba(15,23,42,0.12), 0 8px 24px -4px rgba(15,23,42,0.1)';
-  const CARD_SHADOW_HOVER = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.16), 0 20px 48px -8px rgba(15,23,42,0.14)';
-  const ACTION_CARD_SHADOW_HOVER = '0 4px 8px 0 rgba(15,23,42,0.1), 0 12px 32px -4px rgba(15,23,42,0.18), 0 20px 48px -8px rgba(15,23,42,0.15), 0 32px 64px -12px rgba(15,23,42,0.12)';
 
 
   const quickActions = [
