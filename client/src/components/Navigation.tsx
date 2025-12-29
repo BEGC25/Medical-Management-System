@@ -78,7 +78,7 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
     <div className="space-y-8">
       {Object.entries(groupedItems).map(([category, items]) => (
         <div key={category} className="space-y-2">
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90 dark:text-white/85 mb-3 mt-6 px-4 first:mt-2 transition-colors duration-300">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-300 dark:text-slate-400 mb-3 mt-6 px-4 first:mt-2 transition-colors duration-300">
             {category}
           </h3>
           <div className="space-y-1">
@@ -141,9 +141,9 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
       ))}
       
       {/* Professional Footer - Now part of scrollable content */}
-      <div className="mt-8 pt-4 border-t border-white/20">
+      <div className="mt-8 pt-4 border-t border-slate-700 dark:border-slate-600">
         <div className="text-center px-3">
-          <p className="text-xs text-white/70 font-medium">
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
             © 2025 BGC Medical System
           </p>
         </div>
@@ -185,11 +185,11 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
       >
         
         {/* Mobile Header with Close Button */}
-        <div className="flex items-center justify-between p-4 border-b border-white/20">
-          <h2 className="text-lg font-bold text-white">Menu</h2>
+        <div className="flex items-center justify-between p-4 border-b border-slate-700 dark:border-slate-600">
+          <h2 className="text-lg font-bold text-slate-100 dark:text-slate-200">Menu</h2>
           <button 
             onClick={onCloseMobileMenu}
-            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+            className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
             aria-label="Close menu"
           >
             <X className="w-5 h-5 text-white" />
