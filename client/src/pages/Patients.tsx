@@ -596,7 +596,13 @@ export default function Patients() {
         {/* Right side: Quick info */}
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
           <Info className="w-3.5 h-3.5" />
-          <span>Showing results for selected date range</span>
+          <span>
+            {dateFilter === "today" && "Showing patients registered today"}
+            {dateFilter === "yesterday" && "Showing patients registered yesterday"}
+            {dateFilter === "last7days" && "Showing patients from last 7 days"}
+            {dateFilter === "last30days" && "Showing patients from last 30 days"}
+            {dateFilter === "custom" && "Showing patients in custom date range"}
+          </span>
         </div>
         
       </div>
