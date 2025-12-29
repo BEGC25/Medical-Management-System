@@ -48,7 +48,6 @@ function useSidebar() {
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider.")
   }
-
   return context
 }
 
@@ -77,9 +76,11 @@ const SidebarProvider = React.forwardRef<
 
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
+
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value
+
         if (setOpenProp) {
           setOpenProp(openState)
         } else {
@@ -177,18 +178,20 @@ const Sidebar = React.forwardRef<
 
     const sideBorder =
       side === "left"
-        ? "border-r border-sidebar-border/60"
-        : "border-l border-sidebar-border/60"
+        ? "border-r border-sidebar-border/80"
+        : "border-l border-sidebar-border/80"
 
-    // Premium "glass" surface helpers (works great with your teal gradient theme)
-    const premiumSurface =
-      "bg-sidebar/95 supports-[backdrop-filter]:bg-sidebar/85 supports-[backdrop-filter]:backdrop-blur-xl"
+    // Crisp Solid Premium (NO blur/haze)
+    const premiumSurface = cn(
+      "bg-sidebar text-sidebar-foreground",
+      "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+    )
 
     if (collapsible === "none") {
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col text-sidebar-foreground",
+            "flex h-full w-[--sidebar-width] flex-col",
             premiumSurface,
             sideBorder,
             className
@@ -210,7 +213,7 @@ const Sidebar = React.forwardRef<
             className={cn(
               "w-[--sidebar-width] p-0 text-sidebar-foreground [&>button]:hidden",
               premiumSurface,
-              "border-sidebar-border/60"
+              "border-sidebar-border/80"
             )}
             style={
               {
@@ -256,14 +259,10 @@ const Sidebar = React.forwardRef<
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+            // Padding rules by variant
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-              : cn(
-                  "group-data-[collapsible=icon]:w-[--sidebar-width-icon]",
-                  side === "left"
-                    ? "border-r border-sidebar-border/60"
-                    : "border-l border-sidebar-border/60"
-                ),
+              : cn("group-data-[collapsible=icon]:w-[--sidebar-width-icon]", sideBorder),
             className
           )}
           {...props}
@@ -273,11 +272,11 @@ const Sidebar = React.forwardRef<
             className={cn(
               "flex h-full w-full flex-col",
               premiumSurface,
-              // Floating/inset get extra refinement
-              "group-data-[variant=floating]:rounded-2xl group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border/70",
-              "group-data-[variant=floating]:shadow-[0_18px_45px_rgba(0,0,0,0.18)]",
-              "group-data-[variant=inset]:rounded-2xl group-data-[variant=inset]:border group-data-[variant=inset]:border-sidebar-border/60",
-              "group-data-[variant=inset]:shadow-[0_12px_30px_rgba(0,0,0,0.14)]"
+              // Floating/inset refinement
+              "group-data-[variant=floating]:rounded-2xl group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border/75",
+              "group-data-[variant=floating]:shadow-[0_18px_45px_rgba(0,0,0,0.20)]",
+              "group-data-[variant=inset]:rounded-2xl group-data-[variant=inset]:border group-data-[variant=inset]:border-sidebar-border/75",
+              "group-data-[variant=inset]:shadow-[0_12px_30px_rgba(0,0,0,0.16)]"
             )}
           >
             {children}
@@ -362,7 +361,8 @@ const SidebarInset = React.forwardRef<
       ref={ref}
       className={cn(
         "relative flex w-full flex-1 flex-col bg-background",
-        "md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-2xl md:peer-data-[variant=inset]:shadow-[0_12px_30px_rgba(0,0,0,0.10)]",
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0",
+        "md:peer-data-[variant=inset]:rounded-2xl md:peer-data-[variant=inset]:shadow-[0_12px_30px_rgba(0,0,0,0.10)]",
         className
       )}
       {...props}
@@ -381,7 +381,7 @@ const SidebarInput = React.forwardRef<
       data-sidebar="input"
       className={cn(
         "h-9 w-full bg-background/80 shadow-none",
-        "border border-sidebar-border/60",
+        "border border-sidebar-border/70",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         className
       )}
@@ -429,7 +429,7 @@ const SidebarSeparator = React.forwardRef<
     <Separator
       ref={ref}
       data-sidebar="separator"
-      className={cn("mx-3 w-auto bg-sidebar-border/70", className)}
+      className={cn("mx-3 w-auto bg-sidebar-border/75", className)}
       {...props}
     />
   )
@@ -483,7 +483,7 @@ const SidebarGroupLabel = React.forwardRef<
       className={cn(
         "flex h-8 shrink-0 items-center rounded-md px-2",
         "text-[11px] font-semibold uppercase tracking-[0.16em]",
-        "text-sidebar-foreground/80",
+        "text-sidebar-foreground/90",
         "outline-none ring-sidebar-ring",
         "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
         "transition-[margin,opacity] duration-200 ease-linear",
@@ -583,7 +583,7 @@ const sidebarMenuButtonVariants = cva(
     // Active
     "data-[active=true]:bg-sidebar-accent/70 data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold",
     "data-[active=true]:shadow-[0_1px_0_rgba(255,255,255,0.08)_inset]",
-    // Left indicator bar (world-class touch)
+    // Left indicator bar
     "before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2",
     "before:h-6 before:w-[3px] before:rounded-r before:bg-sidebar-ring",
     "before:opacity-0 before:transition-opacity before:duration-200",
@@ -647,14 +647,10 @@ const SidebarMenuButton = React.forwardRef<
       />
     )
 
-    if (!tooltip) {
-      return button
-    }
+    if (!tooltip) return button
 
     if (typeof tooltip === "string") {
-      tooltip = {
-        children: tooltip,
-      }
+      tooltip = { children: tooltip }
     }
 
     return (
@@ -731,9 +727,7 @@ SidebarMenuBadge.displayName = "SidebarMenuBadge"
 
 const SidebarMenuSkeleton = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    showIcon?: boolean
-  }
+  React.ComponentProps<"div"> & { showIcon?: boolean }
 >(({ className, showIcon = false, ...props }, ref) => {
   const width = React.useMemo(() => {
     return `${Math.floor(Math.random() * 40) + 50}%`
@@ -747,19 +741,12 @@ const SidebarMenuSkeleton = React.forwardRef<
       {...props}
     >
       {showIcon && (
-        <Skeleton
-          className="size-[18px] rounded-lg"
-          data-sidebar="menu-skeleton-icon"
-        />
+        <Skeleton className="size-[18px] rounded-lg" data-sidebar="menu-skeleton-icon" />
       )}
       <Skeleton
         className="h-4 max-w-[--skeleton-width] flex-1"
         data-sidebar="menu-skeleton-text"
-        style={
-          {
-            "--skeleton-width": width,
-          } as React.CSSProperties
-        }
+        style={{ "--skeleton-width": width } as React.CSSProperties}
       />
     </div>
   )
@@ -774,7 +761,7 @@ const SidebarMenuSub = React.forwardRef<
     ref={ref}
     data-sidebar="menu-sub"
     className={cn(
-      "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border/70 px-2.5 py-1",
+      "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border/75 px-2.5 py-1",
       "group-data-[collapsible=icon]:hidden",
       className
     )}
