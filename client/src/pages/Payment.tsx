@@ -352,7 +352,7 @@ export default function Payment() {
     return (
       <div 
         key={order.id} 
-        className="p-4 rounded-lg bg-white border-l-[3px] border-red-500 border-r border-t border-b border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-gray-600" 
+        className="p-4 rounded-xl bg-white border-l-4 border-red-500 border-r border-t border-b border-gray-200/70 hover:border-red-400 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-red-600 group" 
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -381,8 +381,8 @@ export default function Payment() {
             {order.quantity && <p className="text-sm text-gray-600 dark:text-gray-400">Quantity: {order.quantity}</p>}
           </div>
           <div className="flex flex-col items-end gap-1">
-            <Badge variant="destructive" className="text-xs">UNPAID</Badge>
-            <span className="text-xs text-gray-500 mt-1">Click to process</span>
+            <Badge variant="destructive" className="text-xs font-semibold shadow-sm">UNPAID</Badge>
+            <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Click to process →</span>
           </div>
         </div>
       </div>
@@ -390,40 +390,44 @@ export default function Payment() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 fade-in duration-500 animate-in">
+      {/* Page Header - Enhanced */}
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Payment Processing</h1>
-          <p className="text-gray-500 mt-1">Process patient payments and manage outstanding balances</p>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-cyan-600 via-cyan-600 to-cyan-700 bg-clip-text text-transparent">
+            Payment Processing
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2 text-base">Process patient payments and manage outstanding balances</p>
         </div>
         {allUnpaidOrders && getTotalUnpaidCount() > 0 && (
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-600" />
-            <span className="text-sm font-medium">
-              <span className="text-red-600">{getTotalUnpaidCount()}</span> pending payment{getTotalUnpaidCount() !== 1 ? 's' : ''}
+          <div className="flex items-center gap-3 bg-red-50 dark:bg-red-950 px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 animate-pulse" />
+            <span className="text-sm font-semibold text-red-700 dark:text-red-300">
+              <span className="text-lg font-bold">{getTotalUnpaidCount()}</span> pending payment{getTotalUnpaidCount() !== 1 ? 's' : ''}
             </span>
           </div>
         )}
       </div>
 
-      {/* Quick Patient Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="w-5 h-5" />
-            Quick Patient Search
+      {/* Quick Patient Search - Enhanced */}
+      <Card className="border-gray-200/70 shadow-md hover:shadow-lg transition-all duration-300">
+        <CardHeader className="bg-gradient-to-r from-blue-50 via-blue-50/50 to-transparent dark:from-blue-950 dark:via-blue-950/50 pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+              <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="font-semibold">Quick Patient Search</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
         <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
             <Input
               placeholder="Search patients by name or ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-12 text-base"
+              className="pl-10 h-12 text-base border-gray-200/70 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
               data-testid="input-search-patients"
             />
           </div>
@@ -455,12 +459,12 @@ export default function Payment() {
                 <Button
                   key={patient.id}
                   variant="outline"
-                  className="justify-start h-auto p-4 hover:bg-gray-50 hover:border-gray-300 transition-all dark:hover:bg-gray-800 dark:hover:border-gray-600"
+                  className="justify-start h-auto p-4 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md transition-all duration-200 dark:hover:bg-blue-950 dark:hover:border-blue-600 border-gray-200/70 group"
                   onClick={() => handleSelectPatient(patient)}
                   data-testid={`patient-result-${patient.patientId}`}
                 >
-                  <div className="text-left">
-                    <div className="font-semibold">
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
                       {patient.firstName} {patient.lastName} ({patient.patientId})
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -473,69 +477,74 @@ export default function Payment() {
           )}
           
           {searchQuery.length > 0 && searchQuery.length < 2 && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">Enter at least 2 characters to search for patients</p>
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg shadow-sm">
+              <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                <span className="inline-block mr-1" aria-hidden="true">💡</span>
+                <span>Enter at least 2 characters to search for patients</span>
+              </p>
             </div>
           )}
         </div>
         </CardContent>
       </Card>
 
-      {/* Pending Payments Overview */}
+      {/* Pending Payments Overview - Enhanced */}
       {allUnpaidLoading ? (
-        <Card>
+        <Card className="border-gray-200/70 shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Patients with Pending Payments
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                <Users className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <span>Patients with Pending Payments</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="h-16 bg-gray-200 rounded"></div>
+                  <div className="h-20 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded-lg"></div>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
       ) : allUnpaidOrders && getTotalUnpaidCount() > 0 ? (
-        <Card>
+        <Card className="border-gray-200/70 shadow-md hover:shadow-lg transition-all duration-300">
           <Tabs defaultValue="laboratory" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="laboratory" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 p-1.5 gap-1">
+              <TabsTrigger value="laboratory" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all" aria-label="Laboratory Tests">
                 <TestTube className="h-4 w-4" />
-                Laboratory
+                <span className="hidden sm:inline">Laboratory</span>
                 {allUnpaidOrders.laboratory.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                  <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm">
                     {allUnpaidOrders.laboratory.length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="xray" className="flex items-center gap-2">
+              <TabsTrigger value="xray" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all" aria-label="X-Ray Exams">
                 <XRayIcon className="h-4 w-4" />
-                X-Ray
+                <span className="hidden sm:inline">X-Ray</span>
                 {allUnpaidOrders.xray.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                  <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm">
                     {allUnpaidOrders.xray.length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="ultrasound" className="flex items-center gap-2">
+              <TabsTrigger value="ultrasound" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all" aria-label="Ultrasound Exams">
                 <ActivitySquare className="h-4 w-4" />
-                Ultrasound
+                <span className="hidden sm:inline">Ultrasound</span>
                 {allUnpaidOrders.ultrasound.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                  <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm">
                     {allUnpaidOrders.ultrasound.length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="pharmacy" className="flex items-center gap-2">
+              <TabsTrigger value="pharmacy" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all" aria-label="Pharmacy Orders">
                 <Pill className="h-4 w-4" />
-                Pharmacy
+                <span className="hidden sm:inline">Pharmacy</span>
                 {allUnpaidOrders.pharmacy.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                  <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm">
                     {allUnpaidOrders.pharmacy.length}
                   </span>
                 )}
@@ -600,69 +609,81 @@ export default function Payment() {
           </Tabs>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              Payment Status
+        <Card className="border-gray-200/70 shadow-md">
+          <CardHeader className="bg-gradient-to-r from-green-50 via-green-50/50 to-transparent dark:from-green-950 dark:via-green-950/50">
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <span>Payment Status</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-center py-12">
-              <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All Payments Up to Date!</h3>
-              <p className="text-gray-500">No pending payments at this time. Great work!</p>
+          <CardContent className="pt-6">
+            <div className="text-center py-16">
+              <div className="relative inline-block mb-4">
+                <DollarSign className="w-20 h-20 mx-auto text-gray-300 dark:text-gray-600" />
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-white" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">All Payments Up to Date!</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                No pending payments at this time. Great work!
+                <span className="inline-block ml-1" aria-hidden="true">🎉</span>
+              </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Payment History Section */}
-      <Card>
-        <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
-          <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-green-600" />
-            Payment History
+      {/* Payment History Section - Enhanced */}
+      <Card className="border-gray-200/70 shadow-md hover:shadow-lg transition-all duration-300">
+        <CardHeader className="bg-gradient-to-r from-green-50 via-emerald-50 to-green-50/50 dark:from-green-950 dark:via-emerald-950 dark:to-green-950/50 pb-5">
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg shadow-sm">
+              <Receipt className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <span className="font-bold text-lg">Payment History</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           {/* Tabs and Search */}
           <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
             <Tabs value={paymentHistoryTab} onValueChange={(v) => setPaymentHistoryTab(v as "today" | "all")} className="w-full sm:w-auto">
-              <TabsList className="grid w-full sm:w-auto grid-cols-2">
-                <TabsTrigger value="today">Today's Payments</TabsTrigger>
-                <TabsTrigger value="all">All Payments</TabsTrigger>
+              <TabsList className="grid w-full sm:w-auto grid-cols-2 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 p-1">
+                <TabsTrigger value="today" className="data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">Today's Payments</TabsTrigger>
+                <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">All Payments</TabsTrigger>
               </TabsList>
             </Tabs>
             
-            <div className="relative flex-1 sm:max-w-xs">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="relative flex-1 sm:max-w-xs group">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-green-500 transition-colors" />
               <Input
                 placeholder="Search by Patient ID..."
                 value={paymentSearchQuery}
                 onChange={(e) => setPaymentSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-gray-200/70 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all"
                 data-testid="input-search-payment-history"
               />
             </div>
           </div>
 
-          {/* Quick Stats for Today */}
+          {/* Quick Stats for Today - Enhanced */}
           {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200">
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Payments</div>
-                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{paymentHistory.length}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 fade-in duration-500 animate-in">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950 dark:to-blue-900 p-5 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Total Payments</div>
+                <div className="text-3xl font-bold text-blue-800 dark:text-blue-200">{paymentHistory.length}</div>
               </div>
-              <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200">
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Amount</div>
-                <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+              <div className="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950 dark:to-green-900 p-5 rounded-xl border border-green-200 dark:border-green-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-sm font-medium text-green-700 dark:text-green-300 mb-1">Total Amount</div>
+                <div className="text-3xl font-bold text-green-800 dark:text-green-200">
                   SSP {paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0).toLocaleString()}
                 </div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200">
-                <div className="text-sm text-gray-600 dark:text-gray-400">Avg. Payment</div>
-                <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950 dark:to-purple-900 p-5 rounded-xl border border-purple-200 dark:border-purple-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-1">Avg. Payment</div>
+                <div className="text-3xl font-bold text-purple-800 dark:text-purple-200">
                   SSP {Math.round(paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0) / paymentHistory.length).toLocaleString()}
                 </div>
               </div>
@@ -686,7 +707,7 @@ export default function Payment() {
           ) : (
             <div className="space-y-3">
               {paymentHistory.map((payment) => (
-                <div key={payment.id} className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-950 transition-all">
+                <div key={payment.id} className="p-4 border-2 border-gray-200/70 rounded-xl hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50/50 hover:to-transparent dark:hover:from-green-950/30 dark:hover:to-transparent hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
                   <div className="flex flex-col sm:flex-row justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -728,7 +749,7 @@ export default function Payment() {
                       </p>
                     </div>
                     <div className="flex sm:flex-col gap-2 items-end">
-                      <Badge className="bg-green-600 text-white">PAID</Badge>
+                      <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm font-semibold">PAID</Badge>
                       <Button
                         variant="outline"
                         size="sm"
@@ -736,7 +757,7 @@ export default function Payment() {
                           setSelectedPaymentForView(payment);
                           setIsReceiptViewOpen(true);
                         }}
-                        className="min-h-[36px]"
+                        className="min-h-[36px] border-gray-200/70 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-950 transition-all group-hover:shadow-md"
                         data-testid={`button-view-receipt-${payment.paymentId}`}
                       >
                         <Eye className="h-4 w-4 mr-1" />
@@ -751,17 +772,19 @@ export default function Payment() {
         </CardContent>
       </Card>
 
-      {/* Payment Processing Modal - Redesigned for Mobile */}
+      {/* Payment Processing Modal - Enhanced */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-3 sm:p-6">
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-3 sm:p-6 border-gray-200/70">
           <DialogHeader>
-            <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Receipt className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
-                <span className="text-lg sm:text-xl">Process Payment</span>
+            <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-gray-200/70">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-xl shadow-sm">
+                  <Receipt className="h-5 w-5 sm:h-6 sm:w-6 text-blue-700 dark:text-blue-300 flex-shrink-0" />
+                </div>
+                <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Process Payment</span>
               </div>
               {selectedPatient && (
-                <div className="text-sm sm:text-base font-normal text-blue-600 bg-blue-50 px-3 py-1.5 rounded-md">
+                <div className="text-sm sm:text-base font-semibold text-blue-700 dark:text-blue-300 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 px-4 py-2 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
                   {selectedPatient.firstName} {selectedPatient.lastName} ({selectedPatient.patientId})
                 </div>
               )}
@@ -770,31 +793,35 @@ export default function Payment() {
 
           {selectedPatient && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4">
-              {/* SECTION 1: Unpaid Orders */}
-              <Card className="lg:col-span-1 border-red-200">
-                <CardHeader className="bg-red-50 dark:bg-red-950 pb-3">
+              {/* SECTION 1: Unpaid Orders - Enhanced */}
+              <Card className="lg:col-span-1 border-2 border-red-200/70 shadow-md hover:shadow-lg transition-all">
+                <CardHeader className="bg-gradient-to-r from-red-50 via-red-50/70 to-transparent dark:from-red-950 dark:via-red-950/70 pb-3">
                   <CardTitle className="flex items-center justify-between text-sm sm:text-base">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
-                      <span>Unpaid Orders</span>
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-red-100 dark:bg-red-900 rounded-lg">
+                        <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400" />
+                      </div>
+                      <span className="font-bold">Unpaid Orders</span>
                     </div>
                     {unpaidOrders.length > 0 && (
-                      <Badge variant="destructive" className="text-xs">{unpaidOrders.length}</Badge>
+                      <Badge variant="destructive" className="text-xs font-semibold shadow-sm">{unpaidOrders.length}</Badge>
                     )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4 px-3 sm:px-6">
                   {unpaidOrders.length === 0 ? (
-                    <div className="text-center py-8">
-                      <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-2" />
-                      <p className="text-green-600 font-semibold">All Paid!</p>
-                      <p className="text-sm text-gray-500 mt-1">No unpaid orders</p>
+                    <div className="text-center py-10">
+                      <div className="relative inline-block mb-3">
+                        <CheckCircle className="h-16 w-16 mx-auto text-green-500" />
+                      </div>
+                      <p className="text-green-600 dark:text-green-400 font-bold text-lg">All Paid!</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No unpaid orders</p>
                     </div>
                   ) : (
                     <>
                       <Button
                         onClick={addAllUnpaidItems}
-                        className="w-full mb-4 bg-blue-600 hover:bg-blue-700 min-h-[44px]"
+                        className="w-full mb-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all min-h-[44px]"
                         size="lg"
                         data-testid="button-add-all-unpaid"
                       >
@@ -865,16 +892,18 @@ export default function Payment() {
                 </CardContent>
               </Card>
 
-              {/* SECTION 2: Selected Items to Pay */}
-              <Card className="lg:col-span-1 border-green-200">
-                <CardHeader className="bg-green-50 dark:bg-green-950 pb-3">
+              {/* SECTION 2: Selected Items to Pay - Enhanced */}
+              <Card className="lg:col-span-1 border-2 border-green-200/70 shadow-md hover:shadow-lg transition-all">
+                <CardHeader className="bg-gradient-to-r from-green-50 via-green-50/70 to-transparent dark:from-green-950 dark:via-green-950/70 pb-3">
                   <CardTitle className="flex items-center justify-between text-sm sm:text-base">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                      <span>Selected Items to Pay</span>
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-green-100 dark:bg-green-900 rounded-lg">
+                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <span className="font-bold">Selected Items to Pay</span>
                     </div>
                     {paymentItems.length > 0 && (
-                      <Badge className="bg-green-600 text-xs">{paymentItems.length}</Badge>
+                      <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white text-xs shadow-sm font-semibold">{paymentItems.length}</Badge>
                     )}
                   </CardTitle>
                 </CardHeader>
@@ -918,10 +947,10 @@ export default function Payment() {
                         ))}
                       </div>
                       
-                      <div className="border-t-2 border-green-600 pt-3 bg-green-100 dark:bg-green-900 -mx-3 sm:-mx-6 px-3 sm:px-6 py-3 sticky bottom-0">
+                      <div className="border-t-2 border-green-600 pt-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-950 -mx-3 sm:-mx-6 px-3 sm:px-6 py-4 sticky bottom-0 rounded-b-lg shadow-lg">
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-base sm:text-lg">Total Amount:</span>
-                          <span className="font-bold text-lg sm:text-2xl text-green-700 dark:text-green-400">
+                          <span className="font-bold text-base sm:text-lg text-green-800 dark:text-green-200">Total Amount:</span>
+                          <span className="font-bold text-xl sm:text-3xl text-green-700 dark:text-green-400">
                             SSP {Math.round(getTotalAmount()).toLocaleString()}
                           </span>
                         </div>
@@ -985,12 +1014,14 @@ export default function Payment() {
                 </CardContent>
               </Card>
 
-              {/* SECTION 3: Payment Details & Summary */}
-              <Card className="lg:col-span-1 border-blue-200">
-                <CardHeader className="bg-blue-50 dark:bg-blue-950 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                    <span>Payment Details</span>
+              {/* SECTION 3: Payment Details & Summary - Enhanced */}
+              <Card className="lg:col-span-1 border-2 border-blue-200/70 shadow-md hover:shadow-lg transition-all">
+                <CardHeader className="bg-gradient-to-r from-blue-50 via-blue-50/70 to-transparent dark:from-blue-950 dark:via-blue-950/70 pb-3">
+                  <CardTitle className="flex items-center gap-3 text-sm sm:text-base">
+                    <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                      <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <span className="font-bold">Payment Details</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4 px-3 sm:px-6">
@@ -1002,25 +1033,25 @@ export default function Payment() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {/* Payment Summary */}
-                      <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg border border-blue-200">
-                        <h4 className="font-semibold mb-3 text-sm sm:text-base">Payment Summary</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-700 dark:text-gray-300">Number of Items:</span>
-                            <span className="font-semibold">{paymentItems.length}</span>
+                      {/* Payment Summary - Enhanced */}
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-950 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-sm">
+                        <h4 className="font-bold mb-3 text-sm sm:text-base text-blue-800 dark:text-blue-200">Payment Summary</h4>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between items-center p-2 bg-white/50 dark:bg-black/20 rounded-lg">
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">Number of Items:</span>
+                            <span className="font-bold text-blue-700 dark:text-blue-300">{paymentItems.length}</span>
                           </div>
-                          <div className="flex justify-between text-lg font-bold border-t pt-2">
-                            <span>Total Amount:</span>
-                            <span className="text-blue-700 dark:text-blue-400">SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
+                          <div className="flex justify-between text-lg font-bold border-t-2 border-blue-300 dark:border-blue-700 pt-3">
+                            <span className="text-blue-800 dark:text-blue-200">Total Amount:</span>
+                            <span className="text-xl text-blue-700 dark:text-blue-400">SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Receipt Preview Button */}
+                      {/* Receipt Preview Button - Enhanced */}
                       <Button
                         variant="outline"
-                        className="w-full min-h-[44px]"
+                        className="w-full min-h-[44px] border-2 border-blue-200/70 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 transition-all shadow-sm hover:shadow-md"
                         onClick={() => setShowReceiptPreview(!showReceiptPreview)}
                         data-testid="button-toggle-receipt-preview"
                       >
@@ -1103,12 +1134,15 @@ export default function Payment() {
                         <Button
                           onClick={handleProcessPayment}
                           disabled={createPaymentMutation.isPending || !receivedBy.trim()}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold min-h-[50px] text-base sm:text-lg"
+                          className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold min-h-[50px] text-base sm:text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                           size="lg"
                           data-testid="button-process-payment"
                         >
                           {createPaymentMutation.isPending ? (
-                            <>Processing...</>
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                              Processing...
+                            </>
                           ) : (
                             <>
                               <CheckCircle className="h-5 w-5 mr-2" />
