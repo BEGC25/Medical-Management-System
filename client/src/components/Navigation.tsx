@@ -78,7 +78,7 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
     <div className="space-y-8">
       {Object.entries(groupedItems).map(([category, items]) => (
         <div key={category} className="space-y-2">
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/90 mb-3 mt-6 px-4 first:mt-2">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/60 mb-3 mt-6 px-4 first:mt-2">
             {category}
           </h3>
           <div className="space-y-1">
@@ -93,25 +93,26 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
                       <div 
                         className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-xl ml-[-4px] transition-all duration-300"
                         style={{
-                          background: 'linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 100%)',
-                          borderLeft: '4px solid #ffffff',
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 15px rgba(255,255,255,0.2)'
+                          background: 'linear-gradient(90deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
+                          borderLeft: '4px solid rgba(255,255,255,0.9)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.15)',
+                          backdropFilter: 'blur(10px)',
                         }}
                       >
-                        <Icon className="w-5 h-5 text-white" />
+                        <Icon className="w-5 h-5 text-white transition-transform duration-300 group-hover:scale-110" />
                         <span className="font-semibold text-white tracking-tight">{item.label}</span>
                         
                         {/* Active indicator dot */}
                         <div className="absolute right-3">
                           <div 
                             className="w-2 h-2 rounded-full bg-white"
-                            style={{ boxShadow: '0 0 6px rgba(255,255,255,0.8)' }}
+                            style={{ boxShadow: '0 0 8px rgba(255,255,255,0.9)' }}
                           />
                         </div>
                       </div>
                     ) : (
-                      <div className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-lg text-white/75 hover:text-white hover:bg-white/10 border-l-4 border-transparent hover:border-white/40 transition-all duration-[var(--transition-base)] cursor-pointer">
-                        <Icon className="w-5 h-5 transition-transform duration-[var(--transition-base)] group-hover:scale-105" />
+                      <div className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 border-l-4 border-transparent hover:border-white/30 transition-all duration-300 cursor-pointer hover:scale-[1.02]">
+                        <Icon className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
                         <span className="font-medium">{item.label}</span>
                       </div>
                     )}
@@ -140,15 +141,25 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
       <aside 
         className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 overflow-y-auto transition-all duration-[var(--transition-slow)] z-30
                    hidden lg:block
-                   bg-[hsl(var(--clinical-teal-600))]
-                   border-r border-[hsl(var(--clinical-teal-700))]/30
-                   shadow-[var(--shadow-lg)]"
+                   border-r border-[hsl(var(--clinical-teal-700))]/30"
+        style={{
+          background: 'linear-gradient(180deg, hsl(var(--clinical-teal-500)) 0%, hsl(var(--clinical-teal-700)) 100%)',
+          boxShadow: 'var(--sidebar-glow), var(--shadow-lg)',
+        }}
       >
-        {/* Subtle depth overlay */}
+        {/* Premium depth overlay with subtle gradient */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.03) 100%)',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.1) 100%)',
+          }}
+        />
+        
+        {/* Soft inner glow effect */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-60"
+          style={{
+            background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.1) 0%, transparent 50%)',
           }}
         />
         
@@ -170,14 +181,22 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
       <aside 
         className={`fixed left-0 top-0 h-full w-72 z-50 lg:hidden
                     transform transition-transform duration-[var(--transition-slow)] ease-out
-                    bg-[hsl(var(--clinical-teal-600))]
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{
-          boxShadow: isMobileMenuOpen ? 'var(--shadow-2xl)' : 'none'
+          background: 'linear-gradient(180deg, hsl(var(--clinical-teal-500)) 0%, hsl(var(--clinical-teal-700)) 100%)',
+          boxShadow: isMobileMenuOpen ? 'var(--sidebar-glow), var(--shadow-2xl)' : 'none'
         }}
       >
+        {/* Premium depth overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.1) 100%)',
+          }}
+        />
+        
         {/* Mobile Header with Close Button */}
-        <div className="flex items-center justify-between p-4 border-b border-white/20">
+        <div className="relative z-10 flex items-center justify-between p-4 border-b border-white/20">
           <h2 className="text-lg font-bold text-white">Menu</h2>
           <button 
             onClick={onCloseMobileMenu}
@@ -189,7 +208,7 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
         </div>
 
         {/* Mobile Navigation Content */}
-        <nav className="h-[calc(100%-60px)] overflow-y-auto px-4 py-4">
+        <nav className="relative z-10 h-[calc(100%-60px)] overflow-y-auto px-4 py-4">
           {renderNavItems(true)}
         </nav>
       </aside>
