@@ -105,21 +105,14 @@ export default function Dashboard() {
           return (
             <Link key={action.title} href={action.href}>
               <Card 
-                className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl cursor-pointer transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] active:translate-y-0 active:scale-[0.99]"
+                className="card-quick-action group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl cursor-pointer transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] active:translate-y-0 active:scale-[0.99]"
                 style={{ 
                   animation: `slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s backwards`,
                   border: '1px solid rgba(0,0,0,0.06)',
-                  boxShadow: 'var(--card-shadow-premium)',
                   borderLeft: action.color === 'bg-medical-blue' ? '4px solid #0ea5e9' :
                               action.color === 'bg-health-green' ? '4px solid #22c55e' :
                               action.color === 'bg-attention-orange' ? '4px solid #f97316' :
                               '4px solid #ef4444'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05), 0 8px 16px rgba(0,0,0,0.06), 0 16px 32px rgba(0,0,0,0.08), 0 32px 64px rgba(0,0,0,0.06)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = 'var(--card-shadow-premium)';
                 }}
               >
                 {/* Subtle gradient overlay */}
@@ -133,7 +126,7 @@ export default function Dashboard() {
                   }}
                 />
                 
-                <CardContent className="p-6 relative z-10">
+                <CardContent className="p-6 relative">
                   <div className="flex items-center gap-4">
                     <div 
                       className="p-4 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
