@@ -33,40 +33,23 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
 
   return (
     <header className="sticky top-0 left-0 right-0 z-[var(--z-sticky)]
-                       relative overflow-hidden
-                       bg-gradient-to-r from-[hsl(var(--clinical-teal-500))] via-[hsl(var(--clinical-teal-600))] to-[hsl(var(--clinical-teal-700))]
-                       dark:from-gray-800 dark:via-gray-850 dark:to-gray-900
-                       shadow-[var(--shadow-lg)]
-                       dark:shadow-[0_2px_12px_rgba(0,0,0,0.4),0_1px_3px_rgba(0,0,0,0.3)]
-                       border-b border-[hsl(var(--clinical-teal-800))]/30 dark:border-gray-700/50
-                       backdrop-blur-xl
+                       bg-white dark:bg-slate-900
+                       border-b border-gray-200 dark:border-slate-700
+                       shadow-sm
                        transition-all duration-[var(--transition-slow)]">
-      {/* Premium top highlight line for depth */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"></div>
       
-      {/* Subtle overlay gradient for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none"></div>
-      
-      {/* Soft glow effect */}
-      <div 
-        className="absolute inset-0 pointer-events-none opacity-50"
-        style={{
-          background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.1) 0%, transparent 50%)',
-        }}
-      />
-      
-      {/* Header content with relative positioning */}
-      <div className="relative px-3 sm:px-6 py-2.5 sm:py-3.5">
+      {/* Header content */}
+      <div className="px-3 sm:px-6 py-2.5 sm:py-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {/* Hamburger Menu Button - Mobile Only */}
             {onToggleMobileMenu && (
               <button 
-                className="lg:hidden p-2 rounded-lg glass-effect glass-hover transition-all duration-300"
+                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300"
                 onClick={onToggleMobileMenu}
                 aria-label="Toggle menu"
               >
-                {isMobileMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
+                {isMobileMenuOpen ? <X className="w-6 h-6 text-foreground" /> : <Menu className="w-6 h-6 text-foreground" />}
               </button>
             )}
             <div className="relative">
@@ -74,21 +57,20 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
                 src={clinicLogo} 
                 alt="Bahr El Ghazal Clinic Logo" 
                 className="h-12 w-12 object-contain rounded-full 
-                           shadow-[0_2px_8px_rgba(0,0,0,0.15)]
-                           ring-2 ring-white/30"
+                           shadow-md
+                           ring-2 ring-slate-200 dark:ring-slate-700"
               />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg md:text-xl font-bold text-white tracking-tight
-                             drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold text-foreground tracking-tight">
                 <span className="sm:hidden">BGC</span>
                 <span className="hidden sm:inline">Bahr El Ghazal Clinic</span>
               </h1>
-              <p className="text-xs sm:text-sm text-white/95 font-medium hidden md:block">Medical Management System</p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium hidden md:block">Medical Management System</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg glass-effect transition-all duration-300">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all duration-300">
               <div className="relative">
                 <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'}
                                 shadow-[0_0_8px_rgba(74,222,128,0.6)]`}></div>
@@ -97,17 +79,19 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
                                   animate-ping opacity-75"></div>
                 )}
               </div>
-              {isOnline ? <Wifi className="w-4 h-4 text-white" /> : <WifiOff className="w-4 h-4 text-white" />}
-              <span className="text-sm font-medium text-white hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
+              {isOnline ? <Wifi className="w-4 h-4 text-foreground" /> : <WifiOff className="w-4 h-4 text-foreground" />}
+              <span className="text-sm font-medium text-foreground hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
             </div>
             
             {user && (
               <>
                 <button className="group relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl
-                                   glass-effect glass-hover
-                                   text-white font-medium
-                                   shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)]
-                                   hover:shadow-[0_4px_12px_rgba(0,0,0,0.18),0_2px_4px_rgba(0,0,0,0.12)]
+                                   bg-slate-100 dark:bg-slate-800
+                                   hover:bg-slate-200 dark:hover:bg-slate-700
+                                   text-foreground font-medium
+                                   border border-slate-200 dark:border-slate-700
+                                   shadow-sm
+                                   hover:shadow-md
                                    transition-all duration-300 ease-out
                                    hover:scale-[1.02]"
                         data-testid="user-info">
@@ -123,13 +107,13 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
                   disabled={logoutMutation.isPending}
                   data-testid="button-logout"
                   className="group relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl
-                             glass-effect
-                             hover:bg-red-500/90 dark:hover:bg-red-600/80
-                             text-white font-medium
-                             border border-white/30 dark:border-gray-500/30
-                             hover:border-red-400/50 dark:hover:border-red-500/50
-                             shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)]
-                             hover:shadow-[0_4px_12px_rgba(239,68,68,0.3),0_2px_4px_rgba(239,68,68,0.2)]
+                             bg-white dark:bg-slate-800
+                             hover:bg-red-50 dark:hover:bg-red-950
+                             text-foreground hover:text-red-600 dark:hover:text-red-400 font-medium
+                             border border-slate-200 dark:border-slate-700
+                             hover:border-red-300 dark:hover:border-red-800
+                             shadow-sm
+                             hover:shadow-md
                              transition-all duration-300 ease-out
                              hover:scale-[1.02]"
                 >
@@ -142,7 +126,6 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
           </div>
         </div>
       </div>
-      <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
     </header>
   );
 }
