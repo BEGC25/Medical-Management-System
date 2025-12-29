@@ -477,6 +477,7 @@ export default function Payment() {
               <p className="text-sm text-blue-700">Enter at least 2 characters to search for patients</p>
             </div>
           )}
+        </div>
         </CardContent>
       </Card>
 
