@@ -1,5 +1,4 @@
 // client/src/pages/Dashboard.tsx
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import {
@@ -22,89 +21,51 @@ import {
   RadioTower,
   CheckCircle2,
 } from "lucide-react";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 
-type DashboardStats = {
-  newPatients: number;
-  totalVisits: number;
-  labTests: number;
-  xrays: number;
-  ultrasounds: number;
-  pending: {
-    labResults: number;
-    xrayReports: number;
-    ultrasoundReports: number;
-  };
-};
+const QUICK_ACTION_THEMES = {
+  blue: {
+    borderLeft: "4px solid #0ea5e9",
+    hoverOverlay:
+      "linear-gradient(135deg, rgba(14,165,233,0.06) 0%, transparent 55%)",
+    iconBg:
+      "linear-gradient(135deg, rgba(14,165,233,0.16) 0%, rgba(6,182,212,0.10) 100%)",
+    iconColor: "#0ea5e9",
+    focusRing: "focus-visible:ring-sky-400/40",
+  },
+  green: {
+    borderLeft: "4px solid #22c55e",
+    hoverOverlay:
+      "linear-gradient(135deg, rgba(34,197,94,0.06) 0%, transparent 55%)",
+    iconBg:
+      "linear-gradient(135deg, rgba(34,197,94,0.16) 0%, rgba(16,185,129,0.10) 100%)",
+    iconColor: "#22c55e",
+    focusRing: "focus-visible:ring-emerald-400/40",
+  },
+  orange: {
+    borderLeft: "4px solid #f97316",
+    hoverOverlay:
+      "linear-gradient(135deg, rgba(249,115,22,0.06) 0%, transparent 55%)",
+    iconBg:
+      "linear-gradient(135deg, rgba(249,115,22,0.16) 0%, rgba(245,158,11,0.10) 100%)",
+    iconColor: "#f97316",
+    focusRing: "focus-visible:ring-orange-400/40",
+  },
+  red: {
+    borderLeft: "4px solid #ef4444",
+    hoverOverlay:
+      "linear-gradient(135deg, rgba(239,68,68,0.06) 0%, transparent 55%)",
+    iconBg:
+      "linear-gradient(135deg, rgba(239,68,68,0.16) 0%, rgba(244,63,94,0.10) 100%)",
+    iconColor: "#ef4444",
+    focusRing: "focus-visible:ring-rose-400/40",
+  },
+} as const;
 
-function formatToday() {
-  return new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function clampNumber(n: any): number {
-  const x = Number(n);
-  return Number.isFinite(x) ? x : 0;
-}
-
-function SectionHeader({
-  icon: Icon,
-  title,
-  subtitle,
-  iconColorClass,
-}: {
-  icon: any;
-  title: string;
-  subtitle?: string;
-  iconColorClass?: string;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex items-start gap-3">
-        <div
-          className={`
-            h-9 w-9 rounded-xl border border-gray-200/70 dark:border-gray-700/60
-            bg-white dark:bg-gray-900
-            flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
-          `}
-        >
-          <Icon className={`h-5 w-5 ${iconColorClass ?? "text-gray-700 dark:text-gray-200"}`} />
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {title}
-          </h2>
-          {subtitle ? (
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-              {subtitle}
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SkeletonLines({ rows = 4 }: { rows?: number }) {
-  return (
-    <div className="space-y-2">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div
-          key={i}
-          className="h-10 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-gray-100/70 dark:bg-gray-900/40 animate-pulse"
-        />
-      ))}
-    </div>
-  );
-}
+type QuickActionTheme = keyof typeof QUICK_ACTION_THEMES;
 
 export default function Dashboard() {
   const { data: stats } = useQuery({
@@ -127,106 +88,49 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/results-ready"],
   });
 
-  const quickActions = [
+  const quickActions: Array<{
+    title: string;
+    description: string;
+    icon: any;
+    href: string;
+    theme: QuickActionTheme;
+  }> = [
     {
       title: "Register Patient",
       description: "Add new patient",
       icon: UserPlus,
       href: "/patients",
-      accent: "border-l-sky-500",
-      iconTint: "text-sky-600",
-      iconBg: "bg-sky-50 dark:bg-sky-950/30",
+      theme: "blue",
     },
     {
       title: "Find Patient",
       description: "Search records",
       icon: Search,
       href: "/patients",
-      accent: "border-l-green-500",
-      iconTint: "text-green-600",
-      iconBg: "bg-green-50 dark:bg-green-950/30",
+      theme: "green",
     },
     {
       title: "New Treatment",
       description: "Record visit",
       icon: Stethoscope,
       href: "/treatment",
-      accent: "border-l-orange-500",
-      iconTint: "text-orange-600",
-      iconBg: "bg-orange-50 dark:bg-orange-950/30",
+      theme: "orange",
     },
     {
       title: "Urgent Cases",
       description: "Priority patients",
       icon: AlertTriangle,
       href: "/reports",
-      accent: "border-l-red-500",
-      iconTint: "text-red-600",
-      iconBg: "bg-red-50 dark:bg-red-950/30",
+      theme: "red",
     },
   ];
 
-  const attention = useMemo(() => {
-    const s = stats as DashboardStats | undefined;
-    const pendingLab = clampNumber(s?.pending?.labResults);
-    const pendingXray = clampNumber(s?.pending?.xrayReports);
-    const pendingUs = clampNumber(s?.pending?.ultrasoundReports);
-
-    const readyCount = Array.isArray(resultsReady) ? resultsReady.length : 0;
-    const paymentsCount = Array.isArray(outstandingPayments) ? outstandingPayments.length : 0;
-
-    const items: Array<{
-      label: string;
-      value: number;
-      href: string;
-      tone: "ok" | "warn" | "danger";
-    }> = [];
-
-    items.push({
-      label: "Results ready",
-      value: readyCount,
-      href: "/treatment",
-      tone: readyCount >= 8 ? "warn" : "ok",
-    });
-
-    items.push({
-      label: "Pending lab results",
-      value: pendingLab,
-      href: "/laboratory",
-      tone: pendingLab >= 10 ? "danger" : pendingLab >= 5 ? "warn" : "ok",
-    });
-
-    items.push({
-      label: "Pending x-ray reports",
-      value: pendingXray,
-      href: "/xray",
-      tone: pendingXray >= 10 ? "danger" : pendingXray >= 5 ? "warn" : "ok",
-    });
-
-    items.push({
-      label: "Pending ultrasound reports",
-      value: pendingUs,
-      href: "/ultrasound",
-      tone: pendingUs >= 10 ? "danger" : pendingUs >= 5 ? "warn" : "ok",
-    });
-
-    items.push({
-      label: "Outstanding payments",
-      value: paymentsCount,
-      href: "/payment",
-      tone: paymentsCount >= 12 ? "warn" : "ok",
-    });
-
-    // Show only items that matter first, but still show zeros in calm tone.
-    return items;
-  }, [stats, resultsReady, outstandingPayments]);
-
   const getStatusBadge = (status: string) => {
-    switch ((status || "").toLowerCase()) {
+    switch (status.toLowerCase()) {
       case "treated":
         return (
           <Badge
-            className="font-semibold text-xs text-white shadow-sm"
+            className="font-semibold text-sm text-white shadow-sm"
             style={{ backgroundColor: "var(--health-green)" }}
           >
             Treated
@@ -235,7 +139,7 @@ export default function Dashboard() {
       case "waiting":
         return (
           <Badge
-            className="font-semibold text-xs text-white shadow-sm"
+            className="font-semibold text-sm text-white shadow-sm"
             style={{ backgroundColor: "var(--attention-orange)" }}
           >
             Waiting
@@ -244,7 +148,7 @@ export default function Dashboard() {
       case "urgent":
         return (
           <Badge
-            className="font-semibold text-xs text-white shadow-sm"
+            className="font-semibold text-sm text-white shadow-sm"
             style={{ backgroundColor: "var(--alert-red)" }}
           >
             Urgent
@@ -252,7 +156,7 @@ export default function Dashboard() {
         );
       default:
         return (
-          <Badge variant="outline" className="text-xs dark:border-gray-700">
+          <Badge variant="outline" className="dark:border-gray-600 shadow-sm">
             {status}
           </Badge>
         );
@@ -260,579 +164,826 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 transition-colors duration-300">
-      <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        {/* Command Center Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-                Clinic Command Center
-              </h1>
-              <Badge
-                variant="outline"
-                className="rounded-full border-gray-300 dark:border-gray-700 text-xs"
-              >
-                {formatToday()}
-              </Badge>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Run your day with clarity: queues, results, and payments in one place.
-            </p>
-          </div>
+    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 px-2 sm:px-0 transition-colors duration-300 space-y-4 sm:space-y-6 md:space-y-8 animate-in fade-in duration-500">
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+        {quickActions.map((action, index) => {
+          const Icon = action.icon;
+          const t = QUICK_ACTION_THEMES[action.theme];
 
-          <div className="flex items-center gap-2">
-            <Badge className="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-600 text-white shadow-sm">
-              Online
-            </Badge>
-            <Badge
-              variant="outline"
-              className="rounded-full px-3 py-1 text-xs border-gray-300 dark:border-gray-700"
+          return (
+            <Link
+              key={action.title}
+              href={action.href}
+              className={[
+                "block rounded-2xl",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+                "focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950",
+                t.focusRing,
+              ].join(" ")}
             >
-              Operational view
-            </Badge>
-          </div>
-        </div>
+              <Card
+                className={[
+                  "card-quick-action group relative overflow-hidden",
+                  "bg-white dark:bg-gray-800 rounded-2xl cursor-pointer",
+                  "transition-all duration-300 ease-out",
+                  // calmer + more premium motion
+                  "hover:-translate-y-1 hover:scale-[1.01] active:translate-y-0 active:scale-[0.995]",
+                  // world-class accessibility
+                  "motion-reduce:transform-none motion-reduce:transition-none",
+                ].join(" ")}
+                style={{
+                  animation: `slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${
+                    index * 0.1
+                  }s backwards`,
+                  border: "1px solid rgba(0,0,0,0.06)",
+                  borderLeft: t.borderLeft,
+                }}
+              >
+                {/* Subtle gradient overlay */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  style={{ background: t.hoverOverlay }}
+                />
 
-        {/* Needs Attention Strip */}
-        <Card className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/70 dark:border-gray-800 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-gray-800 dark:text-gray-200" />
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Needs attention
-                </p>
-              </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Click any item to jump to the work queue
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              {attention.map((a) => {
-                const tone =
-                  a.tone === "danger"
-                    ? "border-red-200 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-950/25 dark:text-red-200"
-                    : a.tone === "warn"
-                      ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-200"
-                      : "border-gray-200 bg-gray-50 text-gray-800 dark:border-gray-800 dark:bg-gray-900/30 dark:text-gray-200";
-
-                return (
-                  <Link key={a.label} href={a.href}>
+                <CardContent className="p-6 relative">
+                  <div className="flex items-center gap-4">
                     <div
-                      className={`
-                        cursor-pointer rounded-xl border ${tone}
-                        px-3 py-2 transition-all duration-200
-                        hover:shadow-sm hover:-translate-y-[1px]
-                      `}
+                      className="p-4 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-2 motion-reduce:transform-none"
+                      style={{
+                        background: t.iconBg,
+                        boxShadow:
+                          "inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 8px rgba(0,0,0,0.05)",
+                      }}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold truncate">{a.label}</p>
-                        <span className="text-sm font-bold tabular-nums">{a.value}</span>
-                      </div>
+                      <Icon className="w-7 h-7" style={{ color: t.iconColor }} />
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
+
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-[15px] text-gray-900 dark:text-gray-100 tracking-tight">
+                        {action.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-0.5">
+                        {action.description}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Today's Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        {/* Statistics */}
+        <Card className="md:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium motion-reduce:transform-none motion-reduce:transition-none">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
+              Today's Statistics
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 pb-6 px-5 space-y-1">
+            {stats ? (
+              <>
+                <Link href="/patients?filter=today">
+                  <StatCard
+                    label="New Patients"
+                    value={stats.newPatients}
+                    color="var(--medical-blue)"
+                    showProgress={true}
+                    maxValue={20}
+                    icon={
+                      <Users
+                        className="w-4 h-4"
+                        style={{ color: "var(--medical-blue)" }}
+                      />
+                    }
+                  />
+                </Link>
+                <Link href="/treatment?filter=today">
+                  <StatCard
+                    label="Total Visits"
+                    value={stats.totalVisits}
+                    color="var(--health-green)"
+                    showProgress={true}
+                    maxValue={50}
+                    icon={
+                      <Activity
+                        className="w-4 h-4"
+                        style={{ color: "var(--health-green)" }}
+                      />
+                    }
+                  />
+                </Link>
+                <Link href="/laboratory">
+                  <StatCard
+                    label="Lab Tests"
+                    value={stats.labTests}
+                    color="var(--attention-orange)"
+                    showProgress={true}
+                    maxValue={30}
+                    icon={
+                      <TestTube
+                        className="w-4 h-4"
+                        style={{ color: "var(--attention-orange)" }}
+                      />
+                    }
+                  />
+                </Link>
+                <Link href="/xray">
+                  <StatCard
+                    label="X-Rays"
+                    value={stats.xrays}
+                    color="hsl(270, 65%, 55%)"
+                    showProgress={true}
+                    maxValue={15}
+                    icon={
+                      <Scan
+                        className="w-4 h-4"
+                        style={{ color: "hsl(270, 65%, 55%)" }}
+                      />
+                    }
+                  />
+                </Link>
+                <Link href="/ultrasound">
+                  <StatCard
+                    label="Ultrasounds"
+                    value={stats.ultrasounds}
+                    color="hsl(210, 75%, 55%)"
+                    showProgress={true}
+                    maxValue={10}
+                    icon={
+                      <MonitorSpeaker
+                        className="w-4 h-4"
+                        style={{ color: "hsl(210, 75%, 55%)" }}
+                      />
+                    }
+                  />
+                </Link>
+              </>
+            ) : (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-shimmer" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8 animate-shimmer" />
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Link key={action.title} href={action.href}>
-                <Card
-                  className={cn(
-                    "rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/70 dark:border-gray-800",
-                    "shadow-sm cursor-pointer transition-all duration-200",
-                    "hover:-translate-y-1 hover:shadow-md",
-                    "active:translate-y-0",
-                    "border-l-4",
-                    action.accent
-                  )}
-                >
-                  <CardContent className="p-5">
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={cn(
-                          "h-12 w-12 rounded-2xl flex items-center justify-center",
-                          "border border-gray-200/70 dark:border-gray-800",
-                          "shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-                          action.iconBg
-                        )}
+        {/* Results Ready for Review Widget */}
+        <Card className="md:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium motion-reduce:transform-none motion-reduce:transition-none">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-gradient-to-r from-purple-50/80 to-white dark:from-purple-950/40 dark:to-gray-900">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
+                Results Ready to Review
+              </CardTitle>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              Completed results awaiting doctor review
+            </p>
+          </CardHeader>
+          <CardContent className="p-6">
+            {resultsReady ? (
+              resultsReady.length > 0 ? (
+                <div className="space-y-3">
+                  {resultsReady.slice(0, 5).map((result: any, index: number) => {
+                    const isComplete = result.allComplete;
+                    const isPartial = !isComplete;
+
+                    const statusStyles = isComplete
+                      ? {
+                          bg: "bg-green-50 dark:bg-green-950/30",
+                          border: "border-green-200 dark:border-green-800",
+                          textColor: "text-green-800 dark:text-green-300",
+                          badgeBg: "bg-green-100 dark:bg-green-900/50",
+                          badgeText: "text-green-800 dark:text-green-300",
+                          icon: CheckCircle2,
+                          iconColor: "text-green-600 dark:text-green-400",
+                        }
+                      : {
+                          bg: "bg-amber-50 dark:bg-amber-950/30",
+                          border: "border-amber-200 dark:border-amber-800",
+                          textColor: "text-amber-800 dark:text-amber-300",
+                          badgeBg: "bg-amber-100 dark:bg-amber-900/50",
+                          badgeText: "text-amber-800 dark:text-amber-300",
+                          icon: Clock,
+                          iconColor: "text-amber-600 dark:text-amber-400",
+                        };
+
+                    const StatusIcon = statusStyles.icon;
+
+                    return (
+                      <Link
+                        key={result.encounterId || index}
+                        href={`/treatment?patientId=${result.patientId}`}
                       >
-                        <Icon className={cn("h-6 w-6", action.iconTint)} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                          {action.title}
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                          {action.description}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Top Row: Stats + Results Ready + Pending */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Today's Statistics */}
-          <Card className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/70 dark:border-gray-800 shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-200/70 dark:border-gray-800">
-              <SectionHeader
-                icon={Activity}
-                title="Today"
-                subtitle="Core operational counts"
-                iconColorClass="text-sky-600"
-              />
-            </CardHeader>
-            <CardContent className="p-5">
-              {stats ? (
-                <>
-                  <Link href="/patients?filter=today">
-                    <StatCard
-                      label="New Patients"
-                      value={(stats as any).newPatients}
-                      color="var(--medical-blue)"
-                      showProgress={true}
-                      maxValue={20}
-                      icon={<Users className="w-4 h-4" style={{ color: "var(--medical-blue)" }} />}
-                    />
-                  </Link>
-                  <Link href="/treatment?filter=today">
-                    <StatCard
-                      label="Total Visits"
-                      value={(stats as any).totalVisits}
-                      color="var(--health-green)"
-                      showProgress={true}
-                      maxValue={50}
-                      icon={<Activity className="w-4 h-4" style={{ color: "var(--health-green)" }} />}
-                    />
-                  </Link>
-                  <Link href="/laboratory">
-                    <StatCard
-                      label="Lab Tests"
-                      value={(stats as any).labTests}
-                      color="var(--attention-orange)"
-                      showProgress={true}
-                      maxValue={30}
-                      icon={<TestTube className="w-4 h-4" style={{ color: "var(--attention-orange)" }} />}
-                    />
-                  </Link>
-                  <Link href="/xray">
-                    <StatCard
-                      label="X-Rays"
-                      value={(stats as any).xrays}
-                      color="hsl(270, 65%, 55%)"
-                      showProgress={true}
-                      maxValue={15}
-                      icon={<Scan className="w-4 h-4" style={{ color: "hsl(270, 65%, 55%)" }} />}
-                    />
-                  </Link>
-                  <Link href="/ultrasound">
-                    <StatCard
-                      label="Ultrasounds"
-                      value={(stats as any).ultrasounds}
-                      color="hsl(210, 75%, 55%)"
-                      showProgress={true}
-                      maxValue={10}
-                      icon={<MonitorSpeaker className="w-4 h-4" style={{ color: "hsl(210, 75%, 55%)" }} />}
-                    />
-                  </Link>
-                </>
-              ) : (
-                <SkeletonLines rows={5} />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Results Ready */}
-          <Card className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/70 dark:border-gray-800 shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-200/70 dark:border-gray-800">
-              <SectionHeader
-                icon={FileText}
-                title="Results Ready"
-                subtitle="Completed results awaiting doctor review"
-                iconColorClass="text-purple-600"
-              />
-            </CardHeader>
-            <CardContent className="p-5">
-              {resultsReady ? (
-                Array.isArray(resultsReady) && resultsReady.length > 0 ? (
-                  <div className="space-y-3">
-                    {resultsReady.slice(0, 5).map((result: any, index: number) => {
-                      const isComplete = !!result.allComplete;
-                      const StatusIcon = isComplete ? CheckCircle2 : Clock;
-
-                      const tone = isComplete
-                        ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/25"
-                        : "border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/25";
-
-                      const iconTone = isComplete
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-amber-600 dark:text-amber-400";
-
-                      return (
-                        <Link key={result.encounterId || index} href={`/treatment?patientId=${result.patientId}`}>
-                          <div
-                            className={cn(
-                              "rounded-xl border p-4 cursor-pointer transition-all duration-200",
-                              "hover:shadow-sm hover:-translate-y-[1px]",
-                              tone
-                            )}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                  {result.firstName} {result.lastName}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-gray-300 dark:border-gray-700">
-                                    {result.patientId}
-                                  </Badge>
-                                  {Array.isArray(result.resultTypes) &&
-                                    result.resultTypes.slice(0, 3).map((t: string, i: number) => (
-                                      <Badge
-                                        key={`${t}-${i}`}
-                                        variant="outline"
-                                        className="text-[10px] px-2 py-0.5 border-gray-300 dark:border-gray-700"
-                                      >
-                                        {t}
-                                      </Badge>
-                                    ))}
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <StatusIcon className={cn("h-5 w-5", iconTone)} />
-                              </div>
+                        <div
+                          className={`p-4 rounded-xl border ${statusStyles.border} ${statusStyles.bg} hover:shadow-md transition-all duration-300 ease-out cursor-pointer group motion-reduce:transition-none`}
+                          data-testid={`result-ready-${result.patientId}`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-base text-gray-900 dark:text-gray-100">
+                                {result.firstName} {result.lastName}
+                              </p>
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-2 py-0.5 bg-white/50 dark:bg-gray-900/50 border-gray-300 dark:border-gray-700"
+                              >
+                                {result.patientId}
+                              </Badge>
                             </div>
+                          </div>
 
-                            <div className="mt-3 flex items-center justify-between">
-                              <p className="text-xs text-gray-700 dark:text-gray-300 font-semibold">
+                          <div className="flex items-center gap-1 flex-wrap mb-3">
+                            {result.resultTypes.map((type: string, idx: number) => (
+                              <Badge
+                                key={idx}
+                                variant="outline"
+                                className={`text-xs px-2 py-1 font-medium ${
+                                  type === "Lab"
+                                    ? "text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700 bg-orange-100/50 dark:bg-orange-900/30"
+                                    : type === "X-Ray"
+                                    ? "text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700 bg-purple-100/50 dark:bg-purple-900/30"
+                                    : "text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700 bg-blue-100/50 dark:bg-blue-900/30"
+                                }`}
+                              >
+                                {type}
+                              </Badge>
+                            ))}
+                          </div>
+
+                          <div
+                            className={`p-3 rounded-lg ${statusStyles.badgeBg} border ${statusStyles.border}`}
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <StatusIcon
+                                className={`w-5 h-5 ${statusStyles.iconColor} flex-shrink-0 transition-transform duration-300 group-hover:scale-110 motion-reduce:transform-none`}
+                              />
+                              <span
+                                className={`font-semibold text-sm ${statusStyles.badgeText}`}
+                              >
                                 {isComplete
                                   ? `All ${result.totalOrdered} Ready`
                                   : `${result.resultCount} of ${result.totalOrdered} Ready`}
-                              </p>
-                              <div className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
-                                Open <ArrowRight className="h-4 w-4" />
-                              </div>
+                              </span>
                             </div>
 
-                            {!isComplete && Array.isArray(result.pendingTestTypes) && result.pendingTestTypes.length > 0 ? (
-                              <p className="mt-2 text-[11px] text-gray-600 dark:text-gray-400">
-                                Waiting for:{" "}
-                                <span className="font-semibold">
-                                  {result.pendingTestTypes.join(", ")}
-                                </span>
-                              </p>
-                            ) : null}
+                            <div
+                              className={`text-sm font-semibold ${statusStyles.textColor} flex items-center gap-2`}
+                            >
+                              {isComplete ? (
+                                <>
+                                  <span>Patient ready for doctor</span>
+                                  <ArrowRight
+                                    className={`w-4 h-4 ${statusStyles.iconColor} transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none`}
+                                  />
+                                </>
+                              ) : (
+                                <span>Keep patient in waiting area</span>
+                              )}
+                            </div>
+
+                            {isPartial &&
+                              result.pendingTestTypes &&
+                              result.pendingTestTypes.length > 0 && (
+                                <div
+                                  className={`mt-2 pt-2 border-t ${statusStyles.border}`}
+                                >
+                                  <p
+                                    className={`text-xs font-medium ${statusStyles.textColor}`}
+                                  >
+                                    <span className="font-semibold">
+                                      Waiting for:
+                                    </span>{" "}
+                                    {result.pendingTestTypes.join(", ")}
+                                  </p>
+                                </div>
+                              )}
                           </div>
-                        </Link>
-                      );
-                    })}
-
-                    {Array.isArray(resultsReady) && resultsReady.length > 5 ? (
-                      <Link href="/treatment">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full rounded-xl border-gray-300 dark:border-gray-700"
-                        >
-                          View all ({resultsReady.length}) <ArrowRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </Link>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="text-center py-10">
-                    <CheckCircle2 className="h-12 w-12 mx-auto mb-2" style={{ color: "var(--health-green)" }} />
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      All caught up
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      No results waiting for review
-                    </p>
-                  </div>
-                )
-              ) : (
-                <SkeletonLines rows={4} />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Pending Items */}
-          <Card className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/70 dark:border-gray-800 shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-200/70 dark:border-gray-800">
-              <SectionHeader
-                icon={Clock}
-                title="Pending Items"
-                subtitle="Queues that can block patient flow"
-                iconColorClass="text-gray-800 dark:text-gray-200"
-              />
-            </CardHeader>
-            <CardContent className="p-5">
-              {stats ? (
-                <div className="space-y-2">
-                  <Link href="/laboratory">
-                    <div className="flex items-center justify-between rounded-xl border border-gray-200/70 dark:border-gray-800 p-3 hover:shadow-sm hover:-translate-y-[1px] transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-gray-200/70 dark:border-gray-800 flex items-center justify-center">
-                          <TestTube className="h-5 w-5 text-orange-600" />
                         </div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Lab Results</p>
+                      </Link>
+                    );
+                  })}
+
+                  {resultsReady.length > 5 && (
+                    <Link href="/treatment">
+                      <div className="text-center pt-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/30 p-2 rounded-lg transition-all duration-300 ease-out motion-reduce:transition-none">
+                        <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                          + {resultsReady.length - 5} more patients with results
+                          ready
+                        </p>
                       </div>
-                      <Badge className="rounded-full px-3 py-1 text-xs font-bold" style={{ backgroundColor: "var(--attention-orange)", color: "white" }}>
-                        {(stats as any).pending?.labResults ?? 0}
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle2
+                    className="w-12 h-12 mx-auto mb-2"
+                    style={{ color: "var(--health-green)" }}
+                  />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    All caught up!
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    No pending results for today
+                  </p>
+                </div>
+              )
+            ) : (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2 animate-shimmer" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-shimmer" />
+                    </div>
+                    <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pending Items */}
+        <Card className="md:col-span-2 lg:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium motion-reduce:transform-none motion-reduce:transition-none">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
+              Pending Items
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-3">
+              {stats ? (
+                <>
+                  <Link href="/laboratory">
+                    <div
+                      className={`flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-gray-800/60 p-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out border-l-4 border-transparent hover:border-l-orange-500 dark:hover:border-l-orange-400 hover:shadow-[4px_0_12px_rgba(249,115,22,0.12),2px_0_6px_rgba(249,115,22,0.08)] hover:translate-x-1 motion-reduce:transform-none motion-reduce:transition-none ${
+                        stats.pending.labResults >= 10
+                          ? "bg-orange-50/80 dark:bg-orange-950/30 border-l-orange-500 dark:border-l-orange-400"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <TestTube className="text-attention-orange w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                          Lab Results
+                        </span>
+                      </div>
+                      <Badge
+                        className={`font-bold text-sm px-3.5 py-1.5 transition-all duration-300 shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)] motion-reduce:transition-none ${
+                          stats.pending.labResults >= 10
+                            ? "animate-pulse-premium ring-4 ring-orange-400/40 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110 shadow-[0_4px_12px_rgba(249,115,22,0.3),0_2px_6px_rgba(249,115,22,0.2)]"
+                            : ""
+                        }`}
+                        style={{
+                          backgroundColor: "var(--attention-orange)",
+                          color: "white",
+                        }}
+                      >
+                        {stats.pending.labResults}
                       </Badge>
                     </div>
                   </Link>
 
                   <Link href="/xray">
-                    <div className="flex items-center justify-between rounded-xl border border-gray-200/70 dark:border-gray-800 p-3 hover:shadow-sm hover:-translate-y-[1px] transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-gray-200/70 dark:border-gray-800 flex items-center justify-center">
-                          <Scan className="h-5 w-5 text-purple-600" />
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">X-Ray Reports</p>
+                    <div
+                      className={`flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-gray-800/60 p-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out border-l-4 border-transparent hover:border-l-purple-500 dark:hover:border-l-purple-400 hover:shadow-[4px_0_12px_rgba(147,51,234,0.12),2px_0_6px_rgba(147,51,234,0.08)] hover:translate-x-1 motion-reduce:transform-none motion-reduce:transition-none ${
+                        stats.pending.xrayReports >= 10
+                          ? "bg-purple-50/80 dark:bg-purple-950/30 border-l-purple-500 dark:border-l-purple-400"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Scan className="text-purple-600 w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                          X-Ray Reports
+                        </span>
                       </div>
-                      <Badge className="rounded-full px-3 py-1 text-xs font-bold" style={{ backgroundColor: "hsl(270, 65%, 55%)", color: "white" }}>
-                        {(stats as any).pending?.xrayReports ?? 0}
+                      <Badge
+                        className={`font-bold text-sm px-3.5 py-1.5 transition-all duration-300 shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)] motion-reduce:transition-none ${
+                          stats.pending.xrayReports >= 10
+                            ? "animate-pulse-premium ring-4 ring-purple-400/40 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110 shadow-[0_4px_12px_rgba(147,51,234,0.3),0_2px_6px_rgba(147,51,234,0.2)]"
+                            : ""
+                        }`}
+                        style={{
+                          backgroundColor: "hsl(270, 65%, 55%)",
+                          color: "white",
+                        }}
+                      >
+                        {stats.pending.xrayReports}
                       </Badge>
                     </div>
                   </Link>
 
                   <Link href="/ultrasound">
-                    <div className="flex items-center justify-between rounded-xl border border-gray-200/70 dark:border-gray-800 p-3 hover:shadow-sm hover:-translate-y-[1px] transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-gray-200/70 dark:border-gray-800 flex items-center justify-center">
-                          <MonitorSpeaker className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Ultrasound Reports</p>
+                    <div
+                      className={`flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-gray-800/60 p-3.5 rounded-xl cursor-pointer transition-all duration-300 ease-out border-l-4 border-transparent hover:border-l-blue-500 dark:hover:border-l-blue-400 hover:shadow-[4px_0_12px_rgba(37,99,235,0.12),2px_0_6px_rgba(37,99,235,0.08)] hover:translate-x-1 motion-reduce:transform-none motion-reduce:transition-none ${
+                        stats.pending.ultrasoundReports >= 10
+                          ? "bg-blue-50/80 dark:bg-blue-950/30 border-l-blue-500 dark:border-l-blue-400"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <MonitorSpeaker className="text-blue-600 w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                          Ultrasound Reports
+                        </span>
                       </div>
-                      <Badge className="rounded-full px-3 py-1 text-xs font-bold" style={{ backgroundColor: "hsl(210, 75%, 55%)", color: "white" }}>
-                        {(stats as any).pending?.ultrasoundReports ?? 0}
+                      <Badge
+                        className={`font-bold text-sm px-3.5 py-1.5 transition-all duration-300 shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)] motion-reduce:transition-none ${
+                          stats.pending.ultrasoundReports >= 10
+                            ? "animate-pulse-premium ring-4 ring-blue-400/40 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110 shadow-[0_4px_12px_rgba(37,99,235,0.3),0_2px_6px_rgba(37,99,235,0.2)]"
+                            : ""
+                        }`}
+                        style={{
+                          backgroundColor: "hsl(210, 75%, 55%)",
+                          color: "white",
+                        }}
+                      >
+                        {stats.pending.ultrasoundReports}
                       </Badge>
                     </div>
                   </Link>
-                </div>
+                </>
               ) : (
-                <SkeletonLines rows={3} />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Second Row: Flow + Payments + Recent */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Patient Flow */}
-          <Card className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/70 dark:border-gray-800 shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-200/70 dark:border-gray-800">
-              <SectionHeader
-                icon={UserCheck}
-                title="Patient Flow"
-                subtitle="Live queue overview"
-                iconColorClass="text-sky-600"
-              />
-            </CardHeader>
-            <CardContent className="p-5">
-              {patientFlow ? (
-                <div className="space-y-2">
-                  {[
-                    { label: "Waiting for Doctor", value: (patientFlow as any).waitingForDoctor, icon: UserCheck, tint: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-                    { label: "In Treatment", value: (patientFlow as any).inTreatment, icon: Stethoscope, tint: "text-sky-600", bg: "bg-sky-50 dark:bg-sky-950/30" },
-                    { label: "Waiting for Lab", value: (patientFlow as any).waitingForLab, icon: FlaskConical, tint: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/30" },
-                    { label: "Waiting for X-ray", value: (patientFlow as any).waitingForXray, icon: RadioTower, tint: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/30" },
-                    { label: "Waiting for Ultrasound", value: (patientFlow as any).waitingForUltrasound, icon: MonitorSpeaker, tint: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-                    { label: "Waiting for Pharmacy", value: (patientFlow as any).waitingForPharmacy, icon: Pill, tint: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/25" },
-                    { label: "Ready for Checkout", value: (patientFlow as any).readyForCheckout, icon: CheckCircle2, tint: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/25" },
-                  ].map((row) => {
-                    const RowIcon = row.icon;
-                    return (
-                      <div
-                        key={row.label}
-                        className="flex items-center justify-between rounded-xl border border-gray-200/70 dark:border-gray-800 p-3"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={cn("h-9 w-9 rounded-xl border border-gray-200/70 dark:border-gray-800 flex items-center justify-center", row.bg)}>
-                            <RowIcon className={cn("h-5 w-5", row.tint)} />
-                          </div>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                            {row.label}
-                          </p>
-                        </div>
-                        <Badge className="rounded-full px-3 py-1 text-xs font-bold bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900">
-                          {clampNumber(row.value)}
-                        </Badge>
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between py-2">
+                      <div className="flex items-center">
+                        <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded mr-3 animate-shimmer" />
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-shimmer" />
                       </div>
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-8 animate-shimmer" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* New Dashboard Widgets Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+        {/* Patient Flow & Queue Widget */}
+        <Card className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium motion-reduce:transform-none motion-reduce:transition-none">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-gradient-to-r from-blue-50/80 to-white dark:from-blue-950/40 dark:to-gray-900">
+            <div className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-medical-blue dark:text-blue-400" />
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
+                Patient Flow
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {patientFlow ? (
+              <div className="space-y-2">
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50/80 dark:hover:bg-gray-800/60 transition-all duration-300 ease-out border-l-3 border-transparent hover:border-l-amber-500 dark:hover:border-l-amber-400 hover:shadow-[2px_0_8px_rgba(245,158,11,0.12)] hover:translate-x-1.5 motion-reduce:transform-none motion-reduce:transition-none"
+                  data-testid="flow-waiting-doctor"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+                      <UserCheck className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Waiting for Doctor
+                    </span>
+                  </div>
+                  <Badge className="bg-amber-600 text-white font-semibold shadow-sm px-3 py-1">
+                    {patientFlow.waitingForDoctor}
+                  </Badge>
+                </div>
+
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50/80 dark:hover:bg-gray-800/60 transition-all duration-300 ease-out border-l-3 border-transparent hover:border-l-blue-500 dark:hover:border-l-blue-400 hover:shadow-[2px_0_8px_rgba(59,130,246,0.12)] hover:translate-x-1.5 motion-reduce:transform-none motion-reduce:transition-none"
+                  data-testid="flow-in-treatment"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">
+                      <Stethoscope className="w-4 h-4 text-medical-blue dark:text-blue-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      In Treatment
+                    </span>
+                  </div>
+                  <Badge
+                    className="text-white font-semibold shadow-sm px-3 py-1"
+                    style={{ backgroundColor: "var(--medical-blue)" }}
+                  >
+                    {patientFlow.inTreatment}
+                  </Badge>
+                </div>
+
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50/80 dark:hover:bg-gray-800/60 transition-all duration-300 ease-out border-l-3 border-transparent hover:border-l-orange-500 dark:hover:border-l-orange-400 hover:shadow-[2px_0_8px_rgba(249,115,22,0.12)] hover:translate-x-1.5 motion-reduce:transform-none motion-reduce:transition-none"
+                  data-testid="flow-waiting-lab"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-950/30">
+                      <FlaskConical className="w-4 h-4 text-attention-orange dark:text-orange-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Waiting for Lab
+                    </span>
+                  </div>
+                  <Badge
+                    className="text-white font-semibold shadow-sm px-3 py-1"
+                    style={{ backgroundColor: "var(--attention-orange)" }}
+                  >
+                    {patientFlow.waitingForLab}
+                  </Badge>
+                </div>
+
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50/80 dark:hover:bg-gray-800/60 transition-all duration-300 ease-out border-l-3 border-transparent hover:border-l-purple-500 dark:hover:border-l-purple-400 hover:shadow-[2px_0_8px_rgba(147,51,234,0.12)] hover:translate-x-1.5 motion-reduce:transform-none motion-reduce:transition-none"
+                  data-testid="flow-waiting-xray"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/30">
+                      <RadioTower className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Waiting for X-ray
+                    </span>
+                  </div>
+                  <Badge className="bg-purple-600 text-white font-semibold shadow-sm px-3 py-1">
+                    {patientFlow.waitingForXray}
+                  </Badge>
+                </div>
+
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50/80 dark:hover:bg-gray-800/60 transition-all duration-300 ease-out border-l-3 border-transparent hover:border-l-blue-500 dark:hover:border-l-blue-400 hover:shadow-[2px_0_8px_rgba(59,130,246,0.12)] hover:translate-x-1.5 motion-reduce:transform-none motion-reduce:transition-none"
+                  data-testid="flow-waiting-ultrasound"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">
+                      <MonitorSpeaker className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Waiting for Ultrasound
+                    </span>
+                  </div>
+                  <Badge className="bg-blue-600 text-white font-semibold shadow-sm px-3 py-1">
+                    {patientFlow.waitingForUltrasound}
+                  </Badge>
+                </div>
+
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50/80 dark:hover:bg-gray-800/60 transition-all duration-300 ease-out border-l-3 border-transparent hover:border-l-green-500 dark:hover:border-l-green-400 hover:shadow-[2px_0_8px_rgba(34,197,94,0.12)] hover:translate-x-1.5 motion-reduce:transform-none motion-reduce:transition-none"
+                  data-testid="flow-waiting-pharmacy"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30">
+                      <Pill className="w-4 h-4 text-health-green dark:text-green-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Waiting for Pharmacy
+                    </span>
+                  </div>
+                  <Badge
+                    className="text-white font-semibold shadow-sm px-3 py-1"
+                    style={{ backgroundColor: "var(--health-green)" }}
+                  >
+                    {patientFlow.waitingForPharmacy}
+                  </Badge>
+                </div>
+
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50/80 dark:hover:bg-gray-800/60 border-t border-gray-100 dark:border-gray-800 mt-2 pt-3 transition-all duration-300 ease-out border-l-3 border-transparent hover:border-l-green-500 dark:hover:border-l-green-400 hover:shadow-[2px_0_8px_rgba(34,197,94,0.12)] hover:translate-x-1.5 motion-reduce:transform-none motion-reduce:transition-none"
+                  data-testid="flow-ready-checkout"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30">
+                      <CheckCircle2 className="w-4 h-4 text-health-green dark:text-green-400" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      Ready for Checkout
+                    </span>
+                  </div>
+                  <Badge
+                    className="text-white font-semibold text-base shadow-sm px-3 py-1.5"
+                    style={{ backgroundColor: "var(--health-green)" }}
+                  >
+                    {patientFlow.readyForCheckout}
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {[...Array(7)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-shimmer" />
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-8 animate-shimmer" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Outstanding Payments Widget */}
+        <Card className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium motion-reduce:transform-none motion-reduce:transition-none">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-gradient-to-r from-green-50/80 to-white dark:from-green-950/40 dark:to-gray-900">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-health-green dark:text-green-400" />
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
+                Outstanding Payments
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {outstandingPayments ? (
+              outstandingPayments.length > 0 ? (
+                <div className="space-y-2.5">
+                  {outstandingPayments.slice(0, 6).map((payment: any, idx: number) => {
+                    const getDepartmentColor = (type: string) => {
+                      switch (type) {
+                        case "lab":
+                          return {
+                            bg: "bg-orange-50 dark:bg-orange-950/30",
+                            border: "border-orange-200 dark:border-orange-800",
+                            badge: "bg-orange-600",
+                          };
+                        case "xray":
+                          return {
+                            bg: "bg-purple-50 dark:bg-purple-950/30",
+                            border: "border-purple-200 dark:border-purple-800",
+                            badge: "bg-purple-600",
+                          };
+                        case "ultrasound":
+                          return {
+                            bg: "bg-blue-50 dark:bg-blue-950/30",
+                            border: "border-blue-200 dark:border-blue-800",
+                            badge: "bg-blue-600",
+                          };
+                        default:
+                          return {
+                            bg: "bg-gray-50 dark:bg-gray-800",
+                            border: "border-gray-200 dark:border-gray-700",
+                            badge: "bg-gray-600",
+                          };
+                      }
+                    };
+
+                    const colors = getDepartmentColor(payment.orderType);
+
+                    return (
+                      <Link key={idx} href="/payment">
+                        <div
+                          className={`flex items-start justify-between p-3 rounded-xl hover:shadow-md cursor-pointer border ${colors.border} ${colors.bg} transition-all duration-300 ease-out motion-reduce:transition-none`}
+                          data-testid={`payment-${payment.patientId}`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1">
+                              {payment.patientName}
+                            </p>
+                            <p className="text-xs text-gray-700 dark:text-gray-300 mb-1.5 line-clamp-1">
+                              {payment.serviceDescription}
+                            </p>
+                            {payment.tests && payment.orderType === "lab" && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                Categories: {payment.tests}
+                              </p>
+                            )}
+                            {payment.services && payment.services.length > 1 && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                +{payment.services.length - 1} more services
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col items-end ml-3 gap-1.5">
+                            <Badge className={`${colors.badge} text-white font-semibold text-sm px-2.5 py-1 shadow-sm`}>
+                              {Number(payment.amount).toLocaleString()} SSP
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className="text-xs capitalize border-gray-300 dark:border-gray-600"
+                            >
+                              {payment.orderType}
+                            </Badge>
+                          </div>
+                        </div>
+                      </Link>
                     );
                   })}
+
+                  {outstandingPayments.length > 6 && (
+                    <Link href="/payment">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-3 hover:bg-green-50 dark:hover:bg-green-950/30 transition-all duration-300 ease-out motion-reduce:transition-none"
+                        data-testid="view-all-payments"
+                      >
+                        View All ({outstandingPayments.length}){" "}
+                        <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               ) : (
-                <SkeletonLines rows={7} />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Outstanding Payments */}
-          <Card className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/70 dark:border-gray-800 shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-200/70 dark:border-gray-800">
-              <SectionHeader
-                icon={DollarSign}
-                title="Outstanding Payments"
-                subtitle="Patients who need to pay before closing"
-                iconColorClass="text-emerald-600"
-              />
-            </CardHeader>
-            <CardContent className="p-5">
-              {outstandingPayments ? (
-                Array.isArray(outstandingPayments) && outstandingPayments.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {outstandingPayments.slice(0, 6).map((payment: any, idx: number) => {
-                      const orderType = String(payment?.orderType || "other").toLowerCase();
-                      const tone =
-                        orderType === "lab"
-                          ? "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900/40"
-                          : orderType === "xray"
-                            ? "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900/40"
-                            : orderType === "ultrasound"
-                              ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/40"
-                              : "bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-800";
-
-                      return (
-                        <Link key={idx} href="/payment">
-                          <div
-                            className={cn(
-                              "rounded-xl border p-3 cursor-pointer transition-all duration-200",
-                              "hover:shadow-sm hover:-translate-y-[1px]",
-                              tone
-                            )}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                  {payment.patientName}
-                                </p>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">
-                                  {payment.serviceDescription}
-                                </p>
-                              </div>
-                              <div className="flex flex-col items-end gap-1.5">
-                                <Badge className="rounded-full px-3 py-1 text-xs font-bold bg-emerald-600 text-white shadow-sm">
-                                  {clampNumber(payment.amount).toLocaleString()} SSP
-                                </Badge>
-                                <Badge variant="outline" className="text-[10px] rounded-full capitalize border-gray-300 dark:border-gray-700">
-                                  {orderType}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
-
-                    {Array.isArray(outstandingPayments) && outstandingPayments.length > 6 ? (
-                      <Link href="/payment">
-                        <Button variant="outline" size="sm" className="w-full rounded-xl border-gray-300 dark:border-gray-700">
-                          View all ({outstandingPayments.length}) <ArrowRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </Link>
-                    ) : null}
+                <div className="text-center py-8">
+                  <CheckCircle2
+                    className="w-12 h-12 mx-auto mb-2"
+                    style={{ color: "var(--health-green)" }}
+                  />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    All payments collected!
+                  </p>
+                </div>
+              )
+            ) : (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-2">
+                    <div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-1 animate-shimmer" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-shimmer" />
+                    </div>
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12 animate-shimmer" />
                   </div>
-                ) : (
-                  <div className="text-center py-10">
-                    <CheckCircle2 className="h-12 w-12 mx-auto mb-2" style={{ color: "var(--health-green)" }} />
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      All payments collected
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      Nothing outstanding right now
-                    </p>
-                  </div>
-                )
-              ) : (
-                <SkeletonLines rows={4} />
-              )}
-            </CardContent>
-          </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Recent Patients */}
-          <Card className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/70 dark:border-gray-800 shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-200/70 dark:border-gray-800">
-              <SectionHeader
-                icon={Users}
-                title="Recent Patients"
-                subtitle="Latest activity (quick access)"
-                iconColorClass="text-gray-800 dark:text-gray-200"
-              />
-            </CardHeader>
-            <CardContent className="p-5">
+        {/* Recent Patients */}
+        <Card className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium motion-reduce:transform-none motion-reduce:transition-none">
+          <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
+              Recent Patients
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-3">
               {recentPatients ? (
-                Array.isArray(recentPatients) && recentPatients.length > 0 ? (
-                  <div className="space-y-2">
-                    {recentPatients.slice(0, 6).map((patient: any) => (
-                      <div
-                        key={patient.id}
-                        className={cn(
-                          "rounded-xl border border-gray-200/70 dark:border-gray-800 p-3",
-                          "hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                              {patient.firstName} {patient.lastName}
+                recentPatients.map((patient: any) => (
+                  <div
+                    key={patient.id}
+                    className="flex items-start sm:items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0 min-h-[60px] sm:min-h-[56px] hover:bg-gray-50/80 dark:hover:bg-gray-800/60 rounded-lg px-2 transition-all duration-300 ease-out motion-reduce:transition-none"
+                  >
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="font-medium text-base text-gray-800 dark:text-gray-200 break-words">
+                        {patient.firstName} {patient.lastName}
+                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          ID: {patient.patientId}
+                        </p>
+                        {patient.lastVisit && (
+                          <>
+                            <span className="text-gray-400 dark:text-gray-600 hidden sm:inline">
+                              •
+                            </span>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {new Date(patient.lastVisit).toLocaleDateString(
+                                "en-US",
+                                { month: "short", day: "numeric" }
+                              )}
                             </p>
-                            <div className="flex items-center gap-2 flex-wrap mt-1">
-                              <p className="text-xs text-gray-600 dark:text-gray-400">ID: {patient.patientId}</p>
-                              {patient.lastVisit ? (
-                                <p className="text-[11px] text-gray-500 dark:text-gray-500 flex items-center">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {new Date(patient.lastVisit).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
-                                </p>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className="flex-shrink-0">{getStatusBadge(patient.status)}</div>
-                        </div>
+                          </>
+                        )}
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex-shrink-0">
+                      {getStatusBadge(patient.status)}
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-10">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      No recent patients
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      New registrations will appear here
-                    </p>
-                  </div>
-                )
+                ))
               ) : (
-                <SkeletonLines rows={4} />
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between py-2">
+                      <div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-1 animate-shimmer" />
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-shimmer" />
+                      </div>
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-shimmer" />
+                    </div>
+                  ))}
+                </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-}
-
-// Local helper to avoid importing cn twice in this file
-function cn(...classes: Array<string | undefined | null | false>) {
-  return classes.filter(Boolean).join(" ");
 }
