@@ -746,9 +746,7 @@ export default function Patients() {
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
-
+        </SectionCard>
       {/* Patient Registration/Edit Dialog */}
       <Dialog open={showRegistrationForm} onOpenChange={setShowRegistrationForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
