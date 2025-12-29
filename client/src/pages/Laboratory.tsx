@@ -62,16 +62,6 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
-import { 
-  PageHeader, 
-  StatCard, 
-  FilterChips, 
-  SectionCard, 
-  StatusChip, 
-  EmptyState,
-  SkeletonTable,
-  SkeletonCard 
-} from "@/components/clinical";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -783,51 +773,65 @@ export default function Laboratory() {
       </div>
     ) : null;
 
-  return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Laboratory Department"
-        subtitle="Clinical laboratory testing and diagnostics"
-        actions={
-          <Button
-            type="button"
-            onClick={() => setRequestOpen(true)}
-            className="bg-[hsl(var(--clinical-teal-500))] hover:bg-[hsl(var(--clinical-teal-600))] text-white"
-            data-testid="button-new-lab-request"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Lab Request
-          </Button>
-        }
-      />
+return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Laboratory Department</h1>
+          <p className="text-gray-500 mt-1">Clinical laboratory testing and diagnostics</p>
+        </div>
+        <Button
+          type="button"
+          onClick={() => setRequestOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          data-testid="button-new-lab-request"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Lab Request
+        </Button>
+      </div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard
-          title="Pending"
-          value={pendingTests.length}
-          icon={Clock}
-          variant="warning"
-          data-testid="stat-pending"
-        />
-        <StatCard
-          title="Completed"
-          value={completedTests.length}
-          icon={Check}
-          variant="success"
-          data-testid="stat-completed"
-        />
-        <StatCard
-          title="Total Exams"
-          value={allLabTests.length}
-          icon={TestTube}
-          variant="default"
-          data-testid="stat-total"
-        />
-      </div>
+      {/* Statistics */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Pending</p>
+                <p className="text-3xl font-bold mt-1" data-testid="stat-pending">{pendingTests.length}</p>
+              </div>
+              <Clock className="w-8 h-8 text-yellow-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Completed</p>
+                <p className="text-3xl font-bold mt-1" data-testid="stat-completed">{completedTests.length}</p>
+              </div>
+              <Check className="w-8 h-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total Exams</p>
+                <p className="text-3xl font-bold mt-1" data-testid="stat-total">{allLabTests.length}</p>
+              </div>
+              <TestTube className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEFT – Pending Test Requests (Always Visible) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* LEFT – Pending Test Requests (Always Visible) */}
+
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-gradient-to-r from-amber-50 to-white dark:from-amber-900/20 dark:to-gray-900 border-b">
             <CardTitle className="flex items-center justify-between">
@@ -2170,6 +2174,6 @@ export default function Laboratory() {
           </div>
         </div>
         )}
-    </>
+    </div>
   );
 }

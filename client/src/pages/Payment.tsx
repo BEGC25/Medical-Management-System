@@ -22,14 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  PageHeader, 
-  StatCard, 
-  SectionCard, 
-  StatusChip, 
-  EmptyState,
-  SkeletonTable 
-} from "@/components/clinical";
 
 interface Patient {
   id: number;
@@ -360,7 +352,7 @@ export default function Payment() {
     return (
       <div 
         key={order.id} 
-        className="p-4 rounded-lg bg-[hsl(var(--surface-white))] border-l-[3px] border-[hsl(var(--status-error))] border-r border-t border-b border-[hsl(var(--border-light))] hover:border-[hsl(var(--border-medium))] hover:shadow-[var(--shadow-card-hover)] transition-all duration-[var(--transition-base)] cursor-pointer" 
+        className="p-4 rounded-lg bg-white border-l-[3px] border-red-500 border-r border-t border-b border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-gray-600" 
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -373,24 +365,24 @@ export default function Payment() {
             <div className="flex items-center gap-2 mb-1">
               {patient ? (
                 <>
-                  <span className="font-semibold text-[hsl(var(--text-primary))]">
+                  <span className="font-semibold text-gray-900 dark:text-white">
                     {patient.firstName} {patient.lastName}
                   </span>
                   <Badge variant="outline" className="text-xs">{patient.patientId}</Badge>
                 </>
               ) : (
-                <span className="font-semibold text-[hsl(var(--text-primary))]">{order.patientId}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{order.patientId}</span>
               )}
             </div>
-            <h4 className="font-medium text-[hsl(var(--text-primary))]">{order.description}</h4>
-            <p className="text-sm text-[hsl(var(--text-secondary))]">Date: {new Date(order.date).toLocaleDateString()}</p>
-            {order.bodyPart && <p className="text-sm text-[hsl(var(--text-secondary))]">Body Part: {order.bodyPart}</p>}
-            {order.dosage && <p className="text-sm text-[hsl(var(--text-secondary))]">Dosage: {order.dosage}</p>}
-            {order.quantity && <p className="text-sm text-[hsl(var(--text-secondary))]">Quantity: {order.quantity}</p>}
+            <h4 className="font-medium text-gray-900 dark:text-white">{order.description}</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Date: {new Date(order.date).toLocaleDateString()}</p>
+            {order.bodyPart && <p className="text-sm text-gray-600 dark:text-gray-400">Body Part: {order.bodyPart}</p>}
+            {order.dosage && <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {order.dosage}</p>}
+            {order.quantity && <p className="text-sm text-gray-600 dark:text-gray-400">Quantity: {order.quantity}</p>}
           </div>
           <div className="flex flex-col items-end gap-1">
-            <StatusChip status="unpaid" />
-            <span className="text-xs text-[hsl(var(--text-muted))] mt-1">Click to process</span>
+            <Badge variant="destructive" className="text-xs">UNPAID</Badge>
+            <span className="text-xs text-gray-500 mt-1">Click to process</span>
           </div>
         </div>
       </div>
@@ -399,29 +391,34 @@ export default function Payment() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Payment Processing"
-        subtitle="Process patient payments and manage outstanding balances"
-        metadata={
-          allUnpaidOrders && getTotalUnpaidCount() > 0 && (
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-[hsl(var(--status-error))]" />
-              <span className="text-sm font-medium">
-                <span className="text-[hsl(var(--status-error))]">{getTotalUnpaidCount()}</span> pending payment{getTotalUnpaidCount() !== 1 ? 's' : ''}
-              </span>
-            </div>
-          )
-        }
-      />
+      {/* Page Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Payment Processing</h1>
+          <p className="text-gray-500 mt-1">Process patient payments and manage outstanding balances</p>
+        </div>
+        {allUnpaidOrders && getTotalUnpaidCount() > 0 && (
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600" />
+            <span className="text-sm font-medium">
+              <span className="text-red-600">{getTotalUnpaidCount()}</span> pending payment{getTotalUnpaidCount() !== 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Quick Patient Search */}
-      <SectionCard 
-        icon={Search}
-        title="Quick Patient Search"
-      >
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="w-5 h-5" />
+            Quick Patient Search
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
         <div className="space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[hsl(var(--text-muted))]" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               placeholder="Search patients by name or ID..."
               value={searchQuery}
@@ -435,30 +432,30 @@ export default function Payment() {
             <div className="grid gap-2 max-h-60 overflow-y-auto">
               {patientsLoading && (
                 <div className="flex items-center justify-center p-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[hsl(var(--clinical-teal-500))]"></div>
-                  <span className="ml-2 text-sm text-[hsl(var(--text-secondary))]">Searching patients...</span>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching patients...</span>
                 </div>
               )}
               {patientsError && (
-                <div className="p-4 bg-[hsl(var(--status-error-bg))] border border-[hsl(var(--status-error-border))] rounded-lg">
-                  <div className="flex items-center gap-2 text-[hsl(var(--status-error))]">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm">{patientsError.message}</span>
                   </div>
                 </div>
               )}
               {!patientsLoading && !patientsError && patients.length === 0 && (
-                <EmptyState
-                  icon={Search}
-                  title="No patients found"
-                  description={`No patients matching "${searchQuery}". Try different search terms.`}
-                />
+                <div className="text-center py-12">
+                  <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No patients found</h3>
+                  <p className="text-gray-500">{`No patients matching "${searchQuery}". Try different search terms.`}</p>
+                </div>
               )}
               {!patientsLoading && !patientsError && patients.map((patient: Patient) => (
                 <Button
                   key={patient.id}
                   variant="outline"
-                  className="justify-start h-auto p-4 hover:bg-[hsl(var(--surface-50))] hover:border-[hsl(var(--border-medium))] transition-all"
+                  className="justify-start h-auto p-4 hover:bg-gray-50 hover:border-gray-300 transition-all dark:hover:bg-gray-800 dark:hover:border-gray-600"
                   onClick={() => handleSelectPatient(patient)}
                   data-testid={`patient-result-${patient.patientId}`}
                 >
@@ -466,7 +463,7 @@ export default function Payment() {
                     <div className="font-semibold">
                       {patient.firstName} {patient.lastName} ({patient.patientId})
                     </div>
-                    <div className="text-sm text-[hsl(var(--text-secondary))]">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
                       {patient.age} years old • {patient.gender}
                     </div>
                   </div>
@@ -476,30 +473,42 @@ export default function Payment() {
           )}
           
           {searchQuery.length > 0 && searchQuery.length < 2 && (
-            <div className="p-3 bg-[hsl(var(--status-info-bg))] border border-[hsl(var(--status-info-border))] rounded-lg">
-              <p className="text-sm text-[hsl(var(--status-info))]">Enter at least 2 characters to search for patients</p>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">Enter at least 2 characters to search for patients</p>
             </div>
           )}
         </div>
-      </SectionCard>
+        </CardContent>
+      </Card>
 
       {/* Pending Payments Overview */}
       {allUnpaidLoading ? (
-        <SectionCard title="Patients with Pending Payments" icon={Users}>
-          <SkeletonTable rows={3} />
-        </SectionCard>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Patients with Pending Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-16 bg-gray-200 rounded"></div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       ) : allUnpaidOrders && getTotalUnpaidCount() > 0 ? (
-        <SectionCard 
-          title="Patients with Pending Payments" 
-          icon={Users}
-        >
+        <Card>
           <Tabs defaultValue="laboratory" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="laboratory" className="flex items-center gap-2">
                 <TestTube className="h-4 w-4" />
                 Laboratory
                 {allUnpaidOrders.laboratory.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[hsl(var(--status-error-bg))] text-[hsl(var(--status-error))]">
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
                     {allUnpaidOrders.laboratory.length}
                   </span>
                 )}
@@ -508,7 +517,7 @@ export default function Payment() {
                 <XRayIcon className="h-4 w-4" />
                 X-Ray
                 {allUnpaidOrders.xray.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[hsl(var(--status-error-bg))] text-[hsl(var(--status-error))]">
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
                     {allUnpaidOrders.xray.length}
                   </span>
                 )}
@@ -517,7 +526,7 @@ export default function Payment() {
                 <ActivitySquare className="h-4 w-4" />
                 Ultrasound
                 {allUnpaidOrders.ultrasound.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[hsl(var(--status-error-bg))] text-[hsl(var(--status-error))]">
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
                     {allUnpaidOrders.ultrasound.length}
                   </span>
                 )}
@@ -526,7 +535,7 @@ export default function Payment() {
                 <Pill className="h-4 w-4" />
                 Pharmacy
                 {allUnpaidOrders.pharmacy.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-[hsl(var(--status-error-bg))] text-[hsl(var(--status-error))]">
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
                     {allUnpaidOrders.pharmacy.length}
                   </span>
                 )}
@@ -536,11 +545,11 @@ export default function Payment() {
             <TabsContent value="laboratory" className="mt-4">
               <div className="space-y-3">
                 {allUnpaidOrders.laboratory.length === 0 ? (
-                  <EmptyState 
-                    icon={TestTube}
-                    title="No pending laboratory payments"
-                    description="All laboratory tests have been paid for."
-                  />
+                  <div className="text-center py-12">
+                    <TestTube className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No pending laboratory payments</h3>
+                    <p className="text-gray-500">All laboratory tests have been paid for.</p>
+                  </div>
                 ) : (
                   allUnpaidOrders.laboratory.map(order => renderOrderCard(order, 'laboratory'))
                 )}
@@ -550,11 +559,11 @@ export default function Payment() {
             <TabsContent value="xray" className="mt-4">
               <div className="space-y-3">
                 {allUnpaidOrders.xray.length === 0 ? (
-                  <EmptyState 
-                    icon={XRayIcon}
-                    title="No pending X-ray payments"
-                    description="All X-ray exams have been paid for."
-                  />
+                  <div className="text-center py-12">
+                    <XRayIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No pending X-ray payments</h3>
+                    <p className="text-gray-500">All X-ray exams have been paid for.</p>
+                  </div>
                 ) : (
                   allUnpaidOrders.xray.map(order => renderOrderCard(order, 'xray'))
                 )}
@@ -564,11 +573,11 @@ export default function Payment() {
             <TabsContent value="ultrasound" className="mt-4">
               <div className="space-y-3">
                 {allUnpaidOrders.ultrasound.length === 0 ? (
-                  <EmptyState 
-                    icon={ActivitySquare}
-                    title="No pending ultrasound payments"
-                    description="All ultrasound exams have been paid for."
-                  />
+                  <div className="text-center py-12">
+                    <ActivitySquare className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No pending ultrasound payments</h3>
+                    <p className="text-gray-500">All ultrasound exams have been paid for.</p>
+                  </div>
                 ) : (
                   allUnpaidOrders.ultrasound.map(order => renderOrderCard(order, 'ultrasound'))
                 )}
@@ -578,26 +587,34 @@ export default function Payment() {
             <TabsContent value="pharmacy" className="mt-4">
               <div className="space-y-3">
                 {allUnpaidOrders.pharmacy.length === 0 ? (
-                  <EmptyState 
-                    icon={Pill}
-                    title="No pending pharmacy payments"
-                    description="All pharmacy orders have been paid for."
-                  />
+                  <div className="text-center py-12">
+                    <Pill className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No pending pharmacy payments</h3>
+                    <p className="text-gray-500">All pharmacy orders have been paid for.</p>
+                  </div>
                 ) : (
                   allUnpaidOrders.pharmacy.map(order => renderOrderCard(order, 'pharmacy'))
                 )}
               </div>
             </TabsContent>
           </Tabs>
-        </SectionCard>
+        </Card>
       ) : (
-        <SectionCard title="Payment Status" icon={CheckCircle}>
-          <EmptyState
-            icon={DollarSign}
-            title="All Payments Up to Date!"
-            description="No pending payments at this time. Great work!"
-          />
-        </SectionCard>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              Payment Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">All Payments Up to Date!</h3>
+              <p className="text-gray-500">No pending payments at this time. Great work!</p>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Payment History Section */}

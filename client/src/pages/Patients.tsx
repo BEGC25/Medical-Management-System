@@ -68,16 +68,6 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, formatClinicDay, getClinicDayKey } from "@/lib/date-utils";
-import { 
-  PageHeader, 
-  StatCard, 
-  FilterChips, 
-  SectionCard, 
-  StatusChip, 
-  EmptyState,
-  SkeletonTable,
-  SkeletonCard 
-} from "@/components/clinical";
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
@@ -494,67 +484,130 @@ export default function Patients() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Patient Management"
-        subtitle="Register and manage patient records"
-        actions={
+      {/* Page Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Patient Management</h1>
+          <p className="text-gray-500 mt-1">Register and manage patient records</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-500">
+            Last updated: {lastRefresh.toLocaleTimeString()}
+          </span>
           <Button
             onClick={handleNewPatient}
             size="lg"
-            className="bg-[hsl(var(--clinical-teal-500))] hover:bg-[hsl(var(--clinical-teal-600))] text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
             data-testid="button-new-patient-primary"
           >
             <UserPlus className="w-5 h-5 mr-2" />
             Register New Patient
           </Button>
-        }
-        metadata={
-          <span className="text-sm">
-            Last updated: {lastRefresh.toLocaleTimeString()}
-          </span>
-        }
-      />
+        </div>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {dateFilter === "today" && countsLoading ? (
-          <SkeletonCard />
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           dateFilter === "today" && (
-            <StatCard
-              title="Registered Today"
-              value={todayCount}
-              icon={Calendar}
-              variant="default"
-            />
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Registered Today</p>
+                    <p className="text-3xl font-bold mt-1">{todayCount}</p>
+                  </div>
+                  <Calendar className="w-8 h-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
           )
         )}
 
         {patientsLoading ? (
-          <SkeletonCard />
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
-          <StatCard
-            title="Patients in Range"
-            value={patientsToDisplay.length}
-            icon={Users}
-            variant="success"
-          />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Patients in Range</p>
+                  <p className="text-3xl font-bold mt-1">{patientsToDisplay.length}</p>
+                </div>
+                <Users className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        <StatCard
-          title="Last Updated"
-          value={lastRefresh.toLocaleTimeString()}
-          icon={Clock}
-          variant="default"
-        />
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Last Updated</p>
+                <p className="text-xl font-semibold mt-1">{lastRefresh.toLocaleTimeString()}</p>
+              </div>
+              <Clock className="w-8 h-8 text-gray-400" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Date Range Filters */}
       <div className="space-y-3">
-        <FilterChips
-          value={dateFilter}
-          onChange={(value) => setDateFilter(value)}
-        />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={dateFilter === "today" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("today")}
+          >
+            Today
+          </Button>
+          <Button
+            variant={dateFilter === "yesterday" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("yesterday")}
+          >
+            Yesterday
+          </Button>
+          <Button
+            variant={dateFilter === "last7days" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("last7days")}
+          >
+            Last 7 Days
+          </Button>
+          <Button
+            variant={dateFilter === "last30days" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("last30days")}
+          >
+            Last 30 Days
+          </Button>
+          <Button
+            variant={dateFilter === "custom" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("custom")}
+          >
+            Custom Range
+          </Button>
+        </div>
         
         {dateFilter === "custom" && (
           <div className="flex gap-2 items-center">
@@ -564,7 +617,7 @@ export default function Patients() {
               placeholder="Start Date"
               className="w-48"
             />
-            <span className="text-sm text-[hsl(var(--text-muted))]">to</span>
+            <span className="text-sm text-gray-500">to</span>
             <DatePicker
               date={customEndDate}
               onDateChange={setCustomEndDate}
@@ -578,7 +631,7 @@ export default function Patients() {
           variant={showSearch ? "default" : "outline"}
           size="sm"
           onClick={() => setShowSearch(!showSearch)}
-          className={showSearch ? "bg-[hsl(var(--clinical-teal-500))] hover:bg-[hsl(var(--clinical-teal-600))]" : ""}
+          className={showSearch ? "bg-blue-600 hover:bg-blue-700" : ""}
           data-testid="button-toggle-search"
         >
           <Search className="w-4 h-4 mr-2" />
@@ -587,7 +640,7 @@ export default function Patients() {
         
         {showSearch && (
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[hsl(var(--text-muted))]" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               type="text"
               placeholder="Search by name or patient ID..."
@@ -601,38 +654,46 @@ export default function Patients() {
       </div>
 
       {/* Patients Table */}
-      <SectionCard 
-        title={
-          showSearch && searchQuery ? `Search Results for "${searchQuery}"` :
-          showSearch && !searchQuery ? "Enter search query" :
-          dateFilter === "today" ? "Patients Registered Today" :
-          dateFilter === "yesterday" ? "Patients Registered Yesterday" :
-          dateFilter === "last7days" ? "Patients from Last 7 Days" :
-          dateFilter === "last30days" ? "Patients from Last 30 Days" :
-          "Patients in Custom Range"
-        }
-        icon={Users}
-      >
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            {showSearch && searchQuery ? `Search Results for "${searchQuery}"` :
+            showSearch && !searchQuery ? "Enter search query" :
+            dateFilter === "today" ? "Patients Registered Today" :
+            dateFilter === "yesterday" ? "Patients Registered Yesterday" :
+            dateFilter === "last7days" ? "Patients from Last 7 Days" :
+            dateFilter === "last30days" ? "Patients from Last 30 Days" :
+            "Patients in Custom Range"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
         {patientsLoading || (showSearch && searchLoading) ? (
-          <SkeletonTable rows={5} />
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-16 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
         ) : patientsToDisplay.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title={
-              showSearch && searchQuery
+          <div className="text-center py-12">
+            <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {showSearch && searchQuery
                 ? "No patients found"
                 : dateFilter === "custom" && !customStartDate && !customEndDate
                 ? "Select date range"
-                : "No patients found"
-            }
-            description={
-              showSearch && searchQuery
+                : "No patients found"}
+            </h3>
+            <p className="text-gray-500">
+              {showSearch && searchQuery
                 ? "No patients found matching your search. Try different keywords."
                 : dateFilter === "custom" && !customStartDate && !customEndDate
                 ? "Select start and end dates above to view patients in custom range"
-                : "No patients found for this date range"
-            }
-          />
+                : "No patients found for this date range"}
+            </p>
+          </div>
         ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -746,7 +807,8 @@ export default function Patients() {
               </table>
             </div>
           )}
-        </SectionCard>
+        </CardContent>
+      </Card>
       {/* Patient Registration/Edit Dialog */}
       <Dialog open={showRegistrationForm} onOpenChange={setShowRegistrationForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
