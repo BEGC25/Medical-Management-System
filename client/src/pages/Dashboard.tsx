@@ -105,32 +105,36 @@ export default function Dashboard() {
           return (
             <Link key={action.title} href={action.href}>
               <Card 
-                className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl cursor-pointer transition-all duration-500 ease-out hover:-translate-y-3 hover:scale-[1.02] active:translate-y-0 active:scale-[0.99]"
+                className="card-quick-action group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl cursor-pointer transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] active:translate-y-0 active:scale-[0.99]"
                 style={{ 
                   animation: `slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s backwards`,
-                  border: '1px solid rgba(0,0,0,0.08)',
-                  boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)',
+                  border: '1px solid rgba(0,0,0,0.06)',
                   borderLeft: action.color === 'bg-medical-blue' ? '4px solid #0ea5e9' :
                               action.color === 'bg-health-green' ? '4px solid #22c55e' :
                               action.color === 'bg-attention-orange' ? '4px solid #f97316' :
                               '4px solid #ef4444'
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.20), 0 8px 25px rgba(15,23,42,0.15), 0 4px 10px rgba(15,23,42,0.10)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
-                }}
               >
-                <CardContent className="p-6">
+                {/* Subtle gradient overlay */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  style={{
+                    background: action.color === 'bg-medical-blue' ? 'linear-gradient(135deg, rgba(14,165,233,0.05) 0%, transparent 50%)' :
+                                action.color === 'bg-health-green' ? 'linear-gradient(135deg, rgba(34,197,94,0.05) 0%, transparent 50%)' :
+                                action.color === 'bg-attention-orange' ? 'linear-gradient(135deg, rgba(249,115,22,0.05) 0%, transparent 50%)' :
+                                'linear-gradient(135deg, rgba(239,68,68,0.05) 0%, transparent 50%)'
+                  }}
+                />
+                
+                <CardContent className="p-6 relative">
                   <div className="flex items-center gap-4">
                     <div 
                       className="p-4 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
                       style={{
-                        background: action.color === 'bg-medical-blue' ? 'linear-gradient(135deg, rgba(14,165,233,0.2) 0%, rgba(6,182,212,0.15) 100%)' :
-                                    action.color === 'bg-health-green' ? 'linear-gradient(135deg, rgba(34,197,94,0.2) 0%, rgba(16,185,129,0.15) 100%)' :
-                                    action.color === 'bg-attention-orange' ? 'linear-gradient(135deg, rgba(249,115,22,0.2) 0%, rgba(245,158,11,0.15) 100%)' :
-                                    'linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(244,63,94,0.15) 100%)',
+                        background: action.color === 'bg-medical-blue' ? 'linear-gradient(135deg, rgba(14,165,233,0.15) 0%, rgba(6,182,212,0.1) 100%)' :
+                                    action.color === 'bg-health-green' ? 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(16,185,129,0.1) 100%)' :
+                                    action.color === 'bg-attention-orange' ? 'linear-gradient(135deg, rgba(249,115,22,0.15) 0%, rgba(245,158,11,0.1) 100%)' :
+                                    'linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(244,63,94,0.1) 100%)',
                         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 8px rgba(0,0,0,0.06)'
                       }}
                     >
@@ -160,16 +164,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {/* Statistics */}
         <Card 
-          className="md:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
-          style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
-          }}
+          className="md:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium"
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70 
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
@@ -246,16 +241,7 @@ export default function Dashboard() {
 
         {/* Results Ready for Review Widget */}
         <Card 
-          className="md:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
-          style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
-          }}
+          className="md:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium"
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-purple-50/80 to-white dark:from-purple-950/40 dark:to-gray-900">
@@ -411,16 +397,7 @@ export default function Dashboard() {
 
         {/* Pending Items */}
         <Card 
-          className="md:col-span-2 lg:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
-          style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
-          }}
+          className="md:col-span-2 lg:col-span-1 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium"
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
@@ -525,16 +502,7 @@ export default function Dashboard() {
         
         {/* Patient Flow & Queue Widget */}
         <Card 
-          className="bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
-          style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
-          }}
+          className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium"
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-blue-50/80 to-white dark:from-blue-950/40 dark:to-gray-900">
@@ -669,16 +637,7 @@ export default function Dashboard() {
 
         {/* Outstanding Payments Widget */}
         <Card 
-          className="bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
-          style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
-          }}
+          className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium"
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-green-50/80 to-white dark:from-green-950/40 dark:to-gray-900">
@@ -775,16 +734,7 @@ export default function Dashboard() {
 
         {/* Recent Patients */}
         <Card 
-          className="bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/60 transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01]"
-          style={{
-            boxShadow: '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.18), 0 8px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 25px rgba(15,23,42,0.12), 0 2px 10px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.06)';
-          }}
+          className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/50 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] rounded-2xl card-premium"
         >
           <CardHeader className="pb-4 border-b border-gray-200/70 dark:border-gray-800/70
                                  bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/60 dark:to-gray-900">
