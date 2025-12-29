@@ -497,36 +497,78 @@ export default function Patients() {
           <Button
             onClick={handleNewPatient}
             size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="group bg-blue-600 hover:bg-blue-700 
+                       dark:bg-blue-500 dark:hover:bg-blue-600
+                       text-white font-semibold
+                       px-5 py-2.5
+                       shadow-[0_4px_12px_rgba(59,130,246,0.25),
+                               0_2px_6px_rgba(59,130,246,0.15)]
+                       hover:shadow-[0_8px_20px_rgba(59,130,246,0.35),
+                                    0_4px_10px_rgba(59,130,246,0.25)]
+                       hover:-translate-y-0.5
+                       active:translate-y-0
+                       transition-all duration-300"
             data-testid="button-new-patient-primary"
           >
-            <UserPlus className="w-5 h-5 mr-2" />
+            <UserPlus className="w-5 h-5 mr-2 transition-transform duration-300 
+                                group-hover:scale-110" />
             Register New Patient
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Premium Dashboard Styling */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {dateFilter === "today" && countsLoading ? (
-          <Card>
+          <Card className="group relative overflow-hidden
+                           bg-white dark:bg-gray-800
+                           border-2 border-gray-200/80 dark:border-gray-700/60
+                           border-l-4 border-l-blue-600 dark:border-l-blue-400
+                           shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                   0_2px_10px_rgba(15,23,42,0.06),
+                                   0_1px_3px_rgba(15,23,42,0.04)]
+                           transition-all duration-300
+                           cursor-default">
             <CardContent className="p-6">
               <div className="animate-pulse space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
               </div>
             </CardContent>
           </Card>
         ) : (
           dateFilter === "today" && (
-            <Card>
+            <Card className="group relative overflow-hidden
+                             bg-white dark:bg-gray-800
+                             border-2 border-gray-200/80 dark:border-gray-700/60
+                             border-l-4 border-l-blue-600 dark:border-l-blue-400
+                             shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                     0_2px_10px_rgba(15,23,42,0.06),
+                                     0_1px_3px_rgba(15,23,42,0.04)]
+                             hover:shadow-[0_8px_32px_rgba(15,23,42,0.14),
+                                          0_4px_16px_rgba(15,23,42,0.10),
+                                          0_2px_6px_rgba(15,23,42,0.06)]
+                             hover:-translate-y-1
+                             transition-all duration-300
+                             cursor-default">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Registered Today</p>
-                    <p className="text-3xl font-bold mt-1">{todayCount}</p>
-                  </div>
-                  <Calendar className="w-8 h-8 text-blue-500" />
+                <div className="inline-flex p-3 rounded-xl mb-4
+                                bg-blue-100/80 dark:bg-blue-900/40
+                                transition-all duration-300
+                                group-hover:bg-blue-200/90 dark:group-hover:bg-blue-800/50
+                                group-hover:scale-110
+                                group-hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                  <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                  Registered Today
+                </div>
+                
+                <div className="text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100
+                                transition-transform duration-300
+                                group-hover:scale-105">
+                  {todayCount}
                 </div>
               </CardContent>
             </Card>
@@ -534,79 +576,233 @@ export default function Patients() {
         )}
 
         {patientsLoading ? (
-          <Card>
+          <Card className="group relative overflow-hidden
+                           bg-white dark:bg-gray-800
+                           border-2 border-gray-200/80 dark:border-gray-700/60
+                           border-l-4 border-l-green-600 dark:border-l-green-400
+                           shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                   0_2px_10px_rgba(15,23,42,0.06),
+                                   0_1px_3px_rgba(15,23,42,0.04)]
+                           transition-all duration-300
+                           cursor-default">
             <CardContent className="p-6">
               <div className="animate-pulse space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="group relative overflow-hidden
+                           bg-white dark:bg-gray-800
+                           border-2 border-gray-200/80 dark:border-gray-700/60
+                           border-l-4 border-l-green-600 dark:border-l-green-400
+                           shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                   0_2px_10px_rgba(15,23,42,0.06),
+                                   0_1px_3px_rgba(15,23,42,0.04)]
+                           hover:shadow-[0_8px_32px_rgba(15,23,42,0.14),
+                                        0_4px_16px_rgba(15,23,42,0.10),
+                                        0_2px_6px_rgba(15,23,42,0.06)]
+                           hover:-translate-y-1
+                           transition-all duration-300
+                           cursor-default">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Patients in Range</p>
-                  <p className="text-3xl font-bold mt-1">{patientsToDisplay.length}</p>
-                </div>
-                <Users className="w-8 h-8 text-green-500" />
+              <div className="inline-flex p-3 rounded-xl mb-4
+                              bg-green-100/80 dark:bg-green-900/40
+                              transition-all duration-300
+                              group-hover:bg-green-200/90 dark:group-hover:bg-green-800/50
+                              group-hover:scale-110
+                              group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+                <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+              
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                Patients in Range
+              </div>
+              
+              <div className="text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100
+                              transition-transform duration-300
+                              group-hover:scale-105">
+                {patientsToDisplay.length}
               </div>
             </CardContent>
           </Card>
         )}
 
-        <Card>
+        <Card className="group relative overflow-hidden
+                         bg-white dark:bg-gray-800
+                         border-2 border-gray-200/80 dark:border-gray-700/60
+                         border-l-4 border-l-purple-600 dark:border-l-purple-400
+                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
+                                 0_2px_10px_rgba(15,23,42,0.06),
+                                 0_1px_3px_rgba(15,23,42,0.04)]
+                         hover:shadow-[0_8px_32px_rgba(15,23,42,0.14),
+                                      0_4px_16px_rgba(15,23,42,0.10),
+                                      0_2px_6px_rgba(15,23,42,0.06)]
+                         hover:-translate-y-1
+                         transition-all duration-300
+                         cursor-default">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Last Updated</p>
-                <p className="text-xl font-semibold mt-1">{lastRefresh.toLocaleTimeString()}</p>
-              </div>
-              <Clock className="w-8 h-8 text-gray-400" />
+            <div className="inline-flex p-3 rounded-xl mb-4
+                            bg-purple-100/80 dark:bg-purple-900/40
+                            transition-all duration-300
+                            group-hover:bg-purple-200/90 dark:group-hover:bg-purple-800/50
+                            group-hover:scale-110
+                            group-hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+              <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            
+            <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+              Last Updated
+            </div>
+            
+            <div className="text-xl font-semibold tabular-nums text-gray-900 dark:text-gray-100
+                            transition-transform duration-300
+                            group-hover:scale-105">
+              {lastRefresh.toLocaleTimeString()}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Date Range Filters */}
+      {/* Date Range Filters - Modern Underline Design */}
       <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={dateFilter === "today" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("today")}
+        <div className="flex items-center gap-1">
+          {/* Tab container with bottom border */}
+          <div className="flex items-center gap-1 flex-1 
+                          border-b-2 border-gray-200 dark:border-gray-700">
+            
+            {/* Today tab */}
+            <button
+              onClick={() => setDateFilter("today")}
+              className={`relative px-4 py-3 font-semibold text-sm
+                         transition-all duration-300
+                         ${dateFilter === "today" 
+                           ? "text-blue-700 dark:text-blue-300" 
+                           : "text-gray-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/30 dark:hover:bg-blue-900/10"
+                         }`}
+            >
+              Today
+              {dateFilter === "today" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-600 dark:bg-blue-400
+                                shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+              )}
+            </button>
+            
+            {/* Yesterday tab */}
+            <button
+              onClick={() => setDateFilter("yesterday")}
+              className={`relative px-4 py-3 font-medium text-sm
+                         transition-all duration-300
+                         group
+                         ${dateFilter === "yesterday" 
+                           ? "text-blue-700 dark:text-blue-300" 
+                           : "text-gray-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/30 dark:hover:bg-blue-900/10"
+                         }`}
+            >
+              Yesterday
+              {dateFilter === "yesterday" ? (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-600 dark:bg-blue-400
+                                shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+              ) : (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-400 dark:bg-blue-500
+                                opacity-0 group-hover:opacity-50
+                                transition-opacity duration-300"></div>
+              )}
+            </button>
+            
+            {/* Last 7 Days tab */}
+            <button
+              onClick={() => setDateFilter("last7days")}
+              className={`relative px-4 py-3 font-medium text-sm
+                         transition-all duration-300
+                         group
+                         ${dateFilter === "last7days" 
+                           ? "text-blue-700 dark:text-blue-300" 
+                           : "text-gray-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/30 dark:hover:bg-blue-900/10"
+                         }`}
+            >
+              Last 7 Days
+              {dateFilter === "last7days" ? (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-600 dark:bg-blue-400
+                                shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+              ) : (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-400 dark:bg-blue-500
+                                opacity-0 group-hover:opacity-50
+                                transition-opacity duration-300"></div>
+              )}
+            </button>
+            
+            {/* Last 30 Days tab */}
+            <button
+              onClick={() => setDateFilter("last30days")}
+              className={`relative px-4 py-3 font-medium text-sm
+                         transition-all duration-300
+                         group
+                         ${dateFilter === "last30days" 
+                           ? "text-blue-700 dark:text-blue-300" 
+                           : "text-gray-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/30 dark:hover:bg-blue-900/10"
+                         }`}
+            >
+              Last 30 Days
+              {dateFilter === "last30days" ? (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-600 dark:bg-blue-400
+                                shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+              ) : (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-400 dark:bg-blue-500
+                                opacity-0 group-hover:opacity-50
+                                transition-opacity duration-300"></div>
+              )}
+            </button>
+            
+            {/* Custom Range tab */}
+            <button
+              onClick={() => setDateFilter("custom")}
+              className={`relative px-4 py-3 font-medium text-sm
+                         transition-all duration-300
+                         group
+                         ${dateFilter === "custom" 
+                           ? "text-blue-700 dark:text-blue-300" 
+                           : "text-gray-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/30 dark:hover:bg-blue-900/10"
+                         }`}
+            >
+              Custom Range
+              {dateFilter === "custom" ? (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-600 dark:bg-blue-400
+                                shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+              ) : (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 
+                                bg-blue-400 dark:bg-blue-500
+                                opacity-0 group-hover:opacity-50
+                                transition-opacity duration-300"></div>
+              )}
+            </button>
+          </div>
+          
+          {/* Search toggle button - icon only */}
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className={`p-3 rounded-lg
+                       transition-all duration-300
+                       group
+                       border border-gray-200 dark:border-gray-700
+                       ${showSearch 
+                         ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" 
+                         : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
+                       }`}
+            data-testid="button-toggle-search"
           >
-            Today
-          </Button>
-          <Button
-            variant={dateFilter === "yesterday" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("yesterday")}
-          >
-            Yesterday
-          </Button>
-          <Button
-            variant={dateFilter === "last7days" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("last7days")}
-          >
-            Last 7 Days
-          </Button>
-          <Button
-            variant={dateFilter === "last30days" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("last30days")}
-          >
-            Last 30 Days
-          </Button>
-          <Button
-            variant={dateFilter === "custom" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("custom")}
-          >
-            Custom Range
-          </Button>
+            <Search className="w-5 h-5 transition-transform duration-300 
+                              group-hover:scale-110" />
+          </button>
         </div>
         
         {dateFilter === "custom" && (
@@ -626,17 +822,6 @@ export default function Patients() {
             />
           </div>
         )}
-        
-        <Button
-          variant={showSearch ? "default" : "outline"}
-          size="sm"
-          onClick={() => setShowSearch(!showSearch)}
-          className={showSearch ? "bg-blue-600 hover:bg-blue-700" : ""}
-          data-testid="button-toggle-search"
-        >
-          <Search className="w-4 h-4 mr-2" />
-          {showSearch ? "Hide Search" : "Show Search"}
-        </Button>
         
         {showSearch && (
           <div className="relative">
@@ -677,22 +862,69 @@ export default function Patients() {
             ))}
           </div>
         ) : patientsToDisplay.length === 0 ? (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <div className="flex flex-col items-center justify-center py-20 px-6">
+            {/* Icon with colored background and badge */}
+            <div className="relative mb-8">
+              {/* Main icon circle */}
+              <div className="p-8 rounded-full 
+                              bg-gradient-to-br from-blue-100/90 via-blue-50/80 to-cyan-100/90
+                              dark:from-blue-900/40 dark:via-blue-800/30 dark:to-cyan-900/40
+                              shadow-[0_8px_32px_rgba(59,130,246,0.15),
+                                      0_4px_16px_rgba(59,130,246,0.10)]
+                              dark:shadow-[0_8px_32px_rgba(59,130,246,0.25),
+                                           0_4px_16px_rgba(59,130,246,0.15)]">
+                <Users className="w-20 h-20 text-blue-600 dark:text-blue-400" />
+              </div>
+              
+              {/* Plus badge (encourages action) */}
+              <div className="absolute -bottom-2 -right-2 
+                              p-3 rounded-full 
+                              bg-blue-600 dark:bg-blue-500
+                              shadow-[0_4px_16px_rgba(59,130,246,0.4),
+                                      0_2px_8px_rgba(59,130,246,0.3)]
+                              dark:shadow-[0_4px_16px_rgba(59,130,246,0.6),
+                                           0_2px_8px_rgba(59,130,246,0.4)]
+                              animate-pulse">
+                <UserPlus className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            
+            {/* Messaging */}
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
               {showSearch && searchQuery
                 ? "No patients found"
                 : dateFilter === "custom" && !customStartDate && !customEndDate
                 ? "Select date range"
                 : "No patients found"}
             </h3>
-            <p className="text-gray-500">
+            <p className="text-gray-600 dark:text-gray-400 text-center max-w-md mb-8">
               {showSearch && searchQuery
                 ? "No patients found matching your search. Try different keywords."
                 : dateFilter === "custom" && !customStartDate && !customEndDate
                 ? "Select start and end dates above to view patients in custom range"
-                : "No patients found for this date range"}
+                : "No patients registered for this date range. Start by registering your first patient to begin managing records."}
             </p>
+            
+            {/* Call-to-action button */}
+            {!showSearch && (
+              <Button 
+                onClick={handleNewPatient}
+                className="bg-blue-600 hover:bg-blue-700 
+                           dark:bg-blue-500 dark:hover:bg-blue-600
+                           text-white font-semibold text-base
+                           px-6 py-3
+                           shadow-[0_4px_16px_rgba(59,130,246,0.25),
+                                   0_2px_8px_rgba(59,130,246,0.15)]
+                           hover:shadow-[0_8px_24px_rgba(59,130,246,0.35),
+                                        0_4px_12px_rgba(59,130,246,0.25)]
+                           hover:-translate-y-1
+                           active:translate-y-0
+                           transition-all duration-300
+                           flex items-center gap-2">
+                <UserPlus className="w-5 h-5" />
+                Register Your First Patient
+              </Button>
+            )}
           </div>
         ) : (
             <div className="overflow-x-auto">
