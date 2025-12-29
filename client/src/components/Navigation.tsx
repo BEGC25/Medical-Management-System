@@ -78,7 +78,7 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
     <div className="space-y-8">
       {Object.entries(groupedItems).map(([category, items]) => (
         <div key={category} className="space-y-2">
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/60 mb-3 mt-6 px-4 first:mt-2">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/90 dark:text-white/85 mb-3 mt-6 px-4 first:mt-2 transition-colors duration-300">
             {category}
           </h3>
           <div className="space-y-1">
@@ -93,27 +93,43 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
                       <div 
                         className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-xl ml-[-4px] transition-all duration-300"
                         style={{
-                          background: 'linear-gradient(90deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
-                          borderLeft: '4px solid rgba(255,255,255,0.9)',
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.15)',
-                          backdropFilter: 'blur(10px)',
+                          background: 'linear-gradient(90deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.12) 100%)',
+                          borderLeft: '4px solid rgba(255,255,255,0.95)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 14px rgba(0,0,0,0.18)',
+                          backdropFilter: 'blur(12px)',
                         }}
                       >
-                        <Icon className="w-5 h-5 text-white transition-transform duration-300 group-hover:scale-110" />
-                        <span className="font-semibold text-white tracking-tight">{item.label}</span>
+                        <Icon className="w-5 h-5 text-white drop-shadow-[0_0_4px_rgba(255,255,255,0.5)] transition-transform duration-300 group-hover:scale-110" />
+                        <span className="font-semibold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{item.label}</span>
                         
                         {/* Active indicator dot */}
                         <div className="absolute right-3">
                           <div 
                             className="w-2 h-2 rounded-full bg-white"
-                            style={{ boxShadow: '0 0 8px rgba(255,255,255,0.9)' }}
+                            style={{ boxShadow: '0 0 10px rgba(255,255,255,1), 0 0 6px rgba(255,255,255,0.8)' }}
                           />
                         </div>
                       </div>
                     ) : (
-                      <div className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 border-l-4 border-transparent hover:border-white/30 transition-all duration-300 cursor-pointer hover:scale-[1.02]">
-                        <Icon className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
-                        <span className="font-medium">{item.label}</span>
+                      <div className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-xl
+                                      text-white dark:text-white
+                                      hover:bg-white/15 dark:hover:bg-white/15
+                                      border-l-4 border-transparent
+                                      hover:border-l-white/60 dark:hover:border-l-white/60
+                                      hover:shadow-[2px_0_12px_rgba(255,255,255,0.12),
+                                                   1px_0_4px_rgba(255,255,255,0.08)]
+                                      dark:hover:shadow-[2px_0_16px_rgba(255,255,255,0.18),
+                                                          1px_0_6px_rgba(255,255,255,0.12)]
+                                      transition-all duration-300 ease-out
+                                      hover:translate-x-1.5
+                                      cursor-pointer
+                                      ml-[-4px]
+                                      backdrop-blur-sm">
+                        <Icon className="w-5 h-5 transition-all duration-300 
+                                       group-hover:scale-110 
+                                       group-hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.5)]" />
+                        <span className="font-medium tracking-tight transition-all duration-300 
+                                         group-hover:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{item.label}</span>
                       </div>
                     )}
                   </div>
