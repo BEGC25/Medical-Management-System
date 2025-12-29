@@ -24,15 +24,15 @@ export function ThemeToggle() {
     <button
       onClick={toggleTheme}
       className="group relative p-2.5 rounded-xl
-                 bg-white/10 dark:bg-gray-700/30
-                 hover:bg-white/20 dark:hover:bg-gray-600/40
+                 bg-white/10 dark:bg-white/5
+                 hover:bg-white/20 dark:hover:bg-white/10
                  text-white
-                 border border-white/30 dark:border-gray-500/30
-                 shadow-[0_2px_6px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.08)]
-                 hover:shadow-[0_4px_12px_rgba(0,0,0,0.18),0_2px_4px_rgba(0,0,0,0.12)]
+                 border border-white/30 dark:border-white/20
+                 shadow-sm
+                 hover:shadow-md
+                 backdrop-blur-md
                  transition-all duration-300 ease-out
-                 hover:scale-[1.05] hover:rotate-12
-                 backdrop-blur-sm"
+                 hover:scale-[1.05] hover:rotate-12"
       aria-label="Toggle theme"
     >
       <Sun className="h-5 w-5 rotate-0 scale-100 transition-all duration-300 
