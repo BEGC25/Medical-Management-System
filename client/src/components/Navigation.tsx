@@ -78,7 +78,7 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
     <div className="space-y-8">
       {Object.entries(groupedItems).map(([category, items]) => (
         <div key={category} className="space-y-2">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/90 dark:text-white/85 mb-3 mt-6 px-4 first:mt-2 transition-colors duration-300">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90 dark:text-white/85 mb-3 mt-6 px-4 first:mt-2 transition-colors duration-300">
             {category}
           </h3>
           <div className="space-y-1">
@@ -112,10 +112,10 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
                       </div>
                     ) : (
                       <div className="group relative flex items-center gap-3 px-4 py-3 sm:py-2.5 rounded-xl
-                                      text-white dark:text-white
-                                      hover:bg-white/15 dark:hover:bg-white/15
+                                      text-white
+                                      hover:bg-white/15
                                       border-l-4 border-transparent
-                                      hover:border-l-white/60 dark:hover:border-l-white/60
+                                      hover:border-l-white/60
                                       hover:shadow-[2px_0_12px_rgba(255,255,255,0.12),
                                                    1px_0_4px_rgba(255,255,255,0.08)]
                                       dark:hover:shadow-[2px_0_16px_rgba(255,255,255,0.18),
