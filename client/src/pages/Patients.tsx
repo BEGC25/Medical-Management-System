@@ -16,6 +16,7 @@ import {
   Trash2,
   AlertTriangle,
   Filter,
+  Info,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -517,152 +518,87 @@ export default function Patients() {
         </div>
       </div>
 
-      {/* Stats Cards - Premium Dashboard Styling */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {dateFilter === "today" && countsLoading ? (
-          <Card className="group relative overflow-hidden
-                           bg-white dark:bg-gray-800
-                           border-2 border-gray-200/80 dark:border-gray-700/60
-                           border-l-4 border-l-blue-600 dark:border-l-blue-400
-                           shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                   0_2px_10px_rgba(15,23,42,0.06),
-                                   0_1px_3px_rgba(15,23,42,0.04)]
-                           transition-all duration-300
-                           cursor-default">
-            <CardContent className="p-6">
-              <div className="animate-pulse space-y-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          dateFilter === "today" && (
-            <Card className="group relative overflow-hidden
-                             bg-white dark:bg-gray-800
-                             border-2 border-gray-200/80 dark:border-gray-700/60
-                             border-l-4 border-l-blue-600 dark:border-l-blue-400
-                             shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                     0_2px_10px_rgba(15,23,42,0.06),
-                                     0_1px_3px_rgba(15,23,42,0.04)]
-                             hover:shadow-[0_8px_32px_rgba(15,23,42,0.14),
-                                          0_4px_16px_rgba(15,23,42,0.10),
-                                          0_2px_6px_rgba(15,23,42,0.06)]
-                             hover:-translate-y-1
-                             transition-all duration-300
-                             cursor-default">
-              <CardContent className="p-6">
-                <div className="inline-flex p-3 rounded-xl mb-4
-                                bg-blue-100/80 dark:bg-blue-900/40
-                                transition-all duration-300
-                                group-hover:bg-blue-200/90 dark:group-hover:bg-blue-800/50
-                                group-hover:scale-110
-                                group-hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]">
-                  <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+      {/* Compact Statistics Bar - Space Efficient */}
+      <div className="flex items-center justify-between gap-6 px-6 py-4 mb-6
+                      bg-white dark:bg-gray-800
+                      border border-gray-200/60 dark:border-gray-700/60
+                      rounded-xl
+                      shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
+                      transition-all duration-300
+                      hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+        
+        {/* Left side: Statistics */}
+        <div className="flex items-center gap-8">
+          
+          {/* Stat 1: Registered Today */}
+          {dateFilter === "today" && (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg 
+                                bg-blue-100/80 dark:bg-blue-900/30
+                                transition-colors duration-300">
+                  <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                
-                <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                  Registered Today
+                <div>
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Registered Today
+                  </div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                    {countsLoading ? "..." : todayCount}
+                  </div>
                 </div>
-                
-                <div className="text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100
-                                transition-transform duration-300
-                                group-hover:scale-105">
-                  {todayCount}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        )}
-
-        {patientsLoading ? (
-          <Card className="group relative overflow-hidden
-                           bg-white dark:bg-gray-800
-                           border-2 border-gray-200/80 dark:border-gray-700/60
-                           border-l-4 border-l-green-600 dark:border-l-green-400
-                           shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                   0_2px_10px_rgba(15,23,42,0.06),
-                                   0_1px_3px_rgba(15,23,42,0.04)]
-                           transition-all duration-300
-                           cursor-default">
-            <CardContent className="p-6">
-              <div className="animate-pulse space-y-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="group relative overflow-hidden
-                           bg-white dark:bg-gray-800
-                           border-2 border-gray-200/80 dark:border-gray-700/60
-                           border-l-4 border-l-green-600 dark:border-l-green-400
-                           shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                   0_2px_10px_rgba(15,23,42,0.06),
-                                   0_1px_3px_rgba(15,23,42,0.04)]
-                           hover:shadow-[0_8px_32px_rgba(15,23,42,0.14),
-                                        0_4px_16px_rgba(15,23,42,0.10),
-                                        0_2px_6px_rgba(15,23,42,0.06)]
-                           hover:-translate-y-1
-                           transition-all duration-300
-                           cursor-default">
-            <CardContent className="p-6">
-              <div className="inline-flex p-3 rounded-xl mb-4
-                              bg-green-100/80 dark:bg-green-900/40
-                              transition-all duration-300
-                              group-hover:bg-green-200/90 dark:group-hover:bg-green-800/50
-                              group-hover:scale-110
-                              group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]">
-                <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                Patients in Range
+              {/* Vertical Divider */}
+              <div className="h-10 w-px bg-gray-200 dark:bg-gray-700"></div>
+            </>
+          )}
+          
+          {/* Stat 2: Total Patients (renamed from "Patients in Range") */}
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg 
+                            bg-green-100/80 dark:bg-green-900/30
+                            transition-colors duration-300">
+              <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Total Patients
               </div>
-              
-              <div className="text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100
-                              transition-transform duration-300
-                              group-hover:scale-105">
-                {patientsToDisplay.length}
+              <div className="text-lg font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                {patientsLoading ? "..." : patientsToDisplay.length}
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="group relative overflow-hidden
-                         bg-white dark:bg-gray-800
-                         border-2 border-gray-200/80 dark:border-gray-700/60
-                         border-l-4 border-l-purple-600 dark:border-l-purple-400
-                         shadow-[0_4px_20px_rgba(15,23,42,0.10),
-                                 0_2px_10px_rgba(15,23,42,0.06),
-                                 0_1px_3px_rgba(15,23,42,0.04)]
-                         hover:shadow-[0_8px_32px_rgba(15,23,42,0.14),
-                                      0_4px_16px_rgba(15,23,42,0.10),
-                                      0_2px_6px_rgba(15,23,42,0.06)]
-                         hover:-translate-y-1
-                         transition-all duration-300
-                         cursor-default">
-          <CardContent className="p-6">
-            <div className="inline-flex p-3 rounded-xl mb-4
-                            bg-purple-100/80 dark:bg-purple-900/40
-                            transition-all duration-300
-                            group-hover:bg-purple-200/90 dark:group-hover:bg-purple-800/50
-                            group-hover:scale-110
-                            group-hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-              <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
-            
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-              Last Updated
+          </div>
+          
+          {/* Vertical Divider */}
+          <div className="h-10 w-px bg-gray-200 dark:bg-gray-700"></div>
+          
+          {/* Stat 3: Last Updated */}
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg 
+                            bg-purple-100/80 dark:bg-purple-900/30
+                            transition-colors duration-300">
+              <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             </div>
-            
-            <div className="text-xl font-semibold tabular-nums text-gray-900 dark:text-gray-100
-                            transition-transform duration-300
-                            group-hover:scale-105">
-              {lastRefresh.toLocaleTimeString()}
+            <div>
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Last Updated
+              </div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
+                {lastRefresh.toLocaleTimeString()}
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+        </div>
+        
+        {/* Right side: Quick info */}
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <Info className="w-3.5 h-3.5" />
+          <span>Showing results for selected date range</span>
+        </div>
+        
       </div>
 
       {/* Date Range Filters - Modern Underline Design */}
