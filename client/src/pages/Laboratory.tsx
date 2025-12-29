@@ -62,16 +62,6 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
-import { 
-  PageHeader, 
-  StatCard, 
-  FilterChips, 
-  SectionCard, 
-  StatusChip, 
-  EmptyState,
-  SkeletonTable,
-  SkeletonCard 
-} from "@/components/clinical";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */

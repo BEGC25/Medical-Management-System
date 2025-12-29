@@ -4,9 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import Clinical Design System Tokens */
-@import './styles/design-tokens.css';
-
 @layer base {
   :root {
     /* Premium Neutral Foundation - More nuanced and refined */
