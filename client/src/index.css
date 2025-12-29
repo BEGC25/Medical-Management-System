@@ -627,14 +627,8 @@
       transform: scale(1.02);
     }
   }
-  
   .animate-subtle-pulse {
     animation: subtle-pulse 2s ease-in-out infinite;
-  }
-  
-  /* Fade-in Animation */
-  .animate-fade-in {
-    animation: fade-in 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   /* Gradient overlays for cards */

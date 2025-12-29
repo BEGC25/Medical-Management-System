@@ -390,7 +390,7 @@ export default function Payment() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 fade-in duration-500 animate-in">
       {/* Page Header - Enhanced */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -478,7 +478,10 @@ export default function Payment() {
           
           {searchQuery.length > 0 && searchQuery.length < 2 && (
             <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg shadow-sm">
-              <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">💡 Enter at least 2 characters to search for patients</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                <span className="inline-block mr-1" aria-hidden="true">💡</span>
+                <span>Enter at least 2 characters to search for patients</span>
+              </p>
             </div>
           )}
         </div>
@@ -510,7 +513,7 @@ export default function Payment() {
         <Card className="border-gray-200/70 shadow-md hover:shadow-lg transition-all duration-300">
           <Tabs defaultValue="laboratory" className="w-full">
             <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 p-1.5 gap-1">
-              <TabsTrigger value="laboratory" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">
+              <TabsTrigger value="laboratory" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all" aria-label="Laboratory Tests">
                 <TestTube className="h-4 w-4" />
                 <span className="hidden sm:inline">Laboratory</span>
                 {allUnpaidOrders.laboratory.length > 0 && (
@@ -519,7 +522,7 @@ export default function Payment() {
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="xray" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">
+              <TabsTrigger value="xray" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all" aria-label="X-Ray Exams">
                 <XRayIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">X-Ray</span>
                 {allUnpaidOrders.xray.length > 0 && (
@@ -528,7 +531,7 @@ export default function Payment() {
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="ultrasound" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">
+              <TabsTrigger value="ultrasound" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all" aria-label="Ultrasound Exams">
                 <ActivitySquare className="h-4 w-4" />
                 <span className="hidden sm:inline">Ultrasound</span>
                 {allUnpaidOrders.ultrasound.length > 0 && (
@@ -537,7 +540,7 @@ export default function Payment() {
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="pharmacy" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">
+              <TabsTrigger value="pharmacy" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md transition-all" aria-label="Pharmacy Orders">
                 <Pill className="h-4 w-4" />
                 <span className="hidden sm:inline">Pharmacy</span>
                 {allUnpaidOrders.pharmacy.length > 0 && (
@@ -624,7 +627,10 @@ export default function Payment() {
                 </div>
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">All Payments Up to Date!</h3>
-              <p className="text-gray-600 dark:text-gray-400">No pending payments at this time. Great work! 🎉</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                No pending payments at this time. Great work!
+                <span className="inline-block ml-1" aria-hidden="true">🎉</span>
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -664,7 +670,7 @@ export default function Payment() {
 
           {/* Quick Stats for Today - Enhanced */}
           {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 animate-fade-in">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 fade-in duration-500 animate-in">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950 dark:to-blue-900 p-5 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-all">
                 <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Total Payments</div>
                 <div className="text-3xl font-bold text-blue-800 dark:text-blue-200">{paymentHistory.length}</div>
@@ -807,7 +813,6 @@ export default function Payment() {
                     <div className="text-center py-10">
                       <div className="relative inline-block mb-3">
                         <CheckCircle className="h-16 w-16 mx-auto text-green-500" />
-                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full animate-ping"></div>
                       </div>
                       <p className="text-green-600 dark:text-green-400 font-bold text-lg">All Paid!</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No unpaid orders</p>
