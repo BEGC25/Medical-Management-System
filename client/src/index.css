@@ -6,6 +6,17 @@
 
 @layer base {
   :root {
+    /* Theme-agnostic Variables - Shared across light and dark modes */
+    /* Note: Clinical teal colors use comma-separated HSL values (without hsl() wrapper)
+       because they're used in components with hsl(var(--clinical-teal-*)) syntax */
+    
+    /* Z-Index Hierarchy */
+    --z-sticky: 50;
+    
+    /* Premium Transitions */
+    --transition-base: 200ms;
+    --transition-slow: 350ms;
+    
     /* Premium Neutral Foundation - More nuanced and refined */
     --background: hsl(210, 25%, 98%);
     --foreground: hsl(215, 28%, 17%);
@@ -23,6 +34,13 @@
     --accent-foreground: hsl(215, 28%, 17%);
     --destructive: hsl(0, 68%, 56%);
     --destructive-foreground: hsl(0, 0%, 100%);
+    
+    /* Premium Clinical Teal Palette - Professional Medical Brand */
+    --clinical-teal-400: 180, 65%, 58%;
+    --clinical-teal-500: 180, 62%, 48%;
+    --clinical-teal-600: 180, 58%, 38%;
+    --clinical-teal-700: 180, 55%, 28%;
+    --clinical-teal-800: 180, 52%, 20%;
     
     /* Sophisticated Medical Colors - Desaturated and Professional */
     --medical-blue: hsl(211, 25%, 45%);
@@ -75,6 +93,10 @@
       0 8px 12px -2px rgba(15, 23, 42, 0.1),
       0 20px 40px -5px rgba(15, 23, 42, 0.14),
       0 30px 60px -8px rgba(15, 23, 42, 0.1);
+    --shadow-2xl:
+      0 12px 24px -4px rgba(15, 23, 42, 0.12),
+      0 25px 50px -8px rgba(15, 23, 42, 0.16),
+      0 40px 80px -12px rgba(15, 23, 42, 0.12);
   }
 
   .dark {
@@ -95,6 +117,13 @@
     --accent-foreground: hsl(210, 22%, 94%);
     --destructive: hsl(0, 68%, 62%);
     --destructive-foreground: hsl(0, 0%, 100%);
+    
+    /* Premium Clinical Teal Palette - Dark Mode */
+    --clinical-teal-400: 180, 65%, 65%;
+    --clinical-teal-500: 180, 60%, 55%;
+    --clinical-teal-600: 180, 55%, 45%;
+    --clinical-teal-700: 180, 50%, 35%;
+    --clinical-teal-800: 180, 45%, 25%;
     
     /* Dark Mode Medical Colors - Balanced luminosity */
     --medical-blue: hsl(211, 40%, 60%);
@@ -146,6 +175,10 @@
       0 8px 12px -2px rgba(0, 0, 0, 0.55),
       0 20px 40px -5px rgba(0, 0, 0, 0.48),
       0 30px 60px -8px rgba(0, 0, 0, 0.35);
+    --shadow-2xl:
+      0 12px 24px -4px rgba(0, 0, 0, 0.60),
+      0 25px 50px -8px rgba(0, 0, 0, 0.55),
+      0 40px 80px -12px rgba(0, 0, 0, 0.45);
   }
 }
 
