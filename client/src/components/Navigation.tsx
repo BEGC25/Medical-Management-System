@@ -157,30 +157,12 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
       <aside 
         className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 overflow-y-auto transition-all duration-[var(--transition-slow)] z-30
                    hidden lg:block
-                   border-r border-[hsl(var(--clinical-teal-700))]/30"
-        style={{
-          background: 'linear-gradient(180deg, hsl(var(--clinical-teal-500)) 0%, hsl(var(--clinical-teal-700)) 100%)',
-          boxShadow: 'var(--sidebar-glow), var(--shadow-lg)',
-        }}
+                   bg-slate-900 dark:bg-slate-950
+                   border-r border-slate-800 dark:border-slate-700
+                   shadow-lg"
       >
-        {/* Premium depth overlay with subtle gradient */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.1) 100%)',
-          }}
-        />
-        
-        {/* Soft inner glow effect */}
-        <div 
-          className="absolute inset-0 pointer-events-none opacity-60"
-          style={{
-            background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.1) 0%, transparent 50%)',
-          }}
-        />
-        
         {/* Desktop nav content */}
-        <nav className="relative z-10 h-full overflow-y-auto px-4 py-6 pb-20">
+        <nav className="h-full overflow-y-auto px-4 py-6 pb-20">
           {renderNavItems(false)}
         </nav>
       </aside>
@@ -196,23 +178,14 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
       {/* Mobile Sidebar Drawer */}
       <aside 
         className={`fixed left-0 top-0 h-full w-72 z-50 lg:hidden
+                    bg-slate-900 dark:bg-slate-950
+                    shadow-2xl
                     transform transition-transform duration-[var(--transition-slow)] ease-out
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{
-          background: 'linear-gradient(180deg, hsl(var(--clinical-teal-500)) 0%, hsl(var(--clinical-teal-700)) 100%)',
-          boxShadow: isMobileMenuOpen ? 'var(--sidebar-glow), var(--shadow-2xl)' : 'none'
-        }}
       >
-        {/* Premium depth overlay */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.1) 100%)',
-          }}
-        />
         
         {/* Mobile Header with Close Button */}
-        <div className="relative z-10 flex items-center justify-between p-4 border-b border-white/20">
+        <div className="flex items-center justify-between p-4 border-b border-white/20">
           <h2 className="text-lg font-bold text-white">Menu</h2>
           <button 
             onClick={onCloseMobileMenu}
@@ -224,7 +197,7 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
         </div>
 
         {/* Mobile Navigation Content */}
-        <nav className="relative z-10 h-[calc(100%-60px)] overflow-y-auto px-4 py-4">
+        <nav className="h-[calc(100%-60px)] overflow-y-auto px-4 py-4">
           {renderNavItems(true)}
         </nav>
       </aside>
