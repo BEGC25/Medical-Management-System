@@ -457,57 +457,58 @@ export default function Ultrasound() {
     return (
       <div
         className={cx(
-          "rounded-xl p-3 border-l-4 cursor-pointer transition-all duration-300 ease-out shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 group hover:border-opacity-100",
-          isPaid && !isCompleted && "border-orange-500 bg-white dark:bg-gray-800",
-          !isPaid && !isCompleted && "border-red-500 bg-red-50 dark:bg-red-900/20",
-          isCompleted && "border-emerald-500 bg-white dark:bg-gray-800",
-          !canPerform && "opacity-75"
+          "rounded-lg p-2.5 border-l-4 cursor-pointer transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 group",
+          isPaid && !isCompleted && "border-l-orange-500 bg-white dark:bg-gray-800",
+          !isPaid && !isCompleted && "border-l-red-500 bg-red-50/50 dark:bg-red-900/10",
+          isCompleted && "border-l-emerald-500 bg-white dark:bg-gray-800",
+          !canPerform && "opacity-70 hover:shadow-none"
         )}
         onClick={() => canPerform && handleUltrasoundExamSelect(exam)}
         style={!canPerform ? { cursor: "not-allowed" } : {}}
         data-testid={`card-ultrasound-${exam.examId}`}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight truncate">{patient ? fullName(patient) : exam.patientId}</div>
-              <Chip tone="slate">{exam.examId}</Chip>
-            </div>
-            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-              {timeAgo(exam.requestedDate)}
-              {isCompleted && (exam as any).reportDate && (
-                <> • Completed {timeAgo((exam as any).reportDate)}</>
-              )}
-            </div>
-            <div className="mt-1 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-              <span className="font-medium">Exam Type:</span> {exam.examType}
-            </div>
-            {!isPaid && !isCompleted && (
-              <div className="flex items-center gap-2 mt-2 px-2.5 py-1.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                <span className="text-xs text-amber-800 dark:text-amber-300 font-medium leading-tight">
-                  Patient must pay at reception before exam can be performed
+            {/* Line 1: Patient name + ID chip (left), Status pill + chevron (right) */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {patient ? fullName(patient) : exam.patientId}
                 </span>
+                <Chip tone="slate">{exam.examId}</Chip>
+              </div>
+              <div className="shrink-0 flex items-center gap-1.5">
+                {isCompleted && (
+                  <Badge className="px-1.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">
+                    Completed
+                  </Badge>
+                )}
+                {!isCompleted && isPaid && (
+                  <Badge className="px-1.5 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0">
+                    Pending
+                  </Badge>
+                )}
+                {!isCompleted && !isPaid && (
+                  <Badge className="px-1.5 py-0.5 text-xs font-bold bg-red-500 text-white dark:bg-red-600 border-0 shadow-sm">
+                    UNPAID
+                  </Badge>
+                )}
+                {canPerform && <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />}
+              </div>
+            </div>
+            
+            {/* Line 2: Exam summary without redundant label */}
+            <div className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 truncate">
+              {exam.examType} • {timeAgo(exam.requestedDate)}
+            </div>
+            
+            {/* Line 3: Warning if UNPAID (compact, single line) */}
+            {!isPaid && !isCompleted && (
+              <div className="flex items-center gap-1.5 mt-1 text-xs text-amber-700 dark:text-amber-400 truncate">
+                <AlertTriangle className="w-3 h-3 shrink-0" />
+                <span className="truncate">Payment required before exam</span>
               </div>
             )}
-          </div>
-          <div className="shrink-0 flex items-center gap-2">
-            {isCompleted && (
-              <Badge className="px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                Completed
-              </Badge>
-            )}
-            {!isCompleted && isPaid && (
-              <Badge className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                Pending
-              </Badge>
-            )}
-            {!isCompleted && !isPaid && (
-              <Badge className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800 shadow-sm animate-pulse-subtle">
-                UNPAID
-              </Badge>
-            )}
-            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300" />
           </div>
         </div>
       </div>
@@ -577,45 +578,33 @@ export default function Ultrasound() {
               </Button>
             </div>
 
-            {/* Stats Cards (Compact but Premium) */}
-            <div className="grid grid-cols-3 gap-3">
-              {/* Pending Card */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border border-orange-200/50 dark:border-orange-800/30 p-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-orange-700 dark:text-orange-400">Pending</p>
-                    <p className="text-2xl font-bold text-orange-900 dark:text-orange-300" data-testid="stat-pending">{pendingExams.length}</p>
-                  </div>
-                </div>
+            {/* KPI Bar (Thin horizontal bar - Patient page style) */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white/50 dark:bg-gray-800/50 py-2.5 px-4">
+              {/* Pending */}
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                <span className="text-gray-600 dark:text-gray-400">Pending:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-pending">{pendingExams.length}</span>
               </div>
-
-              {/* Completed Card */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border border-green-200/50 dark:border-green-800/30 p-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
-                    <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-green-700 dark:text-green-400">Completed</p>
-                    <p className="text-2xl font-bold text-green-900 dark:text-green-300" data-testid="stat-completed">{completedExams.length}</p>
-                  </div>
-                </div>
+              
+              {/* Divider */}
+              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
+              
+              {/* Completed */}
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-gray-600 dark:text-gray-400">Completed:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-completed">{completedExams.length}</span>
               </div>
-
-              {/* Total Card */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/20 dark:to-indigo-800/10 border border-indigo-200/50 dark:border-indigo-800/30 p-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center">
-                    <Waves className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400">Total</p>
-                    <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-300" data-testid="stat-total">{allUltrasoundExams.length}</p>
-                  </div>
-                </div>
+              
+              {/* Divider */}
+              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
+              
+              {/* Total */}
+              <div className="flex items-center gap-2">
+                <Waves className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span className="text-gray-600 dark:text-gray-400">Total:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-total">{allUltrasoundExams.length}</span>
               </div>
             </div>
           </CardContent>
@@ -698,35 +687,30 @@ export default function Ultrasound() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Showing {pendingExams.length} pending exam{pendingExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
+              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                {pendingExams.length} pending{patientSearchTerm && ` matching "${patientSearchTerm}"`}
               </div>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-2">
               {pendingExams.length > 0 ? (
                 pendingExams.map((exam) => (
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="relative mb-4">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
-                      <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border-2 border-green-500">
-                      <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                    </div>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-14 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
+                    <Clock className="w-7 h-7 text-orange-500 dark:text-orange-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
+                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
-                      ? "Select start and end dates above to view exams in custom range"
-                      : "No pending examinations at the moment. New requests will appear here."}
+                      ? "Select dates above to view exams."
+                      : "No pending exams at the moment."}
                   </p>
                 </div>
               )}
@@ -810,8 +794,8 @@ export default function Ultrasound() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Showing {completedExams.length} completed exam{completedExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
+              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                {completedExams.length} completed{patientSearchTerm && ` matching "${patientSearchTerm}"`}
               </div>
             </div>
             
@@ -821,18 +805,18 @@ export default function Ultrasound() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
-                    <Check className="w-8 h-8 text-green-500 dark:text-green-400" />
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+                    <Check className="w-6 h-6 text-green-500 dark:text-green-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
-                      : "No completed examinations"}
+                      : "No completed exams"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
-                      ? "Select start and end dates above to view exams in custom range"
+                      ? "Select dates above to view exams."
                       : "Completed exams will appear here."}
                   </p>
                 </div>
