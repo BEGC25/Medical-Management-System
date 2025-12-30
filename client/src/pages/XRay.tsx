@@ -516,6 +516,10 @@ export default function XRay() {
     
     return (
       <div
+        role="button"
+        tabIndex={canPerform ? 0 : -1}
+        aria-label={`Exam for ${patient ? fullName(patient) : exam.patientId}, ${exam.examType}, ${exam.priority || 'routine'} priority, ${isCompleted ? 'completed' : isPaid ? 'pending' : 'blocked - unpaid'}`}
+        aria-disabled={!canPerform}
         className={cx(
           "group relative bg-white dark:bg-gray-800 border-l-4 hover:shadow-md transition-all duration-200",
           "grid grid-cols-[1fr_auto] gap-3 p-3 cursor-pointer",
@@ -525,6 +529,12 @@ export default function XRay() {
           !canPerform && "opacity-60 cursor-not-allowed"
         )}
         onClick={() => canPerform && handleXrayExamSelect(exam)}
+        onKeyDown={(e) => {
+          if (canPerform && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            handleXrayExamSelect(exam);
+          }
+        }}
         data-testid={`row-xray-${exam.examId}`}
       >
         {/* Main Content */}
@@ -775,16 +785,17 @@ export default function XRay() {
                 </div>
               )}
               <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
                 <input
                   type="text"
                   placeholder="Search by patient name or ID..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
+                  aria-label="Search pending exams by patient name or ID"
                   className="pl-9 pr-4 py-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-300 placeholder:text-gray-400"
                 />
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-gray-500 dark:text-gray-400" role="status" aria-live="polite">
                 Showing {pendingExams.length} pending exam{pendingExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
               </div>
             </div>
@@ -852,16 +863,17 @@ export default function XRay() {
                 </div>
               )}
               <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
                 <input
                   type="text"
                   placeholder="Search by patient name or ID..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
+                  aria-label="Search completed exams by patient name or ID"
                   className="pl-9 pr-4 py-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-300 placeholder:text-gray-400"
                 />
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-gray-500 dark:text-gray-400" role="status" aria-live="polite">
                 Showing {completedExams.length} completed exam{completedExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
               </div>
             </div>
