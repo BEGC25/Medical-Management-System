@@ -1014,8 +1014,8 @@ return (
         </Card>
 
         {/* RIGHT – Completed Tests */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-white dark:from-green-900/20 dark:to-gray-900 border-b">
+        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
+          <CardHeader className="bg-gradient-to-r from-green-50/50 to-white dark:from-green-900/10 dark:to-gray-900 border-b pb-4">
             <CardTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
               <Check className="w-5 h-5 text-green-600" />
               Completed Tests
@@ -1183,7 +1183,7 @@ return (
                   </p>
 
                   {/* Table header */}
-                  <div className="mt-4 grid grid-cols-5 gap-0 bg-gray-50 dark:bg-gray-900/50 text-xs font-semibold text-gray-500 dark:text-gray-400 px-3 py-2 rounded-t-xl border dark:border-gray-800">
+                  <div className="mt-4 grid grid-cols-5 gap-0 bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 text-xs font-semibold text-gray-700 dark:text-gray-300 px-3 py-2 rounded-t-xl border border-purple-200 dark:border-purple-800">
                     <div>Patient ID</div>
                     <div className="col-span-2">Name</div>
                     <div>Contact</div>
@@ -1207,7 +1207,7 @@ return (
                       (debounced ? visibleSearch : visibleToday).map((p) => (
                         <li
                           key={p.id}
-                          className="grid grid-cols-5 items-center px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 cursor-pointer"
+                          className="grid grid-cols-5 items-center px-3 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer transition-colors duration-200"
                           onClick={() => setSelectedPatient(p)}
                           data-testid={`row-patient-${p.patientId}`}
                         >
