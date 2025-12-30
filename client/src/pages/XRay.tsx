@@ -471,8 +471,8 @@ export default function XRay() {
     return (
       <div
         className={cx(
-          "rounded-xl p-3 border-l-4 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group",
-          isCompleted && "bg-white dark:bg-gray-800 border-green-500",
+          "rounded-xl p-3 border-l-4 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer group hover:border-opacity-100",
+          isCompleted && "bg-white dark:bg-gray-800 border-emerald-500",
           !isCompleted && isPaid && "bg-white dark:bg-gray-800 border-orange-500",
           !isCompleted && !isPaid && "bg-red-50 dark:bg-red-900/20 border-red-500",
           !canPerform && "opacity-75"
@@ -484,36 +484,38 @@ export default function XRay() {
         <div className="flex justify-between items-start">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-900 dark:text-gray-100">{patient ? fullName(patient) : exam.patientId}</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100 tracking-tight">{patient ? fullName(patient) : exam.patientId}</span>
               <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">{exam.examId}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">{timeAgo(exam.requestedDate)}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{timeAgo(exam.requestedDate)}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
               Exam Type: <span className="font-medium">{exam.examType}</span>
               {exam.bodyPart && <> • Body Part: <span className="font-medium">{exam.bodyPart}</span></>}
             </p>
             {!isPaid && !isCompleted && (
-              <>
-                <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full uppercase inline-block mt-2">
-                  UNPAID
+              <div className="flex items-center gap-2 mt-2 px-2.5 py-1.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <span className="text-xs text-amber-800 dark:text-amber-300 font-medium leading-tight">
+                  Patient must pay at reception before exam can be performed
                 </span>
-                <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium mt-2">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>Patient must pay at reception before exam can be performed</span>
-                </div>
-              </>
+              </div>
             )}
           </div>
           <div className="shrink-0 flex items-center gap-2">
             {isCompleted && (
-              <span className="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+              <Badge className="px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                 Completed
-              </span>
+              </Badge>
             )}
             {!isCompleted && isPaid && (
-              <span className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full">
+              <Badge className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                 Pending
-              </span>
+              </Badge>
+            )}
+            {!isCompleted && !isPaid && (
+              <Badge className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800 shadow-sm animate-pulse-subtle">
+                UNPAID
+              </Badge>
             )}
             {canPerform && <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300" />}
           </div>
@@ -672,14 +674,23 @@ export default function XRay() {
                 ))
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
-                    <Clock className="w-7 h-7 text-orange-500 dark:text-orange-400" />
+                  <div className="relative mb-4">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
+                      <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center">
+                      <Check className="w-3 h-3 text-green-600" />
+                    </div>
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">No pending X-ray examinations</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight mb-1">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range"
+                      : "All caught up!"}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm leading-relaxed">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select start and end dates above to view exams in custom range"
-                      : "All caught up! Completed exams will appear in the right panel."}
+                      : "No pending X-ray examinations. Click \"New X-Ray Request\" to create one."}
                   </p>
                 </div>
               )}
