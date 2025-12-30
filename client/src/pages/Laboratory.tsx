@@ -959,11 +959,8 @@ return (
                       key={test.testId}
                       data-testid={`card-pending-test-${test.testId}`}
                       className={cx(
-                        "rounded-lg p-3 cursor-pointer transition-all border shadow-md hover:shadow-xl",
-                        isPaid
-                          ? "border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 hover:from-green-100 hover:to-green-200/50 dark:hover:from-green-900/30 dark:hover:to-green-900/20"
-                          : "border-red-300 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-900/10 hover:from-red-100 hover:to-red-200/50 dark:hover:from-red-900/30 dark:hover:to-red-900/20",
-                        !canPerform && "opacity-75"
+                        "bg-white dark:bg-gray-800 rounded-xl p-4 border-l-4 border-orange-500 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer",
+                        !canPerform && "opacity-75"
                       )}
                       onClick={() => canPerform && handleLabTestSelect(test)}
                       style={!canPerform ? { cursor: "not-allowed" } : {}}
@@ -985,9 +982,9 @@ return (
                           )}
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-2">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
-                            Ordered by Doctor
-                          </Badge>
+                          <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full border border-purple-200 dark:border-purple-700">
+                            Ordered by Doctor
+                          </span>
                           <div className="flex items-center gap-2">
                             <span className={isPaid ? "px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full" : "px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full"}>{isPaid ? "Paid" : "UNPAID"}</span>
                             <span className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full">Pending</span>
