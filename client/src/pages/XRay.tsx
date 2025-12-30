@@ -224,6 +224,10 @@ export default function XRay() {
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
+  
+  // Track last refresh time
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
     return () => clearTimeout(id);
@@ -527,10 +531,15 @@ export default function XRay() {
             setSelectedPatient(p);
             setTerm('');
           }}
-          className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:border-cyan-300 cursor-pointer transition-all duration-200"
+          className={cx(
+            "p-3 rounded-lg border transition-all duration-200 cursor-pointer",
+            selectedPatient?.patientId === p.patientId
+              ? "border-2 border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
+              : "border border-gray-200 dark:border-gray-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:border-cyan-300 dark:hover:border-cyan-700"
+          )}
           data-testid={`patient-option-${p.patientId}`}
         >
-          <p className="font-semibold">{fullName(p)}</p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100">{fullName(p)}</p>
           <p className="text-sm text-gray-500">ID: {p.patientId} • {p.age} • {p.gender}</p>
         </div>
       ))}
@@ -548,76 +557,59 @@ export default function XRay() {
 
   return (
     <div className="space-y-4">
-      {/* Page Header - Premium Card Container */}
+      {/* Unified Compact Header with Stats - Like Patient Page */}
       <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-        <CardContent className="p-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg">
-                <XSquare className="w-5 h-5 text-white" />
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg">
+                  <XSquare className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                    X-Ray Department
+                  </h1>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
-                  X-Ray Department
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 text-xs">Radiological imaging and diagnostic services</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                Radiological imaging and diagnostic services • Updated: {lastRefresh.toLocaleTimeString()}
+              </p>
+              {/* Inline Stats Bar */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Pending:</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100" data-testid="stat-pending">{pendingExams.length}</span>
+                </div>
+                <span className="text-gray-300 dark:text-gray-700">|</span>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Completed:</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100" data-testid="stat-completed">{completedExams.length}</span>
+                </div>
+                <span className="text-gray-300 dark:text-gray-700">|</span>
+                <div className="flex items-center gap-2">
+                  <XSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                  <span className="text-gray-600 dark:text-gray-400">Total:</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100" data-testid="stat-total">{allXrayExams.length}</span>
+                </div>
               </div>
             </div>
-            <Button
-              type="button"
-              onClick={() => setRequestOpen(true)}
-              className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:shadow-[0_4px_20px_rgba(6,182,212,0.4)] text-white font-semibold transition-all duration-300"
-              data-testid="button-new-request"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New X-Ray Request
-            </Button>
+            <div className="flex-shrink-0">
+              <Button
+                type="button"
+                onClick={() => setRequestOpen(true)}
+                className="w-full md:w-auto bg-gradient-to-r from-cyan-600 to-teal-500 hover:shadow-[0_4px_20px_rgba(6,182,212,0.4)] text-white font-semibold transition-all duration-300"
+                data-testid="button-new-request"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New X-Ray Request
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Statistics - Premium */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Pending</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-pending">{pendingExams.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Completed</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-completed">{completedExams.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Total Exams</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-total">{allXrayExams.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                <XSquare className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* LEFT – Pending Test Requests */}
@@ -800,7 +792,7 @@ export default function XRay() {
                         placeholder="Search patients by name or ID..."
                         value={term}
                         onChange={(e) => setTerm(e.target.value)}
-                        className="pl-10 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                        className="pl-10 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                         data-testid="input-patient-search"
                       />
                     </div>
@@ -1074,7 +1066,7 @@ export default function XRay() {
                     <FormLabel>Image Quality</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger data-testid="select-image-quality">
+                        <SelectTrigger className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="select-image-quality">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
@@ -1102,6 +1094,7 @@ export default function XRay() {
                         placeholder="Describe radiological findings..."
                         {...field}
                         rows={6}
+                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                         data-testid="textarea-findings"
                       />
                     </FormControl>
@@ -1122,6 +1115,7 @@ export default function XRay() {
                         placeholder="Clinical impression and diagnosis..."
                         {...field}
                         rows={3}
+                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                         data-testid="textarea-impression"
                       />
                     </FormControl>
@@ -1142,6 +1136,7 @@ export default function XRay() {
                         placeholder="Clinical recommendations and follow-up..."
                         {...field}
                         rows={3}
+                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                         data-testid="textarea-recommendations"
                       />
                     </FormControl>
@@ -1158,7 +1153,7 @@ export default function XRay() {
                     <FormItem>
                       <FormLabel>Report Date</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} data-testid="input-report-date" />
+                        <Input type="date" {...field} className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="input-report-date" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1172,7 +1167,7 @@ export default function XRay() {
                     <FormItem>
                       <FormLabel>Radiologist</FormLabel>
                       <FormControl>
-                        <Input placeholder="Name of radiologist" {...field} data-testid="input-radiologist" />
+                        <Input placeholder="Name of radiologist" {...field} className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="input-radiologist" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
