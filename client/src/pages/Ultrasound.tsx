@@ -462,7 +462,7 @@ export default function Ultrasound() {
     return (
       <div
         className={cx(
-          "rounded-xl p-3 border-l-4 cursor-pointer transition-all duration-300 ease-out shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 group hover:border-opacity-100",
+          "rounded-xl p-3 border-l-4 cursor-pointer transition-all duration-300 ease-out shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 group hover:border-opacity-100",
           isPaid && !isCompleted && "border-orange-500 bg-white dark:bg-gray-800",
           !isPaid && !isCompleted && "border-red-500 bg-red-50 dark:bg-red-900/20",
           isCompleted && "border-emerald-500 bg-white dark:bg-gray-800",
@@ -554,51 +554,73 @@ export default function Ultrasound() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto space-y-4">
-        {/* Compact Unified Header */}
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center shadow-lg">
-                  <Waves className="w-5 h-5 text-white" />
+        {/* Premium Header */}
+        <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)]">
+          <CardContent className="p-6">
+            {/* Top Section: Title + CTA */}
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                  <Waves className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
                     Ultrasound Department
                   </h1>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs">
-                    Advanced ultrasound imaging and diagnostic services • Updated: {formatTime(lastUpdated)}
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Advanced diagnostic imaging and ultrasound services
                   </p>
                 </div>
               </div>
               <Button 
                 onClick={() => setRequestOpen(true)}
-                className="bg-gradient-to-r from-indigo-600 to-blue-500 hover:shadow-[0_4px_20px_rgba(99,102,241,0.4)] text-white font-semibold"
+                className="bg-gradient-to-r from-indigo-600 to-blue-500 hover:shadow-lg hover:shadow-indigo-500/40 transition-all duration-300"
                 data-testid="button-new-request"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Ultrasound Request
+                New Request
               </Button>
             </div>
-            
-            {/* Inline stats bar */}
-            <div className="flex items-center gap-6 text-sm border-t border-gray-100 dark:border-gray-800 pt-3">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-500" />
-                <span className="text-gray-600 dark:text-gray-400">Pending:</span>
-                <span className="font-semibold" data-testid="stat-pending">{pendingExams.length}</span>
+
+            {/* Stats Cards (Compact but Premium) */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* Pending Card */}
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border border-orange-200/50 dark:border-orange-800/30 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-orange-700 dark:text-orange-400">Pending</p>
+                    <p className="text-2xl font-bold text-orange-900 dark:text-orange-300" data-testid="stat-pending">{pendingExams.length}</p>
+                  </div>
+                </div>
               </div>
-              <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-gray-600 dark:text-gray-400">Completed:</span>
-                <span className="font-semibold" data-testid="stat-completed">{completedExams.length}</span>
+
+              {/* Completed Card */}
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border border-green-200/50 dark:border-green-800/30 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-green-700 dark:text-green-400">Completed</p>
+                    <p className="text-2xl font-bold text-green-900 dark:text-green-300" data-testid="stat-completed">{completedExams.length}</p>
+                  </div>
+                </div>
               </div>
-              <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
-              <div className="flex items-center gap-2">
-                <Waves className="w-4 h-4 text-indigo-500" />
-                <span className="text-gray-600 dark:text-gray-400">Total:</span>
-                <span className="font-semibold" data-testid="stat-total">{allUltrasoundExams.length}</span>
+
+              {/* Total Card */}
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/20 dark:to-indigo-800/10 border border-indigo-200/50 dark:border-indigo-800/30 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center">
+                    <Waves className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400">Total</p>
+                    <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-300" data-testid="stat-total">{allUltrasoundExams.length}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -608,20 +630,11 @@ export default function Ultrasound() {
         {/* LEFT – Pending Test Requests */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
           <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-                <Clock className="w-5 h-5 text-blue-600" />
-                Pending Test Requests
-              </span>
-              <Button
-                type="button"
-                onClick={() => setRequestOpen(true)}
-                className="bg-medical-blue hover:bg-blue-700 text-white font-semibold shadow-md transition-all"
-                data-testid="button-new-request"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Request
-              </Button>
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              </div>
+              Pending Test Requests
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
@@ -703,22 +716,22 @@ export default function Ultrasound() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="relative mb-4">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
                       <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center">
-                      <Check className="w-3 h-3 text-green-600" />
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border-2 border-green-500">
+                      <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm leading-relaxed">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select start and end dates above to view exams in custom range"
-                      : "No pending examinations. Click \"New Ultrasound Request\" to create one."}
+                      : "No pending examinations at the moment. New requests will appear here."}
                   </p>
                 </div>
               )}
@@ -729,8 +742,10 @@ export default function Ultrasound() {
         {/* RIGHT – Completed Tests */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
           <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
-            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-500" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+              </div>
               Completed Tests
             </CardTitle>
           </CardHeader>
