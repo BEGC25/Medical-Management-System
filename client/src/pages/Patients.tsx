@@ -484,32 +484,32 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Premium Page Header - Card Style */}
+    <div className="space-y-3 sm:space-y-4">
+      {/* Compact Page Header */}
       <div className="bg-white dark:bg-gray-800 
                       border border-gray-200/60 dark:border-gray-700/50 
-                      rounded-2xl 
+                      rounded-xl 
                       shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
                       hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]
                       transition-all duration-300
-                      p-6 sm:p-8
+                      p-4
                       card-premium">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
           <div className="flex-1">
-            <h1 className="text-3xl sm:text-4xl font-bold 
+            <h1 className="text-2xl font-bold 
                            bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 
                            dark:from-blue-400 dark:via-blue-300 dark:to-cyan-300
                            bg-clip-text text-transparent
-                           mb-2">
+                           mb-1">
               Patient Management
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+            <p className="text-gray-600 dark:text-gray-400 text-sm inline">
               Register and manage patient records
             </p>
-            {/* Last updated - hidden on mobile, shown on larger screens */}
-            <p className="hidden lg:block text-xs text-gray-500 dark:text-gray-500 mt-2">
-              Last updated: {lastRefresh.toLocaleTimeString()}
-            </p>
+            {/* Last updated - inline on larger screens */}
+            <span className="hidden lg:inline text-xs text-gray-500 dark:text-gray-500 ml-2">
+              • Updated: {lastRefresh.toLocaleTimeString()}
+            </span>
           </div>
           <div className="flex-shrink-0">
             <Button
@@ -525,7 +525,8 @@ export default function Patients() {
                          shadow-[0_4px_16px_rgba(59,130,246,0.25),
                                  0_2px_8px_rgba(59,130,246,0.15)]
                          hover:shadow-[0_8px_24px_rgba(59,130,246,0.35),
-                                      0_4px_12px_rgba(59,130,246,0.25)]
+                                      0_4px_12px_rgba(59,130,246,0.25),
+                                      0_0_30px_rgba(59,130,246,0.4)]
                          hover:-translate-y-1
                          active:translate-y-0
                          transition-all duration-300
@@ -540,115 +541,57 @@ export default function Patients() {
         </div>
       </div>
 
-      {/* Enhanced Statistics Cards - Premium Design */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-        
-        {/* Stat 1: Registered Today - Only show when filter is "today" */}
-        {dateFilter === "today" && (
-          <div className="bg-white dark:bg-gray-800
-                          border border-gray-200/60 dark:border-gray-700/50
-                          rounded-2xl
-                          shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
-                          hover:shadow-[0_4px_16px_rgba(59,130,246,0.12),0_2px_8px_rgba(59,130,246,0.08)]
-                          hover:-translate-y-1
-                          transition-all duration-300
-                          p-5 sm:p-6
-                          card-premium
-                          motion-reduce:transform-none motion-reduce:transition-none">
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-2xl
-                              bg-gradient-to-br from-blue-100/90 via-blue-50/80 to-cyan-100/90
-                              dark:from-blue-900/40 dark:via-blue-800/30 dark:to-cyan-900/40
-                              shadow-[0_4px_12px_rgba(59,130,246,0.15),0_2px_6px_rgba(59,130,246,0.10)]
-                              dark:shadow-[0_4px_12px_rgba(59,130,246,0.25),0_2px_6px_rgba(59,130,246,0.15)]
-                              transition-transform duration-300
-                              hover:scale-110
-                              motion-reduce:transform-none">
-                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="flex-1">
-                <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
-                  Registered Today
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
-                  {countsLoading ? "..." : todayCount}
-                </div>
-              </div>
+      {/* Slim Stats Bar - Compact Horizontal Design */}
+      <div className="bg-white dark:bg-gray-800
+                      border border-gray-200/60 dark:border-gray-700/50
+                      rounded-xl
+                      shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
+                      hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]
+                      transition-all duration-300
+                      py-2.5 px-4
+                      card-premium">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+          {/* Registered Today - Only show when filter is "today" */}
+          {dateFilter === "today" && (
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-gray-600 dark:text-gray-400">Registered Today:</span>
+              <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                {countsLoading ? "..." : todayCount}
+              </span>
             </div>
+          )}
+          
+          {/* Divider */}
+          {dateFilter === "today" && (
+            <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
+          )}
+          
+          {/* Total Patients */}
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <span className="text-gray-600 dark:text-gray-400">Total:</span>
+            <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+              {patientsLoading ? "..." : patientsToDisplay.length}
+            </span>
           </div>
-        )}
-        
-        {/* Stat 2: Total Patients */}
-        <div className="bg-white dark:bg-gray-800
-                        border border-gray-200/60 dark:border-gray-700/50
-                        rounded-2xl
-                        shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
-                        hover:shadow-[0_4px_16px_rgba(34,197,94,0.12),0_2px_8px_rgba(34,197,94,0.08)]
-                        hover:-translate-y-1
-                        transition-all duration-300
-                        p-5 sm:p-6
-                        card-premium
-                        motion-reduce:transform-none motion-reduce:transition-none">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl
-                            bg-gradient-to-br from-green-100/90 via-green-50/80 to-emerald-100/90
-                            dark:from-green-900/40 dark:via-green-800/30 dark:to-emerald-900/40
-                            shadow-[0_4px_12px_rgba(34,197,94,0.15),0_2px_6px_rgba(34,197,94,0.10)]
-                            dark:shadow-[0_4px_12px_rgba(34,197,94,0.25),0_2px_6px_rgba(34,197,94,0.15)]
-                            transition-transform duration-300
-                            hover:scale-110
-                            motion-reduce:transform-none">
-              <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="flex-1">
-              <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
-                Total Patients
-              </div>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
-                {patientsLoading ? "..." : patientsToDisplay.length}
-              </div>
-            </div>
+          
+          {/* Divider */}
+          <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
+          
+          {/* Last Updated */}
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span className="text-gray-600 dark:text-gray-400">Updated:</span>
+            <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
+              {lastRefresh.toLocaleTimeString()}
+            </span>
           </div>
         </div>
-        
-        {/* Stat 3: Last Updated - Hidden on mobile (sm), shown on larger screens */}
-        <div className="hidden sm:block
-                        bg-white dark:bg-gray-800
-                        border border-gray-200/60 dark:border-gray-700/50
-                        rounded-2xl
-                        shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
-                        hover:shadow-[0_4px_16px_rgba(147,51,234,0.12),0_2px_8px_rgba(147,51,234,0.08)]
-                        hover:-translate-y-1
-                        transition-all duration-300
-                        p-5 sm:p-6
-                        card-premium
-                        motion-reduce:transform-none motion-reduce:transition-none">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl
-                            bg-gradient-to-br from-purple-100/90 via-purple-50/80 to-violet-100/90
-                            dark:from-purple-900/40 dark:via-purple-800/30 dark:to-violet-900/40
-                            shadow-[0_4px_12px_rgba(147,51,234,0.15),0_2px_6px_rgba(147,51,234,0.10)]
-                            dark:shadow-[0_4px_12px_rgba(147,51,234,0.25),0_2px_6px_rgba(147,51,234,0.15)]
-                            transition-transform duration-300
-                            hover:scale-110
-                            motion-reduce:transform-none">
-              <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div className="flex-1">
-              <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
-                Last Updated
-              </div>
-              <div className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
-                {lastRefresh.toLocaleTimeString()}
-              </div>
-            </div>
-          </div>
-        </div>
-        
       </div>
 
       {/* Date Range Filters - Modern Underline Design with Mobile Scroll */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center gap-1">
           {/* Tab container with bottom border - scrollable on mobile */}
           <div className="flex items-center gap-1 flex-1 
@@ -658,7 +601,7 @@ export default function Patients() {
             {/* Today tab */}
             <button
               onClick={() => setDateFilter("today")}
-              className={`relative px-4 py-3 font-semibold text-sm whitespace-nowrap
+              className={`relative px-4 py-2.5 font-semibold text-sm whitespace-nowrap
                          transition-all duration-300
                          ${dateFilter === "today" 
                            ? "text-blue-700 dark:text-blue-300" 
@@ -676,7 +619,7 @@ export default function Patients() {
             {/* Yesterday tab */}
             <button
               onClick={() => setDateFilter("yesterday")}
-              className={`relative px-4 py-3 font-medium text-sm whitespace-nowrap
+              className={`relative px-4 py-2.5 font-medium text-sm whitespace-nowrap
                          transition-all duration-300
                          group
                          ${dateFilter === "yesterday" 
@@ -700,7 +643,7 @@ export default function Patients() {
             {/* Last 7 Days tab */}
             <button
               onClick={() => setDateFilter("last7days")}
-              className={`relative px-3 sm:px-4 py-3 font-medium text-sm whitespace-nowrap
+              className={`relative px-3 sm:px-4 py-2.5 font-medium text-sm whitespace-nowrap
                          transition-all duration-300
                          group
                          ${dateFilter === "last7days" 
@@ -725,7 +668,7 @@ export default function Patients() {
             {/* Last 30 Days tab */}
             <button
               onClick={() => setDateFilter("last30days")}
-              className={`relative px-3 sm:px-4 py-3 font-medium text-sm whitespace-nowrap
+              className={`relative px-3 sm:px-4 py-2.5 font-medium text-sm whitespace-nowrap
                          transition-all duration-300
                          group
                          ${dateFilter === "last30days" 
@@ -750,7 +693,7 @@ export default function Patients() {
             {/* Custom Range tab */}
             <button
               onClick={() => setDateFilter("custom")}
-              className={`relative px-3 sm:px-4 py-3 font-medium text-sm whitespace-nowrap
+              className={`relative px-3 sm:px-4 py-2.5 font-medium text-sm whitespace-nowrap
                          transition-all duration-300
                          group
                          ${dateFilter === "custom" 
@@ -776,7 +719,7 @@ export default function Patients() {
           {/* Search toggle button - icon only */}
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className={`p-3 rounded-xl flex-shrink-0
+            className={`p-2.5 rounded-xl flex-shrink-0
                        transition-all duration-300
                        group
                        border border-gray-200/60 dark:border-gray-700/50
@@ -828,17 +771,17 @@ export default function Patients() {
 
       {/* Patients Table - Premium with Mobile Cards */}
       <Card className="border border-gray-200/60 dark:border-gray-700/50 
-                       rounded-2xl 
-                       shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
-                       hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]
+                       rounded-xl 
+                       shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04),0_8px_16px_rgba(15,23,42,0.03)]
+                       hover:shadow-[0_4px_12px_rgba(15,23,42,0.08),0_12px_24px_rgba(15,23,42,0.05)]
                        transition-all duration-300
                        card-premium">
         <CardHeader className="border-b border-gray-200/70 dark:border-gray-800/70 
                                bg-gradient-to-r from-gray-50/80 to-white 
                                dark:from-gray-800/60 dark:to-gray-900
-                               rounded-t-2xl">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Users className="w-5 h-5" />
+                               rounded-t-xl py-3 px-5">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Users className="w-4 h-4" />
             {showSearch && searchQuery ? `Search Results for "${searchQuery}"` :
             showSearch && !searchQuery ? "Enter search query" :
             dateFilter === "today" ? "Patients Registered Today" :
@@ -933,25 +876,25 @@ export default function Patients() {
                   <thead className="bg-gradient-to-r from-gray-50/90 to-gray-100/80 
                                     dark:from-gray-800/70 dark:to-gray-900/60">
                     <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Patient
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         ID
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Age/Gender
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Contact
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Registered
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Consultation
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -970,7 +913,7 @@ export default function Patients() {
                         onClick={() => handleViewPatient(patient)}
                         data-testid={`patient-row-${patient.patientId}`}
                       >
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-2.5">
                           <div className="flex items-center gap-3">
                             <div
                               className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold shadow-md transition-transform duration-300 hover:scale-110 motion-reduce:transform-none ${getAvatarColor(patient.firstName + patient.lastName)}`}
@@ -984,20 +927,20 @@ export default function Patients() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 font-medium">
+                        <td className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400 font-medium">
                           {patient.patientId}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400">
                           {patient.age ? `${patient.age}` : "—"}
                           {patient.gender ? ` • ${patient.gender}` : ""}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400">
                           {patient.phoneNumber || <span className="text-gray-400">—</span>}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400">
                           {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-2.5">
                           {patient.serviceStatus ? (
                             ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
                               <Badge 
@@ -1020,7 +963,7 @@ export default function Patients() {
                             <span className="text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-2.5">
                           <Button
                             variant="outline"
                             size="sm"
