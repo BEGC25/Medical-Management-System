@@ -403,7 +403,7 @@ export default function Payment() {
           <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 shadow-sm hover:shadow-md transition-all">
             <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 animate-pulse" />
             <span className="text-sm font-semibold text-red-700 dark:text-red-300">
-              <span className="text-base font-bold">{getTotalUnpaidCount()}</span> pending
+              <span className="text-base font-bold">{getTotalUnpaidCount()}</span> pending payment{getTotalUnpaidCount() !== 1 ? 's' : ''}
             </span>
           </div>
         )}
@@ -437,7 +437,7 @@ export default function Payment() {
               {patientsLoading && (
                 <div className="flex items-center justify-center p-3">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching...</span>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Searching patients...</span>
                 </div>
               )}
               {patientsError && (
@@ -769,7 +769,7 @@ export default function Payment() {
                         data-testid={`button-view-receipt-${payment.paymentId}`}
                       >
                         <Eye className="h-3.5 w-3.5 mr-1" />
-                        View
+                        Receipt
                       </Button>
                     </div>
                   </div>
