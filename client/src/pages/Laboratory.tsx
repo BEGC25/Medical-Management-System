@@ -848,8 +848,8 @@ return (
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 overflow-hidden">
           <CardContent className="p-4">
             {/* Section Header with Icon */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
                 <Clock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
               </div>
               <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">
@@ -976,8 +976,9 @@ return (
                           </div>
                           <TestsRow tests={tests} />
                           {!isPaid && (
-                            <div className="text-xs text-red-700 mt-2">
-                              ⚠️ Patient must pay at reception before test can be performed
+                            <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium mt-2">
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              <span>Patient must pay at reception before test can be performed</span>
                             </div>
                           )}
                         </div>
@@ -996,11 +997,21 @@ return (
                   );
                 })
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  {dateFilter === "custom" && !customStartDate && !customEndDate
-                    ? "📅 Select start and end dates above to view tests in custom range"
-                    : "No pending tests"}
-                </p>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
+                    <Clock className="w-7 h-7 text-orange-500 dark:text-orange-400" />
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range"
+                      : "No pending tests"}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select start and end dates above to view tests"
+                      : "All caught up! Click \"New Lab Request\" to create one."}
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>
@@ -1010,9 +1021,9 @@ return (
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 overflow-hidden">
           <CardContent className="p-4">
             {/* Section Header with Icon */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
               </div>
               <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">
                 Completed Tests
@@ -1137,11 +1148,21 @@ return (
                   );
                 })
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  {dateFilter === "custom" && !customStartDate && !customEndDate
-                    ? "📅 Select start and end dates above to view tests in custom range"
-                    : "No completed lab tests"}
-                </p>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+                    <Check className="w-7 h-7 text-green-500 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range"
+                      : "No completed tests"}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select start and end dates above to view tests"
+                      : "Completed tests will appear here."}
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>
