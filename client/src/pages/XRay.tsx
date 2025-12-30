@@ -694,8 +694,8 @@ export default function XRay() {
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
-                      ? "Select dates above to view exams"
-                      : "No pending exams at the moment"}
+                      ? "Select dates above to view exams."
+                      : "No pending exams at the moment."}
                   </p>
                 </div>
               )}
@@ -774,8 +774,8 @@ export default function XRay() {
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
-                      ? "Select dates above to view exams"
-                      : "Completed exams will appear here"}
+                      ? "Select dates above to view exams."
+                      : "Completed exams will appear here."}
                   </p>
                 </div>
               )}
