@@ -18,7 +18,6 @@ import {
   Zap,
   AlertCircle,
   Ban,
-  CalendarClock,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -518,7 +517,7 @@ export default function XRay() {
       <div
         role="button"
         tabIndex={canPerform ? 0 : -1}
-        aria-label={`Exam for ${patient ? fullName(patient) : exam.patientId}, ${exam.examType}, ${exam.priority || 'routine'} priority, ${isCompleted ? 'completed' : isPaid ? 'pending' : 'blocked - unpaid'}`}
+        aria-label={`${exam.examType} exam for ${patient ? fullName(patient) : exam.patientId}, ${exam.priority || 'routine'} priority`}
         aria-disabled={!canPerform}
         className={cx(
           "group relative bg-white dark:bg-gray-800 border-l-4 hover:shadow-md transition-all duration-200",
