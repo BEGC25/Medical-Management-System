@@ -1327,6 +1327,7 @@ export default function XRay() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
