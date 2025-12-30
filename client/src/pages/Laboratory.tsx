@@ -17,6 +17,7 @@ import {
   BadgeInfo,
   ChevronRight,
   TestTube,
+  AlertTriangle,
 } from "lucide-react";
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 
@@ -840,13 +841,6 @@ return (
           </CardContent>
         </Card>
       </div>
-              <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <TestTube className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests (Always Visible) */}
@@ -1014,8 +1008,8 @@ return (
         </Card>
 
         {/* RIGHT – Completed Tests */}
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardHeader className="bg-gradient-to-r from-green-50/50 to-white dark:from-green-900/10 dark:to-gray-900 border-b pb-4">
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-white dark:from-green-900/20 dark:to-gray-900 border-b">
             <CardTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
               <Check className="w-5 h-5 text-green-600" />
               Completed Tests
