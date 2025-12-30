@@ -225,9 +225,6 @@ export default function XRay() {
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
   
-  // Track last refresh time
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-  
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
     return () => clearTimeout(id);
@@ -471,7 +468,7 @@ export default function XRay() {
     return (
       <div
         className={cx(
-          "rounded-xl p-3 border-l-4 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer group hover:border-opacity-100",
+          "rounded-xl p-3 border-l-4 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer group hover:border-opacity-100",
           isCompleted && "bg-white dark:bg-gray-800 border-emerald-500",
           !isCompleted && isPaid && "bg-white dark:bg-gray-800 border-orange-500",
           !isCompleted && !isPaid && "bg-red-50 dark:bg-red-900/20 border-red-500",
@@ -558,72 +555,92 @@ export default function XRay() {
   );
 
   return (
-    <div className="space-y-4">
-      {/* Unified Compact Header with Stats - Like Patient Page */}
-      <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg">
-                  <XSquare className="w-5 h-5 text-white" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Premium Header */}
+        <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)]">
+          <CardContent className="p-6">
+            {/* Top Section: Title + CTA */}
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                  <XSquare className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
                     X-Ray Department
                   </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Radiological imaging and diagnostic services
+                  </p>
                 </div>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
-                Radiological imaging and diagnostic services • Updated: {lastRefresh.toLocaleTimeString()}
-              </p>
-              {/* Inline Stats Bar */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Pending:</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100" data-testid="stat-pending">{pendingExams.length}</span>
-                </div>
-                <span className="text-gray-300 dark:text-gray-700">|</span>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Completed:</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100" data-testid="stat-completed">{completedExams.length}</span>
-                </div>
-                <span className="text-gray-300 dark:text-gray-700">|</span>
-                <div className="flex items-center gap-2">
-                  <XSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                  <span className="text-gray-600 dark:text-gray-400">Total:</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100" data-testid="stat-total">{allXrayExams.length}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex-shrink-0">
               <Button
-                type="button"
                 onClick={() => setRequestOpen(true)}
-                className="w-full md:w-auto bg-gradient-to-r from-cyan-600 to-teal-500 hover:shadow-[0_4px_20px_rgba(6,182,212,0.4)] text-white font-semibold transition-all duration-300"
+                className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:shadow-lg hover:shadow-cyan-500/40 transition-all duration-300"
                 data-testid="button-new-request"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New X-Ray Request
+                New Request
               </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Stats Cards (Compact but Premium) */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* Pending Card */}
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border border-orange-200/50 dark:border-orange-800/30 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-orange-700 dark:text-orange-400">Pending</p>
+                    <p className="text-2xl font-bold text-orange-900 dark:text-orange-300" data-testid="stat-pending">{pendingExams.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Completed Card */}
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border border-green-200/50 dark:border-green-800/30 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-green-700 dark:text-green-400">Completed</p>
+                    <p className="text-2xl font-bold text-green-900 dark:text-green-300" data-testid="stat-completed">{completedExams.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Total Card */}
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-50 to-cyan-100/50 dark:from-cyan-900/20 dark:to-cyan-800/10 border border-cyan-200/50 dark:border-cyan-800/30 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 flex items-center justify-center">
+                    <XSquare className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-cyan-700 dark:text-cyan-400">Total</p>
+                    <p className="text-2xl font-bold text-cyan-900 dark:text-cyan-300" data-testid="stat-total">{allXrayExams.length}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardContent className="p-4">
-            {/* Section Header with Icon */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
               </div>
-              <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">Pending Test Requests</h2>
-            </div>
+              Pending Test Requests
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
             {/* Date Filter and Search Controls */}
             <div className="mb-4 space-y-3">
               <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
@@ -673,24 +690,24 @@ export default function XRay() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="relative mb-4">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
                       <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center">
-                      <Check className="w-3 h-3 text-green-600" />
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border-2 border-green-500">
+                      <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight mb-1">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm leading-relaxed">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select start and end dates above to view exams in custom range"
-                      : "No pending X-ray examinations. Click \"New X-Ray Request\" to create one."}
+                      : "No pending X-ray examinations at the moment. New requests will appear here."}
                   </p>
                 </div>
               )}
@@ -700,14 +717,15 @@ export default function XRay() {
 
         {/* RIGHT – Completed Tests */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardContent className="p-4">
-            {/* Section Header with Icon */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
-              <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">Completed Tests</h2>
-            </div>
+              Completed Tests
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
             {/* Same filter controls for completed tests */}
             <div className="mb-4 space-y-3">
               <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
@@ -1306,6 +1324,7 @@ export default function XRay() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
