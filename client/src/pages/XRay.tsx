@@ -700,21 +700,21 @@ export default function XRay() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="relative mb-4">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
-                      <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="relative mb-3">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-md">
+                      <Clock className="w-8 h-8 text-orange-600 dark:text-orange-400" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border-2 border-green-500">
-                      <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border-2 border-green-500">
+                      <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight mt-2">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1.5 max-w-sm">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select start and end dates above to view exams in custom range"
                       : "No pending X-ray examinations at the moment. New requests will appear here."}
