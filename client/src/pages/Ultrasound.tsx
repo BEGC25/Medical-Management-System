@@ -13,6 +13,7 @@ import {
   Camera,
   Save,
   ChevronRight,
+  AlertTriangle,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -461,10 +462,10 @@ export default function Ultrasound() {
     return (
       <div
         className={cx(
-          "rounded-lg p-3 cursor-pointer transition-all border shadow-md hover:shadow-xl",
-          isPaid && !isCompleted && "border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 hover:from-green-100 hover:to-green-200/50 dark:hover:from-green-900/30 dark:hover:to-green-900/20",
-          !isPaid && !isCompleted && "border-red-300 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-900/10 hover:from-red-100 hover:to-red-200/50 dark:hover:from-red-900/30 dark:hover:to-red-900/20",
-          isCompleted && "border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 hover:from-green-100 hover:to-green-200/50 dark:hover:from-green-900/30 dark:hover:to-green-900/20",
+          "rounded-xl p-3 border-l-4 cursor-pointer transition-all duration-300 ease-out shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 group hover:border-opacity-100",
+          isPaid && !isCompleted && "border-orange-500 bg-white dark:bg-gray-800",
+          !isPaid && !isCompleted && "border-red-500 bg-red-50 dark:bg-red-900/20",
+          isCompleted && "border-emerald-500 bg-white dark:bg-gray-800",
           !canPerform && "opacity-75"
         )}
         onClick={() => canPerform && handleUltrasoundExamSelect(exam)}
@@ -474,29 +475,44 @@ export default function Ultrasound() {
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="text-sm font-semibold truncate">{patient ? fullName(patient) : exam.patientId}</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight truncate">{patient ? fullName(patient) : exam.patientId}</div>
               <Chip tone="slate">{exam.examId}</Chip>
             </div>
-            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
               {timeAgo(exam.requestedDate)}
               {isCompleted && (exam as any).reportDate && (
                 <> • Completed {timeAgo((exam as any).reportDate)}</>
               )}
             </div>
-            <div className="mt-1 text-xs text-gray-700 dark:text-gray-300">
+            <div className="mt-1 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
               <span className="font-medium">Exam Type:</span> {exam.examType}
             </div>
             {!isPaid && !isCompleted && (
-              <div className="text-xs text-red-700 mt-2">
-                ⚠️ Patient must pay at reception before exam can be performed
+              <div className="flex items-center gap-2 mt-2 px-2.5 py-1.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <span className="text-xs text-amber-800 dark:text-amber-300 font-medium leading-tight">
+                  Patient must pay at reception before exam can be performed
+                </span>
               </div>
             )}
           </div>
           <div className="shrink-0 flex items-center gap-2">
-            {isCompleted && <Chip tone="emerald">Completed</Chip>}
-            {!isCompleted && isPaid && <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800">Pending</Badge>}
-            {!isCompleted && !isPaid && <Badge variant="destructive">UNPAID</Badge>}
-            <ChevronRight className="w-4 h-4 text-gray-400" />
+            {isCompleted && (
+              <Badge className="px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                Completed
+              </Badge>
+            )}
+            {!isCompleted && isPaid && (
+              <Badge className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                Pending
+              </Badge>
+            )}
+            {!isCompleted && !isPaid && (
+              <Badge className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800 shadow-sm animate-pulse-subtle">
+                UNPAID
+              </Badge>
+            )}
+            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300" />
           </div>
         </div>
       </div>
@@ -686,18 +702,23 @@ export default function Ultrasound() {
                 ))
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4">
-                    <Clock className="w-8 h-8 text-orange-500 dark:text-orange-400" />
+                  <div className="relative mb-4">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
+                      <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center">
+                      <Check className="w-3 h-3 text-green-600" />
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight mb-2">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
-                      : "No pending examinations"}
+                      : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm leading-relaxed">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select start and end dates above to view exams in custom range"
-                      : "All caught up! Click \"New Ultrasound Request\" to create one."}
+                      : "No pending examinations. Click \"New Ultrasound Request\" to create one."}
                   </p>
                 </div>
               )}
