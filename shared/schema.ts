@@ -84,6 +84,7 @@ export const xrayExams = sqliteTable("xray_exams", {
   clinicalIndication: text("clinical_indication"),
   specialInstructions: text("special_instructions"),
   requestedDate: text("requested_date").notNull(),
+  priority: text("priority").$type<"stat" | "urgent" | "routine">().notNull().default("routine"),
   status: text("status").$type<"pending" | "completed" | "cancelled">().notNull(),
   paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
   findings: text("findings"),
