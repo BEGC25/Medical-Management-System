@@ -87,10 +87,6 @@ function fullName(p?: Patient | null) {
   return n || p.patientId || '';
 }
 
-function formatTime(date: Date) {
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-}
-
 /* ------------------------------------------------------------------ */
 /* Data hooks                                                          */
 /* ------------------------------------------------------------------ */
@@ -195,7 +191,6 @@ function useUltrasoundServices() {
 
 export default function Ultrasound() {
   const { toast } = useToast();
-  const [lastUpdated, setLastUpdated] = useState(new Date());
   const queryClient = useQueryClient();
 
   // Request state

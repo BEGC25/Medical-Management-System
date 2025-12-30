@@ -225,9 +225,6 @@ export default function XRay() {
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
   
-  // Track last refresh time
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-  
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
     return () => clearTimeout(id);
