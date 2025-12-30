@@ -15,6 +15,9 @@ import {
   ChevronRight,
   XSquare,
   AlertTriangle,
+  Zap,
+  AlertCircle,
+  Ban,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -87,6 +90,28 @@ function fullName(p?: Patient | null) {
   if (!p) return '';
   const n = [p.firstName, p.lastName].filter(Boolean).join(' ').trim();
   return n || p.patientId || '';
+}
+
+function getPriorityOrder(priority?: 'stat' | 'urgent' | 'routine'): number {
+  switch (priority) {
+    case 'stat': return 1;
+    case 'urgent': return 2;
+    case 'routine': return 3;
+    default: return 4;
+  }
+}
+
+function sortExamsByPriority(exams: XrayExam[]): XrayExam[] {
+  return [...exams].sort((a, b) => {
+    // First sort by priority (STAT > Urgent > Routine)
+    const priorityDiff = getPriorityOrder(a.priority) - getPriorityOrder(b.priority);
+    if (priorityDiff !== 0) return priorityDiff;
+    
+    // Then by age (oldest first)
+    const dateA = new Date(a.requestedDate).getTime();
+    const dateB = new Date(b.requestedDate).getTime();
+    return dateA - dateB;
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -238,6 +263,7 @@ export default function XRay() {
       bodyPart: '',
       clinicalIndication: '',
       specialInstructions: '',
+      priority: 'routine',
       // Use clinic timezone (Africa/Juba) for requestedDate to ensure consistent day classification
       // across all pages (Treatment, X-Ray, Payments). Using UTC would cause records around
       // midnight to be classified into wrong clinic day.
@@ -290,8 +316,14 @@ export default function XRay() {
     });
   };
   
-  const pendingExams = filterByPatient(dateFilteredPending);
-  const completedExams = filterByPatient(dateFilteredCompleted);
+  // Sort by priority then apply patient filter
+  const pendingExams = sortExamsByPriority(filterByPatient(dateFilteredPending));
+  const completedExams = sortExamsByPriority(filterByPatient(dateFilteredCompleted));
+  
+  // Calculate KPI metrics
+  const statCount = dateFilteredPending.filter(e => e.priority === 'stat').length;
+  const blockedCount = dateFilteredPending.filter(e => e.paymentStatus === 'unpaid').length;
+  const urgentCount = dateFilteredPending.filter(e => e.priority === 'urgent').length;
 
   // Patient picker data: today's + search
   const todayPatients = useTodayPatients();
@@ -459,67 +491,133 @@ export default function XRay() {
     </span>
   );
 
-  const ExamCard = ({ exam, patient }: { exam: XrayExam; patient?: Patient | null }) => {
+  const PriorityBadge = ({ priority }: { priority?: 'stat' | 'urgent' | 'routine' }) => {
+    if (!priority || priority === 'routine') return null;
+    
+    return (
+      <span className={cx(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wide",
+        priority === 'stat' && "bg-red-600 text-white shadow-sm",
+        priority === 'urgent' && "bg-amber-500 text-white shadow-sm"
+      )}>
+        {priority === 'stat' && <Zap className="w-3 h-3" />}
+        {priority === 'urgent' && <AlertCircle className="w-3 h-3" />}
+        {priority}
+      </span>
+    );
+  };
+
+  const ExamRow = ({ exam, patient }: { exam: XrayExam; patient?: Patient | null }) => {
     const isPaid = exam.paymentStatus === 'paid';
     const canPerform = exam.status === 'completed' || isPaid;
     const isCompleted = exam.status === 'completed';
+    const isBlocked = !isPaid && !isCompleted;
     
     return (
       <div
+        role="button"
+        tabIndex={canPerform ? 0 : -1}
+        aria-label={`${exam.examType} exam for ${patient ? fullName(patient) : exam.patientId}, ${exam.priority || 'routine'} priority`}
+        aria-disabled={!canPerform}
         className={cx(
-          "bg-white dark:bg-gray-800 rounded-xl p-3 border-l-4 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group",
-          isCompleted && "border-green-500",
-          !isCompleted && isPaid && "border-orange-500",
-          !isCompleted && !isPaid && "border-red-500",
-          !canPerform && "opacity-75"
+          "group relative bg-white dark:bg-gray-800 border-l-4 hover:shadow-md transition-all duration-200",
+          "grid grid-cols-[1fr_auto] gap-3 p-3 cursor-pointer",
+          isCompleted && "border-green-500 hover:border-green-600",
+          !isCompleted && isPaid && "border-cyan-500 hover:border-cyan-600",
+          isBlocked && "border-red-500 hover:border-red-600",
+          !canPerform && "opacity-60 cursor-not-allowed"
         )}
         onClick={() => canPerform && handleXrayExamSelect(exam)}
-        style={!canPerform ? { cursor: "not-allowed" } : {}}
-        data-testid={`card-xray-${exam.examId}`}
+        onKeyDown={(e) => {
+          if (canPerform && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            handleXrayExamSelect(exam);
+          }
+        }}
+        data-testid={`row-xray-${exam.examId}`}
       >
-        <div className="flex justify-between items-start">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-900 dark:text-gray-100">{patient ? fullName(patient) : exam.patientId}</span>
-              <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">{exam.examId}</span>
+        {/* Main Content */}
+        <div className="grid grid-cols-[2fr_2fr_1fr_1fr] gap-3 items-center min-w-0">
+          {/* Column 1: Patient Info */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
+                {patient ? fullName(patient) : exam.patientId}
+              </span>
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded shrink-0">
+                {patient?.patientId || exam.patientId}
+              </span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">{timeAgo(exam.requestedDate)}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Exam Type: <span className="font-medium">{exam.examType}</span>
-              {exam.bodyPart && <> • Body Part: <span className="font-medium">{exam.bodyPart}</span></>}
-            </p>
-            {!isPaid && !isCompleted && (
-              <>
-                <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full uppercase inline-block mt-2">
-                  UNPAID
-                </span>
-                <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium mt-2">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>Patient must pay at reception before exam can be performed</span>
-                </div>
-              </>
+            {patient && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {patient.age} • {patient.gender}
+              </div>
             )}
           </div>
-          <div className="shrink-0 flex items-center gap-2">
-            {isCompleted && (
-              <span className="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
-                Completed
+
+          {/* Column 2: Exam Details */}
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {exam.examType} {exam.bodyPart && `• ${exam.bodyPart}`}
+            </div>
+            {exam.clinicalIndication && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                {exam.clinicalIndication}
+              </div>
+            )}
+          </div>
+
+          {/* Column 3: Priority & Status */}
+          <div className="flex flex-col gap-1">
+            <PriorityBadge priority={exam.priority} />
+            {isBlocked && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800">
+                <Ban className="w-3 h-3" />
+                UNPAID
               </span>
             )}
-            {!isCompleted && isPaid && (
-              <span className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full">
-                Pending
-              </span>
+          </div>
+
+          {/* Column 4: Timing */}
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-right">
+            <div className="flex items-center gap-1 justify-end">
+              <Clock className="w-3 h-3" />
+              <span className="font-medium">{timeAgo(exam.requestedDate)}</span>
+            </div>
+            {exam.requestedDate && (
+              <div className="mt-0.5 opacity-75">
+                {new Date(exam.requestedDate).toLocaleDateString()}
+              </div>
             )}
-            {canPerform && <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300" />}
           </div>
         </div>
+
+        {/* Action Indicator */}
+        <div className="flex items-center gap-2 shrink-0">
+          {isCompleted && (
+            <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-md flex items-center gap-1">
+              <Check className="w-3 h-3" />
+              Done
+            </span>
+          )}
+          {canPerform && (
+            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-200" />
+          )}
+        </div>
+
+        {/* Blocked Warning */}
+        {isBlocked && (
+          <div className="col-span-2 flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium pt-2 border-t border-red-100 dark:border-red-900/30">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            <span>Patient must pay at reception before exam can be performed</span>
+          </div>
+        )}
       </div>
     );
   };
 
   const PatientPickerList = ({ patients }: { patients: Patient[] }) => (
-    <div className="space-y-2 max-h-96 overflow-y-auto">
+    <div className="space-y-1 max-h-96 overflow-y-auto">
       {patients.map((p) => (
         <div
           key={p.patientId}
@@ -527,18 +625,25 @@ export default function XRay() {
             setSelectedPatient(p);
             setTerm('');
           }}
-          className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:border-cyan-300 cursor-pointer transition-all duration-200"
+          className="p-2.5 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:border-cyan-300 dark:hover:border-cyan-700 cursor-pointer transition-all duration-150"
           data-testid={`patient-option-${p.patientId}`}
         >
-          <p className="font-semibold">{fullName(p)}</p>
-          <p className="text-sm text-gray-500">ID: {p.patientId} • {p.age} • {p.gender}</p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm truncate">{fullName(p)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                ID: {p.patientId} • {p.age} • {p.gender}
+              </p>
+            </div>
+          </div>
         </div>
       ))}
       {patients.length >= page * PER_PAGE && (
         <Button
           variant="ghost"
           onClick={() => setPage((p) => p + 1)}
-          className="w-full"
+          className="w-full text-xs"
+          size="sm"
         >
           Load More
         </Button>
@@ -576,43 +681,63 @@ export default function XRay() {
         </CardContent>
       </Card>
 
-      {/* Statistics - Premium */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
+      {/* Statistics - Actionable Clinical KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* STAT Priority */}
+        <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-red-300 dark:hover:border-red-700 transition-all duration-200">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Pending</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-pending">{pendingExams.length}</p>
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">STAT</p>
+                <p className="text-2xl font-bold mt-1 text-red-600 dark:text-red-400" data-testid="stat-stat">{statCount}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
+
+        {/* Urgent Priority */}
+        <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-amber-300 dark:hover:border-amber-700 transition-all duration-200">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Completed</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-completed">{completedExams.length}</p>
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Urgent</p>
+                <p className="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400" data-testid="stat-urgent">{urgentCount}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
+
+        {/* Blocked (Unpaid) */}
+        <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-red-300 dark:hover:border-red-700 transition-all duration-200">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Total Exams</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-total">{allXrayExams.length}</p>
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Blocked</p>
+                <p className="text-2xl font-bold mt-1 text-red-600 dark:text-red-400" data-testid="stat-blocked">{blockedCount}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                <XSquare className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+              <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <Ban className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pending Total */}
+        <Card className="border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-cyan-300 dark:hover:border-cyan-700 transition-all duration-200">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Pending</p>
+                <p className="text-2xl font-bold mt-1 text-cyan-600 dark:text-cyan-400" data-testid="stat-pending">{pendingExams.length}</p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
               </div>
             </div>
           </CardContent>
@@ -659,35 +784,38 @@ export default function XRay() {
                 </div>
               )}
               <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
                 <input
                   type="text"
                   placeholder="Search by patient name or ID..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
+                  aria-label="Search pending exams by patient name or ID"
                   className="pl-9 pr-4 py-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-300 placeholder:text-gray-400"
                 />
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-gray-500 dark:text-gray-400" role="status" aria-live="polite">
                 Showing {pendingExams.length} pending exam{pendingExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
               </div>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-2">
               {pendingExams.length > 0 ? (
                 pendingExams.map((exam) => (
-                  <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
+                  <ExamRow key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
-                    <Clock className="w-7 h-7 text-orange-500 dark:text-orange-400" />
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
+                    <Clock className="w-6 h-6 text-gray-400" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">No pending X-ray examinations</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {dateFilter === "custom" && !customStartDate && !customEndDate
-                      ? "Select start and end dates above to view exams in custom range"
-                      : "All caught up! Completed exams will appear in the right panel."}
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">No pending exams</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    {patientSearchTerm
+                      ? `No results for "${patientSearchTerm}"`
+                      : dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range to view exams"
+                      : "All caught up!"}
                   </p>
                 </div>
               )}
@@ -734,35 +862,38 @@ export default function XRay() {
                 </div>
               )}
               <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
                 <input
                   type="text"
                   placeholder="Search by patient name or ID..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
+                  aria-label="Search completed exams by patient name or ID"
                   className="pl-9 pr-4 py-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-300 placeholder:text-gray-400"
                 />
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-gray-500 dark:text-gray-400" role="status" aria-live="polite">
                 Showing {completedExams.length} completed exam{completedExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
               </div>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-2">
               {completedExams.length > 0 ? (
                 completedExams.map((exam) => (
-                  <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
+                  <ExamRow key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
-                    <Check className="w-7 h-7 text-green-500 dark:text-green-400" />
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
+                    <Check className="w-6 h-6 text-gray-400" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">No completed X-ray examinations</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {dateFilter === "custom" && !customStartDate && !customEndDate
-                      ? "Select start and end dates above to view exams in custom range"
-                      : "Completed exams will appear here."}
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">No completed exams</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    {patientSearchTerm
+                      ? `No results for "${patientSearchTerm}"`
+                      : dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range to view exams"
+                      : "No completed exams yet"}
                   </p>
                 </div>
               )}
@@ -790,11 +921,15 @@ export default function XRay() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6">
               {/* Patient Selection */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Patient Selection</h3>
+              <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 bg-cyan-500 rounded-full"></div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">1. Patient Selection</h3>
+                  <span className="text-xs text-red-600 dark:text-red-400 font-semibold">*Required</span>
+                </div>
                 {!selectedPatient ? (
                   <div>
-                    <div className="relative mb-4">
+                    <div className="relative mb-3">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
                         placeholder="Search patients by name or ID..."
@@ -808,7 +943,7 @@ export default function XRay() {
                       <PatientPickerList patients={visibleSearch} />
                     ) : (
                       <>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Today's Patients</p>
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Today's Patients</p>
                         <PatientPickerList patients={visibleToday} />
                       </>
                     )}
@@ -817,11 +952,11 @@ export default function XRay() {
                   <div className="p-3 rounded-lg border-2 border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-cyan-800 dark:text-cyan-200" data-testid="selected-patient-name">
+                        <p className="font-semibold text-cyan-900 dark:text-cyan-100" data-testid="selected-patient-name">
                           {fullName(selectedPatient)}
                         </p>
-                        <p className="text-sm text-cyan-700 dark:text-cyan-300">
-                          ID: {selectedPatient.patientId} | Age: {selectedPatient.age} | {selectedPatient.gender}
+                        <p className="text-xs text-cyan-700 dark:text-cyan-300 mt-0.5">
+                          ID: {selectedPatient.patientId} • {selectedPatient.age} • {selectedPatient.gender}
                         </p>
                       </div>
                       <Button
@@ -829,7 +964,7 @@ export default function XRay() {
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedPatient(null)}
-                        className="border-gray-300 hover:bg-gray-50"
+                        className="border-gray-300 hover:bg-gray-50 text-xs"
                         data-testid="button-change-patient"
                       >
                         Change
@@ -840,31 +975,118 @@ export default function XRay() {
               </div>
 
               {/* Exam Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 bg-cyan-500 rounded-full"></div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">2. Examination Details</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="examType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Exam Type <span className="text-red-600">*</span>
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" data-testid="select-exam-type">
+                              <SelectValue placeholder="Select exam type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {radiologyServices.length > 0 ? (
+                              radiologyServices.map((service) => (
+                                <SelectItem key={service.id} value={service.name}>
+                                  {service.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="chest">Chest X-Ray</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="bodyPart"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Body Part</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Left knee"
+                            {...field}
+                            value={field.value || ''}
+                            className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                            data-testid="input-body-part"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Priority <span className="text-red-600">*</span>
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" data-testid="select-priority">
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="stat">
+                              <div className="flex items-center gap-2">
+                                <Zap className="w-3 h-3 text-red-600" />
+                                <span className="font-semibold">STAT</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="urgent">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-3 h-3 text-amber-600" />
+                                <span className="font-semibold">Urgent</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="routine">Routine</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Clinical Information */}
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="examType"
+                  name="clinicalIndication"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Exam Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" data-testid="select-exam-type">
-                            <SelectValue placeholder="Select exam type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {radiologyServices.length > 0 ? (
-                            radiologyServices.map((service) => (
-                              <SelectItem key={service.id} value={service.name}>
-                                {service.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="chest">Chest X-Ray</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Clinical Indication</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe the clinical reason for this X-ray examination..."
+                          {...field}
+                          value={field.value || ''}
+                          rows={3}
+                          className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                          data-testid="textarea-clinical-indication"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -872,17 +1094,18 @@ export default function XRay() {
 
                 <FormField
                   control={form.control}
-                  name="bodyPart"
+                  name="specialInstructions"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Body Part (Optional)</FormLabel>
+                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Special Instructions</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="e.g., Left knee, Right shoulder"
+                        <Textarea
+                          placeholder="Any special instructions for the technician..."
                           {...field}
                           value={field.value || ''}
+                          rows={2}
                           className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-                          data-testid="input-body-part"
+                          data-testid="textarea-special-instructions"
                         />
                       </FormControl>
                       <FormMessage />
@@ -891,49 +1114,12 @@ export default function XRay() {
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="clinicalIndication"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Clinical Indication</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe the clinical reason for this X-ray examination..."
-                        {...field}
-                        value={field.value || ''}
-                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-                        data-testid="textarea-clinical-indication"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="specialInstructions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Special Instructions (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Any special instructions for the technician..."
-                        {...field}
-                        value={field.value || ''}
-                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-                        data-testid="textarea-special-instructions"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* Safety Checklist */}
-              <div className="space-y-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 dark:text-white">Safety Checklist</h4>
+              <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 bg-cyan-500 rounded-full"></div>
+                  <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">3. Safety Checklist</h4>
+                </div>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
