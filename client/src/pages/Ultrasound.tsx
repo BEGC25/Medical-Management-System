@@ -86,6 +86,10 @@ function fullName(p?: Patient | null) {
   return n || p.patientId || '';
 }
 
+function formatTime(date: Date) {
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
 /* ------------------------------------------------------------------ */
 /* Data hooks                                                          */
 /* ------------------------------------------------------------------ */
@@ -190,6 +194,7 @@ function useUltrasoundServices() {
 
 export default function Ultrasound() {
   const { toast } = useToast();
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   const queryClient = useQueryClient();
 
   // Request state
@@ -507,7 +512,7 @@ export default function Ultrasound() {
             setSelectedPatient(p);
             setTerm('');
           }}
-          className="p-3 border rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors"
+          className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-300 dark:hover:border-indigo-700 cursor-pointer transition-all duration-200"
           data-testid={`patient-option-${p.patientId}`}
         >
           <div className="font-medium text-gray-900 dark:text-white">
@@ -532,61 +537,61 @@ export default function Ultrasound() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Department Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg shadow-lg">
-              <Waves className="w-6 h-6 text-white" />
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Compact Unified Header */}
+        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center shadow-lg">
+                  <Waves className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                    Ultrasound Department
+                  </h1>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">
+                    Advanced ultrasound imaging and diagnostic services • Updated: {formatTime(lastUpdated)}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setRequestOpen(true)}
+                className="bg-gradient-to-r from-indigo-600 to-blue-500 hover:shadow-[0_4px_20px_rgba(99,102,241,0.4)] text-white font-semibold"
+                data-testid="button-new-request"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Ultrasound Request
+              </Button>
             </div>
-            Ultrasound Department
-          </h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Advanced ultrasound imaging and diagnostic services</p>
-        </div>
-
-        {/* Statistics - Compact Modern Design */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wide">Pending</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-pending">{pendingExams.length}</p>
+            
+            {/* Inline stats bar */}
+            <div className="flex items-center gap-6 text-sm border-t border-gray-100 dark:border-gray-800 pt-3">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-orange-500" />
+                <span className="text-gray-600 dark:text-gray-400">Pending:</span>
+                <span className="font-semibold" data-testid="stat-pending">{pendingExams.length}</span>
               </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-500" />
+                <span className="text-gray-600 dark:text-gray-400">Completed:</span>
+                <span className="font-semibold" data-testid="stat-completed">{completedExams.length}</span>
               </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Completed</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-completed">{completedExams.length}</p>
-              </div>
-              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
-                <Check className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+              <div className="flex items-center gap-2">
+                <Waves className="w-4 h-4 text-indigo-500" />
+                <span className="text-gray-600 dark:text-gray-400">Total:</span>
+                <span className="font-semibold" data-testid="stat-total">{allUltrasoundExams.length}</span>
               </div>
             </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400 uppercase tracking-wide">Total Exams</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1" data-testid="stat-total">{allUltrasoundExams.length}</p>
-              </div>
-              <div className="p-3 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg">
-                <Waves className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-900 border-b">
+        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
+          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
                 <Clock className="w-5 h-5 text-blue-600" />
@@ -603,15 +608,60 @@ export default function Ultrasound() {
               </Button>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {/* Date Filter and Search Controls */}
-            <div className="mb-4 space-y-3 border-b pb-4">
-              <div className="flex flex-wrap gap-2">
-                <Button variant={dateFilter === "today" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("today")}>Today</Button>
-                <Button variant={dateFilter === "yesterday" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("yesterday")}>Yesterday</Button>
-                <Button variant={dateFilter === "last7days" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("last7days")}>Last 7 Days</Button>
-                <Button variant={dateFilter === "last30days" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("last30days")}>Last 30 Days</Button>
-                <Button variant={dateFilter === "custom" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("custom")}>Custom Range</Button>
+            <div className="mb-4 space-y-3">
+              <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setDateFilter("today")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "today"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => setDateFilter("yesterday")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "yesterday"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Yesterday
+                </button>
+                <button
+                  onClick={() => setDateFilter("last7days")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "last7days"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Last 7 Days
+                </button>
+                <button
+                  onClick={() => setDateFilter("last30days")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "last30days"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Last 30 Days
+                </button>
+                <button
+                  onClick={() => setDateFilter("custom")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "custom"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Custom Range
+                </button>
               </div>
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
@@ -622,46 +672,101 @@ export default function Ultrasound() {
               )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10" />
+                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 Showing {pendingExams.length} pending exam{pendingExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
               </div>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               {pendingExams.length > 0 ? (
                 pendingExams.map((exam) => (
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  {dateFilter === "custom" && !customStartDate && !customEndDate
-                    ? "📅 Select start and end dates above to view exams in custom range"
-                    : "No pending ultrasound examinations"}
-                </p>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4">
+                    <Clock className="w-8 h-8 text-orange-500 dark:text-orange-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range"
+                      : "No pending examinations"}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select start and end dates above to view exams in custom range"
+                      : "All caught up! Click \"New Ultrasound Request\" to create one."}
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
 
         {/* RIGHT – Completed Tests */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-white dark:from-green-900/20 dark:to-gray-900 border-b">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-              <Check className="w-5 h-5 text-green-600" />
+        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
+          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-500" />
               Completed Tests
             </CardTitle>
           </CardHeader>
           <CardContent>
             {/* Same filter controls for completed tests */}
-            <div className="mb-4 space-y-3 border-b pb-4">
-              <div className="flex flex-wrap gap-2">
-                <Button variant={dateFilter === "today" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("today")}>Today</Button>
-                <Button variant={dateFilter === "yesterday" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("yesterday")}>Yesterday</Button>
-                <Button variant={dateFilter === "last7days" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("last7days")}>Last 7 Days</Button>
-                <Button variant={dateFilter === "last30days" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("last30days")}>Last 30 Days</Button>
-                <Button variant={dateFilter === "custom" ? "default" : "outline"} size="sm" onClick={() => setDateFilter("custom")}>Custom Range</Button>
+            <div className="mb-4 space-y-3">
+              <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setDateFilter("today")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "today"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => setDateFilter("yesterday")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "yesterday"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Yesterday
+                </button>
+                <button
+                  onClick={() => setDateFilter("last7days")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "last7days"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Last 7 Days
+                </button>
+                <button
+                  onClick={() => setDateFilter("last30days")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "last30days"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Last 30 Days
+                </button>
+                <button
+                  onClick={() => setDateFilter("custom")}
+                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    dateFilter === "custom"
+                      ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+                      : "text-gray-500 hover:text-indigo-500"
+                  }`}
+                >
+                  Custom Range
+                </button>
               </div>
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
@@ -672,7 +777,7 @@ export default function Ultrasound() {
               )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10" />
+                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 Showing {completedExams.length} completed exam{completedExams.length !== 1 ? "s" : ""}{patientSearchTerm && ` matching "${patientSearchTerm}"`}
@@ -685,11 +790,21 @@ export default function Ultrasound() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  {dateFilter === "custom" && !customStartDate && !customEndDate
-                    ? "📅 Select start and end dates above to view exams in custom range"
-                    : "No completed ultrasound examinations"}
-                </p>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
+                    <Check className="w-8 h-8 text-green-500 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range"
+                      : "No completed examinations"}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select start and end dates above to view exams in custom range"
+                      : "Completed exams will appear here."}
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>
@@ -699,12 +814,17 @@ export default function Ultrasound() {
       {/* New Request Dialog */}
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>New Ultrasound Examination Request</DialogTitle>
-            <DialogDescription>
-              Submit a new ultrasound examination request for a patient
-            </DialogDescription>
-          </DialogHeader>
+          <div className="bg-gradient-to-r from-indigo-600 to-blue-500 p-4 rounded-t-xl -m-6 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <Waves className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">New Ultrasound Examination Request</h2>
+                <p className="text-indigo-100 text-sm">Submit a new ultrasound examination request for a patient</p>
+              </div>
+            </div>
+          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6">
@@ -719,7 +839,7 @@ export default function Ultrasound() {
                         placeholder="Search patients by name or ID..."
                         value={term}
                         onChange={(e) => setTerm(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
                         data-testid="input-patient-search"
                       />
                     </div>
@@ -733,13 +853,13 @@ export default function Ultrasound() {
                     )}
                   </div>
                 ) : (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-500 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-green-800 dark:text-green-200" data-testid="selected-patient-name">
+                        <p className="font-medium text-indigo-800 dark:text-indigo-200" data-testid="selected-patient-name">
                           {fullName(selectedPatient)}
                         </p>
-                        <p className="text-sm text-green-700 dark:text-green-300">
+                        <p className="text-sm text-indigo-700 dark:text-indigo-300">
                           ID: {selectedPatient.patientId} | Age: {selectedPatient.age} | {selectedPatient.gender}
                         </p>
                       </div>
@@ -763,10 +883,10 @@ export default function Ultrasound() {
                 name="examType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Exam Type</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Exam Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger data-testid="select-exam-type">
+                        <SelectTrigger className="focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" data-testid="select-exam-type">
                           <SelectValue placeholder="Select exam type" />
                         </SelectTrigger>
                       </FormControl>
@@ -792,12 +912,13 @@ export default function Ultrasound() {
                 name="clinicalIndication"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Clinical Indication</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Clinical Indication</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Describe the clinical reason for this ultrasound examination..."
                         {...field}
                         value={field.value || ''}
+                        className="focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
                         data-testid="textarea-clinical-indication"
                       />
                     </FormControl>
@@ -811,12 +932,13 @@ export default function Ultrasound() {
                 name="specialInstructions"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Special Instructions (Optional)</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Special Instructions (Optional)</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Any special instructions for the sonographer..."
                         {...field}
                         value={field.value || ''}
+                        className="focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
                         data-testid="textarea-special-instructions"
                       />
                     </FormControl>
@@ -916,7 +1038,7 @@ export default function Ultrasound() {
                 name="imageQuality"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Image Quality</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Image Quality</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-image-quality">
@@ -941,7 +1063,7 @@ export default function Ultrasound() {
                 name="findings"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Findings</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Findings</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Describe ultrasound findings..."
@@ -961,7 +1083,7 @@ export default function Ultrasound() {
                 name="impression"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Impression</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Impression</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Clinical impression and diagnosis..."
@@ -981,7 +1103,7 @@ export default function Ultrasound() {
                 name="recommendations"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Recommendations</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Recommendations</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Clinical recommendations and follow-up..."
@@ -1001,7 +1123,7 @@ export default function Ultrasound() {
                   name="reportDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Report Date</FormLabel>
+                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Report Date</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} data-testid="input-report-date" />
                       </FormControl>
@@ -1015,7 +1137,7 @@ export default function Ultrasound() {
                   name="sonographer"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sonographer</FormLabel>
+                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Sonographer</FormLabel>
                       <FormControl>
                         <Input placeholder="Name of sonographer" {...field} data-testid="input-sonographer" />
                       </FormControl>
