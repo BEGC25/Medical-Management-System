@@ -39,9 +39,11 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
                        shadow-lg shadow-blue-900/20 dark:shadow-slate-950/50
                        backdrop-blur-sm
                        transition-all duration-[var(--transition-slow)]
-                       after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px]
-                       after:bg-gradient-to-r after:from-transparent after:via-blue-400/30 after:to-transparent
-                       dark:after:via-slate-500/20">
+                       after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px]
+                       after:bg-gradient-to-r after:from-cyan-400/60 after:via-blue-500/80 after:to-purple-500/60
+                       after:shadow-[0_0_8px_rgba(59,130,246,0.5),0_0_16px_rgba(139,92,246,0.3)]
+                       dark:after:from-cyan-400/40 dark:after:via-blue-500/60 dark:after:to-purple-500/40
+                       dark:after:shadow-[0_0_8px_rgba(59,130,246,0.4),0_0_16px_rgba(139,92,246,0.2)]">
       
       {/* Header content */}
       <div className="px-3 sm:px-6 py-2.5 sm:py-3.5">
