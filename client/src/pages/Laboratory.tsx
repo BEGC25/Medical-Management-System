@@ -845,69 +845,71 @@ return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests (Always Visible) */}
 
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-amber-50 to-white dark:from-amber-900/20 dark:to-gray-900 border-b">
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-                <Clock className="w-5 h-5 text-amber-600" />
-                Pending Test Requests
-              </span>
-              <Button
-                type="button"
-                onClick={() => setRequestOpen(true)}
-                className="bg-medical-blue hover:bg-blue-700 text-white font-semibold shadow-md transition-all"
-                data-testid="button-new-request"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Request
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 overflow-hidden">
+          <CardContent className="p-5">
+            {/* Section Header with Icon */}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Pending Test Requests
+              </h2>
+            </div>
             {/* Date Filter and Search Controls */}
-            <div className="mb-4 space-y-3 border-b pb-4">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={dateFilter === "today" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("today")}
-                  data-testid="filter-today"
-                >
-                  Today
-                </Button>
-                <Button
-                  variant={dateFilter === "yesterday" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("yesterday")}
-                  data-testid="filter-yesterday"
-                >
-                  Yesterday
-                </Button>
-                <Button
-                  variant={dateFilter === "last7days" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("last7days")}
-                  data-testid="filter-last7days"
-                >
-                  Last 7 Days
-                </Button>
-                <Button
-                  variant={dateFilter === "last30days" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("last30days")}
-                  data-testid="filter-last30days"
-                >
-                  Last 30 Days
-                </Button>
-                <Button
-                  variant={dateFilter === "custom" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("custom")}
-                  data-testid="filter-custom"
-                >
-                  Custom Range
-                </Button>
-              </div>
+            <div className="mb-4 space-y-3">
+              <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-2 border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setDateFilter("today")}
+                  data-testid="filter-today"
+                  className={dateFilter === "today" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => setDateFilter("yesterday")}
+                  data-testid="filter-yesterday"
+                  className={dateFilter === "yesterday" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Yesterday
+                </button>
+                <button
+                  onClick={() => setDateFilter("last7days")}
+                  data-testid="filter-last7days"
+                  className={dateFilter === "last7days" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Last 7 Days
+                </button>
+                <button
+                  onClick={() => setDateFilter("last30days")}
+                  data-testid="filter-last30days"
+                  className={dateFilter === "last30days" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Last 30 Days
+                </button>
+                <button
+                  onClick={() => setDateFilter("custom")}
+                  data-testid="filter-custom"
+                  className={dateFilter === "custom" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Custom Range
+                </button>
+              </div>
               
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
@@ -933,7 +935,7 @@ return (
                   placeholder="Search by patient name or ID..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 placeholder:text-gray-400"
                   data-testid="input-patient-search"
                 />
               </div>
@@ -1008,53 +1010,66 @@ return (
         </Card>
 
         {/* RIGHT – Completed Tests */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-white dark:from-green-900/20 dark:to-gray-900 border-b">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-              <Check className="w-5 h-5 text-green-600" />
-              Completed Tests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 overflow-hidden">
+          <CardContent className="p-5">
+            {/* Section Header with Icon */}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Completed Tests
+              </h2>
+            </div>
             {/* Same filter controls for completed tests */}
-            <div className="mb-4 space-y-3 border-b pb-4">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={dateFilter === "today" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("today")}
-                >
-                  Today
-                </Button>
-                <Button
-                  variant={dateFilter === "yesterday" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("yesterday")}
-                >
-                  Yesterday
-                </Button>
-                <Button
-                  variant={dateFilter === "last7days" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("last7days")}
-                >
-                  Last 7 Days
-                </Button>
-                <Button
-                  variant={dateFilter === "last30days" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("last30days")}
-                >
-                  Last 30 Days
-                </Button>
-                <Button
-                  variant={dateFilter === "custom" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateFilter("custom")}
-                >
-                  Custom Range
-                </Button>
-              </div>
+            <div className="mb-4 space-y-3">
+              <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-2 border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setDateFilter("today")}
+                  className={dateFilter === "today" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => setDateFilter("yesterday")}
+                  className={dateFilter === "yesterday" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Yesterday
+                </button>
+                <button
+                  onClick={() => setDateFilter("last7days")}
+                  className={dateFilter === "last7days" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Last 7 Days
+                </button>
+                <button
+                  onClick={() => setDateFilter("last30days")}
+                  className={dateFilter === "last30days" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Last 30 Days
+                </button>
+                <button
+                  onClick={() => setDateFilter("custom")}
+                  className={dateFilter === "custom" 
+                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
+                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                  }
+                >
+                  Custom Range
+                </button>
+              </div>
               
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
@@ -1080,7 +1095,7 @@ return (
                   placeholder="Search by patient name or ID..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 placeholder:text-gray-400"
                 />
               </div>
               
@@ -1099,7 +1114,7 @@ return (
                     <div
                       key={test.testId}
                       data-testid={`card-completed-test-${test.testId}`}
-                      className="rounded-lg p-3 cursor-pointer transition-all border border-green-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 hover:from-green-100 hover:to-green-200/50 dark:hover:from-green-900/30 dark:hover:to-green-900/20 shadow-md hover:shadow-xl"
+                      className="bg-white dark:bg-gray-800 rounded-xl p-4 border-l-4 border-green-500 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group"
                       onClick={() => handleLabTestSelect(test)}
                     >
                       <div className="flex items-center justify-between">
