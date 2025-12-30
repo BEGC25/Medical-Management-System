@@ -959,8 +959,9 @@ return (
                       key={test.testId}
                       data-testid={`card-pending-test-${test.testId}`}
                       className={cx(
-                        "bg-white dark:bg-gray-800 rounded-xl p-3 border-l-4 border-orange-500 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer",
-                        !canPerform && "opacity-75"
+                        "rounded-xl p-3 border-l-4 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer",
+                        !isPaid ? "bg-red-50 dark:bg-red-900/20 border-red-500" : "bg-white dark:bg-gray-800 border-orange-500",
+                        !canPerform && "opacity-75"
                       )}
                       onClick={() => canPerform && handleLabTestSelect(test)}
                       style={!canPerform ? { cursor: "not-allowed" } : {}}
@@ -987,8 +988,11 @@ return (
                             Ordered by Doctor
                           </span>
                           <div className="flex items-center gap-2">
-                            <span className={isPaid ? "px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full" : "px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full uppercase tracking-wide"}>{isPaid ? "Paid" : "UNPAID"}</span>
-                            <span className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full">Pending</span>
+                            {!isPaid ? (
+                              <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 rounded-full uppercase">UNPAID</span>
+                            ) : (
+                              <span className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full">Pending</span>
+                            )}
                             {canPerform && <ChevronRight className="w-5 h-5 text-gray-400" />}
                           </div>
                         </div>

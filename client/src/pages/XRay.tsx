@@ -471,10 +471,10 @@ export default function XRay() {
     return (
       <div
         className={cx(
-          "bg-white dark:bg-gray-800 rounded-xl p-3 border-l-4 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group",
-          isCompleted && "border-green-500",
-          !isCompleted && isPaid && "border-orange-500",
-          !isCompleted && !isPaid && "border-red-500",
+          "rounded-xl p-3 border-l-4 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group",
+          isCompleted && "bg-white dark:bg-gray-800 border-green-500",
+          !isCompleted && isPaid && "bg-white dark:bg-gray-800 border-orange-500",
+          !isCompleted && !isPaid && "bg-red-50 dark:bg-red-900/20 border-red-500",
           !canPerform && "opacity-75"
         )}
         onClick={() => canPerform && handleXrayExamSelect(exam)}
