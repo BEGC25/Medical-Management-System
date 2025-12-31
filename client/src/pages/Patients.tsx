@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,10 @@ import {
   AlertTriangle,
   Filter,
   Info,
+  Edit,
+  Eye,
+  MoreVertical,
+  FileText,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +34,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -170,6 +181,9 @@ export default function Patients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  
+  // Payment filter state
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "unpaid" | "paid">("all");
 
   useEffect(() => {
     const searchPatients = async () => {
@@ -456,8 +470,20 @@ export default function Patients() {
 
   const patientsList = patientsListData || [];
 
+  // Apply payment filter
+  const filteredPatientsList = useMemo(() => {
+    if (paymentFilter === "all") return patientsList;
+    
+    return patientsList.filter((p: any) => {
+      const balance = p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0;
+      if (paymentFilter === "unpaid") return balance > 0;
+      if (paymentFilter === "paid") return balance === 0;
+      return true;
+    });
+  }, [patientsList, paymentFilter]);
+
   // Determine which patients to display
-  const patientsToDisplay = showSearch ? searchResults : patientsList;
+  const patientsToDisplay = showSearch ? searchResults : filteredPatientsList;
 
   const jump = (path: string) => {
     window.location.href = path;
@@ -541,8 +567,136 @@ export default function Patients() {
         </div>
       </div>
 
-      {/* Slim Stats Bar - Compact Horizontal Design */}
-      <div className="bg-white dark:bg-gray-800
+      {/* Compact Stats Cards - Premium KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Patients Today */}
+        {dateFilter === "today" && (
+          <button
+            onClick={() => setPaymentFilter("all")}
+            className="bg-white dark:bg-gray-800
+                       border border-gray-200/60 dark:border-gray-700/50
+                       rounded-xl
+                       shadow-[0_2px_8px_rgba(15,23,42,0.06)]
+                       hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]
+                       hover:border-blue-300 dark:hover:border-blue-700
+                       transition-all duration-200
+                       p-4
+                       text-left
+                       cursor-pointer
+                       group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                  {countsLoading ? "..." : todayCount}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                  Today
+                </div>
+              </div>
+            </div>
+          </button>
+        )}
+        
+        {/* Total in View */}
+        <button
+          onClick={() => setPaymentFilter("all")}
+          className="bg-white dark:bg-gray-800
+                     border border-gray-200/60 dark:border-gray-700/50
+                     rounded-xl
+                     shadow-[0_2px_8px_rgba(15,23,42,0.06)]
+                     hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]
+                     hover:border-blue-300 dark:hover:border-blue-700
+                     transition-all duration-200
+                     p-4
+                     text-left
+                     cursor-pointer
+                     group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors">
+              <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                {patientsLoading ? "..." : filteredPatientsList.length}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                {dateFilter === "today" ? "In View" : 
+                 dateFilter === "yesterday" ? "Yesterday" :
+                 dateFilter === "last7days" ? "Last 7 Days" :
+                 dateFilter === "last30days" ? "Last 30 Days" : "In Range"}
+              </div>
+            </div>
+          </div>
+        </button>
+        
+        {/* Unpaid */}
+        <button
+          onClick={() => setPaymentFilter("unpaid")}
+          className="bg-white dark:bg-gray-800
+                     border border-gray-200/60 dark:border-gray-700/50
+                     rounded-xl
+                     shadow-[0_2px_8px_rgba(15,23,42,0.06)]
+                     hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]
+                     hover:border-red-300 dark:hover:border-red-700
+                     transition-all duration-200
+                     p-4
+                     text-left
+                     cursor-pointer
+                     group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                {patientsLoading ? "..." : patientsList.filter((p: any) => (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0).length}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                Unpaid
+              </div>
+            </div>
+          </div>
+        </button>
+        
+        {/* Paid */}
+        <button
+          onClick={() => setPaymentFilter("paid")}
+          className="bg-white dark:bg-gray-800
+                     border border-gray-200/60 dark:border-gray-700/50
+                     rounded-xl
+                     shadow-[0_2px_8px_rgba(15,23,42,0.06)]
+                     hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]
+                     hover:border-green-300 dark:hover:border-green-700
+                     transition-all duration-200
+                     p-4
+                     text-left
+                     cursor-pointer
+                     group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors">
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                {patientsLoading ? "..." : patientsList.filter((p: any) => (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) === 0).length}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                Paid
+              </div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Old Slim Stats Bar - kept for reference */}
+      <div className="hidden bg-white dark:bg-gray-800
                       border border-gray-200/60 dark:border-gray-700/50
                       rounded-xl
                       shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
@@ -591,7 +745,104 @@ export default function Patients() {
       </div>
 
       {/* Date Range Filters - Modern Underline Design with Mobile Scroll */}
-      <div className="space-y-2">
+      <div className="space-y-3">
+        {/* Search Bar - Prominent and Always Visible */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+          <Input
+            type="text"
+            placeholder="Search by name, ID, or phone..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSearch(e.target.value.trim().length > 0);
+            }}
+            className="pl-12 pr-4 h-12 text-base
+                       border-gray-300 dark:border-gray-600
+                       focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+                       focus:border-blue-500 dark:focus:border-blue-400
+                       rounded-xl
+                       shadow-sm
+                       transition-all duration-200"
+            data-testid="input-search-main"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setShowSearch(false);
+              }}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 
+                         text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+                         transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Quick Filter Chips */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            Payment Status:
+          </span>
+          <button
+            onClick={() => setPaymentFilter("all")}
+            className={`px-4 py-2 rounded-full text-sm font-medium
+                       transition-all duration-200
+                       ${paymentFilter === "all"
+                         ? "bg-blue-600 text-white shadow-md"
+                         : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                       }`}
+            data-testid="filter-all"
+          >
+            All
+            <Badge 
+              variant="secondary" 
+              className="ml-2 bg-white/20 text-white dark:bg-black/20"
+            >
+              {filteredPatientsList.length}
+            </Badge>
+          </button>
+          <button
+            onClick={() => setPaymentFilter("unpaid")}
+            className={`px-4 py-2 rounded-full text-sm font-medium
+                       transition-all duration-200
+                       ${paymentFilter === "unpaid"
+                         ? "bg-red-600 text-white shadow-md"
+                         : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                       }`}
+            data-testid="filter-unpaid"
+          >
+            Unpaid Only
+            <Badge 
+              variant="secondary" 
+              className="ml-2 bg-white/20 text-white dark:bg-black/20"
+            >
+              {patientsList.filter((p: any) => (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0).length}
+            </Badge>
+          </button>
+          <button
+            onClick={() => setPaymentFilter("paid")}
+            className={`px-4 py-2 rounded-full text-sm font-medium
+                       transition-all duration-200
+                       ${paymentFilter === "paid"
+                         ? "bg-green-600 text-white shadow-md"
+                         : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                       }`}
+            data-testid="filter-paid"
+          >
+            Paid
+            <Badge 
+              variant="secondary" 
+              className="ml-2 bg-white/20 text-white dark:bg-black/20"
+            >
+              {patientsList.filter((p: any) => (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) === 0).length}
+            </Badge>
+          </button>
+        </div>
+
+        {/* Date Range Tabs */}
         <div className="flex items-center gap-1">
           {/* Tab container with bottom border - scrollable on mobile */}
           <div className="flex items-center gap-1 flex-1 
@@ -715,25 +966,6 @@ export default function Patients() {
               )}
             </button>
           </div>
-          
-          {/* Search toggle button - icon only */}
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className={`p-2.5 rounded-xl flex-shrink-0
-                       transition-all duration-300
-                       group
-                       border border-gray-200/60 dark:border-gray-700/50
-                       shadow-[0_2px_6px_rgba(15,23,42,0.04)]
-                       hover:shadow-[0_4px_12px_rgba(59,130,246,0.12),0_2px_6px_rgba(59,130,246,0.08)]
-                       ${showSearch 
-                         ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" 
-                         : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
-                       }`}
-            data-testid="button-toggle-search"
-          >
-            <Search className="w-5 h-5 transition-transform duration-300 
-                              group-hover:scale-110 motion-reduce:transform-none" />
-          </button>
         </div>
         
         {dateFilter === "custom" && (
@@ -750,20 +982,6 @@ export default function Patients() {
               onDateChange={setCustomEndDate}
               placeholder="End Date"
               className="w-48"
-            />
-          </div>
-        )}
-        
-        {showSearch && (
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search by name or patient ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              data-testid="input-search"
             />
           </div>
         )}
@@ -900,15 +1118,17 @@ export default function Patients() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {patientsToDisplay.map((patient: any) => {
+                    {patientsToDisplay.map((patient: any, index: number) => {
                       const isNewlyRegistered = patient.patientId === newlyRegisteredPatientId;
                       return (
                       <tr
                         key={patient.id}
-                        className={`cursor-pointer transition-all duration-300 ${
+                        className={`cursor-pointer transition-all duration-200 ${
                           isNewlyRegistered 
                             ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-l-green-500 animate-pulse' 
-                            : 'hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-transparent dark:hover:from-gray-800/60 dark:hover:to-transparent'
+                            : index % 2 === 0
+                              ? 'bg-white dark:bg-gray-900 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:shadow-sm'
+                              : 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:shadow-sm'
                         }`}
                         onClick={() => handleViewPatient(patient)}
                         data-testid={`patient-row-${patient.patientId}`}
@@ -934,8 +1154,15 @@ export default function Patients() {
                           {patient.age ? `${patient.age}` : "—"}
                           {patient.gender ? ` • ${patient.gender}` : ""}
                         </td>
-                        <td className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400">
-                          {patient.phoneNumber || <span className="text-gray-400">—</span>}
+                        <td className="px-5 py-2.5 text-sm">
+                          {patient.phoneNumber ? (
+                            <span className="text-gray-600 dark:text-gray-400">{patient.phoneNumber}</span>
+                          ) : (
+                            <span className="text-orange-500 dark:text-orange-400 text-xs italic flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              No contact
+                            </span>
+                          )}
                         </td>
                         <td className="px-5 py-2.5 text-sm text-gray-600 dark:text-gray-400">
                           {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
@@ -945,17 +1172,19 @@ export default function Patients() {
                             ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
                               <Badge 
                                 variant="outline" 
-                                className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold shadow-sm"
+                                className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold shadow-sm flex items-center gap-1 w-fit"
                                 data-testid={`badge-consultation-due-${patient.patientId}`}
                               >
+                                <DollarSign className="w-3 h-3" />
                                 {money(patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance)} Due
                               </Badge>
                             ) : (
                               <Badge 
                                 variant="outline" 
-                                className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800 font-semibold shadow-sm"
+                                className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800 font-semibold shadow-sm flex items-center gap-1 w-fit"
                                 data-testid={`badge-consultation-paid-${patient.patientId}`}
                               >
+                                <CheckCircle className="w-3 h-3" />
                                 Paid
                               </Badge>
                             )
@@ -964,24 +1193,64 @@ export default function Patients() {
                           )}
                         </td>
                         <td className="px-5 py-2.5">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewPatient(patient);
-                            }}
-                            className="font-semibold 
-                                       border-blue-200 dark:border-blue-800
-                                       hover:bg-blue-600 hover:text-white hover:border-blue-600 
-                                       dark:hover:bg-blue-500 dark:hover:border-blue-500
-                                       hover:shadow-[0_4px_12px_rgba(59,130,246,0.25),0_2px_6px_rgba(59,130,246,0.15)]
-                                       transition-all duration-300
-                                       motion-reduce:transform-none motion-reduce:transition-none"
-                            data-testid={`button-view-${patient.patientId}`}
-                          >
-                            View
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => e.stopPropagation()}
+                                className="font-semibold 
+                                           border-blue-200 dark:border-blue-800
+                                           hover:bg-blue-600 hover:text-white hover:border-blue-600 
+                                           dark:hover:bg-blue-500 dark:hover:border-blue-500
+                                           hover:shadow-[0_4px_12px_rgba(59,130,246,0.25),0_2px_6px_rgba(59,130,246,0.15)]
+                                           transition-all duration-200"
+                                data-testid={`button-actions-${patient.patientId}`}
+                              >
+                                Actions
+                                <MoreVertical className="w-4 h-4 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewPatient(patient);
+                                }}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditPatient(patient);
+                                }}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Patient
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.location.href = `/billing?patientId=${patient.patientId}`;
+                                }}
+                              >
+                                <DollarSign className="w-4 h-4 mr-2" />
+                                Billing & Payments
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.location.href = `/treatment?patientId=${patient.patientId}`;
+                                }}
+                              >
+                                <FileText className="w-4 h-4 mr-2" />
+                                Start Visit
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     );
@@ -1034,23 +1303,37 @@ export default function Patients() {
                           </div>
                         )}
                         
+                        {/* Contact */}
+                        <div className="text-sm">
+                          {patient.phoneNumber ? (
+                            <span className="text-gray-600 dark:text-gray-400">{patient.phoneNumber}</span>
+                          ) : (
+                            <span className="text-orange-500 dark:text-orange-400 text-xs italic flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              No contact info
+                            </span>
+                          )}
+                        </div>
+                        
                         {/* Consultation Badge */}
                         {patient.serviceStatus && (
                           <div>
                             {((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
                               <Badge 
                                 variant="outline" 
-                                className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold text-xs"
+                                className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold text-xs flex items-center gap-1 w-fit"
                                 data-testid={`badge-consultation-due-mobile-${patient.patientId}`}
                               >
+                                <DollarSign className="w-3 h-3" />
                                 {money(patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance)} Due
                               </Badge>
                             ) : (
                               <Badge 
                                 variant="outline" 
-                                className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800 font-semibold text-xs"
+                                className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800 font-semibold text-xs flex items-center gap-1 w-fit"
                                 data-testid={`badge-consultation-paid-mobile-${patient.patientId}`}
                               >
+                                <CheckCircle className="w-3 h-3" />
                                 Paid
                               </Badge>
                             )}
