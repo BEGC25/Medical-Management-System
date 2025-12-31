@@ -197,6 +197,7 @@ export interface IStorage {
   getUltrasoundExams(status?: string, startDate?: string, endDate?: string): Promise<schema.UltrasoundExam[]>;
   getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]>;
   updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam>;
+  deleteUltrasoundExam(examId: string): Promise<boolean>;
 
   // Pharmacy Orders
   createPharmacyOrder(data: schema.InsertPharmacyOrder): Promise<schema.PharmacyOrder>;

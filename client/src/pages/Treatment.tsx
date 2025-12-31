@@ -2997,7 +2997,7 @@ export default function Treatment() {
                   setAllergies([
                     ...allergies,
                     {
-                      id: Date.now().toString(),
+                      id: crypto.randomUUID(),
                       name: newAllergyName,
                       severity: newAllergySeverity,
                       reaction: newAllergyReaction,
