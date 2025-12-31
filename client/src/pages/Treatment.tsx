@@ -78,6 +78,59 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   }
 }
 
+// Common chief complaints in South Sudan
+const COMMON_COMPLAINTS = [
+  "Fever",
+  "Cough",
+  "Headache",
+  "Abdominal Pain",
+  "Diarrhea",
+  "Vomiting",
+  "Body Weakness",
+  "Joint Pain",
+  "Skin Rash",
+  "Difficulty Breathing",
+  "Chest Pain",
+  "Malaria Symptoms",
+  "Follow-up Visit",
+];
+
+// Common diagnoses in South Sudan
+const COMMON_DIAGNOSES = [
+  "Malaria (uncomplicated)",
+  "Malaria (severe)",
+  "Typhoid Fever",
+  "Upper Respiratory Tract Infection (URTI)",
+  "Lower Respiratory Tract Infection (LRTI)",
+  "Pneumonia",
+  "Acute Watery Diarrhea",
+  "Dysentery",
+  "Urinary Tract Infection (UTI)",
+  "Skin Infection / Cellulitis",
+  "Worm Infestation (Helminthiasis)",
+  "Anemia",
+  "Hypertension",
+  "Diabetes Mellitus",
+  "HIV/AIDS related illness",
+  "Tuberculosis (TB)",
+  "Malnutrition",
+  "Acute Gastritis",
+  "Peptic Ulcer Disease",
+  "Conjunctivitis",
+];
+
+// Body systems for structured physical exam
+const BODY_SYSTEMS = [
+  { id: "general", label: "General Appearance" },
+  { id: "heent", label: "HEENT (Head, Eyes, Ears, Nose, Throat)" },
+  { id: "chest", label: "Chest/Lungs" },
+  { id: "cardiovascular", label: "Cardiovascular" },
+  { id: "abdomen", label: "Abdomen" },
+  { id: "extremities", label: "Extremities" },
+  { id: "neurological", label: "Neurological" },
+  { id: "skin", label: "Skin" },
+];
+
 // Type for orders returned from /api/visits/:visitId/orders
 // These have additional properties beyond the base LabTest/XRay/Ultrasound types
 type VisitOrder = {
@@ -311,8 +364,49 @@ export default function Treatment() {
   const [editLabPriority, setEditLabPriority] = useState<"routine" | "urgent" | "stat">("routine");
   const [editLabClinicalInfo, setEditLabClinicalInfo] = useState("");
 
+  // NEW: Structured exam toggle state
+  const [useStructuredExam, setUseStructuredExam] = useState(false);
+  const [structuredExamFindings, setStructuredExamFindings] = useState<Record<string, string>>({});
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Helper function to update examination field from structured findings
+  const updateExaminationFromStructured = (findings: Record<string, string>) => {
+    const combined = Object.entries(findings)
+      .filter(([_, value]) => value.trim())
+      .map(([system, value]) => {
+        const label = BODY_SYSTEMS.find(s => s.id === system)?.label || system;
+        return `${label}: ${value}`;
+      })
+      .join('\n');
+    form.setValue("examination", combined);
+  };
+
+  // Helper function to parse freeform examination into structured format
+  const parseExaminationToStructured = (text: string): Record<string, string> => {
+    const findings: Record<string, string> = {};
+    const lines = text.split('\n');
+    
+    lines.forEach(line => {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex > -1) {
+        const label = line.substring(0, colonIndex).trim();
+        const value = line.substring(colonIndex + 1).trim();
+        
+        // Try to match with known body systems
+        const system = BODY_SYSTEMS.find(s => 
+          s.label.toLowerCase() === label.toLowerCase()
+        );
+        
+        if (system && value) {
+          findings[system.id] = value;
+        }
+      }
+    });
+    
+    return findings;
+  };
 
 
   // ... (keep useEffect hooks and data fetching queries as they are) ...
@@ -1360,55 +1454,243 @@ export default function Treatment() {
                   <TabsContent value="notes">
                     <Card>
                       <CardHeader>
-                        {/* UPDATED: Removed (S.O.A.P. Note) */}
                         <CardTitle>Clinical Documentation</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {/* ... (Keep the entire Form and form fields for Visit Notes as is) ... */}
                         <Form {...form}>
-                          <form onSubmit={handleSubmit} className="space-y-6">
+                          <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Visit Info */}
                             <div>
                               <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
                                 Visit Information
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {/* ... Visit Date, Type, Priority fields ... */}
                                 <FormField control={form.control} name="visitDate" render={({ field }) => ( <FormItem><FormLabel>Visit Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="visitType" render={({ field }) => ( <FormItem><FormLabel>Visit Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="consultation">Consultation</SelectItem><SelectItem value="follow-up">Follow-up</SelectItem><SelectItem value="emergency">Emergency</SelectItem><SelectItem value="preventive">Preventive Care</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="priority" render={({ field }) => ( <FormItem><FormLabel>Priority</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="routine">Routine</SelectItem><SelectItem value="urgent">Urgent</SelectItem><SelectItem value="emergency">Emergency</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                               </div>
                             </div>
-                            {/* Subjective */}
-                            <FormField control={form.control} name="chiefComplaint" render={({ field }) => ( <FormItem><FormLabel>Subjective (Chief Complaint)</FormLabel><FormControl><Textarea placeholder="What brings the patient in today?" rows={3} {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem> )} />
-                            {/* Objective */}
-                            <div>
-                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">Objective</h3>
-                              <div className="font-medium mb-2">Vital Signs</div>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {/* ... Vitals fields ... */}
-                                <FormField control={form.control} name="temperature" render={({ field }) => ( <FormItem><FormLabel>Temperature (°C)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="36.5" {...field} value={field.value ?? ""} onChange={(e) => field.onChange( e.target.value ? parseFloat(e.target.value) : null )} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="bloodPressure" render={({ field }) => ( <FormItem><FormLabel>Blood Pressure</FormLabel><FormControl><Input placeholder="120/80" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="heartRate" render={({ field }) => ( <FormItem><FormLabel>Heart Rate (bpm)</FormLabel><FormControl><Input type="number" placeholder="72" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="weight" render={({ field }) => ( <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="65.0" {...field} value={field.value ?? ""} onChange={(e) => field.onChange( e.target.value ? parseFloat(e.target.value) : null )} /></FormControl><FormMessage /></FormItem> )} />
-                              </div>
-                            </div>
-                            <FormField control={form.control} name="examination" render={({ field }) => ( <FormItem><FormLabel>Physical Examination</FormLabel><FormControl><Textarea placeholder="Detailed examination findings..." rows={4} {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem> )} />
-                            {/* Assessment */}
-                            <FormField control={form.control} name="diagnosis" render={({ field }) => ( <FormItem><FormLabel>Assessment (Diagnosis)</FormLabel><FormControl><Textarea placeholder="Primary and secondary diagnoses..." rows={3} {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem> )} />
-                            {/* Plan */}
-                            <FormField control={form.control} name="treatmentPlan" render={({ field }) => ( <FormItem><FormLabel>Plan (Treatment & Follow-up)</FormLabel><FormControl><Textarea placeholder="Medications, procedures, recommendations..." rows={4} {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem> )} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* ... Follow up fields ... */}
-                                <FormField control={form.control} name="followUpDate" render={({ field }) => ( <FormItem><FormLabel>Follow-up Date</FormLabel><FormControl><Input type="date" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="followUpType" render={({ field }) => ( <FormItem><FormLabel>Next Visit Type</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ""}><FormControl><SelectTrigger><SelectValue placeholder="No follow-up needed" /></SelectTrigger></FormControl><SelectContent><SelectItem value="none">No follow-up needed</SelectItem><SelectItem value="routine">Routine Follow-up</SelectItem><SelectItem value="urgent">Urgent Follow-up</SelectItem><SelectItem value="lab-results">Lab Results Review</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                            </div>
+
+                            {/* SOAP Sections with Accordion */}
+                            <Accordion type="multiple" defaultValue={["subjective"]} className="w-full space-y-3">
+                              
+                              {/* Subjective Section */}
+                              <AccordionItem value="subjective" className="border rounded-lg px-4">
+                                <AccordionTrigger className="text-base font-semibold hover:no-underline py-3">
+                                  <span className="text-teal-700 dark:text-teal-400">Subjective (Chief Complaint)</span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-2 pb-4">
+                                  {/* Quick Complaint Chips */}
+                                  <div className="mb-3">
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                                      Common Complaints (click to add)
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                      {COMMON_COMPLAINTS.map((complaint) => (
+                                        <button
+                                          key={complaint}
+                                          type="button"
+                                          onClick={() => {
+                                            const current = form.getValues("chiefComplaint") || "";
+                                            const newValue = current 
+                                              ? `${current}, ${complaint}` 
+                                              : complaint;
+                                            form.setValue("chiefComplaint", newValue);
+                                          }}
+                                          className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-teal-100 dark:bg-gray-800 dark:hover:bg-teal-900 text-gray-700 dark:text-gray-300 rounded-full border border-gray-300 dark:border-gray-600 hover:border-teal-500 dark:hover:border-teal-500 transition-all shadow-sm hover:shadow"
+                                        >
+                                          {complaint}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <FormField control={form.control} name="chiefComplaint" render={({ field }) => ( 
+                                    <FormItem>
+                                      <FormLabel>Chief Complaint Details</FormLabel>
+                                      <FormControl>
+                                        <Textarea 
+                                          placeholder="What brings the patient in today?" 
+                                          className="min-h-[60px] resize-y"
+                                          {...field} 
+                                          value={field.value ?? ""} 
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem> 
+                                  )} />
+                                </AccordionContent>
+                              </AccordionItem>
+
+                              {/* Objective Section */}
+                              <AccordionItem value="objective" className="border rounded-lg px-4">
+                                <AccordionTrigger className="text-base font-semibold hover:no-underline py-3">
+                                  <span className="text-teal-700 dark:text-teal-400">Objective (Physical Exam & Vitals)</span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-2 pb-4 space-y-4">
+                                  <div>
+                                    <div className="font-medium mb-3 text-gray-800 dark:text-gray-200">Vital Signs</div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                      <FormField control={form.control} name="temperature" render={({ field }) => ( <FormItem><FormLabel>Temperature (°C)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="36.5" {...field} value={field.value ?? ""} onChange={(e) => field.onChange( e.target.value ? parseFloat(e.target.value) : null )} /></FormControl><FormMessage /></FormItem> )} />
+                                      <FormField control={form.control} name="bloodPressure" render={({ field }) => ( <FormItem><FormLabel>Blood Pressure</FormLabel><FormControl><Input placeholder="120/80" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem> )} />
+                                      <FormField control={form.control} name="heartRate" render={({ field }) => ( <FormItem><FormLabel>Heart Rate (bpm)</FormLabel><FormControl><Input type="number" placeholder="72" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)} /></FormControl><FormMessage /></FormItem> )} />
+                                      <FormField control={form.control} name="weight" render={({ field }) => ( <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="65.0" {...field} value={field.value ?? ""} onChange={(e) => field.onChange( e.target.value ? parseFloat(e.target.value) : null )} /></FormControl><FormMessage /></FormItem> )} />
+                                    </div>
+                                  </div>
+
+                                  {/* Physical Examination with Structured Option */}
+                                  <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                      <FormLabel>Physical Examination</FormLabel>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          if (useStructuredExam) {
+                                            // Convert structured to freeform
+                                            updateExaminationFromStructured(structuredExamFindings);
+                                            // Keep the structured findings so user can switch back
+                                          } else {
+                                            // Convert freeform to structured
+                                            const currentExam = form.getValues("examination") || "";
+                                            if (currentExam.trim()) {
+                                              const parsed = parseExaminationToStructured(currentExam);
+                                              setStructuredExamFindings(parsed);
+                                            }
+                                          }
+                                          setUseStructuredExam(!useStructuredExam);
+                                        }}
+                                        className="text-xs"
+                                      >
+                                        {useStructuredExam ? "Switch to Freeform" : "Switch to Structured"}
+                                      </Button>
+                                    </div>
+
+                                    {useStructuredExam ? (
+                                      <div className="space-y-3 border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+                                        {BODY_SYSTEMS.map((system) => (
+                                          <div key={system.id} className="space-y-1">
+                                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                              {system.label}
+                                            </label>
+                                            <Input
+                                              placeholder={`Findings for ${system.label.toLowerCase()}...`}
+                                              value={structuredExamFindings[system.id] || ""}
+                                              onChange={(e) => {
+                                                const newFindings = {
+                                                  ...structuredExamFindings,
+                                                  [system.id]: e.target.value
+                                                };
+                                                setStructuredExamFindings(newFindings);
+                                              }}
+                                              onBlur={() => {
+                                                // Update form field when user finishes editing
+                                                updateExaminationFromStructured(structuredExamFindings);
+                                              }}
+                                              className="text-sm"
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <FormField control={form.control} name="examination" render={({ field }) => ( 
+                                        <FormItem>
+                                          <FormControl>
+                                            <Textarea 
+                                              placeholder="Detailed examination findings..." 
+                                              className="min-h-[60px] resize-y"
+                                              {...field} 
+                                              value={field.value ?? ""} 
+                                            />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem> 
+                                      )} />
+                                    )}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+
+                              {/* Assessment Section */}
+                              <AccordionItem value="assessment" className="border rounded-lg px-4">
+                                <AccordionTrigger className="text-base font-semibold hover:no-underline py-3">
+                                  <span className="text-teal-700 dark:text-teal-400">Assessment (Diagnosis)</span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-2 pb-4">
+                                  {/* Common Diagnosis Chips */}
+                                  <div className="mb-3">
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                                      Common Diagnoses (click to add)
+                                    </label>
+                                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg bg-gray-50 dark:bg-gray-900">
+                                      {COMMON_DIAGNOSES.map((diagnosis) => (
+                                        <button
+                                          key={diagnosis}
+                                          type="button"
+                                          onClick={() => {
+                                            const current = form.getValues("diagnosis") || "";
+                                            const newValue = current 
+                                              ? `${current}, ${diagnosis}` 
+                                              : diagnosis;
+                                            form.setValue("diagnosis", newValue);
+                                          }}
+                                          className="px-3 py-1.5 text-sm bg-white hover:bg-teal-100 dark:bg-gray-800 dark:hover:bg-teal-900 text-gray-700 dark:text-gray-300 rounded-full border border-gray-300 dark:border-gray-600 hover:border-teal-500 dark:hover:border-teal-500 transition-all shadow-sm hover:shadow"
+                                        >
+                                          {diagnosis}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <FormField control={form.control} name="diagnosis" render={({ field }) => ( 
+                                    <FormItem>
+                                      <FormLabel>Diagnosis Details</FormLabel>
+                                      <FormControl>
+                                        <Textarea 
+                                          placeholder="Primary and secondary diagnoses..." 
+                                          className="min-h-[60px] resize-y"
+                                          {...field} 
+                                          value={field.value ?? ""} 
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem> 
+                                  )} />
+                                </AccordionContent>
+                              </AccordionItem>
+
+                              {/* Plan Section */}
+                              <AccordionItem value="plan" className="border rounded-lg px-4">
+                                <AccordionTrigger className="text-base font-semibold hover:no-underline py-3">
+                                  <span className="text-teal-700 dark:text-teal-400">Plan (Treatment & Follow-up)</span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-2 pb-4 space-y-4">
+                                  <FormField control={form.control} name="treatmentPlan" render={({ field }) => ( 
+                                    <FormItem>
+                                      <FormLabel>Treatment Plan</FormLabel>
+                                      <FormControl>
+                                        <Textarea 
+                                          placeholder="Medications, procedures, recommendations..." 
+                                          className="min-h-[60px] resize-y"
+                                          {...field} 
+                                          value={field.value ?? ""} 
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem> 
+                                  )} />
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField control={form.control} name="followUpDate" render={({ field }) => ( <FormItem><FormLabel>Follow-up Date</FormLabel><FormControl><Input type="date" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="followUpType" render={({ field }) => ( <FormItem><FormLabel>Next Visit Type</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ""}><FormControl><SelectTrigger><SelectValue placeholder="No follow-up needed" /></SelectTrigger></FormControl><SelectContent><SelectItem value="none">No follow-up needed</SelectItem><SelectItem value="routine">Routine Follow-up</SelectItem><SelectItem value="urgent">Urgent Follow-up</SelectItem><SelectItem value="lab-results">Lab Results Review</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+
                             {/* Actions */}
                             <div className="flex gap-4 pt-6 mt-6 border-t">
-                                {/* ... Save, Close Visit, New Treatment buttons ... */}
-                                <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-medical-blue hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
-                                {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="default" className="bg-orange-600 hover:bg-orange-700" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn">{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
-                                <Button type="button" variant="outline" onClick={handleNewTreatment} className="ml-auto">New Treatment</Button>
+                              <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-medical-blue hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
+                              {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="default" className="bg-orange-600 hover:bg-orange-700" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn">{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
+                              <Button type="button" variant="outline" onClick={handleNewTreatment} className="ml-auto">New Treatment</Button>
                             </div>
                           </form>
                         </Form>
