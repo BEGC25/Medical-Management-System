@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -122,14 +122,17 @@ export default function Patients() {
   // Payment filter state
   const [paymentFilter, setPaymentFilter] = useState<"all" | "unpaid" | "paid">("all");
 
+  // Ref for search input (for keyboard shortcuts)
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // "/" to focus search (only if not typing in an input)
-      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
+      const excludedTags = ["INPUT", "TEXTAREA", "SELECT"];
+      if (e.key === "/" && !excludedTags.includes((e.target as HTMLElement)?.tagName)) {
         e.preventDefault();
-        const searchInput = document.querySelector('[data-testid="input-search-main"]') as HTMLInputElement;
-        searchInput?.focus();
+        searchInputRef.current?.focus();
       }
       
       // Escape to clear search
@@ -514,22 +517,35 @@ export default function Patients() {
   // Export patients to CSV
   const exportToCSV = () => {
     const headers = ["Patient ID", "First Name", "Last Name", "Age", "Gender", "Phone Number", "Registered Date", "Consultation Status"];
+    
+    // Escape CSV cells to prevent injection
+    const escapeCSV = (cell: any) => {
+      const str = String(cell || "");
+      // Escape double quotes and wrap in quotes if contains special chars
+      if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
     const rows = patientsToDisplay.map((p: any) => [
-      p.patientId,
-      p.firstName,
-      p.lastName,
-      p.age || "",
-      p.gender || "",
-      p.phoneNumber || "",
-      formatClinicDay((p as any).clinicDay || p.createdAt),
-      (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0 
-        ? `Unpaid (${money(p.serviceStatus.balanceToday ?? p.serviceStatus.balance)})` 
-        : "Paid"
+      escapeCSV(p.patientId),
+      escapeCSV(p.firstName),
+      escapeCSV(p.lastName),
+      escapeCSV(p.age || ""),
+      escapeCSV(p.gender || ""),
+      escapeCSV(p.phoneNumber || ""),
+      escapeCSV(formatClinicDay((p as any).clinicDay || p.createdAt)),
+      escapeCSV(
+        (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0 
+          ? `Unpaid (${money(p.serviceStatus.balanceToday ?? p.serviceStatus.balance)})` 
+          : "Paid"
+      )
     ]);
     
     const csvContent = [
       headers.join(","),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+      ...rows.map(row => row.join(","))
     ].join("\n");
     
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -541,6 +557,8 @@ export default function Patients() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // Clean up the object URL to prevent memory leaks
+    URL.revokeObjectURL(url);
     
     toast({
       title: "Export Successful",
@@ -828,6 +846,7 @@ export default function Patients() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
             <Input
+              ref={searchInputRef}
               type="text"
               placeholder="Search by name, ID, or phone..."
               value={searchQuery}
