@@ -371,6 +371,43 @@ export default function Treatment() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Helper function to update examination field from structured findings
+  const updateExaminationFromStructured = (findings: Record<string, string>) => {
+    const combined = Object.entries(findings)
+      .filter(([_, value]) => value.trim())
+      .map(([system, value]) => {
+        const label = BODY_SYSTEMS.find(s => s.id === system)?.label || system;
+        return `${label}: ${value}`;
+      })
+      .join('\n');
+    form.setValue("examination", combined);
+  };
+
+  // Helper function to parse freeform examination into structured format
+  const parseExaminationToStructured = (text: string): Record<string, string> => {
+    const findings: Record<string, string> = {};
+    const lines = text.split('\n');
+    
+    lines.forEach(line => {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex > -1) {
+        const label = line.substring(0, colonIndex).trim();
+        const value = line.substring(colonIndex + 1).trim();
+        
+        // Try to match with known body systems
+        const system = BODY_SYSTEMS.find(s => 
+          s.label.toLowerCase() === label.toLowerCase()
+        );
+        
+        if (system && value) {
+          findings[system.id] = value;
+        }
+      }
+    });
+    
+    return findings;
+  };
+
 
   // ... (keep useEffect hooks and data fetching queries as they are) ...
   // open queue if ?filter=today
@@ -1511,15 +1548,15 @@ export default function Treatment() {
                                         onClick={() => {
                                           if (useStructuredExam) {
                                             // Convert structured to freeform
-                                            const combined = Object.entries(structuredExamFindings)
-                                              .filter(([_, value]) => value.trim())
-                                              .map(([system, value]) => {
-                                                const label = BODY_SYSTEMS.find(s => s.id === system)?.label || system;
-                                                return `${label}: ${value}`;
-                                              })
-                                              .join('\n');
-                                            form.setValue("examination", combined);
-                                            setStructuredExamFindings({});
+                                            updateExaminationFromStructured(structuredExamFindings);
+                                            // Keep the structured findings so user can switch back
+                                          } else {
+                                            // Convert freeform to structured
+                                            const currentExam = form.getValues("examination") || "";
+                                            if (currentExam.trim()) {
+                                              const parsed = parseExaminationToStructured(currentExam);
+                                              setStructuredExamFindings(parsed);
+                                            }
                                           }
                                           setUseStructuredExam(!useStructuredExam);
                                         }}
@@ -1540,22 +1577,15 @@ export default function Treatment() {
                                               placeholder={`Findings for ${system.label.toLowerCase()}...`}
                                               value={structuredExamFindings[system.id] || ""}
                                               onChange={(e) => {
-                                                setStructuredExamFindings(prev => ({
-                                                  ...prev,
-                                                  [system.id]: e.target.value
-                                                }));
-                                                // Also update the main form field
-                                                const combined = Object.entries({
+                                                const newFindings = {
                                                   ...structuredExamFindings,
                                                   [system.id]: e.target.value
-                                                })
-                                                  .filter(([_, value]) => value.trim())
-                                                  .map(([sys, value]) => {
-                                                    const label = BODY_SYSTEMS.find(s => s.id === sys)?.label || sys;
-                                                    return `${label}: ${value}`;
-                                                  })
-                                                  .join('\n');
-                                                form.setValue("examination", combined);
+                                                };
+                                                setStructuredExamFindings(newFindings);
+                                              }}
+                                              onBlur={() => {
+                                                // Update form field when user finishes editing
+                                                updateExaminationFromStructured(structuredExamFindings);
                                               }}
                                               className="text-sm"
                                             />
