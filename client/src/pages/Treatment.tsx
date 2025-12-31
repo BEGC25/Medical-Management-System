@@ -27,6 +27,9 @@ import {
   ClipboardList,
   AlertCircle,
   Beaker,
+  Zap, // For X-Ray icon
+  Radio, // For Ultrasound icon
+  FlaskConical, // Alternative Lab icon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -75,6 +78,26 @@ function parseJSON<T = any>(v: any, fallback: T): T {
     return JSON.parse(v ?? "");
   } catch {
     return fallback;
+  }
+}
+
+// Format currency with SSP and thousand separators
+function formatCurrency(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined) return "—";
+  return `SSP ${amount.toLocaleString('en-US')}`;
+}
+
+// Get icon for order type
+function getOrderIcon(type: string) {
+  switch (type) {
+    case 'lab':
+      return <Beaker className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+    case 'xray':
+      return <Zap className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />;
+    case 'ultrasound':
+      return <Radio className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />;
+    default:
+      return <Activity className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
   }
 }
 
@@ -178,12 +201,10 @@ function isAbnormal(val: string | number | undefined | null, cfg?: { normal?: st
 
 // --- Quick Orders helpers ---
 // ... (keep CATEGORY_ALIASES and matchesCategory as they are) ...
-const CATEGORY_ALIASES: Record<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy", string[]> = {
+const CATEGORY_ALIASES: Record<"lab" | "xray" | "ultrasound", string[]> = {
   lab: ["lab", "labs", "laboratory", "hematology", "chemistry", "microbiology"],
   xray: ["xray", "x-ray", "radiology-xray", "radiology_xray", "radiology"],
   ultrasound: ["ultrasound", "u/s", "sonography", "radiology-ultrasound"],
-  consult: ["consult", "consultation", "general consultation"],
-  pharmacy: ["pharmacy", "drug", "medication", "dispensary"],
 };
 function matchesCategory(svc: any, active: keyof typeof CATEGORY_ALIASES) {
   const c = (svc?.category ?? "").toString().toLowerCase().trim();
@@ -292,7 +313,7 @@ export default function Treatment() {
   const [activeTab, setActiveTab] = useState("notes"); // For the new top-level tabs
 
   // State for the NEW sub-tabs inside "Orders & Results"
-  const [qoTab, setQoTab] = useState<"lab" | "xray" | "ultrasound" | "consult" | "pharmacy" | "all">("all");
+  const [qoTab, setQoTab] = useState<"lab" | "xray" | "ultrasound" | "all">("all");
   const [qoSearch, setQoSearch] = useState("");
 
   // unified result drawer state
@@ -1082,6 +1103,14 @@ export default function Treatment() {
   };
 
   const handleDeleteXray = (examId: string) => {
+    if (!examId) {
+      toast({ 
+        title: "Error", 
+        description: "Cannot delete: Exam ID is missing", 
+        variant: "destructive" 
+      });
+      return;
+    }
     if (confirm("Are you sure you want to cancel this X-Ray exam request?")) {
       deleteXrayMutation.mutate(examId);
     }
@@ -1089,8 +1118,17 @@ export default function Treatment() {
 
   const handleSaveXrayEdit = () => {
     if (!xrayToEdit) return;
+    const examId = xrayToEdit.examId || xrayToEdit.orderId;
+    if (!examId) {
+      toast({ 
+        title: "Error", 
+        description: "Cannot edit: Exam ID is missing", 
+        variant: "destructive" 
+      });
+      return;
+    }
     editXrayMutation.mutate({
-      examId: xrayToEdit.examId || xrayToEdit.orderId,
+      examId,
       clinicalIndication: editXrayClinicalInfo,
     });
   };
@@ -1145,6 +1183,14 @@ export default function Treatment() {
   };
 
   const handleDeleteUltrasound = (examId: string) => {
+    if (!examId) {
+      toast({ 
+        title: "Error", 
+        description: "Cannot delete: Exam ID is missing", 
+        variant: "destructive" 
+      });
+      return;
+    }
     if (confirm("Are you sure you want to cancel this Ultrasound exam request?")) {
       deleteUltrasoundMutation.mutate(examId);
     }
@@ -1152,8 +1198,17 @@ export default function Treatment() {
 
   const handleSaveUltrasoundEdit = () => {
     if (!ultrasoundToEdit) return;
+    const examId = ultrasoundToEdit.examId || ultrasoundToEdit.orderId;
+    if (!examId) {
+      toast({ 
+        title: "Error", 
+        description: "Cannot edit: Exam ID is missing", 
+        variant: "destructive" 
+      });
+      return;
+    }
     editUltrasoundMutation.mutate({
-      examId: ultrasoundToEdit.examId || ultrasoundToEdit.orderId,
+      examId,
       clinicalIndication: editUltrasoundClinicalInfo,
     });
   };
@@ -1945,20 +2000,56 @@ export default function Treatment() {
                       <CardContent className="space-y-6">
                         
                         {/* --- Sub-tabs --- */}
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <Button variant={qoTab === "all" ? "secondary" : "outline"} onClick={() => setQoTab("all")}>
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                          <Button 
+                            variant={qoTab === "all" ? "default" : "outline"} 
+                            onClick={() => setQoTab("all")}
+                            className={qoTab === "all" ? "shadow-md" : "hover:bg-gray-100 dark:hover:bg-gray-800"}
+                          >
                             All Results
                           </Button>
-                          {(["lab", "xray", "ultrasound", "consult", "pharmacy"] as const).map((k) => (
-                            <Button key={k} variant={qoTab === k ? "default" : "outline"} onClick={() => { setQoTab(k); setQoSearch(''); }}> {/* Reset search on tab change */}
-                              {/* ... (Tab labels) ... */}
-                              {k === "lab" && "Lab"}
-                              {k === "xray" && "X-Ray"}
-                              {k === "ultrasound" && "Ultrasound"}
-                              {k === "consult" && "Consult"}
-                              {k === "pharmacy" && "Pharmacy"}
-                            </Button>
-                          ))}
+                          {(["lab", "xray", "ultrasound"] as const).map((k) => {
+                            const count = orders.filter((o: any) => o.type === k).length;
+                            return (
+                              <Button 
+                                key={k} 
+                                variant={qoTab === k ? "default" : "outline"} 
+                                onClick={() => { setQoTab(k); setQoSearch(''); }}
+                                className={`gap-2 ${qoTab === k ? "shadow-md" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                              > 
+                                {k === "lab" && (
+                                  <>
+                                    <Beaker className="h-4 w-4" />
+                                    Lab
+                                  </>
+                                )}
+                                {k === "xray" && (
+                                  <>
+                                    <Zap className="h-4 w-4" />
+                                    X-Ray
+                                  </>
+                                )}
+                                {k === "ultrasound" && (
+                                  <>
+                                    <Radio className="h-4 w-4" />
+                                    Ultrasound
+                                  </>
+                                )}
+                                {count > 0 && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`ml-1 px-1.5 py-0.5 text-xs ${
+                                      qoTab === k 
+                                        ? "bg-white/20 text-white" 
+                                        : "bg-gray-200 dark:bg-gray-700"
+                                    }`}
+                                  >
+                                    {count}
+                                  </Badge>
+                                )}
+                              </Button>
+                            );
+                          })}
                           {qoTab !== "all" && (
                             <div className="ml-auto w-full sm:w-64 relative">
                               <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"/>
@@ -2155,16 +2246,15 @@ export default function Treatment() {
                                       );
                                     }
 
-                                    // Other services (consult, pharmacy) - original grid layout
-                                    const rows = (qoTab === 'pharmacy' ? drugs : services)
+                                    // All other tabs should just show services with Add button
+                                    const rows = services
                                       .filter((s: any) => {
-                                        if (qoTab === 'pharmacy') return true;
                                         return matchesCategory(s, qoTab as any);
                                       })
                                       .filter((s: any) => {
                                         if (!qoSearch) return true;
                                         const needle = qoSearch.toLowerCase();
-                                        const name = s.name || s.genericName || "";
+                                        const name = s.name || "";
                                         return (
                                           (name).toLowerCase().includes(needle) ||
                                           (s.description ?? "").toLowerCase().includes(needle)
@@ -2181,33 +2271,22 @@ export default function Treatment() {
                                         {rows.map((svc: any) => (
                                           <div key={svc.id} className="flex items-center justify-between rounded border p-3 bg-white">
                                             <div className="min-w-0 pr-2">
-                                              <div className="font-medium truncate">{svc.genericName || svc.name}</div>
+                                              <div className="font-medium truncate">{svc.name}</div>
                                               <div className="text-xs text-gray-500 truncate">
-                                                {svc.description ? svc.description : (svc.strength ? `Strength: ${svc.strength}` : (typeof svc.price === 'number' ? `Fee: ${svc.price}` : ''))}
+                                                {svc.description ? svc.description : (typeof svc.price === 'number' ? `Fee: ${svc.price}` : '')}
                                               </div>
                                             </div>
-                                            {qoTab === 'pharmacy' ? (
-                                              <Button size="sm" onClick={() => {
-                                                setSelectedDrugId(String(svc.id));
-                                                setSelectedDrugName(svc.genericName || svc.name);
-                                                setActiveTab("medications");
-                                                toast({ title: "Medication Selected", description: "Please complete dosage and quantity." });
-                                              }}>
-                                                <Plus className="h-4 w-4 mr-1"/> Queue
-                                              </Button>
-                                            ) : (
-                                              <Button
-                                                size="sm"
-                                                onClick={() => orderMutation.mutate({ serviceId: svc.id, kind: qoTab, name: svc.name, price: svc.price || 0 })}
-                                                disabled={orderMutation.isPending && orderMutation.variables?.serviceId === svc.id}
-                                              >
-                                                {orderMutation.isPending && orderMutation.variables?.serviceId === svc.id ?
-                                                  <Loader2 className="h-4 w-4 animate-spin"/> :
-                                                  <Plus className="h-4 w-4 mr-1"/>
-                                                }
-                                                Add
-                                              </Button>
-                                            )}
+                                            <Button
+                                              size="sm"
+                                              onClick={() => orderMutation.mutate({ serviceId: svc.id, kind: qoTab, name: svc.name, price: svc.price || 0 })}
+                                              disabled={orderMutation.isPending && orderMutation.variables?.serviceId === svc.id}
+                                            >
+                                              {orderMutation.isPending && orderMutation.variables?.serviceId === svc.id ?
+                                                <Loader2 className="h-4 w-4 animate-spin"/> :
+                                                <Plus className="h-4 w-4 mr-1"/>
+                                              }
+                                              Add
+                                            </Button>
                                           </div>
                                         ))}
                                       </div>
@@ -2227,104 +2306,132 @@ export default function Treatment() {
                             if (qoTab === 'lab') return order.type === 'lab' && order.status === 'pending';
                             if (qoTab === 'xray') return order.type === 'xray' && order.status === 'pending';
                             if (qoTab === 'ultrasound') return order.type === 'ultrasound' && order.status === 'pending';
-                            if (qoTab === 'consult') return order.type === 'consult' && order.status === 'pending';
                             return false;
                           });
 
                           if (pendingOrders.length === 0) return null;
 
                           return (
-                            <div className="mb-8 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-950 border-l-4 border-amber-500 rounded-lg shadow-sm">
-                              <h3 className="font-bold text-lg mb-4 text-amber-800 dark:text-amber-300 flex items-center gap-2">
-                                <Clock className="h-5 w-5" />
-                                Pending Orders (Awaiting Processing)
-                              </h3>
+                            <div className="mb-8 p-5 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950 dark:via-yellow-950 dark:to-orange-950 border-l-4 border-amber-500 rounded-xl shadow-md animate-in fade-in slide-in-from-top-2 duration-500">
+                              <div className="flex items-center justify-between mb-5">
+                                <h3 className="font-bold text-lg text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                                  <Clock className="h-5 w-5 animate-pulse" />
+                                  Pending Orders
+                                  <Badge variant="secondary" className="bg-amber-600 text-white ml-2 px-2 py-0.5 text-sm font-bold">
+                                    {pendingOrders.length}
+                                  </Badge>
+                                </h3>
+                                <p className="text-sm text-amber-700 dark:text-amber-400">Awaiting processing</p>
+                              </div>
                               <div className="space-y-3">
-                                {pendingOrders.map((order: any) => (
-                                  <div key={order.orderId} className="p-4 bg-white dark:bg-gray-900 border-2 border-amber-300 dark:border-amber-700 rounded-lg shadow-sm">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex-1">
-                                        <p className="font-semibold text-base text-gray-900 dark:text-white">{order.name || order.description}</p>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                          Ordered just now • Awaiting {order.department || order.type} processing
-                                        </p>
+                                {pendingOrders.map((order: any, index: number) => (
+                                  <div 
+                                    key={order.orderId} 
+                                    className="group p-4 bg-white dark:bg-gray-900 border-2 border-amber-200 dark:border-amber-800 rounded-lg shadow-sm hover:shadow-lg hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-300 animate-in fade-in slide-in-from-left-1"
+                                    style={{ animationDelay: `${index * 50}ms` }}
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      {/* Icon */}
+                                      <div className="flex-shrink-0 mt-1">
+                                        {getOrderIcon(order.type)}
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        {order.type === 'lab' && (
-                                          <div className="flex gap-1 mr-2">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => handleEditLabTest(order)}
-                                              className="h-8 px-2"
-                                              data-testid={`button-edit-lab-${order.orderId}`}
-                                            >
-                                              <Edit className="w-3 h-3 mr-1" />
-                                              Edit
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => handleDeleteLabTest(order.testId || order.orderId)}
-                                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                              data-testid={`button-delete-lab-${order.orderId}`}
-                                            >
-                                              <Trash2 className="w-3 h-3 mr-1" />
-                                              Delete
-                                            </Button>
+                                      
+                                      {/* Content */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-3 mb-2">
+                                          <div className="flex-1">
+                                            <p className="font-semibold text-base text-gray-900 dark:text-white truncate">
+                                              {order.name || order.description}
+                                            </p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                              Ordered just now • {order.department || order.type} department
+                                            </p>
+                                            {order.totalPrice && (
+                                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">
+                                                Fee: {formatCurrency(order.totalPrice)}
+                                              </p>
+                                            )}
                                           </div>
-                                        )}
-                                        {order.type === 'xray' && (
-                                          <div className="flex gap-1 mr-2">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => handleEditXray(order)}
-                                              className="h-8 px-2"
-                                              data-testid={`button-edit-xray-${order.orderId}`}
-                                            >
-                                              <Edit className="w-3 h-3 mr-1" />
-                                              Edit
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => handleDeleteXray(order.examId || order.orderId)}
-                                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                              data-testid={`button-delete-xray-${order.orderId}`}
-                                            >
-                                              <Trash2 className="w-3 h-3 mr-1" />
-                                              Delete
-                                            </Button>
+                                          
+                                          {/* Actions and Badge */}
+                                          <div className="flex items-center gap-2">
+                                            {order.type === 'lab' && (
+                                              <div className="flex gap-1">
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() => handleEditLabTest(order)}
+                                                  className="h-8 px-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                  data-testid={`button-edit-lab-${order.orderId}`}
+                                                >
+                                                  <Edit className="w-3 h-3 mr-1" />
+                                                  Edit
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() => handleDeleteLabTest(order.testId || order.orderId)}
+                                                  className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                  data-testid={`button-delete-lab-${order.orderId}`}
+                                                >
+                                                  <Trash2 className="w-3 h-3 mr-1" />
+                                                  Delete
+                                                </Button>
+                                              </div>
+                                            )}
+                                            {order.type === 'xray' && (
+                                              <div className="flex gap-1">
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() => handleEditXray(order)}
+                                                  className="h-8 px-2 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
+                                                  data-testid={`button-edit-xray-${order.orderId}`}
+                                                >
+                                                  <Edit className="w-3 h-3 mr-1" />
+                                                  Edit
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() => handleDeleteXray(order.examId || order.orderId)}
+                                                  className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                  data-testid={`button-delete-xray-${order.orderId}`}
+                                                >
+                                                  <Trash2 className="w-3 h-3 mr-1" />
+                                                  Delete
+                                                </Button>
+                                              </div>
+                                            )}
+                                            {order.type === 'ultrasound' && (
+                                              <div className="flex gap-1">
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() => handleEditUltrasound(order)}
+                                                  className="h-8 px-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                                                  data-testid={`button-edit-ultrasound-${order.orderId}`}
+                                                >
+                                                  <Edit className="w-3 h-3 mr-1" />
+                                                  Edit
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() => handleDeleteUltrasound(order.examId || order.orderId)}
+                                                  className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                  data-testid={`button-delete-ultrasound-${order.orderId}`}
+                                                >
+                                                  <Trash2 className="w-3 h-3 mr-1" />
+                                                  Delete
+                                                </Button>
+                                              </div>
+                                            )}
+                                            <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-400 dark:border-amber-600 font-semibold px-3 py-1 ml-2">
+                                              Pending
+                                            </Badge>
                                           </div>
-                                        )}
-                                        {order.type === 'ultrasound' && (
-                                          <div className="flex gap-1 mr-2">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => handleEditUltrasound(order)}
-                                              className="h-8 px-2"
-                                              data-testid={`button-edit-ultrasound-${order.orderId}`}
-                                            >
-                                              <Edit className="w-3 h-3 mr-1" />
-                                              Edit
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => handleDeleteUltrasound(order.examId || order.orderId)}
-                                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                              data-testid={`button-delete-ultrasound-${order.orderId}`}
-                                            >
-                                              <Trash2 className="w-3 h-3 mr-1" />
-                                              Delete
-                                            </Button>
-                                          </div>
-                                        )}
-                                        <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-400 dark:border-amber-600 font-semibold px-3 py-1">
-                                          Pending
-                                        </Badge>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -2335,11 +2442,24 @@ export default function Treatment() {
                         })()}
 
                         {/* --- Existing Results (Filtered + Enhanced Lab View) --- */}
-                        <div className="space-y-4 mt-8 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border-l-4 border-green-600 rounded-lg shadow-sm">
-                          <h3 className="font-bold text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
-                            <FileText className="h-5 w-5" />
-                            Completed Results for this Visit {qoTab !== 'all' ? `(${qoTab})` : ''}
-                          </h3>
+                        <div className="space-y-4 mt-8 p-5 bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 dark:from-green-950 dark:via-emerald-950 dark:to-blue-950 border-l-4 border-green-600 rounded-xl shadow-md">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
+                              <FileText className="h-5 w-5" />
+                              Completed Results {qoTab !== 'all' ? `(${qoTab.charAt(0).toUpperCase() + qoTab.slice(1)})` : ''}
+                            </h3>
+                            {(() => {
+                              const completedCount = 
+                                labTests.filter((t: any) => t.status === "completed").length +
+                                xrays.filter((x: any) => x.status === "completed").length +
+                                ultrasounds.filter((u: any) => u.status === "completed").length;
+                              return completedCount > 0 ? (
+                                <Badge variant="secondary" className="bg-green-600 text-white px-2 py-0.5 text-sm font-bold">
+                                  {completedCount}
+                                </Badge>
+                              ) : null;
+                            })()}
+                          </div>
                           
                           {/* Labs */}
                           {(qoTab === "all" || qoTab === "lab") && labTests.filter((t: any) => t.status === "completed").length > 0 && (
@@ -2479,15 +2599,27 @@ export default function Treatment() {
 
                           {/* Empty State */}
                           {qoTab !== 'all' && labTests.filter((t: LabTest) => t.status === "completed").length === 0 && xrays.filter((x: any) => x.status === "completed").length === 0 && ultrasounds.filter((u: any) => u.status === "completed").length === 0 && (
-                             <div className="text-center py-6 text-gray-500 border rounded-lg">
-                              <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                              <p>No completed {qoTab} results for this visit yet.</p>
+                             <div className="text-center py-12 px-6 text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+                              <div className="flex flex-col items-center gap-4">
+                                {qoTab === 'lab' && <Beaker className="h-16 w-16 text-blue-300 dark:text-blue-700" />}
+                                {qoTab === 'xray' && <Zap className="h-16 w-16 text-cyan-300 dark:text-cyan-700" />}
+                                {qoTab === 'ultrasound' && <Radio className="h-16 w-16 text-indigo-300 dark:text-indigo-700" />}
+                                <div>
+                                  <p className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">No {qoTab} results yet</p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">Order tests using the form above</p>
+                                </div>
+                              </div>
                             </div>
                           )}
                            {qoTab === 'all' && labTests.filter((t: LabTest) => t.status === "completed").length === 0 && xrays.filter((x: any) => x.status === "completed").length === 0 && ultrasounds.filter((u: any) => u.status === "completed").length === 0 && (
-                            <div className="text-center py-6 text-gray-500 border rounded-lg">
-                              <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                              <p>No completed results yet for this visit.</p>
+                            <div className="text-center py-12 px-6 text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+                              <div className="flex flex-col items-center gap-4">
+                                <FileText className="h-16 w-16 text-gray-300 dark:text-gray-700" />
+                                <div>
+                                  <p className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">No results yet</p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">Order diagnostic tests to see results here</p>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>

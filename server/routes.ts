@@ -2241,6 +2241,8 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
       };
     });
 
+    // X-ray display name priority: bodyPart (specific) > examType (category)
+    // e.g., "Left Femur" is more helpful than "extremities"
     const xrayOrders = xrays.map((xray: any) => {
       const orderLine = orderLineMap.get(xray.examId);
       return {
@@ -2248,7 +2250,7 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
         orderId: orderLine?.id || `xray-${xray.examId}`,
         visitId,
         type: "xray",
-        name: xray.examType || "X-Ray",
+        name: xray.bodyPart || xray.examType || "X-Ray",
         flags: null,
         snippet: xray.impression || null,
         resultUrl: `/api/xray-exams/${xray.examId}`,
@@ -2267,7 +2269,7 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
         orderId: orderLine?.id || `ultrasound-${us.examId}`,
         visitId,
         type: "ultrasound",
-        name: us.examinationType || "Ultrasound",
+        name: us.examType || "Ultrasound",
         flags: null,
         snippet: us.impression || null,
         resultUrl: `/api/ultrasound-exams/${us.examId}`,
