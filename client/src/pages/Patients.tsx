@@ -21,6 +21,7 @@ import {
   Eye,
   MoreVertical,
   FileText,
+  Download,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,6 +114,35 @@ export default function Patients() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Patient[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  
+  // Payment filter state
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "unpaid" | "paid">("all");
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // "/" to focus search (only if not typing in an input)
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault();
+        const searchInput = document.querySelector('[data-testid="input-search-main"]') as HTMLInputElement;
+        searchInput?.focus();
+      }
+      
+      // Escape to clear search
+      if (e.key === "Escape" && searchQuery) {
+        setSearchQuery("");
+        setShowSearch(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [searchQuery]);
+
   // Calculate date range based on filter using timezone-aware utilities
   // This ensures consistent "Today" filtering across all pages
   const getDateRange = () => {
@@ -176,14 +206,6 @@ export default function Patients() {
   const allCount = patientCounts?.all || 0;
 
   const [lastRefresh, setLastRefresh] = useState(new Date());
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Patient[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  
-  // Payment filter state
-  const [paymentFilter, setPaymentFilter] = useState<"all" | "unpaid" | "paid">("all");
 
   useEffect(() => {
     const searchPatients = async () => {
@@ -489,6 +511,43 @@ export default function Patients() {
     window.location.href = path;
   };
 
+  // Export patients to CSV
+  const exportToCSV = () => {
+    const headers = ["Patient ID", "First Name", "Last Name", "Age", "Gender", "Phone Number", "Registered Date", "Consultation Status"];
+    const rows = patientsToDisplay.map((p: any) => [
+      p.patientId,
+      p.firstName,
+      p.lastName,
+      p.age || "",
+      p.gender || "",
+      p.phoneNumber || "",
+      formatClinicDay((p as any).clinicDay || p.createdAt),
+      (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0 
+        ? `Unpaid (${money(p.serviceStatus.balanceToday ?? p.serviceStatus.balance)})` 
+        : "Paid"
+    ]);
+    
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `patients_${dateFilter}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Export Successful",
+      description: `Exported ${patientsToDisplay.length} patients to CSV`,
+    });
+  };
+
   // Color generation for avatars
   function getAvatarColor(name: string): string {
     const colors = [
@@ -537,7 +596,25 @@ export default function Patients() {
               • Updated: {lastRefresh.toLocaleTimeString()}
             </span>
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex gap-2 flex-shrink-0">
+            {/* Export Button */}
+            <Button
+              onClick={exportToCSV}
+              variant="outline"
+              size="lg"
+              disabled={patientsToDisplay.length === 0}
+              className="hidden sm:flex items-center gap-2
+                         border-gray-300 dark:border-gray-600
+                         hover:bg-gray-50 dark:hover:bg-gray-800
+                         hover:border-gray-400 dark:hover:border-gray-500
+                         transition-all duration-200"
+              data-testid="button-export-csv"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </Button>
+            
+            {/* Register Button */}
             <Button
               onClick={handleNewPatient}
               size="lg"
@@ -747,38 +824,44 @@ export default function Patients() {
       {/* Date Range Filters - Modern Underline Design with Mobile Scroll */}
       <div className="space-y-3">
         {/* Search Bar - Prominent and Always Visible */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
-          <Input
-            type="text"
-            placeholder="Search by name, ID, or phone..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setShowSearch(e.target.value.trim().length > 0);
-            }}
-            className="pl-12 pr-4 h-12 text-base
-                       border-gray-300 dark:border-gray-600
-                       focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
-                       focus:border-blue-500 dark:focus:border-blue-400
-                       rounded-xl
-                       shadow-sm
-                       transition-all duration-200"
-            data-testid="input-search-main"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setShowSearch(false);
+        <div>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+            <Input
+              type="text"
+              placeholder="Search by name, ID, or phone..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSearch(e.target.value.trim().length > 0);
               }}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 
-                         text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
-                         transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+              className="pl-12 pr-4 h-12 text-base
+                         border-gray-300 dark:border-gray-600
+                         focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+                         focus:border-blue-500 dark:focus:border-blue-400
+                         rounded-xl
+                         shadow-sm
+                         transition-all duration-200"
+              data-testid="input-search-main"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowSearch(false);
+                }}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 
+                           text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+                           transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          {/* Keyboard shortcut hint */}
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 ml-1">
+            💡 Press <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 font-mono text-xs">/</kbd> to focus search, <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 font-mono text-xs">Esc</kbd> to clear
+          </div>
         </div>
 
         {/* Quick Filter Chips */}
