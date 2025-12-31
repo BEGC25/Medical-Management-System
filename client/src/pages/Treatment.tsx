@@ -154,6 +154,80 @@ const BODY_SYSTEMS = [
   { id: "skin", label: "Skin" },
 ];
 
+// Quick dosage presets for common medications
+const DOSAGE_PRESETS = [
+  "1 tablet once daily",
+  "1 tablet twice daily",
+  "1 tablet three times daily",
+  "2 tablets twice daily",
+  "1 tablet at bedtime",
+  "1 tablet every 8 hours",
+  "1 tablet every 6 hours",
+  "As needed for pain/fever",
+];
+
+// Duration presets
+const DURATION_PRESETS = [
+  "3 days",
+  "5 days",
+  "7 days",
+  "10 days",
+  "14 days",
+  "30 days",
+];
+
+// Common medications for South Sudan context
+const COMMON_MEDICATIONS = [
+  {
+    name: "Artemether-Lumefantrine (Coartem)",
+    category: "Antimalarial",
+    icon: "🦟",
+    defaultDosage: "4 tablets twice daily",
+    defaultDuration: "3 days",
+    defaultQuantity: 24,
+  },
+  {
+    name: "Amoxicillin",
+    category: "Antibiotic",
+    icon: "💊",
+    defaultDosage: "1 tablet three times daily",
+    defaultDuration: "7 days",
+    defaultQuantity: 21,
+  },
+  {
+    name: "Paracetamol",
+    category: "Pain/Fever",
+    icon: "🌡️",
+    defaultDosage: "1-2 tablets every 6 hours",
+    defaultDuration: "As needed",
+    defaultQuantity: 20,
+  },
+  {
+    name: "Metronidazole",
+    category: "Antibiotic",
+    icon: "💊",
+    defaultDosage: "1 tablet three times daily",
+    defaultDuration: "7 days",
+    defaultQuantity: 21,
+  },
+  {
+    name: "ORS (Oral Rehydration Salts)",
+    category: "Rehydration",
+    icon: "💧",
+    defaultDosage: "1 sachet after each loose stool",
+    defaultDuration: "As needed",
+    defaultQuantity: 10,
+  },
+  {
+    name: "Zinc Tablets",
+    category: "Supplement",
+    icon: "⚡",
+    defaultDosage: "1 tablet once daily",
+    defaultDuration: "10 days",
+    defaultQuantity: 10,
+  },
+];
+
 // Type for orders returned from /api/visits/:visitId/orders
 // These have additional properties beyond the base LabTest/XRay/Ultrasound types
 type VisitOrder = {
@@ -329,13 +403,14 @@ export default function Treatment() {
 
   // Medication ordering state
   const [medications, setMedications] = useState<
-    Array<{ drugId: number; drugName: string; dosage: string; quantity: number; instructions: string }>
+    Array<{ drugId: number; drugName: string; dosage: string; quantity: number; instructions: string; duration?: string }>
   >([]);
   const [selectedDrugId, setSelectedDrugId] = useState("");
   const [selectedDrugName, setSelectedDrugName] = useState("");
   const [newMedDosage, setNewMedDosage] = useState("");
-  const [newMedQuantity, setNewMedQuantity] = useState(0);
+  const [newMedQuantity, setNewMedQuantity] = useState(1); // Changed default from 0 to 1
   const [newMedInstructions, setNewMedInstructions] = useState("");
+  const [newMedDuration, setNewMedDuration] = useState(""); // New: duration field
 
   // Prescription editing
   const [editingPrescription, setEditingPrescription] = useState<PharmacyOrder | null>(null);
@@ -2643,9 +2718,134 @@ export default function Treatment() {
                           {/* ... Medications to Order list and Submit button ... */}
                            {prescriptions.length > 0 && ( <div className="mb-6"> <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4"> Prescribed Medications ({prescriptions.length}) </h3> <div className="space-y-2"> {prescriptions.map((rx) => ( <div key={rx.orderId} className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg" data-testid={`prescription-${rx.orderId}`}> <div className="flex items-start justify-between"> <div className="flex-1"> <div className="flex items-center gap-2 mb-2"> <p className="font-medium text-gray-900 dark:text-white">{rx.drugName || "Medication"}</p> <Badge variant={rx.status === "dispensed" ? "default" : "secondary"} className={rx.status === "dispensed" ? "bg-green-600" : ""}>{rx.status}</Badge> <Badge variant={rx.paymentStatus === "paid" ? "default" : "destructive"} className={rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"}>{rx.paymentStatus}</Badge> </div> <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {rx.dosage || "As prescribed"} | Quantity: {rx.quantity}</p> {rx.instructions && (<p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>)} <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Order ID: {rx.orderId} | Prescribed: {formatClinicDateTime(rx.createdAt)}</p> {rx.dispensedAt && (<p className="text-xs text-green-600 dark:text-green-400 mt-1">Dispensed: {formatClinicDateTime(rx.dispensedAt)} by {rx.dispensedBy}</p>)} </div> {rx.status === "prescribed" && rx.paymentStatus === "unpaid" && ( <div className="flex gap-2"> <Button type="button" variant="outline" size="sm" onClick={() => { setEditingPrescription(rx); setEditDosage(rx.dosage || ""); setEditQuantity(rx.quantity || 0); setEditInstructions(rx.instructions || ""); }} data-testid={`btn-edit-${rx.orderId}`}><Edit className="w-4 h-4 mr-1" />Edit</Button> <Button type="button" variant="destructive" size="sm" onClick={() => { if (window.confirm("Cancel this prescription?")) { cancelPrescriptionMutation.mutate(rx.orderId); } }} data-testid={`btn-cancel-${rx.orderId}`}><Trash2 className="w-4 h-4 mr-1" />Cancel</Button> </div> )} </div> </div> ))} </div> <div className="border-t pt-4 mt-4" /> </div> )}
                            <div className="flex items-center justify-between"> <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3> <p className="text-sm text-gray-600 dark:text-gray-400">Select drugs from inventory to create pharmacy orders</p> </div>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"> <div className="space-y-2"><label className="text-sm font-medium">Select Drug</label><Select value={selectedDrugId} onValueChange={(value) => { setSelectedDrugId(value); const drug = drugs.find((d) => d.id.toString() === value); if (drug) setSelectedDrugName(drug.genericName || drug.name); }}><SelectTrigger data-testid="select-drug"><SelectValue placeholder="Choose a medication..." /></SelectTrigger><SelectContent>{drugs.map((drug) => (<SelectItem key={drug.id} value={drug.id.toString()}>{drug.genericName || drug.name} - {drug.strength}</SelectItem>))}</SelectContent></Select></div> <div className="space-y-2"><label className="text-sm font-medium">Dosage Instructions</label><Input placeholder="e.g., 1 tablet twice daily" value={newMedDosage} onChange={(e) => setNewMedDosage(e.target.value)} data-testid="input-dosage" /></div> <div className="space-y-2"><label className="text-sm font-medium">Quantity</label><Input type="number" min="1" placeholder="e.g., 30" value={newMedQuantity} onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 0)} data-testid="input-quantity" /></div> <div className="space-y-2"><label className="text-sm font-medium">Additional Instructions</label><Input placeholder="e.g., Take with food" value={newMedInstructions} onChange={(e) => setNewMedInstructions(e.target.value)} data-testid="input-instructions" /></div> </div>
-                           <Button type="button" onClick={() => { if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) { toast({ title: "Validation Error", description: "Please fill in drug, dosage, and quantity", variant: "destructive", }); return; } setMedications([...medications, { drugId: parseInt(selectedDrugId), drugName: selectedDrugName, dosage: newMedDosage, quantity: newMedQuantity, instructions: newMedInstructions, },]); setSelectedDrugId(""); setSelectedDrugName(""); setNewMedDosage(""); setNewMedQuantity(0); setNewMedInstructions(""); toast({ title: "Added", description: "Medication added to order list" }); }} data-testid="btn-add-medication"><Plus className="w-4 h-4 mr-2" />Add to Order List</Button>
-                           {medications.length > 0 && ( <div className="space-y-2"> <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4> <div className="space-y-2">{medications.map((med, idx) => ( <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg"> <div className="flex-1"><p className="font-medium">{med.drugName}</p><p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {med.dosage} | Quantity: {med.quantity}</p>{med.instructions && (<p className="text-sm text-gray-500 dark:text-gray-500">Instructions: {med.instructions}</p>)}</div> <Button type="button" variant="ghost" size="sm" onClick={() => setMedications(medications.filter((_, i) => i !== idx))} data-testid={`btn-remove-med-${idx}`}><Trash2 className="w-4 h-4 text-red-600" /></Button> </div> ))}</div> <Button type="button" onClick={() => submitMedicationsMutation.mutate(medications)} disabled={submitMedicationsMutation.isPending} className="w-full bg-green-600 hover:bg-green-700" data-testid="btn-submit-medications"><Pill className="w-4 h-4 mr-2" />{submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}</Button> </div> )}
+                           
+                           {/* Allergy Warning */}
+                           {allergies.length > 0 && (
+                             <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded">
+                               <div className="flex items-start gap-2">
+                                 <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                                 <div>
+                                   <p className="font-semibold text-red-900 dark:text-red-100 text-sm">Patient has known allergies:</p>
+                                   <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                                     {allergies.map(a => a.name).join(", ")}
+                                   </p>
+                                 </div>
+                               </div>
+                             </div>
+                           )}
+                           
+                           {/* Common Medications Quick Cards */}
+                           <div>
+                             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Common Medications (Click to use)</h4>
+                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                               {COMMON_MEDICATIONS.map((med) => (
+                                 <button
+                                   key={med.name}
+                                   type="button"
+                                   onClick={() => {
+                                     setNewMedDosage(med.defaultDosage);
+                                     setNewMedDuration(med.defaultDuration);
+                                     setNewMedQuantity(med.defaultQuantity);
+                                     // Try to find matching drug in inventory
+                                     const matchingDrug = drugs.find(d => 
+                                       (d.genericName || d.name).toLowerCase().includes(med.name.split(' ')[0].toLowerCase())
+                                     );
+                                     if (matchingDrug) {
+                                       setSelectedDrugId(matchingDrug.id.toString());
+                                       setSelectedDrugName(matchingDrug.genericName || matchingDrug.name);
+                                     }
+                                     toast({ title: "Quick Prescription", description: `${med.name} template loaded. Adjust as needed.` });
+                                   }}
+                                   className="p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all text-left group"
+                                 >
+                                   <div className="text-2xl mb-1">{med.icon}</div>
+                                   <p className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-teal-700 dark:group-hover:text-teal-300">
+                                     {med.name.split(' ')[0]}
+                                   </p>
+                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{med.category}</p>
+                                 </button>
+                               ))}
+                             </div>
+                           </div>
+                           
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                             <div className="space-y-2">
+                               <label className="text-sm font-medium">Select Drug</label>
+                               <Select value={selectedDrugId} onValueChange={(value) => { setSelectedDrugId(value); const drug = drugs.find((d) => d.id.toString() === value); if (drug) setSelectedDrugName(drug.genericName || drug.name); }}>
+                                 <SelectTrigger data-testid="select-drug">
+                                   <SelectValue placeholder="Choose a medication..." />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   {drugs.map((drug) => (
+                                     <SelectItem key={drug.id} value={drug.id.toString()}>
+                                       {drug.genericName || drug.name} - {drug.strength}
+                                     </SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
+                             </div>
+                             
+                             <div className="space-y-2">
+                               <label className="text-sm font-medium">Dosage Instructions</label>
+                               <Select value={newMedDosage} onValueChange={setNewMedDosage}>
+                                 <SelectTrigger data-testid="select-dosage">
+                                   <SelectValue placeholder="Select or type dosage..." />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   {DOSAGE_PRESETS.map((preset) => (
+                                     <SelectItem key={preset} value={preset}>{preset}</SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
+                               <Input 
+                                 placeholder="Or type custom dosage..." 
+                                 value={newMedDosage} 
+                                 onChange={(e) => setNewMedDosage(e.target.value)} 
+                                 data-testid="input-dosage" 
+                                 className="mt-2"
+                               />
+                             </div>
+                             
+                             <div className="space-y-2">
+                               <label className="text-sm font-medium">Duration</label>
+                               <Select value={newMedDuration} onValueChange={setNewMedDuration}>
+                                 <SelectTrigger data-testid="select-duration">
+                                   <SelectValue placeholder="Select duration..." />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   {DURATION_PRESETS.map((preset) => (
+                                     <SelectItem key={preset} value={preset}>{preset}</SelectItem>
+                                   ))}
+                                   <SelectItem value="As needed">As needed</SelectItem>
+                                   <SelectItem value="Ongoing">Ongoing</SelectItem>
+                                 </SelectContent>
+                               </Select>
+                             </div>
+                             
+                             <div className="space-y-2">
+                               <label className="text-sm font-medium">Quantity</label>
+                               <Input 
+                                 type="number" 
+                                 min="1" 
+                                 placeholder="e.g., 30" 
+                                 value={newMedQuantity} 
+                                 onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 1)} 
+                                 data-testid="input-quantity" 
+                               />
+                             </div>
+                             
+                             <div className="space-y-2 md:col-span-2">
+                               <label className="text-sm font-medium">Additional Instructions</label>
+                               <Input 
+                                 placeholder="e.g., Take with food, avoid alcohol" 
+                                 value={newMedInstructions} 
+                                 onChange={(e) => setNewMedInstructions(e.target.value)} 
+                                 data-testid="input-instructions" 
+                               />
+                             </div>
+                           </div>
+                           <Button type="button" onClick={() => { if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) { toast({ title: "Validation Error", description: "Please fill in drug, dosage, and quantity", variant: "destructive", }); return; } setMedications([...medications, { drugId: parseInt(selectedDrugId), drugName: selectedDrugName, dosage: newMedDosage, quantity: newMedQuantity, instructions: newMedInstructions, duration: newMedDuration, },]); setSelectedDrugId(""); setSelectedDrugName(""); setNewMedDosage(""); setNewMedQuantity(1); setNewMedInstructions(""); setNewMedDuration(""); toast({ title: "Added", description: "Medication added to order list" }); }} data-testid="btn-add-medication"><Plus className="w-4 h-4 mr-2" />Add to Order List</Button>
+                           {medications.length > 0 && ( <div className="space-y-2"> <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4> <div className="space-y-2">{medications.map((med, idx) => ( <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg"> <div className="flex-1"><p className="font-medium">{med.drugName}</p><p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {med.dosage} | Quantity: {med.quantity}{med.duration ? ` | Duration: ${med.duration}` : ""}</p>{med.instructions && (<p className="text-sm text-gray-500 dark:text-gray-500">Instructions: {med.instructions}</p>)}</div> <Button type="button" variant="ghost" size="sm" onClick={() => setMedications(medications.filter((_, i) => i !== idx))} data-testid={`btn-remove-med-${idx}`}><Trash2 className="w-4 h-4 text-red-600" /></Button> </div> ))}</div> <Button type="button" onClick={() => submitMedicationsMutation.mutate(medications)} disabled={submitMedicationsMutation.isPending} className="w-full bg-green-600 hover:bg-green-700" data-testid="btn-submit-medications"><Pill className="w-4 h-4 mr-2" />{submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}</Button> </div> )}
                         </div>
                       </CardContent>
                     </Card>
@@ -2750,7 +2950,7 @@ export default function Treatment() {
               {/* === RIGHT "CONTEXT" RAIL === */}
               <div className="space-y-4">
                 {/* Vitals Card */}
-                <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-5 w-5" />Vitals (Today)</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-3 text-sm"><div><div className="text-muted-foreground">Temp</div><div className="font-medium">{watchedVitals[0] ? `${watchedVitals[0]} °C` : "—"}</div></div><div><div className="text-muted-foreground">BP</div><div className="font-medium">{watchedVitals[1] || "—"}</div></div><div><div className="text-muted-foreground">Heart Rate</div><div className="font-medium">{watchedVitals[2] ? `${watchedVitals[2]} bpm` : "—"}</div></div><div><div className="text-muted-foreground">Weight</div><div className="font-medium">{watchedVitals[3] ? `${watchedVitals[3]} kg` : "—"}</div></div></div></CardContent></Card>
+                <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-5 w-5" />Vitals (Today)</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-3 text-sm"><div><div className="text-muted-foreground">Temp</div><div className="font-medium">{watchedVitals[0] ? `${watchedVitals[0]} °C` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">BP</div><div className="font-medium">{watchedVitals[1] || <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">Heart Rate</div><div className="font-medium">{watchedVitals[2] ? `${watchedVitals[2]} bpm` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">Weight</div><div className="font-medium">{watchedVitals[3] ? `${watchedVitals[3]} kg` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div></div></CardContent></Card>
                 {/* Alerts Card */}
                 <Card className="border-red-500/50">
                   <CardHeader>

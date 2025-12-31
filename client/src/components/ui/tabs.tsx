@@ -27,7 +27,13 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+      // Inactive state: white background, muted gray text
+      "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400",
+      // Active state: teal background, teal bottom border, darker text
+      "data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-900/20 data-[state=active]:text-teal-900 dark:data-[state=active]:text-teal-100 data-[state=active]:border-b-[3px] data-[state=active]:border-teal-500 dark:data-[state=active]:border-teal-400 data-[state=active]:shadow-sm",
+      // Hover state for inactive tabs
+      "hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200",
       className
     )}
     {...props}
