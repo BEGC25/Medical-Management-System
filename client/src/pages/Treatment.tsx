@@ -483,6 +483,9 @@ export default function Treatment() {
   const [useStructuredExam, setUseStructuredExam] = useState(false);
   const [structuredExamFindings, setStructuredExamFindings] = useState<Record<string, string>>({});
 
+  // Patient History - expandable visits
+  const [expandedVisits, setExpandedVisits] = useState<Set<string>>(new Set());
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1797,22 +1800,22 @@ export default function Treatment() {
               {/* === LEFT "ACTION" COLUMN === */}
               <div className="space-y-4">
                 <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-                    <TabsTrigger value="notes">
+                  <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-lg">
+                    <TabsTrigger value="notes" className="transition-all duration-200">
                       <FileText className="h-4 w-4 mr-2" />
                       Visit Notes
                     </TabsTrigger>
-                    <TabsTrigger value="orders">
+                    <TabsTrigger value="orders" className="transition-all duration-200">
                       <FileText className="h-4 w-4 mr-2" />
                       Orders & Results
-                      {diagnosticTestCount > 0 && <Badge className="ml-2">{diagnosticTestCount}</Badge>}
+                      {diagnosticTestCount > 0 && <Badge className="ml-2 transition-all duration-200 animate-in fade-in">{diagnosticTestCount}</Badge>}
                     </TabsTrigger>
-                    <TabsTrigger value="medications">
+                    <TabsTrigger value="medications" className="transition-all duration-200">
                       <Pill className="h-4 w-4 mr-2" />
                       Medications
-                      {prescriptions.length > 0 && <Badge className="ml-2">{prescriptions.length}</Badge>}
+                      {prescriptions.length > 0 && <Badge className="ml-2 transition-all duration-200 animate-in fade-in">{prescriptions.length}</Badge>}
                     </TabsTrigger>
-                    <TabsTrigger value="history">
+                    <TabsTrigger value="history" className="transition-all duration-200">
                       <History className="h-4 w-4 mr-2" />
                       Patient History
                     </TabsTrigger>
@@ -2855,10 +2858,18 @@ export default function Treatment() {
                   {/* === TAB 4: PATIENT HISTORY === */}
                   <TabsContent value="history">
                      <Card>
-                       <CardHeader><CardTitle>Patient History</CardTitle></CardHeader>
+                       <CardHeader>
+                         <div className="flex items-center justify-between">
+                           <CardTitle>Patient History</CardTitle>
+                           {recentTreatments.length > 0 && (
+                             <Badge variant="secondary" className="bg-blue-600 text-white px-3 py-1">
+                               {recentTreatments.filter(tx => tx.encounterId !== currentEncounter?.encounterId).length} Previous Visits
+                             </Badge>
+                           )}
+                         </div>
+                       </CardHeader>
                        <CardContent>
                          <p className="text-sm text-muted-foreground mb-4">Past visit history for this patient. Current visit is not shown here.</p>
-                         <h4 className="font-semibold mb-2">Previous Visits</h4>
                          {/* Filter out current encounter to avoid duplication */}
                          {(() => {
                            const pastVisits = recentTreatments.filter(tx => 
@@ -2866,72 +2877,170 @@ export default function Treatment() {
                            );
                            return pastVisits.length > 0 ? (
                            <div className="space-y-3">
-                             {pastVisits.map((tx) => (
-                               <div 
-                                 key={tx.treatmentId} 
-                                 className="p-4 border rounded-lg bg-gradient-to-r from-blue-50/50 to-white dark:from-gray-800 dark:to-gray-900 hover:shadow-lg transition-all border-blue-200 dark:border-blue-800"
-                                 data-testid={`history-visit-${tx.treatmentId}`}
-                               >
-                                 <div className="flex justify-between items-start gap-3 mb-3">
-                                   <div className="flex-1">
-                                     <div className="flex items-center gap-2 mb-2">
-                                       <span className="font-bold text-gray-900 dark:text-white text-base">
-                                         {formatClinicDayKey(tx.visitDate, 'EEE, d MMM yyyy')}
-                                       </span>
-                                       <Badge variant="outline" className="capitalize font-semibold">{tx.visitType}</Badge>
-                                       <Badge className="bg-blue-600 text-white text-xs font-mono">{tx.treatmentId}</Badge>
-                                     </div>
-                                     <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
-                                       <span className="font-semibold">Diagnosis:</span> {tx.diagnosis || "Not recorded"}
-                                     </p>
-                                     {tx.chiefComplaint && (
-                                       <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                                         <span className="font-medium">Complaint:</span> {tx.chiefComplaint}
+                             {pastVisits.map((tx) => {
+                               const isExpanded = expandedVisits.has(tx.treatmentId.toString());
+                               // Color-code by visit type
+                               const visitTypeColors: Record<string, { bg: string; border: string; badge: string }> = {
+                                 consultation: { bg: 'from-blue-50/50 to-white dark:from-gray-800 dark:to-gray-900', border: 'border-blue-200 dark:border-blue-800', badge: 'bg-blue-600' },
+                                 emergency: { bg: 'from-red-50/50 to-white dark:from-gray-800 dark:to-gray-900', border: 'border-red-200 dark:border-red-800', badge: 'bg-red-600' },
+                                 followup: { bg: 'from-green-50/50 to-white dark:from-gray-800 dark:to-gray-900', border: 'border-green-200 dark:border-green-800', badge: 'bg-green-600' },
+                               };
+                               const colors = visitTypeColors[tx.visitType] || visitTypeColors.consultation;
+                               
+                               return (
+                                 <div 
+                                   key={tx.treatmentId} 
+                                   className={`p-4 border rounded-lg bg-gradient-to-r ${colors.bg} hover:shadow-lg transition-all ${colors.border} cursor-pointer`}
+                                   data-testid={`history-visit-${tx.treatmentId}`}
+                                   onClick={() => {
+                                     const newExpanded = new Set(expandedVisits);
+                                     if (isExpanded) {
+                                       newExpanded.delete(tx.treatmentId.toString());
+                                     } else {
+                                       newExpanded.add(tx.treatmentId.toString());
+                                     }
+                                     setExpandedVisits(newExpanded);
+                                   }}
+                                 >
+                                   <div className="flex justify-between items-start gap-3 mb-3">
+                                     <div className="flex-1">
+                                       <div className="flex items-center gap-2 mb-2">
+                                         <span className="font-bold text-gray-900 dark:text-white text-base">
+                                           {formatClinicDayKey(tx.visitDate, 'EEE, d MMM yyyy')}
+                                         </span>
+                                         <Badge variant="outline" className={`capitalize font-semibold ${colors.badge} text-white border-none`}>
+                                           {tx.visitType}
+                                         </Badge>
+                                         <Badge className="bg-gray-600 text-white text-xs font-mono">{tx.treatmentId}</Badge>
+                                         <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                       </div>
+                                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                                         <span className="font-semibold">Diagnosis:</span> {tx.diagnosis || "Not recorded"}
                                        </p>
+                                       {tx.chiefComplaint && (
+                                         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                                           <span className="font-medium">Complaint:</span> {tx.chiefComplaint}
+                                         </p>
+                                       )}
+                                     </div>
+                                     <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                                       {tx.encounterId && (
+                                         <DischargeSummary 
+                                           encounterId={tx.encounterId} 
+                                           patientId={selectedPatient?.patientId || ""} 
+                                         />
+                                       )}
+                                       {!tx.encounterId && (
+                                         <span className="text-xs text-gray-400 italic">No encounter linked</span>
+                                       )}
+                                     </div>
+                                   </div>
+                                   
+                                   {/* Quick Stats - Always Visible */}
+                                   <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                     {tx.temperature && (
+                                       <span className="flex items-center gap-1">
+                                         <span>🌡️</span>
+                                         <span className="font-medium">{tx.temperature}°C</span>
+                                       </span>
+                                     )}
+                                     {tx.bloodPressure && (
+                                       <span className="flex items-center gap-1">
+                                         <span>💓</span>
+                                         <span className="font-medium">{tx.bloodPressure}</span>
+                                       </span>
+                                     )}
+                                     {tx.weight && (
+                                       <span className="flex items-center gap-1">
+                                         <span>⚖️</span>
+                                         <span className="font-medium">{tx.weight} kg</span>
+                                       </span>
+                                     )}
+                                     {tx.heartRate && (
+                                       <span className="flex items-center gap-1">
+                                         <span>❤️</span>
+                                         <span className="font-medium">{tx.heartRate} bpm</span>
+                                       </span>
+                                     )}
+                                     {tx.followUpDate && (
+                                       <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-medium">
+                                         <span>⏰</span>
+                                         <span>Follow-up: {new Date(tx.followUpDate).toLocaleDateString()}</span>
+                                       </span>
                                      )}
                                    </div>
-                                   <div className="flex flex-col gap-2">
-                                     {tx.encounterId && (
-                                       <DischargeSummary 
-                                         encounterId={tx.encounterId} 
-                                         patientId={selectedPatient?.patientId || ""} 
-                                       />
-                                     )}
-                                     {!tx.encounterId && (
-                                       <span className="text-xs text-gray-400 italic">No encounter linked</span>
-                                     )}
-                                   </div>
+                                   
+                                   {/* Expanded Details */}
+                                   {isExpanded && (
+                                     <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                       {/* Full Examination */}
+                                       {tx.examination && (
+                                         <div>
+                                           <h5 className="font-semibold text-sm text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                             <Stethoscope className="h-4 w-4" />
+                                             Examination
+                                           </h5>
+                                           <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                                             {tx.examination}
+                                           </p>
+                                         </div>
+                                       )}
+                                       
+                                       {/* Treatment Plan */}
+                                       {tx.treatmentPlan && (
+                                         <div>
+                                           <h5 className="font-semibold text-sm text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                             <ClipboardList className="h-4 w-4" />
+                                             Treatment Plan
+                                           </h5>
+                                           <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                                             {tx.treatmentPlan}
+                                           </p>
+                                         </div>
+                                       )}
+                                       
+                                       {/* Medications Prescribed (if available) */}
+                                       <div>
+                                         <h5 className="font-semibold text-sm text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                           <Pill className="h-4 w-4" />
+                                           Medications Prescribed
+                                         </h5>
+                                         {allPrescriptions.filter(rx => rx.encounterId === tx.encounterId).length > 0 ? (
+                                           <div className="space-y-2">
+                                             {allPrescriptions
+                                               .filter(rx => rx.encounterId === tx.encounterId)
+                                               .map(rx => (
+                                                 <div key={rx.orderId} className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                                                   <p className="font-medium text-gray-900 dark:text-white">
+                                                     {rx.drugName || "Medication"}
+                                                   </p>
+                                                   <p className="text-gray-600 dark:text-gray-400 text-xs">
+                                                     {rx.dosage} • Qty: {rx.quantity}
+                                                     {rx.instructions && ` • ${rx.instructions}`}
+                                                   </p>
+                                                 </div>
+                                               ))}
+                                           </div>
+                                         ) : (
+                                           <p className="text-sm text-gray-500 italic">No medications prescribed</p>
+                                         )}
+                                       </div>
+                                       
+                                       {/* Lab/Imaging Results Summary (placeholder - would need to fetch) */}
+                                       <div>
+                                         <h5 className="font-semibold text-sm text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                           <Beaker className="h-4 w-4" />
+                                           Diagnostic Tests
+                                         </h5>
+                                         <p className="text-sm text-gray-500 italic">
+                                           View full test results in discharge summary
+                                         </p>
+                                       </div>
+                                     </div>
+                                   )}
                                  </div>
-                                 
-                                 {/* Quick Stats */}
-                                 <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                   {tx.temperature && (
-                                     <span className="flex items-center gap-1">
-                                       <span>🌡️</span>
-                                       <span className="font-medium">{tx.temperature}°C</span>
-                                     </span>
-                                   )}
-                                   {tx.bloodPressure && (
-                                     <span className="flex items-center gap-1">
-                                       <span>💓</span>
-                                       <span className="font-medium">{tx.bloodPressure}</span>
-                                     </span>
-                                   )}
-                                   {tx.weight && (
-                                     <span className="flex items-center gap-1">
-                                       <span>⚖️</span>
-                                       <span className="font-medium">{tx.weight} kg</span>
-                                     </span>
-                                   )}
-                                   {tx.followUpDate && (
-                                     <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-medium">
-                                       <span>⏰</span>
-                                       <span>Follow-up: {new Date(tx.followUpDate).toLocaleDateString()}</span>
-                                     </span>
-                                   )}
-                                 </div>
-                               </div>
-                             ))}
+                               );
+                             })}
                            </div>
                          ) : (
                            <div className="text-center py-8 text-gray-500">
