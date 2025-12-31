@@ -775,88 +775,82 @@ export default function Laboratory() {
     ) : null;
 
 return (
-    <div className="space-y-4">
-      {/* Page Header - Premium Card Container */}
-      <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-        <CardContent className="p-3">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-violet-500 to-purple-500 bg-clip-text text-transparent">
-                Laboratory Department
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">Clinical laboratory testing and diagnostics</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 pt-3 pb-6">
+      <div className="max-w-7xl mx-auto space-y-3">
+        {/* Premium Header - Matching Ultrasound/X-Ray Pattern */}
+        <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)]">
+          <CardContent className="p-6">
+            {/* Top Section: Title + CTA */}
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <TestTube className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    Laboratory Department
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Clinical laboratory testing and diagnostics
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                onClick={() => setRequestOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-violet-500 hover:shadow-lg hover:shadow-purple-500/40 transition-all duration-300"
+                data-testid="button-new-lab-request"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Request
+              </Button>
             </div>
-            <Button
-              type="button"
-              onClick={() => setRequestOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-violet-500 hover:shadow-[0_4px_20px_rgba(139,92,246,0.4)] text-white font-semibold transition-all duration-300 ease-out"
-              data-testid="button-new-lab-request"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Lab Request
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Statistics - Premium */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Pending</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-pending">{pendingTests.length}</p>
+            {/* Compact Stats Bar (Like Patient Page) */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white/50 dark:bg-gray-800/50 py-2.5 px-4">
+              {/* Pending */}
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                <span className="text-gray-600 dark:text-gray-400">Pending:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-pending">{pendingTests.length}</span>
               </div>
-              <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              
+              {/* Divider */}
+              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
+              
+              {/* Completed */}
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-gray-600 dark:text-gray-400">Completed:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-completed">{completedTests.length}</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Completed</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-completed">{completedTests.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Total Exams</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-total">{allLabTests.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <TestTube className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              
+              {/* Divider */}
+              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
+              
+              {/* Total */}
+              <div className="flex items-center gap-2">
+                <TestTube className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span className="text-gray-600 dark:text-gray-400">Total Tests:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-total">{allLabTests.length}</span>
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* LEFT – Pending Test Requests (Always Visible) */}
 
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 overflow-hidden">
-          <CardContent className="p-4">
-            {/* Section Header with Icon */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-              </div>
-              <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-                Pending Test Requests
-              </h2>
-            </div>
-            {/* Date Filter and Search Controls */}
+        <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)] border-0 overflow-hidden">
+          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              </div>
+              Pending Test Requests
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
             <div className="mb-4 space-y-3">
               <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
                 <button
@@ -959,7 +953,7 @@ return (
                       key={test.testId}
                       data-testid={`card-pending-test-${test.testId}`}
                       className={cx(
-                        "rounded-xl p-3 border-l-4 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer",
+                        "rounded-xl p-3 border-l-4 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer",
                         !isPaid ? "bg-red-50 dark:bg-red-900/20 border-red-500" : "bg-white dark:bg-gray-800 border-orange-500",
                         !canPerform && "opacity-75"
                       )}
@@ -1002,38 +996,41 @@ return (
                 })
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
-                    <Clock className="w-7 h-7 text-orange-500 dark:text-orange-400" />
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
+                      <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border-2 border-green-500">
+                      <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                    </div>
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
-                      : "No pending tests"}
+                      : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select start and end dates above to view tests"
-                      : "All caught up! Click \"New Lab Request\" to create one."}
+                      : 'No pending tests at the moment. Click "New Request" to create one.'}
                   </p>
                 </div>
-              )}
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* RIGHT – Completed Tests */}
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 overflow-hidden">
-          <CardContent className="p-4">
-            {/* Section Header with Icon */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-              </div>
-              <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-                Completed Tests
-              </h2>
-            </div>
-            {/* Same filter controls for completed tests */}
+        <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)] border-0 overflow-hidden">
+          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+              </div>
+              Completed Tests
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
             <div className="mb-4 space-y-3">
               <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700">
                 <button
@@ -1126,7 +1123,7 @@ return (
                     <div
                       key={test.testId}
                       data-testid={`card-completed-test-${test.testId}`}
-                      className="bg-white dark:bg-gray-800 rounded-xl p-3 border-l-4 border-green-500 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group"
+                      className="bg-white dark:bg-gray-800 rounded-xl p-3 border-l-4 border-green-500 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group"
                       onClick={() => handleLabTestSelect(test)}
                     >
                       <div className="flex items-center justify-between">
@@ -1153,21 +1150,23 @@ return (
                 })
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
-                    <Check className="w-7 h-7 text-green-500 dark:text-green-400" />
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 flex items-center justify-center shadow-lg">
+                      <Check className="w-10 h-10 text-green-600 dark:text-green-400" />
+                    </div>
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "No completed tests"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select start and end dates above to view tests"
-                      : "Completed tests will appear here."}
+                      : "Completed tests will appear here once lab work is finished."}
                   </p>
                 </div>
-              )}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -2227,6 +2226,7 @@ return (
           </div>
         </div>
         )}
-    </div>
+      </div>
+    </div>
   );
 }
