@@ -2832,7 +2832,10 @@ export default function Treatment() {
                                  min="1" 
                                  placeholder="e.g., 30" 
                                  value={newMedQuantity} 
-                                 onChange={(e) => setNewMedQuantity(parseInt(e.target.value) || 1)} 
+                                 onChange={(e) => {
+                                   const val = parseInt(e.target.value);
+                                   setNewMedQuantity(isNaN(val) ? 1 : Math.max(1, val));
+                                 }} 
                                  data-testid="input-quantity" 
                                />
                              </div>
