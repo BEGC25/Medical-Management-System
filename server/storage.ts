@@ -190,6 +190,7 @@ export interface IStorage {
   getXrayExams(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
   getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]>;
   updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam>;
+  deleteXrayExam(examId: string): Promise<boolean>;
 
   // Ultrasound Exams
   createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam>;
@@ -967,6 +968,14 @@ export class MemStorage implements IStorage {
       .returning();
 
     return xrayExam;
+  }
+
+  async deleteXrayExam(examId: string): Promise<boolean> {
+    const result = await db.delete(xrayExams)
+      .where(eq(xrayExams.examId, examId))
+      .returning();
+
+    return result.length > 0;
   }
 
   // Ultrasound Exams
