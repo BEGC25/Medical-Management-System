@@ -100,8 +100,6 @@ function getOrderIcon(type: string) {
       return <Activity className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
   }
 }
-  }
-}
 
 // Common chief complaints in South Sudan
 const COMMON_COMPLAINTS = [
