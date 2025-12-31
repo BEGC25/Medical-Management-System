@@ -566,17 +566,14 @@ export default function Patients() {
     });
   };
 
-  // Color generation for avatars
+  // Color generation for avatars - Premium palette with softer, varied colors
   function getAvatarColor(name: string): string {
     const colors = [
-      "bg-blue-500",
-      "bg-green-500",
-      "bg-purple-500",
-      "bg-pink-500",
-      "bg-orange-500",
-      "bg-teal-500",
-      "bg-indigo-500",
-      "bg-rose-500",
+      "bg-indigo-500",  // Soft purple-blue
+      "bg-teal-500",    // Sophisticated teal
+      "bg-pink-500",    // Soft pink
+      "bg-orange-500",  // Warm orange
+      "bg-blue-500",    // Classic blue
     ];
     const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[hash % colors.length];
@@ -600,9 +597,7 @@ export default function Patients() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
           <div className="flex-1">
             <h1 className="text-2xl font-bold 
-                           bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 
-                           dark:from-blue-400 dark:via-blue-300 dark:to-cyan-300
-                           bg-clip-text text-transparent
+                           text-slate-800 dark:text-gray-100
                            mb-1">
               Patient Management
             </h1>
