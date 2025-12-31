@@ -1061,6 +1061,19 @@ router.put("/api/xray-exams/:examId", async (req, res) => {
   }
 });
 
+router.delete("/api/xray-exams/:examId", async (req, res) => {
+  try {
+    const success = await storage.deleteXrayExam(req.params.examId);
+    if (success) {
+      res.json({ message: "X-ray exam deleted successfully" });
+    } else {
+      res.status(404).json({ error: "X-ray exam not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete X-ray exam" });
+  }
+});
+
 /* ------------------------------ Ultrasound Exams --------------------------- */
 
 router.get("/api/ultrasound-exams", async (req, res) => {

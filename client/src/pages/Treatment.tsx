@@ -364,6 +364,25 @@ export default function Treatment() {
   const [editLabPriority, setEditLabPriority] = useState<"routine" | "urgent" | "stat">("routine");
   const [editLabClinicalInfo, setEditLabClinicalInfo] = useState("");
 
+  // X-Ray ordering state
+  const [xrayClinicalInfo, setXrayClinicalInfo] = useState("");
+  const [editXrayModalOpen, setEditXrayModalOpen] = useState(false);
+  const [xrayToEdit, setXrayToEdit] = useState<any>(null);
+  const [editXrayClinicalInfo, setEditXrayClinicalInfo] = useState("");
+
+  // Ultrasound ordering state
+  const [ultrasoundClinicalInfo, setUltrasoundClinicalInfo] = useState("");
+  const [editUltrasoundModalOpen, setEditUltrasoundModalOpen] = useState(false);
+  const [ultrasoundToEdit, setUltrasoundToEdit] = useState<any>(null);
+  const [editUltrasoundClinicalInfo, setEditUltrasoundClinicalInfo] = useState("");
+
+  // Allergies state
+  const [allergies, setAllergies] = useState<Array<{ id: string; name: string; severity: string; reaction: string }>>([]);
+  const [showAllergyModal, setShowAllergyModal] = useState(false);
+  const [newAllergyName, setNewAllergyName] = useState("");
+  const [newAllergySeverity, setNewAllergySeverity] = useState<"Mild" | "Moderate" | "Severe">("Mild");
+  const [newAllergyReaction, setNewAllergyReaction] = useState("");
+
   // NEW: Structured exam toggle state
   const [useStructuredExam, setUseStructuredExam] = useState(false);
   const [structuredExamFindings, setStructuredExamFindings] = useState<Record<string, string>>({});
@@ -823,6 +842,99 @@ export default function Treatment() {
     );
   };
 
+  // Order X-Ray mutation (creates exam record + order line)
+  const orderXrayMutation = useMutation({
+    mutationFn: async ({ service, bodyPart }: { service: Service; bodyPart: string }) => {
+      if (!selectedPatient) throw new Error("No patient selected");
+      if (!currentEncounter) throw new Error("No active encounter");
+
+      // 1. Create X-ray exam record with clinical notes
+      const xrayData = {
+        patientId: selectedPatient.patientId,
+        examType: service.category || 'general',
+        bodyPart: bodyPart || service.name,
+        clinicalIndication: xrayClinicalInfo,
+        requestedDate: formatDateInZone(getZonedNow()),
+      };
+
+      const xrayRes = await apiRequest("POST", "/api/xray-exams", xrayData);
+      const createdXray = await xrayRes.json();
+
+      // 2. Create corresponding order_line
+      const orderLineData = {
+        encounterId: currentEncounter.encounterId,
+        serviceId: service.id,
+        relatedType: "xray",
+        relatedId: createdXray.examId,
+        description: `X-Ray: ${bodyPart || service.name}`,
+        quantity: 1,
+        unitPriceSnapshot: service.price || 0,
+        totalPrice: service.price || 0,
+        department: "radiology",
+        orderedBy: "Dr. System",
+      };
+
+      await apiRequest("POST", "/api/order-lines", orderLineData);
+
+      return createdXray;
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "X-Ray exam ordered successfully" });
+      setXrayClinicalInfo("");
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to order X-Ray exam", variant: "destructive" });
+    },
+  });
+
+  // Order Ultrasound mutation (creates exam record + order line)
+  const orderUltrasoundMutation = useMutation({
+    mutationFn: async ({ service, examType }: { service: Service; examType: string }) => {
+      if (!selectedPatient) throw new Error("No patient selected");
+      if (!currentEncounter) throw new Error("No active encounter");
+
+      // 1. Create ultrasound exam record with clinical notes
+      const ultrasoundData = {
+        patientId: selectedPatient.patientId,
+        examType: examType || service.name,
+        clinicalIndication: ultrasoundClinicalInfo,
+        requestedDate: formatDateInZone(getZonedNow()),
+      };
+
+      const ultrasoundRes = await apiRequest("POST", "/api/ultrasound-exams", ultrasoundData);
+      const createdUltrasound = await ultrasoundRes.json();
+
+      // 2. Create corresponding order_line
+      const orderLineData = {
+        encounterId: currentEncounter.encounterId,
+        serviceId: service.id,
+        relatedType: "ultrasound",
+        relatedId: createdUltrasound.examId,
+        description: `Ultrasound: ${examType || service.name}`,
+        quantity: 1,
+        unitPriceSnapshot: service.price || 0,
+        totalPrice: service.price || 0,
+        department: "ultrasound",
+        orderedBy: "Dr. System",
+      };
+
+      await apiRequest("POST", "/api/order-lines", orderLineData);
+
+      return createdUltrasound;
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Ultrasound exam ordered successfully" });
+      setUltrasoundClinicalInfo("");
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to order Ultrasound exam", variant: "destructive" });
+    },
+  });
+
   // Delete lab test mutation
   const deleteLabTestMutation = useMutation({
     mutationFn: async (testId: string) => {
@@ -917,6 +1029,132 @@ export default function Treatment() {
       tests: JSON.stringify(editLabTests),
       priority: editLabPriority,
       clinicalInfo: editLabClinicalInfo,
+    });
+  };
+
+  // X-Ray mutations
+  const deleteXrayMutation = useMutation({
+    mutationFn: async (examId: string) => {
+      const response = await apiRequest("DELETE", `/api/xray-exams/${examId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "X-Ray exam cancelled successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel X-Ray exam",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const editXrayMutation = useMutation({
+    mutationFn: async ({ examId, clinicalIndication }: { examId: string; clinicalIndication: string }) => {
+      const response = await apiRequest("PUT", `/api/xray-exams/${examId}`, {
+        clinicalIndication,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "X-Ray exam updated successfully" });
+      setEditXrayModalOpen(false);
+      setXrayToEdit(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update X-Ray exam",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditXray = (xray: any) => {
+    setXrayToEdit(xray);
+    setEditXrayClinicalInfo(xray.clinicalIndication || "");
+    setEditXrayModalOpen(true);
+  };
+
+  const handleDeleteXray = (examId: string) => {
+    if (confirm("Are you sure you want to cancel this X-Ray exam request?")) {
+      deleteXrayMutation.mutate(examId);
+    }
+  };
+
+  const handleSaveXrayEdit = () => {
+    if (!xrayToEdit) return;
+    editXrayMutation.mutate({
+      examId: xrayToEdit.examId || xrayToEdit.orderId,
+      clinicalIndication: editXrayClinicalInfo,
+    });
+  };
+
+  // Ultrasound mutations
+  const deleteUltrasoundMutation = useMutation({
+    mutationFn: async (examId: string) => {
+      const response = await apiRequest("DELETE", `/api/ultrasound-exams/${examId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Ultrasound exam cancelled successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel Ultrasound exam",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const editUltrasoundMutation = useMutation({
+    mutationFn: async ({ examId, clinicalIndication }: { examId: string; clinicalIndication: string }) => {
+      const response = await apiRequest("PUT", `/api/ultrasound-exams/${examId}`, {
+        clinicalIndication,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Ultrasound exam updated successfully" });
+      setEditUltrasoundModalOpen(false);
+      setUltrasoundToEdit(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update Ultrasound exam",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditUltrasound = (ultrasound: any) => {
+    setUltrasoundToEdit(ultrasound);
+    setEditUltrasoundClinicalInfo(ultrasound.clinicalIndication || "");
+    setEditUltrasoundModalOpen(true);
+  };
+
+  const handleDeleteUltrasound = (examId: string) => {
+    if (confirm("Are you sure you want to cancel this Ultrasound exam request?")) {
+      deleteUltrasoundMutation.mutate(examId);
+    }
+  };
+
+  const handleSaveUltrasoundEdit = () => {
+    if (!ultrasoundToEdit) return;
+    editUltrasoundMutation.mutate({
+      examId: ultrasoundToEdit.examId || ultrasoundToEdit.orderId,
+      clinicalIndication: editUltrasoundClinicalInfo,
     });
   };
 
@@ -1844,23 +2082,95 @@ export default function Treatment() {
                                     </Button>
                                   </div>
                                 ) : (
-                                  /* Other Services: Grid layout */
+                                  /* Other Services: X-Ray, Ultrasound with Clinical Notes */
                                   (() => {
-                                    const rows = (qoTab === 'pharmacy' ? drugs : services)
-                                    .filter((s: any) => {
-                                      if (qoTab === 'pharmacy') return true;
-                                      return matchesCategory(s, qoTab as any);
-                                    })
-                                    .filter((s: any) => {
-                                      if (!qoSearch) return true;
-                                      const needle = qoSearch.toLowerCase();
-                                      const name = s.name || s.genericName || "";
+                                    // X-Ray or Ultrasound - show clinical notes field
+                                    if (qoTab === 'xray' || qoTab === 'ultrasound') {
+                                      const rows = services
+                                        .filter((s: any) => matchesCategory(s, qoTab as any))
+                                        .filter((s: any) => {
+                                          if (!qoSearch) return true;
+                                          const needle = qoSearch.toLowerCase();
+                                          return (
+                                            (s.name || "").toLowerCase().includes(needle) ||
+                                            (s.description ?? "").toLowerCase().includes(needle)
+                                          );
+                                        })
+                                        .slice(0, 50);
+
+                                      if (rows.length === 0) {
+                                        return <div className="text-sm text-muted-foreground p-4 text-center">No matching services found.</div>;
+                                      }
+
                                       return (
-                                        (name).toLowerCase().includes(needle) ||
-                                        (s.description ?? "").toLowerCase().includes(needle)
+                                        <div className="space-y-4">
+                                          {/* Clinical Notes Field */}
+                                          <div className="space-y-2">
+                                            <label className="text-sm font-medium">Clinical Information</label>
+                                            <Textarea
+                                              placeholder="Clinical indication, suspected diagnosis, relevant history..."
+                                              rows={3}
+                                              value={qoTab === 'xray' ? xrayClinicalInfo : ultrasoundClinicalInfo}
+                                              onChange={(e) => qoTab === 'xray' ? setXrayClinicalInfo(e.target.value) : setUltrasoundClinicalInfo(e.target.value)}
+                                              data-testid={`textarea-${qoTab}-clinical-info`}
+                                            />
+                                          </div>
+
+                                          {/* Services Grid */}
+                                          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                            {rows.map((svc: any) => {
+                                              const displayFee = typeof svc.price === 'number' ? svc.price.toLocaleString('en-US') : null;
+                                              return (
+                                                <div key={svc.id} className="flex flex-col rounded border p-3 bg-white space-y-2">
+                                                  <div className="font-medium">{svc.name}</div>
+                                                  {svc.description && (
+                                                    <div className="text-xs text-gray-600">{svc.description}</div>
+                                                  )}
+                                                  {displayFee && (
+                                                    <div className="text-xs font-semibold text-gray-700">Fee: {displayFee} SSP</div>
+                                                  )}
+                                                  <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                      if (qoTab === 'xray') {
+                                                        orderXrayMutation.mutate({ service: svc, bodyPart: svc.name });
+                                                      } else if (qoTab === 'ultrasound') {
+                                                        orderUltrasoundMutation.mutate({ service: svc, examType: svc.name });
+                                                      }
+                                                    }}
+                                                    disabled={(qoTab === 'xray' && orderXrayMutation.isPending) || (qoTab === 'ultrasound' && orderUltrasoundMutation.isPending)}
+                                                    className="mt-auto"
+                                                  >
+                                                    {((qoTab === 'xray' && orderXrayMutation.isPending) || (qoTab === 'ultrasound' && orderUltrasoundMutation.isPending)) ?
+                                                      <Loader2 className="h-4 w-4 animate-spin"/> :
+                                                      <Plus className="h-4 w-4 mr-1"/>
+                                                    }
+                                                    Add
+                                                  </Button>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
                                       );
-                                    })
-                                    .slice(0, 50);
+                                    }
+
+                                    // Other services (consult, pharmacy) - original grid layout
+                                    const rows = (qoTab === 'pharmacy' ? drugs : services)
+                                      .filter((s: any) => {
+                                        if (qoTab === 'pharmacy') return true;
+                                        return matchesCategory(s, qoTab as any);
+                                      })
+                                      .filter((s: any) => {
+                                        if (!qoSearch) return true;
+                                        const needle = qoSearch.toLowerCase();
+                                        const name = s.name || s.genericName || "";
+                                        return (
+                                          (name).toLowerCase().includes(needle) ||
+                                          (s.description ?? "").toLowerCase().includes(needle)
+                                        );
+                                      })
+                                      .slice(0, 50);
 
                                     if (rows.length === 0) {
                                       return <div className="text-sm text-muted-foreground p-4 text-center">No matching services found.</div>;
@@ -1958,6 +2268,54 @@ export default function Treatment() {
                                               onClick={() => handleDeleteLabTest(order.testId || order.orderId)}
                                               className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                                               data-testid={`button-delete-lab-${order.orderId}`}
+                                            >
+                                              <Trash2 className="w-3 h-3 mr-1" />
+                                              Delete
+                                            </Button>
+                                          </div>
+                                        )}
+                                        {order.type === 'xray' && (
+                                          <div className="flex gap-1 mr-2">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleEditXray(order)}
+                                              className="h-8 px-2"
+                                              data-testid={`button-edit-xray-${order.orderId}`}
+                                            >
+                                              <Edit className="w-3 h-3 mr-1" />
+                                              Edit
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleDeleteXray(order.examId || order.orderId)}
+                                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                              data-testid={`button-delete-xray-${order.orderId}`}
+                                            >
+                                              <Trash2 className="w-3 h-3 mr-1" />
+                                              Delete
+                                            </Button>
+                                          </div>
+                                        )}
+                                        {order.type === 'ultrasound' && (
+                                          <div className="flex gap-1 mr-2">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleEditUltrasound(order)}
+                                              className="h-8 px-2"
+                                              data-testid={`button-edit-ultrasound-${order.orderId}`}
+                                            >
+                                              <Edit className="w-3 h-3 mr-1" />
+                                              Edit
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleDeleteUltrasound(order.examId || order.orderId)}
+                                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                              data-testid={`button-delete-ultrasound-${order.orderId}`}
                                             >
                                               <Trash2 className="w-3 h-3 mr-1" />
                                               Delete
@@ -2262,7 +2620,58 @@ export default function Treatment() {
                 {/* Vitals Card */}
                 <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-5 w-5" />Vitals (Today)</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-3 text-sm"><div><div className="text-muted-foreground">Temp</div><div className="font-medium">{watchedVitals[0] ? `${watchedVitals[0]} °C` : "—"}</div></div><div><div className="text-muted-foreground">BP</div><div className="font-medium">{watchedVitals[1] || "—"}</div></div><div><div className="text-muted-foreground">Heart Rate</div><div className="font-medium">{watchedVitals[2] ? `${watchedVitals[2]} bpm` : "—"}</div></div><div><div className="text-muted-foreground">Weight</div><div className="font-medium">{watchedVitals[3] ? `${watchedVitals[3]} kg` : "—"}</div></div></div></CardContent></Card>
                 {/* Alerts Card */}
-                <Card className="border-red-500/50"><CardHeader><CardTitle className="flex items-center gap-2 text-base text-red-600"><AlertTriangle className="h-5 w-5" />Alerts & Allergies</CardTitle></CardHeader><CardContent><p className="font-medium text-red-700">No known drug allergies</p><p className="text-sm text-muted-foreground mt-2">(Placeholder for alerts API)</p></CardContent></Card>
+                <Card className="border-red-500/50">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-base text-red-600">
+                        <AlertTriangle className="h-5 w-5" />
+                        Alerts & Allergies
+                      </CardTitle>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowAllergyModal(true)}
+                        className="h-7 text-xs"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {allergies.length === 0 ? (
+                      <p className="font-medium text-red-700">No known drug allergies</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {allergies.map((allergy) => (
+                          <div key={allergy.id} className="p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-sm text-red-900 dark:text-red-100">{allergy.name}</p>
+                                  <Badge variant={allergy.severity === "Severe" ? "destructive" : allergy.severity === "Moderate" ? "default" : "secondary"} className="text-xs">
+                                    {allergy.severity}
+                                  </Badge>
+                                </div>
+                                {allergy.reaction && (
+                                  <p className="text-xs text-red-700 dark:text-red-300 mt-1">{allergy.reaction}</p>
+                                )}
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setAllergies(allergies.filter(a => a.id !== allergy.id))}
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/40"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}
@@ -2384,6 +2793,238 @@ export default function Treatment() {
                 variant="outline"
                 onClick={() => setEditLabModalOpen(false)}
                 data-testid="button-cancel-edit"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit X-Ray Dialog */}
+      <Dialog open={editXrayModalOpen} onOpenChange={setEditXrayModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-cyan-600" />
+              Edit X-Ray Request
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Clinical Information */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Clinical Information
+              </label>
+              <Textarea
+                value={editXrayClinicalInfo}
+                onChange={(e) => setEditXrayClinicalInfo(e.target.value)}
+                rows={4}
+                placeholder="Clinical indication, suspected diagnosis, relevant history..."
+                data-testid="textarea-edit-xray-clinical-info"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleSaveXrayEdit}
+                disabled={editXrayMutation.isPending}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                data-testid="button-save-xray-edit"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {editXrayMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditXrayModalOpen(false)}
+                data-testid="button-cancel-xray-edit"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Ultrasound Dialog */}
+      <Dialog open={editUltrasoundModalOpen} onOpenChange={setEditUltrasoundModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-indigo-600" />
+              Edit Ultrasound Request
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Clinical Information */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Clinical Information
+              </label>
+              <Textarea
+                value={editUltrasoundClinicalInfo}
+                onChange={(e) => setEditUltrasoundClinicalInfo(e.target.value)}
+                rows={4}
+                placeholder="Clinical indication, suspected diagnosis, relevant history..."
+                data-testid="textarea-edit-ultrasound-clinical-info"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleSaveUltrasoundEdit}
+                disabled={editUltrasoundMutation.isPending}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                data-testid="button-save-ultrasound-edit"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {editUltrasoundMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditUltrasoundModalOpen(false)}
+                data-testid="button-cancel-ultrasound-edit"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Allergy Dialog */}
+      <Dialog open={showAllergyModal} onOpenChange={setShowAllergyModal}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              Add Allergy
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Common Allergens */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Common Allergens (click to select)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Penicillin",
+                  "Sulfa drugs (Sulfonamides)",
+                  "Aspirin / NSAIDs",
+                  "Chloroquine",
+                  "Metronidazole",
+                  "ACE Inhibitors",
+                  "Contrast dye",
+                  "Latex",
+                ].map((allergen) => (
+                  <button
+                    key={allergen}
+                    type="button"
+                    onClick={() => setNewAllergyName(allergen)}
+                    className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                      newAllergyName === allergen
+                        ? "bg-red-600 text-white border-red-600"
+                        : "bg-gray-100 hover:bg-red-100 dark:bg-gray-800 dark:hover:bg-red-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-red-500 dark:hover:border-red-500"
+                    }`}
+                  >
+                    {allergen}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Allergy Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Allergy Name / Substance
+              </label>
+              <Input
+                value={newAllergyName}
+                onChange={(e) => setNewAllergyName(e.target.value)}
+                placeholder="Enter allergy name or select from above"
+                data-testid="input-allergy-name"
+              />
+            </div>
+
+            {/* Severity */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Severity
+              </label>
+              <Select value={newAllergySeverity} onValueChange={(val) => setNewAllergySeverity(val as "Mild" | "Moderate" | "Severe")}>
+                <SelectTrigger data-testid="select-allergy-severity">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Mild">Mild</SelectItem>
+                  <SelectItem value="Moderate">Moderate</SelectItem>
+                  <SelectItem value="Severe">Severe</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Reaction Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Reaction Description (Optional)
+              </label>
+              <Textarea
+                value={newAllergyReaction}
+                onChange={(e) => setNewAllergyReaction(e.target.value)}
+                rows={2}
+                placeholder="Describe the reaction (e.g., rash, difficulty breathing, swelling)..."
+                data-testid="textarea-allergy-reaction"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={() => {
+                  if (!newAllergyName.trim()) {
+                    toast({ title: "Error", description: "Please enter an allergy name", variant: "destructive" });
+                    return;
+                  }
+                  setAllergies([
+                    ...allergies,
+                    {
+                      id: crypto.randomUUID(),
+                      name: newAllergyName,
+                      severity: newAllergySeverity,
+                      reaction: newAllergyReaction,
+                    },
+                  ]);
+                  setNewAllergyName("");
+                  setNewAllergySeverity("Mild");
+                  setNewAllergyReaction("");
+                  setShowAllergyModal(false);
+                  toast({ title: "Success", description: "Allergy added successfully" });
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                data-testid="button-save-allergy"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Allergy
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowAllergyModal(false);
+                  setNewAllergyName("");
+                  setNewAllergySeverity("Mild");
+                  setNewAllergyReaction("");
+                }}
+                data-testid="button-cancel-allergy"
               >
                 Cancel
               </Button>
