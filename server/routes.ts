@@ -2241,6 +2241,8 @@ router.get("/api/visits/:visitId/orders", async (req, res) => {
       };
     });
 
+    // X-ray display name priority: bodyPart (specific) > examType (category)
+    // e.g., "Left Femur" is more helpful than "extremities"
     const xrayOrders = xrays.map((xray: any) => {
       const orderLine = orderLineMap.get(xray.examId);
       return {

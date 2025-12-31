@@ -1058,7 +1058,6 @@ export default function Treatment() {
   // X-Ray mutations
   const deleteXrayMutation = useMutation({
     mutationFn: async (examId: string) => {
-      console.log('DELETE /api/xray-exams/', examId);
       const response = await apiRequest("DELETE", `/api/xray-exams/${examId}`);
       return response.json();
     },
@@ -1068,7 +1067,6 @@ export default function Treatment() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
-      console.error('Failed to delete X-ray exam:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to cancel X-Ray exam",
@@ -1107,7 +1105,6 @@ export default function Treatment() {
   };
 
   const handleDeleteXray = (examId: string) => {
-    console.log('Deleting X-Ray exam:', examId);
     if (!examId) {
       toast({ 
         title: "Error", 
@@ -1124,7 +1121,6 @@ export default function Treatment() {
   const handleSaveXrayEdit = () => {
     if (!xrayToEdit) return;
     const examId = xrayToEdit.examId || xrayToEdit.orderId;
-    console.log('Editing X-Ray exam:', examId, xrayToEdit);
     if (!examId) {
       toast({ 
         title: "Error", 
@@ -1142,7 +1138,6 @@ export default function Treatment() {
   // Ultrasound mutations
   const deleteUltrasoundMutation = useMutation({
     mutationFn: async (examId: string) => {
-      console.log('DELETE /api/ultrasound-exams/', examId);
       const response = await apiRequest("DELETE", `/api/ultrasound-exams/${examId}`);
       return response.json();
     },
@@ -1152,7 +1147,6 @@ export default function Treatment() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
-      console.error('Failed to delete ultrasound exam:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to cancel Ultrasound exam",
@@ -1191,7 +1185,6 @@ export default function Treatment() {
   };
 
   const handleDeleteUltrasound = (examId: string) => {
-    console.log('Deleting Ultrasound exam:', examId);
     if (!examId) {
       toast({ 
         title: "Error", 
@@ -1208,7 +1201,6 @@ export default function Treatment() {
   const handleSaveUltrasoundEdit = () => {
     if (!ultrasoundToEdit) return;
     const examId = ultrasoundToEdit.examId || ultrasoundToEdit.orderId;
-    console.log('Editing Ultrasound exam:', examId, ultrasoundToEdit);
     if (!examId) {
       toast({ 
         title: "Error", 
