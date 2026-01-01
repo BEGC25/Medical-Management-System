@@ -87,6 +87,9 @@ export default function Payment() {
   // NEW: Active category filter for pending payments (replaces Tabs)
   const [activeCategory, setActiveCategory] = useState<"laboratory" | "xray" | "ultrasound" | "pharmacy">("laboratory");
   
+  // NEW: Date filter for pending payments
+  const [pendingPaymentsDateFilter, setPendingPaymentsDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "all">("all");
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -397,6 +400,71 @@ export default function Payment() {
     );
   };
 
+  // Filter unpaid orders by date
+  const filterOrdersByDate = (orders: UnpaidOrder[]) => {
+    if (pendingPaymentsDateFilter === "all") return orders;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    return orders.filter(order => {
+      const orderDate = new Date(order.date);
+      const orderDay = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+      
+      switch (pendingPaymentsDateFilter) {
+        case "today":
+          return orderDay.getTime() === today.getTime();
+        case "yesterday":
+          return orderDay.getTime() === yesterday.getTime();
+        case "last7days":
+          const sevenDaysAgo = new Date(today);
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          return orderDay >= sevenDaysAgo;
+        case "last30days":
+          const thirtyDaysAgo = new Date(today);
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return orderDay >= thirtyDaysAgo;
+        default:
+          return true;
+      }
+    });
+  };
+
+  // Get date range display for payment history
+  const getDateRangeDisplay = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const formatDate = (date: Date) => {
+      const day = date.getDate();
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      return `${month} ${day}`;
+    };
+    
+    switch (paymentHistoryTab) {
+      case "today":
+        return "Today";
+      case "yesterday":
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return "Yesterday";
+      case "last7days":
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        return `Last 7 Days (${formatDate(sevenDaysAgo)} - ${formatDate(now)})`;
+      case "last30days":
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return `Last 30 Days (${formatDate(thirtyDaysAgo)} - ${formatDate(now)})`;
+      case "all":
+        return "All Time";
+      default:
+        return "";
+    }
+  };
+
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
     const displayPrice = order.price || 0;
@@ -571,47 +639,57 @@ export default function Payment() {
       </Card>
 
       {/* Primary Navigation Tabs */}
-      <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)]">
-        <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-          <button
-            onClick={() => setActiveMainTab("pending")}
-            className={`flex-1 min-w-[200px] px-6 py-3 text-sm font-semibold transition-all duration-300 relative ${
-              activeMainTab === "pending"
-                ? "text-teal-700 dark:text-teal-400 bg-gradient-to-r from-teal-50/50 to-transparent dark:from-teal-950/50"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <span>● Pending Payments</span>
-              {allUnpaidOrders && getTotalUnpaidCount() > 0 && (
-                <Badge className="bg-red-600 text-white">{getTotalUnpaidCount()}</Badge>
-              )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          onClick={() => setActiveMainTab("pending")}
+          className={`
+            p-6 rounded-xl border-2 transition-all duration-300
+            hover:scale-[1.02] hover:shadow-lg
+            ${activeMainTab === "pending" 
+              ? "border-teal-600 bg-gradient-to-br from-teal-50 to-teal-100 shadow-md dark:from-teal-950 dark:to-teal-900 dark:border-teal-500" 
+              : "border-gray-200 bg-white hover:border-teal-300 dark:bg-gray-900 dark:border-gray-700 dark:hover:border-teal-600"
+            }
+          `}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle className={`w-6 h-6 ${activeMainTab === "pending" ? "text-teal-600 dark:text-teal-400" : "text-gray-500"}`} />
+              <div className="text-left">
+                <div className="font-bold text-lg text-gray-900 dark:text-white">Pending Payments</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {allUnpaidOrders && getTotalUnpaidCount() > 0 ? `${getTotalUnpaidCount()} patients waiting` : 'All paid'}
+                </div>
+              </div>
             </div>
-            {activeMainTab === "pending" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-600 to-teal-600 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
-            )}
-          </button>
-          
-          <button
-            onClick={() => setActiveMainTab("history")}
-            className={`flex-1 min-w-[200px] px-6 py-3 text-sm font-semibold transition-all duration-300 relative ${
-              activeMainTab === "history"
-                ? "text-teal-700 dark:text-teal-400 bg-gradient-to-r from-teal-50/50 to-transparent dark:from-teal-950/50"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <span>Payment History</span>
-              {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
-                <Badge className="bg-teal-600 text-white">{paymentHistory.length} today</Badge>
-              )}
+            {activeMainTab === "pending" && <CheckCircle className="w-5 h-5 text-teal-600 dark:text-teal-400" />}
+          </div>
+        </button>
+        
+        <button
+          onClick={() => setActiveMainTab("history")}
+          className={`
+            p-6 rounded-xl border-2 transition-all duration-300
+            hover:scale-[1.02] hover:shadow-lg
+            ${activeMainTab === "history" 
+              ? "border-teal-600 bg-gradient-to-br from-teal-50 to-teal-100 shadow-md dark:from-teal-950 dark:to-teal-900 dark:border-teal-500" 
+              : "border-gray-200 bg-white hover:border-teal-300 dark:bg-gray-900 dark:border-gray-700 dark:hover:border-teal-600"
+            }
+          `}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Receipt className={`w-6 h-6 ${activeMainTab === "history" ? "text-teal-600 dark:text-teal-400" : "text-gray-500"}`} />
+              <div className="text-left">
+                <div className="font-bold text-lg text-gray-900 dark:text-white">Payment History</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {paymentHistoryTab === "today" && paymentHistory.length > 0 ? `${paymentHistory.length} today` : 'View records'}
+                </div>
+              </div>
             </div>
-            {activeMainTab === "history" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-600 to-teal-600 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
-            )}
-          </button>
-        </div>
-      </Card>
+            {activeMainTab === "history" && <CheckCircle className="w-5 h-5 text-teal-600 dark:text-teal-400" />}
+          </div>
+        </button>
+      </div>
 
       {/* PENDING PAYMENTS TAB CONTENT */}
       {activeMainTab === "pending" && (
@@ -640,6 +718,60 @@ export default function Payment() {
           ) : allUnpaidOrders && getTotalUnpaidCount() > 0 ? (
             <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(59,130,246,0.15)] transition-all duration-300">
               <CardContent className="pt-4">
+                {/* Date Filter Buttons */}
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setPendingPaymentsDateFilter("today")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      pendingPaymentsDateFilter === "today"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() => setPendingPaymentsDateFilter("yesterday")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      pendingPaymentsDateFilter === "yesterday"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    Yesterday
+                  </button>
+                  <button
+                    onClick={() => setPendingPaymentsDateFilter("last7days")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      pendingPaymentsDateFilter === "last7days"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    Last 7 Days
+                  </button>
+                  <button
+                    onClick={() => setPendingPaymentsDateFilter("last30days")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      pendingPaymentsDateFilter === "last30days"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    Last 30 Days
+                  </button>
+                  <button
+                    onClick={() => setPendingPaymentsDateFilter("all")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      pendingPaymentsDateFilter === "all"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    All
+                  </button>
+                </div>
+
                 {/* Filter Chips (Pills) - Replacing Tabs */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <button
@@ -730,58 +862,66 @@ export default function Payment() {
                 {/* Content for active category */}
                 <div className="space-y-2">
                   {activeCategory === "laboratory" && (
-                    allUnpaidOrders.laboratory.length === 0 ? (
+                    filterOrdersByDate(allUnpaidOrders.laboratory).length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
                           <LaboratoryIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending lab payments</h3>
-                        <p className="text-sm text-gray-500">All laboratory tests paid</p>
+                        <p className="text-sm text-gray-500">
+                          {pendingPaymentsDateFilter !== "all" ? `No lab tests for selected date range` : 'All laboratory tests paid'}
+                        </p>
                       </div>
                     ) : (
-                      allUnpaidOrders.laboratory.map(order => renderOrderCard(order, 'laboratory'))
+                      filterOrdersByDate(allUnpaidOrders.laboratory).map(order => renderOrderCard(order, 'laboratory'))
                     )
                   )}
                   
                   {activeCategory === "xray" && (
-                    allUnpaidOrders.xray.length === 0 ? (
+                    filterOrdersByDate(allUnpaidOrders.xray).length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
                           <XRayIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending X-ray payments</h3>
-                        <p className="text-sm text-gray-500">All X-ray exams paid</p>
+                        <p className="text-sm text-gray-500">
+                          {pendingPaymentsDateFilter !== "all" ? `No X-rays for selected date range` : 'All X-ray exams paid'}
+                        </p>
                       </div>
                     ) : (
-                      allUnpaidOrders.xray.map(order => renderOrderCard(order, 'xray'))
+                      filterOrdersByDate(allUnpaidOrders.xray).map(order => renderOrderCard(order, 'xray'))
                     )
                   )}
                   
                   {activeCategory === "ultrasound" && (
-                    allUnpaidOrders.ultrasound.length === 0 ? (
+                    filterOrdersByDate(allUnpaidOrders.ultrasound).length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
                           <UltrasoundIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending ultrasound payments</h3>
-                        <p className="text-sm text-gray-500">All ultrasound exams paid</p>
+                        <p className="text-sm text-gray-500">
+                          {pendingPaymentsDateFilter !== "all" ? `No ultrasounds for selected date range` : 'All ultrasound exams paid'}
+                        </p>
                       </div>
                     ) : (
-                      allUnpaidOrders.ultrasound.map(order => renderOrderCard(order, 'ultrasound'))
+                      filterOrdersByDate(allUnpaidOrders.ultrasound).map(order => renderOrderCard(order, 'ultrasound'))
                     )
                   )}
                   
                   {activeCategory === "pharmacy" && (
-                    allUnpaidOrders.pharmacy.length === 0 ? (
+                    filterOrdersByDate(allUnpaidOrders.pharmacy).length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
                           <PharmacyIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending pharmacy payments</h3>
-                        <p className="text-sm text-gray-500">All pharmacy orders paid</p>
+                        <p className="text-sm text-gray-500">
+                          {pendingPaymentsDateFilter !== "all" ? `No pharmacy orders for selected date range` : 'All pharmacy orders paid'}
+                        </p>
                       </div>
                     ) : (
-                      allUnpaidOrders.pharmacy.map(order => renderOrderCard(order, 'pharmacy'))
+                      filterOrdersByDate(allUnpaidOrders.pharmacy).map(order => renderOrderCard(order, 'pharmacy'))
                     )
                   )}
                 </div>
@@ -894,6 +1034,13 @@ export default function Payment() {
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600 dark:bg-teal-400 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
                 )}
               </button>
+            </div>
+
+            {/* Date Range Display */}
+            <div className="mb-4 px-1">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Showing payments for: <span className="font-semibold text-gray-900 dark:text-white">{getDateRangeDisplay()}</span>
+              </div>
             </div>
 
             {/* Stats Cards - Premium KPIs */}
@@ -1063,8 +1210,9 @@ export default function Payment() {
                               }}
                               className="h-7 text-xs border-gray-200/70 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950 transition-all"
                               data-testid={`button-view-receipt-${payment.paymentId}`}
+                              title="View Receipt"
                             >
-                              <Eye className="h-3 w-3" />
+                              <Receipt className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
