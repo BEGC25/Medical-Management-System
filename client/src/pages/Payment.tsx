@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard } from "lucide-react";
+import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard, FlaskConical } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -570,48 +570,82 @@ export default function Payment() {
         </CardContent>
       </Card>
 
-      {/* Primary Navigation Tabs */}
-      <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)]">
-        <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-          <button
-            onClick={() => setActiveMainTab("pending")}
-            className={`flex-1 min-w-[200px] px-6 py-3 text-sm font-semibold transition-all duration-300 relative ${
+      {/* Primary Navigation Tabs - Card-Tab Pattern */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button
+          onClick={() => setActiveMainTab("pending")}
+          className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
+            activeMainTab === "pending"
+              ? "border-teal-500 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950 dark:to-teal-900/50 shadow-lg ring-2 ring-teal-500/20"
+              : "border-gray-200 bg-white dark:bg-gray-950 dark:border-gray-700 hover:border-gray-300 hover:shadow-md"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`text-lg font-bold ${
               activeMainTab === "pending"
-                ? "text-teal-700 dark:text-teal-400 bg-gradient-to-r from-teal-50/50 to-transparent dark:from-teal-950/50"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <span>● Pending Payments</span>
-              {allUnpaidOrders && getTotalUnpaidCount() > 0 && (
-                <Badge className="bg-red-600 text-white">{getTotalUnpaidCount()}</Badge>
-              )}
-            </div>
-            {activeMainTab === "pending" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-600 to-teal-600 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
+                ? "text-teal-700 dark:text-teal-400"
+                : "text-gray-700 dark:text-gray-300"
+            }`}>
+              Pending Payments
+            </h3>
+            {allUnpaidOrders && getTotalUnpaidCount() > 0 && (
+              <Badge className={`text-sm font-bold ${
+                activeMainTab === "pending"
+                  ? "bg-teal-600 text-white"
+                  : "bg-red-600 text-white"
+              }`}>
+                {getTotalUnpaidCount()}
+              </Badge>
             )}
-          </button>
-          
-          <button
-            onClick={() => setActiveMainTab("history")}
-            className={`flex-1 min-w-[200px] px-6 py-3 text-sm font-semibold transition-all duration-300 relative ${
+          </div>
+          <p className={`text-sm ${
+            activeMainTab === "pending"
+              ? "text-teal-600 dark:text-teal-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}>
+            {allUnpaidOrders && getTotalUnpaidCount() > 0
+              ? `${getTotalUnpaidCount()} pending payment${getTotalUnpaidCount() !== 1 ? 's' : ''}`
+              : "No pending payments"}
+          </p>
+        </button>
+        
+        <button
+          onClick={() => setActiveMainTab("history")}
+          className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
+            activeMainTab === "history"
+              ? "border-teal-500 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950 dark:to-teal-900/50 shadow-lg ring-2 ring-teal-500/20"
+              : "border-gray-200 bg-white dark:bg-gray-950 dark:border-gray-700 hover:border-gray-300 hover:shadow-md"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`text-lg font-bold ${
               activeMainTab === "history"
-                ? "text-teal-700 dark:text-teal-400 bg-gradient-to-r from-teal-50/50 to-transparent dark:from-teal-950/50"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <span>Payment History</span>
-              {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
-                <Badge className="bg-teal-600 text-white">{paymentHistory.length} today</Badge>
-              )}
-            </div>
-            {activeMainTab === "history" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-600 to-teal-600 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
+                ? "text-teal-700 dark:text-teal-400"
+                : "text-gray-700 dark:text-gray-300"
+            }`}>
+              Payment History
+            </h3>
+            {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
+              <Badge className={`text-sm font-bold ${
+                activeMainTab === "history"
+                  ? "bg-teal-600 text-white"
+                  : "bg-teal-600 text-white"
+              }`}>
+                {paymentHistory.length}
+              </Badge>
             )}
-          </button>
-        </div>
-      </Card>
+          </div>
+          <p className={`text-sm ${
+            activeMainTab === "history"
+              ? "text-teal-600 dark:text-teal-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}>
+            {paymentHistoryTab === "today" && paymentHistory.length > 0
+              ? `${paymentHistory.length} payment${paymentHistory.length !== 1 ? 's' : ''} today`
+              : "View payment records"}
+          </p>
+        </button>
+      </div>
 
       {/* PENDING PAYMENTS TAB CONTENT */}
       {activeMainTab === "pending" && (
@@ -650,7 +684,7 @@ export default function Payment() {
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <LaboratoryIcon className="text-teal-600" size={18} />
+                    <FlaskConical className="text-teal-600" size={18} />
                     <span>Lab</span>
                     {allUnpaidOrders.laboratory.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
