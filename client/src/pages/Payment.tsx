@@ -94,16 +94,16 @@ export default function Payment() {
   function getAvatarColor(name: string): string {
     // Handle empty or undefined names
     if (!name || name.length === 0) {
-      return "bg-gray-500"; // Default color for missing names
+      return "bg-gray-400"; // Default color for missing names
     }
     
     const colors = [
-      "bg-indigo-500",  // Soft purple-blue
-      "bg-teal-500",    // Sophisticated teal
-      "bg-pink-500",    // Soft pink
-      "bg-orange-500",  // Warm orange
-      "bg-blue-500",    // Classic blue
-      "bg-purple-500",  // Rich purple
+      "bg-indigo-300/80",   // Soft muted indigo
+      "bg-teal-300/80",     // Soft muted teal
+      "bg-rose-300/80",     // Soft muted rose
+      "bg-amber-300/80",    // Soft muted amber
+      "bg-sky-300/80",      // Soft muted sky
+      "bg-violet-300/80",   // Soft muted violet
     ];
     const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[hash % colors.length];
@@ -527,6 +527,18 @@ export default function Payment() {
     );
   };
 
+  // Clean description by removing service type prefix
+  const cleanDescription = (desc: string, type: string) => {
+    const prefixes = ['Lab Test:', 'X-Ray:', 'Ultrasound:', 'Pharmacy:', 'Lab:', 'X-ray:'];
+    let cleaned = desc;
+    prefixes.forEach(prefix => {
+      if (cleaned.toLowerCase().startsWith(prefix.toLowerCase())) {
+        cleaned = cleaned.substring(prefix.length).trim();
+      }
+    });
+    return cleaned;
+  };
+
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
     const displayPrice = order.price || 0;
@@ -608,8 +620,11 @@ export default function Payment() {
                 </div>
               </div>
               
-              {/* Service Description */}
-              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 ml-0.5">{order.description}</h4>
+              {/* Service Description with Icon */}
+              <div className="flex items-center gap-1.5 ml-0.5">
+                {serviceIcon}
+                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">{cleanDescription(order.description, departmentType)}</h4>
+              </div>
               
               {/* Additional Info - inline if present */}
               {(order.bodyPart || order.dosage || order.quantity) && (
@@ -626,7 +641,7 @@ export default function Payment() {
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
             {/* Amount - Large and Bold */}
             {displayPrice > 0 && (
-              <div className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+              <div className="text-xl font-semibold text-gray-800 dark:text-gray-200 tabular-nums">
                 SSP {displayPrice.toLocaleString()}
               </div>
             )}
@@ -1242,7 +1257,7 @@ export default function Payment() {
                         
                         {/* Right side: Amount and actions */}
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                          <div className="text-xl font-bold text-teal-700 dark:text-teal-300 tabular-nums">
+                          <div className="text-lg font-semibold text-teal-600 dark:text-teal-400 tabular-nums">
                             SSP {payment.totalAmount.toLocaleString()}
                           </div>
                           <div className="flex gap-2">
