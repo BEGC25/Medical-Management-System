@@ -406,8 +406,6 @@ export default function Payment() {
     
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
     
     return orders.filter(order => {
       const orderDate = new Date(order.date);
@@ -417,14 +415,13 @@ export default function Payment() {
         case "today":
           return orderDay.getTime() === today.getTime();
         case "yesterday":
+          const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
           return orderDay.getTime() === yesterday.getTime();
         case "last7days":
-          const sevenDaysAgo = new Date(today);
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
           return orderDay >= sevenDaysAgo;
         case "last30days":
-          const thirtyDaysAgo = new Date(today);
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
           return orderDay >= thirtyDaysAgo;
         default:
           return true;
@@ -447,16 +444,12 @@ export default function Payment() {
       case "today":
         return "Today";
       case "yesterday":
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
         return "Yesterday";
       case "last7days":
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
         return `Last 7 Days (${formatDate(sevenDaysAgo)} - ${formatDate(now)})`;
       case "last30days":
-        const thirtyDaysAgo = new Date(today);
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
         return `Last 30 Days (${formatDate(thirtyDaysAgo)} - ${formatDate(now)})`;
       case "all":
         return "All Time";
