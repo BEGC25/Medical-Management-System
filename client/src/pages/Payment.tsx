@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard, FlaskConical } from "lucide-react";
+import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -115,14 +115,123 @@ export default function Payment() {
     return `${first}${last}`.toUpperCase() || '??';
   }
 
-  // Service icon mapping - returns React component
-  function getServiceIcon(type: string) {
-    return getMedicalIcon(type, { className: "text-teal-500", size: 18 });
+  // Helper function to normalize service type names
+  function normalizeServiceType(type: string): string {
+    const normalized = type.toLowerCase();
+    if (normalized === 'lab_test_item') return 'laboratory';
+    if (normalized === 'xray_exam') return 'xray';
+    if (normalized === 'ultrasound_exam') return 'ultrasound';
+    if (normalized === 'pharmacy_order') return 'pharmacy';
+    return normalized;
+  }
+
+  // Service-specific color themes - WCAG compliant
+  function getServiceColors(type: string) {
+    const normalizedType = normalizeServiceType(type);
+    
+    const colorMap: Record<string, {
+      bg: string;
+      bgHover: string;
+      border: string;
+      borderHover: string;
+      text: string;
+      iconColor: string;
+      chipBg: string;
+      chipBorder: string;
+      chipText: string;
+      badgeBg: string;
+    }> = {
+      laboratory: {
+        bg: "bg-purple-50 dark:bg-purple-950/30",
+        bgHover: "hover:bg-purple-100 dark:hover:bg-purple-900/40",
+        border: "border-purple-200 dark:border-purple-800",
+        borderHover: "hover:border-purple-400 dark:hover:border-purple-600",
+        text: "text-purple-700 dark:text-purple-300",
+        iconColor: "text-purple-600 dark:text-purple-400",
+        chipBg: "bg-purple-100 dark:bg-purple-900",
+        chipBorder: "border-purple-500",
+        chipText: "text-purple-700 dark:text-purple-300",
+        badgeBg: "bg-purple-500"
+      },
+      xray: {
+        bg: "bg-blue-50 dark:bg-blue-950/30",
+        bgHover: "hover:bg-blue-100 dark:hover:bg-blue-900/40",
+        border: "border-blue-200 dark:border-blue-800",
+        borderHover: "hover:border-blue-400 dark:hover:border-blue-600",
+        text: "text-blue-700 dark:text-blue-300",
+        iconColor: "text-blue-600 dark:text-blue-400",
+        chipBg: "bg-blue-100 dark:bg-blue-900",
+        chipBorder: "border-blue-500",
+        chipText: "text-blue-700 dark:text-blue-300",
+        badgeBg: "bg-blue-500"
+      },
+      ultrasound: {
+        bg: "bg-teal-50 dark:bg-teal-950/30",
+        bgHover: "hover:bg-teal-100 dark:hover:bg-teal-900/40",
+        border: "border-teal-200 dark:border-teal-800",
+        borderHover: "hover:border-teal-400 dark:hover:border-teal-600",
+        text: "text-teal-700 dark:text-teal-300",
+        iconColor: "text-teal-600 dark:text-teal-400",
+        chipBg: "bg-teal-100 dark:bg-teal-900",
+        chipBorder: "border-teal-500",
+        chipText: "text-teal-700 dark:text-teal-300",
+        badgeBg: "bg-teal-500"
+      },
+      pharmacy: {
+        bg: "bg-emerald-50 dark:bg-emerald-950/30",
+        bgHover: "hover:bg-emerald-100 dark:hover:bg-emerald-900/40",
+        border: "border-emerald-200 dark:border-emerald-800",
+        borderHover: "hover:border-emerald-400 dark:hover:border-emerald-600",
+        text: "text-emerald-700 dark:text-emerald-300",
+        iconColor: "text-emerald-600 dark:text-emerald-400",
+        chipBg: "bg-emerald-100 dark:bg-emerald-900",
+        chipBorder: "border-emerald-500",
+        chipText: "text-emerald-700 dark:text-emerald-300",
+        badgeBg: "bg-emerald-500"
+      },
+      consultation: {
+        bg: "bg-cyan-50 dark:bg-cyan-950/30",
+        bgHover: "hover:bg-cyan-100 dark:hover:bg-cyan-900/40",
+        border: "border-cyan-200 dark:border-cyan-800",
+        borderHover: "hover:border-cyan-400 dark:hover:border-cyan-600",
+        text: "text-cyan-700 dark:text-cyan-300",
+        iconColor: "text-cyan-600 dark:text-cyan-400",
+        chipBg: "bg-cyan-100 dark:bg-cyan-900",
+        chipBorder: "border-cyan-500",
+        chipText: "text-cyan-700 dark:text-cyan-300",
+        badgeBg: "bg-cyan-500"
+      },
+      // Default fallback for unknown types
+      default: {
+        bg: "bg-gray-50 dark:bg-gray-950/30",
+        bgHover: "hover:bg-gray-100 dark:hover:bg-gray-900/40",
+        border: "border-gray-200 dark:border-gray-800",
+        borderHover: "hover:border-gray-400 dark:hover:border-gray-600",
+        text: "text-gray-700 dark:text-gray-300",
+        iconColor: "text-gray-600 dark:text-gray-400",
+        chipBg: "bg-gray-100 dark:bg-gray-900",
+        chipBorder: "border-gray-500",
+        chipText: "text-gray-700 dark:text-gray-300",
+        badgeBg: "bg-gray-500"
+      }
+    };
+    
+    return colorMap[normalizedType] || colorMap.default;
+  }
+
+  // Service icon mapping - returns React component with type-specific colors
+  function getServiceIcon(type: string, departmentType?: string) {
+    const serviceType = departmentType || type;
+    const normalizedType = normalizeServiceType(serviceType);
+    const colors = getServiceColors(normalizedType);
+    return getMedicalIcon(type, { className: colors.iconColor, size: 18 });
   }
   
   // Service icon for tabs - slightly larger
   function getServiceIconLarge(type: string) {
-    return getMedicalIcon(type, { className: "text-teal-600", size: 20 });
+    const normalizedType = normalizeServiceType(type);
+    const colors = getServiceColors(normalizedType);
+    return getMedicalIcon(type, { className: colors.iconColor, size: 20 });
   }
 
   // Format date nicely
@@ -400,12 +509,13 @@ export default function Payment() {
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
     const displayPrice = order.price || 0;
-    const serviceIcon = getServiceIcon(order.type);
+    const colors = getServiceColors(departmentType);
+    const serviceIcon = getServiceIcon(order.type, departmentType);
 
     return (
       <div 
         key={order.id} 
-        className="p-4 rounded-lg bg-white border border-gray-200 hover:border-teal-300 hover:shadow-md transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-teal-500 group" 
+        className={`p-4 rounded-lg ${colors.bg} border ${colors.border} ${colors.bgHover} ${colors.borderHover} hover:shadow-md transition-all duration-300 ease-out cursor-pointer group`}
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -450,7 +560,7 @@ export default function Payment() {
               {/* Row 2: Service Description with Icon */}
               <div className="flex items-center gap-2">
                 {serviceIcon}
-                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">{order.description}</h4>
+                <h4 className={`font-medium text-sm ${colors.text}`}>{order.description}</h4>
               </div>
               
               {/* Additional Info - inline if present */}
@@ -468,7 +578,7 @@ export default function Payment() {
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
             {/* Amount - Large and Bold */}
             {displayPrice > 0 && (
-              <div className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+              <div className={`text-2xl font-bold ${colors.text} tabular-nums`}>
                 SSP {displayPrice.toLocaleString()}
               </div>
             )}
@@ -476,7 +586,7 @@ export default function Payment() {
             {/* Action Button */}
             <Button 
               size="sm"
-              className="bg-teal-500 hover:bg-teal-600 text-white shadow-sm transition-all"
+              className={`${colors.badgeBg} hover:opacity-90 text-white shadow-sm transition-all`}
             >
               Process Payment
             </Button>
@@ -680,16 +790,16 @@ export default function Payment() {
                     onClick={() => setActiveCategory("laboratory")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeCategory === "laboratory"
-                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        ? "bg-purple-100 text-purple-700 border-2 border-purple-500 shadow-sm dark:bg-purple-900 dark:text-purple-300"
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <FlaskConical className="text-teal-600" size={18} />
+                    {getServiceIconLarge("laboratory")}
                     <span>Lab</span>
                     {allUnpaidOrders.laboratory.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "laboratory"
-                          ? "bg-teal-500 text-white"
+                          ? "bg-purple-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.laboratory.length}
@@ -701,16 +811,16 @@ export default function Payment() {
                     onClick={() => setActiveCategory("xray")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeCategory === "xray"
-                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        ? "bg-blue-100 text-blue-700 border-2 border-blue-500 shadow-sm dark:bg-blue-900 dark:text-blue-300"
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <XRayIcon className="text-teal-600" size={18} />
+                    {getServiceIconLarge("xray")}
                     <span>X-Ray</span>
                     {allUnpaidOrders.xray.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "xray"
-                          ? "bg-teal-500 text-white"
+                          ? "bg-blue-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.xray.length}
@@ -726,7 +836,7 @@ export default function Payment() {
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <UltrasoundIcon className="text-teal-600" size={18} />
+                    {getServiceIconLarge("ultrasound")}
                     <span>Ultrasound</span>
                     {allUnpaidOrders.ultrasound.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
@@ -743,16 +853,16 @@ export default function Payment() {
                     onClick={() => setActiveCategory("pharmacy")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeCategory === "pharmacy"
-                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-500 shadow-sm dark:bg-emerald-900 dark:text-emerald-300"
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <PharmacyIcon className="text-teal-600" size={18} />
+                    {getServiceIconLarge("pharmacy")}
                     <span>Pharmacy</span>
                     {allUnpaidOrders.pharmacy.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "pharmacy"
-                          ? "bg-teal-500 text-white"
+                          ? "bg-emerald-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.pharmacy.length}
@@ -766,8 +876,8 @@ export default function Payment() {
                   {activeCategory === "laboratory" && (
                     allUnpaidOrders.laboratory.length === 0 ? (
                       <div className="text-center py-10">
-                        <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <LaboratoryIcon className="text-gray-400" size={28} />
+                        <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-800 dark:to-purple-700 rounded-full flex items-center justify-center">
+                          <LaboratoryIcon className="text-purple-600 dark:text-purple-300" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending lab payments</h3>
                         <p className="text-sm text-gray-500">All laboratory tests paid</p>
@@ -780,8 +890,8 @@ export default function Payment() {
                   {activeCategory === "xray" && (
                     allUnpaidOrders.xray.length === 0 ? (
                       <div className="text-center py-10">
-                        <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <XRayIcon className="text-gray-400" size={28} />
+                        <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-700 rounded-full flex items-center justify-center">
+                          <XRayIcon className="text-blue-600 dark:text-blue-300" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending X-ray payments</h3>
                         <p className="text-sm text-gray-500">All X-ray exams paid</p>
@@ -794,8 +904,8 @@ export default function Payment() {
                   {activeCategory === "ultrasound" && (
                     allUnpaidOrders.ultrasound.length === 0 ? (
                       <div className="text-center py-10">
-                        <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <UltrasoundIcon className="text-gray-400" size={28} />
+                        <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-teal-100 to-teal-200 dark:from-teal-800 dark:to-teal-700 rounded-full flex items-center justify-center">
+                          <UltrasoundIcon className="text-teal-600 dark:text-teal-300" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending ultrasound payments</h3>
                         <p className="text-sm text-gray-500">All ultrasound exams paid</p>
@@ -808,8 +918,8 @@ export default function Payment() {
                   {activeCategory === "pharmacy" && (
                     allUnpaidOrders.pharmacy.length === 0 ? (
                       <div className="text-center py-10">
-                        <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <PharmacyIcon className="text-gray-400" size={28} />
+                        <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-800 dark:to-emerald-700 rounded-full flex items-center justify-center">
+                          <PharmacyIcon className="text-emerald-600 dark:text-emerald-300" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending pharmacy payments</h3>
                         <p className="text-sm text-gray-500">All pharmacy orders paid</p>
@@ -1058,9 +1168,10 @@ export default function Payment() {
                               {payment.breakdown && Object.keys(payment.breakdown).length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Object.entries(payment.breakdown).map(([category, details]: [string, any]) => {
-                                    const icon = getMedicalIcon(category, { className: "text-teal-600", size: 14 });
+                                    const colors = getServiceColors(category);
+                                    const icon = getMedicalIcon(category, { className: colors.iconColor, size: 14 });
                                     return (
-                                      <div key={category} className="flex items-center gap-1 text-xs bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950 dark:text-teal-300 px-2 py-0.5 rounded">
+                                      <div key={category} className={`flex items-center gap-1 text-xs ${colors.chipBg} ${colors.chipText} border ${colors.chipBorder} px-2 py-0.5 rounded`}>
                                         {icon}
                                         <span>{category} {details.count > 1 ? `(${details.count})` : ''}</span>
                                       </div>
