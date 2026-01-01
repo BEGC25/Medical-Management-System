@@ -115,14 +115,144 @@ export default function Payment() {
     return `${first}${last}`.toUpperCase() || '??';
   }
 
-  // Service icon mapping - returns React component
-  function getServiceIcon(type: string) {
-    return getMedicalIcon(type, { className: "text-teal-500", size: 18 });
+  // Helper function to get category-specific colors
+  function getCategoryColor(category: string) {
+    switch (category.toLowerCase()) {
+      case 'laboratory':
+      case 'lab_test_item':
+        return {
+          bg: 'bg-emerald-50',
+          bgActive: 'bg-emerald-100',
+          bgGradient: 'bg-gradient-to-br from-emerald-50 to-emerald-100',
+          text: 'text-emerald-700',
+          textDark: 'text-emerald-300',
+          border: 'border-emerald-200',
+          borderActive: 'border-emerald-500',
+          icon: 'text-emerald-500',
+          iconDark: 'text-emerald-400',
+          badge: 'bg-emerald-500',
+          badgeActive: 'bg-emerald-600',
+          hover: 'hover:border-emerald-300',
+          ring: 'ring-emerald-500/20',
+          dark: {
+            bg: 'dark:bg-emerald-950',
+            bgActive: 'dark:bg-emerald-900',
+            border: 'dark:border-emerald-800',
+            borderActive: 'dark:border-emerald-500',
+            text: 'dark:text-emerald-300'
+          }
+        };
+      case 'xray':
+      case 'radiology':
+      case 'xray_exam':
+        return {
+          bg: 'bg-blue-50',
+          bgActive: 'bg-blue-100',
+          bgGradient: 'bg-gradient-to-br from-blue-50 to-blue-100',
+          text: 'text-blue-700',
+          textDark: 'text-blue-300',
+          border: 'border-blue-200',
+          borderActive: 'border-blue-500',
+          icon: 'text-blue-500',
+          iconDark: 'text-blue-400',
+          badge: 'bg-blue-500',
+          badgeActive: 'bg-blue-600',
+          hover: 'hover:border-blue-300',
+          ring: 'ring-blue-500/20',
+          dark: {
+            bg: 'dark:bg-blue-950',
+            bgActive: 'dark:bg-blue-900',
+            border: 'dark:border-blue-800',
+            borderActive: 'dark:border-blue-500',
+            text: 'dark:text-blue-300'
+          }
+        };
+      case 'ultrasound':
+      case 'ultrasound_exam':
+        return {
+          bg: 'bg-violet-50',
+          bgActive: 'bg-violet-100',
+          bgGradient: 'bg-gradient-to-br from-violet-50 to-violet-100',
+          text: 'text-violet-700',
+          textDark: 'text-violet-300',
+          border: 'border-violet-200',
+          borderActive: 'border-violet-500',
+          icon: 'text-violet-500',
+          iconDark: 'text-violet-400',
+          badge: 'bg-violet-500',
+          badgeActive: 'bg-violet-600',
+          hover: 'hover:border-violet-300',
+          ring: 'ring-violet-500/20',
+          dark: {
+            bg: 'dark:bg-violet-950',
+            bgActive: 'dark:bg-violet-900',
+            border: 'dark:border-violet-800',
+            borderActive: 'dark:border-violet-500',
+            text: 'dark:text-violet-300'
+          }
+        };
+      case 'pharmacy':
+      case 'pharmacy_order':
+        return {
+          bg: 'bg-orange-50',
+          bgActive: 'bg-orange-100',
+          bgGradient: 'bg-gradient-to-br from-orange-50 to-orange-100',
+          text: 'text-orange-700',
+          textDark: 'text-orange-300',
+          border: 'border-orange-200',
+          borderActive: 'border-orange-500',
+          icon: 'text-orange-500',
+          iconDark: 'text-orange-400',
+          badge: 'bg-orange-500',
+          badgeActive: 'bg-orange-600',
+          hover: 'hover:border-orange-300',
+          ring: 'ring-orange-500/20',
+          dark: {
+            bg: 'dark:bg-orange-950',
+            bgActive: 'dark:bg-orange-900',
+            border: 'dark:border-orange-800',
+            borderActive: 'dark:border-orange-500',
+            text: 'dark:text-orange-300'
+          }
+        };
+      default:
+        return {
+          bg: 'bg-teal-50',
+          bgActive: 'bg-teal-100',
+          bgGradient: 'bg-gradient-to-br from-teal-50 to-teal-100',
+          text: 'text-teal-700',
+          textDark: 'text-teal-300',
+          border: 'border-teal-200',
+          borderActive: 'border-teal-500',
+          icon: 'text-teal-500',
+          iconDark: 'text-teal-400',
+          badge: 'bg-teal-500',
+          badgeActive: 'bg-teal-600',
+          hover: 'hover:border-teal-300',
+          ring: 'ring-teal-500/20',
+          dark: {
+            bg: 'dark:bg-teal-950',
+            bgActive: 'dark:bg-teal-900',
+            border: 'dark:border-teal-800',
+            borderActive: 'dark:border-teal-500',
+            text: 'dark:text-teal-300'
+          }
+        };
+    }
+  }
+
+  // Service icon mapping - returns React component with category-specific colors
+  function getServiceIcon(type: string, category?: string) {
+    const categoryToUse = category || type;
+    const colors = getCategoryColor(categoryToUse);
+    return getMedicalIcon(type, { className: `${colors.icon} ${colors.iconDark}`, size: 18 });
   }
   
   // Service icon for tabs - slightly larger
-  function getServiceIconLarge(type: string) {
-    return getMedicalIcon(type, { className: "text-teal-600", size: 20 });
+  function getServiceIconLarge(type: string, category?: string) {
+    const categoryToUse = category || type;
+    const colors = getCategoryColor(categoryToUse);
+    return getMedicalIcon(type, { className: `${colors.icon} ${colors.iconDark}`, size: 20 });
   }
 
   // Format date nicely
@@ -400,12 +530,34 @@ export default function Payment() {
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
     const displayPrice = order.price || 0;
-    const serviceIcon = getServiceIcon(order.type);
+    const colors = getCategoryColor(departmentType);
+    const serviceIcon = getServiceIcon(order.type, departmentType);
+    
+    // Get service type label
+    const getServiceTypeLabel = (type: string) => {
+      switch (type.toLowerCase()) {
+        case 'lab_test_item':
+        case 'laboratory':
+          return 'Lab Test';
+        case 'xray_exam':
+        case 'radiology':
+        case 'xray':
+          return 'X-Ray';
+        case 'ultrasound_exam':
+        case 'ultrasound':
+          return 'Ultrasound';
+        case 'pharmacy_order':
+        case 'pharmacy':
+          return 'Pharmacy';
+        default:
+          return 'Service';
+      }
+    };
 
     return (
       <div 
         key={order.id} 
-        className="p-4 rounded-lg bg-white border border-gray-200 hover:border-teal-300 hover:shadow-md transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-teal-500 group" 
+        className={`p-4 rounded-lg bg-white border border-gray-200 ${colors.hover} hover:shadow-md transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 ${colors.dark.borderActive.replace('dark:border-', 'dark:hover:border-')} group`}
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -447,11 +599,17 @@ export default function Payment() {
                 )}
               </div>
               
-              {/* Row 2: Service Description with Icon */}
-              <div className="flex items-center gap-2">
-                {serviceIcon}
-                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">{order.description}</h4>
+              {/* Row 2: Service Type Badge and Description */}
+              <div className="flex items-center gap-2 mb-1">
+                {/* Colored Service Type Badge */}
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${colors.bg} ${colors.text} ${colors.border} ${colors.dark.bg} ${colors.dark.text} ${colors.dark.border} shadow-sm`}>
+                  {serviceIcon}
+                  <span className="text-xs font-semibold">{getServiceTypeLabel(departmentType)}</span>
+                </div>
               </div>
+              
+              {/* Service Description */}
+              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 ml-0.5">{order.description}</h4>
               
               {/* Additional Info - inline if present */}
               {(order.bodyPart || order.dosage || order.quantity) && (
@@ -473,10 +631,10 @@ export default function Payment() {
               </div>
             )}
             
-            {/* Action Button */}
+            {/* Action Button - category colored */}
             <Button 
               size="sm"
-              className="bg-teal-500 hover:bg-teal-600 text-white shadow-sm transition-all"
+              className={`${colors.badge} hover:${colors.badgeActive} text-white shadow-sm transition-all`}
             >
               Process Payment
             </Button>
@@ -680,16 +838,16 @@ export default function Payment() {
                     onClick={() => setActiveCategory("laboratory")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeCategory === "laboratory"
-                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-500 shadow-sm dark:bg-emerald-900 dark:text-emerald-300"
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <FlaskConical className="text-teal-600" size={18} />
+                    <FlaskConical className={activeCategory === "laboratory" ? "text-emerald-600 dark:text-emerald-400" : "text-gray-600"} size={18} />
                     <span>Lab</span>
                     {allUnpaidOrders.laboratory.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "laboratory"
-                          ? "bg-teal-500 text-white"
+                          ? "bg-emerald-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.laboratory.length}
@@ -701,16 +859,16 @@ export default function Payment() {
                     onClick={() => setActiveCategory("xray")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeCategory === "xray"
-                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        ? "bg-blue-100 text-blue-700 border-2 border-blue-500 shadow-sm dark:bg-blue-900 dark:text-blue-300"
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <XRayIcon className="text-teal-600" size={18} />
+                    <XRayIcon className={activeCategory === "xray" ? "text-blue-600 dark:text-blue-400" : "text-gray-600"} size={18} />
                     <span>X-Ray</span>
                     {allUnpaidOrders.xray.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "xray"
-                          ? "bg-teal-500 text-white"
+                          ? "bg-blue-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.xray.length}
@@ -722,16 +880,16 @@ export default function Payment() {
                     onClick={() => setActiveCategory("ultrasound")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeCategory === "ultrasound"
-                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        ? "bg-violet-100 text-violet-700 border-2 border-violet-500 shadow-sm dark:bg-violet-900 dark:text-violet-300"
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <UltrasoundIcon className="text-teal-600" size={18} />
+                    <UltrasoundIcon className={activeCategory === "ultrasound" ? "text-violet-600 dark:text-violet-400" : "text-gray-600"} size={18} />
                     <span>Ultrasound</span>
                     {allUnpaidOrders.ultrasound.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "ultrasound"
-                          ? "bg-teal-500 text-white"
+                          ? "bg-violet-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.ultrasound.length}
@@ -743,16 +901,16 @@ export default function Payment() {
                     onClick={() => setActiveCategory("pharmacy")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeCategory === "pharmacy"
-                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        ? "bg-orange-100 text-orange-700 border-2 border-orange-500 shadow-sm dark:bg-orange-900 dark:text-orange-300"
                         : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
-                    <PharmacyIcon className="text-teal-600" size={18} />
+                    <PharmacyIcon className={activeCategory === "pharmacy" ? "text-orange-600 dark:text-orange-400" : "text-gray-600"} size={18} />
                     <span>Pharmacy</span>
                     {allUnpaidOrders.pharmacy.length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "pharmacy"
-                          ? "bg-teal-500 text-white"
+                          ? "bg-orange-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.pharmacy.length}
@@ -1058,9 +1216,10 @@ export default function Payment() {
                               {payment.breakdown && Object.keys(payment.breakdown).length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Object.entries(payment.breakdown).map(([category, details]: [string, any]) => {
-                                    const icon = getMedicalIcon(category, { className: "text-teal-600", size: 14 });
+                                    const colors = getCategoryColor(category);
+                                    const icon = getMedicalIcon(category, { className: `${colors.icon} ${colors.iconDark}`, size: 14 });
                                     return (
-                                      <div key={category} className="flex items-center gap-1 text-xs bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950 dark:text-teal-300 px-2 py-0.5 rounded">
+                                      <div key={category} className={`flex items-center gap-1 text-xs ${colors.bg} ${colors.text} border ${colors.border} ${colors.dark.bg} ${colors.dark.text} ${colors.dark.border} px-2 py-0.5 rounded`}>
                                         {icon}
                                         <span>{category} {details.count > 1 ? `(${details.count})` : ''}</span>
                                       </div>
@@ -1187,7 +1346,7 @@ export default function Payment() {
                             description: order.description
                           };
                           
-                          const serviceIcon = getServiceIcon(order.type);
+                          const serviceIcon = getServiceIcon(order.type, serviceForPayment.category);
                           
                           return (
                             <div 
