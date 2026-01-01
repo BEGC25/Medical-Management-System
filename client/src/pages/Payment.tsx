@@ -84,6 +84,9 @@ export default function Payment() {
   // NEW: Main tab navigation state
   const [activeMainTab, setActiveMainTab] = useState<"pending" | "history">("pending");
   
+  // NEW: Active category filter for pending payments (replaces Tabs)
+  const [activeCategory, setActiveCategory] = useState<"laboratory" | "xray" | "ultrasound" | "pharmacy">("laboratory");
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -402,7 +405,7 @@ export default function Payment() {
     return (
       <div 
         key={order.id} 
-        className="p-4 rounded-lg bg-white border-l-4 border-teal-400 border-r border-t border-b border-gray-200/70 hover:border-teal-500 hover:shadow-[0_4px_20px_rgba(20,184,166,0.2)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-teal-500 group" 
+        className="p-4 rounded-lg bg-white border border-gray-200 hover:border-teal-300 hover:shadow-md transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-teal-500 group" 
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -465,7 +468,7 @@ export default function Payment() {
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
             {/* Amount - Large and Bold */}
             {displayPrice > 0 && (
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                 SSP {displayPrice.toLocaleString()}
               </div>
             )}
@@ -495,14 +498,6 @@ export default function Payment() {
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">Process patient payments and manage outstanding balances</p>
             </div>
-            {allUnpaidOrders && getTotalUnpaidCount() > 0 && (
-              <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 shadow-sm hover:shadow-md transition-all flex-shrink-0">
-                <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 animate-pulse" />
-                <span className="text-sm font-semibold text-red-700 dark:text-red-300">
-                  <span className="text-base font-bold">{getTotalUnpaidCount()}</span> pending
-                </span>
-              </div>
-            )}
           </div>
           
           {/* Integrated Search Bar */}
@@ -510,7 +505,7 @@ export default function Payment() {
             <div className="relative group">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors z-10" />
               <Input
-                placeholder="🔍 Search patients by name or ID..."
+                placeholder="🔍 Search patients by name or ID... (⌘K)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-11 text-sm border-gray-200/70 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-300"
@@ -580,7 +575,7 @@ export default function Payment() {
         <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
           <button
             onClick={() => setActiveMainTab("pending")}
-            className={`flex-1 min-w-[200px] px-6 py-4 text-sm font-semibold transition-all duration-300 relative ${
+            className={`flex-1 min-w-[200px] px-6 py-3 text-sm font-semibold transition-all duration-300 relative ${
               activeMainTab === "pending"
                 ? "text-teal-700 dark:text-teal-400 bg-gradient-to-r from-teal-50/50 to-transparent dark:from-teal-950/50"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
@@ -599,7 +594,7 @@ export default function Payment() {
           
           <button
             onClick={() => setActiveMainTab("history")}
-            className={`flex-1 min-w-[200px] px-6 py-4 text-sm font-semibold transition-all duration-300 relative ${
+            className={`flex-1 min-w-[200px] px-6 py-3 text-sm font-semibold transition-all duration-300 relative ${
               activeMainTab === "history"
                 ? "text-teal-700 dark:text-teal-400 bg-gradient-to-r from-teal-50/50 to-transparent dark:from-teal-950/50"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
@@ -644,49 +639,98 @@ export default function Payment() {
             </Card>
           ) : allUnpaidOrders && getTotalUnpaidCount() > 0 ? (
             <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(59,130,246,0.15)] transition-all duration-300">
-              <Tabs defaultValue="laboratory" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 p-1 gap-1 overflow-x-auto">
-                  <TabsTrigger value="laboratory" className="flex items-center gap-1.5 data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-950 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Laboratory Tests">
+              <CardContent className="pt-4">
+                {/* Filter Chips (Pills) - Replacing Tabs */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <button
+                    onClick={() => setActiveCategory("laboratory")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      activeCategory === "laboratory"
+                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                    }`}
+                  >
                     <LaboratoryIcon className="text-teal-600" size={18} />
-                    <span className="hidden sm:inline text-sm">Lab</span>
+                    <span>Lab</span>
                     {allUnpaidOrders.laboratory.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm">
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                        activeCategory === "laboratory"
+                          ? "bg-teal-500 text-white"
+                          : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
+                      }`}>
                         {allUnpaidOrders.laboratory.length}
                       </span>
                     )}
-                  </TabsTrigger>
-                  <TabsTrigger value="xray" className="flex items-center gap-1.5 data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-950 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="X-Ray Exams">
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveCategory("xray")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      activeCategory === "xray"
+                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                    }`}
+                  >
                     <XRayIcon className="text-teal-600" size={18} />
-                    <span className="hidden sm:inline text-sm">X-Ray</span>
+                    <span>X-Ray</span>
                     {allUnpaidOrders.xray.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm">
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                        activeCategory === "xray"
+                          ? "bg-teal-500 text-white"
+                          : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
+                      }`}>
                         {allUnpaidOrders.xray.length}
                       </span>
                     )}
-                  </TabsTrigger>
-                  <TabsTrigger value="ultrasound" className="flex items-center gap-1.5 data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-950 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Ultrasound Exams">
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveCategory("ultrasound")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      activeCategory === "ultrasound"
+                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                    }`}
+                  >
                     <UltrasoundIcon className="text-teal-600" size={18} />
-                    <span className="hidden sm:inline text-sm">Ultrasound</span>
+                    <span>Ultrasound</span>
                     {allUnpaidOrders.ultrasound.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm">
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                        activeCategory === "ultrasound"
+                          ? "bg-teal-500 text-white"
+                          : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
+                      }`}>
                         {allUnpaidOrders.ultrasound.length}
                       </span>
                     )}
-                  </TabsTrigger>
-                  <TabsTrigger value="pharmacy" className="flex items-center gap-1.5 data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-950 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Pharmacy Orders">
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveCategory("pharmacy")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      activeCategory === "pharmacy"
+                        ? "bg-teal-100 text-teal-700 border-2 border-teal-500 shadow-sm dark:bg-teal-900 dark:text-teal-300"
+                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                    }`}
+                  >
                     <PharmacyIcon className="text-teal-600" size={18} />
-                    <span className="hidden sm:inline text-sm">Pharmacy</span>
+                    <span>Pharmacy</span>
                     {allUnpaidOrders.pharmacy.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm">
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                        activeCategory === "pharmacy"
+                          ? "bg-teal-500 text-white"
+                          : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
+                      }`}>
                         {allUnpaidOrders.pharmacy.length}
                       </span>
                     )}
-                  </TabsTrigger>
-                </TabsList>
+                  </button>
+                </div>
 
-                <TabsContent value="laboratory" className="mt-3 px-1">
-                  <div className="space-y-2">
-                    {allUnpaidOrders.laboratory.length === 0 ? (
+                {/* Content for active category */}
+                <div className="space-y-2">
+                  {activeCategory === "laboratory" && (
+                    allUnpaidOrders.laboratory.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
                           <LaboratoryIcon className="text-gray-400" size={28} />
@@ -696,13 +740,11 @@ export default function Payment() {
                       </div>
                     ) : (
                       allUnpaidOrders.laboratory.map(order => renderOrderCard(order, 'laboratory'))
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="xray" className="mt-3 px-1">
-                  <div className="space-y-2">
-                    {allUnpaidOrders.xray.length === 0 ? (
+                    )
+                  )}
+                  
+                  {activeCategory === "xray" && (
+                    allUnpaidOrders.xray.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
                           <XRayIcon className="text-gray-400" size={28} />
@@ -712,13 +754,11 @@ export default function Payment() {
                       </div>
                     ) : (
                       allUnpaidOrders.xray.map(order => renderOrderCard(order, 'xray'))
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="ultrasound" className="mt-3 px-1">
-                  <div className="space-y-2">
-                    {allUnpaidOrders.ultrasound.length === 0 ? (
+                    )
+                  )}
+                  
+                  {activeCategory === "ultrasound" && (
+                    allUnpaidOrders.ultrasound.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
                           <UltrasoundIcon className="text-gray-400" size={28} />
@@ -728,13 +768,11 @@ export default function Payment() {
                       </div>
                     ) : (
                       allUnpaidOrders.ultrasound.map(order => renderOrderCard(order, 'ultrasound'))
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="pharmacy" className="mt-3 px-1">
-                  <div className="space-y-2">
-                    {allUnpaidOrders.pharmacy.length === 0 ? (
+                    )
+                  )}
+                  
+                  {activeCategory === "pharmacy" && (
+                    allUnpaidOrders.pharmacy.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
                           <PharmacyIcon className="text-gray-400" size={28} />
@@ -744,10 +782,10 @@ export default function Payment() {
                       </div>
                     ) : (
                       allUnpaidOrders.pharmacy.map(order => renderOrderCard(order, 'pharmacy'))
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
+                    )
+                  )}
+                </div>
+              </CardContent>
             </Card>
           ) : (
             <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)]">
@@ -903,9 +941,9 @@ export default function Payment() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Cash: {paymentHistory.filter(p => p.paymentMethod === 'cash').length}
+                        {paymentHistory.filter(p => p.paymentMethod === 'cash').length} Cash Transactions
                         {paymentHistory.filter(p => p.paymentMethod !== 'cash').length > 0 && 
-                          `, Other: ${paymentHistory.filter(p => p.paymentMethod !== 'cash').length}`
+                          `, ${paymentHistory.filter(p => p.paymentMethod !== 'cash').length} Other`
                         }
                       </div>
                       <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
@@ -1011,7 +1049,7 @@ export default function Payment() {
                         
                         {/* Right side: Amount and actions */}
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                          <div className="text-xl font-bold text-teal-700 dark:text-teal-300">
+                          <div className="text-xl font-bold text-teal-700 dark:text-teal-300 tabular-nums">
                             SSP {payment.totalAmount.toLocaleString()}
                           </div>
                           <div className="flex gap-2">
@@ -1202,7 +1240,7 @@ export default function Payment() {
                                     {item.description}
                                   </div>
                                 )}
-                                <div className="text-sm font-bold text-green-700 dark:text-green-400 mt-0.5">
+                                <div className="text-sm font-bold text-green-700 dark:text-green-400 mt-0.5 tabular-nums">
                                   SSP {item.unitPrice.toLocaleString()}
                                 </div>
                               </div>
@@ -1223,7 +1261,7 @@ export default function Payment() {
                       <div className="border-t-2 border-green-600 pt-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-950 -mx-3 sm:-mx-4 px-3 sm:px-4 py-3 sticky bottom-0 rounded-b-lg shadow-lg">
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-sm sm:text-base text-green-800 dark:text-green-200">Total:</span>
-                          <span className="font-bold text-xl sm:text-2xl text-green-700 dark:text-green-400">
+                          <span className="font-bold text-xl sm:text-2xl text-green-700 dark:text-green-400 tabular-nums">
                             SSP {Math.round(getTotalAmount()).toLocaleString()}
                           </span>
                         </div>
@@ -1316,7 +1354,7 @@ export default function Payment() {
                           </div>
                           <div className="flex justify-between text-sm font-bold border-t-2 border-blue-300 dark:border-blue-700 pt-2">
                             <span className="text-blue-800 dark:text-blue-200">Total:</span>
-                            <span className="text-base text-blue-700 dark:text-blue-400">SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
+                            <span className="text-base text-blue-700 dark:text-blue-400 tabular-nums">SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
@@ -1355,7 +1393,7 @@ export default function Payment() {
                           </div>
                           <div className="font-bold flex justify-between text-sm">
                             <span>TOTAL:</span>
-                            <span>SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
+                            <span className="tabular-nums">SSP {Math.round(getTotalAmount()).toLocaleString()}</span>
                           </div>
                           <div className="mt-2 text-xs text-gray-600">
                             <p>Method: {paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'mobile_money' ? 'Mobile' : 'Bank'}</p>
@@ -1419,7 +1457,7 @@ export default function Payment() {
                           ) : (
                             <>
                               <CheckCircle className="h-4 w-4 mr-2" />
-                              Complete (SSP {Math.round(getTotalAmount()).toLocaleString()})
+                              <span className="tabular-nums">Complete (SSP {Math.round(getTotalAmount()).toLocaleString()})</span>
                             </>
                           )}
                         </Button>
@@ -1446,7 +1484,7 @@ export default function Payment() {
                 <p className="font-semibold mb-2">Please confirm payment details:</p>
                 <div className="space-y-1 text-xs">
                   <p><strong>Patient:</strong> {selectedPatient?.firstName} {selectedPatient?.lastName} ({selectedPatient?.patientId})</p>
-                  <p><strong>Total Amount:</strong> <span className="text-green-600 font-bold text-base">SSP {Math.round(getTotalAmount()).toLocaleString()}</span></p>
+                  <p><strong>Total Amount:</strong> <span className="text-green-600 font-bold text-base tabular-nums">SSP {Math.round(getTotalAmount()).toLocaleString()}</span></p>
                   <p><strong>Items:</strong> {paymentItems.length} service(s)</p>
                   <p><strong>Payment Method:</strong> {paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'mobile_money' ? 'Mobile Money' : 'Bank Transfer'}</p>
                   <p><strong>Received By:</strong> {receivedBy}</p>
