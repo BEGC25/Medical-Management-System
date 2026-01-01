@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, DollarSign, Receipt, AlertCircle, Users, TestTube, XCircle as XRayIcon, ActivitySquare, Pill, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { LaboratoryIcon, XRayIcon, UltrasoundIcon, PharmacyIcon, getMedicalIcon } from "@/components/MedicalIcons";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -75,7 +76,7 @@ export default function Payment() {
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [openServiceCategories, setOpenServiceCategories] = useState<string[]>(["consultation"]);
-  const [paymentHistoryTab, setPaymentHistoryTab] = useState<"today" | "all">("today");
+  const [paymentHistoryTab, setPaymentHistoryTab] = useState<"today" | "yesterday" | "last7days" | "last30days" | "all">("today");
   const [paymentSearchQuery, setPaymentSearchQuery] = useState("");
   const [selectedPaymentForView, setSelectedPaymentForView] = useState<any | null>(null);
   const [isReceiptViewOpen, setIsReceiptViewOpen] = useState(false);
@@ -111,27 +112,14 @@ export default function Payment() {
     return `${first}${last}`.toUpperCase() || '??';
   }
 
-  // Service icon mapping
-  function getServiceIcon(type: string): string {
-    switch (type.toLowerCase()) {
-      case 'lab_test_item':
-      case 'laboratory':
-        return '🧪';
-      case 'xray_exam':
-      case 'radiology':
-      case 'xray':
-        return '☢️';
-      case 'ultrasound_exam':
-      case 'ultrasound':
-        return '📡';
-      case 'pharmacy_order':
-      case 'pharmacy':
-        return '💊';
-      case 'consultation':
-        return '🩺';
-      default:
-        return '📋';
-    }
+  // Service icon mapping - returns React component
+  function getServiceIcon(type: string) {
+    return getMedicalIcon(type, { className: "text-teal-500", size: 18 });
+  }
+  
+  // Service icon for tabs - slightly larger
+  function getServiceIconLarge(type: string) {
+    return getMedicalIcon(type, { className: "text-teal-600", size: 20 });
   }
 
   // Format date nicely
@@ -176,11 +164,11 @@ export default function Payment() {
 
   // Get payment history using preset-based filtering
   const { data: paymentHistory = [], isLoading: historyLoading, refetch: refetchHistory } = useQuery<any[]>({
-    queryKey: ["/api/payments", { preset: paymentHistoryTab === "today" ? "today" : undefined }, paymentSearchQuery],
+    queryKey: ["/api/payments", { preset: paymentHistoryTab }, paymentSearchQuery],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (paymentHistoryTab === "today") {
-        params.append('preset', 'today');
+      if (paymentHistoryTab !== "all") {
+        params.append('preset', paymentHistoryTab);
       }
       if (paymentSearchQuery) {
         params.append('patientId', paymentSearchQuery);
@@ -414,7 +402,7 @@ export default function Payment() {
     return (
       <div 
         key={order.id} 
-        className="p-4 rounded-lg bg-white border-l-4 border-amber-400 border-r border-t border-b border-gray-200/70 hover:border-amber-500 hover:shadow-[0_4px_20px_rgba(245,158,11,0.2)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-amber-500 group" 
+        className="p-4 rounded-lg bg-white border-l-4 border-teal-400 border-r border-t border-b border-gray-200/70 hover:border-teal-500 hover:shadow-[0_4px_20px_rgba(20,184,166,0.2)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-teal-500 group" 
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -422,8 +410,9 @@ export default function Payment() {
           }
         }}
       >
+        {/* Compact 2-row layout */}
         <div className="flex justify-between items-start gap-3">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {/* Patient Avatar */}
             {patient && (
               <div
@@ -433,59 +422,61 @@ export default function Payment() {
               </div>
             )}
             
+            {/* Row 1: Patient Name, ID, and Date on same line */}
             <div className="flex-1 min-w-0">
-              {/* Patient Name and ID */}
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 {patient ? (
                   <>
-                    <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                    <span className="font-semibold text-sm text-gray-900 dark:text-white">
                       {patient.firstName} {patient.lastName}
                     </span>
-                    <span className="text-gray-500 text-xs">•</span>
+                    <span className="text-gray-400 text-xs">•</span>
                     <Badge variant="outline" className="text-xs flex-shrink-0">{patient.patientId}</Badge>
+                    <span className="text-gray-400 text-xs">•</span>
+                    <span className="text-gray-500 text-xs">{formatDateNice(order.date)}</span>
                   </>
                 ) : (
-                  <span className="font-semibold text-sm text-gray-900 dark:text-white">{order.patientId}</span>
+                  <>
+                    <span className="font-semibold text-sm text-gray-900 dark:text-white">{order.patientId}</span>
+                    <span className="text-gray-400 text-xs">•</span>
+                    <span className="text-gray-500 text-xs">{formatDateNice(order.date)}</span>
+                  </>
                 )}
               </div>
               
-              {/* Service Description with Icon */}
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-base">{serviceIcon}</span>
+              {/* Row 2: Service Description with Icon */}
+              <div className="flex items-center gap-2">
+                {serviceIcon}
                 <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">{order.description}</h4>
               </div>
               
-              {/* Date with Icon */}
-              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                <span>📅</span>
-                <span>{formatDateNice(order.date)}</span>
-              </div>
-              
-              {/* Additional Info */}
-              {order.bodyPart && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Body Part: {order.bodyPart}</p>}
-              {order.dosage && <p className="text-xs text-gray-600 dark:text-gray-400">Dosage: {order.dosage}</p>}
-              {order.quantity && <p className="text-xs text-gray-600 dark:text-gray-400">Quantity: {order.quantity}</p>}
+              {/* Additional Info - inline if present */}
+              {(order.bodyPart || order.dosage || order.quantity) && (
+                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                  {order.bodyPart && <span>Part: {order.bodyPart}</span>}
+                  {order.dosage && <span>Dosage: {order.dosage}</span>}
+                  {order.quantity && <span>Qty: {order.quantity}</span>}
+                </div>
+              )}
             </div>
           </div>
           
           {/* Right Side: Amount and Action */}
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            {/* Amount */}
+            {/* Amount - Large and Bold */}
             {displayPrice > 0 && (
-              <div className="text-right">
-                <div className="text-lg font-bold text-gray-900 dark:text-white">
-                  SSP {displayPrice.toLocaleString()}
-                </div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                SSP {displayPrice.toLocaleString()}
               </div>
             )}
             
             {/* Action Button */}
-            <Badge 
-              variant="outline" 
-              className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-0 shadow-sm hover:shadow-md transition-all px-3 py-1.5 font-semibold cursor-pointer"
+            <Button 
+              size="sm"
+              className="bg-teal-500 hover:bg-teal-600 text-white shadow-sm transition-all"
             >
-              💳 Process Payment
-            </Badge>
+              Process Payment
+            </Button>
           </div>
         </div>
       </div>
@@ -591,7 +582,7 @@ export default function Payment() {
             onClick={() => setActiveMainTab("pending")}
             className={`flex-1 min-w-[200px] px-6 py-4 text-sm font-semibold transition-all duration-300 relative ${
               activeMainTab === "pending"
-                ? "text-blue-700 dark:text-blue-400 bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-950/50"
+                ? "text-teal-700 dark:text-teal-400 bg-gradient-to-r from-teal-50/50 to-transparent dark:from-teal-950/50"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
             }`}
           >
@@ -602,7 +593,7 @@ export default function Payment() {
               )}
             </div>
             {activeMainTab === "pending" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-600 to-teal-600 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
             )}
           </button>
           
@@ -610,18 +601,18 @@ export default function Payment() {
             onClick={() => setActiveMainTab("history")}
             className={`flex-1 min-w-[200px] px-6 py-4 text-sm font-semibold transition-all duration-300 relative ${
               activeMainTab === "history"
-                ? "text-green-700 dark:text-green-400 bg-gradient-to-r from-green-50/50 to-transparent dark:from-green-950/50"
+                ? "text-teal-700 dark:text-teal-400 bg-gradient-to-r from-teal-50/50 to-transparent dark:from-teal-950/50"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
             }`}
           >
             <div className="flex items-center justify-center gap-2">
               <span>Payment History</span>
               {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
-                <Badge className="bg-green-600 text-white">{paymentHistory.length} today</Badge>
+                <Badge className="bg-teal-600 text-white">{paymentHistory.length} today</Badge>
               )}
             </div>
             {activeMainTab === "history" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-green-600 to-emerald-600 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-600 to-teal-600 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
             )}
           </button>
         </div>
@@ -655,38 +646,38 @@ export default function Payment() {
             <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(59,130,246,0.15)] transition-all duration-300">
               <Tabs defaultValue="laboratory" className="w-full">
                 <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 p-1 gap-1 overflow-x-auto">
-                  <TabsTrigger value="laboratory" className="flex items-center gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Laboratory Tests">
-                    <span className="text-base">🧪</span>
+                  <TabsTrigger value="laboratory" className="flex items-center gap-1.5 data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-950 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Laboratory Tests">
+                    <LaboratoryIcon className="text-teal-600" size={18} />
                     <span className="hidden sm:inline text-sm">Lab</span>
                     {allUnpaidOrders.laboratory.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
+                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm">
                         {allUnpaidOrders.laboratory.length}
                       </span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="xray" className="flex items-center gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="X-Ray Exams">
-                    <span className="text-base">☢️</span>
+                  <TabsTrigger value="xray" className="flex items-center gap-1.5 data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-950 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="X-Ray Exams">
+                    <XRayIcon className="text-teal-600" size={18} />
                     <span className="hidden sm:inline text-sm">X-Ray</span>
                     {allUnpaidOrders.xray.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
+                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm">
                         {allUnpaidOrders.xray.length}
                       </span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="ultrasound" className="flex items-center gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Ultrasound Exams">
-                    <span className="text-base">📡</span>
+                  <TabsTrigger value="ultrasound" className="flex items-center gap-1.5 data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-950 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Ultrasound Exams">
+                    <UltrasoundIcon className="text-teal-600" size={18} />
                     <span className="hidden sm:inline text-sm">Ultrasound</span>
                     {allUnpaidOrders.ultrasound.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
+                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm">
                         {allUnpaidOrders.ultrasound.length}
                       </span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="pharmacy" className="flex items-center gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Pharmacy Orders">
-                    <span className="text-base">💊</span>
+                  <TabsTrigger value="pharmacy" className="flex items-center gap-1.5 data-[state=active]:bg-teal-50 dark:data-[state=active]:bg-teal-950 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Pharmacy Orders">
+                    <PharmacyIcon className="text-teal-600" size={18} />
                     <span className="hidden sm:inline text-sm">Pharmacy</span>
                     {allUnpaidOrders.pharmacy.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
+                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm">
                         {allUnpaidOrders.pharmacy.length}
                       </span>
                     )}
@@ -698,7 +689,7 @@ export default function Payment() {
                     {allUnpaidOrders.laboratory.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <TestTube className="w-7 h-7 text-gray-400" />
+                          <LaboratoryIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending lab payments</h3>
                         <p className="text-sm text-gray-500">All laboratory tests paid</p>
@@ -714,7 +705,7 @@ export default function Payment() {
                     {allUnpaidOrders.xray.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <XRayIcon className="w-7 h-7 text-gray-400" />
+                          <XRayIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending X-ray payments</h3>
                         <p className="text-sm text-gray-500">All X-ray exams paid</p>
@@ -730,7 +721,7 @@ export default function Payment() {
                     {allUnpaidOrders.ultrasound.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <ActivitySquare className="w-7 h-7 text-gray-400" />
+                          <UltrasoundIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending ultrasound payments</h3>
                         <p className="text-sm text-gray-500">All ultrasound exams paid</p>
@@ -746,7 +737,7 @@ export default function Payment() {
                     {allUnpaidOrders.pharmacy.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <Pill className="w-7 h-7 text-gray-400" />
+                          <PharmacyIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending pharmacy payments</h3>
                         <p className="text-sm text-gray-500">All pharmacy orders paid</p>
@@ -790,31 +781,146 @@ export default function Payment() {
 
       {/* PAYMENT HISTORY TAB CONTENT */}
       {activeMainTab === "history" && (
-        <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(34,197,94,0.15)] transition-all duration-300">
+        <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(20,184,166,0.15)] transition-all duration-300">
           <CardContent className="pt-4">
-            {/* Today/All Toggle and Inline Stats */}
-            <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
-              <Tabs value={paymentHistoryTab} onValueChange={(v) => setPaymentHistoryTab(v as "today" | "all")} className="w-full sm:w-auto">
-                <TabsList className="grid w-full sm:w-auto grid-cols-2 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 p-0.5">
-                  <TabsTrigger value="today" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-md transition-all text-sm">Today</TabsTrigger>
-                  <TabsTrigger value="all" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-md transition-all text-sm">All</TabsTrigger>
-                </TabsList>
-              </Tabs>
+            {/* Date Range Filter Tabs */}
+            <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto mb-4">
+              <button
+                onClick={() => setPaymentHistoryTab("today")}
+                className={`relative px-4 py-2.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                  paymentHistoryTab === "today"
+                    ? "text-teal-700 dark:text-teal-400"
+                    : "text-gray-600 dark:text-gray-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50/30 dark:hover:bg-teal-900/10"
+                }`}
+              >
+                Today
+                {paymentHistoryTab === "today" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600 dark:bg-teal-400 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
+                )}
+              </button>
               
-              {/* Compact Inline Stats */}
-              {paymentHistoryTab === "today" && paymentHistory.length > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 rounded-lg border border-green-200 dark:border-green-800">
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-300">
-                    📊 {paymentHistory.length} payment{paymentHistory.length !== 1 ? 's' : ''} • SSP {paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0).toLocaleString()} total
-                  </span>
-                </div>
-              )}
+              <button
+                onClick={() => setPaymentHistoryTab("yesterday")}
+                className={`relative px-4 py-2.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                  paymentHistoryTab === "yesterday"
+                    ? "text-teal-700 dark:text-teal-400"
+                    : "text-gray-600 dark:text-gray-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50/30 dark:hover:bg-teal-900/10"
+                }`}
+              >
+                Yesterday
+                {paymentHistoryTab === "yesterday" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600 dark:bg-teal-400 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
+                )}
+              </button>
+              
+              <button
+                onClick={() => setPaymentHistoryTab("last7days")}
+                className={`relative px-3 sm:px-4 py-2.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                  paymentHistoryTab === "last7days"
+                    ? "text-teal-700 dark:text-teal-400"
+                    : "text-gray-600 dark:text-gray-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50/30 dark:hover:bg-teal-900/10"
+                }`}
+              >
+                <span className="hidden sm:inline">Last 7 Days</span>
+                <span className="sm:hidden">7 Days</span>
+                {paymentHistoryTab === "last7days" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600 dark:bg-teal-400 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
+                )}
+              </button>
+              
+              <button
+                onClick={() => setPaymentHistoryTab("last30days")}
+                className={`relative px-3 sm:px-4 py-2.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                  paymentHistoryTab === "last30days"
+                    ? "text-teal-700 dark:text-teal-400"
+                    : "text-gray-600 dark:text-gray-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50/30 dark:hover:bg-teal-900/10"
+                }`}
+              >
+                <span className="hidden sm:inline">Last 30 Days</span>
+                <span className="sm:hidden">30 Days</span>
+                {paymentHistoryTab === "last30days" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600 dark:bg-teal-400 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
+                )}
+              </button>
+              
+              <button
+                onClick={() => setPaymentHistoryTab("all")}
+                className={`relative px-4 py-2.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                  paymentHistoryTab === "all"
+                    ? "text-teal-700 dark:text-teal-400"
+                    : "text-gray-600 dark:text-gray-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50/30 dark:hover:bg-teal-900/10"
+                }`}
+              >
+                All
+                {paymentHistoryTab === "all" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600 dark:bg-teal-400 shadow-[0_0_8px_rgba(20,184,166,0.6)]" />
+                )}
+              </button>
             </div>
+
+            {/* Stats Cards - Premium KPIs */}
+            {paymentHistory.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                {/* Total Collected */}
+                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-4 rounded-lg border border-green-200 dark:border-green-800 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-200 dark:bg-green-800 rounded-lg">
+                      <Wallet className="w-5 h-5 text-green-700 dark:text-green-300" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-green-700 dark:text-green-300 tabular-nums">
+                        SSP {paymentHistory.reduce((sum, p) => sum + p.totalAmount, 0).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                        Total Collected
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transaction Count */}
+                <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 p-4 rounded-lg border border-teal-200 dark:border-teal-800 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-teal-200 dark:bg-teal-800 rounded-lg">
+                      <TrendingUp className="w-5 h-5 text-teal-700 dark:text-teal-300" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-teal-700 dark:text-teal-300 tabular-nums">
+                        {paymentHistory.length}
+                      </div>
+                      <div className="text-xs text-teal-600 dark:text-teal-400 font-medium">
+                        Transactions
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Methods Breakdown */}
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg">
+                      <CreditCard className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Cash: {paymentHistory.filter(p => p.paymentMethod === 'cash').length}
+                        {paymentHistory.filter(p => p.paymentMethod !== 'cash').length > 0 && 
+                          `, Other: ${paymentHistory.filter(p => p.paymentMethod !== 'cash').length}`
+                        }
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                        Payment Methods
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Payment List */}
             {historyLoading ? (
               <div className="flex items-center justify-center py-10">
-                <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-green-600"></div>
+                <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-teal-600"></div>
                 <span className="ml-3 text-sm text-gray-600">Loading...</span>
               </div>
             ) : paymentHistory.length === 0 ? (
@@ -824,7 +930,11 @@ export default function Payment() {
                 </div>
                 <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No payments found</h3>
                 <p className="text-sm text-gray-500">
-                  {paymentHistoryTab === "today" ? "No payments today yet" : "No payment history"}
+                  {paymentHistoryTab === "today" ? "No payments today yet" :
+                   paymentHistoryTab === "yesterday" ? "No payments yesterday" :
+                   paymentHistoryTab === "last7days" ? "No payments in last 7 days" :
+                   paymentHistoryTab === "last30days" ? "No payments in last 30 days" :
+                   "No payment history"}
                 </p>
               </div>
             ) : (
@@ -834,7 +944,7 @@ export default function Payment() {
                     ? `${payment.patient.firstName} ${payment.patient.lastName}` 
                     : payment.patientId;
                   
-                  // Safe fallback for avatar generation - use patient name if available, otherwise patientId
+                  // Safe fallback for avatar generation
                   let patientFirstName = 'P';
                   let patientLastName = 'T';
                   
@@ -842,15 +952,15 @@ export default function Payment() {
                     patientFirstName = payment.patient.firstName;
                     patientLastName = payment.patient.lastName;
                   } else if (payment.patientId && payment.patientId.length >= 2) {
-                    // Use first 2 chars for both first and last to ensure we always have something
                     patientFirstName = payment.patientId.substring(0, 1);
                     patientLastName = payment.patientId.substring(1, 2);
                   }
                   
                   return (
-                    <div key={payment.id} className="p-3 border border-gray-200/70 rounded-lg hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50/50 hover:to-transparent dark:hover:from-green-950/30 dark:hover:to-transparent hover:shadow-[0_2px_8px_rgba(34,197,94,0.15)] hover:-translate-y-0.5 transition-all duration-300 ease-out group">
-                      <div className="flex flex-col sm:flex-row justify-between gap-2">
-                        <div className="flex-1 min-w-0 flex items-start gap-3">
+                    <div key={payment.id} className="p-3 border border-gray-200/70 rounded-lg hover:border-teal-300 hover:bg-gradient-to-r hover:from-teal-50/50 hover:to-transparent dark:hover:from-teal-950/30 dark:hover:to-transparent hover:shadow-[0_2px_8px_rgba(20,184,166,0.15)] hover:-translate-y-0.5 transition-all duration-300 ease-out group">
+                      {/* Compact 2-row layout for payment history */}
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           {/* Patient Avatar */}
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md flex-shrink-0 ${getAvatarColor(patientFirstName + patientLastName)}`}
@@ -859,59 +969,66 @@ export default function Payment() {
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+                            {/* Row 1: Patient info and time */}
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                                 {patientName}
                               </h4>
+                              <span className="text-gray-400 text-xs">•</span>
                               <Badge variant="outline" className="text-xs flex-shrink-0">{payment.patientId}</Badge>
+                              <span className="text-gray-400 text-xs">•</span>
+                              <span className="text-xs text-gray-500">{new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
-                            <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                              <span className="font-semibold text-sm text-green-700 dark:text-green-400">
-                                SSP {payment.totalAmount.toLocaleString()}
-                              </span>
-                              <span>•</span>
-                              <span className="capitalize">
+                            
+                            {/* Row 2: Service breakdown and payment method */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Service Breakdown with Icons */}
+                              {payment.breakdown && Object.keys(payment.breakdown).length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {Object.entries(payment.breakdown).map(([category, details]: [string, any]) => {
+                                    const icon = getMedicalIcon(category, { className: "text-teal-600", size: 14 });
+                                    return (
+                                      <div key={category} className="flex items-center gap-1 text-xs bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950 dark:text-teal-300 px-2 py-0.5 rounded">
+                                        {icon}
+                                        <span>{category} {details.count > 1 ? `(${details.count})` : ''}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <span className="text-gray-400 text-xs">•</span>
+                              <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">
                                 {payment.paymentMethod === 'cash' ? '💵 Cash' : 
                                  payment.paymentMethod === 'mobile_money' ? '📱 Mobile' : 
                                  '🏦 Bank'}
                               </span>
-                              <span>•</span>
-                              <span>{new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
-                            {/* Service Breakdown with Icons */}
-                            {payment.breakdown && Object.keys(payment.breakdown).length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                {Object.entries(payment.breakdown).map(([category, details]: [string, any]) => (
-                                  <Badge 
-                                    key={category} 
-                                    variant="outline" 
-                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300"
-                                  >
-                                    {getServiceIcon(category)} {category} {details.count > 1 ? `(${details.count})` : ''}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
                             <p className="text-xs text-gray-500 mt-1">
                               Processed by <span className="font-medium capitalize">{payment.receivedBy}</span>
                             </p>
                           </div>
                         </div>
-                        <div className="flex sm:flex-col gap-2 items-start sm:items-end flex-shrink-0">
-                          <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm font-semibold text-xs">PAID</Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedPaymentForView(payment);
-                              setIsReceiptViewOpen(true);
-                            }}
-                            className="min-h-[36px] text-xs border-gray-200/70 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-950 transition-all group-hover:shadow-md"
-                            data-testid={`button-view-receipt-${payment.paymentId}`}
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1" />
-                            📄
-                          </Button>
+                        
+                        {/* Right side: Amount and actions */}
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          <div className="text-xl font-bold text-teal-700 dark:text-teal-300">
+                            SSP {payment.totalAmount.toLocaleString()}
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge className="bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-sm font-semibold text-xs">PAID</Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedPaymentForView(payment);
+                                setIsReceiptViewOpen(true);
+                              }}
+                              className="h-7 text-xs border-gray-200/70 hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950 transition-all"
+                              data-testid={`button-view-receipt-${payment.paymentId}`}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
