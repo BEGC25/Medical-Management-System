@@ -584,7 +584,7 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-2 sm:space-y-3">
       {/* Compact Page Header */}
       <div className="bg-white dark:bg-gray-800 
                       border border-gray-200/60 dark:border-gray-700/50 
@@ -592,7 +592,7 @@ export default function Patients() {
                       shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
                       hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]
                       transition-all duration-300
-                      p-4
+                      p-3
                       card-premium">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
           <div className="flex-1">
@@ -632,16 +632,16 @@ export default function Patients() {
               onClick={handleNewPatient}
               size="lg"
               className="w-full md:w-auto
-                         group bg-gradient-to-r from-teal-500 to-blue-500 
-                         hover:from-teal-600 hover:to-blue-600
-                         dark:from-teal-500 dark:to-blue-400
-                         dark:hover:from-teal-600 dark:hover:to-blue-500
+                         group bg-gradient-to-r from-teal-500 to-cyan-500 
+                         hover:from-teal-600 hover:to-cyan-600
+                         dark:from-teal-500 dark:to-cyan-400
+                         dark:hover:from-teal-600 dark:hover:to-cyan-500
                          text-white font-semibold
                          px-6 py-3
                          shadow-[0_4px_16px_rgba(20,184,166,0.25),
-                                 0_2px_8px_rgba(59,130,246,0.15)]
+                                 0_2px_8px_rgba(6,182,212,0.15)]
                          hover:shadow-[0_8px_24px_rgba(20,184,166,0.35),
-                                      0_4px_12px_rgba(59,130,246,0.25),
+                                      0_4px_12px_rgba(6,182,212,0.25),
                                       0_0_30px_rgba(20,184,166,0.2)]
                          hover:-translate-y-1
                          active:translate-y-0
@@ -658,48 +658,16 @@ export default function Patients() {
       </div>
 
       {/* Compact Stats Cards - Premium KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {/* Patients Today */}
-        {dateFilter === "today" && (
-          <button
-            onClick={() => setPaymentFilter("all")}
-            className="bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10
-                       border border-gray-200/60 dark:border-gray-700/50
-                       rounded-xl
-                       shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
-                       hover:shadow-[0_4px_12px_rgba(15,23,42,0.08),0_2px_6px_rgba(15,23,42,0.06)]
-                       hover:border-blue-300 dark:hover:border-blue-700
-                       transition-all duration-200
-                       p-4
-                       text-left
-                       cursor-pointer
-                       group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors shadow-sm">
-                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
-                  {countsLoading ? "..." : todayCount}
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                  Today
-                </div>
-              </div>
-            </div>
-          </button>
-        )}
-        
-        {/* Total in View */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Total Patients for Selected Period */}
         <button
           onClick={() => setPaymentFilter("all")}
-          className="bg-gradient-to-br from-white to-green-50/30 dark:from-gray-800 dark:to-green-900/10
+          className="bg-gradient-to-br from-white to-teal-50/30 dark:from-gray-800 dark:to-teal-900/10
                      border border-gray-200/60 dark:border-gray-700/50
                      rounded-xl
                      shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
                      hover:shadow-[0_4px_12px_rgba(15,23,42,0.08),0_2px_6px_rgba(15,23,42,0.06)]
-                     hover:border-green-300 dark:hover:border-green-700
+                     hover:border-teal-300 dark:hover:border-teal-700
                      transition-all duration-200
                      p-4
                      text-left
@@ -707,18 +675,18 @@ export default function Patients() {
                      group"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors shadow-sm">
-              <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/30 transition-colors shadow-sm">
+              <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
                 {patientsLoading ? "..." : filteredPatientsList.length}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                {dateFilter === "today" ? "In View" : 
-                 dateFilter === "yesterday" ? "Yesterday" :
-                 dateFilter === "last7days" ? "Last 7 Days" :
-                 dateFilter === "last30days" ? "Last 30 Days" : "In Range"}
+                {dateFilter === "today" ? "Patients - Today" : 
+                 dateFilter === "yesterday" ? "Patients - Yesterday" :
+                 dateFilter === "last7days" ? "Patients - Last 7 Days" :
+                 dateFilter === "last30days" ? "Patients - Last 30 Days" : "Patients - Range"}
               </div>
             </div>
           </div>
@@ -1118,23 +1086,23 @@ export default function Patients() {
             <div className="relative mb-8">
               {/* Main icon circle */}
               <div className="p-8 rounded-full 
-                              bg-gradient-to-br from-blue-100/90 via-blue-50/80 to-cyan-100/90
-                              dark:from-blue-900/40 dark:via-blue-800/30 dark:to-cyan-900/40
-                              shadow-[0_8px_32px_rgba(59,130,246,0.15),
-                                      0_4px_16px_rgba(59,130,246,0.10)]
-                              dark:shadow-[0_8px_32px_rgba(59,130,246,0.25),
-                                           0_4px_16px_rgba(59,130,246,0.15)]">
-                <Users className="w-20 h-20 text-blue-600 dark:text-blue-400" />
+                              bg-gradient-to-br from-teal-100/90 via-teal-50/80 to-cyan-100/90
+                              dark:from-teal-900/40 dark:via-teal-800/30 dark:to-cyan-900/40
+                              shadow-[0_8px_32px_rgba(20,184,166,0.15),
+                                      0_4px_16px_rgba(20,184,166,0.10)]
+                              dark:shadow-[0_8px_32px_rgba(20,184,166,0.25),
+                                           0_4px_16px_rgba(20,184,166,0.15)]">
+                <Users className="w-20 h-20 text-teal-600 dark:text-teal-400" />
               </div>
               
               {/* Plus badge (encourages action) */}
               <div className="absolute -bottom-2 -right-2 
                               p-3 rounded-full 
-                              bg-blue-600 dark:bg-blue-500
-                              shadow-[0_4px_16px_rgba(59,130,246,0.4),
-                                      0_2px_8px_rgba(59,130,246,0.3)]
-                              dark:shadow-[0_4px_16px_rgba(59,130,246,0.6),
-                                           0_2px_8px_rgba(59,130,246,0.4)]
+                              bg-teal-600 dark:bg-teal-500
+                              shadow-[0_4px_16px_rgba(20,184,166,0.4),
+                                      0_2px_8px_rgba(20,184,166,0.3)]
+                              dark:shadow-[0_4px_16px_rgba(20,184,166,0.6),
+                                           0_2px_8px_rgba(20,184,166,0.4)]
                               animate-pulse">
                 <UserPlus className="w-6 h-6 text-white" />
               </div>
@@ -1160,16 +1128,16 @@ export default function Patients() {
             {!showSearch && (
               <Button 
                 onClick={handleNewPatient}
-                className="bg-gradient-to-r from-blue-600 to-blue-500 
-                           hover:from-blue-700 hover:to-blue-600
-                           dark:from-blue-500 dark:to-blue-400
-                           dark:hover:from-blue-600 dark:hover:to-blue-500
+                className="bg-gradient-to-r from-teal-500 to-cyan-500 
+                           hover:from-teal-600 hover:to-cyan-600
+                           dark:from-teal-500 dark:to-cyan-400
+                           dark:hover:from-teal-600 dark:hover:to-cyan-500
                            text-white font-semibold text-base
                            px-6 py-3
-                           shadow-[0_4px_16px_rgba(59,130,246,0.25),
-                                   0_2px_8px_rgba(59,130,246,0.15)]
-                           hover:shadow-[0_8px_24px_rgba(59,130,246,0.35),
-                                        0_4px_12px_rgba(59,130,246,0.25)]
+                           shadow-[0_4px_16px_rgba(20,184,166,0.25),
+                                   0_2px_8px_rgba(6,182,212,0.15)]
+                           hover:shadow-[0_8px_24px_rgba(20,184,166,0.35),
+                                        0_4px_12px_rgba(6,182,212,0.25)]
                            hover:-translate-y-1
                            active:translate-y-0
                            transition-all duration-300
@@ -1188,25 +1156,25 @@ export default function Patients() {
                   <thead className="bg-gradient-to-r from-gray-50/90 to-gray-100/80 
                                     dark:from-gray-800/70 dark:to-gray-900/60">
                     <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Patient
                       </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         ID
                       </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Age/Gender
                       </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Contact
                       </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Registered
                       </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Consultation
                       </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Actions
                       </th>
                     </tr>
@@ -1294,10 +1262,10 @@ export default function Patients() {
                                 size="sm"
                                 onClick={(e) => e.stopPropagation()}
                                 className="font-semibold 
-                                           border-blue-200 dark:border-blue-800
-                                           hover:bg-blue-600 hover:text-white hover:border-blue-600 
-                                           dark:hover:bg-blue-500 dark:hover:border-blue-500
-                                           hover:shadow-[0_4px_12px_rgba(59,130,246,0.25),0_2px_6px_rgba(59,130,246,0.15)]
+                                           border-teal-200 dark:border-teal-800
+                                           hover:bg-teal-600 hover:text-white hover:border-teal-600 
+                                           dark:hover:bg-teal-500 dark:hover:border-teal-500
+                                           hover:shadow-[0_4px_12px_rgba(20,184,166,0.25),0_2px_6px_rgba(6,182,212,0.15)]
                                            transition-all duration-200"
                                 data-testid={`button-actions-${patient.patientId}`}
                               >
@@ -1444,9 +1412,9 @@ export default function Patients() {
                           handleViewPatient(patient);
                         }}
                         className="w-full font-semibold 
-                                   border-blue-200 dark:border-blue-800
-                                   hover:bg-blue-600 hover:text-white hover:border-blue-600
-                                   dark:hover:bg-blue-500 dark:hover:border-blue-500
+                                   border-teal-200 dark:border-teal-800
+                                   hover:bg-teal-600 hover:text-white hover:border-teal-600
+                                   dark:hover:bg-teal-500 dark:hover:border-teal-500
                                    transition-all duration-300"
                         data-testid={`button-view-mobile-${patient.patientId}`}
                       >
@@ -1469,7 +1437,7 @@ export default function Patients() {
                                    border border-gray-200/60 dark:border-gray-700/50
                                    animate-in fade-in duration-300">
           <DialogHeader className="border-b border-gray-200/70 dark:border-gray-800/70 pb-4">
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent">
+            <DialogTitle className="text-2xl font-bold text-slate-800 dark:text-gray-100">
               {editingPatient ? "Edit Patient" : "New Patient Registration"}
             </DialogTitle>
           </DialogHeader>
@@ -1616,12 +1584,15 @@ export default function Patients() {
                 />
 
                 {!editingPatient && billingSettings && (
-                  <div className="flex items-center space-x-2 p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+                  <div className="flex items-center space-x-2 p-4 border border-teal-200 rounded-lg bg-teal-50 dark:bg-teal-900/20 dark:border-teal-800">
                     <Switch
                       id="collect-fee"
                       checked={collectConsultationFee}
                       onCheckedChange={setCollectConsultationFee}
                       data-testid="switch-collect-fee"
+                      className="data-[state=checked]:bg-teal-500 dark:data-[state=checked]:bg-teal-500
+                                 transition-all duration-300 ease-in-out
+                                 shadow-sm data-[state=checked]:shadow-md"
                     />
                     <label
                       htmlFor="collect-fee"
@@ -1634,7 +1605,7 @@ export default function Patients() {
                         return `Collect consultation fee (${money(price)})`;
                       })()}
                       {billingSettings.requirePrepayment && (
-                        <Badge variant="default" className="ml-2">Recommended</Badge>
+                        <Badge variant="outline" className="ml-2 bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700">Recommended</Badge>
                       )}
                     </label>
                   </div>
@@ -1643,13 +1614,13 @@ export default function Patients() {
                 <div className="flex flex-col sm:flex-row gap-2 pt-4">
                   <Button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 
-                               hover:from-blue-700 hover:to-blue-600
-                               dark:from-blue-500 dark:to-blue-400
-                               dark:hover:from-blue-600 dark:hover:to-blue-500
+                    className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500 
+                               hover:from-teal-600 hover:to-cyan-600
+                               dark:from-teal-500 dark:to-cyan-400
+                               dark:hover:from-teal-600 dark:hover:to-cyan-500
                                text-white font-semibold
-                               shadow-[0_4px_12px_rgba(59,130,246,0.25),0_2px_6px_rgba(59,130,246,0.15)]
-                               hover:shadow-[0_8px_20px_rgba(59,130,246,0.35),0_4px_10px_rgba(59,130,246,0.25)]
+                               shadow-[0_4px_12px_rgba(20,184,166,0.25),0_2px_6px_rgba(6,182,212,0.15)]
+                               hover:shadow-[0_8px_20px_rgba(20,184,166,0.35),0_4px_10px_rgba(6,182,212,0.25)]
                                transition-all duration-300"
                     disabled={
                       createPatientMutation.isPending ||
@@ -1855,13 +1826,13 @@ export default function Patients() {
               {/* Quick actions - Simplified for Reception */}
               <div className="mt-6 space-y-3">
                 <Button
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-500 
-                             hover:from-blue-700 hover:to-blue-600
-                             dark:from-blue-500 dark:to-blue-400
-                             dark:hover:from-blue-600 dark:hover:to-blue-500
+                  className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 
+                             hover:from-teal-600 hover:to-cyan-600
+                             dark:from-teal-500 dark:to-cyan-400
+                             dark:hover:from-teal-600 dark:hover:to-cyan-500
                              text-white font-semibold
-                             shadow-[0_4px_12px_rgba(59,130,246,0.25),0_2px_6px_rgba(59,130,246,0.15)]
-                             hover:shadow-[0_8px_20px_rgba(59,130,246,0.35),0_4px_10px_rgba(59,130,246,0.25)]
+                             shadow-[0_4px_12px_rgba(20,184,166,0.25),0_2px_6px_rgba(6,182,212,0.15)]
+                             hover:shadow-[0_8px_20px_rgba(20,184,166,0.35),0_4px_10px_rgba(6,182,212,0.25)]
                              transition-all duration-300
                              h-12"
                   onClick={() =>
