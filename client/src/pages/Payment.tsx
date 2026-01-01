@@ -620,11 +620,8 @@ export default function Payment() {
                 </div>
               </div>
               
-              {/* Service Description with Icon */}
-              <div className="flex items-center gap-1.5 ml-0.5">
-                {serviceIcon}
-                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">{cleanDescription(order.description, departmentType)}</h4>
-              </div>
+              {/* Service Description */}
+              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 ml-0.5">{cleanDescription(order.description, departmentType)}</h4>
               
               {/* Additional Info - inline if present */}
               {(order.bodyPart || order.dosage || order.quantity) && (
