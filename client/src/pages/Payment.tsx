@@ -115,8 +115,20 @@ export default function Payment() {
     return `${first}${last}`.toUpperCase() || '??';
   }
 
+  // Helper function to normalize service type names
+  function normalizeServiceType(type: string): string {
+    const normalized = type.toLowerCase();
+    if (normalized === 'lab_test_item') return 'laboratory';
+    if (normalized === 'xray_exam') return 'xray';
+    if (normalized === 'ultrasound_exam') return 'ultrasound';
+    if (normalized === 'pharmacy_order') return 'pharmacy';
+    return normalized;
+  }
+
   // Service-specific color themes - WCAG compliant
   function getServiceColors(type: string) {
+    const normalizedType = normalizeServiceType(type);
+    
     const colorMap: Record<string, {
       bg: string;
       bgHover: string;
@@ -188,30 +200,37 @@ export default function Payment() {
         chipBorder: "border-cyan-500",
         chipText: "text-cyan-700 dark:text-cyan-300",
         badgeBg: "bg-cyan-500"
+      },
+      // Default fallback for unknown types
+      default: {
+        bg: "bg-gray-50 dark:bg-gray-950/30",
+        bgHover: "hover:bg-gray-100 dark:hover:bg-gray-900/40",
+        border: "border-gray-200 dark:border-gray-800",
+        borderHover: "hover:border-gray-400 dark:hover:border-gray-600",
+        text: "text-gray-700 dark:text-gray-300",
+        iconColor: "text-gray-600 dark:text-gray-400",
+        chipBg: "bg-gray-100 dark:bg-gray-900",
+        chipBorder: "border-gray-500",
+        chipText: "text-gray-700 dark:text-gray-300",
+        badgeBg: "bg-gray-500"
       }
     };
     
-    return colorMap[type] || colorMap.consultation;
+    return colorMap[normalizedType] || colorMap.default;
   }
 
   // Service icon mapping - returns React component with type-specific colors
   function getServiceIcon(type: string, departmentType?: string) {
     const serviceType = departmentType || type;
-    let normalizedType = serviceType.toLowerCase();
-    
-    // Normalize types
-    if (type === 'lab_test_item') normalizedType = 'laboratory';
-    if (type === 'xray_exam') normalizedType = 'xray';
-    if (type === 'ultrasound_exam') normalizedType = 'ultrasound';
-    if (type === 'pharmacy_order') normalizedType = 'pharmacy';
-    
+    const normalizedType = normalizeServiceType(serviceType);
     const colors = getServiceColors(normalizedType);
     return getMedicalIcon(type, { className: colors.iconColor, size: 18 });
   }
   
   // Service icon for tabs - slightly larger
   function getServiceIconLarge(type: string) {
-    const colors = getServiceColors(type);
+    const normalizedType = normalizeServiceType(type);
+    const colors = getServiceColors(normalizedType);
     return getMedicalIcon(type, { className: colors.iconColor, size: 20 });
   }
 
