@@ -88,6 +88,11 @@ export default function Payment() {
 
   // Avatar utility functions - Premium palette
   function getAvatarColor(name: string): string {
+    // Handle empty or undefined names
+    if (!name || name.length === 0) {
+      return "bg-gray-500"; // Default color for missing names
+    }
+    
     const colors = [
       "bg-indigo-500",  // Soft purple-blue
       "bg-teal-500",    // Sophisticated teal
@@ -101,7 +106,9 @@ export default function Payment() {
   }
 
   function getInitials(firstName: string, lastName: string): string {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    const first = (firstName || '').charAt(0);
+    const last = (lastName || '').charAt(0);
+    return `${first}${last}`.toUpperCase() || '??';
   }
 
   // Service icon mapping
@@ -826,8 +833,19 @@ export default function Payment() {
                   const patientName = payment.patient 
                     ? `${payment.patient.firstName} ${payment.patient.lastName}` 
                     : payment.patientId;
-                  const patientFirstName = payment.patient?.firstName || payment.patientId.substring(0, 2);
-                  const patientLastName = payment.patient?.lastName || payment.patientId.substring(2, 4);
+                  
+                  // Safe fallback for avatar generation - use patient name if available, otherwise patientId
+                  let patientFirstName = 'P';
+                  let patientLastName = 'T';
+                  
+                  if (payment.patient) {
+                    patientFirstName = payment.patient.firstName;
+                    patientLastName = payment.patient.lastName;
+                  } else if (payment.patientId && payment.patientId.length >= 2) {
+                    // Use first 2 chars for both first and last to ensure we always have something
+                    patientFirstName = payment.patientId.substring(0, 1);
+                    patientLastName = payment.patientId.substring(1, 2);
+                  }
                   
                   return (
                     <div key={payment.id} className="p-3 border border-gray-200/70 rounded-lg hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50/50 hover:to-transparent dark:hover:from-green-950/30 dark:hover:to-transparent hover:shadow-[0_2px_8px_rgba(34,197,94,0.15)] hover:-translate-y-0.5 transition-all duration-300 ease-out group">
