@@ -557,7 +557,7 @@ export default function Payment() {
     return (
       <div 
         key={order.id} 
-        className={`p-4 rounded-lg bg-white border border-gray-200 ${colors.hover} hover:shadow-md transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:${colors.hover.replace('hover:border-', 'hover:border-')} group`}
+        className={`p-4 rounded-lg bg-white border border-gray-200 ${colors.hover} hover:shadow-md transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 ${colors.dark.borderActive.replace('dark:border-', 'dark:hover:border-')} group`}
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -1346,7 +1346,7 @@ export default function Payment() {
                             description: order.description
                           };
                           
-                          const serviceIcon = getServiceIcon(order.type);
+                          const serviceIcon = getServiceIcon(order.type, serviceForPayment.category);
                           
                           return (
                             <div 
