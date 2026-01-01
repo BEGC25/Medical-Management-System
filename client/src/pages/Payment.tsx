@@ -86,6 +86,56 @@ export default function Payment() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Avatar utility functions - Premium palette
+  function getAvatarColor(name: string): string {
+    const colors = [
+      "bg-indigo-500",  // Soft purple-blue
+      "bg-teal-500",    // Sophisticated teal
+      "bg-pink-500",    // Soft pink
+      "bg-orange-500",  // Warm orange
+      "bg-blue-500",    // Classic blue
+      "bg-purple-500",  // Rich purple
+    ];
+    const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  }
+
+  function getInitials(firstName: string, lastName: string): string {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  }
+
+  // Service icon mapping
+  function getServiceIcon(type: string): string {
+    switch (type.toLowerCase()) {
+      case 'lab_test_item':
+      case 'laboratory':
+        return '🧪';
+      case 'xray_exam':
+      case 'radiology':
+      case 'xray':
+        return '☢️';
+      case 'ultrasound_exam':
+      case 'ultrasound':
+        return '📡';
+      case 'pharmacy_order':
+      case 'pharmacy':
+        return '💊';
+      case 'consultation':
+        return '🩺';
+      default:
+        return '📋';
+    }
+  }
+
+  // Format date nicely
+  function formatDateNice(dateStr: string): string {
+    const date = new Date(dateStr);
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  }
+
   // Search patients with better error handling
   const { data: patients = [], isLoading: patientsLoading, error: patientsError } = useQuery<Patient[]>({
     queryKey: ["/api/patients", searchQuery],
@@ -351,11 +401,13 @@ export default function Payment() {
 
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
+    const displayPrice = order.price || 0;
+    const serviceIcon = getServiceIcon(order.type);
 
     return (
       <div 
         key={order.id} 
-        className="p-3 rounded-lg bg-white border-l-4 border-red-500 border-r border-t border-b border-gray-200/70 hover:border-red-400 hover:shadow-[0_4px_20px_rgba(239,68,68,0.15)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-red-600 group" 
+        className="p-4 rounded-lg bg-white border-l-4 border-amber-400 border-r border-t border-b border-gray-200/70 hover:border-amber-500 hover:shadow-[0_4px_20px_rgba(245,158,11,0.2)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:border-amber-500 group" 
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -363,29 +415,70 @@ export default function Payment() {
           }
         }}
       >
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              {patient ? (
-                <>
-                  <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                    {patient.firstName} {patient.lastName}
-                  </span>
-                  <Badge variant="outline" className="text-xs flex-shrink-0">{patient.patientId}</Badge>
-                </>
-              ) : (
-                <span className="font-semibold text-sm text-gray-900 dark:text-white">{order.patientId}</span>
-              )}
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Patient Avatar */}
+            {patient && (
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md flex-shrink-0 ${getAvatarColor(patient.firstName + patient.lastName)}`}
+              >
+                {getInitials(patient.firstName, patient.lastName)}
+              </div>
+            )}
+            
+            <div className="flex-1 min-w-0">
+              {/* Patient Name and ID */}
+              <div className="flex items-center gap-2 mb-1">
+                {patient ? (
+                  <>
+                    <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                      {patient.firstName} {patient.lastName}
+                    </span>
+                    <span className="text-gray-500 text-xs">•</span>
+                    <Badge variant="outline" className="text-xs flex-shrink-0">{patient.patientId}</Badge>
+                  </>
+                ) : (
+                  <span className="font-semibold text-sm text-gray-900 dark:text-white">{order.patientId}</span>
+                )}
+              </div>
+              
+              {/* Service Description with Icon */}
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-base">{serviceIcon}</span>
+                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">{order.description}</h4>
+              </div>
+              
+              {/* Date with Icon */}
+              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                <span>📅</span>
+                <span>{formatDateNice(order.date)}</span>
+              </div>
+              
+              {/* Additional Info */}
+              {order.bodyPart && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Body Part: {order.bodyPart}</p>}
+              {order.dosage && <p className="text-xs text-gray-600 dark:text-gray-400">Dosage: {order.dosage}</p>}
+              {order.quantity && <p className="text-xs text-gray-600 dark:text-gray-400">Quantity: {order.quantity}</p>}
             </div>
-            <h4 className="font-medium text-sm text-gray-900 dark:text-white">{order.description}</h4>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Date: {new Date(order.date).toLocaleDateString()}</p>
-            {order.bodyPart && <p className="text-xs text-gray-600 dark:text-gray-400">Body Part: {order.bodyPart}</p>}
-            {order.dosage && <p className="text-xs text-gray-600 dark:text-gray-400">Dosage: {order.dosage}</p>}
-            {order.quantity && <p className="text-xs text-gray-600 dark:text-gray-400">Quantity: {order.quantity}</p>}
           </div>
-          <div className="flex flex-col items-end gap-1 flex-shrink-0">
-            <Badge variant="destructive" className="text-xs font-semibold shadow-sm">UNPAID</Badge>
-            <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Click →</span>
+          
+          {/* Right Side: Amount and Action */}
+          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+            {/* Amount */}
+            {displayPrice > 0 && (
+              <div className="text-right">
+                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                  SSP {displayPrice.toLocaleString()}
+                </div>
+              </div>
+            )}
+            
+            {/* Action Button */}
+            <Badge 
+              variant="outline" 
+              className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-0 shadow-sm hover:shadow-md transition-all px-3 py-1.5 font-semibold cursor-pointer"
+            >
+              💳 Process Payment
+            </Badge>
           </div>
         </div>
       </div>
@@ -396,10 +489,10 @@ export default function Payment() {
     <div className="space-y-4 fade-in duration-500 animate-in">
       {/* Compact Premium Header with Integrated Search */}
       <Card className="border-gray-200/70 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(59,130,246,0.15)] transition-all duration-300">
-        <CardContent className="pt-4 pb-4">
+        <CardContent className="pt-3 pb-3">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-3">
             <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-cyan-600 via-cyan-600 to-cyan-700 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
                 Payment Processing
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">Process patient payments and manage outstanding balances</p>
@@ -556,37 +649,37 @@ export default function Payment() {
               <Tabs defaultValue="laboratory" className="w-full">
                 <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 p-1 gap-1 overflow-x-auto">
                   <TabsTrigger value="laboratory" className="flex items-center gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Laboratory Tests">
-                    <TestTube className="h-3.5 w-3.5" />
+                    <span className="text-base">🧪</span>
                     <span className="hidden sm:inline text-sm">Lab</span>
                     {allUnpaidOrders.laboratory.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm">
+                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
                         {allUnpaidOrders.laboratory.length}
                       </span>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="xray" className="flex items-center gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="X-Ray Exams">
-                    <XRayIcon className="h-3.5 w-3.5" />
+                    <span className="text-base">☢️</span>
                     <span className="hidden sm:inline text-sm">X-Ray</span>
                     {allUnpaidOrders.xray.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm">
+                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
                         {allUnpaidOrders.xray.length}
                       </span>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="ultrasound" className="flex items-center gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Ultrasound Exams">
-                    <ActivitySquare className="h-3.5 w-3.5" />
+                    <span className="text-base">📡</span>
                     <span className="hidden sm:inline text-sm">Ultrasound</span>
                     {allUnpaidOrders.ultrasound.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm">
+                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
                         {allUnpaidOrders.ultrasound.length}
                       </span>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="pharmacy" className="flex items-center gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out min-h-[44px]" aria-label="Pharmacy Orders">
-                    <Pill className="h-3.5 w-3.5" />
+                    <span className="text-base">💊</span>
                     <span className="hidden sm:inline text-sm">Pharmacy</span>
                     {allUnpaidOrders.pharmacy.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm">
+                      <span className="ml-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
                         {allUnpaidOrders.pharmacy.length}
                       </span>
                     )}
@@ -729,66 +822,83 @@ export default function Payment() {
               </div>
             ) : (
               <div className="space-y-2">
-                {paymentHistory.map((payment) => (
-                  <div key={payment.id} className="p-3 border border-gray-200/70 rounded-lg hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50/50 hover:to-transparent dark:hover:from-green-950/30 dark:hover:to-transparent hover:shadow-[0_2px_8px_rgba(34,197,94,0.15)] hover:-translate-y-0.5 transition-all duration-300 ease-out group">
-                    <div className="flex flex-col sm:flex-row justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
-                            {payment.patient ? `${payment.patient.firstName} ${payment.patient.lastName}` : payment.patientId}
-                          </h4>
-                          <Badge variant="outline" className="text-xs flex-shrink-0">{payment.patientId}</Badge>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                          <span className="font-semibold text-sm text-green-700 dark:text-green-400">
-                            SSP {payment.totalAmount.toLocaleString()}
-                          </span>
-                          <span>•</span>
-                          <span className="capitalize">
-                            {payment.paymentMethod === 'cash' ? '💵 Cash' : 
-                             payment.paymentMethod === 'mobile_money' ? '📱 Mobile' : 
-                             '🏦 Bank'}
-                          </span>
-                          <span>•</span>
-                          <span>{new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                        {/* Service Breakdown */}
-                        {payment.breakdown && Object.keys(payment.breakdown).length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            {Object.entries(payment.breakdown).map(([category, details]: [string, any]) => (
-                              <Badge 
-                                key={category} 
-                                variant="outline" 
-                                className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300"
-                              >
-                                {category} {details.count > 1 ? `(${details.count})` : ''}
-                              </Badge>
-                            ))}
+                {paymentHistory.map((payment) => {
+                  const patientName = payment.patient 
+                    ? `${payment.patient.firstName} ${payment.patient.lastName}` 
+                    : payment.patientId;
+                  const patientFirstName = payment.patient?.firstName || payment.patientId.substring(0, 2);
+                  const patientLastName = payment.patient?.lastName || payment.patientId.substring(2, 4);
+                  
+                  return (
+                    <div key={payment.id} className="p-3 border border-gray-200/70 rounded-lg hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50/50 hover:to-transparent dark:hover:from-green-950/30 dark:hover:to-transparent hover:shadow-[0_2px_8px_rgba(34,197,94,0.15)] hover:-translate-y-0.5 transition-all duration-300 ease-out group">
+                      <div className="flex flex-col sm:flex-row justify-between gap-2">
+                        <div className="flex-1 min-w-0 flex items-start gap-3">
+                          {/* Patient Avatar */}
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md flex-shrink-0 ${getAvatarColor(patientFirstName + patientLastName)}`}
+                          >
+                            {getInitials(patientFirstName, patientLastName)}
                           </div>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1">
-                          By: {payment.receivedBy}
-                        </p>
-                      </div>
-                      <div className="flex sm:flex-col gap-2 items-start sm:items-end flex-shrink-0">
-                        <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm font-semibold text-xs">PAID</Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedPaymentForView(payment);
-                            setIsReceiptViewOpen(true);
-                          }}
-                          className="min-h-[36px] text-xs border-gray-200/70 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-950 transition-all group-hover:shadow-md"
-                          data-testid={`button-view-receipt-${payment.paymentId}`}
-                        >
-                          <Eye className="h-3.5 w-3.5 mr-1" />
-                          📄
-                        </Button>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+                                {patientName}
+                              </h4>
+                              <Badge variant="outline" className="text-xs flex-shrink-0">{payment.patientId}</Badge>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                              <span className="font-semibold text-sm text-green-700 dark:text-green-400">
+                                SSP {payment.totalAmount.toLocaleString()}
+                              </span>
+                              <span>•</span>
+                              <span className="capitalize">
+                                {payment.paymentMethod === 'cash' ? '💵 Cash' : 
+                                 payment.paymentMethod === 'mobile_money' ? '📱 Mobile' : 
+                                 '🏦 Bank'}
+                              </span>
+                              <span>•</span>
+                              <span>{new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            {/* Service Breakdown with Icons */}
+                            {payment.breakdown && Object.keys(payment.breakdown).length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                {Object.entries(payment.breakdown).map(([category, details]: [string, any]) => (
+                                  <Badge 
+                                    key={category} 
+                                    variant="outline" 
+                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300"
+                                  >
+                                    {getServiceIcon(category)} {category} {details.count > 1 ? `(${details.count})` : ''}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">
+                              Processed by <span className="font-medium capitalize">{payment.receivedBy}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex sm:flex-col gap-2 items-start sm:items-end flex-shrink-0">
+                          <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm font-semibold text-xs">PAID</Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedPaymentForView(payment);
+                              setIsReceiptViewOpen(true);
+                            }}
+                            className="min-h-[36px] text-xs border-gray-200/70 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-950 transition-all group-hover:shadow-md"
+                            data-testid={`button-view-receipt-${payment.paymentId}`}
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" />
+                            📄
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -801,10 +911,10 @@ export default function Payment() {
           <DialogHeader>
             <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-gray-200/70">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-lg shadow-sm">
-                  <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-blue-700 dark:text-blue-300 flex-shrink-0" />
+                <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-lg shadow-sm">
+                  <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-slate-700 dark:text-slate-300 flex-shrink-0" />
                 </div>
-                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Process Payment</span>
+                <span className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Process Payment</span>
               </div>
               {selectedPatient && (
                 <div className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
@@ -870,22 +980,27 @@ export default function Payment() {
                             description: order.description
                           };
                           
+                          const serviceIcon = getServiceIcon(order.type);
+                          
                           return (
                             <div 
                               key={order.id} 
                               className={`p-2.5 border-2 rounded-lg transition-all duration-300 ${
                                 isAdded 
                                   ? 'bg-green-50 border-green-300 dark:bg-green-950' 
-                                  : 'bg-red-50 border-red-200 dark:bg-red-950'
+                                  : 'bg-orange-50 border-orange-200 dark:bg-orange-950/30'
                               }`}
                             >
                               <div className="flex justify-between items-start mb-1.5">
                                 <div className="flex-1 min-w-0 pr-2">
-                                  <h4 className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-gray-100 break-words">
-                                    {order.description}
-                                  </h4>
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <span className="text-sm">{serviceIcon}</span>
+                                    <h4 className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-gray-100 break-words">
+                                      {order.description}
+                                    </h4>
+                                  </div>
                                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                                    {order.date}
+                                    {formatDateNice(order.date)}
                                   </p>
                                   {order.bodyPart && (
                                     <p className="text-xs text-gray-500">Part: {order.bodyPart}</p>
