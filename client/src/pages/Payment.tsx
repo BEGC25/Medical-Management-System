@@ -784,13 +784,13 @@ export default function Payment() {
                   >
                     <LaboratoryIcon className="text-teal-600" size={18} />
                     <span>Lab</span>
-                    {allUnpaidOrders.laboratory.length > 0 && (
+                    {filterOrdersByDate(allUnpaidOrders.laboratory).length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "laboratory"
                           ? "bg-teal-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
-                        {allUnpaidOrders.laboratory.length}
+                        {filterOrdersByDate(allUnpaidOrders.laboratory).length}
                       </span>
                     )}
                   </button>
@@ -805,13 +805,13 @@ export default function Payment() {
                   >
                     <XRayIcon className="text-teal-600" size={18} />
                     <span>X-Ray</span>
-                    {allUnpaidOrders.xray.length > 0 && (
+                    {filterOrdersByDate(allUnpaidOrders.xray).length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "xray"
                           ? "bg-teal-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
-                        {allUnpaidOrders.xray.length}
+                        {filterOrdersByDate(allUnpaidOrders.xray).length}
                       </span>
                     )}
                   </button>
@@ -826,13 +826,13 @@ export default function Payment() {
                   >
                     <UltrasoundIcon className="text-teal-600" size={18} />
                     <span>Ultrasound</span>
-                    {allUnpaidOrders.ultrasound.length > 0 && (
+                    {filterOrdersByDate(allUnpaidOrders.ultrasound).length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "ultrasound"
                           ? "bg-teal-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
-                        {allUnpaidOrders.ultrasound.length}
+                        {filterOrdersByDate(allUnpaidOrders.ultrasound).length}
                       </span>
                     )}
                   </button>
@@ -847,13 +847,13 @@ export default function Payment() {
                   >
                     <PharmacyIcon className="text-teal-600" size={18} />
                     <span>Pharmacy</span>
-                    {allUnpaidOrders.pharmacy.length > 0 && (
+                    {filterOrdersByDate(allUnpaidOrders.pharmacy).length > 0 && (
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "pharmacy"
                           ? "bg-teal-500 text-white"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
-                        {allUnpaidOrders.pharmacy.length}
+                        {filterOrdersByDate(allUnpaidOrders.pharmacy).length}
                       </span>
                     )}
                   </button>
