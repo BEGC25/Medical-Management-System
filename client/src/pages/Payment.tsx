@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, DollarSign, Receipt, AlertCircle, Users, TestTube, XCircle as XRayIconLucide, ActivitySquare, Pill, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard } from "lucide-react";
+import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -689,7 +689,7 @@ export default function Payment() {
                     {allUnpaidOrders.laboratory.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <TestTube className="w-7 h-7 text-gray-400" />
+                          <LaboratoryIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending lab payments</h3>
                         <p className="text-sm text-gray-500">All laboratory tests paid</p>
@@ -705,7 +705,7 @@ export default function Payment() {
                     {allUnpaidOrders.xray.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <XRayIcon className="w-7 h-7 text-gray-400" />
+                          <XRayIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending X-ray payments</h3>
                         <p className="text-sm text-gray-500">All X-ray exams paid</p>
@@ -721,7 +721,7 @@ export default function Payment() {
                     {allUnpaidOrders.ultrasound.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <ActivitySquare className="w-7 h-7 text-gray-400" />
+                          <UltrasoundIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending ultrasound payments</h3>
                         <p className="text-sm text-gray-500">All ultrasound exams paid</p>
@@ -737,7 +737,7 @@ export default function Payment() {
                     {allUnpaidOrders.pharmacy.length === 0 ? (
                       <div className="text-center py-10">
                         <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
-                          <Pill className="w-7 h-7 text-gray-400" />
+                          <PharmacyIcon className="text-gray-400" size={28} />
                         </div>
                         <h3 className="text-base font-medium text-gray-900 dark:text-white mb-1">No pending pharmacy payments</h3>
                         <p className="text-sm text-gray-500">All pharmacy orders paid</p>
