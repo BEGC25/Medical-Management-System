@@ -18,6 +18,9 @@ import {
   Activity,
   Zap,
   User,
+  Eye,
+  Trash,
+  FileText,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -213,6 +216,7 @@ export default function XRay() {
   const [selectedXrayExam, setSelectedXrayExam] = useState<XrayExam | null>(null);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
   const [reportPatient, setReportPatient] = useState<Patient | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; name: string }>>([]);
 
   // Print modals
   const [showXrayRequest, setShowXrayRequest] = useState(false);
@@ -257,6 +261,7 @@ export default function XRay() {
       impression: '',
       recommendations: '',
       imageQuality: 'good' as 'excellent' | 'good' | 'adequate' | 'limited',
+      technicalFactors: '',
       // Use clinic timezone (Africa/Juba) for reportDate to ensure consistent day classification
       reportDate: formatDateInZone(getZonedNow()),
       radiologist: '',
@@ -442,11 +447,13 @@ export default function XRay() {
   const handleXrayExamSelect = (exam: XrayExam) => {
     setSelectedXrayExam(exam);
     setResultsModalOpen(true);
+    setUploadedImages([]);
     resultsForm.reset({
       findings: exam.findings || '',
       impression: exam.impression || '',
       recommendations: exam.recommendations || '',
       imageQuality: (exam as any).imageQuality || 'good',
+      technicalFactors: (exam as any).technicalFactors || '',
       // Use clinic timezone (Africa/Juba) for reportDate fallback
       reportDate: (exam as any).reportDate || formatDateInZone(getZonedNow()),
       radiologist: exam.radiologist || '',
@@ -513,7 +520,7 @@ export default function XRay() {
             
             {/* Line 2: Exam summary without redundant label */}
             <div className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 truncate">
-              {exam.examType}{exam.bodyPart && ` • ${exam.bodyPart}`} • {timeAgo(exam.requestedDate)}
+              {exam.examType}{exam.bodyPart ? ` • ${exam.bodyPart}` : ''} • {timeAgo(exam.requestedDate)}
             </div>
             
             {/* Line 3: Warning if UNPAID (compact, single line) */}
@@ -745,7 +752,7 @@ export default function XRay() {
 
       {/* New Request Dialog */}
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-cyan-50/30 dark:from-gray-900 dark:via-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-100">
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-cyan-50/30 dark:from-gray-900 dark:via-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-100">
           
           {/* Premium Header with Gradient Background */}
           <div className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
@@ -773,7 +780,7 @@ export default function XRay() {
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6 overflow-y-auto max-h-[calc(90vh-200px)] px-6">
+            <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-200px)] px-6">
               {/* Premium Patient Selection */}
               <div className="mb-6">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
@@ -862,7 +869,7 @@ export default function XRay() {
                   Examination Type
                 </label>
                 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {[
                     { value: 'chest', label: 'Chest X-Ray', icon: '🫁', description: 'Thoracic imaging' },
                     { value: 'extremity', label: 'Extremity', icon: '🦴', description: 'Arms, legs, joints' },
@@ -879,7 +886,7 @@ export default function XRay() {
                         form.setValue('examType', exam.value);
                       }}
                       className={`
-                        relative overflow-hidden rounded-xl p-4 border-2 transition-all duration-300 text-left
+                        relative overflow-hidden rounded-xl p-4 border-2 transition-all duration-300 text-left min-h-[100px]
                         ${examType === exam.value
                           ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 shadow-lg shadow-blue-500/20 scale-105'
                           : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md hover:scale-102'
@@ -971,11 +978,12 @@ export default function XRay() {
               {/* Body Part Quick Selector (Conditional on Exam Type) */}
               {examType === 'extremity' && (
                 <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-600" />
                     Body Part (Quick Select)
                   </label>
                   
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {[
                       'Left Hand', 'Right Hand', 'Left Wrist', 'Right Wrist',
                       'Left Elbow', 'Right Elbow', 'Left Shoulder', 'Right Shoulder',
@@ -991,13 +999,203 @@ export default function XRay() {
                           setBodyPart(part);
                           form.setValue('bodyPart', part);
                         }}
-                        className={`text-xs ${
+                        className={`text-xs min-h-[44px] ${
                           bodyPart === part
                             ? 'bg-blue-100 border-blue-500 text-blue-700 font-semibold'
                             : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
                         }`}
                       >
                         {part}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'chest' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-600" />
+                    View/Projection (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {[
+                      'PA (Posteroanterior)',
+                      'AP (Anteroposterior)',
+                      'Lateral',
+                      'AP & Lateral',
+                      'Portable AP',
+                      'Lordotic View'
+                    ].map((view) => (
+                      <Button
+                        key={view}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setBodyPart(view);
+                          form.setValue('bodyPart', view);
+                        }}
+                        className={`text-xs min-h-[44px] ${
+                          bodyPart === view
+                            ? 'bg-blue-100 border-blue-500 text-blue-700 font-semibold'
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        {view}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'abdominal' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-600" />
+                    View/Projection (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {[
+                      'AP Supine',
+                      'AP Upright',
+                      'Left Lateral Decubitus',
+                      'KUB (Kidneys, Ureters, Bladder)',
+                      'Acute Abdomen Series',
+                      'Pelvis AP'
+                    ].map((view) => (
+                      <Button
+                        key={view}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setBodyPart(view);
+                          form.setValue('bodyPart', view);
+                        }}
+                        className={`text-xs min-h-[44px] ${
+                          bodyPart === view
+                            ? 'bg-blue-100 border-blue-500 text-blue-700 font-semibold'
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        {view}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'spine' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-600" />
+                    Spine Region (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {[
+                      'Cervical Spine (C-Spine)',
+                      'Thoracic Spine (T-Spine)',
+                      'Lumbar Spine (L-Spine)',
+                      'Sacral/Coccyx',
+                      'Full Spine (Scoliosis)',
+                      'Cervical AP & Lateral'
+                    ].map((region) => (
+                      <Button
+                        key={region}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setBodyPart(region);
+                          form.setValue('bodyPart', region);
+                        }}
+                        className={`text-xs min-h-[44px] ${
+                          bodyPart === region
+                            ? 'bg-blue-100 border-blue-500 text-blue-700 font-semibold'
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        {region}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'skull' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-600" />
+                    View/Projection (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {[
+                      'AP (Caldwell)',
+                      'Lateral',
+                      "Towne's View",
+                      "Waters View (Sinuses)",
+                      'Submentovertex (Base)',
+                      'Skull Series (4 views)'
+                    ].map((view) => (
+                      <Button
+                        key={view}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setBodyPart(view);
+                          form.setValue('bodyPart', view);
+                        }}
+                        className={`text-xs min-h-[44px] ${
+                          bodyPart === view
+                            ? 'bg-blue-100 border-blue-500 text-blue-700 font-semibold'
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        {view}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'pelvic' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-600" />
+                    View/Projection (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {[
+                      'AP Pelvis',
+                      'Lateral',
+                      'Inlet View',
+                      'Outlet View',
+                      'Frog-Leg (Hip)',
+                      'Bilateral Hip'
+                    ].map((view) => (
+                      <Button
+                        key={view}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setBodyPart(view);
+                          form.setValue('bodyPart', view);
+                        }}
+                        className={`text-xs min-h-[44px] ${
+                          bodyPart === view
+                            ? 'bg-blue-100 border-blue-500 text-blue-700 font-semibold'
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        {view}
                       </Button>
                     ))}
                   </div>
@@ -1167,7 +1365,7 @@ export default function XRay() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
@@ -1177,7 +1375,7 @@ export default function XRay() {
                     form.reset();
                     setSafetyChecklist({ pregnancy: false, metal: false, cooperation: false });
                   }}
-                  className="border-gray-300 hover:bg-gray-50"
+                  className="border-gray-300 hover:bg-gray-50 min-h-[44px] w-full sm:w-auto"
                   data-testid="button-cancel-request"
                 >
                   Cancel
@@ -1185,7 +1383,7 @@ export default function XRay() {
                 <Button
                   type="submit"
                   disabled={!selectedPatient || !allSafetyChecksPassed || createXrayExamMutation.isPending}
-                  className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-[0_4px_20px_rgba(6,182,212,0.4)] text-white font-semibold"
+                  className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-[0_4px_20px_rgba(6,182,212,0.4)] text-white font-semibold min-h-[44px] w-full sm:w-auto"
                   data-testid="button-submit-request"
                 >
                   {createXrayExamMutation.isPending ? (
@@ -1205,30 +1403,70 @@ export default function XRay() {
 
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>X-Ray Examination Report</DialogTitle>
-            <DialogDescription>
-              {selectedXrayExam && (
-                <>
-                  Exam ID: {selectedXrayExam.examId} | Patient: {reportPatient ? fullName(reportPatient) : selectedXrayExam.patientId}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
+          {/* Premium Header with Gradient Background */}
+          <div className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                  <FileText className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-bold text-white">
+                    X-Ray Examination Report
+                  </DialogTitle>
+                  <DialogDescription className="text-blue-100 text-sm mt-1">
+                    Complete radiological findings and diagnosis
+                  </DialogDescription>
+                </div>
+              </div>
+              <button 
+                onClick={() => setResultsModalOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Exam Type & Body Part Banner */}
+            {selectedXrayExam && (
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-blue-100">
+                <Badge className="bg-white/20 text-white border-0 px-3 py-1">
+                  {selectedXrayExam.examType}
+                </Badge>
+                {selectedXrayExam.bodyPart && (
+                  <Badge className="bg-white/20 text-white border-0 px-3 py-1">
+                    {selectedXrayExam.bodyPart}
+                  </Badge>
+                )}
+                <span className="text-sm">
+                  Requested: {selectedXrayExam.requestedDate ? new Date(selectedXrayExam.requestedDate).toLocaleDateString() : 'N/A'}
+                </span>
+                <span className="text-sm">
+                  Patient: {reportPatient ? fullName(reportPatient) : selectedXrayExam.patientId}
+                </span>
+              </div>
+            )}
+          </div>
 
           <Form {...resultsForm}>
-            <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
-              {/* Photo Upload Section */}
-              <div className="space-y-4 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <h4 className="font-medium text-gray-900 dark:text-white">X-Ray Images</h4>
+            <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
+              {/* Premium Image Upload Section */}
+              <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-blue-900 dark:text-blue-100">X-Ray Images</h3>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">Upload radiological films or digital images</p>
+                  </div>
                 </div>
+                
                 <ObjectUploader
-                  maxNumberOfFiles={5}
-                  maxFileSize={10485760}
-                  accept="image/*"
+                  maxNumberOfFiles={10}
+                  maxFileSize={20971520}
+                  accept="image/*,.dcm"
                   onGetUploadParameters={async () => {
                     const response = await fetch('/api/objects/upload', { method: 'POST' });
                     if (!response.ok) throw new Error('Upload failed');
@@ -1240,59 +1478,82 @@ export default function XRay() {
                   }}
                   onComplete={(uploadedFiles) => {
                     if (uploadedFiles.length > 0) {
-                      const currentFindings = resultsForm.getValues('findings');
-                      const imageLinks = uploadedFiles.map((file) => `Image: ${file.url}`).join('\n');
-                      resultsForm.setValue('findings', currentFindings ? `${currentFindings}\n\n${imageLinks}` : imageLinks);
+                      const newImages = uploadedFiles.map((file, idx) => ({
+                        url: file.url,
+                        name: `X-Ray ${uploadedImages.length + idx + 1}`
+                      }));
+                      setUploadedImages([...uploadedImages, ...newImages]);
                       toast({ title: 'Success', description: `${uploadedFiles.length} image(s) uploaded successfully` });
                     }
                   }}
+                  buttonClassName="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg"
                 >
                   <Camera className="w-4 h-4 mr-2" />
                   Upload X-Ray Images
                 </ObjectUploader>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Upload X-ray films or digital images. Images will be added to findings.
-                </p>
+                
+                {/* Image Gallery */}
+                {uploadedImages.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 md:grid-cols-4 gap-3">
+                    {uploadedImages.map((img, idx) => (
+                      <div key={idx} className="relative group rounded-lg overflow-hidden border-2 border-blue-300 dark:border-blue-700 shadow-md hover:shadow-xl transition-all">
+                        <img src={img.url} alt={img.name} className="w-full h-24 object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => window.open(img.url, '_blank')}
+                            className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setUploadedImages(uploadedImages.filter((_, i) => i !== idx))}
+                            className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Image Quality */}
-              <FormField
-                control={resultsForm.control}
-                name="imageQuality"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Image Quality</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="select-image-quality">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="excellent">Excellent</SelectItem>
-                        <SelectItem value="good">Good</SelectItem>
-                        <SelectItem value="adequate">Adequate</SelectItem>
-                        <SelectItem value="limited">Limited</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Findings */}
+              {/* Dynamic Findings Template */}
               <FormField
                 control={resultsForm.control}
                 name="findings"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Findings</FormLabel>
+                    <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      Radiological Findings
+                    </FormLabel>
+                    
+                    {/* Template Guide based on exam type */}
+                    {selectedXrayExam && (
+                      <div className="mb-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                          Template Guide for {selectedXrayExam.examType} X-Ray:
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          {selectedXrayExam.examType === 'chest' && 'Describe lungs, heart, mediastinum, bones, soft tissues'}
+                          {selectedXrayExam.examType === 'abdominal' && 'Describe bowel gas pattern, organs, calcifications, free air'}
+                          {selectedXrayExam.examType === 'spine' && 'Describe alignment, disc spaces, vertebral bodies, soft tissues'}
+                          {selectedXrayExam.examType === 'skull' && 'Describe calvarium, sinuses, facial bones, soft tissues'}
+                          {selectedXrayExam.examType === 'pelvic' && 'Describe pelvic bones, hip joints, soft tissues'}
+                          {selectedXrayExam.examType === 'extremity' && 'Describe bones, joints, soft tissues, alignment'}
+                        </p>
+                      </div>
+                    )}
+                    
                     <FormControl>
                       <Textarea
-                        placeholder="Describe radiological findings..."
+                        placeholder="Describe radiological findings in detail..."
                         {...field}
-                        rows={6}
-                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
+                        rows={8}
+                        className="font-mono text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                         data-testid="textarea-findings"
                       />
                     </FormControl>
@@ -1301,55 +1562,112 @@ export default function XRay() {
                 )}
               />
 
-              {/* Impression */}
-              <FormField
-                control={resultsForm.control}
-                name="impression"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Impression</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Clinical impression and diagnosis..."
-                        {...field}
-                        rows={3}
-                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
-                        data-testid="textarea-impression"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Structured Impression & Recommendations */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={resultsForm.control}
+                  name="impression"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Clinical Impression
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Summary diagnosis and impression..."
+                          {...field}
+                          rows={4}
+                          className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
+                          data-testid="textarea-impression"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={resultsForm.control}
+                  name="recommendations"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Recommendations
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Follow-up recommendations, additional imaging..."
+                          {...field}
+                          rows={4}
+                          className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
+                          data-testid="textarea-recommendations"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              {/* Recommendations */}
-              <FormField
-                control={resultsForm.control}
-                name="recommendations"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recommendations</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Clinical recommendations and follow-up..."
-                        {...field}
-                        rows={3}
-                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
-                        data-testid="textarea-recommendations"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Image Quality & Technical Factors */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={resultsForm.control}
+                  name="imageQuality"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Image Quality
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="select-image-quality">
+                            <SelectValue placeholder="Select quality..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="excellent">Excellent - Diagnostic quality</SelectItem>
+                          <SelectItem value="good">Good - Minor limitations</SelectItem>
+                          <SelectItem value="adequate">Fair - Suboptimal but diagnostic</SelectItem>
+                          <SelectItem value="limited">Poor - Limited diagnostic value</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={resultsForm.control}
+                  name="technicalFactors"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Technical Factors
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="kVp, mAs, positioning notes..."
+                          {...field}
+                          className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
+              {/* Radiologist Signature & Report Date */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={resultsForm.control}
                   name="reportDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Report Date</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Report Date
+                      </FormLabel>
                       <FormControl>
                         <Input type="date" {...field} className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="input-report-date" />
                       </FormControl>
@@ -1363,9 +1681,11 @@ export default function XRay() {
                   name="radiologist"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Radiologist</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Radiologist Name
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="Name of radiologist" {...field} className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="input-radiologist" />
+                        <Input placeholder="Dr. Name" {...field} className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="input-radiologist" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1373,7 +1693,8 @@ export default function XRay() {
                 />
               </div>
 
-              <div className="flex justify-between pt-4 border-t">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t border-blue-100 dark:border-blue-900">
                 <Button
                   type="button"
                   variant="outline"
@@ -1383,19 +1704,23 @@ export default function XRay() {
                       setTimeout(() => window.print(), 100);
                     }
                   }}
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50 min-h-[44px]"
                   data-testid="button-print-report"
                 >
                   <Printer className="w-4 h-4 mr-2" />
                   Print Report
                 </Button>
-                <div className="flex gap-2">
+                
+                <div className="flex gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
                       setResultsModalOpen(false);
                       setSelectedXrayExam(null);
+                      setUploadedImages([]);
                     }}
+                    className="min-h-[44px]"
                     data-testid="button-cancel-report"
                   >
                     Cancel
@@ -1403,6 +1728,7 @@ export default function XRay() {
                   <Button
                     type="submit"
                     disabled={updateXrayExamMutation.isPending}
+                    className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg min-h-[44px]"
                     data-testid="button-save-report"
                   >
                     {updateXrayExamMutation.isPending ? (
