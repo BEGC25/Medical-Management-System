@@ -1328,30 +1328,65 @@ export default function Ultrasound() {
 
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Ultrasound Examination Report</DialogTitle>
-            <DialogDescription>
-              {selectedUltrasoundExam && (
-                <>
-                  Exam ID: {selectedUltrasoundExam.examId} | Patient: {reportPatient ? fullName(reportPatient) : selectedUltrasoundExam.patientId}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
+          {/* Premium Header with Gradient Background */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                  <FileText className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-bold text-white">
+                    Ultrasound Examination Report
+                  </DialogTitle>
+                  <DialogDescription className="text-indigo-100 text-sm mt-1">
+                    Complete ultrasound findings and diagnostic impression
+                  </DialogDescription>
+                </div>
+              </div>
+              <button 
+                onClick={() => setResultsModalOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Exam Type & Patient Banner */}
+            {selectedUltrasoundExam && (
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-indigo-100">
+                <Badge className="bg-white/20 text-white border-0 px-3 py-1">
+                  {selectedUltrasoundExam.examType}
+                </Badge>
+                <span className="text-sm">
+                  Requested: {selectedUltrasoundExam.requestedDate ? new Date(selectedUltrasoundExam.requestedDate).toLocaleDateString() : 'N/A'}
+                </span>
+                <span className="text-sm">
+                  Patient: {reportPatient ? fullName(reportPatient) : selectedUltrasoundExam.patientId}
+                </span>
+              </div>
+            )}
+          </div>
 
           <Form {...resultsForm}>
-            <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
-              {/* Photo Upload Section */}
-              <div className="space-y-4 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <h4 className="font-medium text-gray-900 dark:text-white">Ultrasound Images</h4>
+            <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
+              {/* Premium Image Upload Section */}
+              <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-indigo-900 dark:text-indigo-100">Ultrasound Images (Optional)</h3>
+                    <p className="text-xs text-indigo-700 dark:text-indigo-300">Upload sonographic images or DICOM files (max 10 files)</p>
+                  </div>
                 </div>
+                
                 <ObjectUploader
-                  maxNumberOfFiles={5}
-                  maxFileSize={10485760}
-                  accept="image/*"
+                  maxNumberOfFiles={10}
+                  maxFileSize={20971520}
+                  accept="image/*,.dcm"
                   onGetUploadParameters={async () => {
                     const response = await fetch('/api/objects/upload', { method: 'POST' });
                     if (!response.ok) throw new Error('Upload failed');
@@ -1363,19 +1398,46 @@ export default function Ultrasound() {
                   }}
                   onComplete={(uploadedFiles) => {
                     if (uploadedFiles.length > 0) {
-                      const currentFindings = resultsForm.getValues('findings');
-                      const imageLinks = uploadedFiles.map((file) => `Image: ${file.url}`).join('\n');
-                      resultsForm.setValue('findings', currentFindings ? `${currentFindings}\n\n${imageLinks}` : imageLinks);
+                      const newImages = uploadedFiles.map((file, idx) => ({
+                        url: file.url,
+                        name: `Ultrasound Image ${uploadedImages.length + idx + 1}`
+                      }));
+                      setUploadedImages([...uploadedImages, ...newImages]);
                       toast({ title: 'Success', description: `${uploadedFiles.length} image(s) uploaded successfully` });
                     }
                   }}
+                  buttonClassName="w-full bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg"
                 >
                   <Camera className="w-4 h-4 mr-2" />
                   Upload Ultrasound Images
                 </ObjectUploader>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Upload ultrasound scans or images. Images will be added to findings.
-                </p>
+                
+                {/* Image Gallery */}
+                {uploadedImages.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 md:grid-cols-4 gap-3">
+                    {uploadedImages.map((img, idx) => (
+                      <div key={idx} className="relative group rounded-lg overflow-hidden border-2 border-indigo-300 dark:border-indigo-700 shadow-md hover:shadow-xl transition-all">
+                        <img src={img.url} alt={img.name} className="w-full h-24 object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => window.open(img.url, '_blank')}
+                            className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setUploadedImages(uploadedImages.filter((_, i) => i !== idx))}
+                            className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Image Quality */}
@@ -1403,75 +1465,437 @@ export default function Ultrasound() {
                 )}
               />
 
-              {/* Findings */}
+              {/* Interactive Finding Builder System with Voice Dictation */}
               <FormField
                 control={resultsForm.control}
                 name="findings"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Findings</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe ultrasound findings..."
-                        {...field}
-                        rows={6}
-                        data-testid="textarea-findings"
-                      />
-                    </FormControl>
+                    <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-indigo-600" />
+                      Ultrasound Findings
+                    </FormLabel>
+                    
+                    {/* Finding Builder for Obstetric Ultrasound */}
+                    {selectedUltrasoundExam?.examType?.toLowerCase().includes('obstetric') && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-indigo-600" />
+                          <h4 className="font-semibold text-indigo-900">Quick Obstetric Findings (Click to Add)</h4>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Pregnancy Status:</label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Intrauterine pregnancy visualized.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                <Check className="w-3 h-3 mr-1" /> IUP Present
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Single live intrauterine pregnancy. Fetal cardiac activity present.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                <Heart className="w-3 h-3 mr-1" /> Single IUP + FCA
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Twin gestation identified. Both fetuses viable with cardiac activity.")} className="border-blue-300 hover:bg-blue-50 text-xs">
+                                👯 Twin Gestation
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Fetal Biometry:</label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Fetal biometry consistent with stated gestational age.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                ✅ Normal Growth
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("BPD, HC, AC, FL measurements obtained and within normal limits.")} className="border-blue-300 hover:bg-blue-50 text-xs">
+                                📏 Biometry WNL
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Placenta & Amniotic Fluid:</label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Placenta anterior/posterior/fundal in location. No evidence of placenta previa.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                ✅ Normal Placenta
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Amniotic fluid volume appears adequate/normal.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                💧 AFI Normal
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Polyhydramnios noted - increased amniotic fluid volume.")} className="border-amber-300 hover:bg-amber-50 text-xs">
+                                ⚠️ Polyhydramnios
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Oligohydramnios - reduced amniotic fluid volume.")} className="border-red-300 hover:bg-red-50 text-xs">
+                                ⚠️ Oligohydramnios
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Finding Builder for Abdominal Ultrasound */}
+                    {selectedUltrasoundExam?.examType?.toLowerCase().includes('abdominal') && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-indigo-600" />
+                          <h4 className="font-semibold text-indigo-900">Quick Abdominal Findings (Click to Add)</h4>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Liver:</label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Liver normal in size and echogenicity. No focal lesions.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                <Check className="w-3 h-3 mr-1" /> Normal Liver
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hepatomegaly noted. Liver size increased.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                                Hepatomegaly
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Fatty infiltration of liver - increased echogenicity.")} className="border-amber-300 hover:bg-amber-50 text-xs">
+                                Fatty Liver
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Gallbladder:</label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Gallbladder normal. No stones or wall thickening.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                <Check className="w-3 h-3 mr-1" /> Normal GB
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Cholelithiasis - gallstones present.")} className="border-red-300 hover:bg-red-50 text-xs">
+                                💎 Gallstones
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Cholecystitis - gallbladder wall thickening and pericholecystic fluid.")} className="border-red-300 hover:bg-red-50 text-xs">
+                                🔥 Cholecystitis
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Kidneys:</label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Both kidneys normal in size and echotexture. No hydronephrosis.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                <Check className="w-3 h-3 mr-1" /> Normal Kidneys
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Renal calculus identified. Shadowing stone present.")} className="border-red-300 hover:bg-red-50 text-xs">
+                                💎 Kidney Stone
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hydronephrosis - dilated renal collecting system.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                                ⚠️ Hydronephrosis
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Finding Builder for Cardiac Ultrasound */}
+                    {selectedUltrasoundExam?.examType?.toLowerCase().includes('cardiac') && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-indigo-600" />
+                          <h4 className="font-semibold text-indigo-900">Quick Cardiac Findings (Click to Add)</h4>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">LV Function:</label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Left ventricular systolic function normal. EF estimated 55-60%.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                <Heart className="w-3 h-3 mr-1" /> Normal EF
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Reduced LV systolic function. EF estimated 35-40%.")} className="border-red-300 hover:bg-red-50 text-xs">
+                                ⚠️ Reduced EF
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Valves:</label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Mitral valve normal. No significant regurgitation or stenosis.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                <Check className="w-3 h-3 mr-1" /> Normal MV
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Aortic valve trileaflet and opens well. No AS or AR.")} className="border-green-300 hover:bg-green-50 text-xs">
+                                <Check className="w-3 h-3 mr-1" /> Normal AV
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Detailed Findings
+                        </label>
+                        <Button 
+                          type="button"
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => startVoiceInput('findings')}
+                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                        >
+                          <Mic className={`w-3 h-3 mr-1 ${isRecording.findings ? 'animate-pulse text-red-500' : ''}`} />
+                          {isRecording.findings ? 'Stop' : 'Dictate'}
+                        </Button>
+                      </div>
+                      
+                      <FormControl>
+                        <Textarea
+                          ref={findingsRef}
+                          placeholder="Click buttons above to add findings, or type/dictate here..."
+                          value={findings}
+                          onChange={(e) => {
+                            setFindings(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
+                          rows={8}
+                          className="font-mono text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
+                          data-testid="textarea-findings"
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Impression */}
-              <FormField
-                control={resultsForm.control}
-                name="impression"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Impression</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Clinical impression and diagnosis..."
-                        {...field}
-                        rows={3}
-                        data-testid="textarea-impression"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Clinical Impression & Recommendations - Collapsible Accordions */}
+              <Accordion type="multiple" className="w-full space-y-4">
+                
+                {/* Clinical Impression - Collapsible */}
+                <AccordionItem value="impression" className="border-2 border-purple-100 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-purple-50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-5 h-5 text-purple-600" />
+                      <span className="font-semibold text-gray-900">Clinical Impression</span>
+                      <Badge variant="outline" className="ml-2 text-xs border-purple-300 text-purple-700">
+                        Click to expand
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  
+                  <AccordionContent className="px-4 pb-4">
+                    <FormField
+                      control={resultsForm.control}
+                      name="impression"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* Quick Templates */}
+                          <div className="mb-3">
+                            <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2 block">
+                              Quick Templates:
+                            </label>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal ultrasound examination. No abnormalities detected.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                ✅ Normal Study
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings consistent with cholelithiasis.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                💎 Gallstones
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Intrauterine pregnancy, single live fetus, gestational age [XX] weeks.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                🤰 Normal IUP
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hydronephrosis suggesting ureteral obstruction.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                Hydronephrosis
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatic steatosis (fatty liver).")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                Fatty Liver
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings require further evaluation or correlation.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                ⚠️ Further Eval
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Voice Dictation + Textarea */}
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-semibold text-gray-700">Summary Impression</label>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => startVoiceInput('impression')}
+                              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                            >
+                              <Mic className={`w-3 h-3 mr-1 ${isRecording.impression ? 'animate-pulse text-red-500' : ''}`} />
+                              {isRecording.impression ? 'Stop' : 'Dictate'}
+                            </Button>
+                          </div>
+                          
+                          <FormControl>
+                            <Textarea
+                              ref={impressionRef}
+                              value={impression}
+                              onChange={(e) => {
+                                setImpression(e.target.value);
+                                field.onChange(e.target.value);
+                              }}
+                              rows={4}
+                              placeholder="Summary diagnosis and impression..."
+                              className="focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
+                              data-testid="textarea-impression"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                {/* Recommendations - Collapsible */}
+                <AccordionItem value="recommendations" className="border-2 border-green-100 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-green-50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="w-5 h-5 text-green-600" />
+                      <span className="font-semibold text-gray-900">Recommendations</span>
+                      <Badge variant="outline" className="ml-2 text-xs border-green-300 text-green-700">
+                        Click to expand
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  
+                  <AccordionContent className="px-4 pb-4">
+                    <FormField
+                      control={resultsForm.control}
+                      name="recommendations"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* Quick Add Buttons */}
+                          <div className="mb-3">
+                            <label className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2 block">
+                              Quick Add:
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging required at this time.")} className="text-xs border-green-300 hover:bg-green-50">
+                                ✅ No Follow-up
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up ultrasound in 4-6 weeks.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                                📅 Repeat US
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for further evaluation.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                                🔍 CT Scan
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for detailed assessment.")} className="text-xs border-purple-300 hover:bg-purple-50">
+                                🧲 MRI
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation recommended.")} className="text-xs border-amber-300 hover:bg-amber-50">
+                                💡 Clinical Correlation
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Specialist consultation recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
+                                👨‍⚕️ Specialist Consult
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Voice Dictation + Textarea */}
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-semibold text-gray-700">Follow-up Plan</label>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => startVoiceInput('recommendations')}
+                              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                            >
+                              <Mic className={`w-3 h-3 mr-1 ${isRecording.recommendations ? 'animate-pulse text-red-500' : ''}`} />
+                              {isRecording.recommendations ? 'Stop' : 'Dictate'}
+                            </Button>
+                          </div>
+                          
+                          <FormControl>
+                            <Textarea
+                              ref={recommendationsRef}
+                              value={recommendations}
+                              onChange={(e) => {
+                                setRecommendations(e.target.value);
+                                field.onChange(e.target.value);
+                              }}
+                              rows={4}
+                              placeholder="Follow-up recommendations, additional imaging..."
+                              className="focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
+                              data-testid="textarea-recommendations"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+                
+              </Accordion>
 
-              {/* Recommendations */}
-              <FormField
-                control={resultsForm.control}
-                name="recommendations"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Recommendations</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Clinical recommendations and follow-up..."
-                        {...field}
-                        rows={3}
-                        data-testid="textarea-recommendations"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Image Quality & Technical Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={resultsForm.control}
+                  name="imageQuality"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Image Quality
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200" data-testid="select-image-quality">
+                            <SelectValue placeholder="Select quality..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="excellent">Excellent - Diagnostic quality</SelectItem>
+                          <SelectItem value="good">Good - Minor limitations</SelectItem>
+                          <SelectItem value="adequate">Adequate - Suboptimal but diagnostic</SelectItem>
+                          <SelectItem value="limited">Limited - Technical difficulties</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormItem>
+                  <div className="flex items-center justify-between mb-2">
+                    <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Technical Details
+                    </FormLabel>
+                    <Button 
+                      type="button"
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => startVoiceInput('technicalDetails')}
+                      className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                    >
+                      <Mic className={`w-3 h-3 mr-1 ${isRecording.technicalDetails ? 'animate-pulse text-red-500' : ''}`} />
+                      {isRecording.technicalDetails ? 'Stop' : 'Dictate'}
+                    </Button>
+                  </div>
+                  <Input
+                    ref={technicalDetailsRef}
+                    value={technicalDetails}
+                    onChange={(e) => setTechnicalDetails(e.target.value)}
+                    placeholder="Probe type, depth, gain settings..."
+                    className="focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
+                  />
+                </FormItem>
+              </div>
 
+              {/* Sonographer Details & Report Date */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={resultsForm.control}
                   name="reportDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Report Date</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Report Date
+                      </FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} data-testid="input-report-date" />
+                        <Input type="date" {...field} className="focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200" data-testid="input-report-date" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1483,9 +1907,20 @@ export default function Ultrasound() {
                   name="sonographer"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Sonographer</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Sonographer Name
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="Name of sonographer" {...field} data-testid="input-sonographer" />
+                        <Input 
+                          value={sonographerName}
+                          onChange={(e) => {
+                            setSonographerName(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
+                          placeholder="Enter sonographer name & credentials" 
+                          className="focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 text-sm" 
+                          data-testid="input-sonographer" 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1493,7 +1928,20 @@ export default function Ultrasound() {
                 />
               </div>
 
-              <div className="flex justify-between pt-4 border-t">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t border-indigo-100 dark:border-indigo-900">
+                {hasPreviousReports && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={copyFromPreviousReport}
+                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Previous Report
+                  </Button>
+                )}
+                
                 <Button
                   type="button"
                   variant="outline"
@@ -1503,19 +1951,23 @@ export default function Ultrasound() {
                       setTimeout(() => window.print(), 100);
                     }
                   }}
+                  className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
                   data-testid="button-print-report"
                 >
                   <Printer className="w-4 h-4 mr-2" />
                   Print Report
                 </Button>
-                <div className="flex gap-2">
+                
+                <div className="flex gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
                       setResultsModalOpen(false);
                       setSelectedUltrasoundExam(null);
+                      setUploadedImages([]);
                     }}
+                    className="min-h-[44px]"
                     data-testid="button-cancel-report"
                   >
                     Cancel
@@ -1523,6 +1975,7 @@ export default function Ultrasound() {
                   <Button
                     type="submit"
                     disabled={updateUltrasoundExamMutation.isPending}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg min-h-[44px]"
                     data-testid="button-save-report"
                   >
                     {updateUltrasoundExamMutation.isPending ? (
@@ -1610,6 +2063,25 @@ export default function Ultrasound() {
           </div>
         </div>
       )}
+      
+      {/* Custom Scrollbar Styling */}
+      <style>{`
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: rgb(224 231 255);
+          border-radius: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgb(165 180 252);
+          border-radius: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: rgb(99 102 241);
+        }
+      `}</style>
       </div>
     </div>
   );
