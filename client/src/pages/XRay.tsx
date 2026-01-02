@@ -15,6 +15,9 @@ import {
   ChevronRight,
   XSquare,
   AlertTriangle,
+  Activity,
+  Zap,
+  User,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -198,10 +201,12 @@ export default function XRay() {
   // Request state
   const [requestOpen, setRequestOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [examType, setExamType] = useState('chest');
+  const [bodyPart, setBodyPart] = useState('');
   const [safetyChecklist, setSafetyChecklist] = useState({
-    notPregnant: false,
-    metalRemoved: false,
-    canCooperate: false,
+    pregnancy: false,
+    metal: false,
+    cooperation: false,
   });
 
   // Results state
@@ -450,25 +455,18 @@ export default function XRay() {
 
   /* --------------------------- Render ---------------------------- */
 
-  const Chip = ({ tone, children }: { tone: string; children: React.ReactNode }) => (
-    <span className={cx(
-      "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-      tone === "slate" && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-      tone === "emerald" && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-    )}>
-      {children}
-    </span>
-  );
-
   const ExamCard = ({ exam, patient }: { exam: XrayExam; patient?: Patient | null }) => {
     const isPaid = exam.paymentStatus === 'paid';
     const canPerform = exam.status === 'completed' || isPaid;
     const isCompleted = exam.status === 'completed';
     
+    // Count exam views
+    const examViews = exam.examType ? exam.examType.split(',').length : 1;
+    
     return (
       <div
         className={cx(
-          "rounded-lg p-2.5 border-l-4 cursor-pointer transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 group",
+          "rounded-lg p-2.5 border-l-4 cursor-pointer transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:shadow-[0_4px_16px_rgba(37,99,235,0.15)] hover:-translate-y-0.5 group",
           isCompleted && "border-l-emerald-500 bg-white dark:bg-gray-800",
           !isCompleted && isPaid && "border-l-orange-500 bg-white dark:bg-gray-800",
           !isCompleted && !isPaid && "border-l-red-500 bg-red-50/50 dark:bg-red-900/10",
@@ -480,13 +478,18 @@ export default function XRay() {
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
-            {/* Line 1: Patient name + ID chip (left), Status pill + chevron (right) */}
+            {/* Line 1: Patient name + ID chip + view count (left), Status pill + chevron (right) */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                   {patient ? fullName(patient) : exam.patientId}
                 </span>
-                <Chip tone="slate">{exam.examId}</Chip>
+                <Badge className="h-5 px-2 bg-blue-100 text-blue-700 border-0">
+                  {exam.patientId}
+                </Badge>
+                <Badge className="h-5 px-2 bg-cyan-100 text-cyan-700 border-0">
+                  {examViews} view{examViews > 1 ? 's' : ''}
+                </Badge>
               </div>
               <div className="shrink-0 flex items-center gap-1.5">
                 {isCompleted && (
@@ -504,7 +507,7 @@ export default function XRay() {
                     UNPAID
                   </Badge>
                 )}
-                {canPerform && <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-0.5 transition-all" />}
+                {canPerform && <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
             </div>
             
@@ -526,41 +529,11 @@ export default function XRay() {
     );
   };
 
-  const PatientPickerList = ({ patients }: { patients: Patient[] }) => (
-    <div className="space-y-2 max-h-96 overflow-y-auto">
-      {patients.map((p) => (
-        <div
-          key={p.patientId}
-          onClick={() => {
-            setSelectedPatient(p);
-            setTerm('');
-          }}
-          className={cx(
-            "p-3 rounded-lg border transition-all duration-200 cursor-pointer",
-            selectedPatient?.patientId === p.patientId
-              ? "border-2 border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
-              : "border border-gray-200 dark:border-gray-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:border-cyan-300 dark:hover:border-cyan-700"
-          )}
-          data-testid={`patient-option-${p.patientId}`}
-        >
-          <p className="font-semibold text-gray-900 dark:text-gray-100">{fullName(p)}</p>
-          <p className="text-sm text-gray-500">ID: {p.patientId} • {p.age} • {p.gender}</p>
-        </div>
-      ))}
-      {patients.length >= page * PER_PAGE && (
-        <Button
-          variant="ghost"
-          onClick={() => setPage((p) => p + 1)}
-          className="w-full"
-        >
-          Load More
-        </Button>
-      )}
-    </div>
-  );
+  // Check if all safety checks are passed
+  const allSafetyChecksPassed = safetyChecklist.pregnancy && safetyChecklist.metal && safetyChecklist.cooperation;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 pt-1.5 pb-6">
       <div className="max-w-7xl mx-auto space-y-4">
         {/* Premium Header */}
         <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)]">
@@ -568,11 +541,11 @@ export default function XRay() {
             {/* Top Section: Title + CTA */}
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                  <XSquare className="w-7 h-7 text-white" />
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-xl shadow-blue-500/30">
+                  <Activity className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">
                     X-Ray Department
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -582,7 +555,7 @@ export default function XRay() {
               </div>
               <Button
                 onClick={() => setRequestOpen(true)}
-                className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:shadow-lg hover:shadow-cyan-500/40 transition-all duration-300"
+                className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg shadow-blue-500/30"
                 data-testid="button-new-request"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -590,33 +563,19 @@ export default function XRay() {
               </Button>
             </div>
 
-            {/* KPI Bar (Thin horizontal bar - Patient page style) */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white/50 dark:bg-gray-800/50 py-2.5 px-4">
-              {/* Pending */}
+            {/* Stats Bar */}
+            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                <span className="text-gray-600 dark:text-gray-400">Pending:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-pending">{pendingExams.length}</span>
+                <Clock className="w-4 h-4 text-orange-500" />
+                <span className="text-sm text-gray-600">Pending: <strong>{pendingExams.length}</strong></span>
               </div>
-              
-              {/* Divider */}
-              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
-              
-              {/* Completed */}
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-                <span className="text-gray-600 dark:text-gray-400">Completed:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-completed">{completedExams.length}</span>
+                <Check className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-gray-600">Completed: <strong>{completedExams.length}</strong></span>
               </div>
-              
-              {/* Divider */}
-              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
-              
-              {/* Total */}
               <div className="flex items-center gap-2">
-                <XSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                <span className="text-gray-600 dark:text-gray-400">Total:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-total">{allXrayExams.length}</span>
+                <Activity className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-gray-600">Total: <strong>{allXrayExams.length}</strong></span>
               </div>
             </div>
           </CardContent>
@@ -643,8 +602,8 @@ export default function XRay() {
                     onClick={() => setDateFilter(filter as any)}
                     className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
                       dateFilter === filter
-                        ? "text-cyan-600 dark:text-cyan-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-600 after:to-teal-500 after:shadow-[0_0_8px_rgba(6,182,212,0.6)]"
-                        : "text-gray-500 hover:text-cyan-500"
+                        ? "text-blue-600 dark:text-blue-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-600 after:to-cyan-500 after:shadow-[0_0_8px_rgba(37,99,235,0.6)]"
+                        : "text-gray-500 hover:text-blue-500"
                     }`}
                   >
                     {filter === "today" && "Today"}
@@ -669,7 +628,7 @@ export default function XRay() {
                   placeholder="Search by patient name or ID..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-300 placeholder:text-gray-400"
+                  className="pl-9 pr-4 py-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 placeholder:text-gray-400"
                 />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
@@ -723,8 +682,8 @@ export default function XRay() {
                     onClick={() => setDateFilter(filter as any)}
                     className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
                       dateFilter === filter
-                        ? "text-cyan-600 dark:text-cyan-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-600 after:to-teal-500 after:shadow-[0_0_8px_rgba(6,182,212,0.6)]"
-                        : "text-gray-500 hover:text-cyan-500"
+                        ? "text-blue-600 dark:text-blue-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-600 after:to-cyan-500 after:shadow-[0_0_8px_rgba(37,99,235,0.6)]"
+                        : "text-gray-500 hover:text-blue-500"
                     }`}
                   >
                     {filter === "today" && "Today"}
@@ -749,7 +708,7 @@ export default function XRay() {
                   placeholder="Search by patient name or ID..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-300 placeholder:text-gray-400"
+                  className="pl-9 pr-4 py-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 placeholder:text-gray-400"
                 />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
@@ -786,123 +745,289 @@ export default function XRay() {
 
       {/* New Request Dialog */}
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          {/* Modal header with gradient */}
-          <div className="bg-gradient-to-r from-cyan-600 to-teal-500 p-4 rounded-t-xl -m-6 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <XSquare className="w-5 h-5 text-white" />
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-cyan-50/30 dark:from-gray-900 dark:via-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-100">
+          
+          {/* Premium Header with Gradient Background */}
+          <div className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                  <Activity className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-bold text-white">
+                    New X-Ray Examination Request
+                  </DialogTitle>
+                  <DialogDescription className="text-blue-100 text-sm mt-1">
+                    Submit a radiological imaging request with safety verification
+                  </DialogDescription>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">New X-Ray Examination Request</h2>
-                <p className="text-cyan-100 text-sm">Submit a new X-ray examination request for a patient</p>
-              </div>
+              <button 
+                onClick={() => setRequestOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6">
-              {/* Patient Selection */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Patient Selection</h3>
+            <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6 overflow-y-auto max-h-[calc(90vh-200px)] px-6">
+              {/* Premium Patient Selection */}
+              <div className="mb-6">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <User className="w-4 h-4 text-blue-600" />
+                  Select Patient
+                </label>
+                
                 {!selectedPatient ? (
-                  <div>
-                    <div className="relative mb-4">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <>
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
-                        placeholder="Search patients by name or ID..."
+                        className="pl-10 border-2 border-blue-200 focus:border-blue-500"
+                        placeholder="Search patients by name or ID (press / to focus)..."
                         value={term}
                         onChange={(e) => setTerm(e.target.value)}
-                        className="pl-10 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                         data-testid="input-patient-search"
                       />
                     </div>
-                    {term.trim() ? (
-                      <PatientPickerList patients={visibleSearch} />
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Today's Patients</p>
-                        <PatientPickerList patients={visibleToday} />
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-3 rounded-lg border-2 border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-cyan-800 dark:text-cyan-200" data-testid="selected-patient-name">
-                          {fullName(selectedPatient)}
-                        </p>
-                        <p className="text-sm text-cyan-700 dark:text-cyan-300">
-                          ID: {selectedPatient.patientId} | Age: {selectedPatient.age} | {selectedPatient.gender}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedPatient(null)}
-                        className="border-gray-300 hover:bg-gray-50"
-                        data-testid="button-change-patient"
-                      >
-                        Change
-                      </Button>
+                    
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-blue-50">
+                      {(term.trim() ? visibleSearch : visibleToday).map((patient) => (
+                        <div
+                          key={patient.patientId}
+                          onClick={() => {
+                            setSelectedPatient(patient);
+                            setTerm('');
+                          }}
+                          className="group relative overflow-hidden rounded-xl border-2 border-gray-100 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer bg-white/80 backdrop-blur-sm p-4"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/0 via-blue-50/50 to-cyan-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          
+                          <div className="relative flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                {patient.firstName?.[0]}{patient.lastName?.[0]}
+                              </div>
+                              
+                              <div>
+                                <div className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                                  {fullName(patient)}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-gray-600">
+                                  <Badge className="h-5 px-2 bg-blue-100 text-blue-700 border-0">
+                                    {patient.patientId}
+                                  </Badge>
+                                  <span>{patient.age}y</span>
+                                  <span className="capitalize">{patient.gender}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                  </>
+                ) : (
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold shadow-md">
+                        {selectedPatient.firstName?.[0]}{selectedPatient.lastName?.[0]}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-blue-900">{fullName(selectedPatient)}</p>
+                        <p className="text-sm text-blue-700">ID: {selectedPatient.patientId}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSelectedPatient(null)}
+                      className="border-blue-400 text-blue-700 hover:bg-blue-100"
+                    >
+                      Change
+                    </Button>
                   </div>
                 )}
               </div>
 
-              {/* Exam Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="examType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Exam Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" data-testid="select-exam-type">
-                            <SelectValue placeholder="Select exam type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {radiologyServices.length > 0 ? (
-                            radiologyServices.map((service) => (
-                              <SelectItem key={service.id} value={service.name}>
-                                {service.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="chest">Chest X-Ray</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="bodyPart"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Body Part (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., Left knee, Right shoulder"
-                          {...field}
-                          value={field.value || ''}
-                          className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-                          data-testid="input-body-part"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Visual Exam Type Selector */}
+              <div className="mb-6">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-blue-600" />
+                  Examination Type
+                </label>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { value: 'chest', label: 'Chest X-Ray', icon: '🫁', description: 'Thoracic imaging' },
+                    { value: 'extremity', label: 'Extremity', icon: '🦴', description: 'Arms, legs, joints' },
+                    { value: 'abdominal', label: 'Abdominal', icon: '🫄', description: 'Abdomen & pelvis' },
+                    { value: 'spine', label: 'Spine', icon: '🦴', description: 'Cervical to lumbar' },
+                    { value: 'skull', label: 'Skull/Head', icon: '💀', description: 'Cranial imaging' },
+                    { value: 'pelvic', label: 'Pelvic', icon: '🦴', description: 'Hip & pelvis' },
+                  ].map((exam) => (
+                    <button
+                      key={exam.value}
+                      type="button"
+                      onClick={() => {
+                        setExamType(exam.value);
+                        form.setValue('examType', exam.value);
+                      }}
+                      className={`
+                        relative overflow-hidden rounded-xl p-4 border-2 transition-all duration-300 text-left
+                        ${examType === exam.value
+                          ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 shadow-lg shadow-blue-500/20 scale-105'
+                          : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md hover:scale-102'
+                        }
+                      `}
+                    >
+                      <div className="text-3xl mb-2">{exam.icon}</div>
+                      <div className={`text-sm font-semibold mb-1 ${
+                        examType === exam.value ? 'text-blue-700' : 'text-gray-700'
+                      }`}>
+                        {exam.label}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {exam.description}
+                      </div>
+                      
+                      {examType === exam.value && (
+                        <div className="absolute top-2 right-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-md">
+                            <Check className="w-4 h-4 text-white stroke-[3]" />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Quick Exam Presets */}
+              <div className="mb-4">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  Common Exam Presets
+                </label>
+                
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { 
+                      name: 'Trauma Screen', 
+                      icon: '🚑',
+                      examType: 'extremity',
+                      bodyPart: 'Multiple',
+                      indication: 'Suspected fracture or dislocation following trauma'
+                    },
+                    { 
+                      name: 'Respiratory Assessment', 
+                      icon: '🫁',
+                      examType: 'chest',
+                      bodyPart: 'Chest PA & Lateral',
+                      indication: 'Evaluation of cough, dyspnea, or suspected pneumonia'
+                    },
+                    { 
+                      name: 'Back Pain Evaluation', 
+                      icon: '🦴',
+                      examType: 'spine',
+                      bodyPart: 'Lumbar spine',
+                      indication: 'Chronic or acute lower back pain assessment'
+                    },
+                    { 
+                      name: 'Post-Operative Check', 
+                      icon: '✅',
+                      examType: 'chest',
+                      bodyPart: 'Chest AP',
+                      indication: 'Post-operative monitoring'
+                    },
+                  ].map((preset) => (
+                    <Button
+                      key={preset.name}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setExamType(preset.examType);
+                        setBodyPart(preset.bodyPart);
+                        form.setValue('examType', preset.examType);
+                        form.setValue('bodyPart', preset.bodyPart);
+                        form.setValue('clinicalIndication', preset.indication);
+                      }}
+                      className="border-2 border-blue-300 hover:bg-blue-50 hover:border-blue-500 hover:shadow-md transition-all"
+                    >
+                      <span className="mr-1.5">{preset.icon}</span>
+                      <Plus className="w-3 h-3 mr-1" />
+                      {preset.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Body Part Quick Selector (Conditional on Exam Type) */}
+              {examType === 'extremity' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Body Part (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      'Left Hand', 'Right Hand', 'Left Wrist', 'Right Wrist',
+                      'Left Elbow', 'Right Elbow', 'Left Shoulder', 'Right Shoulder',
+                      'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle',
+                      'Left Foot', 'Right Foot', 'Left Hip', 'Right Hip'
+                    ].map((part) => (
+                      <Button
+                        key={part}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setBodyPart(part);
+                          form.setValue('bodyPart', part);
+                        }}
+                        className={`text-xs ${
+                          bodyPart === part
+                            ? 'bg-blue-100 border-blue-500 text-blue-700 font-semibold'
+                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        {part}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Body Part Input (Always visible) */}
+              <FormField
+                control={form.control}
+                name="bodyPart"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Body Part (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Left knee, Right shoulder"
+                        {...field}
+                        value={bodyPart || field.value || ''}
+                        onChange={(e) => {
+                          setBodyPart(e.target.value);
+                          field.onChange(e);
+                        }}
+                        className="focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        data-testid="input-body-part"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -915,7 +1040,7 @@ export default function XRay() {
                         placeholder="Describe the clinical reason for this X-ray examination..."
                         {...field}
                         value={field.value || ''}
-                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                        className="focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         data-testid="textarea-clinical-indication"
                       />
                     </FormControl>
@@ -935,7 +1060,7 @@ export default function XRay() {
                         placeholder="Any special instructions for the technician..."
                         {...field}
                         value={field.value || ''}
-                        className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                        className="focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         data-testid="textarea-special-instructions"
                       />
                     </FormControl>
@@ -944,50 +1069,102 @@ export default function XRay() {
                 )}
               />
 
-              {/* Safety Checklist */}
-              <div className="space-y-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 dark:text-white">Safety Checklist</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="notPregnant"
-                      checked={safetyChecklist.notPregnant}
-                      onCheckedChange={(checked) =>
-                        setSafetyChecklist((prev) => ({ ...prev, notPregnant: !!checked }))
-                      }
-                      data-testid="checkbox-not-pregnant"
-                    />
-                    <label htmlFor="notPregnant" className="text-sm">
-                      Patient is not pregnant (or pregnancy status confirmed)
-                    </label>
+              {/* Enhanced Safety Checklist */}
+              <div className="mb-6 p-5 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                    <AlertTriangle className="w-5 h-5 text-white" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="metalRemoved"
-                      checked={safetyChecklist.metalRemoved}
-                      onCheckedChange={(checked) =>
-                        setSafetyChecklist((prev) => ({ ...prev, metalRemoved: !!checked }))
-                      }
-                      data-testid="checkbox-metal-removed"
-                    />
-                    <label htmlFor="metalRemoved" className="text-sm">
-                      Metal objects and jewelry removed from examination area
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="canCooperate"
-                      checked={safetyChecklist.canCooperate}
-                      onCheckedChange={(checked) =>
-                        setSafetyChecklist((prev) => ({ ...prev, canCooperate: !!checked }))
-                      }
-                      data-testid="checkbox-can-cooperate"
-                    />
-                    <label htmlFor="canCooperate" className="text-sm">
-                      Patient can cooperate and follow positioning instructions
-                    </label>
+                  <div>
+                    <h3 className="font-bold text-amber-900">Safety Checklist</h3>
+                    <p className="text-xs text-amber-700">All items must be verified before examination</p>
                   </div>
                 </div>
+                
+                <div className="space-y-3">
+                  {[
+                    { 
+                      id: 'pregnancy', 
+                      label: 'Patient is not pregnant (or pregnancy status confirmed)',
+                      critical: true,
+                      icon: '🤰'
+                    },
+                    { 
+                      id: 'metal', 
+                      label: 'Metal objects and jewelry removed from examination area',
+                      critical: false,
+                      icon: '💍'
+                    },
+                    { 
+                      id: 'cooperation', 
+                      label: 'Patient can cooperate and follow positioning instructions',
+                      critical: false,
+                      icon: '🙋'
+                    },
+                  ].map((item) => {
+                    const isChecked = safetyChecklist[item.id as keyof typeof safetyChecklist] || false;
+                    
+                    return (
+                      <label
+                        key={item.id}
+                        className={`
+                          flex items-center gap-3 p-3.5 rounded-lg cursor-pointer transition-all duration-300
+                          ${isChecked
+                            ? 'bg-green-100 border-2 border-green-400 shadow-sm'
+                            : item.critical 
+                              ? 'bg-red-50 border-2 border-red-300 animate-pulse-subtle'
+                              : 'bg-white border-2 border-gray-200 hover:border-amber-300'
+                          }
+                        `}
+                      >
+                        {/* Custom Checkbox */}
+                        <div className={`
+                          w-7 h-7 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all
+                          ${isChecked
+                            ? 'bg-green-500 border-green-500 scale-110'
+                            : 'bg-white border-gray-300'
+                          }
+                        `}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => setSafetyChecklist(prev => ({
+                              ...prev,
+                              [item.id]: e.target.checked
+                            }))}
+                            className="sr-only"
+                          />
+                          {isChecked && <Check className="w-5 h-5 text-white stroke-[3]" />}
+                        </div>
+                        
+                        {/* Icon */}
+                        <span className="text-2xl">{item.icon}</span>
+                        
+                        {/* Label */}
+                        <span className={`flex-1 text-sm font-medium ${
+                          isChecked ? 'text-green-900' : item.critical ? 'text-red-800' : 'text-gray-700'
+                        }`}>
+                          {item.label}
+                          {item.critical && !isChecked && (
+                            <Badge className="ml-2 bg-red-500 text-white border-0 text-xs">
+                              REQUIRED
+                            </Badge>
+                          )}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                
+                {/* Warning if incomplete */}
+                {!allSafetyChecksPassed && (
+                  <div className="mt-4 flex items-start gap-2 text-xs text-amber-900 bg-amber-100 p-3 rounded-lg border border-amber-300">
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Safety verification incomplete.</strong> All checklist items must be confirmed before submitting the X-ray request.
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t">
@@ -998,7 +1175,7 @@ export default function XRay() {
                     setRequestOpen(false);
                     setSelectedPatient(null);
                     form.reset();
-                    setSafetyChecklist({ notPregnant: false, metalRemoved: false, canCooperate: false });
+                    setSafetyChecklist({ pregnancy: false, metal: false, cooperation: false });
                   }}
                   className="border-gray-300 hover:bg-gray-50"
                   data-testid="button-cancel-request"
@@ -1007,8 +1184,8 @@ export default function XRay() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={!selectedPatient || createXrayExamMutation.isPending}
-                  className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:shadow-[0_4px_20px_rgba(6,182,212,0.4)] text-white font-semibold"
+                  disabled={!selectedPatient || !allSafetyChecksPassed || createXrayExamMutation.isPending}
+                  className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-[0_4px_20px_rgba(6,182,212,0.4)] text-white font-semibold"
                   data-testid="button-submit-request"
                 >
                   {createXrayExamMutation.isPending ? (
@@ -1316,6 +1493,25 @@ export default function XRay() {
           </div>
         </div>
       )}
+      
+      {/* Custom Scrollbar Styling */}
+      <style>{`
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: rgb(224 242 254);
+          border-radius: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgb(125 211 252);
+          border-radius: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: rgb(6 182 212);
+        }
+      `}</style>
       </div>
     </div>
   );
