@@ -21,6 +21,8 @@ import {
   Eye,
   Trash,
   FileText,
+  Mic,
+  Copy,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -217,6 +219,12 @@ export default function XRay() {
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
   const [reportPatient, setReportPatient] = useState<Patient | null>(null);
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; name: string }>>([]);
+  const [findings, setFindings] = useState('');
+  const [impression, setImpression] = useState('');
+  const [recommendations, setRecommendations] = useState('');
+  const [viewDescriptions, setViewDescriptions] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [imageUploadMode, setImageUploadMode] = useState<'describe' | 'upload'>('describe');
 
   // Print modals
   const [showXrayRequest, setShowXrayRequest] = useState(false);
@@ -448,6 +456,12 @@ export default function XRay() {
     setSelectedXrayExam(exam);
     setResultsModalOpen(true);
     setUploadedImages([]);
+    
+    // Set local state for findings
+    setFindings(exam.findings || '');
+    setImpression(exam.impression || '');
+    setRecommendations(exam.recommendations || '');
+    
     resultsForm.reset({
       findings: exam.findings || '',
       impression: exam.impression || '',
@@ -459,6 +473,120 @@ export default function XRay() {
       radiologist: exam.radiologist || '',
     });
   };
+
+  // Helper functions for quick fill
+  const addFinding = (text: string) => {
+    setFindings(prev => {
+      const newValue = prev ? `${prev}\n\n${text}` : text;
+      resultsForm.setValue('findings', newValue);
+      return newValue;
+    });
+  };
+
+  const addImpression = (text: string) => {
+    setImpression(prev => {
+      const newValue = prev ? `${prev}\n${text}` : text;
+      resultsForm.setValue('impression', newValue);
+      return newValue;
+    });
+  };
+
+  const addRecommendation = (text: string) => {
+    setRecommendations(prev => {
+      const newValue = prev ? `${prev}\n${text}` : text;
+      resultsForm.setValue('recommendations', newValue);
+      return newValue;
+    });
+  };
+
+  // Voice dictation
+  const startVoiceDictation = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      toast({ 
+        title: 'Not Supported', 
+        description: 'Voice dictation is not supported in this browser',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => {
+      setIsListening(true);
+      toast({ title: 'Listening...', description: 'Speak now to add findings' });
+    };
+    
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+      addFinding(transcript);
+    };
+    
+    recognition.onerror = () => {
+      setIsListening(false);
+      toast({ 
+        title: 'Error', 
+        description: 'Voice recognition error occurred',
+        variant: 'destructive'
+      });
+    };
+    
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+    
+    recognition.start();
+    
+    // Auto-stop after 30 seconds
+    setTimeout(() => {
+      if (recognition) {
+        recognition.stop();
+      }
+    }, 30000);
+  };
+
+  // Copy from previous report
+  const copyFromPreviousReport = async () => {
+    if (!selectedXrayExam) return;
+    
+    try {
+      // Find previous completed reports for this patient
+      const previousReports = completedExams
+        .filter(e => e.patientId === selectedXrayExam.patientId && e.examId !== selectedXrayExam.examId)
+        .sort((a, b) => new Date(b.requestedDate || 0).getTime() - new Date(a.requestedDate || 0).getTime());
+      
+      if (previousReports.length > 0) {
+        const prev = previousReports[0];
+        if (prev.findings) addFinding(prev.findings);
+        if (prev.impression) addImpression(prev.impression);
+        if (prev.recommendations) addRecommendation(prev.recommendations);
+        toast({ title: 'Copied', description: 'Previous report copied successfully' });
+      } else {
+        toast({ 
+          title: 'No Previous Reports', 
+          description: 'No previous reports found for this patient',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to copy previous report',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const hasPreviousReports = selectedXrayExam 
+    ? completedExams.filter(e => 
+        e.patientId === selectedXrayExam.patientId && 
+        e.examId !== selectedXrayExam.examId
+      ).length > 0
+    : false;
 
   /* --------------------------- Render ---------------------------- */
 
@@ -1451,76 +1579,109 @@ export default function XRay() {
 
           <Form {...resultsForm}>
             <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
-              {/* Premium Image Upload Section */}
-              <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
-                    <Camera className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-blue-900 dark:text-blue-100">X-Ray Images</h3>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">Upload radiological films or digital images</p>
-                  </div>
-                </div>
+              
+              {/* Tabs for Describe Views vs Upload Images (Low Bandwidth Mode) */}
+              <Tabs value={imageUploadMode} onValueChange={(v) => setImageUploadMode(v as 'describe' | 'upload')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="describe">📝 Describe Views (Low Bandwidth)</TabsTrigger>
+                  <TabsTrigger value="upload">📤 Upload Images</TabsTrigger>
+                </TabsList>
                 
-                <ObjectUploader
-                  maxNumberOfFiles={10}
-                  maxFileSize={20971520}
-                  accept="image/*,.dcm"
-                  onGetUploadParameters={async () => {
-                    const response = await fetch('/api/objects/upload', { method: 'POST' });
-                    if (!response.ok) throw new Error('Upload failed');
-                    const data = await response.json();
-                    return {
-                      method: 'PUT' as const,
-                      url: data.url,
-                    };
-                  }}
-                  onComplete={(uploadedFiles) => {
-                    if (uploadedFiles.length > 0) {
-                      const newImages = uploadedFiles.map((file, idx) => ({
-                        url: file.url,
-                        name: `X-Ray ${uploadedImages.length + idx + 1}`
-                      }));
-                      setUploadedImages([...uploadedImages, ...newImages]);
-                      toast({ title: 'Success', description: `${uploadedFiles.length} image(s) uploaded successfully` });
-                    }
-                  }}
-                  buttonClassName="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg"
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Upload X-Ray Images
-                </ObjectUploader>
-                
-                {/* Image Gallery */}
-                {uploadedImages.length > 0 && (
-                  <div className="mt-4 grid grid-cols-3 md:grid-cols-4 gap-3">
-                    {uploadedImages.map((img, idx) => (
-                      <div key={idx} className="relative group rounded-lg overflow-hidden border-2 border-blue-300 dark:border-blue-700 shadow-md hover:shadow-xl transition-all">
-                        <img src={img.url} alt={img.name} className="w-full h-24 object-cover" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => window.open(img.url, '_blank')}
-                            className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setUploadedImages(uploadedImages.filter((_, i) => i !== idx))}
-                            className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
-                          >
-                            <Trash className="w-4 h-4" />
-                          </button>
-                        </div>
+                <TabsContent value="describe" className="mt-4">
+                  <div className="p-5 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
+                        <FileText className="w-5 h-5 text-white" />
                       </div>
-                    ))}
+                      <div>
+                        <h3 className="font-bold text-green-900 dark:text-green-100">Describe X-Ray Views</h3>
+                        <p className="text-xs text-green-700 dark:text-green-300">For low bandwidth: describe views instead of uploading images</p>
+                      </div>
+                    </div>
+                    
+                    <Textarea
+                      placeholder="Example: AP and Lateral views obtained. Patient positioning adequate. Good penetration and exposure..."
+                      value={viewDescriptions}
+                      onChange={(e) => setViewDescriptions(e.target.value)}
+                      rows={4}
+                      className="w-full bg-white dark:bg-gray-900 focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    />
                   </div>
-                )}
-              </div>
+                </TabsContent>
+                
+                <TabsContent value="upload" className="mt-4">
+                  {/* Premium Image Upload Section */}
+                  <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                        <Camera className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-blue-900 dark:text-blue-100">X-Ray Images (Optional)</h3>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">Upload radiological films or digital images (max 10 files)</p>
+                      </div>
+                    </div>
+                    
+                    <ObjectUploader
+                      maxNumberOfFiles={10}
+                      maxFileSize={20971520}
+                      accept="image/*,.dcm"
+                      onGetUploadParameters={async () => {
+                        const response = await fetch('/api/objects/upload', { method: 'POST' });
+                        if (!response.ok) throw new Error('Upload failed');
+                        const data = await response.json();
+                        return {
+                          method: 'PUT' as const,
+                          url: data.url,
+                        };
+                      }}
+                      onComplete={(uploadedFiles) => {
+                        if (uploadedFiles.length > 0) {
+                          const newImages = uploadedFiles.map((file, idx) => ({
+                            url: file.url,
+                            name: `X-Ray ${uploadedImages.length + idx + 1}`
+                          }));
+                          setUploadedImages([...uploadedImages, ...newImages]);
+                          toast({ title: 'Success', description: `${uploadedFiles.length} image(s) uploaded successfully` });
+                        }
+                      }}
+                      buttonClassName="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg"
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      Upload X-Ray Images
+                    </ObjectUploader>
+                    
+                    {/* Image Gallery */}
+                    {uploadedImages.length > 0 && (
+                      <div className="mt-4 grid grid-cols-3 md:grid-cols-4 gap-3">
+                        {uploadedImages.map((img, idx) => (
+                          <div key={idx} className="relative group rounded-lg overflow-hidden border-2 border-blue-300 dark:border-blue-700 shadow-md hover:shadow-xl transition-all">
+                            <img src={img.url} alt={img.name} className="w-full h-24 object-cover" />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => window.open(img.url, '_blank')}
+                                className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setUploadedImages(uploadedImages.filter((_, i) => i !== idx))}
+                                className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
+                              >
+                                <Trash className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
 
-              {/* Dynamic Findings Template */}
+              {/* Interactive Finding Builder System */}
               <FormField
                 control={resultsForm.control}
                 name="findings"
@@ -1531,27 +1692,444 @@ export default function XRay() {
                       Radiological Findings
                     </FormLabel>
                     
-                    {/* Template Guide based on exam type */}
-                    {selectedXrayExam && (
-                      <div className="mb-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                          Template Guide for {selectedXrayExam.examType} X-Ray:
-                        </p>
-                        <p className="text-xs text-blue-700 dark:text-blue-300">
-                          {selectedXrayExam.examType === 'chest' && 'Describe lungs, heart, mediastinum, bones, soft tissues'}
-                          {selectedXrayExam.examType === 'abdominal' && 'Describe bowel gas pattern, organs, calcifications, free air'}
-                          {selectedXrayExam.examType === 'spine' && 'Describe alignment, disc spaces, vertebral bodies, soft tissues'}
-                          {selectedXrayExam.examType === 'skull' && 'Describe calvarium, sinuses, facial bones, soft tissues'}
-                          {selectedXrayExam.examType === 'pelvic' && 'Describe pelvic bones, hip joints, soft tissues'}
-                          {selectedXrayExam.examType === 'extremity' && 'Describe bones, joints, soft tissues, alignment'}
-                        </p>
+                    {/* EXTREMITY X-RAY FINDING BUILDER */}
+                    {selectedXrayExam?.examType === 'extremity' && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-blue-600" />
+                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
+                        </div>
+                        
+                        {/* Bone Assessment */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Bone Integrity:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("No fracture identified. Bone cortex intact.")}
+                              className="border-green-300 hover:bg-green-50 hover:border-green-500 text-xs"
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              No Fracture
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Fracture identified at [specify location]. [Describe displacement/angulation].")}
+                              className="border-red-300 hover:bg-red-50 hover:border-red-500 text-xs"
+                            >
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Fracture Present
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Dislocation noted at [joint]. No associated fracture.")}
+                              className="border-orange-300 hover:bg-orange-50 hover:border-orange-500 text-xs"
+                            >
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Dislocation
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Normal bone alignment and density.")}
+                              className="border-green-300 hover:bg-green-50 hover:border-green-500 text-xs"
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              Normal Alignment
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Joint Assessment */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Joint Space:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Joint spaces preserved. No effusion.")}
+                              className="border-green-300 hover:bg-green-50 hover:border-green-500 text-xs"
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              Normal Joint Space
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Joint effusion present suggesting inflammation or hemarthrosis.")}
+                              className="border-blue-300 hover:bg-blue-50 hover:border-blue-500 text-xs"
+                            >
+                              💧 Effusion
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Degenerative changes with joint space narrowing and osteophyte formation.")}
+                              className="border-amber-300 hover:bg-amber-50 hover:border-amber-500 text-xs"
+                            >
+                              🦴 Arthritis
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Bone spur formation noted.")}
+                              className="border-gray-300 hover:bg-gray-50 text-xs"
+                            >
+                              Bone Spurs
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Soft Tissue */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Soft Tissues:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Soft tissues unremarkable. No swelling or masses.")}
+                              className="border-green-300 hover:bg-green-50 hover:border-green-500 text-xs"
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              Normal
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Soft tissue swelling present consistent with trauma/inflammation.")}
+                              className="border-orange-300 hover:bg-orange-50 hover:border-orange-500 text-xs"
+                            >
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Swelling
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("No radiopaque foreign body visualized.")}
+                              className="border-green-300 hover:bg-green-50 hover:border-green-500 text-xs"
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              No Foreign Body
+                            </Button>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => addFinding("Radiopaque foreign body identified at [location].")}
+                              className="border-red-300 hover:bg-red-50 hover:border-red-500 text-xs"
+                            >
+                              ⚠️ Foreign Body
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* CHEST X-RAY FINDING BUILDER */}
+                    {selectedXrayExam?.examType === 'chest' && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-blue-600" />
+                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
+                        </div>
+                        
+                        {/* Lungs */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Lungs:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Lungs clear. No infiltrates or masses.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Clear Lungs
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Infiltrate seen in [location] consistent with pneumonia.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Infiltrate/Pneumonia
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Pleural effusion present on [left/right] side.")} className="border-blue-300 hover:bg-blue-50 text-xs">
+                              💧 Pleural Effusion
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Pulmonary mass/nodule identified requiring further evaluation.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              ⚠️ Mass/Nodule
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Pneumothorax noted on [left/right] side.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              ⚠️ Pneumothorax
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Heart */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Heart & Mediastinum:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Heart size normal. Cardiothoracic ratio <0.5.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Heart Size
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Cardiomegaly present. Cardiothoracic ratio >0.5.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              ❤️ Cardiomegaly
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Mediastinal widening noted.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              ⚠️ Mediastinal Widening
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Bones */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Bones & Soft Tissues:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Ribs, clavicles, and visible spine intact.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Intact Bones
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Rib fracture identified at [location].")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Rib Fracture
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Subcutaneous emphysema present.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              ⚠️ Subcutaneous Emphysema
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* ABDOMINAL X-RAY FINDING BUILDER */}
+                    {selectedXrayExam?.examType === 'abdominal' && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-blue-600" />
+                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
+                        </div>
+                        
+                        {/* Bowel Gas */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Bowel Gas Pattern:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Normal bowel gas pattern. No obstruction.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Pattern
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Dilated bowel loops consistent with obstruction.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Obstruction
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Air-fluid levels present suggesting obstruction or ileus.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              ⚠️ Air-Fluid Levels
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Free air under diaphragm indicating perforation.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              🚨 Free Air (Perforation)
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Organs */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Solid Organs:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Liver, spleen, and kidneys normal in size and position.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Organs
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hepatomegaly noted.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              Enlarged Liver
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Splenomegaly present.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              Enlarged Spleen
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Calcifications */}
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Calcifications/Stones:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("No renal or gallstones visualized.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> No Stones
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Renal calculus identified in [location].")} className="border-red-300 hover:bg-red-50 text-xs">
+                              💎 Kidney Stone
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Gallstones present in gallbladder region.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              💎 Gallstones
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* SPINE X-RAY FINDING BUILDER */}
+                    {selectedXrayExam?.examType === 'spine' && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-blue-600" />
+                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Alignment:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Normal vertebral alignment maintained.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Alignment
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Scoliosis present with [direction] curvature.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              ⚠️ Scoliosis
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Listhesis noted at [level].")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Listhesis
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Disc Spaces:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Disc spaces preserved throughout.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Disc Spaces
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Disc space narrowing at [level] suggesting degeneration.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              Disc Narrowing
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Vertebral Bodies:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Vertebral bodies intact with normal height and density.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Vertebrae
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Compression fracture at [level].")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Compression Fracture
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Osteophyte formation consistent with degenerative changes.")} className="border-amber-300 hover:bg-amber-50 text-xs">
+                              Osteophytes
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* SKULL X-RAY FINDING BUILDER */}
+                    {selectedXrayExam?.examType === 'skull' && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-blue-600" />
+                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Calvarium:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Calvarium intact. No fracture lines identified.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Intact Calvarium
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Skull fracture identified at [location].")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Skull Fracture
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Sinuses & Facial Bones:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Paranasal sinuses clear. Facial bones intact.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Sinuses
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Sinus opacification suggesting sinusitis.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              Sinusitis
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Facial bone fracture at [location].")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Facial Fracture
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* PELVIC X-RAY FINDING BUILDER */}
+                    {selectedXrayExam?.examType === 'pelvic' && (
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-blue-600" />
+                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Pelvic Bones:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Pelvic bones intact with normal alignment.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Pelvis
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Pelvic fracture identified at [location].")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Pelvic Fracture
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
+                            Hip Joints:
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hip joints preserved bilaterally.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Check className="w-3 h-3 mr-1" /> Normal Hips
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hip dislocation on [left/right] side.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Hip Dislocation
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Degenerative changes in hip joint with space narrowing.")} className="border-amber-300 hover:bg-amber-50 text-xs">
+                              Hip Arthritis
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     )}
                     
                     <FormControl>
                       <Textarea
                         placeholder="Describe radiological findings in detail..."
-                        {...field}
+                        value={findings}
+                        onChange={(e) => {
+                          setFindings(e.target.value);
+                          field.onChange(e.target.value);
+                        }}
                         rows={8}
                         className="font-mono text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                         data-testid="textarea-findings"
@@ -1572,10 +2150,43 @@ export default function XRay() {
                       <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                         Clinical Impression
                       </FormLabel>
+                      
+                      {/* Quick Impression Templates */}
+                      <div className="mb-2 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200">
+                        <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 mb-2">Quick Templates:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Normal study. No acute findings.")} className="text-xs border-green-300 hover:bg-green-50">
+                            ✅ Normal
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Acute fracture requiring orthopedic follow-up.")} className="text-xs border-red-300 hover:bg-red-50">
+                            🚨 Acute Fracture
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Pneumonia. Antibiotic therapy recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
+                            🫁 Pneumonia
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Degenerative changes consistent with osteoarthritis.")} className="text-xs border-amber-300 hover:bg-amber-50">
+                            🦴 Arthritis
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Findings suspicious for malignancy. Further imaging recommended.")} className="text-xs border-red-300 hover:bg-red-50">
+                            ⚠️ Suspicious
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Effusion present. Clinical correlation advised.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                            💧 Effusion
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Chronic changes. No acute abnormality.")} className="text-xs border-gray-300 hover:bg-gray-50">
+                            Chronic
+                          </Button>
+                        </div>
+                      </div>
+                      
                       <FormControl>
                         <Textarea
                           placeholder="Summary diagnosis and impression..."
-                          {...field}
+                          value={impression}
+                          onChange={(e) => {
+                            setImpression(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
                           rows={4}
                           className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                           data-testid="textarea-impression"
@@ -1594,10 +2205,46 @@ export default function XRay() {
                       <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                         Recommendations
                       </FormLabel>
+                      
+                      {/* Quick Recommendation Buttons */}
+                      <div className="mb-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200">
+                        <p className="text-xs font-semibold text-green-900 dark:text-green-100 mb-2">Quick Add:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging needed.")} className="text-xs border-green-300 hover:bg-green-50">
+                            ✅ No Follow-up
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up X-ray in 4-6 weeks.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                            📅 Follow-up XR
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for further evaluation.")} className="text-xs border-purple-300 hover:bg-purple-50">
+                            🔍 CT Scan
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for soft tissue evaluation.")} className="text-xs border-purple-300 hover:bg-purple-50">
+                            🧲 MRI
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Ultrasound correlation suggested.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                            📡 Ultrasound
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation advised.")} className="text-xs border-amber-300 hover:bg-amber-50">
+                            👨‍⚕️ Clinical Correlation
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Orthopedic consultation recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
+                            🏥 Orthopedic Consult
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Immediate surgical consultation advised.")} className="text-xs border-red-300 hover:bg-red-50">
+                            🚨 Urgent Surgical Consult
+                          </Button>
+                        </div>
+                      </div>
+                      
                       <FormControl>
                         <Textarea
                           placeholder="Follow-up recommendations, additional imaging..."
-                          {...field}
+                          value={recommendations}
+                          onChange={(e) => {
+                            setRecommendations(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
                           rows={4}
                           className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                           data-testid="textarea-recommendations"
@@ -1691,6 +2338,37 @@ export default function XRay() {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Helper Tools: Voice Dictation & Copy Previous Report */}
+              <div className="flex flex-wrap gap-3 p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900 dark:to-slate-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={startVoiceDictation}
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-500"
+                >
+                  <Mic className={`w-4 h-4 mr-2 ${isListening ? 'animate-pulse text-red-500' : ''}`} />
+                  {isListening ? 'Listening...' : 'Voice Dictation'}
+                </Button>
+                
+                {hasPreviousReports && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyFromPreviousReport}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-500"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy from Previous Report
+                  </Button>
+                )}
+                
+                <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto self-center">
+                  💡 Tip: Use quick-fill buttons to complete reports faster
+                </span>
               </div>
 
               {/* Action Buttons */}
