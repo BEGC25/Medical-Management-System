@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,6 +23,8 @@ import {
   FileText,
   Mic,
   Copy,
+  Lightbulb,
+  Filter,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -57,6 +59,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 
 import {
@@ -223,7 +226,18 @@ export default function XRay() {
   const [impression, setImpression] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [viewDescriptions, setViewDescriptions] = useState('');
-  const [isListening, setIsListening] = useState(false);
+  const [technicalFactors, setTechnicalFactors] = useState('');
+  const [radiologistName, setRadiologistName] = useState('');
+  
+  // Voice recording state for multiple fields
+  const [isRecording, setIsRecording] = useState({
+    viewDescription: false,
+    findings: false,
+    impression: false,
+    recommendations: false,
+    technicalFactors: false
+  });
+  
   const [imageUploadMode, setImageUploadMode] = useState<'describe' | 'upload'>('describe');
 
   // Print modals
@@ -275,6 +289,16 @@ export default function XRay() {
       radiologist: '',
     },
   });
+  
+  // Refs for voice input
+  const viewDescriptionRef = useRef<HTMLTextAreaElement>(null);
+  const findingsRef = useRef<HTMLTextAreaElement>(null);
+  const impressionRef = useRef<HTMLTextAreaElement>(null);
+  const recommendationsRef = useRef<HTMLTextAreaElement>(null);
+  const technicalFactorsRef = useRef<HTMLInputElement>(null);
+  
+  // Recognition instance (shared across all fields)
+  const recognitionInstanceRef = useRef<any>(null);
 
   /* ----------------------------- Data ----------------------------- */
 
@@ -475,11 +499,13 @@ export default function XRay() {
     setResultsModalOpen(true);
     setUploadedImages([]);
     
-    // Set local state for findings
+    // Set local state for all fields
     setFindings(exam.findings || '');
     setImpression(exam.impression || '');
     setRecommendations(exam.recommendations || '');
     setViewDescriptions('');
+    setTechnicalFactors((exam as any).technicalFactors || '');
+    setRadiologistName(exam.radiologist || '');
     setImageUploadMode('describe');
     
     resultsForm.reset({
@@ -519,66 +545,99 @@ export default function XRay() {
     });
   };
 
-  // Voice dictation
-  const startVoiceDictation = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast({ 
-        title: 'Not Supported', 
-        description: 'Voice dictation is not supported in this browser',
-        variant: 'destructive'
+  // Voice dictation - multi-field support
+  const startVoiceInput = (fieldName: keyof typeof isRecording) => {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast({
+        title: "Not Supported",
+        description: "Voice dictation is not supported in this browser. Try Chrome or Edge.",
+        variant: "destructive"
       });
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
+    // Stop any existing recognition
+    if (recognitionInstanceRef.current) {
+      recognitionInstanceRef.current.stop();
+    }
+
+    // If already recording this field, stop
+    if (isRecording[fieldName]) {
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      return;
+    }
+
+    const recognition = new (window as any).webkitSpeechRecognition();
     recognition.continuous = true;
-    recognition.interimResults = false;
-    
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
     recognition.onstart = () => {
-      setIsListening(true);
-      toast({ title: 'Listening...', description: 'Speak now to add findings' });
-    };
-    
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
-      addFinding(transcript);
-    };
-    
-    recognition.onerror = (event: any) => {
-      setIsListening(false);
-      const errorMessage = event.error === 'not-allowed' 
-        ? 'Microphone access denied. Please enable microphone permissions.'
-        : event.error === 'network' 
-        ? 'Network error occurred during voice recognition.'
-        : `Voice recognition error: ${event.error}`;
-      
-      toast({ 
-        title: 'Error', 
-        description: errorMessage,
-        variant: 'destructive'
+      setIsRecording(prev => ({ ...prev, [fieldName]: true }));
+      toast({
+        title: "🎤 Listening...",
+        description: "Speak clearly. Click 'Stop' when done.",
+        duration: 2000
       });
     };
-    
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-    
-    recognition.start();
-    
-    // Auto-stop after 30 seconds and cleanup
-    const timeoutId = setTimeout(() => {
-      try {
-        recognition.stop();
-      } catch (e) {
-        // Recognition may have already stopped
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0])
+        .map((result: any) => result.transcript)
+        .join('');
+
+      // Update the appropriate field
+      switch(fieldName) {
+        case 'viewDescription':
+          setViewDescriptions(transcript);
+          break;
+        case 'findings':
+          setFindings(transcript);
+          resultsForm.setValue('findings', transcript);
+          break;
+        case 'impression':
+          setImpression(transcript);
+          resultsForm.setValue('impression', transcript);
+          break;
+        case 'recommendations':
+          setRecommendations(transcript);
+          resultsForm.setValue('recommendations', transcript);
+          break;
+        case 'technicalFactors':
+          setTechnicalFactors(transcript);
+          resultsForm.setValue('technicalFactors', transcript);
+          break;
       }
-    }, 30000);
-    
-    // Store timeout for potential cleanup (if needed later for component unmount)
-    (recognition as any)._timeoutId = timeoutId;
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      toast({
+        title: "Error",
+        description: `Voice recognition error: ${event.error}`,
+        variant: "destructive"
+      });
+    };
+
+    recognition.onend = () => {
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      recognitionInstanceRef.current = null;
+    };
+
+    recognitionInstanceRef.current = recognition;
+    recognition.start();
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionInstanceRef.current) {
+        recognitionInstanceRef.current.stop();
+      }
+    };
+  }, []);
 
   // Copy from previous report
   const copyFromPreviousReport = async () => {
@@ -1611,10 +1670,13 @@ export default function XRay() {
           <Form {...resultsForm}>
             <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
               
-              {/* Tabs for Describe Views vs Upload Images (Low Bandwidth Mode) */}
+              {/* Tabs for Describe Views vs Upload Images */}
               <Tabs value={imageUploadMode} onValueChange={(v) => setImageUploadMode(v as 'describe' | 'upload')} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="describe">📝 Describe Views (Low Bandwidth)</TabsTrigger>
+                  <TabsTrigger value="describe" className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Describe X-Ray Views
+                  </TabsTrigger>
                   <TabsTrigger value="upload">📤 Upload Images</TabsTrigger>
                 </TabsList>
                 
@@ -1626,17 +1688,36 @@ export default function XRay() {
                       </div>
                       <div>
                         <h3 className="font-bold text-green-900 dark:text-green-100">Describe X-Ray Views</h3>
-                        <p className="text-xs text-green-700 dark:text-green-300">For low bandwidth: describe views instead of uploading images</p>
+                        <p className="text-xs text-green-700 dark:text-green-300">Document image details without uploading files</p>
                       </div>
                     </div>
                     
-                    <Textarea
-                      placeholder="Example: AP and Lateral views obtained. Patient positioning adequate. Good penetration and exposure..."
-                      value={viewDescriptions}
-                      onChange={(e) => setViewDescriptions(e.target.value)}
-                      rows={4}
-                      className="w-full bg-white dark:bg-gray-900 focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
-                    />
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Describe X-Ray Views
+                        </label>
+                        <Button 
+                          type="button"
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => startVoiceInput('viewDescription')}
+                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                        >
+                          <Mic className={`w-3 h-3 mr-1 ${isRecording.viewDescription ? 'animate-pulse text-red-500' : ''}`} />
+                          {isRecording.viewDescription ? 'Stop' : 'Dictate'}
+                        </Button>
+                      </div>
+                      
+                      <Textarea
+                        ref={viewDescriptionRef}
+                        placeholder="Example: AP and Lateral views obtained. Patient positioning adequate. Good penetration and exposure..."
+                        value={viewDescriptions}
+                        onChange={(e) => setViewDescriptions(e.target.value)}
+                        rows={4}
+                        className="w-full bg-white dark:bg-gray-900 focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                      />
+                    </div>
                   </div>
                 </TabsContent>
                 
@@ -2153,139 +2234,215 @@ export default function XRay() {
                       </div>
                     )}
                     
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe radiological findings in detail..."
-                        value={findings}
-                        onChange={(e) => {
-                          setFindings(e.target.value);
-                          field.onChange(e.target.value);
-                        }}
-                        rows={8}
-                        className="font-mono text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
-                        data-testid="textarea-findings"
-                      />
-                    </FormControl>
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Radiological Findings
+                        </label>
+                        <Button 
+                          type="button"
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => startVoiceInput('findings')}
+                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                        >
+                          <Mic className={`w-3 h-3 mr-1 ${isRecording.findings ? 'animate-pulse text-red-500' : ''}`} />
+                          {isRecording.findings ? 'Stop' : 'Dictate'}
+                        </Button>
+                      </div>
+                      
+                      <FormControl>
+                        <Textarea
+                          ref={findingsRef}
+                          placeholder="Click buttons above to add findings, or type/dictate here..."
+                          value={findings}
+                          onChange={(e) => {
+                            setFindings(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
+                          rows={8}
+                          className="font-mono text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
+                          data-testid="textarea-findings"
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Structured Impression & Recommendations */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={resultsForm.control}
-                  name="impression"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Clinical Impression
-                      </FormLabel>
-                      
-                      {/* Quick Impression Templates */}
-                      <div className="mb-2 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200">
-                        <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 mb-2">Quick Templates:</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Normal study. No acute findings.")} className="text-xs border-green-300 hover:bg-green-50">
-                            ✅ Normal
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Acute fracture requiring orthopedic follow-up.")} className="text-xs border-red-300 hover:bg-red-50">
-                            🚨 Acute Fracture
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Pneumonia. Antibiotic therapy recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
-                            🫁 Pneumonia
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Degenerative changes consistent with osteoarthritis.")} className="text-xs border-amber-300 hover:bg-amber-50">
-                            🦴 Arthritis
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Findings suspicious for malignancy. Further imaging recommended.")} className="text-xs border-red-300 hover:bg-red-50">
-                            ⚠️ Suspicious
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Effusion present. Clinical correlation advised.")} className="text-xs border-blue-300 hover:bg-blue-50">
-                            💧 Effusion
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addImpression("Chronic changes. No acute abnormality.")} className="text-xs border-gray-300 hover:bg-gray-50">
-                            Chronic
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <FormControl>
-                        <Textarea
-                          placeholder="Summary diagnosis and impression..."
-                          value={impression}
-                          onChange={(e) => {
-                            setImpression(e.target.value);
-                            field.onChange(e.target.value);
-                          }}
-                          rows={4}
-                          className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
-                          data-testid="textarea-impression"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Clinical Impression & Recommendations - Collapsible Accordions */}
+              <Accordion type="multiple" className="w-full space-y-4">
                 
-                <FormField
-                  control={resultsForm.control}
-                  name="recommendations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Recommendations
-                      </FormLabel>
-                      
-                      {/* Quick Recommendation Buttons */}
-                      <div className="mb-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200">
-                        <p className="text-xs font-semibold text-green-900 dark:text-green-100 mb-2">Quick Add:</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging needed.")} className="text-xs border-green-300 hover:bg-green-50">
-                            ✅ No Follow-up
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up X-ray in 4-6 weeks.")} className="text-xs border-blue-300 hover:bg-blue-50">
-                            📅 Follow-up XR
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for further evaluation.")} className="text-xs border-purple-300 hover:bg-purple-50">
-                            🔍 CT Scan
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for soft tissue evaluation.")} className="text-xs border-purple-300 hover:bg-purple-50">
-                            🧲 MRI
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Ultrasound correlation suggested.")} className="text-xs border-blue-300 hover:bg-blue-50">
-                            📡 Ultrasound
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation advised.")} className="text-xs border-amber-300 hover:bg-amber-50">
-                            👨‍⚕️ Clinical Correlation
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Orthopedic consultation recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
-                            🏥 Orthopedic Consult
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Immediate surgical consultation advised.")} className="text-xs border-red-300 hover:bg-red-50">
-                            🚨 Urgent Surgical Consult
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <FormControl>
-                        <Textarea
-                          placeholder="Follow-up recommendations, additional imaging..."
-                          value={recommendations}
-                          onChange={(e) => {
-                            setRecommendations(e.target.value);
-                            field.onChange(e.target.value);
-                          }}
-                          rows={4}
-                          className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
-                          data-testid="textarea-recommendations"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                {/* Clinical Impression - Collapsible */}
+                <AccordionItem value="impression" className="border-2 border-purple-100 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-purple-50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-5 h-5 text-purple-600" />
+                      <span className="font-semibold text-gray-900">Clinical Impression</span>
+                      <Badge variant="outline" className="ml-2 text-xs border-purple-300 text-purple-700">
+                        Click to expand
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  
+                  <AccordionContent className="px-4 pb-4">
+                    <FormField
+                      control={resultsForm.control}
+                      name="impression"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* Quick Templates */}
+                          <div className="mb-3">
+                            <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2 block">
+                              Quick Templates:
+                            </label>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("No acute fracture, dislocation, or other bony abnormality. Normal study.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                ✅ Normal Study
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Fracture of [specify bone] requiring orthopedic evaluation and management.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                🦴 Fracture
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Degenerative changes consistent with osteoarthritis.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                🦴 Arthritis
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Soft tissue injury without associated bony abnormality.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                🩹 Soft Tissue
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pneumonia/infiltrate seen in [location]. Clinical correlation advised.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                🫁 Pneumonia
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Suspicious finding requiring further evaluation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                ⚠️ Suspicious
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Voice Dictation + Textarea */}
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-semibold text-gray-700">Summary Impression</label>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => startVoiceInput('impression')}
+                              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                            >
+                              <Mic className={`w-3 h-3 mr-1 ${isRecording.impression ? 'animate-pulse text-red-500' : ''}`} />
+                              {isRecording.impression ? 'Stop' : 'Dictate'}
+                            </Button>
+                          </div>
+                          
+                          <FormControl>
+                            <Textarea
+                              ref={impressionRef}
+                              value={impression}
+                              onChange={(e) => {
+                                setImpression(e.target.value);
+                                field.onChange(e.target.value);
+                              }}
+                              rows={4}
+                              placeholder="Summary diagnosis and impression..."
+                              className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
+                              data-testid="textarea-impression"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                {/* Recommendations - Collapsible */}
+                <AccordionItem value="recommendations" className="border-2 border-green-100 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-green-50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="w-5 h-5 text-green-600" />
+                      <span className="font-semibold text-gray-900">Recommendations</span>
+                      <Badge variant="outline" className="ml-2 text-xs border-green-300 text-green-700">
+                        Click to expand
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  
+                  <AccordionContent className="px-4 pb-4">
+                    <FormField
+                      control={resultsForm.control}
+                      name="recommendations"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* Quick Add Buttons */}
+                          <div className="mb-3">
+                            <label className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2 block">
+                              Quick Add:
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging required at this time.")} className="text-xs border-green-300 hover:bg-green-50">
+                                ✅ No Follow-up
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up X-ray in 4-6 weeks to assess healing.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                                📅 Follow-up XR
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for better anatomical detail.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                                🔍 CT Scan
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for soft tissue evaluation.")} className="text-xs border-purple-300 hover:bg-purple-50">
+                                🧲 MRI
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Ultrasound for further characterization.")} className="text-xs border-cyan-300 hover:bg-cyan-50">
+                                🔊 Ultrasound
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation recommended.")} className="text-xs border-amber-300 hover:bg-amber-50">
+                                💡 Clinical Correlation
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Orthopedic consultation recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
+                                👨‍⚕️ Ortho Consult
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Urgent surgical consultation required.")} className="text-xs border-red-300 hover:bg-red-50">
+                                🚨 Urgent Surgery
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Voice Dictation + Textarea */}
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-semibold text-gray-700">Follow-up Plan</label>
+                            <Button 
+                              type="button"
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => startVoiceInput('recommendations')}
+                              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                            >
+                              <Mic className={`w-3 h-3 mr-1 ${isRecording.recommendations ? 'animate-pulse text-red-500' : ''}`} />
+                              {isRecording.recommendations ? 'Stop' : 'Dictate'}
+                            </Button>
+                          </div>
+                          
+                          <FormControl>
+                            <Textarea
+                              ref={recommendationsRef}
+                              value={recommendations}
+                              onChange={(e) => {
+                                setRecommendations(e.target.value);
+                                field.onChange(e.target.value);
+                              }}
+                              rows={4}
+                              placeholder="Follow-up recommendations, additional imaging..."
+                              className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
+                              data-testid="textarea-recommendations"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+                
+              </Accordion>
 
               {/* Image Quality & Technical Factors */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2320,13 +2477,30 @@ export default function XRay() {
                   name="technicalFactors"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Technical Factors
-                      </FormLabel>
+                      <div className="flex items-center justify-between mb-2">
+                        <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          Technical Factors
+                        </FormLabel>
+                        <Button 
+                          type="button"
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => startVoiceInput('technicalFactors')}
+                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                        >
+                          <Mic className={`w-3 h-3 mr-1 ${isRecording.technicalFactors ? 'animate-pulse text-red-500' : ''}`} />
+                          {isRecording.technicalFactors ? 'Stop' : 'Dictate'}
+                        </Button>
+                      </div>
                       <FormControl>
                         <Input
+                          ref={technicalFactorsRef}
+                          value={technicalFactors}
+                          onChange={(e) => {
+                            setTechnicalFactors(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
                           placeholder="kVp, mAs, positioning notes..."
-                          {...field}
                           className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200"
                         />
                       </FormControl>
@@ -2363,43 +2537,21 @@ export default function XRay() {
                         Radiologist Name
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Dr. Name" {...field} className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200" data-testid="input-radiologist" />
+                        <Input 
+                          value={radiologistName}
+                          onChange={(e) => {
+                            setRadiologistName(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
+                          placeholder="Enter radiologist name" 
+                          className="focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 text-sm" 
+                          data-testid="input-radiologist" 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-
-              {/* Helper Tools: Voice Dictation & Copy Previous Report */}
-              <div className="flex flex-wrap gap-3 p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900 dark:to-slate-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={startVoiceDictation}
-                  className="border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-500"
-                >
-                  <Mic className={`w-4 h-4 mr-2 ${isListening ? 'animate-pulse text-red-500' : ''}`} />
-                  {isListening ? 'Listening...' : 'Voice Dictation'}
-                </Button>
-                
-                {hasPreviousReports && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={copyFromPreviousReport}
-                    className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-500"
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy from Previous Report
-                  </Button>
-                )}
-                
-                <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto self-center">
-                  💡 Tip: Use quick-fill buttons to complete reports faster
-                </span>
               </div>
 
               {/* Action Buttons */}
