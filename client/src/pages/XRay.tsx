@@ -404,6 +404,13 @@ export default function XRay() {
       resultsForm.reset();
       setSelectedXrayExam(null);
       setResultsModalOpen(false);
+      // Reset new state variables
+      setFindings('');
+      setImpression('');
+      setRecommendations('');
+      setViewDescriptions('');
+      setImageUploadMode('describe');
+      setUploadedImages([]);
       queryClient.invalidateQueries({ queryKey: ['/api/xray-exams'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
     },
@@ -421,6 +428,13 @@ export default function XRay() {
         resultsForm.reset();
         setSelectedXrayExam(null);
         setResultsModalOpen(false);
+        // Reset new state variables
+        setFindings('');
+        setImpression('');
+        setRecommendations('');
+        setViewDescriptions('');
+        setImageUploadMode('describe');
+        setUploadedImages([]);
       } else {
         toast({
           title: 'Error',
@@ -448,7 +462,11 @@ export default function XRay() {
     if (!selectedXrayExam) return;
     updateXrayExamMutation.mutate({
       examId: selectedXrayExam.examId,
-      data: { ...data, status: 'completed' },
+      data: { 
+        ...data, 
+        status: 'completed',
+        viewDescriptions: viewDescriptions || undefined,
+      },
     });
   };
 
@@ -461,6 +479,8 @@ export default function XRay() {
     setFindings(exam.findings || '');
     setImpression(exam.impression || '');
     setRecommendations(exam.recommendations || '');
+    setViewDescriptions('');
+    setImageUploadMode('describe');
     
     resultsForm.reset({
       findings: exam.findings || '',
@@ -526,11 +546,17 @@ export default function XRay() {
       addFinding(transcript);
     };
     
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
       setIsListening(false);
+      const errorMessage = event.error === 'not-allowed' 
+        ? 'Microphone access denied. Please enable microphone permissions.'
+        : event.error === 'network' 
+        ? 'Network error occurred during voice recognition.'
+        : `Voice recognition error: ${event.error}`;
+      
       toast({ 
         title: 'Error', 
-        description: 'Voice recognition error occurred',
+        description: errorMessage,
         variant: 'destructive'
       });
     };
@@ -541,12 +567,17 @@ export default function XRay() {
     
     recognition.start();
     
-    // Auto-stop after 30 seconds
-    setTimeout(() => {
-      if (recognition) {
+    // Auto-stop after 30 seconds and cleanup
+    const timeoutId = setTimeout(() => {
+      try {
         recognition.stop();
+      } catch (e) {
+        // Recognition may have already stopped
       }
     }, 30000);
+    
+    // Store timeout for potential cleanup (if needed later for component unmount)
+    (recognition as any)._timeoutId = timeoutId;
   };
 
   // Copy from previous report
