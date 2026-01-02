@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation } from "wouter";
 import {
   Beaker,
   Plus,
@@ -394,6 +395,7 @@ function usePatientSearch(term: string) {
 export default function Laboratory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   // Request state
   const [requestOpen, setRequestOpen] = useState(false);
@@ -1274,7 +1276,7 @@ return (
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              onClick={() => window.location.href = '/patients?action=new'}
+                              onClick={() => navigate('/patients?action=new')}
                               className="border-2 border-teal-400 text-teal-700 hover:bg-teal-50 hover:border-teal-500"
                             >
                               <Plus size={16} className="mr-2" />
@@ -1298,7 +1300,7 @@ return (
                             <div className="flex items-center gap-4">
                               {/* Patient Avatar */}
                               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                                {p.firstName?.[0]}{p.lastName?.[0]}
+                                {(p.firstName?.[0] || '').toUpperCase()}{(p.lastName?.[0] || '').toUpperCase() || (p.patientId?.[0] || 'P')}
                               </div>
                               
                               {/* Patient Info */}
