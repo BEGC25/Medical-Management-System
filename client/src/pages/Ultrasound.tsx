@@ -214,6 +214,7 @@ export default function Ultrasound() {
   const [requestOpen, setRequestOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [examType, setExamType] = useState('abdominal');
+  const [specificExam, setSpecificExam] = useState('');
 
   // Results state
   const [selectedUltrasoundExam, setSelectedUltrasoundExam] = useState<UltrasoundExam | null>(null);
@@ -224,7 +225,7 @@ export default function Ultrasound() {
   const [impression, setImpression] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [technicalDetails, setTechnicalDetails] = useState('');
-  const [sonographerName, setSonographerName] = useState('');
+  const [radiologistName, setRadiologistName] = useState('');
   
   // Voice recording state for multiple fields
   const [isRecording, setIsRecording] = useState({
@@ -477,7 +478,7 @@ export default function Ultrasound() {
     setImpression(exam.impression || '');
     setRecommendations(exam.recommendations || '');
     setTechnicalDetails('');
-    setSonographerName(exam.sonographer || '');
+    setRadiologistName(exam.sonographer || '');
     setImageUploadMode('upload');
     
     resultsForm.reset({
@@ -1178,6 +1179,303 @@ export default function Ultrasound() {
                   ))}
                 </div>
               </div>
+
+              {/* Specific Exam Type Lists (Like X-Ray) */}
+              {examType === 'cardiac' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-600" />
+                    Specific Exam (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      'Transthoracic Echocardiogram (TTE)',
+                      'Stress Echocardiogram',
+                      'Limited Cardiac Study',
+                      'Bubble Study',
+                      'Pericardial Effusion Assessment',
+                    ].map((exam) => (
+                      <button
+                        key={exam}
+                        type="button"
+                        onClick={() => {
+                          setSpecificExam(exam);
+                          form.setValue('clinicalIndication', `Cardiac ultrasound - ${exam}`);
+                        }}
+                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
+                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
+                        }`}
+                      >
+                        {exam}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'obstetric' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-600" />
+                    Specific Exam (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      'First Trimester Dating Scan (6-13 weeks)',
+                      'Nuchal Translucency Scan (11-14 weeks)',
+                      'Anatomy Scan (18-22 weeks)',
+                      'Growth Scan (Third Trimester)',
+                      'Biophysical Profile (BPP)',
+                      'Fetal Well-being Assessment',
+                      'Multiple Gestation Scan',
+                      'Doppler Study - Umbilical Artery',
+                      'Cervical Length Assessment',
+                    ].map((exam) => (
+                      <button
+                        key={exam}
+                        type="button"
+                        onClick={() => {
+                          setSpecificExam(exam);
+                          form.setValue('clinicalIndication', `Obstetric ultrasound - ${exam}`);
+                        }}
+                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
+                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
+                        }`}
+                      >
+                        {exam}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'abdominal' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-600" />
+                    Specific Exam (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      'Complete Abdomen',
+                      'RUQ - Liver & Gallbladder',
+                      'Renal (Kidneys & Bladder)',
+                      'Appendix Study',
+                      'Bowel Assessment',
+                      'Spleen',
+                      'Pancreas',
+                      'Abdominal Aorta',
+                      'Ascites Assessment',
+                    ].map((exam) => (
+                      <button
+                        key={exam}
+                        type="button"
+                        onClick={() => {
+                          setSpecificExam(exam);
+                          form.setValue('clinicalIndication', `Abdominal ultrasound - ${exam}`);
+                        }}
+                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
+                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
+                        }`}
+                      >
+                        {exam}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'musculoskeletal' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-600" />
+                    Specific Exam (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      'Shoulder (Left)',
+                      'Shoulder (Right)',
+                      'Elbow (Left)',
+                      'Elbow (Right)',
+                      'Wrist (Left)',
+                      'Wrist (Right)',
+                      'Hip (Left)',
+                      'Hip (Right)',
+                      'Knee (Left)',
+                      'Knee (Right)',
+                      'Ankle (Left)',
+                      'Ankle (Right)',
+                      'Rotator Cuff',
+                      'Achilles Tendon',
+                      'Baker\'s Cyst',
+                      'Soft Tissue Mass',
+                    ].map((exam) => (
+                      <button
+                        key={exam}
+                        type="button"
+                        onClick={() => {
+                          setSpecificExam(exam);
+                          form.setValue('clinicalIndication', `Musculoskeletal ultrasound - ${exam}`);
+                        }}
+                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
+                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
+                        }`}
+                      >
+                        {exam}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'thoracic' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-600" />
+                    Specific Exam (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      'Pleural Effusion Assessment',
+                      'Lung Ultrasound (POCUS)',
+                      'Chest Wall Mass',
+                      'Thyroid Gland',
+                      'Neck Lymph Nodes',
+                      'Parotid/Salivary Glands',
+                    ].map((exam) => (
+                      <button
+                        key={exam}
+                        type="button"
+                        onClick={() => {
+                          setSpecificExam(exam);
+                          form.setValue('clinicalIndication', `Thoracic ultrasound - ${exam}`);
+                        }}
+                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
+                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
+                        }`}
+                      >
+                        {exam}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'vascular' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-600" />
+                    Specific Exam (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      'Carotid Doppler (Bilateral)',
+                      'Lower Extremity DVT (Left)',
+                      'Lower Extremity DVT (Right)',
+                      'Upper Extremity DVT (Left)',
+                      'Upper Extremity DVT (Right)',
+                      'Renal Artery Doppler',
+                      'Mesenteric Doppler',
+                      'Portal Vein Doppler',
+                      'AV Fistula Study',
+                      'Varicose Veins Assessment',
+                    ].map((exam) => (
+                      <button
+                        key={exam}
+                        type="button"
+                        onClick={() => {
+                          setSpecificExam(exam);
+                          form.setValue('clinicalIndication', `Vascular ultrasound - ${exam}`);
+                        }}
+                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
+                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
+                        }`}
+                      >
+                        {exam}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'pelvic' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-600" />
+                    Specific Exam (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      'Transvaginal Pelvic Scan',
+                      'Transabdominal Pelvic Scan',
+                      'Ovarian Cyst Evaluation',
+                      'Follicular Study',
+                      'IUD Position Check',
+                      'Endometrial Thickness',
+                      'Scrotal Ultrasound',
+                      'Testicular Doppler',
+                      'Prostate (Transabdominal)',
+                    ].map((exam) => (
+                      <button
+                        key={exam}
+                        type="button"
+                        onClick={() => {
+                          setSpecificExam(exam);
+                          form.setValue('clinicalIndication', `Pelvic ultrasound - ${exam}`);
+                        }}
+                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
+                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
+                        }`}
+                      >
+                        {exam}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {examType === 'other' && (
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-600" />
+                    Specific Exam (Quick Select)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      'Breast Ultrasound (Left)',
+                      'Breast Ultrasound (Right)',
+                      'Axillary Lymph Nodes',
+                      'Inguinal Hernia',
+                      'Umbilical Hernia',
+                      'Superficial Mass/Lesion',
+                      'Foreign Body Localization',
+                      'Guided Procedure (Biopsy/Aspiration)',
+                    ].map((exam) => (
+                      <button
+                        key={exam}
+                        type="button"
+                        onClick={() => {
+                          setSpecificExam(exam);
+                          form.setValue('clinicalIndication', `Ultrasound - ${exam}`);
+                        }}
+                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
+                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
+                        }`}
+                      >
+                        {exam}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Quick Exam Presets */}
               <div className="mb-4">
@@ -1908,18 +2206,18 @@ export default function Ultrasound() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Sonographer Name
+                        Radiologist Name
                       </FormLabel>
                       <FormControl>
                         <Input 
-                          value={sonographerName}
+                          value={radiologistName}
                           onChange={(e) => {
-                            setSonographerName(e.target.value);
+                            setRadiologistName(e.target.value);
                             field.onChange(e.target.value);
                           }}
-                          placeholder="Enter sonographer name & credentials" 
+                          placeholder="Enter radiologist name & credentials" 
                           className="focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 text-sm" 
-                          data-testid="input-sonographer" 
+                          data-testid="input-radiologist" 
                         />
                       </FormControl>
                       <FormMessage />
@@ -2057,7 +2355,7 @@ export default function Ultrasound() {
             )}
 
             <div className="mt-8 pt-4 border-t">
-              <p className="text-sm"><strong>Sonographer:</strong> {resultsForm.getValues('sonographer')}</p>
+              <p className="text-sm"><strong>Radiologist:</strong> {resultsForm.getValues('sonographer')}</p>
               <p className="text-sm"><strong>Image Quality:</strong> {resultsForm.getValues('imageQuality')}</p>
             </div>
           </div>
