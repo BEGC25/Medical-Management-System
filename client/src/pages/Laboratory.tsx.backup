@@ -18,6 +18,8 @@ import {
   ChevronRight,
   TestTube,
   AlertTriangle,
+  User,
+  Zap,
 } from "lucide-react";
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 
@@ -424,6 +426,18 @@ export default function Laboratory() {
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === '/' && e.target && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        document.querySelector<HTMLInputElement>('[data-testid="input-patient-search"]')?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
     return () => clearTimeout(id);
@@ -775,96 +789,90 @@ export default function Laboratory() {
     ) : null;
 
 return (
-    <div className="space-y-4">
-      {/* Page Header - Premium Card Container */}
-      <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-        <CardContent className="p-3">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-violet-500 to-purple-500 bg-clip-text text-transparent">
-                Laboratory Department
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">Clinical laboratory testing and diagnostics</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 pt-1.5 pb-6">
+      <div className="max-w-7xl mx-auto space-y-3">
+        {/* Premium Header - Matching Ultrasound/X-Ray Pattern */}
+        <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)]">
+          <CardContent className="p-6">
+            {/* Top Section: Title + CTA */}
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 via-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/30">
+                  <TestTube className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    Laboratory Department
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Clinical laboratory testing and diagnostics
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                onClick={() => setRequestOpen(true)}
+                className="bg-gradient-to-r from-teal-600 to-emerald-500 hover:shadow-lg hover:shadow-teal-500/40 transition-all duration-300"
+                data-testid="button-new-lab-request"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Request
+              </Button>
             </div>
-            <Button
-              type="button"
-              onClick={() => setRequestOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-violet-500 hover:shadow-[0_4px_20px_rgba(139,92,246,0.4)] text-white font-semibold transition-all duration-300 ease-out"
-              data-testid="button-new-lab-request"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Lab Request
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Statistics - Premium */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Pending</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-pending">{pendingTests.length}</p>
+            {/* Compact Stats Bar (Like Patient Page) */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white/50 dark:bg-gray-800/50 py-2.5 px-4">
+              {/* Pending */}
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                <span className="text-gray-600 dark:text-gray-400">Pending:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-pending">{pendingTests.length}</span>
               </div>
-              <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              
+              {/* Divider */}
+              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
+              
+              {/* Completed */}
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-gray-600 dark:text-gray-400">Completed:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-completed">{completedTests.length}</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Completed</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-completed">{completedTests.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Total Exams</p>
-                <p className="text-2xl font-bold mt-0.5" data-testid="stat-total">{allLabTests.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <TestTube className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              
+              {/* Divider */}
+              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
+              
+              {/* Total */}
+              <div className="flex items-center gap-2">
+                <TestTube className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <span className="text-gray-600 dark:text-gray-400">Total Tests:</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-total">{allLabTests.length}</span>
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* LEFT – Pending Test Requests (Always Visible) */}
 
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 overflow-hidden">
-          <CardContent className="p-5">
-            {/* Section Header with Icon */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-              </div>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                Pending Test Requests
-              </h2>
-            </div>
-            {/* Date Filter and Search Controls */}
+        <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)] border-0 overflow-hidden">
+          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              </div>
+              Pending Test Requests
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
             <div className="mb-4 space-y-3">
-              <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-2 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
                 <button
                   onClick={() => setDateFilter("today")}
                   data-testid="filter-today"
                   className={dateFilter === "today" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Today
@@ -873,8 +881,8 @@ return (
                   onClick={() => setDateFilter("yesterday")}
                   data-testid="filter-yesterday"
                   className={dateFilter === "yesterday" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Yesterday
@@ -883,8 +891,8 @@ return (
                   onClick={() => setDateFilter("last7days")}
                   data-testid="filter-last7days"
                   className={dateFilter === "last7days" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Last 7 Days
@@ -893,8 +901,8 @@ return (
                   onClick={() => setDateFilter("last30days")}
                   data-testid="filter-last30days"
                   className={dateFilter === "last30days" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Last 30 Days
@@ -903,8 +911,8 @@ return (
                   onClick={() => setDateFilter("custom")}
                   data-testid="filter-custom"
                   className={dateFilter === "custom" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Custom Range
@@ -932,10 +940,10 @@ return (
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search by patient name or ID..."
+                  placeholder="Search by patient name, ID, or test type (press / to focus)..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 placeholder:text-gray-400"
+                  className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all duration-300 placeholder:text-gray-400"
                   data-testid="input-patient-search"
                 />
               </div>
@@ -959,35 +967,55 @@ return (
                       key={test.testId}
                       data-testid={`card-pending-test-${test.testId}`}
                       className={cx(
-                        "bg-white dark:bg-gray-800 rounded-xl p-4 border-l-4 border-orange-500 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer",
-                        !canPerform && "opacity-75"
+                        "rounded-xl p-3 border-l-4 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer",
+                        !isPaid ? "bg-red-50 dark:bg-red-900/20 border-red-500" : "bg-white dark:bg-gray-800 border-orange-500",
+                        !canPerform && "opacity-75"
                       )}
                       onClick={() => canPerform && handleLabTestSelect(test)}
                       style={!canPerform ? { cursor: "not-allowed" } : {}}
                     >
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <div className="text-sm font-semibold truncate">{fullName(p)}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
-                          </div>
-                          <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                            {timeAgo(test.requestedDate)}
+                            <Chip tone="blue">{tests.length} test{tests.length !== 1 ? 's' : ''}</Chip>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.requestedDate)}</span>
                           </div>
                           <TestsRow tests={tests} />
+                          {test.resultStatus === 'critical' && (
+                            <div className="bg-red-50 border-l-4 border-red-500 p-3 mt-2">
+                              <div className="flex items-center gap-2">
+                                <AlertTriangle className="text-red-500" size={18} />
+                                <span className="text-sm font-semibold text-red-700">
+                                  Critical result - requires immediate physician notification
+                                </span>
+                              </div>
+                            </div>
+                          )}
                           {!isPaid && (
-                            <div className="text-xs text-red-700 mt-2">
-                              ⚠️ Patient must pay at reception before test can be performed
+                            <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium mt-2">
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              <span>Patient must pay at reception before test can be performed</span>
                             </div>
                           )}
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-2">
-                          <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full border border-purple-200 dark:border-purple-700">
+                          <span className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 rounded-full border border-teal-200 dark:border-teal-800">
                             Ordered by Doctor
                           </span>
                           <div className="flex items-center gap-2">
-                            <span className={isPaid ? "px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full" : "px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full"}>{isPaid ? "Paid" : "UNPAID"}</span>
-                            <span className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full">Pending</span>
+                            {!isPaid ? (
+                              <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 rounded-full uppercase inline-flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              UNPAID
+                            </span>
+                            ) : (
+                              <span className="px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded-full inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Pending
+                            </span>
+                            )}
                             {canPerform && <ChevronRight className="w-5 h-5 text-gray-400" />}
                           </div>
                         </div>
@@ -996,36 +1024,49 @@ return (
                   );
                 })
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  {dateFilter === "custom" && !customStartDate && !customEndDate
-                    ? "📅 Select start and end dates above to view tests in custom range"
-                    : "No pending tests"}
-                </p>
-              )}
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
+                      <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border-2 border-green-500">
+                      <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range"
+                      : "All caught up!"}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select start and end dates above to view tests"
+                      : 'No pending tests. Create a new lab request or register a patient to get started.'}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* RIGHT – Completed Tests */}
-        <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0 overflow-hidden">
-          <CardContent className="p-5">
-            {/* Section Header with Icon */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-              </div>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                Completed Tests
-              </h2>
-            </div>
-            {/* Same filter controls for completed tests */}
+        <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)] border-0 overflow-hidden">
+          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+              </div>
+              Completed Tests
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
             <div className="mb-4 space-y-3">
-              <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-2 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setDateFilter("today")}
                   className={dateFilter === "today" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Today
@@ -1033,8 +1074,8 @@ return (
                 <button
                   onClick={() => setDateFilter("yesterday")}
                   className={dateFilter === "yesterday" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Yesterday
@@ -1042,8 +1083,8 @@ return (
                 <button
                   onClick={() => setDateFilter("last7days")}
                   className={dateFilter === "last7days" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Last 7 Days
@@ -1051,8 +1092,8 @@ return (
                 <button
                   onClick={() => setDateFilter("last30days")}
                   className={dateFilter === "last30days" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Last 30 Days
@@ -1060,8 +1101,8 @@ return (
                 <button
                   onClick={() => setDateFilter("custom")}
                   className={dateFilter === "custom" 
-                    ? "relative text-purple-600 dark:text-purple-400 font-semibold px-3 py-2 text-sm whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)] transition-all duration-300"
-                    : "text-gray-500 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors duration-300 px-3 py-2 text-sm whitespace-nowrap"
+                    ? "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative text-teal-600 dark:text-teal-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-600 after:to-violet-500 after:shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    : "pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 text-gray-500 hover:text-teal-500"
                   }
                 >
                   Custom Range
@@ -1089,10 +1130,10 @@ return (
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search by patient name or ID..."
+                  placeholder="Search by patient name, ID, or test type (press / to focus)..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 placeholder:text-gray-400"
+                  className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all duration-300 placeholder:text-gray-400"
                 />
               </div>
               
@@ -1111,38 +1152,49 @@ return (
                     <div
                       key={test.testId}
                       data-testid={`card-completed-test-${test.testId}`}
-                      className="bg-white dark:bg-gray-800 rounded-xl p-4 border-l-4 border-green-500 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group"
+                      className="bg-white dark:bg-gray-800 rounded-xl p-3 border-l-4 border-green-500 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group"
                       onClick={() => handleLabTestSelect(test)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <div className="text-sm font-semibold truncate">{fullName(p) || test.patientId}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
-                          </div>
-                          <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                            {timeAgo(test.requestedDate)} • Completed {timeAgo((test as any).completedDate)}
+                            <Chip tone="blue">{tests.length} test{tests.length !== 1 ? 's' : ''}</Chip>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.requestedDate)} • Completed {timeAgo((test as any).completedDate)}</span>
                           </div>
                           <TestsRow tests={tests} />
                         </div>
                         <div className="shrink-0 flex items-center gap-2">
-                          <span className="px-2.5 py-1 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full flex items-center gap-1">
+                          <span className="px-2.5 py-1 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full inline-flex items-center gap-1">
                             <Check className="w-3 h-3" />
                             Completed
                           </span>
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-teal-500 group-hover:translate-x-1 transition-all duration-300" />
                         </div>
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  {dateFilter === "custom" && !customStartDate && !customEndDate
-                    ? "📅 Select start and end dates above to view tests in custom range"
-                    : "No completed lab tests"}
-                </p>
-              )}
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 flex items-center justify-center shadow-lg">
+                      <Check className="w-10 h-10 text-green-600 dark:text-green-400" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select date range"
+                      : "No completed tests"}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
+                    {dateFilter === "custom" && !customStartDate && !customEndDate
+                      ? "Select start and end dates above to view tests"
+                      : "Completed tests will appear here once lab work is finished."}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1150,21 +1202,30 @@ return (
 
       {/* New Request Dialog */}
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Beaker className="w-5 h-5 text-blue-600" />
-              New Laboratory Test Request
-            </DialogTitle>
-            <DialogDescription>
-              Select a patient and specify the tests to be performed
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-white via-teal-50/30 to-emerald-50/30 dark:from-gray-900 dark:via-teal-950/20 dark:to-emerald-950/20 border-2 border-teal-100">
+          <DialogHeader className="border-b border-teal-100/50 pb-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/30">
+                <TestTube className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-teal-700 to-emerald-700 bg-clip-text text-transparent">
+                  New Laboratory Test Request
+                </DialogTitle>
+                <DialogDescription className="text-teal-600/80">
+                  Select a patient and specify the tests to be performed
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
 
           <div className="space-y-6">
             {/* Patient selector */}
             <div>
-              <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Patient</h3>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <User className="w-4 h-4 text-teal-600" />
+                Select Patient
+              </label>
 
               {!selectedPatient ? (
                 <>
@@ -1192,7 +1253,7 @@ return (
                   </p>
 
                   {/* Table header */}
-                  <div className="mt-4 grid grid-cols-5 gap-0 bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 text-xs font-semibold text-gray-700 dark:text-gray-300 px-3 py-2 rounded-t-xl border border-purple-200 dark:border-purple-800">
+                  <div className="mt-4 grid grid-cols-5 gap-0 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 text-xs font-semibold text-gray-700 dark:text-gray-300 px-3 py-2 rounded-t-xl border border-teal-200 dark:border-teal-800">
                     <div>Patient ID</div>
                     <div className="col-span-2">Name</div>
                     <div>Contact</div>
@@ -1216,7 +1277,7 @@ return (
                       (debounced ? visibleSearch : visibleToday).map((p) => (
                         <li
                           key={p.id}
-                          className="grid grid-cols-5 items-center px-3 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer transition-colors duration-200"
+                          className="grid grid-cols-5 items-center px-3 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/20 cursor-pointer transition-colors duration-200"
                           onClick={() => setSelectedPatient(p)}
                           data-testid={`row-patient-${p.patientId}`}
                         >
@@ -1778,7 +1839,7 @@ return (
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold text-gray-800">Laboratory Test Report</p>
+                  <p className="text-base font-semibold text-gray-800">Laboratory Test Report</p>
                   <p className="text-xs text-gray-500">Generated: {new Date().toLocaleString()}</p>
                 </div>
               </div>
@@ -2202,6 +2263,7 @@ return (
           </div>
         </div>
         )}
-    </div>
+      </div>
+    </div>
   );
 }

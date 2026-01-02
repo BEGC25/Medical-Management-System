@@ -1252,43 +1252,76 @@ return (
                     By default we list Today's Patients. Start typing to search anyone.
                   </p>
 
-                  {/* Table header */}
-                  <div className="mt-4 grid grid-cols-5 gap-0 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 text-xs font-semibold text-gray-700 dark:text-gray-300 px-3 py-2 rounded-t-xl border border-teal-200 dark:border-teal-800">
-                    <div>Patient ID</div>
-                    <div className="col-span-2">Name</div>
-                    <div>Contact</div>
-                    <div>Gender</div>
-                  </div>
-
-                  {/* Results section */}
-                  <ul className="divide-y dark:divide-gray-800 rounded-b-xl border border-t-0 dark:border-gray-800 max-h-64 overflow-y-auto">
-                    {/* Show search if there is a term, otherwise show today */}
-                    {(debounced ? visibleSearch : visibleToday).length === 0 ? (
-                      <li className="py-8 text-center text-sm text-gray-500">
-                        {debounced
-                          ? searchPatients.isLoading
-                            ? "Searching…"
-                            : "No matches."
-                          : todayPatients.isLoading
-                          ? "Loading today's patients…"
-                          : "No patients registered today."}
-                      </li>
-                    ) : (
-                      (debounced ? visibleSearch : visibleToday).map((p) => (
-                        <li
-                          key={p.id}
-                          className="grid grid-cols-5 items-center px-3 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/20 cursor-pointer transition-colors duration-200"
-                          onClick={() => setSelectedPatient(p)}
-                          data-testid={`row-patient-${p.patientId}`}
-                        >
-                          <div className="font-medium">{p.patientId}</div>
-                          <div className="col-span-2 truncate">{fullName(p)}</div>
-                          <div className="truncate">{p.phoneNumber || "N/A"}</div>
-                          <div className="capitalize">{p.gender || "—"}</div>
-                        </li>
-                      ))
-                    )}
-                  </ul>
+                  {/* Premium Patient Cards */}
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-teal-300 scrollbar-track-teal-50 mt-4">
+                    {(debounced ? visibleSearch : visibleToday).length === 0 ? (
+                      <div className="text-center py-12 px-4">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 flex items-center justify-center">
+                          <User className="w-10 h-10 text-teal-600" />
+                        </div>
+                        <p className="font-semibold text-gray-700 text-lg mb-2">
+                          {debounced
+                            ? searchPatients.isLoading
+                              ? "Searching…"
+                              : "No matches found"
+                            : todayPatients.isLoading
+                            ? "Loading today's patients…"
+                            : "No patients registered today"}
+                        </p>
+                        {!debounced && !todayPatients.isLoading && (
+                          <>
+                            <p className="text-sm text-gray-500 mb-4">Register a new patient or search for existing patients to create a lab order</p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => window.location.href = '/patients?action=new'}
+                              className="border-2 border-teal-400 text-teal-700 hover:bg-teal-50 hover:border-teal-500"
+                            >
+                              <Plus size={16} className="mr-2" />
+                              Register New Patient
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      (debounced ? visibleSearch : visibleToday).map((p) => (
+                        <div
+                          key={p.id}
+                          onClick={() => setSelectedPatient(p)}
+                          className="group relative overflow-hidden rounded-xl border-2 border-gray-100 hover:border-teal-400 hover:shadow-lg hover:shadow-teal-500/20 transition-all duration-300 cursor-pointer bg-white/80 backdrop-blur-sm p-4"
+                          data-testid={`row-patient-${p.patientId}`}
+                        >
+                          {/* Gradient hover effect */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-teal-50/0 via-teal-50/50 to-emerald-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          
+                          <div className="relative flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {/* Patient Avatar */}
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                {p.firstName?.[0]}{p.lastName?.[0]}
+                              </div>
+                              
+                              {/* Patient Info */}
+                              <div>
+                                <div className="font-semibold text-gray-900 group-hover:text-teal-700 transition-colors">
+                                  {fullName(p)}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-gray-600">
+                                  <Badge className="h-5 px-2 bg-teal-100 text-teal-700 border-0">
+                                    {p.patientId}
+                                  </Badge>
+                                  <span>{p.age}y</span>
+                                  <span className="capitalize">{p.gender}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-teal-500 group-hover:translate-x-1 transition-all" />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
 
                   {/* Load more */}
                   {!!(debounced ? searchPatients.data?.length : todayPatients.data?.length) &&
@@ -1319,59 +1352,165 @@ return (
             {/* Order form */}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Test Category</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={(v) => {
-                          field.onChange(v);
-                          setCurrentCategory(v as keyof typeof commonTests);
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-category">
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="blood">Blood Tests</SelectItem>
-                          <SelectItem value="urine">Urine Analysis</SelectItem>
-                          <SelectItem value="stool">Stool Examination</SelectItem>
-                          <SelectItem value="microbiology">Microbiology</SelectItem>
-                          <SelectItem value="chemistry">Biochemistry</SelectItem>
-                          <SelectItem value="hormonal">Hormonal Tests</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Visual Test Category Selector */}
+                <div className="mb-6">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Beaker className="w-4 h-4 text-teal-600" />
+                    Test Category
+                  </label>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { value: 'blood', label: 'Blood Tests', icon: '🩸', description: 'Hematology & CBC' },
+                      { value: 'urine', label: 'Urine Analysis', icon: '🧪', description: 'Urinalysis panels' },
+                      { value: 'stool', label: 'Stool Analysis', icon: '💩', description: 'Parasitology' },
+                      { value: 'microbiology', label: 'Microbiology', icon: '🦠', description: 'Cultures & sensitivity' },
+                      { value: 'chemistry', label: 'Chemistry', icon: '⚗️', description: 'Biochemistry tests' },
+                      { value: 'hormonal', label: 'Hormones', icon: '💉', description: 'Endocrine panels' },
+                    ].map((category) => (
+                      <button
+                        key={category.value}
+                        type="button"
+                        onClick={() => {
+                          form.setValue('category', category.value);
+                          setCurrentCategory(category.value as keyof typeof commonTests);
+                        }}
+                        className={`
+                          relative overflow-hidden rounded-xl p-4 border-2 transition-all duration-300 text-left
+                          ${currentCategory === category.value
+                            ? 'border-teal-500 bg-gradient-to-br from-teal-50 to-emerald-50 shadow-lg shadow-teal-500/20 scale-105'
+                            : 'border-gray-200 bg-white hover:border-teal-300 hover:shadow-md hover:scale-102'
+                          }
+                        `}
+                      >
+                        <div className="text-3xl mb-2">{category.icon}</div>
+                        <div className={`text-sm font-semibold mb-1 ${
+                          currentCategory === category.value ? 'text-teal-700' : 'text-gray-700'
+                        }`}>
+                          {category.label}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {category.description}
+                        </div>
+                        
+                        {currentCategory === category.value && (
+                          <div className="absolute top-2 right-2">
+                            <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                <div>
-                  <FormLabel>Specific Tests</FormLabel>
-                  <div className="space-y-2 mt-2 max-h-48 overflow-y-auto">
-                    {commonTests[currentCategory].map((t) => (
-                      <label key={t} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={selectedTests.includes(t)}
-                          onCheckedChange={() => handleTestToggle(t)}
-                          data-testid={`checkbox-test-${t}`}
-                        />
-                        <span className="text-sm">{t}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {selectedTests.length > 0 && (
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Selected: {selectedTests.join(", ")}
-                    </div>
-                  )}
-                </div>
+                {/* Quick Test Panels */}
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    Quick Panels (Common Test Bundles)
+                  </label>
+                  
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { 
+                        name: 'Malaria Screen', 
+                        icon: '🦟',
+                        tests: ['Blood Film for Malaria (BFFM)'] 
+                      },
+                      { 
+                        name: 'Complete Blood Work', 
+                        icon: '🩸',
+                        tests: ['Complete Blood Count (CBC)', 'Blood Group & Rh', 'ESR (Erythrocyte Sedimentation Rate)'] 
+                      },
+                      { 
+                        name: 'Basic Metabolic', 
+                        icon: '⚗️',
+                        tests: ['Random Blood Sugar (RBS)', 'Renal Function Test (RFT)', 'Liver Function Test (LFT)'] 
+                      },
+                    ].map((panel) => (
+                      <Button
+                        key={panel.name}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          panel.tests.forEach(test => {
+                            if (!selectedTests.includes(test)) {
+                              handleTestToggle(test);
+                            }
+                          });
+                        }}
+                        className="border-2 border-teal-300 hover:bg-teal-50 hover:border-teal-500 hover:shadow-md transition-all"
+                      >
+                        <span className="mr-1.5">{panel.icon}</span>
+                        <Plus className="w-3 h-3 mr-1" />
+                        {panel.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Premium Test Selection */}
+                <div className="mb-6">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Specific Tests
+                  </label>
+                  
+                  <div className="space-y-2 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-teal-300 scrollbar-track-teal-50">
+                    {commonTests[currentCategory]?.map((test) => {
+                      const isSelected = selectedTests.includes(test);
+                      return (
+                        <label
+                          key={test}
+                          className={`
+                            group flex items-center gap-4 p-3.5 rounded-xl border-2 cursor-pointer
+                            transition-all duration-300
+                            ${isSelected
+                              ? 'border-teal-500 bg-gradient-to-r from-teal-50 to-emerald-50 shadow-md shadow-teal-500/10 scale-[1.02]'
+                              : 'border-gray-200 bg-white hover:border-teal-300 hover:bg-teal-50/30 hover:scale-[1.01]'
+                            }
+                          `}
+                        >
+                          {/* Custom Checkbox */}
+                          <div className={`
+                            relative w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0
+                            transition-all duration-300
+                            ${isSelected
+                              ? 'border-teal-500 bg-teal-500 scale-110'
+                              : 'border-gray-300 bg-white group-hover:border-teal-400'
+                            }
+                          `}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleTestToggle(test)}
+                              className="sr-only"
+                              data-testid={`checkbox-test-${test}`}
+                            />
+                            {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
+                          </div>
+                          
+                          {/* Test Name */}
+                          <span className={`flex-1 font-medium transition-colors ${
+                            isSelected ? 'text-teal-700' : 'text-gray-700 group-hover:text-teal-600'
+                          }`}>
+                            {test}
+                          </span>
+                          
+                          {/* Estimated duration badge */}
+                          <Badge variant="outline" className={`text-xs ${
+                            isSelected ? 'border-teal-400 text-teal-700' : 'border-gray-300 text-gray-600'
+                          }`}>
+                            <Clock className="w-3 h-3 mr-1" />
+                            ~30min
+                          </Badge>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <FormField
                   control={form.control}
@@ -1450,6 +1589,48 @@ return (
               </form>
             </Form>
           </div>
+
+          {/* Selected Tests Sticky Footer */}
+          {selectedTests.length > 0 && (
+            <div className="sticky bottom-0 left-0 right-0 -mx-6 -mb-6 bg-gradient-to-r from-teal-500 to-emerald-600 text-white p-4 shadow-2xl shadow-teal-900/30 border-t-2 border-teal-400">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">
+                    {selectedTests.length}
+                  </div>
+                  <div>
+                    <div className="text-sm opacity-90">Selected Tests</div>
+                    <div className="font-bold">{selectedTests.length} test{selectedTests.length !== 1 ? 's' : ''} requested</div>
+                  </div>
+                </div>
+                
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTests([])}
+                  className="text-white hover:bg-white/20"
+                >
+                  Clear all
+                </Button>
+              </div>
+              
+              <div className="flex gap-2 flex-wrap">
+                {selectedTests.map((test) => (
+                  <Badge key={test} className="bg-white/20 hover:bg-white/30 border-0 text-white backdrop-blur-sm px-3 py-1.5">
+                    {test.split('(')[0].trim()}
+                    <X 
+                      className="w-3.5 h-3.5 ml-1.5 cursor-pointer hover:scale-125 transition-transform" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTestToggle(test);
+                      }}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -2266,4 +2447,23 @@ return (
       </div>
     </div>
   );
+
+      {/* Custom Scrollbar Styling */}
+      <style>{`
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: rgb(240 253 250);
+          border-radius: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgb(94 234 212);
+          border-radius: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: rgb(45 212 191);
+        }
+      `}</style>
 }
