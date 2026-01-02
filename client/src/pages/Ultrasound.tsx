@@ -290,7 +290,7 @@ export default function Ultrasound() {
       imageQuality: 'good' as 'excellent' | 'good' | 'adequate' | 'limited',
       // Use clinic timezone (Africa/Juba) for reportDate to ensure consistent day classification
       reportDate: formatDateInZone(getZonedNow()),
-      radiologist: '',
+      sonographer: '',
     },
   });
 
@@ -478,7 +478,7 @@ export default function Ultrasound() {
     setImpression(exam.impression || '');
     setRecommendations(exam.recommendations || '');
     setTechnicalDetails('');
-    setRadiologistName(exam.radiologist || '');
+    setRadiologistName(exam.sonographer || '');
     setImageUploadMode('upload');
     
     resultsForm.reset({
@@ -488,7 +488,7 @@ export default function Ultrasound() {
       imageQuality: (exam as any).imageQuality || 'good',
       // Use clinic timezone (Africa/Juba) for reportDate fallback
       reportDate: (exam as any).reportDate || formatDateInZone(getZonedNow()),
-      radiologist: exam.radiologist || '',
+      sonographer: exam.sonographer || '',
     });
   };
 
@@ -2202,7 +2202,7 @@ export default function Ultrasound() {
 
                 <FormField
                   control={resultsForm.control}
-                  name="radiologist"
+                  name="sonographer"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -2355,7 +2355,7 @@ export default function Ultrasound() {
             )}
 
             <div className="mt-8 pt-4 border-t">
-              <p className="text-sm"><strong>Radiologist:</strong> {resultsForm.getValues('radiologist')}</p>
+              <p className="text-sm"><strong>Radiologist:</strong> {resultsForm.getValues('sonographer')}</p>
               <p className="text-sm"><strong>Image Quality:</strong> {resultsForm.getValues('imageQuality')}</p>
             </div>
           </div>
