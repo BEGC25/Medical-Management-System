@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,6 +14,22 @@ import {
   Save,
   ChevronRight,
   AlertTriangle,
+  Activity,
+  Zap,
+  User,
+  Eye,
+  Trash,
+  FileText,
+  Mic,
+  Copy,
+  Lightbulb,
+  Filter,
+  X,
+  Heart,
+  Baby,
+  Stethoscope,
+  Bone,
+  Lungs,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -47,6 +63,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 
 import {
@@ -196,11 +213,28 @@ export default function Ultrasound() {
   // Request state
   const [requestOpen, setRequestOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [examType, setExamType] = useState('abdominal');
 
   // Results state
   const [selectedUltrasoundExam, setSelectedUltrasoundExam] = useState<UltrasoundExam | null>(null);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
   const [reportPatient, setReportPatient] = useState<Patient | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; name: string }>>([]);
+  const [findings, setFindings] = useState('');
+  const [impression, setImpression] = useState('');
+  const [recommendations, setRecommendations] = useState('');
+  const [technicalDetails, setTechnicalDetails] = useState('');
+  const [sonographerName, setSonographerName] = useState('');
+  
+  // Voice recording state for multiple fields
+  const [isRecording, setIsRecording] = useState({
+    technicalDetails: false,
+    findings: false,
+    impression: false,
+    recommendations: false,
+  });
+  
+  const [imageUploadMode, setImageUploadMode] = useState<'upload' | 'describe'>('upload');
 
   // Print modals
   const [showUltrasoundRequest, setShowUltrasoundRequest] = useState(false);
@@ -217,10 +251,20 @@ export default function Ultrasound() {
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
+  
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
     return () => clearTimeout(id);
   }, [term]);
+
+  // Refs for voice input
+  const technicalDetailsRef = useRef<HTMLTextAreaElement>(null);
+  const findingsRef = useRef<HTMLTextAreaElement>(null);
+  const impressionRef = useRef<HTMLTextAreaElement>(null);
+  const recommendationsRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Recognition instance (shared across all fields)
+  const recognitionInstanceRef = useRef<any>(null);
 
   // Forms
   const form = useForm<InsertUltrasoundExam>({
@@ -426,6 +470,16 @@ export default function Ultrasound() {
   const handleUltrasoundExamSelect = (exam: UltrasoundExam) => {
     setSelectedUltrasoundExam(exam);
     setResultsModalOpen(true);
+    setUploadedImages([]);
+    
+    // Set local state for all fields
+    setFindings(exam.findings || '');
+    setImpression(exam.impression || '');
+    setRecommendations(exam.recommendations || '');
+    setTechnicalDetails('');
+    setSonographerName(exam.sonographer || '');
+    setImageUploadMode('upload');
+    
     resultsForm.reset({
       findings: exam.findings || '',
       impression: exam.impression || '',
@@ -437,17 +491,161 @@ export default function Ultrasound() {
     });
   };
 
-  /* --------------------------- Render ---------------------------- */
+  // Helper functions for quick fill
+  const addFinding = (text: string) => {
+    setFindings(prev => {
+      const newValue = prev ? `${prev}\n\n${text}` : text;
+      resultsForm.setValue('findings', newValue);
+      return newValue;
+    });
+  };
 
-  const Chip = ({ tone, children }: { tone: string; children: React.ReactNode }) => (
-    <span className={cx(
-      "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-      tone === "slate" && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-      tone === "emerald" && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-    )}>
-      {children}
-    </span>
-  );
+  const addImpression = (text: string) => {
+    setImpression(prev => {
+      const newValue = prev ? `${prev}\n${text}` : text;
+      resultsForm.setValue('impression', newValue);
+      return newValue;
+    });
+  };
+
+  const addRecommendation = (text: string) => {
+    setRecommendations(prev => {
+      const newValue = prev ? `${prev}\n${text}` : text;
+      resultsForm.setValue('recommendations', newValue);
+      return newValue;
+    });
+  };
+
+  // Voice dictation - multi-field support
+  const startVoiceInput = (fieldName: keyof typeof isRecording) => {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast({
+        title: "Not Supported",
+        description: "Voice dictation is not supported in this browser. Try Chrome or Edge.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Stop any existing recognition
+    if (recognitionInstanceRef.current) {
+      recognitionInstanceRef.current.stop();
+    }
+
+    // If already recording this field, stop
+    if (isRecording[fieldName]) {
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      return;
+    }
+
+    const recognition = new (window as any).webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsRecording(prev => ({ ...prev, [fieldName]: true }));
+      toast({
+        title: "🎤 Listening...",
+        description: "Speak clearly. Click 'Stop' when done.",
+        duration: 2000
+      });
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0])
+        .map((result: any) => result.transcript)
+        .join('');
+
+      // Update the appropriate field
+      switch(fieldName) {
+        case 'technicalDetails':
+          setTechnicalDetails(transcript);
+          break;
+        case 'findings':
+          setFindings(transcript);
+          resultsForm.setValue('findings', transcript);
+          break;
+        case 'impression':
+          setImpression(transcript);
+          resultsForm.setValue('impression', transcript);
+          break;
+        case 'recommendations':
+          setRecommendations(transcript);
+          resultsForm.setValue('recommendations', transcript);
+          break;
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      toast({
+        title: "Error",
+        description: `Voice recognition error: ${event.error}`,
+        variant: "destructive"
+      });
+    };
+
+    recognition.onend = () => {
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      recognitionInstanceRef.current = null;
+    };
+
+    recognitionInstanceRef.current = recognition;
+    recognition.start();
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionInstanceRef.current) {
+        recognitionInstanceRef.current.stop();
+      }
+    };
+  }, []);
+
+  // Copy from previous report
+  const copyFromPreviousReport = async () => {
+    if (!selectedUltrasoundExam) return;
+    
+    try {
+      // Find previous completed reports for this patient
+      const previousReports = completedExams
+        .filter(e => e.patientId === selectedUltrasoundExam.patientId && e.examId !== selectedUltrasoundExam.examId)
+        .sort((a, b) => new Date(b.requestedDate || 0).getTime() - new Date(a.requestedDate || 0).getTime());
+      
+      if (previousReports.length > 0) {
+        const prev = previousReports[0];
+        if (prev.findings) addFinding(prev.findings);
+        if (prev.impression) addImpression(prev.impression);
+        if (prev.recommendations) addRecommendation(prev.recommendations);
+        toast({ title: 'Copied', description: 'Previous report copied successfully' });
+      } else {
+        toast({ 
+          title: 'No Previous Reports', 
+          description: 'No previous reports found for this patient',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to copy previous report',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const hasPreviousReports = selectedUltrasoundExam 
+    ? completedExams.filter(e => 
+        e.patientId === selectedUltrasoundExam.patientId && 
+        e.examId !== selectedUltrasoundExam.examId
+      ).length > 0
+    : false;
+
+  /* --------------------------- Render ---------------------------- */
 
   const ExamCard = ({ exam, patient }: { exam: UltrasoundExam; patient?: Patient | null }) => {
     const isPaid = exam.paymentStatus === 'paid';
@@ -457,10 +655,10 @@ export default function Ultrasound() {
     return (
       <div
         className={cx(
-          "rounded-lg p-2.5 border-l-4 cursor-pointer transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 group",
-          isPaid && !isCompleted && "border-l-orange-500 bg-white dark:bg-gray-800",
-          !isPaid && !isCompleted && "border-l-red-500 bg-red-50/50 dark:bg-red-900/10",
+          "rounded-lg p-2.5 border-l-4 cursor-pointer transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:shadow-[0_4px_16px_rgba(99,102,241,0.15)] hover:-translate-y-0.5 group",
           isCompleted && "border-l-emerald-500 bg-white dark:bg-gray-800",
+          !isCompleted && isPaid && "border-l-orange-500 bg-white dark:bg-gray-800",
+          !isCompleted && !isPaid && "border-l-red-500 bg-red-50/50 dark:bg-red-900/10",
           !canPerform && "opacity-70 hover:shadow-none"
         )}
         onClick={() => canPerform && handleUltrasoundExamSelect(exam)}
@@ -475,7 +673,9 @@ export default function Ultrasound() {
                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                   {patient ? fullName(patient) : exam.patientId}
                 </span>
-                <Chip tone="slate">{exam.examId}</Chip>
+                <Badge className="h-5 px-2 bg-indigo-100 text-indigo-700 border-0">
+                  {exam.patientId}
+                </Badge>
               </div>
               <div className="shrink-0 flex items-center gap-1.5">
                 {isCompleted && (
@@ -556,11 +756,11 @@ export default function Ultrasound() {
             {/* Top Section: Title + CTA */}
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <Waves className="w-7 h-7 text-white" />
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-500 flex items-center justify-center shadow-xl shadow-indigo-500/30">
+                  <Waves className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">
                     Ultrasound Department
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -570,7 +770,7 @@ export default function Ultrasound() {
               </div>
               <Button 
                 onClick={() => setRequestOpen(true)}
-                className="bg-gradient-to-r from-indigo-600 to-blue-500 hover:shadow-lg hover:shadow-indigo-500/40 transition-all duration-300"
+                className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg shadow-indigo-500/30"
                 data-testid="button-new-request"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -578,33 +778,19 @@ export default function Ultrasound() {
               </Button>
             </div>
 
-            {/* KPI Bar (Thin horizontal bar - Patient page style) */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white/50 dark:bg-gray-800/50 py-2.5 px-4">
-              {/* Pending */}
+            {/* Stats Bar */}
+            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                <span className="text-gray-600 dark:text-gray-400">Pending:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-pending">{pendingExams.length}</span>
+                <Clock className="w-4 h-4 text-orange-500" />
+                <span className="text-sm text-gray-600">Pending: <strong>{pendingExams.length}</strong></span>
               </div>
-              
-              {/* Divider */}
-              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
-              
-              {/* Completed */}
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-                <span className="text-gray-600 dark:text-gray-400">Completed:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-completed">{completedExams.length}</span>
+                <Check className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-gray-600">Completed: <strong>{completedExams.length}</strong></span>
               </div>
-              
-              {/* Divider */}
-              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
-              
-              {/* Total */}
               <div className="flex items-center gap-2">
-                <Waves className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-gray-600 dark:text-gray-400">Total:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-total">{allUltrasoundExams.length}</span>
+                <Waves className="w-4 h-4 text-indigo-500" />
+                <span className="text-sm text-gray-600">Total: <strong>{allUltrasoundExams.length}</strong></span>
               </div>
             </div>
           </CardContent>
@@ -828,99 +1014,242 @@ export default function Ultrasound() {
 
       {/* New Request Dialog */}
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <div className="bg-gradient-to-r from-indigo-600 to-blue-500 p-4 rounded-t-xl -m-6 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <Waves className="w-5 h-5 text-white" />
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30 dark:from-gray-900 dark:via-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-100">
+          
+          {/* Premium Header with Gradient Background */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                  <Waves className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-bold text-white">
+                    New Ultrasound Examination Request
+                  </DialogTitle>
+                  <DialogDescription className="text-indigo-100 text-sm mt-1">
+                    Submit an ultrasound imaging request for diagnostic evaluation
+                  </DialogDescription>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">New Ultrasound Examination Request</h2>
-                <p className="text-indigo-100 text-sm">Submit a new ultrasound examination request for a patient</p>
-              </div>
+              <button 
+                onClick={() => setRequestOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6">
-              {/* Patient Selection */}
-              <div className="space-y-4">
-                <h3 className="font-medium text-gray-900 dark:text-white">Patient Selection</h3>
+            <form onSubmit={form.handleSubmit(onSubmitRequest)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-200px)] px-6">
+              {/* Premium Patient Selection */}
+              <div className="mb-6">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <User className="w-4 h-4 text-indigo-600" />
+                  Select Patient
+                </label>
+                
                 {!selectedPatient ? (
-                  <div>
-                    <div className="relative mb-4">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <>
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
-                        placeholder="Search patients by name or ID..."
+                        className="pl-10 border-2 border-indigo-200 focus:border-indigo-500"
+                        placeholder="Search patients by name or ID (press / to focus)..."
                         value={term}
                         onChange={(e) => setTerm(e.target.value)}
-                        className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
                         data-testid="input-patient-search"
                       />
                     </div>
-                    {term.trim() ? (
-                      <PatientPickerList patients={visibleSearch} />
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Today's Patients</p>
-                        <PatientPickerList patients={visibleToday} />
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-500 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-indigo-800 dark:text-indigo-200" data-testid="selected-patient-name">
-                          {fullName(selectedPatient)}
-                        </p>
-                        <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                          ID: {selectedPatient.patientId} | Age: {selectedPatient.age} | {selectedPatient.gender}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedPatient(null)}
-                        data-testid="button-change-patient"
-                      >
-                        Change
-                      </Button>
+                    
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-indigo-50">
+                      {(term.trim() ? visibleSearch : visibleToday).map((patient) => (
+                        <div
+                          key={patient.patientId}
+                          onClick={() => {
+                            setSelectedPatient(patient);
+                            setTerm('');
+                          }}
+                          className="group relative overflow-hidden rounded-xl border-2 border-gray-100 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-300 cursor-pointer bg-white/80 backdrop-blur-sm p-4"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/0 via-indigo-50/50 to-purple-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          
+                          <div className="relative flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                {patient.firstName?.[0]}{patient.lastName?.[0]}
+                              </div>
+                              
+                              <div>
+                                <div className="font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors">
+                                  {fullName(patient)}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-gray-600">
+                                  <Badge className="h-5 px-2 bg-indigo-100 text-indigo-700 border-0">
+                                    {patient.patientId}
+                                  </Badge>
+                                  <span>{patient.age}y</span>
+                                  <span className="capitalize">{patient.gender}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                  </>
+                ) : (
+                  <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold shadow-md">
+                        {selectedPatient.firstName?.[0]}{selectedPatient.lastName?.[0]}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-indigo-900">{fullName(selectedPatient)}</p>
+                        <p className="text-sm text-indigo-700">ID: {selectedPatient.patientId}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSelectedPatient(null)}
+                      className="border-indigo-400 text-indigo-700 hover:bg-indigo-100"
+                    >
+                      Change
+                    </Button>
                   </div>
                 )}
               </div>
 
-              {/* Exam Details */}
-              <FormField
-                control={form.control}
-                name="examType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Exam Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" data-testid="select-exam-type">
-                          <SelectValue placeholder="Select exam type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {ultrasoundServices.length > 0 ? (
-                          ultrasoundServices.map((service) => (
-                            <SelectItem key={service.id} value={service.name}>
-                              {service.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="abdominal">Abdominal Ultrasound</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Visual Exam Type Selector */}
+              <div className="mb-6">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <Waves className="w-4 h-4 text-indigo-600" />
+                  Examination Type
+                </label>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { value: 'cardiac', label: 'Cardiac/Echo', icon: '🫀', description: 'Heart & vessels' },
+                    { value: 'obstetric', label: 'Obstetric', icon: '🤰', description: 'Pregnancy imaging' },
+                    { value: 'abdominal', label: 'Abdominal', icon: '🫄', description: 'Abdomen & organs' },
+                    { value: 'musculoskeletal', label: 'Musculoskeletal', icon: '🦴', description: 'Bones & joints' },
+                    { value: 'thoracic', label: 'Thoracic', icon: '🫁', description: 'Chest & lungs' },
+                    { value: 'vascular', label: 'Vascular', icon: '🧠', description: 'Blood vessels' },
+                    { value: 'pelvic', label: 'Pelvic', icon: '🩺', description: 'Pelvic organs' },
+                    { value: 'other', label: 'Other/Custom', icon: '🎯', description: 'Custom exam' },
+                  ].map((exam) => (
+                    <button
+                      key={exam.value}
+                      type="button"
+                      onClick={() => {
+                        setExamType(exam.value);
+                        form.setValue('examType', exam.value);
+                      }}
+                      className={`
+                        relative overflow-hidden rounded-xl p-4 border-2 transition-all duration-300 text-left min-h-[100px]
+                        ${examType === exam.value
+                          ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg shadow-indigo-500/20 scale-105'
+                          : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-md hover:scale-102'
+                        }
+                      `}
+                    >
+                      <div className="text-3xl mb-2">{exam.icon}</div>
+                      <div className={`text-sm font-semibold mb-1 ${
+                        examType === exam.value ? 'text-indigo-700' : 'text-gray-700'
+                      }`}>
+                        {exam.label}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {exam.description}
+                      </div>
+                      
+                      {examType === exam.value && (
+                        <div className="absolute top-2 right-2">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shadow-md">
+                            <Check className="w-4 h-4 text-white stroke-[3]" />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Exam Presets */}
+              <div className="mb-4">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  Common Exam Presets
+                </label>
+                
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { 
+                      name: 'First Trimester Scan', 
+                      icon: '👶',
+                      examType: 'obstetric',
+                      indication: 'First trimester pregnancy evaluation - confirm intrauterine pregnancy, gestational age assessment, fetal viability'
+                    },
+                    { 
+                      name: 'Anatomy Scan (20w)', 
+                      icon: '🤰',
+                      examType: 'obstetric',
+                      indication: 'Mid-trimester anatomy survey at 20 weeks - detailed fetal anatomical evaluation'
+                    },
+                    { 
+                      name: 'RUQ - Liver/GB', 
+                      icon: '🫄',
+                      examType: 'abdominal',
+                      indication: 'Right upper quadrant pain - evaluate liver, gallbladder, bile ducts for stones, inflammation'
+                    },
+                    { 
+                      name: 'Renal Ultrasound', 
+                      icon: '🔍',
+                      examType: 'abdominal',
+                      indication: 'Evaluate kidneys for stones, obstruction, masses, or infection'
+                    },
+                    { 
+                      name: 'Transthoracic Echo', 
+                      icon: '🫀',
+                      examType: 'cardiac',
+                      indication: 'Evaluate cardiac function, chamber sizes, valvular function, ejection fraction'
+                    },
+                    { 
+                      name: 'Carotid Doppler', 
+                      icon: '🧠',
+                      examType: 'vascular',
+                      indication: 'Carotid artery stenosis evaluation - assess for atherosclerotic disease'
+                    },
+                    { 
+                      name: 'DVT Lower Extremity', 
+                      icon: '🦵',
+                      examType: 'vascular',
+                      indication: 'Rule out deep vein thrombosis in lower extremity - assess venous flow and compressibility'
+                    },
+                  ].map((preset) => (
+                    <Button
+                      key={preset.name}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setExamType(preset.examType);
+                        form.setValue('examType', preset.examType);
+                        form.setValue('clinicalIndication', preset.indication);
+                      }}
+                      className="border-2 border-indigo-300 hover:bg-indigo-50 hover:border-indigo-500 hover:shadow-md transition-all"
+                    >
+                      <span className="mr-1.5">{preset.icon}</span>
+                      <Plus className="w-3 h-3 mr-1" />
+                      {preset.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
 
               <FormField
                 control={form.control}
@@ -962,7 +1291,7 @@ export default function Ultrasound() {
                 )}
               />
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
@@ -971,6 +1300,7 @@ export default function Ultrasound() {
                     setSelectedPatient(null);
                     form.reset();
                   }}
+                  className="border-gray-300 hover:bg-gray-50 min-h-[44px] w-full sm:w-auto"
                   data-testid="button-cancel-request"
                 >
                   Cancel
@@ -978,6 +1308,7 @@ export default function Ultrasound() {
                 <Button
                   type="submit"
                   disabled={!selectedPatient || createUltrasoundExamMutation.isPending}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:shadow-[0_4px_20px_rgba(99,102,241,0.4)] text-white font-semibold min-h-[44px] w-full sm:w-auto"
                   data-testid="button-submit-request"
                 >
                   {createUltrasoundExamMutation.isPending ? (
@@ -986,7 +1317,7 @@ export default function Ultrasound() {
                       Submitting...
                     </>
                   ) : (
-                    'Submit Request'
+                    'Submit Ultrasound Request'
                   )}
                 </Button>
               </div>
