@@ -1300,7 +1300,13 @@ return (
                             <div className="flex items-center gap-4">
                               {/* Patient Avatar */}
                               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                                {(p.firstName?.[0] || '').toUpperCase()}{(p.lastName?.[0] || '').toUpperCase() || (p.patientId?.[0] || 'P')}
+                                {(() => {
+                                  const firstInitial = (p.firstName?.[0] || '').toUpperCase();
+                                  const lastInitial = (p.lastName?.[0] || '').toUpperCase();
+                                  if (firstInitial && lastInitial) return firstInitial + lastInitial;
+                                  if (firstInitial) return firstInitial;
+                                  return (p.patientId?.[0] || 'P').toUpperCase();
+                                })()}
                               </div>
                               
                               {/* Patient Info */}
@@ -2447,8 +2453,6 @@ return (
         </div>
         )}
       </div>
-    </div>
-  );
 
       {/* Custom Scrollbar Styling */}
       <style>{`
@@ -2468,4 +2472,7 @@ return (
           background: rgb(45 212 191);
         }
       `}</style>
+    </div>
+  );
+
 }
