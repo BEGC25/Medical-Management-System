@@ -427,9 +427,9 @@ export default function Laboratory() {
   // Keyboard shortcut for search
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      if (e.key === '/' && e.target && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault();
-        document.querySelector<HTMLInputElement>('input[placeholder*="Search"]')?.focus();
+        document.querySelector<HTMLInputElement>('[data-testid="input-patient-search"]')?.focus();
       }
     };
     window.addEventListener('keydown', handleKeyPress);
