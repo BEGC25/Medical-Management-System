@@ -18,6 +18,8 @@ import {
   ChevronRight,
   TestTube,
   AlertTriangle,
+  User,
+  Zap,
 } from "lucide-react";
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 
@@ -787,7 +789,7 @@ export default function Laboratory() {
     ) : null;
 
 return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 pt-3 pb-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 pt-1.5 pb-6">
       <div className="max-w-7xl mx-auto space-y-3">
         {/* Premium Header - Matching Ultrasound/X-Ray Pattern */}
         <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)]">
@@ -1200,21 +1202,30 @@ return (
 
       {/* New Request Dialog */}
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Beaker className="w-5 h-5 text-blue-600" />
-              New Laboratory Test Request
-            </DialogTitle>
-            <DialogDescription>
-              Select a patient and specify the tests to be performed
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-white via-teal-50/30 to-emerald-50/30 dark:from-gray-900 dark:via-teal-950/20 dark:to-emerald-950/20 border-2 border-teal-100">
+          <DialogHeader className="border-b border-teal-100/50 pb-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/30">
+                <TestTube className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-teal-700 to-emerald-700 bg-clip-text text-transparent">
+                  New Laboratory Test Request
+                </DialogTitle>
+                <DialogDescription className="text-teal-600/80">
+                  Select a patient and specify the tests to be performed
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
 
           <div className="space-y-6">
             {/* Patient selector */}
             <div>
-              <h3 className="font-medium text-gray-800 mb-3 dark:text-gray-200">Patient</h3>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <User className="w-4 h-4 text-teal-600" />
+                Select Patient
+              </label>
 
               {!selectedPatient ? (
                 <>
