@@ -233,6 +233,7 @@ export default function Ultrasound() {
     findings: false,
     impression: false,
     recommendations: false,
+    clinicalIndication: false,
   });
   
   const [imageUploadMode, setImageUploadMode] = useState<'upload' | 'describe'>('upload');
@@ -263,6 +264,7 @@ export default function Ultrasound() {
   const findingsRef = useRef<HTMLTextAreaElement>(null);
   const impressionRef = useRef<HTMLTextAreaElement>(null);
   const recommendationsRef = useRef<HTMLTextAreaElement>(null);
+  const clinicalIndicationRef = useRef<HTMLTextAreaElement>(null);
   
   // Recognition instance (shared across all fields)
   const recognitionInstanceRef = useRef<any>(null);
@@ -575,6 +577,9 @@ export default function Ultrasound() {
         case 'recommendations':
           setRecommendations(transcript);
           resultsForm.setValue('recommendations', transcript);
+          break;
+        case 'clinicalIndication':
+          form.setValue('clinicalIndication', transcript);
           break;
       }
     };
@@ -1140,7 +1145,7 @@ export default function Ultrasound() {
                     { value: 'musculoskeletal', label: 'Musculoskeletal', icon: '🦴', description: 'Bones & joints' },
                     { value: 'thoracic', label: 'Thoracic', icon: '🫁', description: 'Chest & lungs' },
                     { value: 'vascular', label: 'Vascular', icon: '🧠', description: 'Blood vessels' },
-                    { value: 'pelvic', label: 'Pelvic', icon: '🩺', description: 'Pelvic organs' },
+                    { value: 'pelvic', label: 'Pelvic', icon: '🩻', description: 'Pelvic organs' },
                     { value: 'other', label: 'Other/Custom', icon: '🎯', description: 'Custom exam' },
                   ].map((exam) => (
                     <button
@@ -1554,14 +1559,28 @@ export default function Ultrasound() {
                 name="clinicalIndication"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Clinical Indication</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                      <span>Clinical Indication</span>
+                      <Button 
+                        type="button"
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => startVoiceInput('clinicalIndication')}
+                        className="border-purple-300 text-purple-700 hover:bg-purple-50 h-8"
+                      >
+                        <Mic className={`w-3 h-3 mr-1 ${isRecording.clinicalIndication ? 'animate-pulse text-red-500' : ''}`} />
+                        {isRecording.clinicalIndication ? 'Stop' : 'Dictate'}
+                      </Button>
+                    </FormLabel>
                     <FormControl>
                       <Textarea
+                        ref={clinicalIndicationRef}
                         placeholder="Describe the clinical reason for this ultrasound examination..."
                         {...field}
                         value={field.value || ''}
                         className="focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
                         data-testid="textarea-clinical-indication"
+                        rows={4}
                       />
                     </FormControl>
                     <FormMessage />
@@ -1985,27 +2004,239 @@ export default function Ultrasound() {
                           {/* Quick Templates */}
                           <div className="mb-3">
                             <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2 block">
-                              Quick Templates:
+                              Quick Templates (30+ Options):
                             </label>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal ultrasound examination. No abnormalities detected.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
-                                ✅ Normal Study
-                              </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings consistent with cholelithiasis.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
-                                💎 Gallstones
-                              </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Intrauterine pregnancy, single live fetus, gestational age [XX] weeks.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
-                                🤰 Normal IUP
-                              </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hydronephrosis suggesting ureteral obstruction.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
-                                Hydronephrosis
-                              </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatic steatosis (fatty liver).")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
-                                Fatty Liver
-                              </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings require further evaluation or correlation.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
-                                ⚠️ Further Eval
-                              </Button>
+                            
+                            <div className="space-y-4">
+                              {/* General/Normal Templates */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🟢 General</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal ultrasound examination. No abnormalities detected.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    ✅ Normal Study
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Technically limited study due to patient body habitus/gas/motion. Findings may be incomplete.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                    📋 Limited Study
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings should be correlated with clinical presentation and laboratory results.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                    🔍 Correlate Clinically
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Recommend clinical follow-up and repeat imaging if symptoms persist or worsen.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                    📊 Clinical Follow-up
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings require further evaluation or correlation with additional imaging modalities.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    ⚠️ Further Eval
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Abdominal Templates */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🟡 Abdominal</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings consistent with cholelithiasis. Multiple gallstones visualized within the gallbladder. No evidence of acute cholecystitis. Common bile duct normal in caliber.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                    💎 Gallstones
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatic steatosis (fatty liver). Increased echogenicity of liver parenchyma consistent with fatty infiltration.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                    🫘 Fatty Liver
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hydronephrosis - dilated renal collecting system suggesting ureteral obstruction. Recommend urological evaluation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    💧 Hydronephrosis
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Liver normal in size, contour, and echogenicity. No focal lesions or masses identified.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    🫘 Normal Liver
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatomegaly noted. Liver size increased beyond normal limits. Recommend clinical correlation and further workup.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    🫘 Hepatomegaly
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Splenomegaly - enlarged spleen. Recommend hematological evaluation and clinical correlation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    🫘 Splenomegaly
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Both kidneys normal in size, position, and echotexture. No hydronephrosis, stones, or masses. Bladder unremarkable.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    💧 Normal Kidneys
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Simple renal cyst identified. Benign appearance. No intervention required unless symptomatic.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                    💧 Renal Cyst
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Ascites - free intraperitoneal fluid noted. Recommend clinical correlation to determine etiology.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    💧 Ascites
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Abdominal mass visualized. Further characterization with CT or MRI recommended for complete evaluation.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    📍 Abdominal Mass
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings suggestive of acute appendicitis. Thickened, non-compressible appendix with periappendiceal fluid. Surgical consultation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 Appendicitis
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pancreatic mass identified in the [head/body/tail] of pancreas. Further evaluation with CT/MRI and biopsy recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🫘 Pancreatic Mass
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Obstetric Templates */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🟣 Obstetric</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Intrauterine pregnancy, single live fetus with cardiac activity. Gestational age [XX] weeks by biometry. Fetal anatomy appears normal.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                    🤰 Normal IUP
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal first trimester pregnancy. Single intrauterine gestation with fetal cardiac activity. Crown-rump length consistent with [X] weeks gestation.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                    👶 Normal 1st Trimester
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal mid-trimester anatomy scan. All fetal structures visualized and appear within normal limits. No gross anatomical abnormalities detected.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                    👶 Normal Anatomy Scan
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Fetal biometry appropriate for stated gestational age. Estimated fetal weight [XXX] grams. Growth parameters within normal range.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                    👶 Normal Growth
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Oligohydramnios - reduced amniotic fluid volume. AFI [X] cm, below normal range. Recommend close monitoring and obstetric follow-up.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    💧 Oligohydramnios
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Polyhydramnios - increased amniotic fluid volume. AFI [X] cm, above normal range. Recommend evaluation for underlying causes.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    💧 Polyhydramnios
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Placenta previa - placental edge covering or within 2 cm of internal cervical os. Recommend obstetric consultation and delivery planning.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 Placenta Previa
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Multiple gestation - [dichorionic diamniotic / monochorionic diamniotic] twin pregnancy. Both fetuses viable with cardiac activity.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                    👥 Twins/Triplets
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings suspicious for ectopic pregnancy. No intrauterine gestational sac visualized. Complex adnexal mass with free fluid. Recommend gynecological consultation urgently.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 Ectopic Pregnancy
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Cardiac Templates */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">❤️ Cardiac</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal echocardiogram. Cardiac chambers normal in size. LV systolic function normal with EF 55-60%. All valves normal without significant stenosis or regurgitation.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    ❤️ Normal Echo
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Left ventricular systolic dysfunction. Reduced ejection fraction estimated at [30-40]%. Global hypokinesis. Recommend cardiology consultation.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    💔 LV Dysfunction (EF<40%)
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pericardial effusion - [small/moderate/large] circumferential fluid collection. No evidence of tamponade physiology at this time.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    💧 Pericardial Effusion
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Valvular disease identified. [Specify valve] shows [stenosis/regurgitation] of [mild/moderate/severe] degree. Recommend cardiology follow-up.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    🫀 Valvular Disease
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Regional wall motion abnormality noted in [specify segments]. Suggests ischemic cardiac disease. Recommend cardiology consultation and stress testing.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    📉 RWMA
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Diastolic dysfunction - impaired left ventricular relaxation pattern. Recommend clinical correlation and cardiology follow-up.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    ❤️ Diastolic Dysfunction
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Vascular Templates */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🩸 Vascular</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal carotid Doppler study. Bilateral carotid arteries patent with normal flow velocities. No evidence of significant stenosis.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    🩸 Normal Carotid
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Mild carotid stenosis - less than 50% luminal narrowing. Recommend vascular follow-up and risk factor modification.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                    ⚠️ Stenosis <50%
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Severe carotid stenosis - greater than 50% luminal narrowing with elevated peak systolic velocities. Vascular surgery consultation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 Stenosis >50%
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Deep vein thrombosis identified in [specify location] lower extremity. Non-compressible vein with echogenic thrombus. Anticoagulation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🦵 DVT Detected
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("No evidence of deep vein thrombosis. All visualized deep veins compressible with normal Doppler flow.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    ✅ No DVT
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Renal artery stenosis suspected. Elevated peak systolic velocities in [right/left] renal artery. Further evaluation with CTA or MRA recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🫘 Renal Artery Stenosis
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("AV fistula patent and functional. Good arterial inflow and venous outflow. Suitable for dialysis access.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    🩸 AV Fistula Patent
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Pelvic Templates */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🩻 Pelvic</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal pelvic ultrasound. Uterus and ovaries normal in size and appearance. No masses or free fluid identified.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    🩻 Normal Pelvic
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Simple ovarian cyst - [right/left] ovary with thin-walled, anechoic cyst measuring [X] cm. Benign appearance, likely functional. Follow-up recommended.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                    🫧 Simple Ovarian Cyst
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Complex ovarian cyst with internal septations/solid components. Further evaluation recommended to exclude neoplasm.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 Complex Cyst
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Uterine fibroids (leiomyomas) - multiple intramural/subserosal/submucosal masses consistent with fibroids. [Specify sizes if symptomatic].")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    🫀 Uterine Fibroids
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Endometrial thickening - endometrial stripe measures [X] mm. Recommend clinical correlation and possible endometrial sampling if postmenopausal.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    📏 Endometrial Thickening
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Free fluid in pelvis (pouch of Douglas). Small volume pelvic free fluid noted. Clinical correlation recommended.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                    💧 Pelvic Free Fluid
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal scrotal ultrasound. Both testes normal in size, echogenicity, and vascularity. No masses, hydrocele, or varicocele identified.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    🔵 Normal Scrotal US
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Testicular mass/lesion identified in [right/left] testis. Solid hypoechoic mass measuring [X] cm. Urological consultation and tumor markers recommended urgently.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 Testicular Mass
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Prostatic enlargement - prostate volume estimated at [X] cc, consistent with benign prostatic hyperplasia (BPH). Recommend urological evaluation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    🫘 Enlarged Prostate
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Musculoskeletal Templates */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🦴 Musculoskeletal</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal musculoskeletal ultrasound. Tendons and ligaments intact without evidence of tear or significant abnormality.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    ✅ Normal - No Tear
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Partial-thickness rotator cuff tear. [Specify tendon] shows focal thinning and hypoechoic defect consistent with partial tear.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 RC Tear - Partial
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Full-thickness rotator cuff tear. Complete disruption of [specify tendon] with retraction. Orthopedic consultation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 RC Tear - Complete
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Joint effusion - [small/moderate/large] fluid collection within [specify joint]. Clinical correlation recommended.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                    💧 Joint Effusion
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Tendinopathy - [specify tendon] shows thickening and heterogeneous echotexture consistent with chronic tendinosis.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    🦴 Tendinopathy
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Soft tissue mass identified measuring [X] cm. Recommend MRI for further characterization and possible biopsy.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    📍 Soft Tissue Mass
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Thoracic Templates */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🫁 Thoracic</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pleural effusion - [small/moderate/large] volume fluid collection in [right/left] pleural space. Thoracentesis may be considered if symptomatic.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                    💧 Pleural Effusion
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal thyroid gland. Both lobes normal in size and echogenicity. No nodules or masses identified.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                    🫁 Normal Thyroid
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Thyroid nodule(s) identified. [Specify characteristics: size, location, solid/cystic, calcifications]. TI-RADS classification [X]. Consider FNA if indicated.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    🔴 Thyroid Nodule
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Neck mass visualized in [specify location]. Further evaluation with CT/MRI recommended for complete characterization.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                    📍 Neck Mass
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                           
