@@ -483,6 +483,14 @@ export default function Treatment() {
   const [editUltrasoundModalOpen, setEditUltrasoundModalOpen] = useState(false);
   const [ultrasoundToEdit, setUltrasoundToEdit] = useState<any>(null);
   const [editUltrasoundClinicalInfo, setEditUltrasoundClinicalInfo] = useState("");
+  
+  // Enhanced Ultrasound state
+  const [ultrasoundExamType, setUltrasoundExamType] = useState('abdominal');
+  const [ultrasoundSpecificExam, setUltrasoundSpecificExam] = useState('');
+  
+  // Enhanced Lab state
+  const [labCategory, setLabCategory] = useState<keyof typeof commonTests>('hematology');
+  const [labSpecificTests, setLabSpecificTests] = useState<string[]>([]);
 
   // Allergies state
   const [allergies, setAllergies] = useState<Array<{ id: string; name: string; severity: string; reaction: string }>>([]);
@@ -2166,54 +2174,111 @@ export default function Treatment() {
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className="border-t-2 border-blue-200 rounded-b-lg p-4 bg-white dark:bg-gray-900">
-                                {/* LAB TESTS: Category-based dropdown + checkboxes */}
+                                {/* LAB TESTS: Enhanced visual category cards */}
                                 {qoTab === "lab" ? (
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {/* Category Dropdown */}
-                                      <div className="space-y-2">
-                                        <label className="text-sm font-medium">Test Category</label>
-                                        <Select
-                                          value={currentLabCategory}
-                                          onValueChange={(v) => setCurrentLabCategory(v as keyof typeof commonTests)}
-                                        >
-                                          <SelectTrigger data-testid="select-lab-category">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="hematology">Hematology</SelectItem>
-                                            <SelectItem value="serology">Serology</SelectItem>
-                                            <SelectItem value="reproductive">Reproductive</SelectItem>
-                                            <SelectItem value="parasitology">Parasitology</SelectItem>
-                                            <SelectItem value="hormones">Hormones</SelectItem>
-                                            <SelectItem value="tuberculosis">Tuberculosis</SelectItem>
-                                            <SelectItem value="emergency">Emergency</SelectItem>
-                                            <SelectItem value="urine">Urine Analysis</SelectItem>
-                                            <SelectItem value="biochemistry">Biochemistry</SelectItem>
-                                            <SelectItem value="stool">Stool</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-
-                                      {/* Priority Dropdown */}
-                                      <div className="space-y-2">
-                                        <label className="text-sm font-medium">Priority</label>
-                                        <Select value={labPriority} onValueChange={(v: any) => setLabPriority(v)}>
-                                          <SelectTrigger data-testid="select-lab-priority">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="routine">Routine</SelectItem>
-                                            <SelectItem value="urgent">Urgent</SelectItem>
-                                            <SelectItem value="stat">STAT</SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                  <div className="space-y-6">
+                                    {/* Visual Test Category Cards */}
+                                    <div className="space-y-3">
+                                      <h3 className="font-semibold text-base text-gray-900 dark:text-white">Test Category</h3>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        {[
+                                          { value: 'hematology' as const, label: 'Blood Tests', description: 'Hematology & CBC', icon: '🩸' },
+                                          { value: 'urine' as const, label: 'Urine Analysis', description: 'Urinalysis panels', icon: '🧪' },
+                                          { value: 'stool' as const, label: 'Stool Analysis', description: 'Parasitology', icon: '💩' },
+                                          { value: 'serology' as const, label: 'Serology', description: 'Infectious diseases', icon: '🦠' },
+                                          { value: 'biochemistry' as const, label: 'Chemistry', description: 'Biochemistry tests', icon: '⚗️' },
+                                          { value: 'hormones' as const, label: 'Hormones', description: 'Endocrine panels', icon: '💉' },
+                                        ].map((cat) => {
+                                          const isSelected = labCategory === cat.value;
+                                          return (
+                                            <button
+                                              key={cat.value}
+                                              type="button"
+                                              onClick={() => {
+                                                setLabCategory(cat.value);
+                                                setCurrentLabCategory(cat.value);
+                                                setLabSpecificTests([]);
+                                              }}
+                                              className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                                                isSelected
+                                                  ? 'border-green-500 bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 shadow-lg scale-105'
+                                                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-green-300 hover:shadow-md'
+                                              }`}
+                                            >
+                                              {isSelected && (
+                                                <div className="absolute top-2 right-2">
+                                                  <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                                                    <Check className="w-4 h-4 text-white" />
+                                                  </div>
+                                                </div>
+                                              )}
+                                              <div className="text-3xl mb-2">{cat.icon}</div>
+                                              <div className={`font-semibold text-sm mb-1 ${isSelected ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white'}`}>
+                                                {cat.label}
+                                              </div>
+                                              <div className={`text-xs ${isSelected ? 'text-green-700 dark:text-green-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                {cat.description}
+                                              </div>
+                                            </button>
+                                          );
+                                        })}
                                       </div>
                                     </div>
 
-                                    {/* Test Selection Checkboxes */}
+                                    {/* Quick Panels Section */}
+                                    <div className="space-y-3">
+                                      <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Panels (Common Test Bundles)</h3>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {[
+                                          { 
+                                            name: 'Malaria Screen', 
+                                            icon: '🦟', 
+                                            tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)'] 
+                                          },
+                                          { 
+                                            name: 'Complete Blood Work', 
+                                            icon: '🩸', 
+                                            tests: ['Complete Blood Count (CBC)', 'Blood Group & Rh', 'ESR (Erythrocyte Sedimentation Rate)'] 
+                                          },
+                                          { 
+                                            name: 'Basic Metabolic', 
+                                            icon: '⚗️', 
+                                            tests: ['Random Blood Sugar (RBS)', 'Renal Function Test (RFT)'] 
+                                          },
+                                          { 
+                                            name: 'Fever Workup', 
+                                            icon: '🤒', 
+                                            tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)', 'Widal Test (Typhoid)'] 
+                                          },
+                                          { 
+                                            name: 'Antenatal Panel', 
+                                            icon: '🤰', 
+                                            tests: ['Blood Group & Rh', 'Hemoglobin (HB)', 'Hepatitis B Test (HBsAg)', 'VDRL Test (Syphilis)'] 
+                                          },
+                                        ].map((panel) => (
+                                          <button
+                                            key={panel.name}
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedLabTests(panel.tests);
+                                              toast({ title: "Quick Panel Selected", description: `${panel.name} tests added` });
+                                            }}
+                                            className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all text-left"
+                                          >
+                                            <span className="text-2xl">{panel.icon}</span>
+                                            <div className="flex-1">
+                                              <div className="font-semibold text-sm text-gray-900 dark:text-white">{panel.name}</div>
+                                              <div className="text-xs text-gray-500 dark:text-gray-400">{panel.tests.length} tests</div>
+                                            </div>
+                                            <Plus className="h-4 w-4 text-green-600" />
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Specific Tests Section */}
                                     <div>
-                                      <label className="text-sm font-medium mb-2 block">Select Tests</label>
+                                      <label className="text-sm font-medium mb-2 block">Specific Tests in Category</label>
                                       <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
                                         {commonTests[currentLabCategory].map((test) => (
                                           <label key={test} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
@@ -2221,18 +2286,53 @@ export default function Treatment() {
                                               checked={selectedLabTests.includes(test)}
                                               onCheckedChange={() => handleLabTestToggle(test)}
                                               data-testid={`checkbox-lab-test-${test}`}
+                                              className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                                             />
                                             <span className="text-sm">{test}</span>
                                           </label>
                                         ))}
                                       </div>
                                       {selectedLabTests.length > 0 && (
-                                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                        <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                                          <p className="text-sm font-medium text-green-700 dark:text-green-300">
                                             Selected ({selectedLabTests.length}): {selectedLabTests.join(", ")}
                                           </p>
                                         </div>
                                       )}
+                                    </div>
+
+                                    {/* Priority Visual Buttons */}
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-medium">Priority Level</label>
+                                      <div className="flex gap-2">
+                                        {[
+                                          { value: 'routine', label: 'Routine', color: 'gray', icon: '' },
+                                          { value: 'urgent', label: '⚠️ Urgent', color: 'orange', icon: '' },
+                                          { value: 'stat', label: '🚨 STAT', color: 'red', icon: '' },
+                                        ].map((priority) => (
+                                          <button
+                                            key={priority.value}
+                                            type="button"
+                                            onClick={() => setLabPriority(priority.value as "routine" | "urgent" | "stat")}
+                                            className={`flex-1 px-4 py-3 rounded-lg border-2 font-semibold transition-all ${
+                                              labPriority === priority.value
+                                                ? priority.color === 'gray'
+                                                  ? 'bg-gray-600 text-white border-gray-600'
+                                                  : priority.color === 'orange'
+                                                  ? 'bg-orange-500 text-white border-orange-500'
+                                                  : 'bg-red-600 text-white border-red-600'
+                                                : priority.color === 'gray'
+                                                ? 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-500'
+                                                : priority.color === 'orange'
+                                                ? 'bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-600 hover:border-orange-500'
+                                                : 'bg-white dark:bg-gray-800 text-red-700 dark:text-red-300 border-red-300 dark:border-red-600 hover:border-red-500'
+                                            }`}
+                                            data-testid={`btn-priority-${priority.value}`}
+                                          >
+                                            {priority.label}
+                                          </button>
+                                        ))}
+                                      </div>
                                     </div>
 
                                     {/* Clinical Information */}
@@ -2247,12 +2347,12 @@ export default function Treatment() {
                                       />
                                     </div>
 
-                                    {/* Submit Button */}
+                                    {/* Submit Button with Green/Teal Gradient */}
                                     <Button
                                       type="button"
                                       onClick={() => submitLabTestsMutation.mutate()}
                                       disabled={submitLabTestsMutation.isPending || selectedLabTests.length === 0}
-                                      className="w-full bg-medical-blue hover:bg-blue-700"
+                                      className="w-full bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600 text-white font-semibold"
                                       data-testid="btn-submit-lab-tests"
                                     >
                                       <Plus className="w-4 h-4 mr-2" />
@@ -2489,26 +2589,99 @@ export default function Treatment() {
                                       );
                                     }
 
-                                    // Enhanced Ultrasound ordering
+                                    // Enhanced Ultrasound ordering with visual exam type cards
                                     if (qoTab === 'ultrasound') {
-                                      const rows = services
-                                        .filter((s: any) => matchesCategory(s, 'ultrasound'))
-                                        .filter((s: any) => {
-                                          if (!qoSearch) return true;
-                                          const needle = qoSearch.toLowerCase();
-                                          return (
-                                            (s.name || "").toLowerCase().includes(needle) ||
-                                            (s.description ?? "").toLowerCase().includes(needle)
-                                          );
-                                        })
-                                        .slice(0, 50);
+                                      const ultrasoundService = services.find((s: any) => matchesCategory(s, 'ultrasound'));
+                                      
+                                      // Ultrasound exam types mapping
+                                      const ultrasoundExamTypes = [
+                                        { value: 'cardiac', label: 'Cardiac/Echo', description: 'Heart & vessels', icon: '❤️' },
+                                        { value: 'obstetric', label: 'Obstetric', description: 'Pregnancy imaging', icon: '🤰' },
+                                        { value: 'abdominal', label: 'Abdominal', description: 'Abdomen & organs', icon: '👶' },
+                                        { value: 'musculoskeletal', label: 'Musculoskeletal', description: 'Bones & joints', icon: '🔧' },
+                                        { value: 'thoracic', label: 'Thoracic', description: 'Chest & lungs', icon: '🫁' },
+                                        { value: 'vascular', label: 'Vascular', description: 'Blood vessels', icon: '🧠' },
+                                        { value: 'pelvic', label: 'Pelvic', description: 'Pelvic organs', icon: '🩻' },
+                                        { value: 'other', label: 'Other/Custom', description: 'Custom exam', icon: '🎯' },
+                                      ];
 
-                                      if (rows.length === 0) {
-                                        return <div className="text-sm text-muted-foreground p-4 text-center">No matching services found.</div>;
-                                      }
+                                      // Specific exams based on type
+                                      const ultrasoundSpecificExams: Record<string, string[]> = {
+                                        abdominal: ['Complete Abdomen', 'RUQ - Liver & Gallbladder', 'Renal (Kidneys & Bladder)', 'Appendix Study', 'Spleen'],
+                                        obstetric: ['Dating Scan', 'Anatomy Scan', 'Growth Scan', 'Biophysical Profile'],
+                                        pelvic: ['Transvaginal', 'Transabdominal', 'Bladder Assessment'],
+                                        cardiac: ['2D Echo', 'Doppler Study', 'Stress Echo'],
+                                        vascular: ['Carotid Doppler', 'Venous Doppler (Legs)', 'Arterial Doppler'],
+                                        thoracic: ['Pleural Assessment', 'Lung Ultrasound'],
+                                        musculoskeletal: ['Joint Assessment', 'Soft Tissue Mass', 'Tendon Evaluation'],
+                                        other: [],
+                                      };
 
                                       return (
-                                        <div className="space-y-4">
+                                        <div className="space-y-6">
+                                          {/* Visual Examination Type Cards */}
+                                          <div className="space-y-3">
+                                            <h3 className="font-semibold text-base text-gray-900 dark:text-white">Examination Type</h3>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                              {ultrasoundExamTypes.map((type) => {
+                                                const isSelected = ultrasoundExamType === type.value;
+                                                return (
+                                                  <button
+                                                    key={type.value}
+                                                    type="button"
+                                                    onClick={() => {
+                                                      setUltrasoundExamType(type.value);
+                                                      setUltrasoundSpecificExam('');
+                                                    }}
+                                                    className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                                                      isSelected
+                                                        ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg scale-105'
+                                                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-purple-300 hover:shadow-md'
+                                                    }`}
+                                                  >
+                                                    {isSelected && (
+                                                      <div className="absolute top-2 right-2">
+                                                        <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                                                          <Check className="w-4 h-4 text-white" />
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                    <div className="text-3xl mb-2">{type.icon}</div>
+                                                    <div className={`font-semibold text-sm mb-1 ${isSelected ? 'text-purple-900 dark:text-purple-100' : 'text-gray-900 dark:text-white'}`}>
+                                                      {type.label}
+                                                    </div>
+                                                    <div className={`text-xs ${isSelected ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                      {type.description}
+                                                    </div>
+                                                  </button>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+
+                                          {/* Specific Exam (Quick Select) Section */}
+                                          {ultrasoundSpecificExams[ultrasoundExamType] && ultrasoundSpecificExams[ultrasoundExamType].length > 0 && (
+                                            <div className="space-y-3">
+                                              <h3 className="font-semibold text-base text-gray-900 dark:text-white">Specific Exam (Quick Select)</h3>
+                                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                {ultrasoundSpecificExams[ultrasoundExamType].map((exam) => (
+                                                  <button
+                                                    key={exam}
+                                                    type="button"
+                                                    onClick={() => setUltrasoundSpecificExam(exam)}
+                                                    className={`p-3 text-sm rounded-lg border-2 transition-all font-medium ${
+                                                      ultrasoundSpecificExam === exam
+                                                        ? 'bg-purple-600 text-white border-purple-500'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white hover:border-purple-400 dark:hover:border-purple-600'
+                                                    }`}
+                                                  >
+                                                    {exam}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
                                           {/* Prominent Clinical Info Field */}
                                           <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg space-y-2">
                                             <div className="flex items-center gap-2 mb-2">
@@ -2528,42 +2701,34 @@ export default function Treatment() {
                                             </p>
                                           </div>
 
-                                          {/* Enhanced Services Grid */}
-                                          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                            {rows.map((svc: any) => {
-                                              const displayFee = typeof svc.price === 'number' ? svc.price.toLocaleString('en-US') : null;
-                                              return (
-                                                <div 
-                                                  key={svc.id} 
-                                                  className="group flex flex-col rounded-lg border-2 border-purple-100 dark:border-purple-900 p-4 bg-white dark:bg-gray-800 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 space-y-3"
-                                                >
-                                                  <div className="font-semibold text-base text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
-                                                    {svc.name}
-                                                  </div>
-                                                  {svc.description && (
-                                                    <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{svc.description}</div>
-                                                  )}
-                                                  {displayFee && (
-                                                    <div className="text-sm font-bold text-purple-700 dark:text-purple-400">Fee: {displayFee} SSP</div>
-                                                  )}
-                                                  <Button
-                                                    size="sm"
-                                                    onClick={() => {
-                                                      orderUltrasoundMutation.mutate({ service: svc, examType: svc.name });
-                                                    }}
-                                                    disabled={orderUltrasoundMutation.isPending}
-                                                    className="mt-auto bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white"
-                                                  >
-                                                    {orderUltrasoundMutation.isPending ?
-                                                      <Loader2 className="h-4 w-4 animate-spin"/> :
-                                                      <Plus className="h-4 w-4 mr-1"/>
-                                                    }
-                                                    Add
-                                                  </Button>
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
+                                          {/* Submit Button with Purple/Indigo Gradient */}
+                                          <Button
+                                            size="lg"
+                                            onClick={() => {
+                                              if (!ultrasoundService) {
+                                                toast({ 
+                                                  title: "Configuration Error", 
+                                                  description: "Ultrasound service not found in system", 
+                                                  variant: "destructive" 
+                                                });
+                                                return;
+                                              }
+                                              const examDescription = ultrasoundSpecificExam || ultrasoundExamType;
+                                              orderUltrasoundMutation.mutate({ 
+                                                service: ultrasoundService, 
+                                                examType: examDescription
+                                              });
+                                            }}
+                                            disabled={orderUltrasoundMutation.isPending || !ultrasoundService}
+                                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white font-semibold disabled:opacity-50"
+                                          >
+                                            {orderUltrasoundMutation.isPending ? (
+                                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            ) : (
+                                              <Radio className="h-4 w-4 mr-2" />
+                                            )}
+                                            {orderUltrasoundMutation.isPending ? 'Ordering...' : 'Order Ultrasound Exam'}
+                                          </Button>
                                         </div>
                                       );
                                     }
