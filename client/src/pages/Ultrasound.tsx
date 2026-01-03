@@ -76,7 +76,9 @@ import {
 
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
-import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from '@/lib/date-utils';
+import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ } from '@/lib/date-utils';
+import { formatDistanceToNow } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -88,15 +90,23 @@ function cx(...cls: Array<string | false | null | undefined>) {
 
 function timeAgo(iso?: string) {
   if (!iso) return '';
-  const d = new Date(iso).getTime();
-  const diff = Date.now() - d;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const days = Math.floor(h / 24);
-  return `${days}d ago`;
+  
+  try {
+    // Parse the ISO timestamp from database
+    const utcDate = new Date(iso);
+    
+    // Convert to Juba timezone for consistent calculation
+    const jubaDate = toZonedTime(utcDate, CLINIC_TZ);
+    
+    // Calculate relative time
+    return formatDistanceToNow(jubaDate, { 
+      addSuffix: true,
+      includeSeconds: true 
+    });
+  } catch (error) {
+    console.error('Error calculating timeAgo:', error);
+    return '';
+  }
 }
 
 function fullName(p?: Patient | null) {
@@ -468,6 +478,7 @@ export default function Ultrasound() {
     createUltrasoundExamMutation.mutate({
       ...data,
       patientId: selectedPatient.patientId,
+      specificExam: specificExam || undefined, // Add specificExam to the submission
     });
   };
 
@@ -820,7 +831,9 @@ export default function Ultrasound() {
             
             {/* Line 2: Exam summary without redundant label */}
             <div className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 truncate">
-              {exam.examType} • {timeAgo(exam.requestedDate)}
+              {exam.specificExam 
+                ? `${exam.examType} - ${exam.specificExam}` 
+                : exam.examType} • {timeAgo(exam.createdAt)}
             </div>
             
             {/* Line 3: Warning if UNPAID (compact, single line) */}
@@ -1321,7 +1334,6 @@ export default function Ultrasound() {
                         type="button"
                         onClick={() => {
                           setSpecificExam(exam);
-                          form.setValue('clinicalIndication', `Cardiac ultrasound - ${exam}`);
                         }}
                         className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
                           specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
@@ -1358,7 +1370,6 @@ export default function Ultrasound() {
                         type="button"
                         onClick={() => {
                           setSpecificExam(exam);
-                          form.setValue('clinicalIndication', `Obstetric ultrasound - ${exam}`);
                         }}
                         className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
                           specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
@@ -1395,7 +1406,6 @@ export default function Ultrasound() {
                         type="button"
                         onClick={() => {
                           setSpecificExam(exam);
-                          form.setValue('clinicalIndication', `Abdominal ultrasound - ${exam}`);
                         }}
                         className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
                           specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
@@ -1439,7 +1449,6 @@ export default function Ultrasound() {
                         type="button"
                         onClick={() => {
                           setSpecificExam(exam);
-                          form.setValue('clinicalIndication', `Musculoskeletal ultrasound - ${exam}`);
                         }}
                         className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
                           specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
@@ -1473,7 +1482,6 @@ export default function Ultrasound() {
                         type="button"
                         onClick={() => {
                           setSpecificExam(exam);
-                          form.setValue('clinicalIndication', `Thoracic ultrasound - ${exam}`);
                         }}
                         className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
                           specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
@@ -1511,7 +1519,6 @@ export default function Ultrasound() {
                         type="button"
                         onClick={() => {
                           setSpecificExam(exam);
-                          form.setValue('clinicalIndication', `Vascular ultrasound - ${exam}`);
                         }}
                         className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
                           specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
@@ -1548,7 +1555,6 @@ export default function Ultrasound() {
                         type="button"
                         onClick={() => {
                           setSpecificExam(exam);
-                          form.setValue('clinicalIndication', `Pelvic ultrasound - ${exam}`);
                         }}
                         className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
                           specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
@@ -1584,7 +1590,6 @@ export default function Ultrasound() {
                         type="button"
                         onClick={() => {
                           setSpecificExam(exam);
-                          form.setValue('clinicalIndication', `Ultrasound - ${exam}`);
                         }}
                         className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
                           specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
@@ -1747,7 +1752,7 @@ export default function Ultrasound() {
                     <FormControl>
                       <Textarea
                         ref={clinicalIndicationRef}
-                        placeholder="Describe the clinical reason for this ultrasound examination..."
+                        placeholder="Describe the clinical reason for this ultrasound examination (symptoms, suspected diagnosis, follow-up, etc.)..."
                         {...field}
                         value={field.value || ''}
                         className="focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
@@ -1846,7 +1851,9 @@ export default function Ultrasound() {
             {selectedUltrasoundExam && (
               <div className="mt-4 flex flex-wrap items-center gap-3 text-indigo-100">
                 <Badge className="bg-white/20 text-white border-0 px-3 py-1">
-                  {selectedUltrasoundExam.examType}
+                  {selectedUltrasoundExam.specificExam 
+                    ? `${selectedUltrasoundExam.examType} - ${selectedUltrasoundExam.specificExam}` 
+                    : selectedUltrasoundExam.examType}
                 </Badge>
                 <span className="text-sm">
                   Requested: {selectedUltrasoundExam.requestedDate ? new Date(selectedUltrasoundExam.requestedDate).toLocaleDateString() : 'N/A'}

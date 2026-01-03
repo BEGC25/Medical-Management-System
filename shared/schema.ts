@@ -100,6 +100,7 @@ export const ultrasoundExams = sqliteTable("ultrasound_exams", {
   examId: text("exam_id").unique().notNull(),
   patientId: text("patient_id").notNull(),
   examType: text("exam_type").$type<"abdominal" | "pelvic" | "obstetric" | "cardiac" | "vascular" | "thyroid" | "renal" | "hepatobiliary" | "gynecological" | "urological" | "pediatric" | "musculoskeletal" | "breast" | "scrotal" | "carotid" | "other">().notNull(),
+  specificExam: text("specific_exam"), // Specific exam type (e.g., "Renal (Kidneys & Bladder)")
   clinicalIndication: text("clinical_indication"),
   specialInstructions: text("special_instructions"),
   requestedDate: text("requested_date").notNull(),
