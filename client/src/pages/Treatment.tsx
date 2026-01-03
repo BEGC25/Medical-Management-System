@@ -2233,31 +2233,26 @@ export default function Treatment() {
                                           { 
                                             name: 'Malaria Screen', 
                                             icon: '🦟', 
-                                            category: 'hematology' as const,
                                             tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)'] 
                                           },
                                           { 
                                             name: 'Complete Blood Work', 
                                             icon: '🩸', 
-                                            category: 'hematology' as const,
                                             tests: ['Complete Blood Count (CBC)', 'Blood Group & Rh', 'ESR (Erythrocyte Sedimentation Rate)'] 
                                           },
                                           { 
                                             name: 'Basic Metabolic', 
                                             icon: '⚗️', 
-                                            category: 'biochemistry' as const,
                                             tests: ['Random Blood Sugar (RBS)', 'Renal Function Test (RFT)'] 
                                           },
                                           { 
                                             name: 'Fever Workup', 
                                             icon: '🤒', 
-                                            category: 'hematology' as const,
                                             tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)', 'Widal Test (Typhoid)'] 
                                           },
                                           { 
                                             name: 'Antenatal Panel', 
                                             icon: '🤰', 
-                                            category: 'hematology' as const,
                                             tests: ['Blood Group & Rh', 'Hemoglobin (HB)', 'Hepatitis B Test (HBsAg)', 'VDRL Test (Syphilis)'] 
                                           },
                                         ].map((panel) => (
@@ -2265,8 +2260,6 @@ export default function Treatment() {
                                             key={panel.name}
                                             type="button"
                                             onClick={() => {
-                                              setLabCategory(panel.category);
-                                              setCurrentLabCategory(panel.category);
                                               setSelectedLabTests(panel.tests);
                                               toast({ title: "Quick Panel Selected", description: `${panel.name} tests added` });
                                             }}
@@ -2712,16 +2705,22 @@ export default function Treatment() {
                                           <Button
                                             size="lg"
                                             onClick={() => {
-                                              if (ultrasoundService) {
-                                                const examDescription = ultrasoundSpecificExam || ultrasoundExamType;
-                                                orderUltrasoundMutation.mutate({ 
-                                                  service: ultrasoundService, 
-                                                  examType: examDescription
+                                              if (!ultrasoundService) {
+                                                toast({ 
+                                                  title: "Configuration Error", 
+                                                  description: "Ultrasound service not found in system", 
+                                                  variant: "destructive" 
                                                 });
+                                                return;
                                               }
+                                              const examDescription = ultrasoundSpecificExam || ultrasoundExamType;
+                                              orderUltrasoundMutation.mutate({ 
+                                                service: ultrasoundService, 
+                                                examType: examDescription
+                                              });
                                             }}
-                                            disabled={orderUltrasoundMutation.isPending}
-                                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white font-semibold"
+                                            disabled={orderUltrasoundMutation.isPending || !ultrasoundService}
+                                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white font-semibold disabled:opacity-50"
                                           >
                                             {orderUltrasoundMutation.isPending ? (
                                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
