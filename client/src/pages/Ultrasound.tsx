@@ -683,6 +683,46 @@ export default function Ultrasound() {
     }
   }, [resultsModalOpen, selectedUltrasoundExam]);
 
+  // Check if there are previous reports for this patient
+  const hasPreviousReports = selectedUltrasoundExam 
+    ? completedExams.filter(e => 
+        e.patientId === selectedUltrasoundExam.patientId && 
+        e.examId !== selectedUltrasoundExam.examId
+      ).length > 0
+    : false;
+
+  // Copy from previous report
+  const copyFromPreviousReport = async () => {
+    if (!selectedUltrasoundExam) return;
+    
+    try {
+      // Find previous completed reports for this patient
+      const previousReports = completedExams
+        .filter(e => e.patientId === selectedUltrasoundExam.patientId && e.examId !== selectedUltrasoundExam.examId)
+        .sort((a, b) => new Date(b.requestedDate || 0).getTime() - new Date(a.requestedDate || 0).getTime());
+      
+      if (previousReports.length > 0) {
+        const prev = previousReports[0];
+        if (prev.findings) addFinding(prev.findings);
+        if (prev.impression) addImpression(prev.impression);
+        if (prev.recommendations) addRecommendation(prev.recommendations);
+        toast({ title: 'Copied', description: 'Previous report copied successfully' });
+      } else {
+        toast({ 
+          title: 'No Previous Reports', 
+          description: 'No previous reports found for this patient',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to copy previous report',
+        variant: 'destructive'
+      });
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -725,45 +765,6 @@ export default function Ultrasound() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [resultsModalOpen, requestOpen, selectedPatient, selectedUltrasoundExam, hasPreviousReports]);
-
-  // Copy from previous report
-  const copyFromPreviousReport = async () => {
-    if (!selectedUltrasoundExam) return;
-    
-    try {
-      // Find previous completed reports for this patient
-      const previousReports = completedExams
-        .filter(e => e.patientId === selectedUltrasoundExam.patientId && e.examId !== selectedUltrasoundExam.examId)
-        .sort((a, b) => new Date(b.requestedDate || 0).getTime() - new Date(a.requestedDate || 0).getTime());
-      
-      if (previousReports.length > 0) {
-        const prev = previousReports[0];
-        if (prev.findings) addFinding(prev.findings);
-        if (prev.impression) addImpression(prev.impression);
-        if (prev.recommendations) addRecommendation(prev.recommendations);
-        toast({ title: 'Copied', description: 'Previous report copied successfully' });
-      } else {
-        toast({ 
-          title: 'No Previous Reports', 
-          description: 'No previous reports found for this patient',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
-      toast({ 
-        title: 'Error', 
-        description: 'Failed to copy previous report',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const hasPreviousReports = selectedUltrasoundExam 
-    ? completedExams.filter(e => 
-        e.patientId === selectedUltrasoundExam.patientId && 
-        e.examId !== selectedUltrasoundExam.examId
-      ).length > 0
-    : false;
 
   /* --------------------------- Render ---------------------------- */
 
