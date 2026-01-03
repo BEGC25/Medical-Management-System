@@ -895,7 +895,7 @@ export default function Treatment() {
         tests: JSON.stringify(selectedLabTests),
         priority: labPriority,
         clinicalInfo: labClinicalInfo,
-        requestedDate: formatDateInZone(getZonedNow()),
+        requestedDate: new Date().toISOString(),
       };
       
       const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);
@@ -953,7 +953,7 @@ export default function Treatment() {
         examType: service.category || 'general',
         bodyPart: bodyPart || service.name,
         clinicalIndication: xrayClinicalInfo,
-        requestedDate: formatDateInZone(getZonedNow()),
+        requestedDate: new Date().toISOString(),
       };
 
       const xrayRes = await apiRequest("POST", "/api/xray-exams", xrayData);
@@ -999,7 +999,7 @@ export default function Treatment() {
         patientId: selectedPatient.patientId,
         examType: examType || service.name,
         clinicalIndication: ultrasoundClinicalInfo,
-        requestedDate: formatDateInZone(getZonedNow()),
+        requestedDate: new Date().toISOString(),
       };
 
       const ultrasoundRes = await apiRequest("POST", "/api/ultrasound-exams", ultrasoundData);

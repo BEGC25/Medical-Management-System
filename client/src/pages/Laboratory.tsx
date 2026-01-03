@@ -66,6 +66,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
+import { timeAgo } from "@/lib/time-utils";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -83,18 +84,6 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   }
 }
 
-function timeAgo(iso?: string) {
-  if (!iso) return "";
-  const d = new Date(iso).getTime();
-  const diff = Date.now() - d;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const days = Math.floor(h / 24);
-  return `${days}d ago`;
-}
 
 function fullName(p?: Patient | null) {
   if (!p) return "";
@@ -982,7 +971,7 @@ return (
                             <div className="text-sm font-semibold truncate">{fullName(p)}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
                             <Chip tone="blue">{tests.length} test{tests.length !== 1 ? 's' : ''}</Chip>
-                            <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.requestedDate)}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.createdAt)}</span>
                           </div>
                           <TestsRow tests={tests} />
                           {test.resultStatus === 'critical' && (
@@ -1163,7 +1152,7 @@ return (
                             <div className="text-sm font-semibold truncate">{fullName(p) || test.patientId}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
                             <Chip tone="blue">{tests.length} test{tests.length !== 1 ? 's' : ''}</Chip>
-                            <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.requestedDate)} • Completed {timeAgo((test as any).completedDate)}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.createdAt)} • Completed {timeAgo((test as any).completedDate)}</span>
                           </div>
                           <TestsRow tests={tests} />
                         </div>
