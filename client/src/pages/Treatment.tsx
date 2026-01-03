@@ -30,6 +30,8 @@ import {
   Zap, // For X-Ray icon
   Radio, // For Ultrasound icon
   FlaskConical, // Alternative Lab icon
+  Check,
+  ChevronRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,6 +71,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
+import { timeAgo } from "@/lib/time-utils";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -2421,8 +2424,11 @@ export default function Treatment() {
                                             <p className="font-semibold text-base text-gray-900 dark:text-white truncate">
                                               {order.name || order.description}
                                             </p>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                              Ordered just now • {order.department || order.type} department
+                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2">
+                                              <span>Ordered {timeAgo(order.createdAt)} • {order.department || order.type} department</span>
+                                              <Badge className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 rounded-full border border-teal-200 dark:border-teal-800">
+                                                Ordered by Doctor
+                                              </Badge>
                                             </p>
                                             {order.totalPrice && (
                                               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">
