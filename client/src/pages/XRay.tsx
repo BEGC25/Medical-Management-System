@@ -72,6 +72,7 @@ import {
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from '@/lib/date-utils';
+import { timeAgo } from '@/lib/time-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -79,19 +80,6 @@ import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } fr
 
 function cx(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
-}
-
-function timeAgo(iso?: string) {
-  if (!iso) return '';
-  const d = new Date(iso).getTime();
-  const diff = Date.now() - d;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const days = Math.floor(h / 24);
-  return `${days}d ago`;
 }
 
 function fullName(p?: Patient | null) {
@@ -738,7 +726,7 @@ export default function XRay() {
             
             {/* Line 2: Exam summary without redundant label */}
             <div className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 truncate">
-              {exam.examType}{exam.bodyPart ? ` • ${exam.bodyPart}` : ''} • {timeAgo(exam.requestedDate)}
+              {exam.examType}{exam.bodyPart ? ` • ${exam.bodyPart}` : ''} • {timeAgo(exam.createdAt)}
             </div>
             
             {/* Line 3: Warning if UNPAID (compact, single line) */}

@@ -77,8 +77,7 @@ import {
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ } from '@/lib/date-utils';
-import { formatDistanceToNow } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { timeAgo } from '@/lib/time-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -86,27 +85,6 @@ import { toZonedTime } from 'date-fns-tz';
 
 function cx(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
-}
-
-function timeAgo(iso?: string) {
-  if (!iso) return '';
-  
-  try {
-    // Parse the ISO timestamp from database
-    const utcDate = new Date(iso);
-    
-    // Convert to Juba timezone for consistent calculation
-    const jubaDate = toZonedTime(utcDate, CLINIC_TZ);
-    
-    // Calculate relative time
-    return formatDistanceToNow(jubaDate, { 
-      addSuffix: true,
-      includeSeconds: true 
-    });
-  } catch (error) {
-    console.error('Error calculating timeAgo:', error);
-    return '';
-  }
 }
 
 function fullName(p?: Patient | null) {
