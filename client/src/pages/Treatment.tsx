@@ -489,7 +489,7 @@ export default function Treatment() {
   const [ultrasoundSpecificExam, setUltrasoundSpecificExam] = useState('');
   
   // Enhanced Lab state
-  const [labCategory, setLabCategory] = useState('blood');
+  const [labCategory, setLabCategory] = useState<keyof typeof commonTests>('hematology');
   const [labSpecificTests, setLabSpecificTests] = useState<string[]>([]);
 
   // Allergies state
@@ -2182,12 +2182,12 @@ export default function Treatment() {
                                       <h3 className="font-semibold text-base text-gray-900 dark:text-white">Test Category</h3>
                                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         {[
-                                          { value: 'blood', label: 'Blood Tests', description: 'Hematology & CBC', icon: '🩸' },
-                                          { value: 'urine', label: 'Urine Analysis', description: 'Urinalysis panels', icon: '🧪' },
-                                          { value: 'stool', label: 'Stool Analysis', description: 'Parasitology', icon: '💩' },
-                                          { value: 'microbiology', label: 'Microbiology', description: 'Cultures & sensitivity', icon: '🦠' },
-                                          { value: 'chemistry', label: 'Chemistry', description: 'Biochemistry tests', icon: '⚗️' },
-                                          { value: 'hormones', label: 'Hormones', description: 'Endocrine panels', icon: '💉' },
+                                          { value: 'hematology' as const, label: 'Blood Tests', description: 'Hematology & CBC', icon: '🩸' },
+                                          { value: 'urine' as const, label: 'Urine Analysis', description: 'Urinalysis panels', icon: '🧪' },
+                                          { value: 'stool' as const, label: 'Stool Analysis', description: 'Parasitology', icon: '💩' },
+                                          { value: 'serology' as const, label: 'Serology', description: 'Infectious diseases', icon: '🦠' },
+                                          { value: 'biochemistry' as const, label: 'Chemistry', description: 'Biochemistry tests', icon: '⚗️' },
+                                          { value: 'hormones' as const, label: 'Hormones', description: 'Endocrine panels', icon: '💉' },
                                         ].map((cat) => {
                                           const isSelected = labCategory === cat.value;
                                           return (
@@ -2196,6 +2196,7 @@ export default function Treatment() {
                                               type="button"
                                               onClick={() => {
                                                 setLabCategory(cat.value);
+                                                setCurrentLabCategory(cat.value);
                                                 setLabSpecificTests([]);
                                               }}
                                               className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left ${
@@ -2229,16 +2230,43 @@ export default function Treatment() {
                                       <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Panels (Common Test Bundles)</h3>
                                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                         {[
-                                          { name: 'Malaria Screen', icon: '🦟', tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)'] },
-                                          { name: 'Complete Blood Work', icon: '🩸', tests: ['Complete Blood Count (CBC)', 'Blood Group & Rh', 'ESR (Erythrocyte Sedimentation Rate)'] },
-                                          { name: 'Basic Metabolic', icon: '⚗️', tests: ['Random Blood Sugar (RBS)', 'Renal Function Test (RFT)'] },
-                                          { name: 'Fever Workup', icon: '🤒', tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)', 'Widal Test (Typhoid)'] },
-                                          { name: 'Antenatal Panel', icon: '🤰', tests: ['Blood Group & Rh', 'Hemoglobin (HB)', 'Hepatitis B Test (HBsAg)', 'VDRL Test (Syphilis)'] },
+                                          { 
+                                            name: 'Malaria Screen', 
+                                            icon: '🦟', 
+                                            category: 'hematology' as const,
+                                            tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)'] 
+                                          },
+                                          { 
+                                            name: 'Complete Blood Work', 
+                                            icon: '🩸', 
+                                            category: 'hematology' as const,
+                                            tests: ['Complete Blood Count (CBC)', 'Blood Group & Rh', 'ESR (Erythrocyte Sedimentation Rate)'] 
+                                          },
+                                          { 
+                                            name: 'Basic Metabolic', 
+                                            icon: '⚗️', 
+                                            category: 'biochemistry' as const,
+                                            tests: ['Random Blood Sugar (RBS)', 'Renal Function Test (RFT)'] 
+                                          },
+                                          { 
+                                            name: 'Fever Workup', 
+                                            icon: '🤒', 
+                                            category: 'hematology' as const,
+                                            tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)', 'Widal Test (Typhoid)'] 
+                                          },
+                                          { 
+                                            name: 'Antenatal Panel', 
+                                            icon: '🤰', 
+                                            category: 'hematology' as const,
+                                            tests: ['Blood Group & Rh', 'Hemoglobin (HB)', 'Hepatitis B Test (HBsAg)', 'VDRL Test (Syphilis)'] 
+                                          },
                                         ].map((panel) => (
                                           <button
                                             key={panel.name}
                                             type="button"
                                             onClick={() => {
+                                              setLabCategory(panel.category);
+                                              setCurrentLabCategory(panel.category);
                                               setSelectedLabTests(panel.tests);
                                               toast({ title: "Quick Panel Selected", description: `${panel.name} tests added` });
                                             }}
