@@ -673,9 +673,6 @@ export default function XRay() {
     const canPerform = exam.status === 'completed' || isPaid;
     const isCompleted = exam.status === 'completed';
     
-    // Count exam views
-    const examViews = exam.examType ? exam.examType.split(',').length : 1;
-    
     return (
       <div
         className={cx(
@@ -691,7 +688,7 @@ export default function XRay() {
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
-            {/* Line 1: Patient name + ID chip + view count (left), Status pill + chevron (right) */}
+            {/* Line 1: Patient name + ID chip (left), Status pill + chevron (right) */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -699,9 +696,6 @@ export default function XRay() {
                 </span>
                 <Badge className="h-5 px-2 bg-blue-100 text-blue-700 border-0">
                   {exam.patientId}
-                </Badge>
-                <Badge className="h-5 px-2 bg-cyan-100 text-cyan-700 border-0">
-                  {examViews} view{examViews > 1 ? 's' : ''}
                 </Badge>
               </div>
               <div className="shrink-0 flex items-center gap-1.5">
@@ -726,10 +720,19 @@ export default function XRay() {
             
             {/* Line 2: Exam summary without redundant label */}
             <div className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 truncate">
-              {exam.examType}{exam.bodyPart ? ` • ${exam.bodyPart}` : ''} • {timeAgo(exam.createdAt)}
+              {exam.bodyPart || exam.examType} • {timeAgo(exam.createdAt)}
             </div>
             
-            {/* Line 3: Warning if UNPAID (compact, single line) */}
+            {/* Line 3: "Ordered by Doctor" badge */}
+            {!isCompleted && (
+              <div className="mt-1">
+                <span className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 rounded-full border border-teal-200 dark:border-teal-800">
+                  Ordered by Doctor
+                </span>
+              </div>
+            )}
+            
+            {/* Line 4: Warning if UNPAID (compact, single line) */}
             {!isPaid && !isCompleted && (
               <div className="flex items-center gap-1.5 mt-1 text-xs text-amber-700 dark:text-amber-400 truncate">
                 <AlertTriangle className="w-3 h-3 shrink-0" />

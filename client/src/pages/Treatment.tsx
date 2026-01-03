@@ -69,6 +69,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
+import { timeAgo } from '@/lib/time-utils';
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -2422,7 +2423,7 @@ export default function Treatment() {
                                               {order.name || order.description}
                                             </p>
                                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                              Ordered just now • {order.department || order.type} department
+                                              Ordered {timeAgo(order.createdAt)} • {order.department || order.type} department
                                             </p>
                                             {order.totalPrice && (
                                               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">

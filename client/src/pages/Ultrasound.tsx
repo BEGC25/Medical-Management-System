@@ -814,7 +814,16 @@ export default function Ultrasound() {
                 : exam.examType} • {timeAgo(exam.createdAt)}
             </div>
             
-            {/* Line 3: Warning if UNPAID (compact, single line) */}
+            {/* Line 3: "Ordered by Doctor" badge */}
+            {!isCompleted && (
+              <div className="mt-1">
+                <span className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 rounded-full border border-teal-200 dark:border-teal-800">
+                  Ordered by Doctor
+                </span>
+              </div>
+            )}
+            
+            {/* Line 4: Warning if UNPAID (compact, single line) */}
             {!isPaid && !isCompleted && (
               <div className="flex items-center gap-1.5 mt-1 text-xs text-amber-700 dark:text-amber-400 truncate">
                 <AlertTriangle className="w-3 h-3 shrink-0" />
