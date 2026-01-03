@@ -254,6 +254,10 @@ export default function Ultrasound() {
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
   
+  // Auto-save and keyboard shortcut state
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
+  
   useEffect(() => {
     const id = setTimeout(() => setDebounced(term), 300);
     return () => clearTimeout(id);
@@ -417,7 +421,11 @@ export default function Ultrasound() {
       const response = await apiRequest('PUT', `/api/ultrasound-exams/${examId}`, data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Clear the draft from localStorage
+      const draftKey = `ultrasound-draft-${variables.examId}`;
+      localStorage.removeItem(draftKey);
+      
       toast({ title: 'Exam Completed', description: 'Ultrasound report saved and exam marked as completed' });
       resultsForm.reset();
       setSelectedUltrasoundExam(null);
@@ -611,6 +619,111 @@ export default function Ultrasound() {
       }
     };
   }, []);
+
+  // Auto-save draft functionality
+  useEffect(() => {
+    if (!resultsModalOpen || !selectedUltrasoundExam) return;
+    
+    const saveTimeout = setTimeout(() => {
+      // Save to localStorage as draft
+      const draftKey = `ultrasound-draft-${selectedUltrasoundExam.examId}`;
+      const draftData = {
+        findings,
+        impression,
+        recommendations,
+        technicalDetails,
+        radiologistName,
+        imageQuality: resultsForm.getValues('imageQuality'),
+        lastSaved: new Date().toISOString(),
+      };
+      
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(draftData));
+        setAutoSaveStatus('saved');
+        setLastSaveTime(new Date());
+      } catch (error) {
+        console.error('Failed to save draft:', error);
+      }
+    }, 2000); // Auto-save after 2 seconds of inactivity
+    
+    setAutoSaveStatus('unsaved');
+    
+    return () => clearTimeout(saveTimeout);
+  }, [findings, impression, recommendations, technicalDetails, radiologistName, resultsModalOpen, selectedUltrasoundExam]);
+
+  // Load draft on modal open
+  useEffect(() => {
+    if (!resultsModalOpen || !selectedUltrasoundExam) return;
+    
+    const draftKey = `ultrasound-draft-${selectedUltrasoundExam.examId}`;
+    const savedDraft = localStorage.getItem(draftKey);
+    
+    if (savedDraft && !selectedUltrasoundExam.findings && !selectedUltrasoundExam.impression) {
+      try {
+        const draftData = JSON.parse(savedDraft);
+        setFindings(draftData.findings || '');
+        setImpression(draftData.impression || '');
+        setRecommendations(draftData.recommendations || '');
+        setTechnicalDetails(draftData.technicalDetails || '');
+        setRadiologistName(draftData.radiologistName || '');
+        resultsForm.setValue('findings', draftData.findings || '');
+        resultsForm.setValue('impression', draftData.impression || '');
+        resultsForm.setValue('recommendations', draftData.recommendations || '');
+        resultsForm.setValue('imageQuality', draftData.imageQuality || 'good');
+        
+        toast({ 
+          title: 'Draft Restored', 
+          description: `Last saved: ${new Date(draftData.lastSaved).toLocaleString()}`,
+          duration: 3000
+        });
+      } catch (error) {
+        console.error('Failed to load draft:', error);
+      }
+    }
+  }, [resultsModalOpen, selectedUltrasoundExam]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S or Cmd+S - Save report
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (resultsModalOpen && selectedUltrasoundExam) {
+          resultsForm.handleSubmit(onSubmitResults)();
+        }
+      }
+      
+      // Ctrl+D or Cmd+D - Copy from previous report
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        if (resultsModalOpen && hasPreviousReports) {
+          copyFromPreviousReport();
+        }
+      }
+      
+      // Esc - Close modal
+      if (e.key === 'Escape') {
+        if (resultsModalOpen) {
+          setResultsModalOpen(false);
+        } else if (requestOpen) {
+          setRequestOpen(false);
+        }
+      }
+      
+      // / - Focus search in patient picker (only if request modal is open and no input focused)
+      if (e.key === '/' && requestOpen && !selectedPatient) {
+        const activeElement = document.activeElement;
+        if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          const searchInput = document.querySelector('[data-testid="input-patient-search"]') as HTMLInputElement;
+          searchInput?.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [resultsModalOpen, requestOpen, selectedPatient, selectedUltrasoundExam, hasPreviousReports]);
 
   // Copy from previous report
   const copyFromPreviousReport = async () => {
@@ -2559,66 +2672,109 @@ export default function Ultrasound() {
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-indigo-100 dark:border-indigo-900">
-                {hasPreviousReports && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={copyFromPreviousReport}
-                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy Previous Report
-                  </Button>
-                )}
+              {/* Action Buttons with Auto-save Indicator */}
+              <div className="pt-4 border-t border-indigo-100 dark:border-indigo-900">
+                {/* Auto-save indicator */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    {autoSaveStatus === 'saved' && lastSaveTime && (
+                      <>
+                        <Check className="w-3 h-3 text-green-500" />
+                        <span>Draft saved {timeAgo(lastSaveTime.toISOString())}</span>
+                      </>
+                    )}
+                    {autoSaveStatus === 'saving' && (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                        <span>Saving draft...</span>
+                      </>
+                    )}
+                    {autoSaveStatus === 'unsaved' && (
+                      <>
+                        <Clock className="w-3 h-3 text-amber-500" />
+                        <span>Unsaved changes</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Keyboard shortcuts hint */}
+                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                    <span className="hidden md:inline">💡 Shortcuts:</span>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs border">Ctrl+S</kbd>
+                    <span className="hidden md:inline">Save</span>
+                    {hasPreviousReports && (
+                      <>
+                        <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs border">Ctrl+D</kbd>
+                        <span className="hidden md:inline">Copy</span>
+                      </>
+                    )}
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs border">Esc</kbd>
+                    <span className="hidden md:inline">Close</span>
+                  </div>
+                </div>
                 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    if (selectedUltrasoundExam && reportPatient) {
-                      setShowUltrasoundReport(true);
-                      setTimeout(() => window.print(), 100);
-                    }
-                  }}
-                  className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
-                  data-testid="button-print-report"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Report
-                </Button>
-                
-                <div className="flex gap-3">
+                <div className="flex items-center justify-between">
+                  {hasPreviousReports && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={copyFromPreviousReport}
+                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
+                      title="Ctrl+D to copy previous report"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy Previous Report
+                    </Button>
+                  )}
+                  
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setResultsModalOpen(false);
-                      setSelectedUltrasoundExam(null);
-                      setUploadedImages([]);
+                      if (selectedUltrasoundExam && reportPatient) {
+                        setShowUltrasoundReport(true);
+                        setTimeout(() => window.print(), 100);
+                      }
                     }}
-                    className="min-h-[44px]"
-                    data-testid="button-cancel-report"
+                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
+                    data-testid="button-print-report"
                   >
-                    Cancel
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print Report
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={updateUltrasoundExamMutation.isPending}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg min-h-[44px]"
-                    data-testid="button-save-report"
-                  >
-                    {updateUltrasoundExamMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Report
-                      </>
+                  
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setResultsModalOpen(false);
+                        setSelectedUltrasoundExam(null);
+                        setUploadedImages([]);
+                      }}
+                      className="min-h-[44px]"
+                      data-testid="button-cancel-report"
+                      title="Press Esc to close"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={updateUltrasoundExamMutation.isPending}
+                      className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg min-h-[44px]"
+                      data-testid="button-save-report"
+                      title="Ctrl+S to save"
+                    >
+                      {updateUltrasoundExamMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Report
+                        </>
                     )}
                   </Button>
                 </div>
