@@ -1482,77 +1482,134 @@ export default function Ultrasound() {
                 </div>
               )}
 
-              {/* Quick Exam Presets */}
-              <div className="mb-4">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-amber-500" />
-                  Common Exam Presets
-                </label>
-                
-                <div className="flex gap-2 flex-wrap">
-                  {[
-                    { 
-                      name: 'First Trimester Scan', 
-                      icon: '👶',
-                      examType: 'obstetric',
-                      indication: 'First trimester pregnancy evaluation - confirm intrauterine pregnancy, gestational age assessment, fetal viability'
-                    },
-                    { 
-                      name: 'Anatomy Scan (20w)', 
-                      icon: '🤰',
-                      examType: 'obstetric',
-                      indication: 'Mid-trimester anatomy survey at 20 weeks - detailed fetal anatomical evaluation'
-                    },
-                    { 
-                      name: 'RUQ - Liver/GB', 
-                      icon: '🫄',
-                      examType: 'abdominal',
-                      indication: 'Right upper quadrant pain - evaluate liver, gallbladder, bile ducts for stones, inflammation'
-                    },
-                    { 
-                      name: 'Renal Ultrasound', 
-                      icon: '🔍',
-                      examType: 'abdominal',
-                      indication: 'Evaluate kidneys for stones, obstruction, masses, or infection'
-                    },
-                    { 
-                      name: 'Transthoracic Echo', 
-                      icon: '🫀',
-                      examType: 'cardiac',
-                      indication: 'Evaluate cardiac function, chamber sizes, valvular function, ejection fraction'
-                    },
-                    { 
-                      name: 'Carotid Doppler', 
-                      icon: '🧠',
-                      examType: 'vascular',
-                      indication: 'Carotid artery stenosis evaluation - assess for atherosclerotic disease'
-                    },
-                    { 
-                      name: 'DVT Lower Extremity', 
-                      icon: '🦵',
-                      examType: 'vascular',
-                      indication: 'Rule out deep vein thrombosis in lower extremity - assess venous flow and compressibility'
-                    },
-                  ].map((preset) => (
-                    <Button
-                      key={preset.name}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setExamType(preset.examType);
-                        form.setValue('examType', preset.examType);
-                        form.setValue('clinicalIndication', preset.indication);
-                      }}
-                      className="border-2 border-indigo-300 hover:bg-indigo-50 hover:border-indigo-500 hover:shadow-md transition-all"
-                    >
-                      <span className="mr-1.5">{preset.icon}</span>
-                      <Plus className="w-3 h-3 mr-1" />
-                      {preset.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+              {/* Quick Exam Presets - Collapsible */}
+              <Accordion type="single" collapsible defaultValue="" className="mb-4">
+                <AccordionItem value="presets" className="border-2 border-amber-100 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-amber-50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-amber-500" />
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">Common Exam Presets</span>
+                      <Badge variant="outline" className="ml-2 text-xs border-amber-300 text-amber-700 bg-amber-50">
+                        Quick Start
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        { 
+                          name: 'First Trimester Scan', 
+                          icon: '👶',
+                          examType: 'obstetric',
+                          indication: 'First trimester pregnancy evaluation - confirm intrauterine pregnancy, gestational age assessment, fetal viability'
+                        },
+                        { 
+                          name: 'Anatomy Scan (20w)', 
+                          icon: '🤰',
+                          examType: 'obstetric',
+                          indication: 'Mid-trimester anatomy survey at 20 weeks - detailed fetal anatomical evaluation'
+                        },
+                        { 
+                          name: 'Pelvi-Abdominal Scan', 
+                          icon: '🫄',
+                          examType: 'pelvic',
+                          indication: 'Pelvic and lower abdominal evaluation for pregnancy assessment and gynecological conditions'
+                        },
+                        { 
+                          name: 'RUQ - Liver/GB', 
+                          icon: '🫘',
+                          examType: 'abdominal',
+                          indication: 'Right upper quadrant pain - evaluate liver, gallbladder, bile ducts for stones, inflammation'
+                        },
+                        { 
+                          name: 'Acute Abdomen Assessment', 
+                          icon: '🚨',
+                          examType: 'abdominal',
+                          indication: 'Emergency evaluation of acute abdominal pain - assess for appendicitis, free fluid, bowel obstruction'
+                        },
+                        { 
+                          name: 'Renal Ultrasound', 
+                          icon: '🔍',
+                          examType: 'abdominal',
+                          indication: 'Evaluate kidneys for stones, obstruction, masses, or infection'
+                        },
+                        { 
+                          name: 'Pelvic Pain Evaluation', 
+                          icon: '⚕️',
+                          examType: 'pelvic',
+                          indication: 'Evaluate pelvic organs for ovarian cysts, fibroids, masses, or other causes of pelvic pain'
+                        },
+                        { 
+                          name: 'Post-Menstrual Bleeding', 
+                          icon: '🩺',
+                          examType: 'pelvic',
+                          indication: 'Evaluate endometrial thickness and uterine abnormalities in postmenopausal bleeding'
+                        },
+                        { 
+                          name: 'Transthoracic Echo', 
+                          icon: '🫀',
+                          examType: 'cardiac',
+                          indication: 'Evaluate cardiac function, chamber sizes, valvular function, ejection fraction'
+                        },
+                        { 
+                          name: 'Carotid Doppler', 
+                          icon: '🧠',
+                          examType: 'vascular',
+                          indication: 'Carotid artery stenosis evaluation - assess for atherosclerotic disease'
+                        },
+                        { 
+                          name: 'DVT Lower Extremity', 
+                          icon: '🦵',
+                          examType: 'vascular',
+                          indication: 'Rule out deep vein thrombosis in lower extremity - assess venous flow and compressibility'
+                        },
+                        { 
+                          name: 'Upper Extremity DVT', 
+                          icon: '💪',
+                          examType: 'vascular',
+                          indication: 'Rule out deep vein thrombosis in upper extremity - evaluate venous patency and flow'
+                        },
+                        { 
+                          name: 'AV Fistula Surveillance', 
+                          icon: '🩸',
+                          examType: 'vascular',
+                          indication: 'Dialysis access evaluation - assess AV fistula patency, flow rates, and complications'
+                        },
+                        { 
+                          name: 'Shoulder Pain Assessment', 
+                          icon: '💫',
+                          examType: 'musculoskeletal',
+                          indication: 'Evaluate rotator cuff for tears, tendinopathy, bursitis causing shoulder pain'
+                        },
+                        { 
+                          name: 'Soft Tissue Mass Evaluation', 
+                          icon: '📍',
+                          examType: 'musculoskeletal',
+                          indication: 'Characterize soft tissue mass - assess size, location, vascularity, internal structure'
+                        },
+                      ].map((preset) => (
+                        <Button
+                          key={preset.name}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setExamType(preset.examType);
+                            form.setValue('examType', preset.examType);
+                            form.setValue('clinicalIndication', preset.indication);
+                          }}
+                          className="border-2 border-indigo-300 hover:bg-indigo-50 hover:border-indigo-500 hover:shadow-md transition-all"
+                        >
+                          <span className="mr-1.5">{preset.icon}</span>
+                          <Plus className="w-3 h-3 mr-1" />
+                          {preset.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
               <FormField
                 control={form.control}
@@ -1688,74 +1745,95 @@ export default function Ultrasound() {
 
           <Form {...resultsForm}>
             <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
-              {/* Premium Image Upload Section */}
-              <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-                    <Camera className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-indigo-900 dark:text-indigo-100">Ultrasound Images (Optional)</h3>
-                    <p className="text-xs text-indigo-700 dark:text-indigo-300">Upload sonographic images or DICOM files (max 10 files)</p>
-                  </div>
-                </div>
-                
-                <ObjectUploader
-                  maxNumberOfFiles={10}
-                  maxFileSize={20971520}
-                  accept="image/*,.dcm"
-                  onGetUploadParameters={async () => {
-                    const response = await fetch('/api/objects/upload', { method: 'POST' });
-                    if (!response.ok) throw new Error('Upload failed');
-                    const data = await response.json();
-                    return {
-                      method: 'PUT' as const,
-                      url: data.url,
-                    };
-                  }}
-                  onComplete={(uploadedFiles) => {
-                    if (uploadedFiles.length > 0) {
-                      const newImages = uploadedFiles.map((file, idx) => ({
-                        url: file.url,
-                        name: `Ultrasound Image ${uploadedImages.length + idx + 1}`
-                      }));
-                      setUploadedImages([...uploadedImages, ...newImages]);
-                      toast({ title: 'Success', description: `${uploadedFiles.length} image(s) uploaded successfully` });
-                    }
-                  }}
-                  buttonClassName="w-full bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg"
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Upload Ultrasound Images
-                </ObjectUploader>
-                
-                {/* Image Gallery */}
-                {uploadedImages.length > 0 && (
-                  <div className="mt-4 grid grid-cols-3 md:grid-cols-4 gap-3">
-                    {uploadedImages.map((img, idx) => (
-                      <div key={idx} className="relative group rounded-lg overflow-hidden border-2 border-indigo-300 dark:border-indigo-700 shadow-md hover:shadow-xl transition-all">
-                        <img src={img.url} alt={img.name} className="w-full h-24 object-cover" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => window.open(img.url, '_blank')}
-                            className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setUploadedImages(uploadedImages.filter((_, i) => i !== idx))}
-                            className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
-                          >
-                            <Trash className="w-4 h-4" />
-                          </button>
+              {/* Premium Image Upload Section - Collapsible */}
+              <Accordion type="single" collapsible defaultValue="" className="mb-4">
+                <AccordionItem value="images" className="border-2 border-indigo-100 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Camera className="w-5 h-5 text-indigo-600" />
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">Ultrasound Images</span>
+                      <Badge variant="outline" className="ml-2 text-xs border-indigo-300 text-indigo-700 bg-indigo-50">
+                        Optional
+                      </Badge>
+                      {uploadedImages.length > 0 && (
+                        <Badge className="ml-1 text-xs bg-indigo-600 text-white">
+                          {uploadedImages.length} uploaded
+                        </Badge>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
+                          <Camera className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-indigo-900 dark:text-indigo-100">Upload Sonographic Images</h3>
+                          <p className="text-xs text-indigo-700 dark:text-indigo-300">Upload images or DICOM files (max 10 files, 20MB each)</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      
+                      <ObjectUploader
+                        maxNumberOfFiles={10}
+                        maxFileSize={20971520}
+                        accept="image/*,.dcm"
+                        onGetUploadParameters={async () => {
+                          const response = await fetch('/api/objects/upload', { method: 'POST' });
+                          if (!response.ok) throw new Error('Upload failed');
+                          const data = await response.json();
+                          return {
+                            method: 'PUT' as const,
+                            url: data.url,
+                          };
+                        }}
+                        onComplete={(uploadedFiles) => {
+                          if (uploadedFiles.length > 0) {
+                            const newImages = uploadedFiles.map((file, idx) => ({
+                              url: file.url,
+                              name: `Ultrasound Image ${uploadedImages.length + idx + 1}`
+                            }));
+                            setUploadedImages([...uploadedImages, ...newImages]);
+                            toast({ title: 'Success', description: `${uploadedFiles.length} image(s) uploaded successfully` });
+                          }
+                        }}
+                        buttonClassName="w-full bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        Upload Ultrasound Images
+                      </ObjectUploader>
+                      
+                      {/* Image Gallery */}
+                      {uploadedImages.length > 0 && (
+                        <div className="mt-4 grid grid-cols-3 md:grid-cols-4 gap-3">
+                          {uploadedImages.map((img, idx) => (
+                            <div key={idx} className="relative group rounded-lg overflow-hidden border-2 border-indigo-300 dark:border-indigo-700 shadow-md hover:shadow-xl transition-all">
+                              <img src={img.url} alt={img.name} className="w-full h-24 object-cover" />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => window.open(img.url, '_blank')}
+                                  className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setUploadedImages(uploadedImages.filter((_, i) => i !== idx))}
+                                  className="p-2 rounded-lg text-white hover:bg-white/20 transition-all"
+                                >
+                                  <Trash className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
               {/* Image Quality */}
               <FormField
@@ -1782,16 +1860,28 @@ export default function Ultrasound() {
                 )}
               />
 
-              {/* Interactive Finding Builder System with Voice Dictation */}
-              <FormField
-                control={resultsForm.control}
-                name="findings"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-indigo-600" />
-                      Ultrasound Findings
-                    </FormLabel>
+              {/* Interactive Finding Builder System with Voice Dictation - Collapsible */}
+              <Accordion type="single" collapsible defaultValue="" className="mb-4">
+                <AccordionItem value="findings" className="border-2 border-blue-100 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-blue-50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">Ultrasound Findings</span>
+                      <Badge variant="outline" className="ml-2 text-xs border-blue-300 text-blue-700 bg-blue-50">
+                        Detailed Observations
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  
+                  <AccordionContent className="px-4 pb-4">
+                    <FormField
+                      control={resultsForm.control}
+                      name="findings"
+                      render={({ field }) => (
+                        <FormItem>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 italic">
+                            💡 <strong>Findings:</strong> Describe what you see on the ultrasound (anatomical observations, measurements, abnormalities)
+                          </p>
                     
                     {/* Finding Builder for Obstetric Ultrasound */}
                     {selectedUltrasoundExam?.examType?.toLowerCase().includes('obstetric') && (
@@ -1943,54 +2033,60 @@ export default function Ultrasound() {
                       </div>
                     )}
                     
-                    <div className="mb-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-semibold text-gray-700">
-                          Detailed Findings
-                        </label>
-                        <Button 
-                          type="button"
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => startVoiceInput('findings')}
-                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                        >
-                          <Mic className={`w-3 h-3 mr-1 ${isRecording.findings ? 'animate-pulse text-red-500' : ''}`} />
-                          {isRecording.findings ? 'Stop' : 'Dictate'}
-                        </Button>
-                      </div>
-                      
-                      <FormControl>
-                        <Textarea
-                          ref={findingsRef}
-                          placeholder="Click buttons above to add findings, or type/dictate here..."
-                          value={findings}
-                          onChange={(e) => {
-                            setFindings(e.target.value);
-                            field.onChange(e.target.value);
-                          }}
-                          rows={8}
-                          className="font-mono text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
-                          data-testid="textarea-findings"
-                        />
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-sm font-semibold text-gray-700">
+                                Detailed Findings
+                              </label>
+                              <Button 
+                                type="button"
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => startVoiceInput('findings')}
+                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                              >
+                                <Mic className={`w-3 h-3 mr-1 ${isRecording.findings ? 'animate-pulse text-red-500' : ''}`} />
+                                {isRecording.findings ? 'Stop' : 'Dictate'}
+                              </Button>
+                            </div>
+                            
+                            <FormControl>
+                              <Textarea
+                                ref={findingsRef}
+                                placeholder="Click buttons above to add findings, or type/dictate here..."
+                                value={findings}
+                                onChange={(e) => {
+                                  setFindings(e.target.value);
+                                  field.onChange(e.target.value);
+                                }}
+                                rows={8}
+                                className="font-mono text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
+                                data-testid="textarea-findings"
+                              />
+                            </FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
               {/* Clinical Impression & Recommendations - Collapsible Accordions */}
-              <Accordion type="multiple" className="w-full space-y-4">
+              <Accordion type="multiple" defaultValue={["impression"]} className="w-full space-y-4">
                 
-                {/* Clinical Impression - Collapsible */}
-                <AccordionItem value="impression" className="border-2 border-purple-100 rounded-xl overflow-hidden">
+                {/* Clinical Impression - Expanded by Default, REQUIRED */}
+                <AccordionItem value="impression" className="border-2 border-purple-200 rounded-xl overflow-hidden shadow-sm">
                   <AccordionTrigger className="px-4 py-3 hover:bg-purple-50 hover:no-underline">
                     <div className="flex items-center gap-2">
                       <Filter className="w-5 h-5 text-purple-600" />
                       <span className="font-semibold text-gray-900">Clinical Impression</span>
-                      <Badge variant="outline" className="ml-2 text-xs border-purple-300 text-purple-700">
-                        Click to expand
+                      <Badge className="ml-2 text-xs bg-purple-600 text-white">
+                        Required
+                      </Badge>
+                      <Badge variant="outline" className="ml-1 text-xs border-purple-300 text-purple-700">
+                        Diagnosis
                       </Badge>
                     </div>
                   </AccordionTrigger>
@@ -2001,6 +2097,9 @@ export default function Ultrasound() {
                       name="impression"
                       render={({ field }) => (
                         <FormItem>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 italic">
+                            💡 <strong>Impression:</strong> Your diagnostic conclusion based on the findings (what it means clinically, the diagnosis)
+                          </p>
                           {/* Quick Templates */}
                           <div className="mb-3">
                             <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2 block">
@@ -2282,8 +2381,8 @@ export default function Ultrasound() {
                     <div className="flex items-center gap-2">
                       <Lightbulb className="w-5 h-5 text-green-600" />
                       <span className="font-semibold text-gray-900">Recommendations</span>
-                      <Badge variant="outline" className="ml-2 text-xs border-green-300 text-green-700">
-                        Click to expand
+                      <Badge variant="outline" className="ml-2 text-xs border-green-300 text-green-700 bg-green-50">
+                        Follow-up Plan
                       </Badge>
                     </div>
                   </AccordionTrigger>
@@ -2294,6 +2393,9 @@ export default function Ultrasound() {
                       name="recommendations"
                       render={({ field }) => (
                         <FormItem>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 italic">
+                            💡 <strong>Recommendations:</strong> Next steps, follow-up imaging, specialist referrals, or clinical management suggestions
+                          </p>
                           {/* Quick Add Buttons */}
                           <div className="mb-3">
                             <label className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2 block">
