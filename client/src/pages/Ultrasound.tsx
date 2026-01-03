@@ -2115,7 +2115,7 @@ export default function Ultrasound() {
                                     ❤️ Normal Echo
                                   </Button>
                                   <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Left ventricular systolic dysfunction. Reduced ejection fraction estimated at [30-40]%. Global hypokinesis. Recommend cardiology consultation.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
-                                    💔 LV Dysfunction (EF<40%)
+                                    💔 LV Dysfunction (EF &lt;40%)
                                   </Button>
                                   <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pericardial effusion - [small/moderate/large] circumferential fluid collection. No evidence of tamponade physiology at this time.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
                                     💧 Pericardial Effusion
@@ -2140,10 +2140,10 @@ export default function Ultrasound() {
                                     🩸 Normal Carotid
                                   </Button>
                                   <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Mild carotid stenosis - less than 50% luminal narrowing. Recommend vascular follow-up and risk factor modification.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
-                                    ⚠️ Stenosis <50%
+                                    ⚠️ Stenosis &lt;50%
                                   </Button>
                                   <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Severe carotid stenosis - greater than 50% luminal narrowing with elevated peak systolic velocities. Vascular surgery consultation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
-                                    🔴 Stenosis >50%
+                                    🔴 Stenosis &gt;50%
                                   </Button>
                                   <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Deep vein thrombosis identified in [specify location] lower extremity. Non-compressible vein with echogenic thrombus. Anticoagulation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
                                     🦵 DVT Detected
