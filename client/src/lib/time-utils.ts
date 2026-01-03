@@ -34,7 +34,7 @@ export function timeAgo(iso?: string | null): string {
     }
     
     // formatDistanceToNow compares against Date.now() which is UTC-based
-    return formatDistanceToNow(date, { addSuffix: true });
+    return formatDistanceToNow(date, { addSuffix: true, includeSeconds: true });
   } catch (error) {
     console.error('[timeAgo] Error:', error, 'Input:', iso);
     return '';
