@@ -97,7 +97,6 @@ function timeAgo(iso?: string) {
     
     // Convert to Juba timezone for consistent calculation
     const jubaDate = toZonedTime(utcDate, CLINIC_TZ);
-    const jubaNow = toZonedTime(new Date(), CLINIC_TZ);
     
     // Calculate relative time
     return formatDistanceToNow(jubaDate, { 
