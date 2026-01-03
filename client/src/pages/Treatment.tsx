@@ -22,6 +22,8 @@ import {
   Search,
   Loader2,
   ChevronDown, // Icon for Accordion
+  Check,
+  ChevronRight,
   Stethoscope,
   Users,
   ClipboardList,
@@ -466,6 +468,15 @@ export default function Treatment() {
   const [editXrayModalOpen, setEditXrayModalOpen] = useState(false);
   const [xrayToEdit, setXrayToEdit] = useState<any>(null);
   const [editXrayClinicalInfo, setEditXrayClinicalInfo] = useState("");
+  
+  // Enhanced X-Ray state
+  const [xrayExamType, setXrayExamType] = useState('chest');
+  const [xrayBodyPart, setXrayBodyPart] = useState('');
+  const [xraySafetyChecklist, setXraySafetyChecklist] = useState({
+    pregnancy: false,
+    metal: false,
+    cooperation: false,
+  });
 
   // Ultrasound ordering state
   const [ultrasoundClinicalInfo, setUltrasoundClinicalInfo] = useState("");
@@ -2254,10 +2265,234 @@ export default function Treatment() {
                                 ) : (
                                   /* Other Services: X-Ray, Ultrasound with Clinical Notes */
                                   (() => {
-                                    // X-Ray or Ultrasound - show clinical notes field
-                                    if (qoTab === 'xray' || qoTab === 'ultrasound') {
+                                    // Enhanced X-Ray ordering with visual selector and safety checklist
+                                    if (qoTab === 'xray') {
+                                      const xrayService = services.find((s: any) => matchesCategory(s, 'xray'));
+                                      
+                                      return (
+                                        <div className="space-y-6">
+                                          {/* Visual Exam Type Selector */}
+                                          <div className="space-y-3">
+                                            <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select Exam Type</h3>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                              {[
+                                                { id: 'chest', emoji: '🫁', name: 'Chest X-Ray', desc: 'Thoracic imaging' },
+                                                { id: 'extremity', emoji: '🦴', name: 'Extremity', desc: 'Arms, legs, joints' },
+                                                { id: 'abdominal', emoji: '🫄', name: 'Abdominal', desc: 'Abdomen & pelvis' },
+                                                { id: 'spine', emoji: '🦴', name: 'Spine', desc: 'Cervical to lumbar' },
+                                                { id: 'skull', emoji: '💀', name: 'Skull/Head', desc: 'Cranial imaging' },
+                                                { id: 'pelvic', emoji: '🦴', name: 'Pelvic', desc: 'Hip & pelvis' },
+                                              ].map((type) => (
+                                                <button
+                                                  key={type.id}
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setXrayExamType(type.id);
+                                                    setXrayBodyPart('');
+                                                  }}
+                                                  className={`relative p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                                                    xrayExamType === type.id
+                                                      ? 'bg-gradient-to-br from-blue-600 to-cyan-500 border-blue-500 text-white shadow-lg scale-[1.02]'
+                                                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md'
+                                                  }`}
+                                                >
+                                                  {xrayExamType === type.id && (
+                                                    <div className="absolute top-2 right-2 bg-white rounded-full p-1">
+                                                      <Check className="h-4 w-4 text-blue-600" />
+                                                    </div>
+                                                  )}
+                                                  <div className="text-3xl mb-2">{type.emoji}</div>
+                                                  <div className={`font-semibold text-sm mb-1 ${xrayExamType === type.id ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                                                    {type.name}
+                                                  </div>
+                                                  <div className={`text-xs ${xrayExamType === type.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                    {type.desc}
+                                                  </div>
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+
+                                          {/* Quick Exam Presets */}
+                                          <div className="space-y-3">
+                                            <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Presets</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                              {[
+                                                { emoji: '🚑', name: 'Trauma Screen', examType: 'extremity', bodyPart: 'Multiple', indication: 'Suspected fracture' },
+                                                { emoji: '🫁', name: 'Respiratory Assessment', examType: 'chest', bodyPart: 'PA & Lateral', indication: 'Pneumonia evaluation' },
+                                                { emoji: '🦴', name: 'Back Pain Evaluation', examType: 'spine', bodyPart: 'Lumbar spine', indication: 'Back pain assessment' },
+                                                { emoji: '✅', name: 'Post-Operative Check', examType: 'chest', bodyPart: 'Chest AP', indication: 'Post-op monitoring' },
+                                              ].map((preset) => (
+                                                <button
+                                                  key={preset.name}
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setXrayExamType(preset.examType);
+                                                    setXrayBodyPart(preset.bodyPart);
+                                                    setXrayClinicalInfo(preset.indication);
+                                                    toast({ title: "Preset Applied", description: preset.name });
+                                                  }}
+                                                  className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
+                                                >
+                                                  <span className="text-2xl">{preset.emoji}</span>
+                                                  <div className="flex-1">
+                                                    <div className="font-semibold text-sm text-gray-900 dark:text-white">{preset.name}</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">{preset.indication}</div>
+                                                  </div>
+                                                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+
+                                          {/* Conditional Body Part Selectors */}
+                                          {xrayExamType === 'extremity' && (
+                                            <div className="space-y-3">
+                                              <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select Body Part</h3>
+                                              <div className="grid grid-cols-4 gap-2">
+                                                {['Left Hand', 'Right Hand', 'Left Wrist', 'Right Wrist', 
+                                                  'Left Elbow', 'Right Elbow', 'Left Shoulder', 'Right Shoulder',
+                                                  'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle',
+                                                  'Left Foot', 'Right Foot', 'Left Hip', 'Right Hip'].map((part) => (
+                                                  <button
+                                                    key={part}
+                                                    type="button"
+                                                    onClick={() => setXrayBodyPart(part)}
+                                                    className={`p-2 text-sm rounded border-2 transition-all ${
+                                                      xrayBodyPart === part
+                                                        ? 'bg-blue-600 text-white border-blue-500'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600'
+                                                    }`}
+                                                  >
+                                                    {part}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {xrayExamType === 'chest' && (
+                                            <div className="space-y-3">
+                                              <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select View</h3>
+                                              <div className="grid grid-cols-3 gap-2">
+                                                {['PA', 'AP', 'Lateral', 'AP & Lateral', 'Portable AP', 'Lordotic View'].map((view) => (
+                                                  <button
+                                                    key={view}
+                                                    type="button"
+                                                    onClick={() => setXrayBodyPart(view)}
+                                                    className={`p-3 text-sm rounded border-2 transition-all ${
+                                                      xrayBodyPart === view
+                                                        ? 'bg-blue-600 text-white border-blue-500'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600'
+                                                    }`}
+                                                  >
+                                                    {view}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Clinical Information */}
+                                          <div className="space-y-2">
+                                            <label className="text-sm font-medium">Clinical Indication</label>
+                                            <Textarea
+                                              placeholder="Clinical indication, suspected diagnosis, relevant history..."
+                                              rows={3}
+                                              value={xrayClinicalInfo}
+                                              onChange={(e) => setXrayClinicalInfo(e.target.value)}
+                                              data-testid="textarea-xray-clinical-info"
+                                            />
+                                          </div>
+
+                                          {/* Safety Checklist */}
+                                          <div className="space-y-3 p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-lg">
+                                            <h3 className="font-semibold text-base text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                                              <AlertCircle className="h-5 w-5" />
+                                              Safety Checklist
+                                            </h3>
+                                            <div className="space-y-2">
+                                              {[
+                                                { id: 'pregnancy', icon: '🤰', label: 'Patient is not pregnant (or pregnancy status confirmed)', required: true },
+                                                { id: 'metal', icon: '💍', label: 'Metal objects and jewelry removed from examination area', required: false },
+                                                { id: 'cooperation', icon: '🙋', label: 'Patient can cooperate and follow positioning instructions', required: false },
+                                              ].map((item) => (
+                                                <div
+                                                  key={item.id}
+                                                  className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all ${
+                                                    xraySafetyChecklist[item.id as keyof typeof xraySafetyChecklist]
+                                                      ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-800'
+                                                      : item.required
+                                                      ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800'
+                                                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                                                  }`}
+                                                >
+                                                  <div className="flex items-center h-5">
+                                                    <Checkbox
+                                                      checked={xraySafetyChecklist[item.id as keyof typeof xraySafetyChecklist]}
+                                                      onCheckedChange={(checked) =>
+                                                        setXraySafetyChecklist({ ...xraySafetyChecklist, [item.id]: checked })
+                                                      }
+                                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                                    />
+                                                  </div>
+                                                  <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="text-lg">{item.icon}</span>
+                                                      <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
+                                                      {item.required && (
+                                                        <Badge variant="destructive" className="text-xs">REQUIRED</Badge>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                            {!xraySafetyChecklist.pregnancy && (
+                                              <div className="flex items-center gap-2 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded text-sm text-red-900 dark:text-red-200">
+                                                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                                                <span className="font-medium">Please confirm pregnancy status before proceeding</span>
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* Submit Button */}
+                                          <Button
+                                            size="lg"
+                                            onClick={() => {
+                                              if (!xrayBodyPart && (xrayExamType === 'extremity' || xrayExamType === 'chest')) {
+                                                toast({ 
+                                                  title: "Selection Required", 
+                                                  description: "Please select a body part or view", 
+                                                  variant: "destructive" 
+                                                });
+                                                return;
+                                              }
+                                              if (xrayService) {
+                                                orderXrayMutation.mutate({ 
+                                                  service: xrayService, 
+                                                  bodyPart: xrayBodyPart || xrayExamType 
+                                                });
+                                              }
+                                            }}
+                                            disabled={!xraySafetyChecklist.pregnancy || orderXrayMutation.isPending}
+                                            className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold"
+                                          >
+                                            {orderXrayMutation.isPending ? (
+                                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            ) : (
+                                              <Zap className="h-4 w-4 mr-2" />
+                                            )}
+                                            {orderXrayMutation.isPending ? 'Ordering...' : 'Order X-Ray Exam'}
+                                          </Button>
+                                        </div>
+                                      );
+                                    }
+
+                                    // Enhanced Ultrasound ordering
+                                    if (qoTab === 'ultrasound') {
                                       const rows = services
-                                        .filter((s: any) => matchesCategory(s, qoTab as any))
+                                        .filter((s: any) => matchesCategory(s, 'ultrasound'))
                                         .filter((s: any) => {
                                           if (!qoSearch) return true;
                                           const needle = qoSearch.toLowerCase();
@@ -2274,44 +2509,52 @@ export default function Treatment() {
 
                                       return (
                                         <div className="space-y-4">
-                                          {/* Clinical Notes Field */}
-                                          <div className="space-y-2">
-                                            <label className="text-sm font-medium">Clinical Information</label>
+                                          {/* Prominent Clinical Info Field */}
+                                          <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg space-y-2">
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <label className="text-sm font-semibold text-purple-900 dark:text-purple-300">Clinical Information</label>
+                                              <Badge className="bg-purple-600 text-white text-xs">Recommended</Badge>
+                                            </div>
                                             <Textarea
                                               placeholder="Clinical indication, suspected diagnosis, relevant history..."
                                               rows={3}
-                                              value={qoTab === 'xray' ? xrayClinicalInfo : ultrasoundClinicalInfo}
-                                              onChange={(e) => qoTab === 'xray' ? setXrayClinicalInfo(e.target.value) : setUltrasoundClinicalInfo(e.target.value)}
-                                              data-testid={`textarea-${qoTab}-clinical-info`}
+                                              value={ultrasoundClinicalInfo}
+                                              onChange={(e) => setUltrasoundClinicalInfo(e.target.value)}
+                                              data-testid="textarea-ultrasound-clinical-info"
+                                              className="border-purple-300 dark:border-purple-700 focus:ring-purple-500"
                                             />
+                                            <p className="text-xs text-purple-700 dark:text-purple-400">
+                                              💡 Tip: Include relevant symptoms, suspected conditions, and specific areas of concern for better diagnostic accuracy
+                                            </p>
                                           </div>
 
-                                          {/* Services Grid */}
-                                          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                          {/* Enhanced Services Grid */}
+                                          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                             {rows.map((svc: any) => {
                                               const displayFee = typeof svc.price === 'number' ? svc.price.toLocaleString('en-US') : null;
                                               return (
-                                                <div key={svc.id} className="flex flex-col rounded border p-3 bg-white space-y-2">
-                                                  <div className="font-medium">{svc.name}</div>
+                                                <div 
+                                                  key={svc.id} 
+                                                  className="group flex flex-col rounded-lg border-2 border-purple-100 dark:border-purple-900 p-4 bg-white dark:bg-gray-800 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 space-y-3"
+                                                >
+                                                  <div className="font-semibold text-base text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
+                                                    {svc.name}
+                                                  </div>
                                                   {svc.description && (
-                                                    <div className="text-xs text-gray-600">{svc.description}</div>
+                                                    <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{svc.description}</div>
                                                   )}
                                                   {displayFee && (
-                                                    <div className="text-xs font-semibold text-gray-700">Fee: {displayFee} SSP</div>
+                                                    <div className="text-sm font-bold text-purple-700 dark:text-purple-400">Fee: {displayFee} SSP</div>
                                                   )}
                                                   <Button
                                                     size="sm"
                                                     onClick={() => {
-                                                      if (qoTab === 'xray') {
-                                                        orderXrayMutation.mutate({ service: svc, bodyPart: svc.name });
-                                                      } else if (qoTab === 'ultrasound') {
-                                                        orderUltrasoundMutation.mutate({ service: svc, examType: svc.name });
-                                                      }
+                                                      orderUltrasoundMutation.mutate({ service: svc, examType: svc.name });
                                                     }}
-                                                    disabled={(qoTab === 'xray' && orderXrayMutation.isPending) || (qoTab === 'ultrasound' && orderUltrasoundMutation.isPending)}
-                                                    className="mt-auto"
+                                                    disabled={orderUltrasoundMutation.isPending}
+                                                    className="mt-auto bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white"
                                                   >
-                                                    {((qoTab === 'xray' && orderXrayMutation.isPending) || (qoTab === 'ultrasound' && orderUltrasoundMutation.isPending)) ?
+                                                    {orderUltrasoundMutation.isPending ?
                                                       <Loader2 className="h-4 w-4 animate-spin"/> :
                                                       <Plus className="h-4 w-4 mr-1"/>
                                                     }
@@ -2425,6 +2668,11 @@ export default function Treatment() {
                                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                               Ordered {timeAgo(order.createdAt)} • {order.department || order.type} department
                                             </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <Badge className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 rounded-full border border-teal-200 dark:border-teal-800">
+                                                Ordered by Doctor
+                                              </Badge>
+                                            </div>
                                             {order.totalPrice && (
                                               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">
                                                 Fee: {formatCurrency(order.totalPrice)}
