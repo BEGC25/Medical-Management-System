@@ -30,6 +30,7 @@ import {
   Stethoscope,
   Bone,
   Lungs,
+  FileDown,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -2727,21 +2728,51 @@ export default function Ultrasound() {
                     </Button>
                   )}
                   
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      if (selectedUltrasoundExam && reportPatient) {
-                        setShowUltrasoundReport(true);
-                        setTimeout(() => window.print(), 100);
-                      }
-                    }}
-                    className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
-                    data-testid="button-print-report"
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print Report
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (selectedUltrasoundExam && reportPatient) {
+                          setShowUltrasoundReport(true);
+                          setTimeout(() => {
+                            window.print();
+                            setTimeout(() => setShowUltrasoundReport(false), 500);
+                          }, 100);
+                        }
+                      }}
+                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
+                      data-testid="button-print-report"
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      Print
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (selectedUltrasoundExam && reportPatient) {
+                          setShowUltrasoundReport(true);
+                          setTimeout(() => {
+                            // Trigger print dialog which allows saving as PDF
+                            window.print();
+                            setTimeout(() => setShowUltrasoundReport(false), 500);
+                          }, 100);
+                          toast({
+                            title: 'Export to PDF',
+                            description: 'In the print dialog, choose "Save as PDF" as your printer',
+                            duration: 5000,
+                          });
+                        }
+                      }}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50 min-h-[44px]"
+                      data-testid="button-export-pdf"
+                    >
+                      <FileDown className="w-4 h-4 mr-2" />
+                      Export PDF
+                    </Button>
+                  </div>
                   
                   <div className="flex gap-3">
                     <Button
@@ -2784,25 +2815,66 @@ export default function Ultrasound() {
         </DialogContent>
       </Dialog>
 
-      {/* Print Report (hidden) */}
+      {/* Print Report (hidden) - Professional Layout */}
       {showUltrasoundReport && selectedUltrasoundExam && reportPatient && (
         <div className="print-only">
           <style>{`
             @media print {
-              body * { visibility: hidden; }
-              .print-only, .print-only * { visibility: visible; }
-              .print-only { position: absolute; left: 0; top: 0; width: 100%; }
-              @page { margin: 1cm; }
+              body * { 
+                visibility: hidden; 
+              }
+              .print-only, .print-only * { 
+                visibility: visible; 
+              }
+              .print-only { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+              }
+              .no-print {
+                display: none !important;
+              }
+              .report-container {
+                max-width: 100%;
+                padding: 20mm;
+                font-size: 11pt;
+                font-family: 'Times New Roman', serif;
+              }
+              .report-header {
+                border-bottom: 2px solid #333;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+              }
+              .report-section {
+                page-break-inside: avoid;
+                margin-bottom: 15px;
+              }
+              .signature-line {
+                margin-top: 40px;
+                border-top: 1px solid #333;
+                width: 200px;
+                padding-top: 5px;
+              }
+              @page { 
+                margin: 1cm; 
+                size: A4;
+              }
+              h1, h2, h3 {
+                page-break-after: avoid;
+              }
             }
           `}</style>
-          <div className="bg-white p-6 max-w-4xl mx-auto">
-            <div className="mb-6 pb-4 border-b-2 border-blue-600">
+          <div className="report-container bg-white p-6 max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="report-header mb-6 pb-4 border-b-2 border-blue-600">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <img src={clinicLogo} alt="Clinic Logo" className="h-20 w-20 object-contain" />
                   <div>
                     <h1 className="text-3xl font-bold text-blue-600 mb-1">Bahr El Ghazal Clinic</h1>
                     <p className="text-sm text-gray-600">Comprehensive Healthcare Services</p>
+                    <p className="text-xs text-gray-500">Wau, South Sudan</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -2812,40 +2884,67 @@ export default function Ultrasound() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            {/* Patient Demographics */}
+            <div className="report-section grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded">
               <div>
-                <p className="text-sm"><strong>Patient Name:</strong> {fullName(reportPatient)}</p>
-                <p className="text-sm"><strong>Patient ID:</strong> {reportPatient.patientId}</p>
-                <p className="text-sm"><strong>Age:</strong> {reportPatient.age}</p>
+                <p className="text-sm mb-1"><strong>Patient Name:</strong> {fullName(reportPatient)}</p>
+                <p className="text-sm mb-1"><strong>Patient ID:</strong> {reportPatient.patientId}</p>
+                <p className="text-sm mb-1"><strong>Age:</strong> {reportPatient.age} years</p>
                 <p className="text-sm"><strong>Gender:</strong> {reportPatient.gender}</p>
               </div>
               <div>
-                <p className="text-sm"><strong>Exam ID:</strong> {selectedUltrasoundExam.examId}</p>
-                <p className="text-sm"><strong>Exam Type:</strong> {selectedUltrasoundExam.examType} Ultrasound</p>
-                <p className="text-sm"><strong>Report Date:</strong> {resultsForm.getValues('reportDate')}</p>
+                <p className="text-sm mb-1"><strong>Exam ID:</strong> {selectedUltrasoundExam.examId}</p>
+                <p className="text-sm mb-1"><strong>Exam Type:</strong> {selectedUltrasoundExam.examType} Ultrasound</p>
+                <p className="text-sm mb-1"><strong>Report Date:</strong> {resultsForm.getValues('reportDate')}</p>
+                <p className="text-sm"><strong>Image Quality:</strong> {resultsForm.getValues('imageQuality')}</p>
               </div>
             </div>
 
-            <div className="mb-4">
-              <h3 className="font-bold mb-2">FINDINGS:</h3>
-              <p className="text-sm whitespace-pre-line">{resultsForm.getValues('findings')}</p>
-            </div>
-
-            <div className="mb-4">
-              <h3 className="font-bold mb-2">IMPRESSION:</h3>
-              <p className="text-sm whitespace-pre-line">{resultsForm.getValues('impression')}</p>
-            </div>
-
-            {resultsForm.getValues('recommendations') && (
-              <div className="mb-4">
-                <h3 className="font-bold mb-2">RECOMMENDATIONS:</h3>
-                <p className="text-sm whitespace-pre-line">{resultsForm.getValues('recommendations')}</p>
+            {/* Clinical Indication */}
+            {selectedUltrasoundExam.clinicalIndication && (
+              <div className="report-section mb-4">
+                <h3 className="font-bold mb-2 text-gray-800 uppercase tracking-wide">Clinical Indication:</h3>
+                <p className="text-sm whitespace-pre-line pl-2 border-l-2 border-gray-300">{selectedUltrasoundExam.clinicalIndication}</p>
               </div>
             )}
 
-            <div className="mt-8 pt-4 border-t">
-              <p className="text-sm"><strong>Radiologist:</strong> {resultsForm.getValues('sonographer')}</p>
-              <p className="text-sm"><strong>Image Quality:</strong> {resultsForm.getValues('imageQuality')}</p>
+            {/* Findings */}
+            <div className="report-section mb-4">
+              <h3 className="font-bold mb-2 text-gray-800 uppercase tracking-wide">Findings:</h3>
+              <p className="text-sm whitespace-pre-line pl-2 border-l-2 border-blue-300">
+                {resultsForm.getValues('findings') || 'No specific findings documented.'}
+              </p>
+            </div>
+
+            {/* Impression */}
+            <div className="report-section mb-4">
+              <h3 className="font-bold mb-2 text-gray-800 uppercase tracking-wide">Impression:</h3>
+              <p className="text-sm whitespace-pre-line pl-2 border-l-2 border-purple-300 font-medium">
+                {resultsForm.getValues('impression') || 'Pending interpretation.'}
+              </p>
+            </div>
+
+            {/* Recommendations */}
+            {resultsForm.getValues('recommendations') && (
+              <div className="report-section mb-4">
+                <h3 className="font-bold mb-2 text-gray-800 uppercase tracking-wide">Recommendations:</h3>
+                <p className="text-sm whitespace-pre-line pl-2 border-l-2 border-green-300">{resultsForm.getValues('recommendations')}</p>
+              </div>
+            )}
+
+            {/* Signature Section */}
+            <div className="mt-12 pt-6">
+              <div className="signature-line">
+                <p className="text-sm font-semibold">{resultsForm.getValues('sonographer') || '__________________________'}</p>
+                <p className="text-xs text-gray-600">Radiologist / Sonographer</p>
+                <p className="text-xs text-gray-500 mt-1">Date: {resultsForm.getValues('reportDate')}</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-8 pt-4 border-t text-center text-xs text-gray-500">
+              <p>This report is electronically generated and valid without signature if marked as completed.</p>
+              <p>Bahr El Ghazal Clinic © {new Date().getFullYear()}</p>
             </div>
           </div>
         </div>
