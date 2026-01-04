@@ -278,6 +278,79 @@ function isAbnormal(val: string | number | undefined | null, cfg?: { normal?: st
   return false; // Default to not abnormal if no clear rule
 }
 
+// Route of administration options
+const ROUTE_OPTIONS = [
+  "PO (By Mouth)",
+  "IV (Intravenous)",
+  "IM (Intramuscular)",
+  "SC (Subcutaneous)",
+  "Topical",
+  "Rectal",
+  "Sublingual",
+  "Inhalation",
+  "Eye Drops",
+  "Ear Drops",
+];
+
+// Auto-calculate quantity based on dosage instructions and duration
+function calculateQuantity(dosageInstructions: string, duration: string): number {
+  // Parse tablets per dose
+  const doseMatch = dosageInstructions.match(/(\d+)\s*tablet[s]?/i);
+  if (!doseMatch) return 1;
+  const tabletsPerDose = parseInt(doseMatch[1]);
+  
+  // Parse frequency
+  let dosesPerDay = 1;
+  const instruction = dosageInstructions.toLowerCase();
+  if (instruction.includes('twice')) dosesPerDay = 2;
+  else if (instruction.includes('three times')) dosesPerDay = 3;
+  else if (instruction.includes('four times')) dosesPerDay = 4;
+  else if (instruction.includes('every 8 hours')) dosesPerDay = 3;
+  else if (instruction.includes('every 6 hours')) dosesPerDay = 4;
+  else if (instruction.includes('every 4 hours')) dosesPerDay = 6;
+  
+  // Parse duration days
+  const durationMatch = duration.match(/(\d+)/);
+  if (!durationMatch) return tabletsPerDose * dosesPerDay;
+  const days = parseInt(durationMatch[1]);
+  
+  return tabletsPerDose * dosesPerDay * days;
+}
+
+// Check if drug matches patient allergies
+function checkDrugAllergy(
+  drug: { name: string; genericName?: string },
+  allergies: Array<{ name: string; severity: string; reaction: string }>
+): { hasAllergy: boolean; matchedAllergy?: { name: string; severity: string; reaction: string } } {
+  if (allergies.length === 0) return { hasAllergy: false };
+  
+  const drugName = (drug.genericName || drug.name).toLowerCase();
+  
+  for (const allergy of allergies) {
+    const allergyName = allergy.name.toLowerCase();
+    
+    // Check exact match or contains
+    if (allergyName.includes(drugName) || drugName.includes(allergyName)) {
+      return { hasAllergy: true, matchedAllergy: allergy };
+    }
+    
+    // Check for drug class matches (e.g., "Penicillin" should flag "Amoxicillin")
+    const drugClasses: Record<string, string[]> = {
+      'penicillin': ['amoxicillin', 'ampicillin', 'penicillin'],
+      'sulfa': ['sulfamethoxazole', 'sulfonamide', 'trimethoprim'],
+      'nsaid': ['ibuprofen', 'aspirin', 'diclofenac', 'naproxen'],
+    };
+    
+    for (const [className, classMembers] of Object.entries(drugClasses)) {
+      if (allergyName.includes(className) && classMembers.some(member => drugName.includes(member))) {
+        return { hasAllergy: true, matchedAllergy: allergy };
+      }
+    }
+  }
+  
+  return { hasAllergy: false };
+}
+
 
 // --- Quick Orders helpers ---
 // ... (keep CATEGORY_ALIASES and matchesCategory as they are) ...
@@ -409,7 +482,7 @@ export default function Treatment() {
 
   // Medication ordering state
   const [medications, setMedications] = useState<
-    Array<{ drugId: number; drugName: string; dosage: string; quantity: number; instructions: string; duration?: string }>
+    Array<{ drugId: number; drugName: string; dosage: string; quantity: number; instructions: string; duration?: string; route?: string }>
   >([]);
   const [selectedDrugId, setSelectedDrugId] = useState("");
   const [selectedDrugName, setSelectedDrugName] = useState("");
@@ -417,6 +490,9 @@ export default function Treatment() {
   const [newMedQuantity, setNewMedQuantity] = useState(1); // Changed default from 0 to 1
   const [newMedInstructions, setNewMedInstructions] = useState("");
   const [newMedDuration, setNewMedDuration] = useState(""); // New: duration field
+  const [newMedRoute, setNewMedRoute] = useState("PO"); // New: route of administration
+  const [isRecordingInstructions, setIsRecordingInstructions] = useState(false); // New: voice recording state
+  const [editingMedicationIndex, setEditingMedicationIndex] = useState<number | null>(null); // New: for editing medications in cart
 
   // Prescription editing
   const [editingPrescription, setEditingPrescription] = useState<PharmacyOrder | null>(null);
@@ -568,6 +644,16 @@ export default function Treatment() {
 
 
   // ... (keep useEffect hooks and data fetching queries as they are) ...
+  // Auto-calculate quantity when dosage or duration changes
+  useEffect(() => {
+    if (newMedDosage && newMedDuration) {
+      const calculatedQty = calculateQuantity(newMedDosage, newMedDuration);
+      if (calculatedQty > 0) {
+        setNewMedQuantity(calculatedQty);
+      }
+    }
+  }, [newMedDosage, newMedDuration]);
+
   // open queue if ?filter=today
   useEffect(() => {
     const filter = new URLSearchParams(window.location.search).get("filter");
@@ -1932,23 +2018,70 @@ export default function Treatment() {
               <div className="space-y-4">
                 <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-lg">
-                    <TabsTrigger value="notes" className="transition-all duration-200">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Visit Notes
+                    {/* Visit Notes Tab - Emerald */}
+                    <TabsTrigger 
+                      value="notes" 
+                      className={`transition-all duration-200 ${
+                        activeTab === "notes"
+                          ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-b-2 border-emerald-500"
+                          : "text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20"
+                      }`}
+                    >
+                      <FileText className={`h-4 w-4 mr-2 ${activeTab === "notes" ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
+                      <span className="hidden sm:inline">Visit Notes</span>
+                      <span className="sm:hidden">Notes</span>
                     </TabsTrigger>
-                    <TabsTrigger value="orders" className="transition-all duration-200">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Orders & Results
-                      {diagnosticTestCount > 0 && <Badge className="ml-2 transition-all duration-200 animate-in fade-in">{diagnosticTestCount}</Badge>}
+                    
+                    {/* Orders & Results Tab - Blue */}
+                    <TabsTrigger 
+                      value="orders" 
+                      className={`transition-all duration-200 ${
+                        activeTab === "orders"
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500"
+                          : "text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
+                      }`}
+                    >
+                      <ClipboardList className={`h-4 w-4 mr-2 ${activeTab === "orders" ? "text-blue-600 dark:text-blue-400" : ""}`} />
+                      <span className="hidden sm:inline">Orders & Results</span>
+                      <span className="sm:hidden">Orders</span>
+                      {diagnosticTestCount > 0 && (
+                        <Badge className="ml-2 transition-all duration-200 animate-in fade-in bg-blue-600 text-white">
+                          {diagnosticTestCount}
+                        </Badge>
+                      )}
                     </TabsTrigger>
-                    <TabsTrigger value="medications" className="transition-all duration-200">
-                      <Pill className="h-4 w-4 mr-2" />
-                      Medications
-                      {prescriptions.length > 0 && <Badge className="ml-2 transition-all duration-200 animate-in fade-in">{prescriptions.length}</Badge>}
+                    
+                    {/* Medications Tab - Purple */}
+                    <TabsTrigger 
+                      value="medications" 
+                      className={`transition-all duration-200 ${
+                        activeTab === "medications"
+                          ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-b-2 border-purple-500"
+                          : "text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/20"
+                      }`}
+                    >
+                      <Pill className={`h-4 w-4 mr-2 ${activeTab === "medications" ? "text-purple-600 dark:text-purple-400" : ""}`} />
+                      <span className="hidden sm:inline">Medications</span>
+                      <span className="sm:hidden">Meds</span>
+                      {prescriptions.length > 0 && (
+                        <Badge className="ml-2 transition-all duration-200 animate-in fade-in bg-purple-600 text-white">
+                          {prescriptions.length}
+                        </Badge>
+                      )}
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="transition-all duration-200">
-                      <History className="h-4 w-4 mr-2" />
-                      Patient History
+                    
+                    {/* Patient History Tab - Amber */}
+                    <TabsTrigger 
+                      value="history" 
+                      className={`transition-all duration-200 ${
+                        activeTab === "history"
+                          ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-b-2 border-amber-500"
+                          : "text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-900/20"
+                      }`}
+                    >
+                      <History className={`h-4 w-4 mr-2 ${activeTab === "history" ? "text-amber-600 dark:text-amber-400" : ""}`} />
+                      <span className="hidden sm:inline">Patient History</span>
+                      <span className="sm:hidden">History</span>
                     </TabsTrigger>
                   </TabsList>
 
