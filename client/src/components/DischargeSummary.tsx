@@ -25,7 +25,7 @@ function capitalizeExamType(type: string): string {
   return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
-function formatDate(date: any): string {
+function formatDate(date: string | number | Date | null | undefined): string {
   if (!date) return '';
   try {
     return new Date(date).toLocaleDateString('en-US', {
@@ -40,7 +40,7 @@ function formatDate(date: any): string {
   }
 }
 
-function formatShortDate(date: any): string {
+function formatShortDate(date: string | number | Date | null | undefined): string {
   if (!date) return '';
   try {
     return new Date(date).toLocaleDateString('en-US', {

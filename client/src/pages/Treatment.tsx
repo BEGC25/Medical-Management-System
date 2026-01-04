@@ -3243,7 +3243,7 @@ export default function Treatment() {
                                         <div className="flex items-start gap-1">
                                           <Camera className="h-3 w-3 text-gray-500 mt-0.5 flex-shrink-0" />
                                           <span className="text-gray-700 dark:text-gray-300 line-clamp-1">
-                                            <span className="font-semibold">View:</span> {x.viewDescriptions.split('.')[0]}
+                                            <span className="font-semibold">View:</span> {x.viewDescriptions.includes('.') ? x.viewDescriptions.split('.')[0] : x.viewDescriptions}
                                           </span>
                                         </div>
                                       )}
