@@ -477,7 +477,7 @@ export default function XRay() {
       data: { 
         ...data, 
         status: 'completed',
-        viewDescriptions: viewDescriptions || undefined, // Include view descriptions in mutation
+        viewDescriptions: viewDescriptions, // Include view descriptions in mutation
       },
     });
   };
@@ -491,8 +491,8 @@ export default function XRay() {
     setFindings(exam.findings || '');
     setImpression(exam.impression || '');
     setRecommendations(exam.recommendations || '');
-    setViewDescriptions((exam as any).viewDescriptions || ''); // Load saved view descriptions
-    setTechnicalFactors((exam as any).technicalFactors || '');
+    setViewDescriptions(exam.viewDescriptions || ''); // Load saved view descriptions
+    setTechnicalFactors(exam.technicalFactors || '');
     setRadiologistName(exam.radiologist || '');
     setImageUploadMode('describe');
     
@@ -500,10 +500,10 @@ export default function XRay() {
       findings: exam.findings || '',
       impression: exam.impression || '',
       recommendations: exam.recommendations || '',
-      imageQuality: (exam as any).imageQuality || 'good',
-      technicalFactors: (exam as any).technicalFactors || '',
+      imageQuality: exam.imageQuality || 'good',
+      technicalFactors: exam.technicalFactors || '',
       // Use clinic timezone (Africa/Juba) for reportDate fallback
-      reportDate: (exam as any).reportDate || formatDateInZone(getZonedNow()),
+      reportDate: exam.reportDate || formatDateInZone(getZonedNow()),
       radiologist: exam.radiologist || '',
     });
   };

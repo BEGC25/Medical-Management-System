@@ -604,8 +604,9 @@ export default function ResultDrawer(props: {
                 </div>
               </div>
 
-              {/* If no data available */}
-              {!data?.viewDescriptions && !data?.findings && !data?.impression && !data?.recommendations && (
+              {/* If no meaningful data available */}
+              {!data?.viewDescriptions && !data?.findings && !data?.impression && !data?.recommendations && 
+               !data?.imageQuality && !data?.technicalFactors && !data?.radiologist && (
                 <div className="rounded-md border bg-muted p-3 text-sm text-center">
                   No report data available yet. Report pending completion.
                 </div>
