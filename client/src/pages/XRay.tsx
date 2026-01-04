@@ -1544,7 +1544,6 @@ export default function XRay() {
                             type="checkbox"
                             checked={isChecked}
                             onChange={(e) => {
-                              e.preventDefault();
                               e.stopPropagation();
                               handleSafetyCheckChange(item.id, e.target.checked);
                             }}
