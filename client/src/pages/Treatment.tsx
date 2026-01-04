@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -746,6 +746,10 @@ export default function Treatment() {
   // Count only diagnostic tests (lab + xray + ultrasound) for badge
   const diagnosticTestCount = useMemo(() => labTests.length + xrays.length + ultrasounds.length, [labTests, xrays, ultrasounds]);
 
+  // Memoized handler for X-ray safety checklist changes to prevent re-renders and event issues
+  const handleXraySafetyCheckChange = useCallback((itemId: string, checked: boolean) => {
+    setXraySafetyChecklist(prev => ({ ...prev, [itemId]: checked }));
+  }, []);
 
   // ... (keep existing treatment query, pharmacy orders query, recent treatments query) ...
   // existing treatment for this encounter
@@ -2674,37 +2678,51 @@ export default function Treatment() {
                                                 { id: 'pregnancy', icon: '🤰', label: 'Patient is not pregnant (or pregnancy status confirmed)', required: true },
                                                 { id: 'metal', icon: '💍', label: 'Metal objects and jewelry removed from examination area', required: false },
                                                 { id: 'cooperation', icon: '🙋', label: 'Patient can cooperate and follow positioning instructions', required: false },
-                                              ].map((item) => (
-                                                <div
-                                                  key={item.id}
-                                                  className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all ${
-                                                    xraySafetyChecklist[item.id as keyof typeof xraySafetyChecklist]
-                                                      ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-800'
-                                                      : item.required
-                                                      ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800'
-                                                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                                                  }`}
-                                                >
-                                                  <div className="flex items-center h-5">
-                                                    <Checkbox
-                                                      checked={xraySafetyChecklist[item.id as keyof typeof xraySafetyChecklist]}
-                                                      onCheckedChange={(checked) =>
-                                                        setXraySafetyChecklist({ ...xraySafetyChecklist, [item.id]: checked })
+                                              ].map((item) => {
+                                                const isChecked = xraySafetyChecklist[item.id as keyof typeof xraySafetyChecklist] || false;
+                                                
+                                                return (
+                                                  <label
+                                                    key={item.id}
+                                                    className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                                                      isChecked
+                                                        ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-800'
+                                                        : item.required
+                                                        ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                                                    }`}
+                                                  >
+                                                    {/* Custom Checkbox */}
+                                                    <div className={`
+                                                      w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all
+                                                      ${isChecked
+                                                        ? 'bg-green-600 border-green-600'
+                                                        : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600'
                                                       }
-                                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                                                    />
-                                                  </div>
-                                                  <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                      <span className="text-lg">{item.icon}</span>
-                                                      <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
-                                                      {item.required && (
-                                                        <Badge variant="destructive" className="text-xs">REQUIRED</Badge>
-                                                      )}
+                                                    `}>
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={isChecked}
+                                                        onChange={(e) => {
+                                                          e.stopPropagation();
+                                                          handleXraySafetyCheckChange(item.id, e.target.checked);
+                                                        }}
+                                                        className="sr-only"
+                                                      />
+                                                      {isChecked && <Check className="w-4 h-4 text-white stroke-[3]" />}
                                                     </div>
-                                                  </div>
-                                                </div>
-                                              ))}
+                                                    <div className="flex-1">
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-lg">{item.icon}</span>
+                                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
+                                                        {item.required && (
+                                                          <Badge variant="destructive" className="text-xs">REQUIRED</Badge>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                  </label>
+                                                );
+                                              })}
                                             </div>
                                             {!xraySafetyChecklist.pregnancy && (
                                               <div className="flex items-center gap-2 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded text-sm text-red-900 dark:text-red-200">
