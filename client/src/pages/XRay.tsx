@@ -1520,8 +1520,22 @@ export default function XRay() {
                     const isChecked = safetyChecklist[item.id as keyof typeof safetyChecklist] || false;
                     
                     return (
-                      <label
+                      <div
                         key={item.id}
+                        role="checkbox"
+                        aria-checked={isChecked}
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSafetyCheckChange(item.id, !isChecked);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === ' ' || e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSafetyCheckChange(item.id, !isChecked);
+                          }
+                        }}
                         className={`
                           flex items-center gap-3 p-3.5 rounded-lg cursor-pointer transition-all duration-300
                           ${isChecked
@@ -1540,15 +1554,6 @@ export default function XRay() {
                             : 'bg-white border-gray-300'
                           }
                         `}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleSafetyCheckChange(item.id, e.target.checked);
-                            }}
-                            className="sr-only"
-                          />
                           {isChecked && <Check className="w-5 h-5 text-white stroke-[3]" />}
                         </div>
                         
@@ -1566,7 +1571,7 @@ export default function XRay() {
                             </Badge>
                           )}
                         </span>
-                      </label>
+                      </div>
                     );
                   })}
                 </div>
