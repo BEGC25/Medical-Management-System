@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +32,7 @@ import {
   Zap, // For X-Ray icon
   Radio, // For Ultrasound icon
   FlaskConical, // Alternative Lab icon
+  Mic, // For voice dictation
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -505,6 +506,23 @@ export default function Treatment() {
 
   // Patient History - expandable visits
   const [expandedVisits, setExpandedVisits] = useState<Set<string>>(new Set());
+
+  // Voice dictation state for Visit Notes
+  const [isRecording, setIsRecording] = useState({
+    chiefComplaint: false,
+    examination: false,
+    diagnosis: false,
+    treatmentPlan: false,
+  });
+  
+  // Refs for voice input
+  const chiefComplaintRef = useRef<HTMLTextAreaElement>(null);
+  const examinationRef = useRef<HTMLTextAreaElement>(null);
+  const diagnosisRef = useRef<HTMLTextAreaElement>(null);
+  const treatmentPlanRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Recognition instance (shared across all fields)
+  const recognitionInstanceRef = useRef<any>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1524,6 +1542,93 @@ export default function Treatment() {
     // Users can then search for specific patients or use date filters
   };
 
+  // Voice dictation - multi-field support for Visit Notes
+  const startVoiceInput = (fieldName: keyof typeof isRecording) => {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast({
+        title: "Not Supported",
+        description: "Voice dictation is not supported in this browser. Try Chrome or Edge.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Stop any existing recognition
+    if (recognitionInstanceRef.current) {
+      recognitionInstanceRef.current.stop();
+    }
+
+    // If already recording this field, stop
+    if (isRecording[fieldName]) {
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      return;
+    }
+
+    const recognition = new (window as any).webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsRecording(prev => ({ ...prev, [fieldName]: true }));
+      toast({
+        title: "🎤 Listening...",
+        description: "Speak clearly. Click 'Stop' when done.",
+        duration: 2000
+      });
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0])
+        .map((result: any) => result.transcript)
+        .join('');
+
+      // Update the appropriate field
+      switch(fieldName) {
+        case 'chiefComplaint':
+          form.setValue('chiefComplaint', transcript);
+          break;
+        case 'examination':
+          form.setValue('examination', transcript);
+          break;
+        case 'diagnosis':
+          form.setValue('diagnosis', transcript);
+          break;
+        case 'treatmentPlan':
+          form.setValue('treatmentPlan', transcript);
+          break;
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      toast({
+        title: "Error",
+        description: `Voice recognition error: ${event.error}`,
+        variant: "destructive"
+      });
+    };
+
+    recognition.onend = () => {
+      setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      recognitionInstanceRef.current = null;
+    };
+
+    recognitionInstanceRef.current = recognition;
+    recognition.start();
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionInstanceRef.current) {
+        recognitionInstanceRef.current.stop();
+      }
+    };
+  }, []);
+
   // ---------- UI ----------
   return (
     <div className="space-y-6">
@@ -1897,9 +2002,22 @@ export default function Treatment() {
                                   </div>
                                   <FormField control={form.control} name="chiefComplaint" render={({ field }) => ( 
                                     <FormItem>
-                                      <FormLabel>Chief Complaint Details</FormLabel>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <FormLabel>Chief Complaint Details</FormLabel>
+                                        <Button 
+                                          type="button"
+                                          size="sm" 
+                                          variant="outline"
+                                          onClick={() => startVoiceInput('chiefComplaint')}
+                                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                        >
+                                          <Mic className={`w-3 h-3 mr-1 ${isRecording.chiefComplaint ? 'animate-pulse text-red-500' : ''}`} />
+                                          {isRecording.chiefComplaint ? 'Stop' : 'Dictate'}
+                                        </Button>
+                                      </div>
                                       <FormControl>
                                         <Textarea 
+                                          ref={chiefComplaintRef}
                                           placeholder="What brings the patient in today?" 
                                           className="min-h-[60px] resize-y"
                                           {...field} 
@@ -1986,8 +2104,22 @@ export default function Treatment() {
                                     ) : (
                                       <FormField control={form.control} name="examination" render={({ field }) => ( 
                                         <FormItem>
+                                          <div className="flex items-center justify-between mb-2">
+                                            <FormLabel>Physical Examination</FormLabel>
+                                            <Button 
+                                              type="button"
+                                              size="sm" 
+                                              variant="outline"
+                                              onClick={() => startVoiceInput('examination')}
+                                              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                            >
+                                              <Mic className={`w-3 h-3 mr-1 ${isRecording.examination ? 'animate-pulse text-red-500' : ''}`} />
+                                              {isRecording.examination ? 'Stop' : 'Dictate'}
+                                            </Button>
+                                          </div>
                                           <FormControl>
                                             <Textarea 
+                                              ref={examinationRef}
                                               placeholder="Detailed examination findings..." 
                                               className="min-h-[60px] resize-y"
                                               {...field} 
@@ -2034,9 +2166,22 @@ export default function Treatment() {
                                   </div>
                                   <FormField control={form.control} name="diagnosis" render={({ field }) => ( 
                                     <FormItem>
-                                      <FormLabel>Diagnosis Details</FormLabel>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <FormLabel>Diagnosis Details</FormLabel>
+                                        <Button 
+                                          type="button"
+                                          size="sm" 
+                                          variant="outline"
+                                          onClick={() => startVoiceInput('diagnosis')}
+                                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                        >
+                                          <Mic className={`w-3 h-3 mr-1 ${isRecording.diagnosis ? 'animate-pulse text-red-500' : ''}`} />
+                                          {isRecording.diagnosis ? 'Stop' : 'Dictate'}
+                                        </Button>
+                                      </div>
                                       <FormControl>
                                         <Textarea 
+                                          ref={diagnosisRef}
                                           placeholder="Primary and secondary diagnoses..." 
                                           className="min-h-[60px] resize-y"
                                           {...field} 
@@ -2057,9 +2202,22 @@ export default function Treatment() {
                                 <AccordionContent className="pt-2 pb-4 space-y-4">
                                   <FormField control={form.control} name="treatmentPlan" render={({ field }) => ( 
                                     <FormItem>
-                                      <FormLabel>Treatment Plan</FormLabel>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <FormLabel>Treatment Plan</FormLabel>
+                                        <Button 
+                                          type="button"
+                                          size="sm" 
+                                          variant="outline"
+                                          onClick={() => startVoiceInput('treatmentPlan')}
+                                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                        >
+                                          <Mic className={`w-3 h-3 mr-1 ${isRecording.treatmentPlan ? 'animate-pulse text-red-500' : ''}`} />
+                                          {isRecording.treatmentPlan ? 'Stop' : 'Dictate'}
+                                        </Button>
+                                      </div>
                                       <FormControl>
                                         <Textarea 
+                                          ref={treatmentPlanRef}
                                           placeholder="Medications, procedures, recommendations..." 
                                           className="min-h-[60px] resize-y"
                                           {...field} 
