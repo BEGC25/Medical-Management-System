@@ -53,6 +53,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 // NEW: Import Accordion components
 import {
   Accordion,
@@ -512,6 +514,11 @@ export default function Treatment() {
   const [isRecordingInstructions, setIsRecordingInstructions] = useState(false); // New: voice recording state
   const [editingMedicationIndex, setEditingMedicationIndex] = useState<number | null>(null); // New: for editing medications in cart
   const [selectedCommonDrug, setSelectedCommonDrug] = useState<string | null>(null); // New: track selected common medication
+  
+  // New state for collapsible order form and searchable dropdown
+  const [isOrderFormExpanded, setIsOrderFormExpanded] = useState(false);
+  const [drugSearchOpen, setDrugSearchOpen] = useState(false);
+  const [drugSearchQuery, setDrugSearchQuery] = useState("");
 
   // Prescription editing
   const [editingPrescription, setEditingPrescription] = useState<PharmacyOrder | null>(null);
@@ -766,6 +773,21 @@ export default function Treatment() {
   // services & drugs
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
   const { data: drugs = [] } = useQuery<Drug[]>({ queryKey: ["/api/pharmacy/drugs"] });
+  
+  // Filter drugs based on search query and group by category
+  const filteredDrugs = useMemo(() => {
+    return drugs.filter(drug => 
+      drug.name.toLowerCase().includes(drugSearchQuery.toLowerCase()) ||
+      (drug.genericName && drug.genericName.toLowerCase().includes(drugSearchQuery.toLowerCase())) ||
+      (drug.category && drug.category.toLowerCase().includes(drugSearchQuery.toLowerCase()))
+    );
+  }, [drugs, drugSearchQuery]);
+  
+  // Get unique drug categories for grouping
+  const drugCategories = useMemo(() => {
+    const categories = new Set(drugs.map(d => d.category).filter(Boolean));
+    return Array.from(categories).sort();
+  }, [drugs]);
   
   // Statistics for header
   const { data: patientCounts } = useQuery<{ today: number; all: number }>({
@@ -2037,30 +2059,30 @@ export default function Treatment() {
               <div className="space-y-4">
                 <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-lg">
-                    {/* Visit Notes Tab - Emerald */}
+                    {/* Visit Notes Tab - Emerald with distinct background */}
                     <TabsTrigger 
                       value="notes" 
-                      className={`transition-all duration-200 ${
+                      className={`px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
                         activeTab === "notes"
-                          ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-b-2 border-emerald-500"
-                          : "text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20"
+                          ? "bg-emerald-100 border-b-3 border-emerald-500 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+                          : "text-gray-600 dark:text-gray-400 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-400"
                       }`}
                     >
-                      <FileText className={`h-4 w-4 mr-2 ${activeTab === "notes" ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
+                      <FileText className={`h-4 w-4 mr-2 ${activeTab === "notes" ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`} />
                       <span className="hidden sm:inline">Visit Notes</span>
                       <span className="sm:hidden">Notes</span>
                     </TabsTrigger>
                     
-                    {/* Orders & Results Tab - Blue */}
+                    {/* Orders & Results Tab - Blue with distinct background */}
                     <TabsTrigger 
                       value="orders" 
-                      className={`transition-all duration-200 ${
+                      className={`px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
                         activeTab === "orders"
-                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500"
-                          : "text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
+                          ? "bg-blue-100 border-b-3 border-blue-500 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+                          : "text-gray-600 dark:text-gray-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
                       }`}
                     >
-                      <ClipboardList className={`h-4 w-4 mr-2 ${activeTab === "orders" ? "text-blue-600 dark:text-blue-400" : ""}`} />
+                      <ClipboardList className={`h-4 w-4 mr-2 ${activeTab === "orders" ? "text-blue-600 dark:text-blue-400" : "text-gray-400"}`} />
                       <span className="hidden sm:inline">Orders & Results</span>
                       <span className="sm:hidden">Orders</span>
                       {diagnosticTestCount > 0 && (
@@ -2070,16 +2092,16 @@ export default function Treatment() {
                       )}
                     </TabsTrigger>
                     
-                    {/* Medications Tab - Purple */}
+                    {/* Medications Tab - Purple with distinct background */}
                     <TabsTrigger 
                       value="medications" 
-                      className={`transition-all duration-200 ${
+                      className={`px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
                         activeTab === "medications"
-                          ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-b-2 border-purple-500"
-                          : "text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/20"
+                          ? "bg-purple-100 border-b-3 border-purple-500 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200"
+                          : "text-gray-600 dark:text-gray-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
                       }`}
                     >
-                      <Pill className={`h-4 w-4 mr-2 ${activeTab === "medications" ? "text-purple-600 dark:text-purple-400" : ""}`} />
+                      <Pill className={`h-4 w-4 mr-2 ${activeTab === "medications" ? "text-purple-600 dark:text-purple-400" : "text-gray-400"}`} />
                       <span className="hidden sm:inline">Medications</span>
                       <span className="sm:hidden">Meds</span>
                       {prescriptions.length > 0 && (
@@ -2089,16 +2111,16 @@ export default function Treatment() {
                       )}
                     </TabsTrigger>
                     
-                    {/* Patient History Tab - Amber */}
+                    {/* Patient History Tab - Amber with distinct background */}
                     <TabsTrigger 
                       value="history" 
-                      className={`transition-all duration-200 ${
+                      className={`px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
                         activeTab === "history"
-                          ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-b-2 border-amber-500"
-                          : "text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-900/20"
+                          ? "bg-amber-100 border-b-3 border-amber-500 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+                          : "text-gray-600 dark:text-gray-400 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
                       }`}
                     >
-                      <History className={`h-4 w-4 mr-2 ${activeTab === "history" ? "text-amber-600 dark:text-amber-400" : ""}`} />
+                      <History className={`h-4 w-4 mr-2 ${activeTab === "history" ? "text-amber-600 dark:text-amber-400" : "text-gray-400"}`} />
                       <span className="hidden sm:inline">Patient History</span>
                       <span className="sm:hidden">History</span>
                     </TabsTrigger>
@@ -3542,10 +3564,12 @@ export default function Treatment() {
                                         <p className="font-semibold text-gray-900 dark:text-white">{med.drugName || "Medication"}</p>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "As prescribed"}</p>
                                         <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-500">
-                                          <span className="flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />
-                                            Started: {formatClinicDayKey(med.createdAt, 'MMM d, yyyy')}
-                                          </span>
+                                          {med.createdAt && (
+                                            <span className="flex items-center gap-1">
+                                              <Calendar className="w-3 h-3" />
+                                              Prescribed: {formatClinicDayKey(med.createdAt, 'MMM d, yyyy')}
+                                            </span>
+                                          )}
                                           <Badge variant={med.status === "dispensed" ? "default" : "secondary"} className={`text-xs ${med.status === "dispensed" ? "bg-green-600" : ""}`}>
                                             {med.status}
                                           </Badge>
@@ -3580,31 +3604,94 @@ export default function Treatment() {
                             )}
                           </div>
 
-                          {/* === SECTION: ORDER NEW MEDICATIONS === */}
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Select drugs from inventory to create pharmacy orders</p>
-                          </div>
-                          
-                          {/* Allergy Warning */}
-                          {allergies.length > 0 && (
-                            <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-700 rounded">
-                              <div className="flex items-start gap-2">
-                                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
-                                <div>
-                                  <p className="font-semibold text-red-900 dark:text-red-100 text-sm">Patient has known allergies:</p>
-                                  <p className="text-sm text-red-800 dark:text-red-200 mt-1">
-                                    {allergies.map(a => a.name).join(", ")}
-                                  </p>
+                          {/* === SECTION: ORDER NEW MEDICATIONS (COLLAPSIBLE) === */}
+                          <div className="mt-6">
+                            <button
+                              onClick={() => setIsOrderFormExpanded(!isOrderFormExpanded)}
+                              className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-all"
+                              type="button"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Plus className={`w-5 h-5 text-purple-600 dark:text-purple-400 transition-transform ${isOrderFormExpanded ? 'rotate-45' : ''}`} />
+                                <div className="text-left">
+                                  <span className="font-semibold text-purple-900 dark:text-purple-100">Order New Medications</span>
+                                  <p className="text-sm text-purple-600 dark:text-purple-400">Select drugs from inventory to create pharmacy orders</p>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                          
-                          {/* === 8. ENHANCED COMMON MEDICATIONS CARDS === */}
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Common Medications (Click to use)</h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                              <ChevronDown className={`w-5 h-5 text-purple-600 dark:text-purple-400 transition-transform ${isOrderFormExpanded ? 'rotate-180' : ''}`} />
+                            </button>
+                            
+                            {isOrderFormExpanded && (
+                              <div className="mt-4 p-6 bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-800 rounded-lg shadow-sm space-y-6">
+                                {/* Allergy Warning */}
+                                {allergies.length > 0 && (
+                                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-700 rounded">
+                                    <div className="flex items-start gap-2">
+                                      <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                                      <div>
+                                        <p className="font-semibold text-red-900 dark:text-red-100 text-sm">Patient has known allergies:</p>
+                                        <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                                          {allergies.map(a => a.name).join(", ")}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* === RECENTLY PRESCRIBED QUICK ACCESS === */}
+                                {(() => {
+                                  // Get unique drug IDs from recent prescriptions (last 30 days)
+                                  const thirtyDaysAgo = new Date();
+                                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                  
+                                  const recentDrugIds = new Set(
+                                    allPrescriptions
+                                      .filter(rx => new Date(rx.createdAt) >= thirtyDaysAgo)
+                                      .map(rx => rx.drugId)
+                                      .filter(Boolean)
+                                  );
+                                  
+                                  const recentlyPrescribed = drugs.filter(d => recentDrugIds.has(d.id)).slice(0, 5);
+                                  
+                                  if (recentlyPrescribed.length === 0) return null;
+                                  
+                                  return (
+                                    <div className="mb-4">
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recently Prescribed:</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {recentlyPrescribed.map(drug => (
+                                          <button
+                                            key={drug.id}
+                                            onClick={() => {
+                                              setSelectedDrugId(drug.id.toString());
+                                              setSelectedDrugName(drug.genericName || drug.name);
+                                              // Find a recent prescription for this drug to pre-fill dosage
+                                              const recentRx = allPrescriptions.find(rx => rx.drugId === drug.id);
+                                              if (recentRx) {
+                                                setNewMedDosage(recentRx.dosage || "");
+                                                setNewMedQuantity(recentRx.quantity || 1);
+                                                setNewMedInstructions(recentRx.instructions || "");
+                                              }
+                                              toast({ 
+                                                title: "Quick Prescription", 
+                                                description: `${drug.genericName || drug.name} selected. Previous dosage pre-filled.` 
+                                              });
+                                            }}
+                                            className="px-3 py-1 text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors border border-purple-200 dark:border-purple-800"
+                                            type="button"
+                                          >
+                                            {drug.genericName || drug.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                
+                                {/* === 8. ENHANCED COMMON MEDICATIONS CARDS === */}
+                                <div>
+                                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Common Medications (Click to use)</h4>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                               {COMMON_MEDICATIONS.map((drug) => (
                                 <div
                                   key={drug.id}
@@ -3652,22 +3739,125 @@ export default function Treatment() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="space-y-2">
                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Drug</label>
-                              <Select value={selectedDrugId} onValueChange={(value) => {
-                                setSelectedDrugId(value);
-                                const drug = drugs.find((d) => d.id.toString() === value);
-                                if (drug) setSelectedDrugName(drug.genericName || drug.name);
-                              }}>
-                                <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500" data-testid="select-drug">
-                                  <SelectValue placeholder="Choose a medication..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {drugs.map((drug) => (
-                                    <SelectItem key={drug.id} value={drug.id.toString()}>
-                                      {drug.genericName || drug.name} - {drug.strength}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <Popover open={drugSearchOpen} onOpenChange={setDrugSearchOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={drugSearchOpen}
+                                    className="w-full justify-between border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-600"
+                                    data-testid="select-drug"
+                                  >
+                                    {selectedDrugId ? (() => {
+                                      const drug = drugs.find((d) => d.id.toString() === selectedDrugId);
+                                      return drug ? (
+                                        <span className="flex items-center gap-2">
+                                          <Pill className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                          {drug.genericName || drug.name} - {drug.strength}
+                                        </span>
+                                      ) : <span className="text-gray-500">Search medications...</span>;
+                                    })() : (
+                                      <span className="text-gray-500">Search medications...</span>
+                                    )}
+                                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[400px] p-0" align="start">
+                                  <Command>
+                                    <CommandInput 
+                                      placeholder="Type to search drugs..." 
+                                      value={drugSearchQuery}
+                                      onValueChange={setDrugSearchQuery}
+                                      className="border-none focus:ring-0"
+                                    />
+                                    <CommandList className="max-h-[300px]">
+                                      <CommandEmpty>
+                                        <div className="p-4 text-center text-gray-500">
+                                          <Search className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                                          <p>No medications found</p>
+                                          <p className="text-xs">Try a different search term</p>
+                                        </div>
+                                      </CommandEmpty>
+                                      
+                                      {/* Group by category */}
+                                      {drugCategories.length > 0 ? drugCategories.map(category => {
+                                        const categoryDrugs = filteredDrugs.filter(d => d.category === category);
+                                        if (categoryDrugs.length === 0) return null;
+                                        
+                                        return (
+                                          <CommandGroup key={category} heading={category || "Other"}>
+                                            {categoryDrugs.map(drug => (
+                                              <CommandItem
+                                                key={drug.id}
+                                                value={`${drug.name}-${drug.id}`}
+                                                onSelect={() => {
+                                                  setSelectedDrugId(drug.id.toString());
+                                                  setSelectedDrugName(drug.genericName || drug.name);
+                                                  setDrugSearchOpen(false);
+                                                  setDrugSearchQuery("");
+                                                }}
+                                                className="flex items-center justify-between p-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                                              >
+                                                <div className="flex items-center gap-2">
+                                                  <Pill className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+                                                  <div>
+                                                    <p className="font-medium">{drug.genericName || drug.name}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{drug.strength} • {drug.form || 'N/A'}</p>
+                                                  </div>
+                                                </div>
+                                                <div className="text-right">
+                                                  {drug.stockLevel !== undefined && (
+                                                    <span className={`text-xs ${
+                                                      drug.stockLevel === 0 ? 'text-red-600 dark:text-red-400' :
+                                                      drug.stockLevel < 20 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'
+                                                    }`}>
+                                                      {drug.stockLevel === 0 ? 'Out of stock' : `${drug.stockLevel} in stock`}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </CommandItem>
+                                            ))}
+                                          </CommandGroup>
+                                        );
+                                      }) : (
+                                        <CommandGroup>
+                                          {filteredDrugs.map(drug => (
+                                            <CommandItem
+                                              key={drug.id}
+                                              value={`${drug.name}-${drug.id}`}
+                                              onSelect={() => {
+                                                setSelectedDrugId(drug.id.toString());
+                                                setSelectedDrugName(drug.genericName || drug.name);
+                                                setDrugSearchOpen(false);
+                                                setDrugSearchQuery("");
+                                              }}
+                                              className="flex items-center justify-between p-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <Pill className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+                                                <div>
+                                                  <p className="font-medium">{drug.genericName || drug.name}</p>
+                                                  <p className="text-xs text-gray-500 dark:text-gray-400">{drug.strength} • {drug.form || 'N/A'}</p>
+                                                </div>
+                                              </div>
+                                              <div className="text-right">
+                                                {drug.stockLevel !== undefined && (
+                                                  <span className={`text-xs ${
+                                                    drug.stockLevel === 0 ? 'text-red-600 dark:text-red-400' :
+                                                    drug.stockLevel < 20 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'
+                                                  }`}>
+                                                    {drug.stockLevel === 0 ? 'Out of stock' : `${drug.stockLevel} in stock`}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </CommandItem>
+                                          ))}
+                                        </CommandGroup>
+                                      )}
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
                               
                               {/* === 3. ALLERGY ALERT COMPONENT (HIGH PRIORITY) === */}
                               {selectedDrugId && (() => {
@@ -3849,45 +4039,75 @@ export default function Treatment() {
                                 </div>
                               )}
                             </div>
-                          </div>
-                          
-                          <Button 
-                            type="button" 
-                            onClick={() => {
-                              if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
-                                toast({
-                                  title: "Validation Error",
-                                  description: "Please fill in drug, dosage, and quantity",
-                                  variant: "destructive",
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                              type="button" 
+                              onClick={() => {
+                                if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
+                                  toast({
+                                    title: "Validation Error",
+                                    description: "Please fill in drug, dosage, and quantity",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                setMedications([...medications, {
+                                  drugId: parseInt(selectedDrugId),
+                                  drugName: selectedDrugName,
+                                  dosage: newMedDosage,
+                                  quantity: newMedQuantity,
+                                  instructions: newMedInstructions,
+                                  duration: newMedDuration,
+                                  route: newMedRoute,
+                                }]);
+                                setSelectedDrugId("");
+                                setSelectedDrugName("");
+                                setNewMedDosage("");
+                                setNewMedQuantity(1);
+                                setNewMedInstructions("");
+                                setNewMedDuration("");
+                                setNewMedRoute("oral");
+                                setSelectedCommonDrug(null);
+                                toast({ 
+                                  title: (
+                                    <div className="flex items-center gap-2">
+                                      <CheckCircle className="w-5 h-5 text-green-600" />
+                                      <span>{selectedDrugName} added</span>
+                                    </div>
+                                  ),
+                                  description: "Click \"Submit to Pharmacy\" when ready" 
                                 });
-                                return;
-                              }
-                              setMedications([...medications, {
-                                drugId: parseInt(selectedDrugId),
-                                drugName: selectedDrugName,
-                                dosage: newMedDosage,
-                                quantity: newMedQuantity,
-                                instructions: newMedInstructions,
-                                duration: newMedDuration,
-                                route: newMedRoute,
-                              }]);
-                              setSelectedDrugId("");
-                              setSelectedDrugName("");
-                              setNewMedDosage("");
-                              setNewMedQuantity(1);
-                              setNewMedInstructions("");
+                              }}
+                              className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white"
+                              data-testid="btn-add-medication"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add to Order List
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedDrugId("");
+                                setSelectedDrugName("");
+                                setNewMedDosage("");
+                                setNewMedQuantity(1);
+                                setNewMedInstructions("");
                               setNewMedDuration("");
                               setNewMedRoute("oral");
                               setSelectedCommonDrug(null);
-                              toast({ title: "Added", description: "Medication added to order list" });
                             }}
-                            className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white"
-                            data-testid="btn-add-medication"
+                            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                            type="button"
                           >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add to Order List
+                            Clear
                           </Button>
-                          
+                        </div>
+                      </div>
+                      </div>
+                            )}
+                          </div>
+
                           {/* === 1. MEDICATION ORDER LIST / SHOPPING CART (HIGH PRIORITY) === */}
                           {medications.length > 0 && (
                             <div className="mt-8 p-6 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950 border-2 border-purple-200 dark:border-purple-800 rounded-xl shadow-lg">
