@@ -519,6 +519,12 @@ export default function Treatment() {
   const [isOrderFormExpanded, setIsOrderFormExpanded] = useState(false);
   const [drugSearchOpen, setDrugSearchOpen] = useState(false);
   const [drugSearchQuery, setDrugSearchQuery] = useState("");
+  
+  // State for Bug #2: Edit button functionality on Current Medications
+  const [editingCurrentMedication, setEditingCurrentMedication] = useState<PharmacyOrder | null>(null);
+  
+  // State for Bug #3: Make Common Medications collapsible
+  const [showCommonMedications, setShowCommonMedications] = useState(false);
 
   // Prescription editing
   const [editingPrescription, setEditingPrescription] = useState<PharmacyOrder | null>(null);
@@ -1460,6 +1466,34 @@ export default function Treatment() {
       examId,
       clinicalIndication: editUltrasoundClinicalInfo,
     });
+  };
+
+  // Bug #2: Handler for editing Current Medications
+  const handleEditCurrentMedication = (medication: PharmacyOrder) => {
+    // Expand the order form if collapsed
+    setIsOrderFormExpanded(true);
+    
+    // Find the drug in the drugs list to pre-fill properly
+    const drug = drugs.find(d => d.id === medication.drugId);
+    
+    // Pre-fill the form with medication data
+    if (drug) {
+      setSelectedDrugId(drug.id.toString());
+      setSelectedDrugName(drug.genericName || drug.name);
+    }
+    setNewMedDosage(medication.dosage || "");
+    setNewMedQuantity(medication.quantity || 1);
+    setNewMedInstructions(medication.instructions || "");
+    setNewMedDuration(medication.duration || "");
+    setNewMedRoute(medication.route || "oral");
+    
+    // Mark that we're editing (not creating new)
+    setEditingCurrentMedication(medication);
+    
+    // Scroll to form
+    setTimeout(() => {
+      document.getElementById('medication-order-form')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const createTreatmentMutation = useMutation({
@@ -3578,12 +3612,7 @@ export default function Treatment() {
                                       <div className="flex gap-2">
                                         {med.status === "prescribed" && med.paymentStatus === "unpaid" && (
                                           <>
-                                            <Button variant="outline" size="sm" onClick={() => {
-                                              setEditingPrescription(med);
-                                              setEditDosage(med.dosage || "");
-                                              setEditQuantity(med.quantity || 0);
-                                              setEditInstructions(med.instructions || "");
-                                            }} className="text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20" data-testid={`btn-edit-${med.orderId}`}>
+                                            <Button variant="outline" size="sm" onClick={() => handleEditCurrentMedication(med)} className="text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20" data-testid={`btn-edit-${med.orderId}`}>
                                               <RefreshCw className="w-3 h-3 mr-1" />
                                               Edit
                                             </Button>
@@ -3604,71 +3633,66 @@ export default function Treatment() {
                             )}
                           </div>
 
-                          {/* === SECTION: ORDER NEW MEDICATIONS (COLLAPSIBLE) === */}
-                          <div className="mt-6">
-                            <button
-                              onClick={() => setIsOrderFormExpanded(!isOrderFormExpanded)}
-                              className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-all"
-                              type="button"
-                            >
+                          {/* === SECTION: ORDER NEW MEDICATIONS === */}
+                          <div className="mt-6 space-y-6">
+                            {/* Section Header - NOT collapsible */}
+                            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                               <div className="flex items-center gap-3">
-                                <Plus className={`w-5 h-5 text-purple-600 dark:text-purple-400 transition-transform ${isOrderFormExpanded ? 'rotate-45' : ''}`} />
+                                <Plus className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                                 <div className="text-left">
                                   <span className="font-semibold text-purple-900 dark:text-purple-100">Order New Medications</span>
                                   <p className="text-sm text-purple-600 dark:text-purple-400">Select drugs from inventory to create pharmacy orders</p>
                                 </div>
                               </div>
-                              <ChevronDown className={`w-5 h-5 text-purple-600 dark:text-purple-400 transition-transform ${isOrderFormExpanded ? 'rotate-180' : ''}`} />
-                            </button>
+                            </div>
                             
-                            {isOrderFormExpanded && (
-                              <div className="mt-4 p-6 bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-800 rounded-lg shadow-sm space-y-6">
-                                {/* Allergy Warning */}
-                                {allergies.length > 0 && (
-                                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-700 rounded">
-                                    <div className="flex items-start gap-2">
-                                      <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
-                                      <div>
-                                        <p className="font-semibold text-red-900 dark:text-red-100 text-sm">Patient has known allergies:</p>
-                                        <p className="text-sm text-red-800 dark:text-red-200 mt-1">
-                                          {allergies.map(a => a.name).join(", ")}
-                                        </p>
-                                      </div>
+                            <div className="p-6 bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-800 rounded-lg shadow-sm space-y-6">
+                              {/* Allergy Warning */}
+                              {allergies.length > 0 && (
+                                <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-700 rounded">
+                                  <div className="flex items-start gap-2">
+                                    <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                                    <div>
+                                      <p className="font-semibold text-red-900 dark:text-red-100 text-sm">Patient has known allergies:</p>
+                                      <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                                        {allergies.map(a => a.name).join(", ")}
+                                      </p>
                                     </div>
                                   </div>
-                                )}
+                                </div>
+                              )}
+                              
+                              {/* === RECENTLY PRESCRIBED QUICK ACCESS === */}
+                              {(() => {
+                                // Get unique drug IDs from recent prescriptions (last 30 days)
+                                const thirtyDaysAgo = new Date();
+                                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                                 
-                                {/* === RECENTLY PRESCRIBED QUICK ACCESS === */}
-                                {(() => {
-                                  // Get unique drug IDs from recent prescriptions (last 30 days)
-                                  const thirtyDaysAgo = new Date();
-                                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                                  
-                                  const recentDrugIds = new Set(
-                                    allPrescriptions
-                                      .filter(rx => new Date(rx.createdAt) >= thirtyDaysAgo)
-                                      .map(rx => rx.drugId)
-                                      .filter(Boolean)
-                                  );
-                                  
-                                  const recentlyPrescribed = drugs.filter(d => recentDrugIds.has(d.id)).slice(0, 5);
-                                  
-                                  if (recentlyPrescribed.length === 0) return null;
-                                  
-                                  return (
-                                    <div className="mb-4">
-                                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recently Prescribed:</p>
-                                      <div className="flex flex-wrap gap-2">
-                                        {recentlyPrescribed.map(drug => (
-                                          <button
-                                            key={drug.id}
-                                            onClick={() => {
-                                              setSelectedDrugId(drug.id.toString());
-                                              setSelectedDrugName(drug.genericName || drug.name);
-                                              // Find a recent prescription for this drug to pre-fill dosage
-                                              const recentRx = allPrescriptions.find(rx => rx.drugId === drug.id);
-                                              if (recentRx) {
-                                                setNewMedDosage(recentRx.dosage || "");
+                                const recentDrugIds = new Set(
+                                  allPrescriptions
+                                    .filter(rx => new Date(rx.createdAt) >= thirtyDaysAgo)
+                                    .map(rx => rx.drugId)
+                                    .filter(Boolean)
+                                );
+                                
+                                const recentlyPrescribed = drugs.filter(d => recentDrugIds.has(d.id)).slice(0, 5);
+                                
+                                if (recentlyPrescribed.length === 0) return null;
+                                
+                                return (
+                                  <div className="mb-4">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recently Prescribed:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {recentlyPrescribed.map(drug => (
+                                        <button
+                                          key={drug.id}
+                                          onClick={() => {
+                                            setSelectedDrugId(drug.id.toString());
+                                            setSelectedDrugName(drug.genericName || drug.name);
+                                            // Find a recent prescription for this drug to pre-fill dosage
+                                            const recentRx = allPrescriptions.find(rx => rx.drugId === drug.id);
+                                            if (recentRx) {
+                                              setNewMedDosage(recentRx.dosage || "");
                                                 setNewMedQuantity(recentRx.quantity || 1);
                                                 setNewMedInstructions(recentRx.instructions || "");
                                               }
@@ -3688,55 +3712,70 @@ export default function Treatment() {
                                   );
                                 })()}
                                 
-                                {/* === 8. ENHANCED COMMON MEDICATIONS CARDS === */}
+                                {/* === COMMON MEDICATIONS - COLLAPSIBLE === */}
                                 <div>
-                                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Common Medications (Click to use)</h4>
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                              {COMMON_MEDICATIONS.map((drug) => (
-                                <div
-                                  key={drug.id}
-                                  className={`
-                                    p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
-                                    hover:shadow-lg hover:scale-105
-                                    ${selectedCommonDrug === drug.id 
-                                      ? 'bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-500 dark:border-purple-700 shadow-md' 
-                                      : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
-                                    }
-                                  `}
-                                  onClick={() => {
-                                    setSelectedCommonDrug(drug.id);
-                                    setNewMedDosage(drug.defaultDosage);
-                                    setNewMedDuration(drug.defaultDuration);
-                                    setNewMedQuantity(drug.defaultQuantity);
-                                    // Try to find matching drug in inventory
-                                    const matchingDrug = drugs.find(d => 
-                                      (d.genericName || d.name).toLowerCase().includes(drug.name.split(' ')[0].toLowerCase())
-                                    );
-                                    if (matchingDrug) {
-                                      setSelectedDrugId(matchingDrug.id.toString());
-                                      setSelectedDrugName(matchingDrug.genericName || matchingDrug.name);
-                                    }
-                                    toast({ title: "Quick Prescription", description: `${drug.name} template loaded. Adjust as needed.` });
-                                  }}
-                                >
-                                  <div className="text-3xl mb-2">{drug.emoji}</div>
-                                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2">{drug.name.split(' ')[0]}</h4>
-                                  <p className="text-xs text-gray-600 dark:text-gray-400">{drug.category}</p>
-                                  {drug.stockLevel !== undefined && (
-                                    <div className="mt-2 flex items-center gap-1">
-                                      <Package className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                                      <span className={`text-xs ${drug.stockLevel < 20 ? 'text-amber-600 dark:text-amber-400 font-medium' : drug.stockLevel === 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
-                                        {drug.stockLevel === 0 ? 'Out of stock' : `${drug.stockLevel} in stock`}
-                                      </span>
-                                    </div>
+                                  <button
+                                    onClick={() => setShowCommonMedications(!showCommonMedications)}
+                                    className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 mb-3 transition-colors"
+                                    type="button"
+                                  >
+                                    {showCommonMedications ? (
+                                      <ChevronDown className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronRight className="w-4 h-4" />
+                                    )}
+                                    <span className="font-medium">Common Medications (Click to use)</span>
+                                    <span className="text-gray-400 dark:text-gray-500">- Quick select</span>
+                                  </button>
+                                  
+                                  {showCommonMedications && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6 animate-in slide-in-from-top-2">
+                                {COMMON_MEDICATIONS.map((drug) => (
+                                  <div
+                                    key={drug.id}
+                                    className={`
+                                      p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                                      hover:shadow-lg hover:scale-105
+                                      ${selectedCommonDrug === drug.id 
+                                        ? 'bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-500 dark:border-purple-700 shadow-md' 
+                                        : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
+                                      }
+                                    `}
+                                    onClick={() => {
+                                      setSelectedCommonDrug(drug.id);
+                                      setNewMedDosage(drug.defaultDosage);
+                                      setNewMedDuration(drug.defaultDuration);
+                                      setNewMedQuantity(drug.defaultQuantity);
+                                      // Try to find matching drug in inventory
+                                      const matchingDrug = drugs.find(d => 
+                                        (d.genericName || d.name).toLowerCase().includes(drug.name.split(' ')[0].toLowerCase())
+                                      );
+                                      if (matchingDrug) {
+                                        setSelectedDrugId(matchingDrug.id.toString());
+                                        setSelectedDrugName(matchingDrug.genericName || matchingDrug.name);
+                                      }
+                                      toast({ title: "Quick Prescription", description: `${drug.name} template loaded. Adjust as needed.` });
+                                    }}
+                                  >
+                                    <div className="text-3xl mb-2">{drug.emoji}</div>
+                                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2">{drug.name.split(' ')[0]}</h4>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">{drug.category}</p>
+                                    {drug.stockLevel !== undefined && (
+                                      <div className="mt-2 flex items-center gap-1">
+                                        <Package className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                                        <span className={`text-xs ${drug.stockLevel < 20 ? 'text-amber-600 dark:text-amber-400 font-medium' : drug.stockLevel === 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                                          {drug.stockLevel === 0 ? 'Out of stock' : `${drug.stockLevel} in stock`}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                                   )}
                                 </div>
-                              ))}
-                            </div>
-                          </div>
                           
-                          {/* === PRESCRIPTION FORM === */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                          {/* === PRESCRIPTION FORM - ALWAYS VISIBLE === */}
+                          <div id="medication-order-form" className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="space-y-2">
                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Drug</label>
                               <Popover open={drugSearchOpen} onOpenChange={setDrugSearchOpen}>
@@ -4052,6 +4091,29 @@ export default function Treatment() {
                                   });
                                   return;
                                 }
+                                
+                                // If we're editing a Current Medication, update it via the edit prescription mutation
+                                if (editingCurrentMedication) {
+                                  editPrescriptionMutation.mutate({
+                                    orderId: editingCurrentMedication.orderId,
+                                    dosage: newMedDosage,
+                                    quantity: newMedQuantity,
+                                    instructions: newMedInstructions,
+                                  });
+                                  // Reset form
+                                  setSelectedDrugId("");
+                                  setSelectedDrugName("");
+                                  setNewMedDosage("");
+                                  setNewMedQuantity(1);
+                                  setNewMedInstructions("");
+                                  setNewMedDuration("");
+                                  setNewMedRoute("oral");
+                                  setSelectedCommonDrug(null);
+                                  setEditingCurrentMedication(null);
+                                  return;
+                                }
+                                
+                                // Otherwise, add to order list as normal
                                 setMedications([...medications, {
                                   drugId: parseInt(selectedDrugId),
                                   drugName: selectedDrugName,
@@ -4082,8 +4144,17 @@ export default function Treatment() {
                               className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white"
                               data-testid="btn-add-medication"
                             >
-                              <Plus className="w-4 h-4 mr-2" />
-                              Add to Order List
+                              {editingCurrentMedication ? (
+                                <>
+                                  <Check className="w-4 h-4 mr-2" />
+                                  Update Medication
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Add to Order List
+                                </>
+                              )}
                             </Button>
                             <Button
                               variant="ghost"
@@ -4096,6 +4167,7 @@ export default function Treatment() {
                               setNewMedDuration("");
                               setNewMedRoute("oral");
                               setSelectedCommonDrug(null);
+                              setEditingCurrentMedication(null);
                             }}
                             className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                             type="button"
@@ -4104,8 +4176,7 @@ export default function Treatment() {
                           </Button>
                         </div>
                       </div>
-                      </div>
-                            )}
+                            </div>
                           </div>
 
                           {/* === 1. MEDICATION ORDER LIST / SHOPPING CART (HIGH PRIORITY) === */}
