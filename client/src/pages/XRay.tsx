@@ -477,7 +477,7 @@ export default function XRay() {
       data: { 
         ...data, 
         status: 'completed',
-        viewDescriptions: viewDescriptions || undefined,
+        viewDescriptions: viewDescriptions || undefined, // Include view descriptions in mutation
       },
     });
   };
@@ -491,7 +491,7 @@ export default function XRay() {
     setFindings(exam.findings || '');
     setImpression(exam.impression || '');
     setRecommendations(exam.recommendations || '');
-    setViewDescriptions('');
+    setViewDescriptions((exam as any).viewDescriptions || ''); // Load saved view descriptions
     setTechnicalFactors((exam as any).technicalFactors || '');
     setRadiologistName(exam.radiologist || '');
     setImageUploadMode('describe');
@@ -1655,7 +1655,7 @@ export default function XRay() {
             {selectedXrayExam && (
               <div className="mt-4 flex flex-wrap items-center gap-3 text-blue-100">
                 <Badge className="bg-white/20 text-white border-0 px-3 py-1">
-                  {selectedXrayExam.examType}
+                  {selectedXrayExam.examType.charAt(0).toUpperCase() + selectedXrayExam.examType.slice(1)}
                 </Badge>
                 {selectedXrayExam.bodyPart && (
                   <Badge className="bg-white/20 text-white border-0 px-3 py-1">
@@ -2482,21 +2482,9 @@ export default function XRay() {
                   name="technicalFactors"
                   render={({ field }) => (
                     <FormItem>
-                      <div className="flex items-center justify-between mb-2">
-                        <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          Technical Factors
-                        </FormLabel>
-                        <Button 
-                          type="button"
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => startVoiceInput('technicalFactors')}
-                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                        >
-                          <Mic className={`w-3 h-3 mr-1 ${isRecording.technicalFactors ? 'animate-pulse text-red-500' : ''}`} />
-                          {isRecording.technicalFactors ? 'Stop' : 'Dictate'}
-                        </Button>
-                      </div>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Technical Factors
+                      </FormLabel>
                       <FormControl>
                         <Input
                           ref={technicalFactorsRef}

@@ -86,9 +86,12 @@ export const xrayExams = sqliteTable("xray_exams", {
   requestedDate: text("requested_date").notNull(),
   status: text("status").$type<"pending" | "completed" | "cancelled">().notNull(),
   paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
+  viewDescriptions: text("view_descriptions"), // X-Ray view descriptions (AP, Lateral, etc.)
   findings: text("findings"),
   impression: text("impression"),
   recommendations: text("recommendations"),
+  imageQuality: text("image_quality").$type<"excellent" | "good" | "adequate" | "limited">(), // Image quality assessment
+  technicalFactors: text("technical_factors"), // kVp, mAs, positioning notes
   reportDate: text("report_date"),
   radiologist: text("radiologist"),
   clinicDay: text("clinic_day"), // Clinic day in YYYY-MM-DD format (Africa/Juba timezone)
