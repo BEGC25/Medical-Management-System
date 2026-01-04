@@ -1524,6 +1524,7 @@ export default function XRay() {
                         key={item.id}
                         role="checkbox"
                         aria-checked={isChecked}
+                        aria-label={item.label}
                         tabIndex={0}
                         onClick={(e) => {
                           e.preventDefault();
