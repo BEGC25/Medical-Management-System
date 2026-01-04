@@ -19,6 +19,40 @@ interface DischargeSummaryProps {
   patientId: string;
 }
 
+// Helper functions for formatting
+function capitalizeExamType(type: string): string {
+  if (!type) return '';
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function formatDate(date: any): string {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return String(date);
+  }
+}
+
+function formatShortDate(date: any): string {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    });
+  } catch {
+    return String(date);
+  }
+}
+
 export function DischargeSummary({ encounterId, patientId }: DischargeSummaryProps) {
   const [open, setOpen] = useState(false);
 
@@ -362,28 +396,6 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                     X-Ray Examinations
                   </h3>
                   {xrays.map((xray) => {
-                    // Helper to capitalize exam type
-                    const capitalizeExamType = (type: string) => {
-                      if (!type) return '';
-                      return type.charAt(0).toUpperCase() + type.slice(1);
-                    };
-
-                    // Helper to format date
-                    const formatDate = (date: any) => {
-                      if (!date) return '';
-                      try {
-                        return new Date(date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        });
-                      } catch {
-                        return String(date);
-                      }
-                    };
-
                     return (
                       <div key={xray.id} style={{ marginBottom: "16px", paddingBottom: "16px", borderBottom: "1px solid #e5e7eb" }}>
                         {/* Exam Header */}
@@ -466,11 +478,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                             )}
                             {xray.reportDate && (
                               <div style={{ marginBottom: "2px" }}>
-                                • Report Date: {new Date(xray.reportDate).toLocaleDateString('en-US', {
-                                  month: '2-digit',
-                                  day: '2-digit',
-                                  year: 'numeric'
-                                })}
+                                • Report Date: {formatShortDate(xray.reportDate)}
                               </div>
                             )}
                           </div>
