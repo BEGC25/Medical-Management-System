@@ -3598,12 +3598,17 @@ export default function Treatment() {
                                         <p className="font-semibold text-gray-900 dark:text-white">{med.drugName || "Medication"}</p>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "As prescribed"}</p>
                                         <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-500">
-                                          {med.createdAt && (
-                                            <span className="flex items-center gap-1">
-                                              <Calendar className="w-3 h-3" />
-                                              Prescribed: {formatClinicDayKey(med.createdAt, 'MMM d, yyyy')}
-                                            </span>
-                                          )}
+                                          {(() => {
+                                            const formattedDate = med.createdAt ? formatClinicDayKey(med.createdAt, 'MMM d, yyyy') : null;
+                                            if (!formattedDate || formattedDate === '—') return null;
+                                            
+                                            return (
+                                              <span className="flex items-center gap-1">
+                                                <Calendar className="w-3 h-3" />
+                                                Prescribed: {formattedDate}
+                                              </span>
+                                            );
+                                          })()}
                                           <Badge variant={med.status === "dispensed" ? "default" : "secondary"} className={`text-xs ${med.status === "dispensed" ? "bg-green-600" : ""}`}>
                                             {med.status}
                                           </Badge>
@@ -3641,7 +3646,7 @@ export default function Treatment() {
                                 <Plus className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                                 <div className="text-left">
                                   <span className="font-semibold text-purple-900 dark:text-purple-100">Order New Medications</span>
-                                  <p className="text-sm text-purple-600 dark:text-purple-400">Select drugs from inventory to create pharmacy orders</p>
+                                  <p className="text-sm text-purple-600 dark:text-purple-400">Prescribe medications for this patient</p>
                                 </div>
                               </div>
                             </div>
