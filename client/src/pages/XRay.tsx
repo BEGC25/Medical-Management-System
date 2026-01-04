@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -744,6 +744,14 @@ export default function XRay() {
       </div>
     );
   };
+
+  // Memoized handler for safety checklist changes to prevent re-renders and event issues
+  const handleSafetyCheckChange = useCallback((itemId: string, checked: boolean) => {
+    setSafetyChecklist(prev => ({
+      ...prev,
+      [itemId]: checked
+    }));
+  }, []);
 
   // Check if all safety checks are passed
   const allSafetyChecksPassed = safetyChecklist.pregnancy && safetyChecklist.metal && safetyChecklist.cooperation;
@@ -1535,10 +1543,10 @@ export default function XRay() {
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            onChange={(e) => setSafetyChecklist(prev => ({
-                              ...prev,
-                              [item.id]: e.target.checked
-                            }))}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleSafetyCheckChange(item.id, e.target.checked);
+                            }}
                             className="sr-only"
                           />
                           {isChecked && <Check className="w-5 h-5 text-white stroke-[3]" />}
