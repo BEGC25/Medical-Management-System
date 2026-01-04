@@ -368,7 +368,7 @@ export default function XRay() {
       toast({ title: 'Success', description: 'X-ray examination request submitted successfully' });
       form.reset();
       setSelectedPatient(null);
-      setSafetyChecklist({ notPregnant: false, metalRemoved: false, canCooperate: false });
+      setSafetyChecklist({ pregnancy: false, metal: false, cooperation: false });
       setRequestOpen(false);
       queryClient.invalidateQueries({ queryKey: ['/api/xray-exams'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
@@ -394,7 +394,7 @@ export default function XRay() {
         });
         form.reset();
         setSelectedPatient(null);
-        setSafetyChecklist({ notPregnant: false, metalRemoved: false, canCooperate: false });
+        setSafetyChecklist({ pregnancy: false, metal: false, cooperation: false });
         setRequestOpen(false);
       } else {
         toast({
@@ -1089,11 +1089,11 @@ export default function XRay() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {[
                     { value: 'chest', label: 'Chest X-Ray', icon: '🫁', description: 'Thoracic imaging' },
-                    { value: 'extremity', label: 'Extremity', icon: '🦴', description: 'Arms, legs, joints' },
-                    { value: 'abdominal', label: 'Abdominal', icon: '🫄', description: 'Abdomen & pelvis' },
+                    { value: 'extremities', label: 'Extremity', icon: '🦴', description: 'Arms, legs, joints' },
+                    { value: 'abdomen', label: 'Abdominal', icon: '🫄', description: 'Abdomen & pelvis' },
                     { value: 'spine', label: 'Spine', icon: '🦴', description: 'Cervical to lumbar' },
                     { value: 'skull', label: 'Skull/Head', icon: '💀', description: 'Cranial imaging' },
-                    { value: 'pelvic', label: 'Pelvic', icon: '🦴', description: 'Hip & pelvis' },
+                    { value: 'pelvis', label: 'Pelvic', icon: '🦴', description: 'Hip & pelvis' },
                   ].map((exam) => (
                     <button
                       key={exam.value}
@@ -1144,7 +1144,7 @@ export default function XRay() {
                     { 
                       name: 'Trauma Screen', 
                       icon: '🚑',
-                      examType: 'extremity',
+                      examType: 'extremities',
                       bodyPart: 'Multiple',
                       indication: 'Suspected fracture or dislocation following trauma'
                     },
@@ -1193,7 +1193,7 @@ export default function XRay() {
               </div>
 
               {/* Body Part Quick Selector (Conditional on Exam Type) */}
-              {examType === 'extremity' && (
+              {examType === 'extremities' && (
                 <div className="mb-4">
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-blue-600" />
@@ -1810,7 +1810,7 @@ export default function XRay() {
                     </FormLabel>
                     
                     {/* EXTREMITY X-RAY FINDING BUILDER */}
-                    {selectedXrayExam?.examType === 'extremity' && (
+                    {selectedXrayExam?.examType === 'extremities' && (
                       <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
                         <div className="flex items-center gap-2 mb-3">
                           <Zap className="w-5 h-5 text-blue-600" />
@@ -2033,7 +2033,7 @@ export default function XRay() {
                     )}
                     
                     {/* ABDOMINAL X-RAY FINDING BUILDER */}
-                    {selectedXrayExam?.examType === 'abdominal' && (
+                    {selectedXrayExam?.examType === 'abdomen' && (
                       <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
                         <div className="flex items-center gap-2 mb-3">
                           <Zap className="w-5 h-5 text-blue-600" />
@@ -2199,7 +2199,7 @@ export default function XRay() {
                     )}
                     
                     {/* PELVIC X-RAY FINDING BUILDER */}
-                    {selectedXrayExam?.examType === 'pelvic' && (
+                    {selectedXrayExam?.examType === 'pelvis' && (
                       <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
                         <div className="flex items-center gap-2 mb-3">
                           <Zap className="w-5 h-5 text-blue-600" />
