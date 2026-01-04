@@ -513,10 +513,6 @@ export default function Treatment() {
     examination: false,
     diagnosis: false,
     treatmentPlan: false,
-    temperature: false,
-    bloodPressure: false,
-    heartRate: false,
-    weight: false,
   });
   
   // Refs for voice input
@@ -524,10 +520,6 @@ export default function Treatment() {
   const examinationRef = useRef<HTMLTextAreaElement>(null);
   const diagnosisRef = useRef<HTMLTextAreaElement>(null);
   const treatmentPlanRef = useRef<HTMLTextAreaElement>(null);
-  const temperatureRef = useRef<HTMLInputElement>(null);
-  const bloodPressureRef = useRef<HTMLInputElement>(null);
-  const heartRateRef = useRef<HTMLInputElement>(null);
-  const weightRef = useRef<HTMLInputElement>(null);
   
   // Recognition instance (shared across all fields)
   const recognitionInstanceRef = useRef<any>(null);
@@ -1605,34 +1597,6 @@ export default function Treatment() {
           break;
         case 'treatmentPlan':
           form.setValue('treatmentPlan', transcript);
-          break;
-        case 'temperature':
-          // Parse numeric value
-          const temp = parseFloat(transcript.replace(/[^\d.]/g, ''));
-          if (!isNaN(temp)) {
-            form.setValue('temperature', temp);
-          }
-          break;
-        case 'bloodPressure':
-          // Handle "one twenty over eighty" → "120/80"
-          const bpMatch = transcript.match(/(\d+)\s*over\s*(\d+)/i);
-          if (bpMatch) {
-            form.setValue('bloodPressure', `${bpMatch[1]}/${bpMatch[2]}`);
-          } else {
-            form.setValue('bloodPressure', transcript);
-          }
-          break;
-        case 'heartRate':
-          const hr = parseInt(transcript.replace(/[^\d]/g, ''));
-          if (!isNaN(hr)) {
-            form.setValue('heartRate', hr);
-          }
-          break;
-        case 'weight':
-          const weight = parseFloat(transcript.replace(/[^\d.]/g, ''));
-          if (!isNaN(weight)) {
-            form.setValue('weight', weight);
-          }
           break;
       }
     };
