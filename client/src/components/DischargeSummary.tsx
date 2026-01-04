@@ -19,6 +19,40 @@ interface DischargeSummaryProps {
   patientId: string;
 }
 
+// Helper functions for formatting
+function capitalizeExamType(type: string): string {
+  if (!type) return '';
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function formatDate(date: string | number | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return String(date);
+  }
+}
+
+function formatShortDate(date: string | number | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    });
+  } catch {
+    return String(date);
+  }
+}
+
 export function DischargeSummary({ encounterId, patientId }: DischargeSummaryProps) {
   const [open, setOpen] = useState(false);
 
@@ -361,23 +395,97 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                   <h3 style={{ color: "#8b5cf6", borderBottom: "1px solid #8b5cf6", paddingBottom: "2px", marginBottom: "8px" }}>
                     X-Ray Examinations
                   </h3>
-                  {xrays.map((xray) => (
-                    <div key={xray.id} className="test-result" style={{ borderLeft: "2px solid #8b5cf6", marginBottom: "8px" }}>
-                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
-                        {xray.bodyPart || xray.examType}
+                  {xrays.map((xray) => {
+                    return (
+                      <div key={xray.id} style={{ marginBottom: "16px", paddingBottom: "16px", borderBottom: "1px solid #e5e7eb" }}>
+                        {/* Exam Header */}
+                        <div style={{ marginBottom: "8px" }}>
+                          <div style={{ fontWeight: "600", fontSize: "1rem", marginBottom: "4px" }}>
+                            <strong>Examination:</strong> {xray.bodyPart}
+                            {xray.examType && ` (${capitalizeExamType(xray.examType)})`}
+                          </div>
+                          <div style={{ fontSize: "0.875rem", color: "#555", marginBottom: "2px" }}>
+                            <strong>Date:</strong> {formatDate(xray.updatedAt || xray.completedAt || xray.reportDate)}
+                          </div>
+                          <div style={{ fontSize: "0.875rem", color: "#555" }}>
+                            <strong>Status:</strong> Completed
+                          </div>
+                        </div>
+
+                        {/* View Descriptions */}
+                        {xray.viewDescriptions && (
+                          <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+                            <div style={{ fontWeight: "600", fontSize: "0.875rem", marginBottom: "4px" }}>
+                              View Descriptions:
+                            </div>
+                            <div style={{ fontSize: "0.875rem", whiteSpace: "pre-line", paddingLeft: "8px" }}>
+                              {xray.viewDescriptions}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Radiological Findings */}
+                        {xray.findings && (
+                          <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+                            <div style={{ fontWeight: "600", fontSize: "0.875rem", marginBottom: "4px" }}>
+                              Radiological Findings:
+                            </div>
+                            <div style={{ fontSize: "0.875rem", whiteSpace: "pre-line", paddingLeft: "8px" }}>
+                              {xray.findings}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Clinical Impression */}
+                        {xray.impression && (
+                          <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+                            <div style={{ fontWeight: "600", fontSize: "0.875rem", marginBottom: "4px" }}>
+                              Clinical Impression:
+                            </div>
+                            <div style={{ fontSize: "0.875rem", fontWeight: "500", color: "#0066CC", whiteSpace: "pre-line", paddingLeft: "8px" }}>
+                              {xray.impression}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Recommendations */}
+                        {xray.recommendations && (
+                          <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+                            <div style={{ fontWeight: "600", fontSize: "0.875rem", marginBottom: "4px" }}>
+                              Recommendations:
+                            </div>
+                            <div style={{ fontSize: "0.875rem", whiteSpace: "pre-line", paddingLeft: "8px" }}>
+                              {xray.recommendations}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Technical Details */}
+                        <div style={{ marginTop: "8px", marginBottom: "4px" }}>
+                          <div style={{ fontWeight: "600", fontSize: "0.875rem", marginBottom: "4px" }}>
+                            Technical Details:
+                          </div>
+                          <div style={{ fontSize: "0.875rem", paddingLeft: "8px" }}>
+                            {xray.imageQuality && (
+                              <div style={{ marginBottom: "2px" }}>
+                                • Image Quality: {xray.imageQuality.replace('-', ' - ')}
+                              </div>
+                            )}
+                            {xray.radiologist && (
+                              <div style={{ marginBottom: "2px" }}>
+                                • Radiologist: {xray.radiologist}
+                              </div>
+                            )}
+                            {xray.reportDate && (
+                              <div style={{ marginBottom: "2px" }}>
+                                • Report Date: {formatShortDate(xray.reportDate)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      {xray.findings && (
-                        <div style={{ fontSize: "0.875rem", marginTop: "4px", marginBottom: "4px" }}>
-                          <strong>Findings:</strong> {xray.findings}
-                        </div>
-                      )}
-                      {xray.impression && (
-                        <div style={{ fontSize: "0.875rem", fontWeight: "500", color: "#0066CC" }}>
-                          <strong>Impression:</strong> {xray.impression}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 

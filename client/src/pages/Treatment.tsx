@@ -33,6 +33,8 @@ import {
   Radio, // For Ultrasound icon
   FlaskConical, // Alternative Lab icon
   Mic, // For voice dictation
+  Camera, // For X-Ray views
+  CheckCircle, // For X-Ray quality indicator
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -3206,28 +3208,91 @@ export default function Treatment() {
                           )}
 
                           {/* X-rays */}
-                          {/* ... (Keep X-ray rendering logic, maybe wrap in Card like labs for consistency) ... */}
                            {(qoTab === "all" || qoTab === "xray") && xrays.filter((x: any) => x.status === "completed").length > 0 && (
                             <div>
                               <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">X-Ray Examinations</h4>
-                              <div className="space-y-2">
-                                {xrays.filter((x: any) => x.status === "completed").map((x: any) => ( /* Consider wrapping in Card */
-                                  <div key={x.examId || x.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-                                    <div className="flex justify-between items-start gap-3">
-                                      {/* ... existing X-ray content ... */}
-                                      <div className="flex-1">
-                                        <p className="font-medium">{x.bodyPart}</p>
-                                        <div className="flex items-center gap-2 my-1">
-                                           <Badge variant={x.status === "completed" ? "default" : "secondary"}>{x.status.charAt(0).toUpperCase() + x.status.slice(1)}</Badge>
-                                           {!x.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
+                              <div className="space-y-3">
+                                {xrays.filter((x: any) => x.status === "completed").map((x: any) => (
+                                  <div 
+                                    key={x.examId || x.orderId} 
+                                    className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                  >
+                                    {/* Header Row */}
+                                    <div className="p-4 flex justify-between items-start gap-3">
+                                      <div className="flex items-center gap-2 flex-1">
+                                        <Zap className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                                        <div>
+                                          <p className="font-semibold text-base">{x.bodyPart} X-Ray</p>
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                              <Check className="h-3 w-3 mr-1" />
+                                              Completed
+                                            </Badge>
+                                            {!x.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                              Completed {timeAgo(x.completedAt || x.resultDate || x.updatedAt)}
+                                            </span>
+                                          </div>
                                         </div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                                          {formatClinicDateTime(x.completedAt || x.resultDate || x.requestDate)}
-                                        </p>
                                       </div>
-                                      <div className="flex flex-col items-end gap-2">
-                                        {x.status === "completed" && (<Button variant="outline" size="sm" onClick={() => openResult("xray", x)}>View Report</Button>)}
+                                    </div>
+
+                                    {/* Quick Info Row */}
+                                    <div className="px-4 pb-2 grid grid-cols-2 gap-2 text-xs">
+                                      {x.viewDescriptions && (
+                                        <div className="flex items-start gap-1">
+                                          <Camera className="h-3 w-3 text-gray-500 mt-0.5 flex-shrink-0" />
+                                          <span className="text-gray-700 dark:text-gray-300 line-clamp-1">
+                                            <span className="font-semibold">View:</span> {x.viewDescriptions.includes('.') ? x.viewDescriptions.split('.')[0] : x.viewDescriptions}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {x.imageQuality && (
+                                        <div className="flex items-start gap-1">
+                                          <CheckCircle className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                          <span className="text-gray-700 dark:text-gray-300 line-clamp-1">
+                                            <span className="font-semibold">Quality:</span> {x.imageQuality.replace('-', ' - ')}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Findings Preview */}
+                                    {x.findings && (
+                                      <div className="mx-4 mb-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                                        <div className="flex items-start gap-2">
+                                          <Activity className="h-4 w-4 text-blue-700 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">KEY FINDING</p>
+                                            <p className="text-sm text-blue-900 dark:text-blue-100 line-clamp-2">{x.findings}</p>
+                                          </div>
+                                        </div>
                                       </div>
+                                    )}
+
+                                    {/* Impression Preview (if available) */}
+                                    {x.impression && (
+                                      <div className="mx-4 mb-3 p-3 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-md">
+                                        <div className="flex items-start gap-2">
+                                          <FileText className="h-4 w-4 text-purple-700 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 mb-1">IMPRESSION</p>
+                                            <p className="text-sm text-purple-900 dark:text-purple-100 line-clamp-2">{x.impression}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* View Full Report Button */}
+                                    <div className="px-4 pb-4">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="w-full" 
+                                        onClick={() => openResult("xray", x)}
+                                      >
+                                        View Full Report →
+                                      </Button>
                                     </div>
                                   </div>
                                 ))}
