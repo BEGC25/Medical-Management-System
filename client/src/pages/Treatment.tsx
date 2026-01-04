@@ -35,6 +35,12 @@ import {
   Mic, // For voice dictation
   Camera, // For X-Ray views
   CheckCircle, // For X-Ray quality indicator
+  Send, // For submit button
+  Calendar, // For dates
+  RefreshCw, // For renew medication
+  XCircle, // For stop/out of stock
+  Package, // For stock indicators
+  Calculator, // For auto-calculate quantity
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -185,52 +191,64 @@ const DURATION_PRESETS = [
 // Common medications for South Sudan context
 const COMMON_MEDICATIONS = [
   {
+    id: "coartem",
     name: "Artemether-Lumefantrine (Coartem)",
     category: "Antimalarial",
-    icon: "🦟",
+    emoji: "🦟",
     defaultDosage: "4 tablets twice daily",
     defaultDuration: "3 days",
     defaultQuantity: 24,
+    stockLevel: 150,
   },
   {
+    id: "amoxicillin",
     name: "Amoxicillin",
     category: "Antibiotic",
-    icon: "💊",
+    emoji: "💊",
     defaultDosage: "1 tablet three times daily",
     defaultDuration: "7 days",
     defaultQuantity: 21,
+    stockLevel: 85,
   },
   {
+    id: "paracetamol",
     name: "Paracetamol",
     category: "Pain/Fever",
-    icon: "🌡️",
+    emoji: "🌡️",
     defaultDosage: "1-2 tablets every 6 hours",
     defaultDuration: "As needed",
     defaultQuantity: 20,
+    stockLevel: 15,
   },
   {
+    id: "metronidazole",
     name: "Metronidazole",
     category: "Antibiotic",
-    icon: "💊",
+    emoji: "💊",
     defaultDosage: "1 tablet three times daily",
     defaultDuration: "7 days",
     defaultQuantity: 21,
+    stockLevel: 45,
   },
   {
+    id: "ors",
     name: "ORS (Oral Rehydration Salts)",
     category: "Rehydration",
-    icon: "💧",
+    emoji: "💧",
     defaultDosage: "1 sachet after each loose stool",
     defaultDuration: "As needed",
     defaultQuantity: 10,
+    stockLevel: 200,
   },
   {
+    id: "zinc",
     name: "Zinc Tablets",
     category: "Supplement",
-    icon: "⚡",
+    emoji: "⚡",
     defaultDosage: "1 tablet once daily",
     defaultDuration: "10 days",
     defaultQuantity: 10,
+    stockLevel: 0,
   },
 ];
 
@@ -490,9 +508,10 @@ export default function Treatment() {
   const [newMedQuantity, setNewMedQuantity] = useState(1); // Changed default from 0 to 1
   const [newMedInstructions, setNewMedInstructions] = useState("");
   const [newMedDuration, setNewMedDuration] = useState(""); // New: duration field
-  const [newMedRoute, setNewMedRoute] = useState("PO"); // New: route of administration
+  const [newMedRoute, setNewMedRoute] = useState("oral"); // New: route of administration
   const [isRecordingInstructions, setIsRecordingInstructions] = useState(false); // New: voice recording state
   const [editingMedicationIndex, setEditingMedicationIndex] = useState<number | null>(null); // New: for editing medications in cart
+  const [selectedCommonDrug, setSelectedCommonDrug] = useState<string | null>(null); // New: track selected common medication
 
   // Prescription editing
   const [editingPrescription, setEditingPrescription] = useState<PharmacyOrder | null>(null);
@@ -3494,157 +3513,466 @@ export default function Treatment() {
                   </TabsContent>
 
                   {/* === TAB 3: MEDICATIONS === */}
-                  {/* ... (Keep Medications tab content as is) ... */}
                   <TabsContent value="medications">
-                    {/* ... The existing Card and content for Medications ... */}
                     <Card>
                       <CardHeader><CardTitle>Medication Orders</CardTitle></CardHeader>
                       <CardContent>
                         <div className="space-y-6">
-                           {/* Prescribed list */}
-                          {prescriptions.length > 0 && ( <div className="mb-6"> {/* ... Prescribed list rendering ... */} </div> )}
-                          {/* Order New Meds section */}
-                          {/* ... Select Drug, Dosage, Quantity, Instructions inputs ... */}
-                          {/* ... Add to Order List button ... */}
-                          {/* ... Medications to Order list and Submit button ... */}
-                           {prescriptions.length > 0 && ( <div className="mb-6"> <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-4"> Prescribed Medications ({prescriptions.length}) </h3> <div className="space-y-2"> {prescriptions.map((rx) => ( <div key={rx.orderId} className="p-4 bg-gray-50 dark:bg-gray-800 border rounded-lg" data-testid={`prescription-${rx.orderId}`}> <div className="flex items-start justify-between"> <div className="flex-1"> <div className="flex items-center gap-2 mb-2"> <p className="font-medium text-gray-900 dark:text-white">{rx.drugName || "Medication"}</p> <Badge variant={rx.status === "dispensed" ? "default" : "secondary"} className={rx.status === "dispensed" ? "bg-green-600" : ""}>{rx.status}</Badge> <Badge variant={rx.paymentStatus === "paid" ? "default" : "destructive"} className={rx.paymentStatus === "paid" ? "bg-blue-600" : "bg-red-600"}>{rx.paymentStatus}</Badge> </div> <p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {rx.dosage || "As prescribed"} | Quantity: {rx.quantity}</p> {rx.instructions && (<p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Instructions: {rx.instructions}</p>)} <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Order ID: {rx.orderId} | Prescribed: {formatClinicDateTime(rx.createdAt)}</p> {rx.dispensedAt && (<p className="text-xs text-green-600 dark:text-green-400 mt-1">Dispensed: {formatClinicDateTime(rx.dispensedAt)} by {rx.dispensedBy}</p>)} </div> {rx.status === "prescribed" && rx.paymentStatus === "unpaid" && ( <div className="flex gap-2"> <Button type="button" variant="outline" size="sm" onClick={() => { setEditingPrescription(rx); setEditDosage(rx.dosage || ""); setEditQuantity(rx.quantity || 0); setEditInstructions(rx.instructions || ""); }} data-testid={`btn-edit-${rx.orderId}`}><Edit className="w-4 h-4 mr-1" />Edit</Button> <Button type="button" variant="destructive" size="sm" onClick={() => { if (window.confirm("Cancel this prescription?")) { cancelPrescriptionMutation.mutate(rx.orderId); } }} data-testid={`btn-cancel-${rx.orderId}`}><Trash2 className="w-4 h-4 mr-1" />Cancel</Button> </div> )} </div> </div> ))} </div> <div className="border-t pt-4 mt-4" /> </div> )}
-                           <div className="flex items-center justify-between"> <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3> <p className="text-sm text-gray-600 dark:text-gray-400">Select drugs from inventory to create pharmacy orders</p> </div>
-                           
-                           {/* Allergy Warning */}
-                           {allergies.length > 0 && (
-                             <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded">
-                               <div className="flex items-start gap-2">
-                                 <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-                                 <div>
-                                   <p className="font-semibold text-red-900 dark:text-red-100 text-sm">Patient has known allergies:</p>
-                                   <p className="text-sm text-red-800 dark:text-red-200 mt-1">
-                                     {allergies.map(a => a.name).join(", ")}
-                                   </p>
-                                 </div>
-                               </div>
-                             </div>
-                           )}
-                           
-                           {/* Common Medications Quick Cards */}
-                           <div>
-                             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Common Medications (Click to use)</h4>
-                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                               {COMMON_MEDICATIONS.map((med) => (
-                                 <button
-                                   key={med.name}
-                                   type="button"
-                                   onClick={() => {
-                                     setNewMedDosage(med.defaultDosage);
-                                     setNewMedDuration(med.defaultDuration);
-                                     setNewMedQuantity(med.defaultQuantity);
-                                     // Try to find matching drug in inventory
-                                     const matchingDrug = drugs.find(d => 
-                                       (d.genericName || d.name).toLowerCase().includes(med.name.split(' ')[0].toLowerCase())
-                                     );
-                                     if (matchingDrug) {
-                                       setSelectedDrugId(matchingDrug.id.toString());
-                                       setSelectedDrugName(matchingDrug.genericName || matchingDrug.name);
-                                     }
-                                     toast({ title: "Quick Prescription", description: `${med.name} template loaded. Adjust as needed.` });
-                                   }}
-                                   className="p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all text-left group"
-                                 >
-                                   <div className="text-2xl mb-1">{med.icon}</div>
-                                   <p className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-teal-700 dark:group-hover:text-teal-300">
-                                     {med.name.split(' ')[0]}
-                                   </p>
-                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{med.category}</p>
-                                 </button>
-                               ))}
-                             </div>
-                           </div>
-                           
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                             <div className="space-y-2">
-                               <label className="text-sm font-medium">Select Drug</label>
-                               <Select value={selectedDrugId} onValueChange={(value) => { setSelectedDrugId(value); const drug = drugs.find((d) => d.id.toString() === value); if (drug) setSelectedDrugName(drug.genericName || drug.name); }}>
-                                 <SelectTrigger data-testid="select-drug">
-                                   <SelectValue placeholder="Choose a medication..." />
-                                 </SelectTrigger>
-                                 <SelectContent>
-                                   {drugs.map((drug) => (
-                                     <SelectItem key={drug.id} value={drug.id.toString()}>
-                                       {drug.genericName || drug.name} - {drug.strength}
-                                     </SelectItem>
-                                   ))}
-                                 </SelectContent>
-                               </Select>
-                             </div>
-                             
-                             <div className="space-y-2">
-                               <label className="text-sm font-medium">Dosage Instructions</label>
-                               <Select value={newMedDosage} onValueChange={setNewMedDosage}>
-                                 <SelectTrigger data-testid="select-dosage">
-                                   <SelectValue placeholder="Select or type dosage..." />
-                                 </SelectTrigger>
-                                 <SelectContent>
-                                   {DOSAGE_PRESETS.map((preset) => (
-                                     <SelectItem key={preset} value={preset}>{preset}</SelectItem>
-                                   ))}
-                                 </SelectContent>
-                               </Select>
-                               <Input 
-                                 placeholder="Or type custom dosage..." 
-                                 value={newMedDosage} 
-                                 onChange={(e) => setNewMedDosage(e.target.value)} 
-                                 data-testid="input-dosage" 
-                                 className="mt-2"
-                               />
-                             </div>
-                             
-                             <div className="space-y-2">
-                               <label className="text-sm font-medium">Duration</label>
-                               <Select value={newMedDuration} onValueChange={setNewMedDuration}>
-                                 <SelectTrigger data-testid="select-duration">
-                                   <SelectValue placeholder="Select duration..." />
-                                 </SelectTrigger>
-                                 <SelectContent>
-                                   {DURATION_PRESETS.map((preset) => (
-                                     <SelectItem key={preset} value={preset}>{preset}</SelectItem>
-                                   ))}
-                                   <SelectItem value="As needed">As needed</SelectItem>
-                                   <SelectItem value="Ongoing">Ongoing</SelectItem>
-                                 </SelectContent>
-                               </Select>
-                             </div>
-                             
-                             <div className="space-y-2">
-                               <label className="text-sm font-medium">Quantity</label>
-                               <Input 
-                                 type="number" 
-                                 min="1" 
-                                 placeholder="e.g., 30" 
-                                 value={newMedQuantity} 
-                                 onChange={(e) => {
-                                   const val = parseInt(e.target.value);
-                                   setNewMedQuantity(isNaN(val) ? 1 : Math.max(1, val));
-                                 }} 
-                                 data-testid="input-quantity" 
-                               />
-                             </div>
-                             
-                             <div className="space-y-2 md:col-span-2">
-                               <label className="text-sm font-medium">Additional Instructions</label>
-                               <Input 
-                                 placeholder="e.g., Take with food, avoid alcohol" 
-                                 value={newMedInstructions} 
-                                 onChange={(e) => setNewMedInstructions(e.target.value)} 
-                                 data-testid="input-instructions" 
-                               />
-                             </div>
-                           </div>
-                           <Button type="button" onClick={() => { if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) { toast({ title: "Validation Error", description: "Please fill in drug, dosage, and quantity", variant: "destructive", }); return; } setMedications([...medications, { drugId: parseInt(selectedDrugId), drugName: selectedDrugName, dosage: newMedDosage, quantity: newMedQuantity, instructions: newMedInstructions, duration: newMedDuration, },]); setSelectedDrugId(""); setSelectedDrugName(""); setNewMedDosage(""); setNewMedQuantity(1); setNewMedInstructions(""); setNewMedDuration(""); toast({ title: "Added", description: "Medication added to order list" }); }} data-testid="btn-add-medication"><Plus className="w-4 h-4 mr-2" />Add to Order List</Button>
-                           {medications.length > 0 && ( <div className="space-y-2"> <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Medications to Order ({medications.length})</h4> <div className="space-y-2">{medications.map((med, idx) => ( <div key={idx} className="flex items-start justify-between p-3 bg-white dark:bg-gray-900 border rounded-lg"> <div className="flex-1"><p className="font-medium">{med.drugName}</p><p className="text-sm text-gray-600 dark:text-gray-400">Dosage: {med.dosage} | Quantity: {med.quantity}{med.duration ? ` | Duration: ${med.duration}` : ""}</p>{med.instructions && (<p className="text-sm text-gray-500 dark:text-gray-500">Instructions: {med.instructions}</p>)}</div> <Button type="button" variant="ghost" size="sm" onClick={() => setMedications(medications.filter((_, i) => i !== idx))} data-testid={`btn-remove-med-${idx}`}><Trash2 className="w-4 h-4 text-red-600" /></Button> </div> ))}</div> <Button type="button" onClick={() => submitMedicationsMutation.mutate(medications)} disabled={submitMedicationsMutation.isPending} className="w-full bg-green-600 hover:bg-green-700" data-testid="btn-submit-medications"><Pill className="w-4 h-4 mr-2" />{submitMedicationsMutation.isPending ? "Submitting..." : `Send ${medications.length} Order(s) to Pharmacy`}</Button> </div> )}
+                          
+                          {/* === 2. CURRENT/ACTIVE MEDICATIONS SECTION (HIGH PRIORITY) === */}
+                          <div className="mb-8 p-5 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-2 border-blue-200 dark:border-blue-800 rounded-xl shadow-md">
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg font-bold flex items-center gap-2 text-blue-900 dark:text-blue-100">
+                                <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                Current Medications
+                              </h3>
+                              <Badge variant="secondary" className="bg-blue-600 text-white">
+                                {prescriptions.filter(p => p.status !== 'cancelled').length} active
+                              </Badge>
+                            </div>
+
+                            {prescriptions.filter(p => p.status !== 'cancelled').length === 0 ? (
+                              <p className="text-sm text-gray-600 dark:text-gray-400 italic">No active medications on record</p>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {prescriptions.filter(p => p.status !== 'cancelled').map((med) => (
+                                  <div key={med.orderId} className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-all">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <p className="font-semibold text-gray-900 dark:text-white">{med.drugName || "Medication"}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "As prescribed"}</p>
+                                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-500">
+                                          <span className="flex items-center gap-1">
+                                            <Calendar className="w-3 h-3" />
+                                            Started: {formatClinicDayKey(med.createdAt, 'MMM d, yyyy')}
+                                          </span>
+                                          <Badge variant={med.status === "dispensed" ? "default" : "secondary"} className={`text-xs ${med.status === "dispensed" ? "bg-green-600" : ""}`}>
+                                            {med.status}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        {med.status === "prescribed" && med.paymentStatus === "unpaid" && (
+                                          <>
+                                            <Button variant="outline" size="sm" onClick={() => {
+                                              setEditingPrescription(med);
+                                              setEditDosage(med.dosage || "");
+                                              setEditQuantity(med.quantity || 0);
+                                              setEditInstructions(med.instructions || "");
+                                            }} className="text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20" data-testid={`btn-edit-${med.orderId}`}>
+                                              <RefreshCw className="w-3 h-3 mr-1" />
+                                              Edit
+                                            </Button>
+                                            <Button variant="ghost" size="sm" onClick={() => {
+                                              if (window.confirm("Cancel this prescription?")) {
+                                                cancelPrescriptionMutation.mutate(med.orderId);
+                                              }
+                                            }} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" data-testid={`btn-cancel-${med.orderId}`}>
+                                              <XCircle className="w-3 h-3" />
+                                            </Button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* === SECTION: ORDER NEW MEDICATIONS === */}
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium text-gray-800 dark:text-gray-200">Order New Medications</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Select drugs from inventory to create pharmacy orders</p>
+                          </div>
+                          
+                          {/* Allergy Warning */}
+                          {allergies.length > 0 && (
+                            <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-700 rounded">
+                              <div className="flex items-start gap-2">
+                                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                                <div>
+                                  <p className="font-semibold text-red-900 dark:text-red-100 text-sm">Patient has known allergies:</p>
+                                  <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                                    {allergies.map(a => a.name).join(", ")}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* === 8. ENHANCED COMMON MEDICATIONS CARDS === */}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Common Medications (Click to use)</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                              {COMMON_MEDICATIONS.map((drug) => (
+                                <div
+                                  key={drug.id}
+                                  className={`
+                                    p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                                    hover:shadow-lg hover:scale-105
+                                    ${selectedCommonDrug === drug.id 
+                                      ? 'bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-500 dark:border-purple-700 shadow-md' 
+                                      : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
+                                    }
+                                  `}
+                                  onClick={() => {
+                                    setSelectedCommonDrug(drug.id);
+                                    setNewMedDosage(drug.defaultDosage);
+                                    setNewMedDuration(drug.defaultDuration);
+                                    setNewMedQuantity(drug.defaultQuantity);
+                                    // Try to find matching drug in inventory
+                                    const matchingDrug = drugs.find(d => 
+                                      (d.genericName || d.name).toLowerCase().includes(drug.name.split(' ')[0].toLowerCase())
+                                    );
+                                    if (matchingDrug) {
+                                      setSelectedDrugId(matchingDrug.id.toString());
+                                      setSelectedDrugName(matchingDrug.genericName || matchingDrug.name);
+                                    }
+                                    toast({ title: "Quick Prescription", description: `${drug.name} template loaded. Adjust as needed.` });
+                                  }}
+                                >
+                                  <div className="text-3xl mb-2">{drug.emoji}</div>
+                                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2">{drug.name.split(' ')[0]}</h4>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400">{drug.category}</p>
+                                  {drug.stockLevel !== undefined && (
+                                    <div className="mt-2 flex items-center gap-1">
+                                      <Package className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                                      <span className={`text-xs ${drug.stockLevel < 20 ? 'text-amber-600 dark:text-amber-400 font-medium' : drug.stockLevel === 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                                        {drug.stockLevel === 0 ? 'Out of stock' : `${drug.stockLevel} in stock`}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* === PRESCRIPTION FORM === */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Drug</label>
+                              <Select value={selectedDrugId} onValueChange={(value) => {
+                                setSelectedDrugId(value);
+                                const drug = drugs.find((d) => d.id.toString() === value);
+                                if (drug) setSelectedDrugName(drug.genericName || drug.name);
+                              }}>
+                                <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500" data-testid="select-drug">
+                                  <SelectValue placeholder="Choose a medication..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {drugs.map((drug) => (
+                                    <SelectItem key={drug.id} value={drug.id.toString()}>
+                                      {drug.genericName || drug.name} - {drug.strength}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              
+                              {/* === 3. ALLERGY ALERT COMPONENT (HIGH PRIORITY) === */}
+                              {selectedDrugId && (() => {
+                                const drug = drugs.find((d) => d.id.toString() === selectedDrugId);
+                                if (!drug) return null;
+                                const allergyCheck = checkDrugAllergy(drug, allergies);
+                                if (!allergyCheck.hasAllergy) return null;
+                                return (
+                                  <div className="mt-4 flex items-start gap-3 p-4 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950 border-2 border-red-400 dark:border-red-600 rounded-xl animate-pulse shadow-lg">
+                                    <AlertCircle className="w-7 h-7 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                                    <div>
+                                      <p className="font-bold text-red-900 dark:text-red-100 text-lg flex items-center gap-2">
+                                        ⚠️ ALLERGY ALERT!
+                                        <Badge variant="destructive" className="animate-bounce">Critical</Badge>
+                                      </p>
+                                      <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                                        Patient has documented allergy to <strong>{drug.genericName || drug.name}</strong> or related medications.
+                                      </p>
+                                      {allergyCheck.matchedAllergy && (
+                                        <p className="text-xs text-red-700 dark:text-red-300 mt-2 bg-red-100 dark:bg-red-900/30 p-2 rounded">
+                                          Previous reaction: {allergyCheck.matchedAllergy.reaction || "See patient record"}
+                                        </p>
+                                      )}
+                                      <p className="text-xs text-red-600 dark:text-red-400 mt-2 font-medium">
+                                        ⚠️ Do NOT prescribe unless absolutely necessary with appropriate precautions
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                              
+                              {/* === 4. STOCK LEVEL WARNING === */}
+                              {selectedDrugId && (() => {
+                                const drug = drugs.find((d) => d.id.toString() === selectedDrugId);
+                                if (!drug || drug.stockLevel === undefined) return null;
+                                
+                                if (drug.stockLevel === 0) {
+                                  return (
+                                    <div className="mt-3 flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg">
+                                      <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                                      <div className="flex-1">
+                                        <p className="text-sm font-semibold text-red-900 dark:text-red-100">Out of Stock</p>
+                                        <p className="text-xs text-red-800 dark:text-red-200">Cannot prescribe - medication out of stock</p>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                
+                                if (drug.stockLevel < 20) {
+                                  return (
+                                    <div className="mt-3 flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg">
+                                      <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                      <div className="flex-1">
+                                        <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Low Stock Warning</p>
+                                        <p className="text-xs text-amber-800 dark:text-amber-200">Only {drug.stockLevel} units available in pharmacy</p>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
+                            
+                            {/* === 5. ROUTE OF ADMINISTRATION DROPDOWN === */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Route of Administration</label>
+                              <Select value={newMedRoute} onValueChange={setNewMedRoute} defaultValue="oral">
+                                <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="oral">💊 Oral (by mouth)</SelectItem>
+                                  <SelectItem value="iv">💉 Intravenous (IV)</SelectItem>
+                                  <SelectItem value="im">💉 Intramuscular (IM)</SelectItem>
+                                  <SelectItem value="sc">💉 Subcutaneous (SC)</SelectItem>
+                                  <SelectItem value="topical">🧴 Topical (on skin)</SelectItem>
+                                  <SelectItem value="inhalation">🌬️ Inhalation</SelectItem>
+                                  <SelectItem value="rectal">Rectal</SelectItem>
+                                  <SelectItem value="sublingual">👅 Under tongue</SelectItem>
+                                  <SelectItem value="ophthalmic">👁️ Eye drops</SelectItem>
+                                  <SelectItem value="otic">👂 Ear drops</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Dosage Instructions</label>
+                              <Select value={newMedDosage} onValueChange={setNewMedDosage}>
+                                <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500" data-testid="select-dosage">
+                                  <SelectValue placeholder="Select or type dosage..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {DOSAGE_PRESETS.map((preset) => (
+                                    <SelectItem key={preset} value={preset}>{preset}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Input 
+                                placeholder="Or type custom dosage..." 
+                                value={newMedDosage} 
+                                onChange={(e) => setNewMedDosage(e.target.value)} 
+                                data-testid="input-dosage" 
+                                className="mt-2 border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Duration</label>
+                              <Select value={newMedDuration} onValueChange={setNewMedDuration}>
+                                <SelectTrigger className="border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500" data-testid="select-duration">
+                                  <SelectValue placeholder="Select duration..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {DURATION_PRESETS.map((preset) => (
+                                    <SelectItem key={preset} value={preset}>{preset}</SelectItem>
+                                  ))}
+                                  <SelectItem value="As needed">As needed</SelectItem>
+                                  <SelectItem value="Ongoing">Ongoing</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
+                              <Input 
+                                type="number" 
+                                min="1" 
+                                placeholder="e.g., 30" 
+                                value={newMedQuantity} 
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  setNewMedQuantity(isNaN(val) ? 1 : Math.max(1, val));
+                                }} 
+                                data-testid="input-quantity"
+                                className="border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                              />
+                              
+                              {/* === 7. AUTO-CALCULATE QUANTITY WITH VISUAL BREAKDOWN === */}
+                              {newMedDosage && newMedDuration && (
+                                <div className="mt-2 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950 border border-purple-200 dark:border-purple-800 rounded-lg">
+                                  <p className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-1 flex items-center gap-2">
+                                    <Calculator className="w-4 h-4" />
+                                    Auto-Calculated Quantity
+                                  </p>
+                                  <p className="text-xs text-purple-800 dark:text-purple-200">
+                                    <strong>{newMedQuantity}</strong> tablets = {newMedDosage} × {newMedDuration}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* === 6. VOICE DICTATION FOR ADDITIONAL INSTRUCTIONS === */}
+                            <div className="space-y-2 sm:col-span-2">
+                              <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Additional Instructions</label>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => setIsRecordingInstructions(!isRecordingInstructions)}
+                                  className={`text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 ${isRecordingInstructions ? 'animate-pulse bg-purple-100 dark:bg-purple-900/30' : ''}`}
+                                  type="button"
+                                >
+                                  <Mic className={`w-4 h-4 mr-1 ${isRecordingInstructions ? 'text-red-600 dark:text-red-400' : ''}`} />
+                                  {isRecordingInstructions ? 'Stop' : 'Dictate'}
+                                </Button>
+                              </div>
+                              <Textarea
+                                placeholder="e.g., Take with food, avoid alcohol, complete full course..."
+                                value={newMedInstructions}
+                                onChange={(e) => setNewMedInstructions(e.target.value)}
+                                rows={3}
+                                className="resize-none border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                                data-testid="input-instructions"
+                              />
+                              {isRecordingInstructions && (
+                                <div className="flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400">
+                                  <span className="inline-block w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full animate-pulse"></span>
+                                  Listening...
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <Button 
+                            type="button" 
+                            onClick={() => {
+                              if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Please fill in drug, dosage, and quantity",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              setMedications([...medications, {
+                                drugId: parseInt(selectedDrugId),
+                                drugName: selectedDrugName,
+                                dosage: newMedDosage,
+                                quantity: newMedQuantity,
+                                instructions: newMedInstructions,
+                                duration: newMedDuration,
+                                route: newMedRoute,
+                              }]);
+                              setSelectedDrugId("");
+                              setSelectedDrugName("");
+                              setNewMedDosage("");
+                              setNewMedQuantity(1);
+                              setNewMedInstructions("");
+                              setNewMedDuration("");
+                              setNewMedRoute("oral");
+                              setSelectedCommonDrug(null);
+                              toast({ title: "Added", description: "Medication added to order list" });
+                            }}
+                            className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white"
+                            data-testid="btn-add-medication"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add to Order List
+                          </Button>
+                          
+                          {/* === 1. MEDICATION ORDER LIST / SHOPPING CART (HIGH PRIORITY) === */}
+                          {medications.length > 0 && (
+                            <div className="mt-8 p-6 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950 border-2 border-purple-200 dark:border-purple-800 rounded-xl shadow-lg">
+                              <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold flex items-center gap-2 text-purple-900 dark:text-purple-100">
+                                  <ShoppingCart className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                  Prescription Order List
+                                  <Badge variant="secondary" className="ml-2 bg-purple-600 text-white">
+                                    {medications.length}
+                                  </Badge>
+                                </h3>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => setMedications([])} 
+                                  className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                  type="button"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-1" />
+                                  Clear All
+                                </Button>
+                              </div>
+
+                              <div className="space-y-3">
+                                {medications.map((order, index) => (
+                                  <div key={index} className="flex items-start justify-between p-4 bg-white dark:bg-gray-900 rounded-lg border border-purple-200 dark:border-purple-800 shadow-sm hover:shadow-md transition-all">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Pill className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                        <p className="font-semibold text-gray-900 dark:text-white">{order.drugName}</p>
+                                      </div>
+                                      <div className="text-sm text-gray-700 dark:text-gray-300 space-y-0.5 ml-6">
+                                        <p><strong>Dosage:</strong> {order.dosage}</p>
+                                        {order.route && <p><strong>Route:</strong> {order.route}</p>}
+                                        {order.duration && <p><strong>Duration:</strong> {order.duration}</p>}
+                                        <p><strong>Quantity:</strong> {order.quantity} units</p>
+                                        {order.instructions && (
+                                          <p className="italic text-gray-600 dark:text-gray-400">"{order.instructions}"</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2 ml-4">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => setMedications(medications.filter((_, i) => i !== index))} 
+                                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                        type="button"
+                                        data-testid={`btn-remove-med-${index}`}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Submit Actions */}
+                              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                                <Button 
+                                  className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 dark:from-purple-700 dark:to-indigo-700 dark:hover:from-purple-800 dark:hover:to-indigo-800 text-white shadow-lg" 
+                                  onClick={() => submitMedicationsMutation.mutate(medications)}
+                                  disabled={submitMedicationsMutation.isPending}
+                                  type="button"
+                                  data-testid="btn-submit-medications"
+                                >
+                                  <Send className="w-4 h-4 mr-2" />
+                                  {submitMedicationsMutation.isPending ? "Submitting..." : `Submit to Pharmacy (${medications.length})`}
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setShowPrescription(true)} 
+                                  className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                                  type="button"
+                                >
+                                  <Printer className="w-4 h-4 mr-2" />
+                                  Print
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
                   </TabsContent>
-
 
                   {/* === TAB 4: PATIENT HISTORY === */}
                   <TabsContent value="history">
