@@ -3638,6 +3638,56 @@ export default function Treatment() {
                                   </div>
                                 )}
                                 
+                                {/* === RECENTLY PRESCRIBED QUICK ACCESS === */}
+                                {(() => {
+                                  // Get unique drug IDs from recent prescriptions (last 30 days)
+                                  const thirtyDaysAgo = new Date();
+                                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                  
+                                  const recentDrugIds = new Set(
+                                    allPrescriptions
+                                      .filter(rx => new Date(rx.createdAt) >= thirtyDaysAgo)
+                                      .map(rx => rx.drugId)
+                                      .filter(Boolean)
+                                  );
+                                  
+                                  const recentlyPrescribed = drugs.filter(d => recentDrugIds.has(d.id)).slice(0, 5);
+                                  
+                                  if (recentlyPrescribed.length === 0) return null;
+                                  
+                                  return (
+                                    <div className="mb-4">
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recently Prescribed:</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {recentlyPrescribed.map(drug => (
+                                          <button
+                                            key={drug.id}
+                                            onClick={() => {
+                                              setSelectedDrugId(drug.id.toString());
+                                              setSelectedDrugName(drug.genericName || drug.name);
+                                              // Find a recent prescription for this drug to pre-fill dosage
+                                              const recentRx = allPrescriptions.find(rx => rx.drugId === drug.id);
+                                              if (recentRx) {
+                                                setNewMedDosage(recentRx.dosage || "");
+                                                setNewMedQuantity(recentRx.quantity || 1);
+                                                setNewMedInstructions(recentRx.instructions || "");
+                                              }
+                                              toast({ 
+                                                title: "Quick Prescription", 
+                                                description: `${drug.genericName || drug.name} selected. Previous dosage pre-filled.` 
+                                              });
+                                            }}
+                                            className="px-3 py-1 text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors border border-purple-200 dark:border-purple-800"
+                                            type="button"
+                                          >
+                                            {drug.genericName || drug.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                
                                 {/* === 8. ENHANCED COMMON MEDICATIONS CARDS === */}
                                 <div>
                                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Common Medications (Click to use)</h4>
@@ -3989,60 +4039,60 @@ export default function Treatment() {
                                 </div>
                               )}
                             </div>
-                          </div>
-                          
-                          <Button 
-                            type="button" 
-                            onClick={() => {
-                              if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
-                                toast({
-                                  title: "Validation Error",
-                                  description: "Please fill in drug, dosage, and quantity",
-                                  variant: "destructive",
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                              type="button" 
+                              onClick={() => {
+                                if (!selectedDrugId || !newMedDosage || newMedQuantity <= 0) {
+                                  toast({
+                                    title: "Validation Error",
+                                    description: "Please fill in drug, dosage, and quantity",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                setMedications([...medications, {
+                                  drugId: parseInt(selectedDrugId),
+                                  drugName: selectedDrugName,
+                                  dosage: newMedDosage,
+                                  quantity: newMedQuantity,
+                                  instructions: newMedInstructions,
+                                  duration: newMedDuration,
+                                  route: newMedRoute,
+                                }]);
+                                setSelectedDrugId("");
+                                setSelectedDrugName("");
+                                setNewMedDosage("");
+                                setNewMedQuantity(1);
+                                setNewMedInstructions("");
+                                setNewMedDuration("");
+                                setNewMedRoute("oral");
+                                setSelectedCommonDrug(null);
+                                toast({ 
+                                  title: (
+                                    <div className="flex items-center gap-2">
+                                      <CheckCircle className="w-5 h-5 text-green-600" />
+                                      <span>{selectedDrugName} added</span>
+                                    </div>
+                                  ),
+                                  description: "Click \"Submit to Pharmacy\" when ready" 
                                 });
-                                return;
-                              }
-                              setMedications([...medications, {
-                                drugId: parseInt(selectedDrugId),
-                                drugName: selectedDrugName,
-                                dosage: newMedDosage,
-                                quantity: newMedQuantity,
-                                instructions: newMedInstructions,
-                                duration: newMedDuration,
-                                route: newMedRoute,
-                              }]);
-                              setSelectedDrugId("");
-                              setSelectedDrugName("");
-                              setNewMedDosage("");
-                              setNewMedQuantity(1);
-                              setNewMedInstructions("");
-                              setNewMedDuration("");
-                              setNewMedRoute("oral");
-                              setSelectedCommonDrug(null);
-                              toast({ 
-                                title: (
-                                  <div className="flex items-center gap-2">
-                                    <CheckCircle className="w-5 h-5 text-green-600" />
-                                    <span>{selectedDrugName} added</span>
-                                  </div>
-                                ),
-                                description: "Click \"Submit to Pharmacy\" when ready" 
-                              });
-                            }}
-                            className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white"
-                            data-testid="btn-add-medication"
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add to Order List
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedDrugId("");
-                              setSelectedDrugName("");
-                              setNewMedDosage("");
-                              setNewMedQuantity(1);
-                              setNewMedInstructions("");
+                              }}
+                              className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white"
+                              data-testid="btn-add-medication"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add to Order List
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedDrugId("");
+                                setSelectedDrugName("");
+                                setNewMedDosage("");
+                                setNewMedQuantity(1);
+                                setNewMedInstructions("");
                               setNewMedDuration("");
                               setNewMedRoute("oral");
                               setSelectedCommonDrug(null);
@@ -4053,9 +4103,11 @@ export default function Treatment() {
                             Clear
                           </Button>
                         </div>
-                      )}
-                    </div>
-                          
+                      </div>
+                      </div>
+                            )}
+                          </div>
+
                           {/* === 1. MEDICATION ORDER LIST / SHOPPING CART (HIGH PRIORITY) === */}
                           {medications.length > 0 && (
                             <div className="mt-8 p-6 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950 border-2 border-purple-200 dark:border-purple-800 rounded-xl shadow-lg">
