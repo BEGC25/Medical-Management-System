@@ -530,6 +530,9 @@ export default function Payment() {
     );
   };
 
+  // Pattern to detect view descriptions in bodyPart field
+  const VIEW_INFO_PATTERN = /\b(ap|lateral|pa|oblique|axial)\b/i;
+
   // Clean description by removing service type prefix and building intelligent descriptions
   const cleanDescription = (desc: string, type: string, order?: UnpaidOrder) => {
     const prefixes = ['Lab Test:', 'X-Ray:', 'Ultrasound:', 'Pharmacy:', 'Lab:', 'X-ray:'];
@@ -543,7 +546,9 @@ export default function Payment() {
     // For X-Ray: Build intelligent description
     if (type === 'xray' || type === 'xray_exam') {
       // Start with exam type (capitalize first letter)
-      let result = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      let result = cleaned && cleaned.length > 0 
+        ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+        : 'X-Ray Examination';
       
       // Add body part if it's different from exam type and doesn't contain view info
       if (order?.bodyPart) {
@@ -551,7 +556,7 @@ export default function Payment() {
         const examTypeLower = cleaned.toLowerCase();
         
         // Check if bodyPart contains view descriptions (AP, Lateral, etc.)
-        const hasViewInfo = /\b(ap|lateral|pa|oblique|axial)\b/i.test(order.bodyPart);
+        const hasViewInfo = VIEW_INFO_PATTERN.test(order.bodyPart);
         
         if (!hasViewInfo && bodyPartLower !== examTypeLower) {
           result += ` - ${order.bodyPart}`;
@@ -569,7 +574,9 @@ export default function Payment() {
     // For Ultrasound: Build intelligent description
     if (type === 'ultrasound' || type === 'ultrasound_exam') {
       // Start with exam type (capitalize first letter)
-      let result = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      let result = cleaned && cleaned.length > 0
+        ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+        : 'Ultrasound Examination';
       
       // Add specific exam if available and different from exam type
       if (order?.specificExam) {
@@ -614,7 +621,7 @@ export default function Payment() {
       if (!order.bodyPart) return false;
       
       // Don't show if bodyPart contains view descriptions (already shown in description)
-      const hasViewInfo = /\b(ap|lateral|pa|oblique|axial)\b/i.test(order.bodyPart);
+      const hasViewInfo = VIEW_INFO_PATTERN.test(order.bodyPart);
       if (hasViewInfo) return false;
       
       // Don't show if bodyPart is same as examType (already in description)
