@@ -115,6 +115,21 @@ function getOrderIcon(type: string) {
   }
 }
 
+/**
+ * Convert SQLite datetime string to ISO format for proper parsing
+ * SQLite datetime('now') returns UTC time in format "YYYY-MM-DD HH:MM:SS"
+ * However, the backend explicitly sets createdAt/dispensedAt using new Date().toISOString()
+ * which returns full ISO 8601 format with timezone (e.g., "2025-01-05T03:35:54.200Z")
+ * This helper handles both formats for robustness.
+ */
+function ensureISOFormat(dateString: string | undefined | null): string | null {
+  if (!dateString) return null;
+  // Already in ISO format with 'T' separator
+  if (dateString.includes('T')) return dateString;
+  // SQLite format "YYYY-MM-DD HH:MM:SS" - assume UTC and convert to ISO
+  return dateString.replace(' ', 'T') + 'Z';
+}
+
 // Common chief complaints in South Sudan
 const COMMON_COMPLAINTS = [
   "Fever",
@@ -3605,9 +3620,8 @@ export default function Treatment() {
                                         <div className="flex flex-col gap-1 mt-2 text-xs text-gray-600 dark:text-gray-400">
                                           {/* Always show prescribed date */}
                                           {(() => {
-                                            if (!med.createdAt) return null;
-                                            // Convert SQLite datetime to ISO format for proper parsing
-                                            const isoDate = med.createdAt.includes('T') ? med.createdAt : med.createdAt.replace(' ', 'T') + 'Z';
+                                            const isoDate = ensureISOFormat(med.createdAt);
+                                            if (!isoDate) return null;
                                             const formattedDate = formatClinicDateTime(isoDate, 'MMM d, yyyy');
                                             if (formattedDate === '—') return null;
                                             return (
@@ -3620,9 +3634,9 @@ export default function Treatment() {
                                           
                                           {/* Show dispensed date if status is dispensed */}
                                           {(() => {
-                                            if (med.status !== "dispensed" || !med.dispensedAt) return null;
-                                            // Convert SQLite datetime to ISO format for proper parsing
-                                            const isoDate = med.dispensedAt.includes('T') ? med.dispensedAt : med.dispensedAt.replace(' ', 'T') + 'Z';
+                                            if (med.status !== "dispensed") return null;
+                                            const isoDate = ensureISOFormat(med.dispensedAt);
+                                            if (!isoDate) return null;
                                             const formattedDate = formatClinicDateTime(isoDate, 'MMM d, yyyy');
                                             if (formattedDate === '—') return null;
                                             return (
