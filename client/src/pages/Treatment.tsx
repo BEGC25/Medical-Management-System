@@ -3672,7 +3672,7 @@ export default function Treatment() {
 
                                         {/* Status badge BELOW the dates */}
                                         <Badge variant={med.status === "dispensed" ? "default" : "secondary"} className={`text-xs mt-2 ${med.status === "dispensed" ? "bg-green-600" : ""}`}>
-                                          {med.status === "dispensed" ? "Dispensed" : "Prescribed"}
+                                          {med.status === "dispensed" ? "Dispensed" : "Pending"}
                                         </Badge>
                                       </div>
                                       <div className="flex gap-2">
