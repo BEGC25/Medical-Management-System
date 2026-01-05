@@ -34,11 +34,23 @@ function getExamTypeLabel(examType: string): string {
 }
 
 /**
+ * Type for X-Ray exam data needed for display
+ */
+export type XrayDisplayData = Pick<XrayExam, 'examType' | 'bodyPart'>;
+
+/**
+ * Type for Ultrasound exam data needed for display
+ */
+export type UltrasoundDisplayData = Pick<UltrasoundExam, 'examType'> & {
+  specificExam?: string;
+};
+
+/**
  * Generate complete display name for X-Ray exam
  * Format: "{Exam Type} X-Ray - {Body Part/View}"
  * Example: "Chest X-Ray - AP & Lateral"
  */
-export function getXrayDisplayName(exam: XrayExam): string {
+export function getXrayDisplayName(exam: XrayDisplayData): string {
   const examTypeLabel = getExamTypeLabel(exam.examType);
   const bodyPart = exam.bodyPart;
   
@@ -53,7 +65,7 @@ export function getXrayDisplayName(exam: XrayExam): string {
  * Format: "{Exam Type} Ultrasound - {Specific Exam}" or "{Exam Type} - {Specific Exam}"
  * Example: "Abdominal Ultrasound - Complete Abdomen"
  */
-export function getUltrasoundDisplayName(exam: UltrasoundExam): string {
+export function getUltrasoundDisplayName(exam: UltrasoundDisplayData): string {
   const examTypeLabel = toTitleCase(exam.examType);
   
   if (exam.specificExam) {

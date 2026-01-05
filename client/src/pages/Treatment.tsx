@@ -83,7 +83,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 import { timeAgo } from '@/lib/time-utils';
-import { getXrayDisplayName, getUltrasoundDisplayName } from '@/lib/display-utils';
+import { getXrayDisplayName, getUltrasoundDisplayName, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -3373,10 +3373,18 @@ export default function Treatment() {
                                               {(() => {
                                                 // Use display helper functions for consistent labeling
                                                 if (order.type === 'xray' && order.examType && order.bodyPart) {
-                                                  return getXrayDisplayName({ examType: order.examType, bodyPart: order.bodyPart } as any);
+                                                  const xrayData: XrayDisplayData = {
+                                                    examType: order.examType,
+                                                    bodyPart: order.bodyPart
+                                                  };
+                                                  return getXrayDisplayName(xrayData);
                                                 }
                                                 if (order.type === 'ultrasound' && order.examType) {
-                                                  return getUltrasoundDisplayName({ examType: order.examType, specificExam: order.specificExam } as any);
+                                                  const ultrasoundData: UltrasoundDisplayData = {
+                                                    examType: order.examType,
+                                                    specificExam: order.specificExam
+                                                  };
+                                                  return getUltrasoundDisplayName(ultrasoundData);
                                                 }
                                                 // Fallback to name/description for other types
                                                 return order.name || order.description;
