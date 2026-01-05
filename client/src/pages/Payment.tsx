@@ -146,21 +146,21 @@ export default function Payment() {
       case 'radiology':
       case 'xray_exam':
         return {
-          bg: 'bg-blue-50',
+          bg: 'bg-gradient-to-br from-blue-50 to-cyan-50',
           bgActive: 'bg-blue-100',
-          bgGradient: 'bg-gradient-to-br from-blue-50 to-blue-100',
+          bgGradient: 'bg-gradient-to-br from-blue-50 to-cyan-50',
           text: 'text-blue-700',
           textDark: 'text-blue-300',
           border: 'border-blue-200',
           borderActive: 'border-blue-500',
-          icon: 'text-blue-500',
+          icon: 'text-blue-600',
           iconDark: 'text-blue-400',
           badge: 'bg-blue-500',
           badgeActive: 'bg-blue-600',
           hover: 'hover:border-blue-300',
           ring: 'ring-blue-500/20',
           dark: {
-            bg: 'dark:bg-blue-950',
+            bg: 'dark:bg-gradient-to-br dark:from-blue-950 dark:to-cyan-950',
             bgActive: 'dark:bg-blue-900',
             border: 'dark:border-blue-800',
             borderActive: 'dark:border-blue-500',
@@ -170,21 +170,21 @@ export default function Payment() {
       case 'ultrasound':
       case 'ultrasound_exam':
         return {
-          bg: 'bg-violet-50',
+          bg: 'bg-gradient-to-br from-violet-50 to-purple-50',
           bgActive: 'bg-violet-100',
-          bgGradient: 'bg-gradient-to-br from-violet-50 to-violet-100',
+          bgGradient: 'bg-gradient-to-br from-violet-50 to-purple-50',
           text: 'text-violet-700',
           textDark: 'text-violet-300',
           border: 'border-violet-200',
           borderActive: 'border-violet-500',
-          icon: 'text-violet-500',
+          icon: 'text-violet-600',
           iconDark: 'text-violet-400',
           badge: 'bg-violet-500',
           badgeActive: 'bg-violet-600',
           hover: 'hover:border-violet-300',
           ring: 'ring-violet-500/20',
           dark: {
-            bg: 'dark:bg-violet-950',
+            bg: 'dark:bg-gradient-to-br dark:from-violet-950 dark:to-purple-950',
             bgActive: 'dark:bg-violet-900',
             border: 'dark:border-violet-800',
             borderActive: 'dark:border-violet-500',
