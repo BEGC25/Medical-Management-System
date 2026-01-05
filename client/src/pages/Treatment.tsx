@@ -115,6 +115,43 @@ function getOrderIcon(type: string) {
   }
 }
 
+/**
+ * Convert SQLite datetime string to ISO format for proper parsing
+ * 
+ * Handles two datetime formats from the database:
+ * 1. SQLite datetime('now'): Returns "YYYY-MM-DD HH:MM:SS" in UTC
+ * 2. Backend ISO format: Returns "YYYY-MM-DDTHH:MM:SS.sssZ" from new Date().toISOString()
+ * 
+ * @param dateString - Date string from database (SQLite or ISO format)
+ * @returns ISO 8601 formatted string with UTC timezone (e.g., "2025-01-05T03:35:54.200Z")
+ *          or null if the format is unrecognized
+ * 
+ * @example
+ * ensureISOFormat("2025-01-05 03:35:54") // "2025-01-05T03:35:54Z"
+ * ensureISOFormat("2025-01-05T03:35:54.200Z") // "2025-01-05T03:35:54.200Z"
+ * ensureISOFormat("invalid") // null (with console warning)
+ */
+function ensureISOFormat(dateString: string | undefined | null): string | null {
+  if (!dateString) return null;
+  
+  // Already in ISO format with 'T' separator, optional milliseconds, and UTC timezone
+  // Matches: "2025-01-05T03:35:54Z" or "2025-01-05T03:35:54.200Z"
+  // Note: We only handle 'Z' (UTC) since backend always uses UTC timezone
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(dateString)) {
+    return dateString;
+  }
+  
+  // SQLite format "YYYY-MM-DD HH:MM:SS" - assume UTC and convert to ISO
+  // Matches exactly: "2025-01-05 03:35:54"
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
+    return dateString.replace(' ', 'T') + 'Z';
+  }
+  
+  // If format is unrecognized, return null to avoid invalid dates
+  console.warn('Unrecognized date format:', dateString);
+  return null;
+}
+
 // Common chief complaints in South Sudan
 const COMMON_COMPLAINTS = [
   "Fever",
@@ -3596,12 +3633,19 @@ export default function Treatment() {
                                     <div className="flex items-start justify-between">
                                       <div className="flex-1">
                                         <p className="font-semibold text-gray-900 dark:text-white">{med.drugName || "Medication"}</p>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "As prescribed"}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "Dose not recorded"}</p>
+                                        {med.instructions && (
+                                          <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-1">
+                                            {med.instructions}
+                                          </p>
+                                        )}
                                         <div className="flex flex-col gap-1 mt-2 text-xs text-gray-600 dark:text-gray-400">
                                           {/* Always show prescribed date */}
                                           {(() => {
-                                            const formattedDate = med.createdAt ? formatClinicDayKey(med.createdAt, 'MMM d, yyyy') : null;
-                                            if (!formattedDate || formattedDate === '—') return null;
+                                            const isoDate = ensureISOFormat(med.createdAt);
+                                            if (!isoDate) return null;
+                                            const formattedDate = formatClinicDateTime(isoDate, 'MMM d, yyyy');
+                                            if (formattedDate === '—') return null;
                                             return (
                                               <span className="flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
@@ -3612,9 +3656,11 @@ export default function Treatment() {
                                           
                                           {/* Show dispensed date if status is dispensed */}
                                           {(() => {
-                                            if (med.status !== "dispensed" || !med.dispensedAt) return null;
-                                            const formattedDate = formatClinicDayKey(med.dispensedAt, 'MMM d, yyyy');
-                                            if (!formattedDate || formattedDate === '—') return null;
+                                            if (med.status !== "dispensed") return null;
+                                            const isoDate = ensureISOFormat(med.dispensedAt);
+                                            if (!isoDate) return null;
+                                            const formattedDate = formatClinicDateTime(isoDate, 'MMM d, yyyy');
+                                            if (formattedDate === '—') return null;
                                             return (
                                               <span className="flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
