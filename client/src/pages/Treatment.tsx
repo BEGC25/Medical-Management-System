@@ -408,6 +408,18 @@ function checkDrugAllergy(
   return { hasAllergy: false };
 }
 
+// Get medication status badge label
+function getMedicationStatusLabel(status: string): string {
+  switch (status) {
+    case "dispensed":
+      return "Dispensed";
+    case "prescribed":
+      return "Active";
+    default:
+      return "Pending";
+  }
+}
+
 
 // --- Quick Orders helpers ---
 // ... (keep CATEGORY_ALIASES and matchesCategory as they are) ...
@@ -3748,7 +3760,7 @@ export default function Treatment() {
 
                                         {/* Status badge BELOW the dates */}
                                         <Badge variant={med.status === "dispensed" ? "default" : "secondary"} className={`text-xs mt-2 ${med.status === "dispensed" ? "bg-green-600" : ""}`}>
-                                          {med.status === "dispensed" ? "Dispensed" : med.status === "prescribed" ? "Active" : "Pending"}
+                                          {getMedicationStatusLabel(med.status)}
                                         </Badge>
                                       </div>
                                       <div className="flex gap-2">
