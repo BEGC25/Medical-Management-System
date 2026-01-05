@@ -9,8 +9,9 @@ import type { XrayExam, UltrasoundExam } from '@shared/schema';
 
 /**
  * Convert a string to Title Case
+ * Exported for use in other utility functions
  */
-function toTitleCase(str: string): string {
+export function toTitleCase(str: string): string {
   if (!str) return '';
   return str
     .split(' ')
@@ -35,14 +36,20 @@ function getExamTypeLabel(examType: string): string {
 
 /**
  * Type for X-Ray exam data needed for display
+ * Uses Partial to allow any object with at least examType and bodyPart
  */
-export type XrayDisplayData = Pick<XrayExam, 'examType' | 'bodyPart'>;
+export type XrayDisplayData = {
+  examType: string;
+  bodyPart?: string | null;
+};
 
 /**
  * Type for Ultrasound exam data needed for display
+ * Uses Partial to allow any object with at least examType
  */
-export type UltrasoundDisplayData = Pick<UltrasoundExam, 'examType'> & {
-  specificExam?: string;
+export type UltrasoundDisplayData = {
+  examType: string;
+  specificExam?: string | null;
 };
 
 /**

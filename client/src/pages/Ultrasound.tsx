@@ -94,18 +94,6 @@ function fullName(p?: Patient | null) {
   return n || p.patientId || '';
 }
 
-/**
- * Convert a string to Title Case
- * (Kept here for internal use, main export is from display-utils)
- */
-function toTitleCase(str: string): string {
-  if (!str) return '';
-  return str
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
 /* ------------------------------------------------------------------ */
 /* Data hooks                                                          */
 /* ------------------------------------------------------------------ */

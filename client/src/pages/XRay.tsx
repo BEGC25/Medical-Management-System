@@ -73,7 +73,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
-import { getXrayDisplayName } from '@/lib/display-utils';
+import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -90,19 +90,8 @@ function fullName(p?: Patient | null) {
 }
 
 /**
- * Convert a string to Title Case
- */
-function toTitleCase(str: string): string {
-  if (!str) return '';
-  return str
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
-/**
  * Get human-readable label for X-Ray exam type
- * (Kept here for internal use, main export is from display-utils)
+ * (Uses toTitleCase from display-utils)
  */
 function getExamTypeLabel(examType: string): string {
   const labels: Record<string, string> = {
