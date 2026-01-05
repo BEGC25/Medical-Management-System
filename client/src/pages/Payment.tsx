@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { formatDepartmentName } from "@/lib/display-utils";
 import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard, FlaskConical } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -542,25 +543,9 @@ export default function Payment() {
     const colors = getCategoryColor(departmentType);
     const serviceIcon = getServiceIcon(order.type, departmentType);
     
-    // Get service type label
+    // Get service type label - use formatDepartmentName without "Department" suffix
     const getServiceTypeLabel = (type: string) => {
-      switch (type.toLowerCase()) {
-        case 'lab_test_item':
-        case 'laboratory':
-          return 'Lab Test';
-        case 'xray_exam':
-        case 'radiology':
-        case 'xray':
-          return 'X-Ray';
-        case 'ultrasound_exam':
-        case 'ultrasound':
-          return 'Ultrasound';
-        case 'pharmacy_order':
-        case 'pharmacy':
-          return 'Pharmacy';
-        default:
-          return 'Service';
-      }
+      return formatDepartmentName(type, false); // false = no "Department" suffix
     };
 
     return (
