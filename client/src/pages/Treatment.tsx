@@ -1184,9 +1184,13 @@ export default function Treatment() {
         'dental': 'Dental X-Ray'
       };
 
-      const fullDescription = bodyPart 
-        ? `${examTypeLabel[xrayExamType] || 'X-Ray Examination'} - ${bodyPart}`
-        : examTypeLabel[xrayExamType] || 'X-Ray Examination';
+      // Determine if bodyPart is an exam type or specific body part
+      const examType = xrayExamType; // Use component state for exam type
+      const specificBodyPart = bodyPart !== examType ? bodyPart : ''; // If bodyPart differs from examType, it's a specific part
+
+      const fullDescription = specificBodyPart 
+        ? `${examTypeLabel[examType] || 'X-Ray Examination'} - ${specificBodyPart}`
+        : examTypeLabel[examType] || bodyPart || 'X-Ray Examination';
 
       // 2. Create corresponding order_line
       const orderLineData = {
@@ -1246,7 +1250,9 @@ export default function Treatment() {
         'renal': 'Renal Ultrasound'
       };
 
-      const fullDescription = examTypeLabel[ultrasoundExamType] || examType || 'Ultrasound Examination';
+      // Use component state for the base exam type, and examType param for specific exam if provided
+      const baseExamType = ultrasoundExamType;
+      const fullDescription = examTypeLabel[baseExamType] || examType || 'Ultrasound Examination';
 
       // 2. Create corresponding order_line
       const orderLineData = {
