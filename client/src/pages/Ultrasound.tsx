@@ -78,6 +78,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
+import { getUltrasoundDisplayName } from '@/lib/display-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -91,41 +92,6 @@ function fullName(p?: Patient | null) {
   if (!p) return '';
   const n = [p.firstName, p.lastName].filter(Boolean).join(' ').trim();
   return n || p.patientId || '';
-}
-
-/**
- * Convert a string to Title Case
- */
-function toTitleCase(str: string): string {
-  if (!str) return '';
-  return str
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
-/**
- * Generate complete display name for Ultrasound exam
- * Format: "{Exam Type} Ultrasound - {Specific Exam}" or "{Exam Type} - {Specific Exam}"
- * Example: "Abdominal Ultrasound - Complete Abdomen"
- */
-function getUltrasoundDisplayName(exam: UltrasoundExam): string {
-  const examTypeLabel = toTitleCase(exam.examType);
-  
-  if (exam.specificExam) {
-    // If examType already contains "Ultrasound", don't duplicate it
-    if (examTypeLabel.toLowerCase().includes('ultrasound')) {
-      return `${examTypeLabel} - ${exam.specificExam}`;
-    }
-    return `${examTypeLabel} Ultrasound - ${exam.specificExam}`;
-  }
-  
-  // If examType already contains "Ultrasound", use as-is
-  if (examTypeLabel.toLowerCase().includes('ultrasound')) {
-    return examTypeLabel;
-  }
-  
-  return `${examTypeLabel} Ultrasound`;
 }
 
 /* ------------------------------------------------------------------ */
