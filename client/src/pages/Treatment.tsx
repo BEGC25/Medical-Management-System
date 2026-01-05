@@ -3599,20 +3599,29 @@ export default function Treatment() {
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "As prescribed"}</p>
                                         <div className="flex flex-col gap-1 mt-2 text-xs text-gray-600 dark:text-gray-400">
                                           {/* Always show prescribed date */}
-                                          {med.createdAt && (
-                                            <span className="flex items-center gap-1">
-                                              <Calendar className="w-3 h-3" />
-                                              Prescribed: {formatClinicDayKey(med.createdAt, 'MMM d, yyyy')}
-                                            </span>
-                                          )}
+                                          {(() => {
+                                            const formattedDate = med.createdAt ? formatClinicDayKey(med.createdAt, 'MMM d, yyyy') : null;
+                                            if (!formattedDate || formattedDate === '—') return null;
+                                            return (
+                                              <span className="flex items-center gap-1">
+                                                <Calendar className="w-3 h-3" />
+                                                Prescribed: {formattedDate}
+                                              </span>
+                                            );
+                                          })()}
                                           
                                           {/* Show dispensed date if status is dispensed */}
-                                          {med.status === "dispensed" && med.dispensedAt && (
-                                            <span className="flex items-center gap-1">
-                                              <Calendar className="w-3 h-3" />
-                                              Dispensed: {formatClinicDayKey(med.dispensedAt, 'MMM d, yyyy')}
-                                            </span>
-                                          )}
+                                          {(() => {
+                                            if (med.status !== "dispensed" || !med.dispensedAt) return null;
+                                            const formattedDate = formatClinicDayKey(med.dispensedAt, 'MMM d, yyyy');
+                                            if (!formattedDate || formattedDate === '—') return null;
+                                            return (
+                                              <span className="flex items-center gap-1">
+                                                <Calendar className="w-3 h-3" />
+                                                Dispensed: {formattedDate}
+                                              </span>
+                                            );
+                                          })()}
                                         </div>
 
                                         {/* Status badge BELOW the dates */}
