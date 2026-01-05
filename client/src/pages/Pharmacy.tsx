@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight } from "lucide-react";
+import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, X } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,20 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Helper function to format dates consistently
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Helper function to format date with time
+function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  const dateFormatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const timeFormatted = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${dateFormatted} at ${timeFormatted}`;
+}
+
 interface PrescriptionWithPatient extends PharmacyOrder {
   patient: Patient;
 }
@@ -34,6 +48,7 @@ export default function Pharmacy() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<PrescriptionWithPatient | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<string>("");
+  const [showBanner, setShowBanner] = useState(true);
   const { toast } = useToast();
 
   // Fetch ALL pharmacy orders with patient data
@@ -174,25 +189,36 @@ export default function Pharmacy() {
       </div>
 
       {/* Info Banner */}
-      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Getting Started with Pharmacy</h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                To dispense medications, you first need to <strong>add drugs to your inventory</strong>. 
-                Click the "Manage Inventory" button above to:
-              </p>
-              <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 ml-4 list-disc space-y-1">
-                <li>Add drugs to your catalog (name, strength, form)</li>
-                <li>Receive stock batches with lot numbers and expiry dates</li>
-                <li>Set prices for each batch</li>
-              </ul>
+      {showBanner && (
+        <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Getting Started with Pharmacy</h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  To dispense medications, you first need to <strong>add drugs to your inventory</strong>. 
+                  Click the "Manage Inventory" button above to:
+                </p>
+                <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 ml-4 list-disc space-y-1">
+                  <li>Add drugs to your catalog (name, strength, form)</li>
+                  <li>Receive stock batches with lot numbers and expiry dates</li>
+                  <li>Set prices for each batch</li>
+                </ul>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowBanner(false)}
+                className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                aria-label="Close banner"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search */}
       <Card>
@@ -274,13 +300,23 @@ export default function Pharmacy() {
                         <p className="text-sm text-gray-600 dark:text-gray-300">
                           Quantity: {order.quantity}
                         </p>
+                        {order.route && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            Route: {order.route}
+                          </p>
+                        )}
+                        {order.duration && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            Duration: {order.duration}
+                          </p>
+                        )}
                         {order.instructions && (
                           <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 italic">
                             Instructions: {order.instructions}
                           </p>
                         )}
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                          Prescribed: {new Date(order.createdAt).toLocaleDateString()}
+                          Prescribed: {formatDate(order.createdAt)}
                         </p>
                       </div>
                       <Button
@@ -339,16 +375,26 @@ export default function Pharmacy() {
                         <p className="text-sm text-gray-600 dark:text-gray-300">
                           Quantity: {order.quantity}
                         </p>
+                        {order.route && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            Route: {order.route}
+                          </p>
+                        )}
+                        {order.duration && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            Duration: {order.duration}
+                          </p>
+                        )}
                         {order.instructions && (
                           <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 italic">
                             Instructions: {order.instructions}
                           </p>
                         )}
                         <div className="flex gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
-                          <p>Prescribed: {new Date(order.createdAt).toLocaleDateString()}</p>
+                          <p>Prescribed: {formatDate(order.createdAt)}</p>
                           {order.dispensedAt && (
                             <p className="font-semibold text-blue-600 dark:text-blue-400">
-                              Dispensed: {new Date(order.dispensedAt).toLocaleDateString()} {new Date(order.dispensedAt).toLocaleTimeString()}
+                              Dispensed: {formatDateTime(order.dispensedAt)}
                             </p>
                           )}
                         </div>
@@ -399,8 +445,18 @@ export default function Pharmacy() {
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         Quantity: {order.quantity}
                       </p>
+                      {order.route && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Route: {order.route}
+                        </p>
+                      )}
+                      {order.duration && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Duration: {order.duration}
+                        </p>
+                      )}
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        Prescribed: {new Date(order.createdAt).toLocaleDateString()}
+                        Prescribed: {formatDate(order.createdAt)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">

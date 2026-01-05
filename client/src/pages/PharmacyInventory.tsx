@@ -285,7 +285,8 @@ export default function PharmacyInventory() {
                 <TableBody>
                   {drugsWithStock.map((drug) => {
                     const stockLevel = drug.stockOnHand;
-                    const isLowStock = stockLevel <= drug.reorderLevel;
+                    const isOutOfStock = stockLevel === 0;
+                    const isLowStock = stockLevel > 0 && stockLevel <= drug.reorderLevel;
                     
                     // Find most recent batch with stock to get current price
                     const drugBatches = allBatches
@@ -304,7 +305,7 @@ export default function PharmacyInventory() {
                         <TableCell>{drug.strength || '-'}</TableCell>
                         <TableCell className="capitalize">{drug.form}</TableCell>
                         <TableCell className="text-right">
-                          <span className={`font-bold ${isLowStock ? "text-red-600" : stockLevel === 0 ? "text-gray-400" : "text-green-600"}`}>
+                          <span className={`font-bold ${isOutOfStock ? "text-gray-400" : isLowStock ? "text-red-600" : "text-green-600"}`}>
                             {stockLevel}
                           </span>
                         </TableCell>
@@ -315,10 +316,10 @@ export default function PharmacyInventory() {
                           {nearestExpiry || '-'}
                         </TableCell>
                         <TableCell>
-                          {isLowStock ? (
-                            <Badge variant="destructive">LOW STOCK</Badge>
-                          ) : stockLevel === 0 ? (
+                          {isOutOfStock ? (
                             <Badge variant="outline" className="border-gray-400">OUT OF STOCK</Badge>
+                          ) : isLowStock ? (
+                            <Badge variant="destructive">LOW STOCK</Badge>
                           ) : (
                             <Badge className="bg-green-600">In Stock</Badge>
                           )}
