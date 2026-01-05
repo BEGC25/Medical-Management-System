@@ -3596,12 +3596,20 @@ export default function Treatment() {
                                     <div className="flex items-start justify-between">
                                       <div className="flex-1">
                                         <p className="font-semibold text-gray-900 dark:text-white">{med.drugName || "Medication"}</p>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "As prescribed"}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "Dose not recorded"}</p>
+                                        {med.instructions && (
+                                          <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-1">
+                                            {med.instructions}
+                                          </p>
+                                        )}
                                         <div className="flex flex-col gap-1 mt-2 text-xs text-gray-600 dark:text-gray-400">
                                           {/* Always show prescribed date */}
                                           {(() => {
-                                            const formattedDate = med.createdAt ? formatClinicDayKey(med.createdAt, 'MMM d, yyyy') : null;
-                                            if (!formattedDate || formattedDate === '—') return null;
+                                            if (!med.createdAt) return null;
+                                            // Convert SQLite datetime to ISO format for proper parsing
+                                            const isoDate = med.createdAt.includes('T') ? med.createdAt : med.createdAt.replace(' ', 'T') + 'Z';
+                                            const formattedDate = formatClinicDateTime(isoDate, 'MMM d, yyyy');
+                                            if (formattedDate === '—') return null;
                                             return (
                                               <span className="flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
@@ -3613,8 +3621,10 @@ export default function Treatment() {
                                           {/* Show dispensed date if status is dispensed */}
                                           {(() => {
                                             if (med.status !== "dispensed" || !med.dispensedAt) return null;
-                                            const formattedDate = formatClinicDayKey(med.dispensedAt, 'MMM d, yyyy');
-                                            if (!formattedDate || formattedDate === '—') return null;
+                                            // Convert SQLite datetime to ISO format for proper parsing
+                                            const isoDate = med.dispensedAt.includes('T') ? med.dispensedAt : med.dispensedAt.replace(' ', 'T') + 'Z';
+                                            const formattedDate = formatClinicDateTime(isoDate, 'MMM d, yyyy');
+                                            if (formattedDate === '—') return null;
                                             return (
                                               <span className="flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
