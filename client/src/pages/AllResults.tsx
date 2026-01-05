@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { getClinicDayKey } from "@/lib/date-utils";
+import { formatDepartmentName } from "@/lib/display-utils";
 
 interface Patient {
   id: number;
@@ -257,16 +258,8 @@ export default function AllResults() {
   };
 
   const getDepartmentName = (type: string) => {
-    switch (type) {
-      case 'lab':
-        return 'Laboratory';
-      case 'xray':
-        return 'X-Ray';
-      case 'ultrasound':
-        return 'Ultrasound';
-      default:
-        return 'Unknown';
-    }
+    // Use the shared formatter without "Department" suffix for badge display
+    return formatDepartmentName(type, false);
   };
 
   const getStatusColor = (status: string) => {
@@ -1528,7 +1521,7 @@ export default function AllResults() {
                             <Badge variant="outline" className="text-xs">
                               {result.patient?.patientId}
                             </Badge>
-                            <Badge variant="outline" className={`text-xs ${departmentColors.badgeColor}`}>
+                            <Badge variant="outline" className={`text-xs font-medium ${departmentColors.badgeColor}`}>
                               {getDepartmentName(result.type)}
                             </Badge>
                           </div>

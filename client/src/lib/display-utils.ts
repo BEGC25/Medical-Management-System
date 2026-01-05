@@ -20,6 +20,47 @@ export function toTitleCase(str: string): string {
 }
 
 /**
+ * Format department name with consistent Title Case
+ * Handles special cases like "xray" → "X-Ray", "lab" → "Lab"
+ * 
+ * @param departmentType - The department type (e.g., "lab", "xray", "ultrasound", "laboratory", "radiology")
+ * @param includeSuffix - Whether to include "Department" suffix (default: true)
+ * @returns Formatted department name (e.g., "Lab Department", "X-Ray Department")
+ */
+export function formatDepartmentName(departmentType: string, includeSuffix: boolean = true): string {
+  if (!departmentType) return '';
+  
+  const type = departmentType.toLowerCase().trim();
+  let formatted = '';
+  
+  // Map department types to their display names
+  switch (type) {
+    case 'lab':
+    case 'laboratory':
+      formatted = 'Lab';
+      break;
+    case 'xray':
+    case 'x-ray':
+    case 'radiology':
+      formatted = 'X-Ray';
+      break;
+    case 'ultrasound':
+    case 'ultrasound_exam':
+      formatted = 'Ultrasound';
+      break;
+    case 'pharmacy':
+    case 'pharmacy_order':
+      formatted = 'Pharmacy';
+      break;
+    default:
+      // Use title case for unknown types
+      formatted = toTitleCase(type);
+  }
+  
+  return includeSuffix ? `${formatted} Department` : formatted;
+}
+
+/**
  * Get human-readable label for X-Ray exam type
  */
 function getExamTypeLabel(examType: string): string {

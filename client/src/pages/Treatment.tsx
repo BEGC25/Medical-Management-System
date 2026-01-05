@@ -83,7 +83,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 import { timeAgo } from '@/lib/time-utils';
-import { getXrayDisplayName, getUltrasoundDisplayName, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
+import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -3391,7 +3391,7 @@ export default function Treatment() {
                                               })()}
                                             </p>
                                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                              Ordered {timeAgo(order.createdAt)} • {order.department || order.type} department
+                                              Ordered {timeAgo(order.createdAt)} • <span className="font-medium text-gray-700 dark:text-gray-300">{formatDepartmentName(order.department || order.type)}</span>
                                             </p>
                                             <div className="flex items-center gap-2 mt-1">
                                               <Badge className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 rounded-full border border-teal-200 dark:border-teal-800">
