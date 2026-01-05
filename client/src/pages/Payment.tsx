@@ -39,10 +39,7 @@ interface UnpaidOrder {
   description: string;
   date: string;
   category?: string;
-  examType?: string;
   bodyPart?: string;
-  specificExam?: string;
-  viewDescriptions?: string;
   patient?: Patient | null;
   patientId: string;
   dosage?: string;
@@ -530,10 +527,7 @@ export default function Payment() {
     );
   };
 
-  // Pattern to detect view descriptions in bodyPart field
-  const VIEW_INFO_PATTERN = /\b(ap|lateral|pa|oblique|axial)\b/i;
-
-  // Clean description by removing service type prefix and building intelligent descriptions
+  // Clean description by removing service type prefix
   const cleanDescription = (desc: string, type: string, order?: UnpaidOrder) => {
     const prefixes = ['Lab Test:', 'X-Ray:', 'Ultrasound:', 'Pharmacy:', 'Lab:', 'X-ray:'];
     let cleaned = desc;
@@ -543,55 +537,7 @@ export default function Payment() {
       }
     });
     
-    // For X-Ray: Build intelligent description
-    if (type === 'xray' || type === 'xray_exam') {
-      // Start with exam type (capitalize first letter)
-      let result = cleaned && cleaned.length > 0 
-        ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-        : 'X-Ray Examination';
-      
-      // Add body part if it's different from exam type and doesn't contain view info
-      if (order?.bodyPart) {
-        const bodyPartLower = order.bodyPart.toLowerCase();
-        const examTypeLower = cleaned.toLowerCase();
-        
-        // Check if bodyPart contains view descriptions (AP, Lateral, etc.)
-        const hasViewInfo = VIEW_INFO_PATTERN.test(order.bodyPart);
-        
-        if (!hasViewInfo && bodyPartLower !== examTypeLower) {
-          result += ` - ${order.bodyPart}`;
-        }
-      }
-      
-      // Add view descriptions if available
-      if (order?.viewDescriptions) {
-        result += ` (${order.viewDescriptions} view)`;
-      }
-      
-      return result;
-    }
-    
-    // For Ultrasound: Build intelligent description
-    if (type === 'ultrasound' || type === 'ultrasound_exam') {
-      // Start with exam type (capitalize first letter)
-      let result = cleaned && cleaned.length > 0
-        ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-        : 'Ultrasound Examination';
-      
-      // Add specific exam if available and different from exam type
-      if (order?.specificExam) {
-        const specificExamLower = order.specificExam.toLowerCase();
-        const examTypeLower = cleaned.toLowerCase();
-        
-        if (specificExamLower !== examTypeLower) {
-          result += ` - ${order.specificExam}`;
-        }
-      }
-      
-      return result;
-    }
-    
-    // For legacy cases and other types, keep original cleanup logic
+    // Fix legacy "radiology" descriptions for X-Ray
     if (cleaned.toLowerCase() === 'radiology' && type === 'xray') {
       // Try to reconstruct from order data
       if (order?.bodyPart) {
@@ -603,42 +549,10 @@ export default function Payment() {
     
     // Fix legacy generic ultrasound descriptions
     if (cleaned.toLowerCase() === 'ultrasound' && type === 'ultrasound') {
-      cleaned = order?.specificExam || order?.bodyPart || 'Ultrasound Examination';
+      cleaned = order?.bodyPart || 'Ultrasound Examination';
     }
     
     return cleaned;
-  };
-
-  // Determine if bodyPart should be shown to avoid redundancy
-  const shouldShowBodyPart = (order: UnpaidOrder, type: string): boolean => {
-    // Never show bodyPart for ultrasound (use specificExam instead)
-    if (type === 'ultrasound' || type === 'ultrasound_exam') {
-      return false;
-    }
-    
-    // For X-Ray, only show if bodyPart is not empty and doesn't contain view info
-    if (type === 'xray' || type === 'xray_exam') {
-      if (!order.bodyPart) return false;
-      
-      // Don't show if bodyPart contains view descriptions (already shown in description)
-      const hasViewInfo = VIEW_INFO_PATTERN.test(order.bodyPart);
-      if (hasViewInfo) return false;
-      
-      // Don't show if bodyPart is same as examType (already in description)
-      if (order.examType && order.bodyPart.toLowerCase() === order.examType.toLowerCase()) {
-        return false;
-      }
-      
-      // If we built the description with bodyPart already, don't show it again
-      const descriptionIncludesBodyPart = order.description && 
-        order.description.toLowerCase().includes(order.bodyPart.toLowerCase());
-      if (descriptionIncludesBodyPart) return false;
-      
-      return true;
-    }
-    
-    // For other types (lab, pharmacy), show bodyPart if present
-    return !!order.bodyPart;
   };
 
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
@@ -726,10 +640,9 @@ export default function Payment() {
               <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 ml-0.5">{cleanDescription(order.description, departmentType, order)}</h4>
               
               {/* Additional Info - inline if present */}
-              {/* Only show bodyPart if it adds new information (not for ultrasound, not if redundant with description) */}
-              {(shouldShowBodyPart(order, departmentType) || order.dosage || order.quantity) && (
+              {(order.bodyPart || order.dosage || order.quantity) && (
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                  {shouldShowBodyPart(order, departmentType) && <span>Part: {order.bodyPart}</span>}
+                  {order.bodyPart && <span>Part: {order.bodyPart}</span>}
                   {order.dosage && <span>Dosage: {order.dosage}</span>}
                   {order.quantity && <span>Qty: {order.quantity}</span>}
                 </div>
