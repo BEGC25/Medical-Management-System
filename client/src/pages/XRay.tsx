@@ -73,6 +73,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
+import { getXrayDisplayName } from '@/lib/display-utils';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -101,6 +102,7 @@ function toTitleCase(str: string): string {
 
 /**
  * Get human-readable label for X-Ray exam type
+ * (Kept here for internal use, main export is from display-utils)
  */
 function getExamTypeLabel(examType: string): string {
   const labels: Record<string, string> = {
@@ -112,21 +114,6 @@ function getExamTypeLabel(examType: string): string {
     'skull': 'Skull',
   };
   return labels[examType.toLowerCase()] || toTitleCase(examType);
-}
-
-/**
- * Generate complete display name for X-Ray exam
- * Format: "{Exam Type} X-Ray - {Body Part/View}"
- * Example: "Chest X-Ray - AP & Lateral"
- */
-function getXrayDisplayName(exam: XrayExam): string {
-  const examTypeLabel = getExamTypeLabel(exam.examType);
-  const bodyPart = exam.bodyPart;
-  
-  if (bodyPart) {
-    return `${examTypeLabel} X-Ray - ${bodyPart}`;
-  }
-  return `${examTypeLabel} X-Ray`;
 }
 
 /* ------------------------------------------------------------------ */

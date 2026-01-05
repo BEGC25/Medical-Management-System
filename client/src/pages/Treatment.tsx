@@ -83,6 +83,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 import { timeAgo } from '@/lib/time-utils';
+import { getXrayDisplayName, getUltrasoundDisplayName } from '@/lib/display-utils';
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -1174,9 +1175,11 @@ export default function Treatment() {
       if (!currentEncounter) throw new Error("No active encounter");
 
       // 1. Create X-ray exam record with clinical notes
+      // Use component state xrayExamType (e.g., 'chest', 'extremities') instead of service.category
+      // to ensure correct exam type is saved (not generic 'radiology')
       const xrayData = {
         patientId: selectedPatient.patientId,
-        examType: service.category || 'general',
+        examType: xrayExamType,
         bodyPart: bodyPart || service.name,
         clinicalIndication: xrayClinicalInfo,
         requestedDate: new Date().toISOString(),
@@ -3367,7 +3370,17 @@ export default function Treatment() {
                                         <div className="flex items-start justify-between gap-3 mb-2">
                                           <div className="flex-1">
                                             <p className="font-semibold text-base text-gray-900 dark:text-white truncate">
-                                              {order.name || order.description}
+                                              {(() => {
+                                                // Use display helper functions for consistent labeling
+                                                if (order.type === 'xray' && order.examType && order.bodyPart) {
+                                                  return getXrayDisplayName({ examType: order.examType, bodyPart: order.bodyPart } as any);
+                                                }
+                                                if (order.type === 'ultrasound' && order.examType) {
+                                                  return getUltrasoundDisplayName({ examType: order.examType, specificExam: order.specificExam } as any);
+                                                }
+                                                // Fallback to name/description for other types
+                                                return order.name || order.description;
+                                              })()}
                                             </p>
                                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                               Ordered {timeAgo(order.createdAt)} • {order.department || order.type} department
@@ -3583,7 +3596,7 @@ export default function Treatment() {
                                       <div className="flex items-center gap-2 flex-1">
                                         <Zap className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                                         <div>
-                                          <p className="font-semibold text-base">{x.bodyPart} X-Ray</p>
+                                          <p className="font-semibold text-base">{getXrayDisplayName(x)}</p>
                                           <div className="flex items-center gap-2 mt-1">
                                             <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
                                               <Check className="h-3 w-3 mr-1" />
@@ -3672,7 +3685,7 @@ export default function Treatment() {
                                     <div className="flex justify-between items-start gap-3">
                                         {/* ... existing Ultrasound content ... */}
                                       <div className="flex-1">
-                                        <p className="font-medium">{u.examType}</p>
+                                        <p className="font-medium">{getUltrasoundDisplayName(u)}</p>
                                          <div className="flex items-center gap-2 my-1">
                                            <Badge variant={u.status === "completed" ? "default" : "secondary"}>{u.status.charAt(0).toUpperCase() + u.status.slice(1)}</Badge>
                                            {!u.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
