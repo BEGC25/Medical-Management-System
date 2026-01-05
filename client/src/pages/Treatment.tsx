@@ -125,13 +125,15 @@ function getOrderIcon(type: string) {
 function ensureISOFormat(dateString: string | undefined | null): string | null {
   if (!dateString) return null;
   
-  // Already in ISO format with 'T' separator and timezone
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dateString)) {
+  // Already in ISO format with 'T' separator, optional milliseconds, and optional timezone
+  // Matches: "2025-01-05T03:35:54Z" or "2025-01-05T03:35:54.200Z"
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(dateString)) {
     return dateString;
   }
   
   // SQLite format "YYYY-MM-DD HH:MM:SS" - assume UTC and convert to ISO
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(dateString)) {
+  // Matches exactly: "2025-01-05 03:35:54"
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
     return dateString.replace(' ', 'T') + 'Z';
   }
   
