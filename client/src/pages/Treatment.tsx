@@ -924,11 +924,12 @@ export default function Treatment() {
 
 
   // Filter orders by type (keep as any to preserve backend properties like orderId, isPaid)
-  const labTests = useMemo(() => orders.filter((o) => o.type === "lab"), [orders]);
+  // Also filter out cancelled lab tests from display
+  const labTests = useMemo(() => orders.filter((o) => o.type === "lab" && o.status !== "cancelled"), [orders]);
   const xrays = useMemo(() => orders.filter((o) => o.type === "xray"), [orders]);
   const ultrasounds = useMemo(() => orders.filter((o) => o.type === "ultrasound"), [orders]);
   
-  // Count only diagnostic tests (lab + xray + ultrasound) for badge
+  // Count only diagnostic tests (lab + xray + ultrasound) for badge, excluding cancelled ones
   const diagnosticTestCount = useMemo(() => labTests.length + xrays.length + ultrasounds.length, [labTests, xrays, ultrasounds]);
 
   // Memoized handler for X-ray safety checklist changes to prevent re-renders and event issues
@@ -1310,7 +1311,7 @@ export default function Treatment() {
     onSuccess: () => {
       toast({ title: "Success", description: "Lab test cancelled successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
@@ -1337,7 +1338,7 @@ export default function Treatment() {
       setEditLabModalOpen(false);
       setLabTestToEdit(null);
       queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
@@ -1406,7 +1407,7 @@ export default function Treatment() {
     },
     onSuccess: () => {
       toast({ title: "Success", description: "X-Ray exam cancelled successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
@@ -1429,7 +1430,7 @@ export default function Treatment() {
       toast({ title: "Success", description: "X-Ray exam updated successfully" });
       setEditXrayModalOpen(false);
       setXrayToEdit(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
@@ -1486,7 +1487,7 @@ export default function Treatment() {
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Ultrasound exam cancelled successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
@@ -1509,7 +1510,7 @@ export default function Treatment() {
       toast({ title: "Success", description: "Ultrasound exam updated successfully" });
       setEditUltrasoundModalOpen(false);
       setUltrasoundToEdit(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/visits", currentEncounter?.encounterId, "orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
     onError: (error: any) => {
