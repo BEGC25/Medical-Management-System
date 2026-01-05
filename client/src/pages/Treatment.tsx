@@ -1185,13 +1185,35 @@ export default function Treatment() {
       const xrayRes = await apiRequest("POST", "/api/xray-exams", xrayData);
       const createdXray = await xrayRes.json();
 
+      // Build descriptive X-Ray label
+      const examTypeLabel: Record<string, string> = {
+        'chest': 'Chest X-Ray',
+        'extremities': 'Extremity X-Ray',
+        'extremity': 'Extremity X-Ray',
+        'abdomen': 'Abdominal X-Ray',
+        'spine': 'Spine X-Ray',
+        'skull': 'Skull X-Ray',
+        'dental': 'Dental X-Ray'
+      };
+
+      // Use component state for exam type
+      const examType = xrayExamType;
+      
+      // If bodyPart is set and is NOT an exam type itself, it's a specific body part
+      const isBodyPartAnExamType = bodyPart && bodyPart.toLowerCase() in examTypeLabel;
+      const hasSpecificBodyPart = bodyPart && !isBodyPartAnExamType;
+      
+      const fullDescription = hasSpecificBodyPart 
+        ? `${examTypeLabel[examType] || 'X-Ray Examination'} - ${bodyPart}`
+        : examTypeLabel[examType] || examTypeLabel[bodyPart?.toLowerCase() || ''] || 'X-Ray Examination';
+
       // 2. Create corresponding order_line
       const orderLineData = {
         encounterId: currentEncounter.encounterId,
         serviceId: service.id,
         relatedType: "xray",
         relatedId: createdXray.examId,
-        description: `X-Ray: ${bodyPart || service.name}`,
+        description: `X-Ray: ${fullDescription}`,
         quantity: 1,
         unitPriceSnapshot: service.price || 0,
         totalPrice: service.price || 0,
@@ -1231,13 +1253,29 @@ export default function Treatment() {
       const ultrasoundRes = await apiRequest("POST", "/api/ultrasound-exams", ultrasoundData);
       const createdUltrasound = await ultrasoundRes.json();
 
+      // Build descriptive Ultrasound label
+      const examTypeLabel: Record<string, string> = {
+        'obstetric': 'Obstetric Ultrasound',
+        'abdominal': 'Abdominal Ultrasound',
+        'pelvic': 'Pelvic Ultrasound',
+        'thyroid': 'Thyroid Ultrasound',
+        'breast': 'Breast Ultrasound',
+        'musculoskeletal': 'Musculoskeletal Ultrasound',
+        'vascular': 'Vascular Ultrasound',
+        'renal': 'Renal Ultrasound'
+      };
+
+      // Use component state for the base exam type, and examType param for specific exam if provided
+      const baseExamType = ultrasoundExamType;
+      const fullDescription = examTypeLabel[baseExamType] || examType || 'Ultrasound Examination';
+
       // 2. Create corresponding order_line
       const orderLineData = {
         encounterId: currentEncounter.encounterId,
         serviceId: service.id,
         relatedType: "ultrasound",
         relatedId: createdUltrasound.examId,
-        description: `Ultrasound: ${examType || service.name}`,
+        description: `Ultrasound: ${fullDescription}`,
         quantity: 1,
         unitPriceSnapshot: service.price || 0,
         totalPrice: service.price || 0,

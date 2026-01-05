@@ -146,49 +146,49 @@ export default function Payment() {
       case 'radiology':
       case 'xray_exam':
         return {
-          bg: 'bg-gradient-to-br from-blue-50 to-cyan-50',
+          bg: 'bg-gradient-to-br from-blue-100 via-cyan-50 to-blue-50',
           bgActive: 'bg-blue-100',
-          bgGradient: 'bg-gradient-to-br from-blue-50 to-cyan-50',
-          text: 'text-blue-700',
-          textDark: 'text-blue-300',
-          border: 'border-blue-200',
+          bgGradient: 'bg-gradient-to-br from-blue-100 via-cyan-50 to-blue-50',
+          text: 'text-blue-800',
+          textDark: 'text-blue-200',
+          border: 'border-blue-300',
           borderActive: 'border-blue-500',
-          icon: 'text-blue-600',
-          iconDark: 'text-blue-400',
-          badge: 'bg-blue-500',
-          badgeActive: 'bg-blue-600',
+          icon: 'text-blue-700',
+          iconDark: 'text-blue-300',
+          badge: 'bg-blue-600',
+          badgeActive: 'bg-blue-700',
           hover: 'hover:border-blue-300',
           ring: 'ring-blue-500/20',
           dark: {
-            bg: 'dark:bg-gradient-to-br dark:from-blue-950 dark:to-cyan-950',
+            bg: 'dark:bg-gradient-to-br dark:from-blue-900 dark:via-cyan-950 dark:to-blue-950',
             bgActive: 'dark:bg-blue-900',
-            border: 'dark:border-blue-800',
+            border: 'dark:border-blue-700',
             borderActive: 'dark:border-blue-500',
-            text: 'dark:text-blue-300'
+            text: 'dark:text-blue-200'
           }
         };
       case 'ultrasound':
       case 'ultrasound_exam':
         return {
-          bg: 'bg-gradient-to-br from-violet-50 to-purple-50',
+          bg: 'bg-gradient-to-br from-violet-100 via-purple-50 to-violet-50',
           bgActive: 'bg-violet-100',
-          bgGradient: 'bg-gradient-to-br from-violet-50 to-purple-50',
-          text: 'text-violet-700',
-          textDark: 'text-violet-300',
-          border: 'border-violet-200',
+          bgGradient: 'bg-gradient-to-br from-violet-100 via-purple-50 to-violet-50',
+          text: 'text-violet-800',
+          textDark: 'text-violet-200',
+          border: 'border-violet-300',
           borderActive: 'border-violet-500',
-          icon: 'text-violet-600',
-          iconDark: 'text-violet-400',
-          badge: 'bg-violet-500',
-          badgeActive: 'bg-violet-600',
+          icon: 'text-violet-700',
+          iconDark: 'text-violet-300',
+          badge: 'bg-violet-600',
+          badgeActive: 'bg-violet-700',
           hover: 'hover:border-violet-300',
           ring: 'ring-violet-500/20',
           dark: {
-            bg: 'dark:bg-gradient-to-br dark:from-violet-950 dark:to-purple-950',
+            bg: 'dark:bg-gradient-to-br dark:from-violet-900 dark:via-purple-950 dark:to-violet-950',
             bgActive: 'dark:bg-violet-900',
-            border: 'dark:border-violet-800',
+            border: 'dark:border-violet-700',
             borderActive: 'dark:border-violet-500',
-            text: 'dark:text-violet-300'
+            text: 'dark:text-violet-200'
           }
         };
       case 'pharmacy':
@@ -242,10 +242,10 @@ export default function Payment() {
   }
 
   // Service icon mapping - returns React component with category-specific colors
-  function getServiceIcon(type: string, category?: string) {
+  function getServiceIcon(type: string, category?: string, size: number = 20) {
     const categoryToUse = category || type;
     const colors = getCategoryColor(categoryToUse);
-    return getMedicalIcon(type, { className: `${colors.icon} ${colors.iconDark}`, size: 18 });
+    return getMedicalIcon(type, { className: `${colors.icon} ${colors.iconDark}`, size });
   }
   
   // Service icon for tabs - slightly larger
@@ -528,7 +528,7 @@ export default function Payment() {
   };
 
   // Clean description by removing service type prefix
-  const cleanDescription = (desc: string, type: string) => {
+  const cleanDescription = (desc: string, type: string, order?: UnpaidOrder) => {
     const prefixes = ['Lab Test:', 'X-Ray:', 'Ultrasound:', 'Pharmacy:', 'Lab:', 'X-ray:'];
     let cleaned = desc;
     prefixes.forEach(prefix => {
@@ -536,6 +536,22 @@ export default function Payment() {
         cleaned = cleaned.substring(prefix.length).trim();
       }
     });
+    
+    // Fix legacy "radiology" descriptions for X-Ray
+    if (cleaned.toLowerCase() === 'radiology' && type === 'xray') {
+      // Try to reconstruct from order data
+      if (order?.bodyPart) {
+        cleaned = `X-Ray - ${order.bodyPart}`;
+      } else {
+        cleaned = 'X-Ray Examination';
+      }
+    }
+    
+    // Fix legacy generic ultrasound descriptions
+    if (cleaned.toLowerCase() === 'ultrasound' && type === 'ultrasound') {
+      cleaned = order?.bodyPart || 'Ultrasound Examination';
+    }
+    
     return cleaned;
   };
 
@@ -613,15 +629,15 @@ export default function Payment() {
               
               {/* Row 2: Service Type Badge and Description */}
               <div className="flex items-center gap-2 mb-1">
-                {/* Colored Service Type Badge */}
-                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${colors.bg} ${colors.text} ${colors.border} ${colors.dark.bg} ${colors.dark.text} ${colors.dark.border} shadow-sm`}>
+                {/* Premium Service Type Badge with Gradient */}
+                <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 shadow-md ${colors.bg} ${colors.text} ${colors.border} ${colors.dark.bg} ${colors.dark.text} ${colors.dark.border} transition-all duration-200`}>
                   {serviceIcon}
-                  <span className="text-xs font-semibold">{getServiceTypeLabel(departmentType)}</span>
+                  <span className="text-sm font-bold tracking-wide">{getServiceTypeLabel(departmentType)}</span>
                 </div>
               </div>
               
               {/* Service Description */}
-              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 ml-0.5">{cleanDescription(order.description, departmentType)}</h4>
+              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 ml-0.5">{cleanDescription(order.description, departmentType, order)}</h4>
               
               {/* Additional Info - inline if present */}
               {(order.bodyPart || order.dosage || order.quantity) && (
@@ -643,10 +659,16 @@ export default function Payment() {
               </div>
             )}
             
-            {/* Action Button - category colored */}
+            {/* Action Button - category colored with gradient */}
             <Button 
               size="sm"
-              className={`${colors.badge} hover:${colors.badgeActive} text-white shadow-sm transition-all`}
+              className={`${
+                departmentType === 'xray' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600' :
+                departmentType === 'ultrasound' ? 'bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600' :
+                departmentType === 'laboratory' ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600' :
+                departmentType === 'pharmacy' ? 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600' :
+                `${colors.badge} hover:${colors.badgeActive}`
+              } text-white shadow-lg transition-all duration-200`}
             >
               Process Payment
             </Button>
@@ -848,18 +870,18 @@ export default function Payment() {
                 <div className="flex flex-wrap gap-2 mb-4">
                   <button
                     onClick={() => setActiveCategory("laboratory")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
                       activeCategory === "laboratory"
-                        ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-500 shadow-sm dark:bg-emerald-900 dark:text-emerald-300"
-                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                        ? "bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-800 border-emerald-400 shadow-lg shadow-emerald-200/50 dark:from-emerald-900 dark:to-emerald-950 dark:text-emerald-200 dark:border-emerald-600"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-emerald-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
                     }`}
                   >
-                    <FlaskConical className={activeCategory === "laboratory" ? "text-emerald-600 dark:text-emerald-400" : "text-gray-600"} size={18} />
+                    <FlaskConical className={activeCategory === "laboratory" ? "text-emerald-700 dark:text-emerald-300" : "text-gray-500"} size={20} />
                     <span>Lab</span>
                     {allUnpaidOrders.laboratory.length > 0 && (
-                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                      <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "laboratory"
-                          ? "bg-emerald-500 text-white"
+                          ? "bg-emerald-600 text-white shadow-sm"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.laboratory.length}
@@ -869,18 +891,18 @@ export default function Payment() {
                   
                   <button
                     onClick={() => setActiveCategory("xray")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
                       activeCategory === "xray"
-                        ? "bg-blue-100 text-blue-700 border-2 border-blue-500 shadow-sm dark:bg-blue-900 dark:text-blue-300"
-                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                        ? "bg-gradient-to-br from-blue-100 to-cyan-50 text-blue-800 border-blue-400 shadow-lg shadow-blue-200/50 dark:from-blue-900 dark:to-cyan-950 dark:text-blue-200 dark:border-blue-600"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-blue-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
                     }`}
                   >
-                    <XRayIcon className={activeCategory === "xray" ? "text-blue-600 dark:text-blue-400" : "text-gray-600"} size={18} />
+                    <XRayIcon className={activeCategory === "xray" ? "text-blue-700 dark:text-blue-300" : "text-gray-500"} size={20} />
                     <span>X-Ray</span>
                     {allUnpaidOrders.xray.length > 0 && (
-                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                         activeCategory === "xray"
-                          ? "bg-blue-500 text-white"
+                          ? "bg-blue-600 text-white shadow-sm"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.xray.length}
@@ -890,18 +912,18 @@ export default function Payment() {
                   
                   <button
                     onClick={() => setActiveCategory("ultrasound")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
                       activeCategory === "ultrasound"
-                        ? "bg-violet-100 text-violet-700 border-2 border-violet-500 shadow-sm dark:bg-violet-900 dark:text-violet-300"
-                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                        ? "bg-gradient-to-br from-violet-100 to-purple-50 text-violet-800 border-violet-400 shadow-lg shadow-violet-200/50 dark:from-violet-900 dark:to-purple-950 dark:text-violet-200 dark:border-violet-600"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-violet-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
                     }`}
                   >
-                    <UltrasoundIcon className={activeCategory === "ultrasound" ? "text-violet-600 dark:text-violet-400" : "text-gray-600"} size={18} />
+                    <UltrasoundIcon className={activeCategory === "ultrasound" ? "text-violet-700 dark:text-violet-300" : "text-gray-500"} size={20} />
                     <span>Ultrasound</span>
                     {allUnpaidOrders.ultrasound.length > 0 && (
-                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                         activeCategory === "ultrasound"
-                          ? "bg-violet-500 text-white"
+                          ? "bg-violet-600 text-white shadow-sm"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.ultrasound.length}
@@ -911,18 +933,18 @@ export default function Payment() {
                   
                   <button
                     onClick={() => setActiveCategory("pharmacy")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
                       activeCategory === "pharmacy"
-                        ? "bg-orange-100 text-orange-700 border-2 border-orange-500 shadow-sm dark:bg-orange-900 dark:text-orange-300"
-                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                        ? "bg-gradient-to-br from-orange-100 to-orange-50 text-orange-800 border-orange-400 shadow-lg shadow-orange-200/50 dark:from-orange-900 dark:to-orange-950 dark:text-orange-200 dark:border-orange-600"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-orange-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
                     }`}
                   >
-                    <PharmacyIcon className={activeCategory === "pharmacy" ? "text-orange-600 dark:text-orange-400" : "text-gray-600"} size={18} />
+                    <PharmacyIcon className={activeCategory === "pharmacy" ? "text-orange-700 dark:text-orange-300" : "text-gray-500"} size={20} />
                     <span>Pharmacy</span>
                     {allUnpaidOrders.pharmacy.length > 0 && (
-                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                      <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
                         activeCategory === "pharmacy"
-                          ? "bg-orange-500 text-white"
+                          ? "bg-orange-600 text-white shadow-sm"
                           : "bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                       }`}>
                         {allUnpaidOrders.pharmacy.length}
