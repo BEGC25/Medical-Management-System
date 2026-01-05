@@ -245,7 +245,7 @@ export default function Payment() {
   function getServiceIcon(type: string, category?: string, size: number = 20) {
     const categoryToUse = category || type;
     const colors = getCategoryColor(categoryToUse);
-    return getMedicalIcon(type, { className: `${colors.icon} ${colors.iconDark}`, size, strokeWidth: 2.5 });
+    return getMedicalIcon(type, { className: `${colors.icon} ${colors.iconDark}`, size });
   }
   
   // Service icon for tabs - slightly larger

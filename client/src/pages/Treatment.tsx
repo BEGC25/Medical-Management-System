@@ -1184,13 +1184,16 @@ export default function Treatment() {
         'dental': 'Dental X-Ray'
       };
 
-      // Determine if bodyPart is an exam type or specific body part
-      const examType = xrayExamType; // Use component state for exam type
-      const specificBodyPart = bodyPart !== examType ? bodyPart : ''; // If bodyPart differs from examType, it's a specific part
-
-      const fullDescription = specificBodyPart 
-        ? `${examTypeLabel[examType] || 'X-Ray Examination'} - ${specificBodyPart}`
-        : examTypeLabel[examType] || bodyPart || 'X-Ray Examination';
+      // Use component state for exam type
+      const examType = xrayExamType;
+      
+      // If bodyPart is set and is NOT an exam type itself, it's a specific body part
+      const isBodyPartAnExamType = bodyPart && bodyPart.toLowerCase() in examTypeLabel;
+      const hasSpecificBodyPart = bodyPart && !isBodyPartAnExamType;
+      
+      const fullDescription = hasSpecificBodyPart 
+        ? `${examTypeLabel[examType] || 'X-Ray Examination'} - ${bodyPart}`
+        : examTypeLabel[examType] || examTypeLabel[bodyPart?.toLowerCase() || ''] || 'X-Ray Examination';
 
       // 2. Create corresponding order_line
       const orderLineData = {
