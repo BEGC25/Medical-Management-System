@@ -40,6 +40,8 @@ interface UnpaidOrder {
   date: string;
   category?: string;
   bodyPart?: string;
+  examType?: string;
+  specificExam?: string;
   patient?: Patient | null;
   patientId: string;
   dosage?: string;
@@ -527,32 +529,11 @@ export default function Payment() {
     );
   };
 
-  // Clean description by removing service type prefix
+  // Clean description - server now sends properly formatted descriptions
   const cleanDescription = (desc: string, type: string, order?: UnpaidOrder) => {
-    const prefixes = ['Lab Test:', 'X-Ray:', 'Ultrasound:', 'Pharmacy:', 'Lab:', 'X-ray:'];
-    let cleaned = desc;
-    prefixes.forEach(prefix => {
-      if (cleaned.toLowerCase().startsWith(prefix.toLowerCase())) {
-        cleaned = cleaned.substring(prefix.length).trim();
-      }
-    });
-    
-    // Fix legacy "radiology" descriptions for X-Ray
-    if (cleaned.toLowerCase() === 'radiology' && type === 'xray') {
-      // Try to reconstruct from order data
-      if (order?.bodyPart) {
-        cleaned = `X-Ray - ${order.bodyPart}`;
-      } else {
-        cleaned = 'X-Ray Examination';
-      }
-    }
-    
-    // Fix legacy generic ultrasound descriptions
-    if (cleaned.toLowerCase() === 'ultrasound' && type === 'ultrasound') {
-      cleaned = order?.bodyPart || 'Ultrasound Examination';
-    }
-    
-    return cleaned;
+    // The description is already properly formatted from the server
+    // Just return it as-is
+    return desc;
   };
 
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
@@ -640,9 +621,11 @@ export default function Payment() {
               <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 ml-0.5">{cleanDescription(order.description, departmentType, order)}</h4>
               
               {/* Additional Info - inline if present */}
-              {(order.bodyPart || order.dosage || order.quantity) && (
+              {/* Only show bodyPart if it's NOT already in the description (to avoid redundancy) */}
+              {/* For X-Ray and Ultrasound, bodyPart/specificExam are already in description */}
+              {(order.dosage || order.quantity || (order.bodyPart && departmentType !== 'xray' && departmentType !== 'ultrasound')) && (
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                  {order.bodyPart && <span>Part: {order.bodyPart}</span>}
+                  {order.bodyPart && departmentType !== 'xray' && departmentType !== 'ultrasound' && <span>Part: {order.bodyPart}</span>}
                   {order.dosage && <span>Dosage: {order.dosage}</span>}
                   {order.quantity && <span>Qty: {order.quantity}</span>}
                 </div>

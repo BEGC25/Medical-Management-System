@@ -1668,6 +1668,28 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
       return services.find((s) => s.name.toLowerCase() === name.toLowerCase() && s.isActive);
     };
 
+    // Helper function to convert string to Title Case
+    const toTitleCase = (str: string): string => {
+      if (!str) return '';
+      return str
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    };
+
+    // Helper function to get X-Ray exam type label
+    const getExamTypeLabel = (examType: string): string => {
+      const labels: Record<string, string> = {
+        'chest': 'Chest',
+        'abdomen': 'Abdomen',
+        'spine': 'Spine',
+        'extremities': 'Extremities',
+        'pelvis': 'Pelvis',
+        'skull': 'Skull',
+      };
+      return labels[examType.toLowerCase()] || toTitleCase(examType);
+    };
+
     const result = {
       laboratory: labTests
         .filter((test) => test.paymentStatus === "unpaid")
@@ -1711,12 +1733,17 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
         .filter((exam) => exam.paymentStatus === "unpaid")
         .map((exam) => {
           const service = getServiceByCategory("radiology");
+          const examTypeLabel = getExamTypeLabel(exam.examType);
+          const displayName = exam.bodyPart 
+            ? `${examTypeLabel} X-Ray - ${exam.bodyPart}` 
+            : `${examTypeLabel} X-Ray`;
           return {
             id: exam.examId,
             type: "xray_exam",
-            description: `X-Ray: ${exam.examType}`,
+            description: displayName,
             date: exam.requestedDate,
             bodyPart: exam.bodyPart,
+            examType: exam.examType,
             patient: patientMap.get(exam.patientId) || null,
             patientId: exam.patientId,
             serviceId: service?.id,
@@ -1728,11 +1755,32 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
         .filter((exam) => exam.paymentStatus === "unpaid")
         .map((exam) => {
           const service = getServiceByCategory("ultrasound");
+          const examTypeLabel = toTitleCase(exam.examType);
+          let displayName = '';
+          
+          if (exam.specificExam) {
+            // If examType already contains "Ultrasound", don't duplicate it
+            if (examTypeLabel.toLowerCase().includes('ultrasound')) {
+              displayName = `${examTypeLabel} - ${exam.specificExam}`;
+            } else {
+              displayName = `${examTypeLabel} Ultrasound - ${exam.specificExam}`;
+            }
+          } else {
+            // If examType already contains "Ultrasound", use as-is
+            if (examTypeLabel.toLowerCase().includes('ultrasound')) {
+              displayName = examTypeLabel;
+            } else {
+              displayName = `${examTypeLabel} Ultrasound`;
+            }
+          }
+          
           return {
             id: exam.examId,
             type: "ultrasound_exam",
-            description: `Ultrasound: ${exam.examType}`,
+            description: displayName,
             date: exam.requestedDate,
+            examType: exam.examType,
+            specificExam: exam.specificExam,
             patient: patientMap.get(exam.patientId) || null,
             patientId: exam.patientId,
             serviceId: service?.id,

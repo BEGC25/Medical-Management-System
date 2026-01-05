@@ -93,6 +93,41 @@ function fullName(p?: Patient | null) {
   return n || p.patientId || '';
 }
 
+/**
+ * Convert a string to Title Case
+ */
+function toTitleCase(str: string): string {
+  if (!str) return '';
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Generate complete display name for Ultrasound exam
+ * Format: "{Exam Type} Ultrasound - {Specific Exam}" or "{Exam Type} - {Specific Exam}"
+ * Example: "Abdominal Ultrasound - Complete Abdomen"
+ */
+function getUltrasoundDisplayName(exam: UltrasoundExam): string {
+  const examTypeLabel = toTitleCase(exam.examType);
+  
+  if (exam.specificExam) {
+    // If examType already contains "Ultrasound", don't duplicate it
+    if (examTypeLabel.toLowerCase().includes('ultrasound')) {
+      return `${examTypeLabel} - ${exam.specificExam}`;
+    }
+    return `${examTypeLabel} Ultrasound - ${exam.specificExam}`;
+  }
+  
+  // If examType already contains "Ultrasound", use as-is
+  if (examTypeLabel.toLowerCase().includes('ultrasound')) {
+    return examTypeLabel;
+  }
+  
+  return `${examTypeLabel} Ultrasound`;
+}
+
 /* ------------------------------------------------------------------ */
 /* Data hooks                                                          */
 /* ------------------------------------------------------------------ */
@@ -809,9 +844,7 @@ export default function Ultrasound() {
             
             {/* Line 2: Exam summary without redundant label */}
             <div className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 truncate">
-              {exam.specificExam 
-                ? `${exam.examType} - ${exam.specificExam}` 
-                : exam.examType} • {timeAgo(exam.createdAt)}
+              {getUltrasoundDisplayName(exam)} • {timeAgo(exam.createdAt)}
             </div>
             
             {/* Line 3: "Ordered by Doctor" badge */}
