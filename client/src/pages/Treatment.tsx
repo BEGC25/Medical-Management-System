@@ -124,10 +124,20 @@ function getOrderIcon(type: string) {
  */
 function ensureISOFormat(dateString: string | undefined | null): string | null {
   if (!dateString) return null;
-  // Already in ISO format with 'T' separator
-  if (dateString.includes('T')) return dateString;
+  
+  // Already in ISO format with 'T' separator and timezone
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dateString)) {
+    return dateString;
+  }
+  
   // SQLite format "YYYY-MM-DD HH:MM:SS" - assume UTC and convert to ISO
-  return dateString.replace(' ', 'T') + 'Z';
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(dateString)) {
+    return dateString.replace(' ', 'T') + 'Z';
+  }
+  
+  // If format is unrecognized, return null to avoid invalid dates
+  console.warn('Unrecognized date format:', dateString);
+  return null;
 }
 
 // Common chief complaints in South Sudan
