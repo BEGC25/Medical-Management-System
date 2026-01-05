@@ -3597,11 +3597,11 @@ export default function Treatment() {
                                       <div className="flex-1">
                                         <p className="font-semibold text-gray-900 dark:text-white">{med.drugName || "Medication"}</p>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "As prescribed"}</p>
-                                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-500">
+                                        <div className="flex flex-col gap-1 mt-2 text-xs text-gray-600 dark:text-gray-400">
+                                          {/* Always show prescribed date */}
                                           {(() => {
                                             const formattedDate = med.createdAt ? formatClinicDayKey(med.createdAt, 'MMM d, yyyy') : null;
                                             if (!formattedDate || formattedDate === '—') return null;
-                                            
                                             return (
                                               <span className="flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
@@ -3609,10 +3609,25 @@ export default function Treatment() {
                                               </span>
                                             );
                                           })()}
-                                          <Badge variant={med.status === "dispensed" ? "default" : "secondary"} className={`text-xs ${med.status === "dispensed" ? "bg-green-600" : ""}`}>
-                                            {med.status}
-                                          </Badge>
+                                          
+                                          {/* Show dispensed date if status is dispensed */}
+                                          {(() => {
+                                            if (med.status !== "dispensed" || !med.dispensedAt) return null;
+                                            const formattedDate = formatClinicDayKey(med.dispensedAt, 'MMM d, yyyy');
+                                            if (!formattedDate || formattedDate === '—') return null;
+                                            return (
+                                              <span className="flex items-center gap-1">
+                                                <Calendar className="w-3 h-3" />
+                                                Dispensed: {formattedDate}
+                                              </span>
+                                            );
+                                          })()}
                                         </div>
+
+                                        {/* Status badge BELOW the dates */}
+                                        <Badge variant={med.status === "dispensed" ? "default" : "secondary"} className={`text-xs mt-2 ${med.status === "dispensed" ? "bg-green-600" : ""}`}>
+                                          {med.status === "dispensed" ? "Dispensed" : "Prescribed"}
+                                        </Badge>
                                       </div>
                                       <div className="flex gap-2">
                                         {med.status === "prescribed" && med.paymentStatus === "unpaid" && (
@@ -3644,10 +3659,7 @@ export default function Treatment() {
                             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                               <div className="flex items-center gap-3">
                                 <Plus className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                                <div className="text-left">
-                                  <span className="font-semibold text-purple-900 dark:text-purple-100">Order New Medications</span>
-                                  <p className="text-sm text-purple-600 dark:text-purple-400">Prescribe medications for this patient</p>
-                                </div>
+                                <h3 className="font-semibold text-purple-900 dark:text-purple-100">Order New Medications</h3>
                               </div>
                             </div>
                             
