@@ -37,11 +37,13 @@ export function formatDepartmentName(departmentType: string, includeSuffix: bool
   switch (type) {
     case 'lab':
     case 'laboratory':
+    case 'lab_test_item':
       formatted = 'Lab';
       break;
     case 'xray':
     case 'x-ray':
     case 'radiology':
+    case 'xray_exam':
       formatted = 'X-Ray';
       break;
     case 'ultrasound':
@@ -53,8 +55,8 @@ export function formatDepartmentName(departmentType: string, includeSuffix: bool
       formatted = 'Pharmacy';
       break;
     default:
-      // Use title case for unknown types
-      formatted = toTitleCase(type);
+      // Use title case for unknown types, replacing underscores with spaces
+      formatted = toTitleCase(type.replace(/_/g, ' '));
   }
   
   return includeSuffix ? `${formatted} Department` : formatted;

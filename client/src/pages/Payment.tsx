@@ -545,9 +545,7 @@ export default function Payment() {
     
     // Get service type label - use formatDepartmentName without "Department" suffix
     const getServiceTypeLabel = (type: string) => {
-      // For consistency, map service types to department types
-      const departmentType = type.toLowerCase().replace('_exam', '').replace('_order', '').replace('_test_item', '');
-      return formatDepartmentName(departmentType, false); // false = no "Department" suffix
+      return formatDepartmentName(type, false); // false = no "Department" suffix
     };
 
     return (
