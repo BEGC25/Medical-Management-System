@@ -88,6 +88,47 @@ function fullName(p?: Patient | null) {
   return n || p.patientId || '';
 }
 
+/**
+ * Convert a string to Title Case
+ */
+function toTitleCase(str: string): string {
+  if (!str) return '';
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Get human-readable label for X-Ray exam type
+ */
+function getExamTypeLabel(examType: string): string {
+  const labels: Record<string, string> = {
+    'chest': 'Chest',
+    'abdomen': 'Abdomen',
+    'spine': 'Spine',
+    'extremities': 'Extremities',
+    'pelvis': 'Pelvis',
+    'skull': 'Skull',
+  };
+  return labels[examType.toLowerCase()] || toTitleCase(examType);
+}
+
+/**
+ * Generate complete display name for X-Ray exam
+ * Format: "{Exam Type} X-Ray - {Body Part/View}"
+ * Example: "Chest X-Ray - AP & Lateral"
+ */
+function getXrayDisplayName(exam: XrayExam): string {
+  const examTypeLabel = getExamTypeLabel(exam.examType);
+  const bodyPart = exam.bodyPart;
+  
+  if (bodyPart) {
+    return `${examTypeLabel} X-Ray - ${bodyPart}`;
+  }
+  return `${examTypeLabel} X-Ray`;
+}
+
 /* ------------------------------------------------------------------ */
 /* Data hooks                                                          */
 /* ------------------------------------------------------------------ */
@@ -720,7 +761,7 @@ export default function XRay() {
             
             {/* Line 2: Exam summary without redundant label */}
             <div className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 truncate">
-              {exam.bodyPart || exam.examType} • {timeAgo(exam.createdAt)}
+              {getXrayDisplayName(exam)} • {timeAgo(exam.createdAt)}
             </div>
             
             {/* Line 3: "Ordered by Doctor" badge */}
