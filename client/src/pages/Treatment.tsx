@@ -117,16 +117,26 @@ function getOrderIcon(type: string) {
 
 /**
  * Convert SQLite datetime string to ISO format for proper parsing
- * SQLite datetime('now') returns UTC time in format "YYYY-MM-DD HH:MM:SS"
- * However, the backend explicitly sets createdAt/dispensedAt using new Date().toISOString()
- * which returns full ISO 8601 format with timezone (e.g., "2025-01-05T03:35:54.200Z")
- * This helper handles both formats for robustness.
+ * 
+ * Handles two datetime formats from the database:
+ * 1. SQLite datetime('now'): Returns "YYYY-MM-DD HH:MM:SS" in UTC
+ * 2. Backend ISO format: Returns "YYYY-MM-DDTHH:MM:SS.sssZ" from new Date().toISOString()
+ * 
+ * @param dateString - Date string from database (SQLite or ISO format)
+ * @returns ISO 8601 formatted string with UTC timezone (e.g., "2025-01-05T03:35:54.200Z")
+ *          or null if the format is unrecognized
+ * 
+ * @example
+ * ensureISOFormat("2025-01-05 03:35:54") // "2025-01-05T03:35:54Z"
+ * ensureISOFormat("2025-01-05T03:35:54.200Z") // "2025-01-05T03:35:54.200Z"
+ * ensureISOFormat("invalid") // null (with console warning)
  */
 function ensureISOFormat(dateString: string | undefined | null): string | null {
   if (!dateString) return null;
   
-  // Already in ISO format with 'T' separator, optional milliseconds, and optional timezone
+  // Already in ISO format with 'T' separator, optional milliseconds, and UTC timezone
   // Matches: "2025-01-05T03:35:54Z" or "2025-01-05T03:35:54.200Z"
+  // Note: We only handle 'Z' (UTC) since backend always uses UTC timezone
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(dateString)) {
     return dateString;
   }
