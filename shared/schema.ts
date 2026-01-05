@@ -260,6 +260,8 @@ export const pharmacyOrders = sqliteTable("pharmacy_orders", {
   dosage: text("dosage"),
   quantity: integer("quantity").notNull().default(1),
   instructions: text("instructions"), // Prescription instructions
+  route: text("route"), // Route of administration (e.g., "PO (By Mouth)", "IV (Intravenous)")
+  duration: text("duration"), // Duration of treatment (e.g., "7 days", "14 days")
   status: text("status").$type<"prescribed" | "dispensed" | "cancelled">().notNull().default("prescribed"),
   paymentStatus: text("payment_status").$type<"unpaid" | "paid">().notNull().default("unpaid"),
   dispensedBy: text("dispensed_by"),

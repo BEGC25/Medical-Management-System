@@ -1575,6 +1575,8 @@ export default function Treatment() {
           dosage: med.dosage,
           quantity: med.quantity,
           instructions: med.instructions,
+          route: med.route,
+          duration: med.duration,
         })
       );
       return Promise.all(promises);
@@ -1817,6 +1819,70 @@ export default function Treatment() {
 
     recognition.onend = () => {
       setIsRecording(prev => ({ ...prev, [fieldName]: false }));
+      recognitionInstanceRef.current = null;
+    };
+
+    recognitionInstanceRef.current = recognition;
+    recognition.start();
+  };
+
+  // Voice input handler for medication instructions field
+  const startInstructionsVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast({
+        title: "Not Supported",
+        description: "Voice dictation is not supported in this browser. Try Chrome or Edge.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Stop any existing recognition
+    if (recognitionInstanceRef.current) {
+      recognitionInstanceRef.current.stop();
+    }
+
+    // If already recording, stop
+    if (isRecordingInstructions) {
+      setIsRecordingInstructions(false);
+      return;
+    }
+
+    const recognition = new (window as any).webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsRecordingInstructions(true);
+      toast({
+        title: "🎤 Listening...",
+        description: "Speak medication instructions. Click 'Stop' when done.",
+        duration: 2000
+      });
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0])
+        .map((result: any) => result.transcript)
+        .join('');
+
+      setNewMedInstructions(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecordingInstructions(false);
+      toast({
+        title: "Error",
+        description: `Voice recognition error: ${event.error}`,
+        variant: "destructive"
+      });
+    };
+
+    recognition.onend = () => {
+      setIsRecordingInstructions(false);
       recognitionInstanceRef.current = null;
     };
 
@@ -3634,6 +3700,16 @@ export default function Treatment() {
                                       <div className="flex-1">
                                         <p className="font-semibold text-gray-900 dark:text-white">{med.drugName || "Medication"}</p>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{med.dosage || "Dose not recorded"}</p>
+                                        {med.route && (
+                                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Route: {med.route}
+                                          </p>
+                                        )}
+                                        {med.duration && (
+                                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Duration: {med.duration}
+                                          </p>
+                                        )}
                                         {med.instructions && (
                                           <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-1">
                                             {med.instructions}
@@ -3672,7 +3748,7 @@ export default function Treatment() {
 
                                         {/* Status badge BELOW the dates */}
                                         <Badge variant={med.status === "dispensed" ? "default" : "secondary"} className={`text-xs mt-2 ${med.status === "dispensed" ? "bg-green-600" : ""}`}>
-                                          {med.status === "dispensed" ? "Dispensed" : "Pending"}
+                                          {med.status === "dispensed" ? "Dispensed" : med.status === "prescribed" ? "Active" : "Pending"}
                                         </Badge>
                                       </div>
                                       <div className="flex gap-2">
@@ -3702,11 +3778,8 @@ export default function Treatment() {
                           {/* === SECTION: ORDER NEW MEDICATIONS === */}
                           <div className="mt-6 space-y-6">
                             {/* Section Header - NOT collapsible */}
-                            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <Plus className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                                <h3 className="font-semibold text-purple-900 dark:text-purple-100">Order New Medications</h3>
-                              </div>
+                            <div className="flex items-center justify-between p-2 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                              <h3 className="font-semibold text-purple-900 dark:text-purple-100">Order New Medications</h3>
                             </div>
                             
                             <div className="p-6 bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-800 rounded-lg shadow-sm space-y-6">
@@ -4118,7 +4191,7 @@ export default function Treatment() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  onClick={() => setIsRecordingInstructions(!isRecordingInstructions)}
+                                  onClick={startInstructionsVoiceInput}
                                   className={`text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 ${isRecordingInstructions ? 'animate-pulse bg-purple-100 dark:bg-purple-900/30' : ''}`}
                                   type="button"
                                 >
