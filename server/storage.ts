@@ -2614,6 +2614,9 @@ export class MemStorage implements IStorage {
       .set(data)
       .where(eq(encounters.encounterId, encounterId))
       .returning();
+    if (!updated) {
+      throw new Error(`Encounter not found: ${encounterId}`);
+    }
     return updated;
   }
 
@@ -2623,6 +2626,9 @@ export class MemStorage implements IStorage {
       .set({ status: "closed", closedAt: now })
       .where(eq(encounters.encounterId, encounterId))
       .returning();
+    if (!updated) {
+      throw new Error(`Encounter not found: ${encounterId}`);
+    }
     return updated;
   }
 

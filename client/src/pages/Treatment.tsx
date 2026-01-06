@@ -1675,6 +1675,10 @@ export default function Treatment() {
   const closeVisitMutation = useMutation({
     mutationFn: async (encounterId: string) => {
       const r = await apiRequest("POST", `/api/encounters/${encounterId}/close`, {});
+      if (!r.ok) {
+        const errorData = await r.json().catch(() => ({ error: "Failed to close visit" }));
+        throw new Error(errorData.error || "Failed to close visit");
+      }
       return r.json();
     },
     onSuccess: () => {
@@ -1683,7 +1687,13 @@ export default function Treatment() {
       setSelectedPatient(null);
       form.reset();
     },
-    onError: () => toast({ title: "Error", description: "Failed to close visit", variant: "destructive" }),
+    onError: (error: Error) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to close visit", 
+        variant: "destructive" 
+      });
+    },
   });
 
   // ---------- behavior wiring ----------

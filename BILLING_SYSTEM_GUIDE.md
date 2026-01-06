@@ -149,19 +149,19 @@ This guide documents the new **system-wide, automatic, and zero-math** billing s
 **Encounters:**
 - `GET /api/encounters` - List encounters (filterable by date/status)
 - `POST /api/encounters` - Create new encounter
-- `GET /api/encounters/:id` - Get encounter details
-- `PUT /api/encounters/:id` - Update encounter
-- `POST /api/encounters/:id/close` - Close encounter
+- `GET /api/encounters/:encounterId` - Get encounter details
+- `PUT /api/encounters/:encounterId` - Update encounter
+- `POST /api/encounters/:encounterId/close` - Close encounter
 
 **Order Lines:**
 - `POST /api/order-lines` - Add service to encounter
-- `GET /api/encounters/:id/order-lines` - Get encounter items
-- `PUT /api/order-lines/:id` - Update order line status
+- `GET /api/encounters/:encounterId/order-lines` - Get encounter items
+- `PUT /api/order-lines/:id` - Update order line status (note: this uses numeric id)
 
 **Invoices:**
 - `GET /api/invoices` - List invoices
 - `GET /api/invoices/:id` - Get invoice details
-- `POST /api/encounters/:id/generate-invoice` - Create invoice from encounter
+- `POST /api/encounters/:encounterId/generate-invoice` - Create invoice from encounter
 
 **Auto-Integration:**
 - `POST /api/services/:type/auto-order` - Auto-add service to encounter (used by departments)

@@ -2119,6 +2119,12 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
   try {
     const { encounterId } = req.params;
 
+    // Verify encounter exists first
+    const encounter = await storage.getEncounterById(encounterId);
+    if (!encounter) {
+      return res.status(404).json({ error: "Encounter not found" });
+    }
+
     const treatments = await storage.getTreatmentsByEncounter(encounterId);
     const treatment = treatments[0]; // Get the first treatment for this encounter
     if (!treatment || !treatment.diagnosis || treatment.diagnosis.trim() === "") {
@@ -2166,15 +2172,21 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
       }
     }
 
-    const encounter = await storage.updateEncounter(encounterId, {
+    const updatedEncounter = await storage.updateEncounter(encounterId, {
       status: invoiceStatus,
       closedAt: new Date().toISOString(),
     });
 
-    res.json(encounter);
+    res.json(updatedEncounter);
   } catch (error) {
     console.error("Error closing encounter:", error);
-    res.status(500).json({ error: "Failed to close encounter" });
+    const errorMessage = error instanceof Error ? error.message : "Failed to close encounter";
+    // If the error message indicates "not found", return 404; otherwise 500
+    if (errorMessage.includes("not found")) {
+      res.status(404).json({ error: errorMessage });
+    } else {
+      res.status(500).json({ error: errorMessage });
+    }
   }
 });
 
