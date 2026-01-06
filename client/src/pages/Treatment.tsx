@@ -1767,7 +1767,7 @@ export default function Treatment() {
 
   // Statistics calculations
   const todayPatients = patientCounts?.today || 0;
-  const activeEncountersCount = queueVisits.length;
+  const activeEncountersCount = visibleQueue.length;
   const pendingOrdersCount = unpaidOrders 
     ? ((unpaidOrders as any).laboratory?.length || 0) + 
       ((unpaidOrders as any).xray?.length || 0) + 
@@ -2009,7 +2009,7 @@ export default function Treatment() {
               </div>
               <span className="text-lg font-bold text-blue-700 dark:text-blue-400">{activeEncountersCount}</span>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Active Visits</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Today's Queue</p>
             <p className="text-[9px] text-gray-500 dark:text-gray-400">Click to view queue</p>
           </button>
 
