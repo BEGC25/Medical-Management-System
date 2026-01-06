@@ -76,7 +76,7 @@ export function KeyFindingCard({
 
   // Critical case: yellow background with prominent red-tinted first row for main critical finding
   return (
-    <div className="mb-4 bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-300 dark:border-yellow-800 rounded-lg p-4">
+    <div className="mb-4 bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-300 dark:border-yellow-800 rounded-lg p-4" role="alert" aria-live="assertive">
       <div className="text-lg font-bold mb-2 text-yellow-900 dark:text-yellow-100 flex items-center gap-2">
         <AlertCircle className="h-6 w-6 text-yellow-700 dark:text-yellow-400" />
         {displayTitle}

@@ -67,6 +67,8 @@ const modalityConfig = {
 function formatDate(date?: string | Date): string {
   if (!date) return "";
   const d = typeof date === "string" ? new Date(date) : date;
+  // Check if the date is valid
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleDateString();
 }
 
