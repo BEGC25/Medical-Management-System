@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 
-type StatusVariant = "paid" | "unpaid" | "completed" | "pending" | "routine" | "stat" | "urgent" | "normal" | "abnormal";
+type StatusVariant = "paid" | "unpaid" | "completed" | "pending" | "routine" | "stat" | "urgent" | "normal" | "abnormal" | "preliminary" | "draft";
 
 interface StatusChipProps {
   variant: StatusVariant;
@@ -44,6 +44,14 @@ const variantConfig = {
   abnormal: {
     className: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 border-red-200 dark:border-red-800",
     defaultLabel: "Abnormal"
+  },
+  preliminary: {
+    className: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    defaultLabel: "Preliminary"
+  },
+  draft: {
+    className: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300 border-gray-200 dark:border-gray-800",
+    defaultLabel: "Draft"
   }
 };
 

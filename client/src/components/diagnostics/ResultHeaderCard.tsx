@@ -1,7 +1,9 @@
 import * as React from "react";
 import { Calendar } from "lucide-react";
+import { StatusChip } from "./StatusChip";
 
 type Modality = "lab" | "xray" | "ultrasound" | "other";
+type HeaderStatus = "completed" | "preliminary" | "draft";
 
 interface ResultHeaderCardProps {
   modality: Modality;
@@ -11,6 +13,7 @@ interface ResultHeaderCardProps {
   completedAt?: string | Date;
   reportedAt?: string | Date;
   accent?: string;
+  status?: HeaderStatus;
 }
 
 const modalityConfig = {
@@ -78,20 +81,30 @@ export function ResultHeaderCard({
   subtitle,
   requestedAt,
   completedAt,
-  reportedAt
+  reportedAt,
+  status
 }: ResultHeaderCardProps) {
   const config = modalityConfig[modality];
 
   return (
-    <div className={`p-4 rounded-xl bg-gradient-to-br ${config.bgGradient} border-2 ${config.border}`}>
+    <div className={`p-4 rounded-xl bg-gradient-to-br ${config.bgGradient} border-2 ${config.border} relative`}>
+      {/* Status chip in top-right corner when provided */}
+      {status && (
+        <div className="absolute top-3 right-3">
+          <StatusChip variant={status}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </StatusChip>
+        </div>
+      )}
+      
       <div className="flex items-center gap-3 mb-2">
         <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${config.gradient} flex items-center justify-center`}>
           {config.icon}
         </div>
-        <div className="flex-1">
+        <div className="flex-1" style={status ? { paddingRight: '80px' } : {}}>
           <h3 className={`text-lg font-bold ${config.textColor}`}>{title}</h3>
           {subtitle && (
-            <p className={`text-sm ${config.textColorSecondary}`}>{subtitle}</p>
+            <p className={`text-sm font-medium ${config.textColorSecondary}`}>{subtitle}</p>
           )}
         </div>
       </div>

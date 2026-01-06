@@ -1902,6 +1902,7 @@ export default function Ultrasound() {
                 subtitle={selectedUltrasoundExam.specificExam || undefined}
                 requestedAt={selectedUltrasoundExam.requestedDate}
                 completedAt={selectedUltrasoundExam.reportDate}
+                status="completed"
               />
 
               {/* Sonographic Findings Section */}
@@ -1910,7 +1911,9 @@ export default function Ultrasound() {
                   title="Sonographic Findings"
                   tone="accent-purple"
                 >
-                  <div className="whitespace-pre-wrap">{selectedUltrasoundExam.findings}</div>
+                  <div className="whitespace-pre-wrap">
+                    {selectedUltrasoundExam.findings.replace(/normal scan/gi, "No abnormal sonographic findings.")}
+                  </div>
                 </ResultSectionCard>
               )}
 
