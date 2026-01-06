@@ -759,8 +759,9 @@ export default function Treatment() {
     }
   }, [visitId]);
 
-  // patients (for names in queue)
-  // Always load patient data for queue names and filtering
+  // patients (for names in queue and basic patient list)
+  // This is a basic patient query without status data - for performance
+  // The patientsWithStatus query below includes full service status for stat cards
   const { data: allPatients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
   });

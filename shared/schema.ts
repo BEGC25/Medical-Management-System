@@ -529,6 +529,6 @@ export interface ServiceStatus {
 // Patient with service status for queries with withStatus=true
 export type PatientWithStatus = Patient & {
   serviceStatus: ServiceStatus;
-  dateOfService?: string; // Clinic day of most recent encounter
-  lastVisit?: string; // Alias for dateOfService
+  dateOfService?: string; // Clinic day of most recent encounter (YYYY-MM-DD format)
+  lastVisit?: string; // Deprecated: Use dateOfService instead - kept for backward compatibility
 };
