@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
 
 type Patient = {
   firstName?: string;
@@ -111,6 +112,16 @@ export default function ResultDrawer(props: {
           {/* LAB CONTENT */}
           {kind === "lab" && (
             <div className="space-y-6">
+              {/* Header Card */}
+              <ResultHeaderCard
+                modality="lab"
+                title="Lab Test"
+                subtitle={`${data?.testId ?? ""} • ${data?.category ?? "Blood Film for Malaria & CBC"}`}
+                requestedAt={data?.requestedDate}
+                completedAt={data?.completedAt}
+                reportedAt={data?.reportDate}
+              />
+
               {/* Tests ordered */}
               {tests?.length > 0 && (
                 <div>
@@ -130,9 +141,12 @@ export default function ResultDrawer(props: {
                   {Object.entries(results).map(([panel, fields]) => {
                     const cfg = resultFields?.[panel] || {};
                     return (
-                      <div key={panel} className="rounded-md border p-4">
-                        <div className="font-medium mb-2">{panel}</div>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                      <ResultSectionCard 
+                        key={panel} 
+                        title={panel}
+                        tone="neutral"
+                      >
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                           {Object.entries(fields).map(([name, value]) => {
                             const c = cfg[name];
                             const abnormal = isAbnormal(value, c);
@@ -151,7 +165,7 @@ export default function ResultDrawer(props: {
                             Normal ranges may vary by age, gender, and laboratory standards
                           </div>
                         )}
-                      </div>
+                      </ResultSectionCard>
                     );
                   })}
                 </div>
@@ -440,34 +454,37 @@ export default function ResultDrawer(props: {
                   }
                 });
 
-                return (criticalFindings.length > 0 || warnings.length > 0) ? (
-                  <div className="mb-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
-                    <div className="text-lg font-bold mb-2 text-yellow-900 flex items-center">
-                      <span className="text-2xl mr-2">ℹ️</span> Clinical Interpretation
-                    </div>
-                    {criticalFindings.length > 0 && (
-                      <div className="mb-3">
-                        <p className="font-semibold text-red-800 mb-2">Critical Findings Requiring Attention:</p>
-                        <div className="space-y-1">
-                          {criticalFindings.map((finding, i) => (
-                            <div key={i} className="bg-red-100 border-l-4 border-red-600 p-2 text-sm">
-                              {finding}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {warnings.length > 0 && (
-                      <div className="space-y-1">
-                        {warnings.map((warning, i) => (
-                          <div key={i} className="bg-yellow-100 border-l-4 border-yellow-600 p-2 text-sm">
-                            {warning}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : null;
+                // Use KeyFindingCard for clinical interpretation
+                if (criticalFindings.length > 0 || warnings.length > 0) {
+                  const severity = criticalFindings.length > 0 ? "critical" : "attention";
+                  const summary = criticalFindings.length > 0 
+                    ? criticalFindings[0] 
+                    : warnings[0];
+                  
+                  const items = [];
+                  
+                  // Add remaining critical findings as items if there are multiple
+                  if (criticalFindings.length > 1) {
+                    for (let i = 1; i < criticalFindings.length; i++) {
+                      items.push({ text: criticalFindings[i] });
+                    }
+                  }
+                  
+                  // Add warnings as items
+                  const warningStart = criticalFindings.length > 0 ? 0 : 1;
+                  for (let i = warningStart; i < warnings.length; i++) {
+                    items.push({ text: warnings[i] });
+                  }
+                  
+                  return (
+                    <KeyFindingCard
+                      severity={severity}
+                      summary={summary}
+                      items={items}
+                    />
+                  );
+                }
+                return null;
               })()}
 
               {!results || Object.keys(results).length === 0 ? (
@@ -480,103 +497,86 @@ export default function ResultDrawer(props: {
           {kind === "xray" && (
             <div className="space-y-4">
               {/* Exam Header */}
-              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100">X-Ray Examination Report</h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      {data?.examId} • {data?.examType?.charAt(0).toUpperCase() + (data?.examType?.slice(1) || '')} 
-                      {data?.bodyPart && ` - ${data.bodyPart}`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3 text-sm">
-                  {data?.requestedDate && (
-                    <div className="flex items-center gap-1 text-blue-700 dark:text-blue-300">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>Requested: {new Date(data.requestedDate).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                  {data?.reportDate && (
-                    <div className="flex items-center gap-1 text-blue-700 dark:text-blue-300">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span>Completed: {new Date(data.reportDate).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ResultHeaderCard
+                modality="xray"
+                title="X-Ray Examination Report"
+                subtitle={`${data?.examId ?? ""} • ${data?.examType?.charAt(0).toUpperCase() + (data?.examType?.slice(1) || '')}${data?.bodyPart ? ` - ${data.bodyPart}` : ""}`}
+                requestedAt={data?.requestedDate}
+                completedAt={data?.reportDate}
+              />
 
               {/* View Descriptions */}
               {data?.viewDescriptions && (
-                <div className="rounded-lg border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <ResultSectionCard
+                  title="View Descriptions"
+                  tone="accent-green"
+                  icon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <div className="font-bold text-green-900 dark:text-green-100">View Descriptions</div>
-                  </div>
-                  <div className="whitespace-pre-line text-sm text-green-900 dark:text-green-100 leading-relaxed">{data.viewDescriptions}</div>
-                </div>
+                  }
+                >
+                  <div className="whitespace-pre-line">{data.viewDescriptions}</div>
+                </ResultSectionCard>
               )}
 
               {/* Radiological Findings */}
               {data?.findings && (
-                <div className="rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-blue-700 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <ResultSectionCard
+                  title="Radiological Findings"
+                  tone="accent-blue"
+                  icon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
-                    <div className="font-bold text-blue-900 dark:text-blue-100">Radiological Findings</div>
-                  </div>
-                  <div className="whitespace-pre-line text-sm text-blue-900 dark:text-blue-100 leading-relaxed">{data.findings}</div>
-                </div>
+                  }
+                >
+                  <div className="whitespace-pre-line">{data.findings}</div>
+                </ResultSectionCard>
               )}
 
               {/* Clinical Impression */}
               {data?.impression && (
-                <div className="rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-purple-700 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <ResultSectionCard
+                  title="Clinical Impression"
+                  tone="accent-purple"
+                  icon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <div className="font-bold text-purple-900 dark:text-purple-100">Clinical Impression</div>
-                  </div>
-                  <div className="whitespace-pre-line text-sm font-medium text-purple-900 dark:text-purple-100 leading-relaxed">{data.impression}</div>
-                </div>
+                  }
+                >
+                  <div className="whitespace-pre-line font-medium">{data.impression}</div>
+                </ResultSectionCard>
               )}
 
               {/* Recommendations */}
               {data?.recommendations && (
-                <div className="rounded-lg border-2 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-amber-700 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <ResultSectionCard
+                  title="Recommendations"
+                  tone="accent-amber"
+                  icon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
-                    <div className="font-bold text-amber-900 dark:text-amber-100">Recommendations</div>
-                  </div>
-                  <div className="whitespace-pre-line text-sm text-amber-900 dark:text-amber-100 leading-relaxed">{data.recommendations}</div>
-                </div>
+                  }
+                >
+                  <div className="whitespace-pre-line">{data.recommendations}</div>
+                </ResultSectionCard>
               )}
 
               {/* Technical Details */}
-              <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-5 h-5 text-gray-700 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <ResultSectionCard
+                title="Technical Details"
+                tone="neutral"
+                icon={
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <div className="font-bold text-gray-900 dark:text-gray-100">Technical Details</div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                }
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {data?.imageQuality && (
                     <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                       <span className="text-gray-600 dark:text-gray-400">Image Quality:</span>
@@ -602,7 +602,7 @@ export default function ResultDrawer(props: {
                     </div>
                   )}
                 </div>
-              </div>
+              </ResultSectionCard>
 
               {/* If no meaningful data available */}
               {!data?.viewDescriptions && !data?.findings && !data?.impression && !data?.recommendations && 
@@ -617,20 +617,90 @@ export default function ResultDrawer(props: {
           {/* ULTRASOUND CONTENT */}
           {kind === "ultrasound" && (
             <div className="space-y-4">
-              <div className="rounded-md border p-3">
-                <div className="font-medium">Exam Type</div>
-                <div className="text-sm text-muted-foreground">{data?.examType ?? "—"}</div>
-              </div>
+              {/* Header Card */}
+              <ResultHeaderCard
+                modality="ultrasound"
+                title="Ultrasound Examination Report"
+                subtitle={`${data?.examId ?? ""} • ${data?.examType ?? "Complete Abdomen"}`}
+                requestedAt={data?.requestDate}
+                completedAt={data?.completedAt || data?.resultDate}
+                reportedAt={data?.reportDate}
+              />
+
+              {/* Sonographic Findings */}
               {data?.findings && (
-                <div className="rounded-md border p-3">
-                  <div className="font-medium text-blue-700">Findings</div>
-                  <div className="whitespace-pre-line text-sm">{data.findings}</div>
-                </div>
+                <ResultSectionCard
+                  title="Sonographic Findings"
+                  tone="accent-blue"
+                  icon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                    </svg>
+                  }
+                >
+                  <div className="whitespace-pre-line">{data.findings}</div>
+                </ResultSectionCard>
               )}
-              {data?.impression && (
-                <div className="rounded-md border p-3">
-                  <div className="font-medium text-green-700">Impression</div>
-                  <div className="whitespace-pre-line text-sm font-medium">{data.impression}</div>
+
+              {/* Impression / Key Findings */}
+              {data?.impression && (() => {
+                // Determine severity based on impression content
+                const impressionLower = data.impression.toLowerCase();
+                const isNormal = impressionLower.includes("normal") && 
+                                 !impressionLower.includes("abnormal") &&
+                                 (impressionLower.includes("no abnormalities") || 
+                                  impressionLower.includes("unremarkable") ||
+                                  impressionLower.includes("within normal limits"));
+                
+                const severity = isNormal ? "normal" : "attention";
+                
+                return (
+                  <KeyFindingCard
+                    severity={severity}
+                    title="Impression / Key Findings"
+                    summary={data.impression}
+                  />
+                );
+              })()}
+
+              {/* Technical Details (if available) */}
+              {(data?.technicalDetails || data?.probe || data?.limitations) && (
+                <ResultSectionCard
+                  title="Technical Details"
+                  tone="neutral"
+                  icon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  }
+                >
+                  <div className="space-y-2 text-sm">
+                    {data?.probe && (
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <span className="text-muted-foreground">Probe Type:</span>
+                        <span className="font-semibold">{data.probe}</span>
+                      </div>
+                    )}
+                    {data?.technicalDetails && (
+                      <div>
+                        <span className="text-muted-foreground">Details:</span>
+                        <p className="mt-1">{data.technicalDetails}</p>
+                      </div>
+                    )}
+                    {data?.limitations && (
+                      <div>
+                        <span className="text-muted-foreground">Limitations:</span>
+                        <p className="mt-1">{data.limitations}</p>
+                      </div>
+                    )}
+                  </div>
+                </ResultSectionCard>
+              )}
+
+              {/* Empty state */}
+              {!data?.findings && !data?.impression && (
+                <div className="rounded-md border bg-muted p-3 text-sm text-center">
+                  No report data available yet. Report pending completion.
                 </div>
               )}
             </div>
