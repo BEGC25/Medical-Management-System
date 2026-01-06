@@ -77,7 +77,9 @@ import {
   type Service,
   type Drug,
   type PharmacyOrder,
-  type LabTest // Assuming LabTest type includes interpretation field
+  type LabTest, // Assuming LabTest type includes interpretation field
+  type XrayExam,
+  type UltrasoundExam,
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
@@ -618,6 +620,10 @@ export default function Treatment() {
   const [ordersWaitingOpen, setOrdersWaitingOpen] = useState(false);
   const [ordersWaitingFilter, setOrdersWaitingFilter] = useState("");
 
+  // Results Ready modal - for completed diagnostic results
+  const [resultsReadyOpen, setResultsReadyOpen] = useState(false);
+  const [resultsReadyFilter, setResultsReadyFilter] = useState("");
+
   // Lab test selection state (for category-based ordering)
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
   const [currentLabCategory, setCurrentLabCategory] = useState<keyof typeof commonTests>("hematology");
@@ -858,13 +864,52 @@ export default function Treatment() {
     queryKey: ["/api/unpaid-orders/all"],
   });
 
+  // Fetch today's completed diagnostic results for Results Ready stat card
+  const { data: completedLabTests = [] } = useQuery<LabTest[]>({
+    queryKey: ["/api/lab-tests", { preset: 'today', status: 'completed' }],
+    queryFn: async () => {
+      const url = new URL("/api/lab-tests", window.location.origin);
+      url.searchParams.set("preset", "today");
+      url.searchParams.set("status", "completed");
+      const response = await fetch(url.toString());
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  const { data: completedXrays = [] } = useQuery<XrayExam[]>({
+    queryKey: ["/api/xray-exams", { preset: 'today', status: 'completed' }],
+    queryFn: async () => {
+      const url = new URL("/api/xray-exams", window.location.origin);
+      url.searchParams.set("preset", "today");
+      url.searchParams.set("status", "completed");
+      const response = await fetch(url.toString());
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  const { data: completedUltrasounds = [] } = useQuery<UltrasoundExam[]>({
+    queryKey: ["/api/ultrasound-exams", { preset: 'today', status: 'completed' }],
+    queryFn: async () => {
+      const url = new URL("/api/ultrasound-exams", window.location.origin);
+      url.searchParams.set("preset", "today");
+      url.searchParams.set("status", "completed");
+      const response = await fetch(url.toString());
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
   // Fetch patients with pending (unprocessed) orders for the stat card
   // Use preset 'today' to get today's patients with service status
+  // Also add filterBy=encounters to match what PatientSearch uses
   const { data: patientsWithStatus = [], isLoading: patientsWithStatusLoading } = useQuery<PatientWithStatus[]>({
-    queryKey: ["/api/patients", { withStatus: true, preset: 'today' }],
+    queryKey: ["/api/patients", { withStatus: true, filterBy: 'encounters', preset: 'today' }],
     queryFn: async () => {
       const url = new URL("/api/patients", window.location.origin);
       url.searchParams.set("withStatus", "true");
+      url.searchParams.set("filterBy", "encounters"); // Match the table source
       url.searchParams.set("preset", "today");
       const response = await fetch(url.toString());
       if (!response.ok) {
@@ -1815,6 +1860,61 @@ export default function Treatment() {
       }).length
     : 0;
   
+  // C) Results Ready - patients with completed diagnostic results today
+  // Group completed results by patient
+  const resultsReadyByPatient = useMemo(() => {
+    const patientMap = new Map<string, { patient: PatientWithStatus; departments: string[] }>();
+    
+    // Process completed lab tests
+    completedLabTests.forEach((test: LabTest) => {
+      const patientId = test.patientId;
+      if (!patientMap.has(patientId)) {
+        const patient = patientsWithStatus.find(p => p.patientId === patientId);
+        if (patient) {
+          patientMap.set(patientId, { patient, departments: [] });
+        }
+      }
+      const entry = patientMap.get(patientId);
+      if (entry && !entry.departments.includes('Lab')) {
+        entry.departments.push('Lab');
+      }
+    });
+    
+    // Process completed X-rays
+    completedXrays.forEach((exam: XrayExam) => {
+      const patientId = exam.patientId;
+      if (!patientMap.has(patientId)) {
+        const patient = patientsWithStatus.find(p => p.patientId === patientId);
+        if (patient) {
+          patientMap.set(patientId, { patient, departments: [] });
+        }
+      }
+      const entry = patientMap.get(patientId);
+      if (entry && !entry.departments.includes('X-ray')) {
+        entry.departments.push('X-ray');
+      }
+    });
+    
+    // Process completed Ultrasounds
+    completedUltrasounds.forEach((exam: UltrasoundExam) => {
+      const patientId = exam.patientId;
+      if (!patientMap.has(patientId)) {
+        const patient = patientsWithStatus.find(p => p.patientId === patientId);
+        if (patient) {
+          patientMap.set(patientId, { patient, departments: [] });
+        }
+      }
+      const entry = patientMap.get(patientId);
+      if (entry && !entry.departments.includes('Ultrasound')) {
+        entry.departments.push('Ultrasound');
+      }
+    });
+    
+    return Array.from(patientMap.values());
+  }, [completedLabTests, completedXrays, completedUltrasounds, patientsWithStatus]);
+  
+  const resultsReadyCount = resultsReadyByPatient.length;
+  
   // Filter patients with orders waiting for the modal
   const patientsWithOrdersWaiting = patientsWithStatus
     ? patientsWithStatus.filter(p => {
@@ -1855,6 +1955,11 @@ export default function Treatment() {
     setOrdersWaitingOpen(true);
   };
 
+  const handleResultsReadyClick = () => {
+    // Open the Results Ready modal
+    setResultsReadyOpen(true);
+  };
+
   // Refresh handler
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -1865,6 +1970,9 @@ export default function Treatment() {
         queryClient.invalidateQueries({ queryKey: ["/api/unpaid-orders/all"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/prescriptions"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] }),
       ]);
       toast({
         title: "Refreshed",
@@ -2028,19 +2136,19 @@ export default function Treatment() {
 
   // ---------- UI ----------
   return (
-    <div className="space-y-6">
-      {/* World-Class Department Header - More Compact */}
-      <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-4 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
+    <div className="space-y-4 md:space-y-6">
+      {/* World-Class Department Header - Mobile Responsive */}
+      <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-3 md:p-4 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl blur-sm opacity-75"></div>
-              <div className="relative h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Stethoscope className="h-6 w-6 text-white" />
+              <div className="relative h-10 w-10 md:h-12 md:w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Stethoscope className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
             </div>
           </div>
           <Button
@@ -2048,14 +2156,16 @@ export default function Treatment() {
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
+            className="self-end sm:self-auto"
+            aria-label="Refresh treatment data"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
         
         {/* Statistics Cards - Compact & Clickable */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {/* Patients Today - Clickable */}
           <button
             type="button"
@@ -2117,6 +2227,23 @@ export default function Treatment() {
             </div>
             <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Orders Waiting</p>
             <p className="text-[9px] text-gray-500 dark:text-gray-400">Lab/X-ray/Ultrasound</p>
+          </button>
+
+          {/* Results Ready - NEW - Clickable */}
+          <button
+            type="button"
+            onClick={handleResultsReadyClick}
+            data-testid="stat-card-results-ready"
+            className="group bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 rounded-lg p-2 border border-purple-200 dark:border-purple-800/50 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left"
+          >
+            <div className="flex items-center justify-between mb-0.5">
+              <div className="h-7 w-7 bg-gradient-to-br from-purple-500 to-violet-600 rounded-md flex items-center justify-center shadow-sm">
+                <CheckCircle className="h-3.5 w-3.5 text-white" />
+              </div>
+              <span className="text-lg font-bold text-purple-700 dark:text-purple-400">{resultsReadyCount}</span>
+            </div>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Results Ready</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">Completed today</p>
           </button>
         </div>
       </div>
@@ -4889,12 +5016,14 @@ export default function Treatment() {
       {showPrescription && selectedPatient && ( <div> {/* ... content ... */} </div> )}
       {/* Queue modal */}
       <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              Open Visits (Today)
-              <Badge variant="secondary" className="ml-2 bg-blue-600 text-white">
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <span>Open Visits (Today)</span>
+              </div>
+              <Badge variant="secondary" className="ml-0 sm:ml-2 bg-blue-600 text-white self-start">
                 {openVisitsPatients.length} patients
               </Badge>
             </DialogTitle>
@@ -5003,12 +5132,14 @@ export default function Treatment() {
 
       {/* Orders Waiting Modal - Diagnostic Orders Only */}
       <Dialog open={ordersWaitingOpen} onOpenChange={setOrdersWaitingOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-amber-600" />
-              Orders Waiting (Lab / X-ray / Ultrasound)
-              <Badge variant="secondary" className="ml-2 bg-amber-600 text-white">
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-amber-600" />
+                <span className="text-sm sm:text-base">Orders Waiting (Lab / X-ray / Ultrasound)</span>
+              </div>
+              <Badge variant="secondary" className="ml-0 sm:ml-2 bg-amber-600 text-white self-start">
                 {patientsWithOrdersWaiting.length} patients
               </Badge>
             </DialogTitle>
@@ -5122,6 +5253,146 @@ export default function Treatment() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Results Ready Modal - NEW */}
+      <Dialog open={resultsReadyOpen} onOpenChange={setResultsReadyOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
+          <DialogHeader>
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-purple-600" />
+                <span>Results Ready</span>
+              </div>
+              <Badge variant="secondary" className="ml-0 sm:ml-2 bg-purple-600 text-white self-start">
+                {resultsReadyCount} patients
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Info text */}
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+              <p className="text-sm text-purple-900 dark:text-purple-100">
+                <strong>Completed diagnostic results today:</strong> These patients have Lab, X-ray, or Ultrasound results that are ready for review.
+              </p>
+            </div>
+
+            {/* Search filter */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search patients..."
+                value={resultsReadyFilter}
+                onChange={(e) => setResultsReadyFilter(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Patient list */}
+            {resultsReadyByPatient.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-medium">No completed results today</p>
+                <p className="text-xs mt-1">
+                  {resultsReadyFilter 
+                    ? "Try a different search term" 
+                    : "Patients with completed diagnostic results will appear here"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {resultsReadyByPatient
+                  .filter((entry) => {
+                    if (!resultsReadyFilter) return true;
+                    const needle = resultsReadyFilter.toLowerCase();
+                    const name = `${entry.patient.firstName} ${entry.patient.lastName}`.toLowerCase();
+                    return (
+                      name.includes(needle) ||
+                      entry.patient.patientId.toLowerCase().includes(needle)
+                    );
+                  })
+                  .map((entry, index) => {
+                    const patient = entry.patient;
+                    const visitStatus = patient.visitStatus || "open";
+                    return (
+                      <div 
+                        key={patient.patientId} 
+                        className="p-4 bg-gradient-to-r from-purple-50/50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-purple-200 dark:border-purple-800/50 hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => {
+                          handlePatientFromQueue(patient.patientId);
+                          setResultsReadyOpen(false);
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-bold text-sm">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h4 className="font-semibold text-gray-900 dark:text-white">
+                                  {patient.firstName} {patient.lastName}
+                                </h4>
+                                <Badge variant="outline" className="text-xs">
+                                  {patient.patientId}
+                                </Badge>
+                                {/* Visit Status Badge */}
+                                <Badge 
+                                  variant={visitStatus === "open" ? "default" : "outline"}
+                                  className={`text-xs capitalize ${
+                                    visitStatus === "open" ? "bg-green-600 text-white" :
+                                    visitStatus === "closed" ? "bg-gray-600 text-white" :
+                                    "bg-yellow-600 text-white"
+                                  }`}
+                                >
+                                  {getVisitStatusLabel(visitStatus)}
+                                </Badge>
+                              </div>
+                              
+                              {/* Completed departments */}
+                              <div className="flex items-center gap-2 flex-wrap mb-2">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Results Ready:</span>
+                                {entry.departments.map((dept, i) => (
+                                  <Badge 
+                                    key={i}
+                                    variant="secondary" 
+                                    className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700"
+                                  >
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    {dept}
+                                  </Badge>
+                                ))}
+                              </div>
+                              
+                              {/* Patient info */}
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {patient.age && <span>{patient.age} years • </span>}
+                                {patient.gender && <span>{patient.gender}</span>}
+                              </div>
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:hover:bg-purple-900/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePatientFromQueue(patient.patientId);
+                              setResultsReadyOpen(false);
+                            }}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>
