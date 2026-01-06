@@ -84,6 +84,7 @@ import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
+import { extractLabKeyFinding } from '@/lib/medical-criteria';
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -3518,72 +3519,87 @@ export default function Treatment() {
                           {(qoTab === "all" || qoTab === "lab") && labTests.filter((t: any) => t.status === "completed").length > 0 && (
                             <div>
                               <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Laboratory Tests</h4>
-                              <div className="space-y-4"> {/* Increased spacing */}
+                              <div className="space-y-3">
                                 {labTests.filter((t: any) => t.status === "completed").map((test: any) => {
-                                  // --- NEW: Parse results for inline display ---
                                   const parsedResults = parseJSON<Record<string, Record<string, string>>>(test.results, {});
                                   const testsOrdered = parseJSON<string[]>(test.tests, []);
                                   
-                                  // Create professional title showing test count and preview
+                                  // Extract key finding using centralized medical criteria
+                                  const keyFinding = extractLabKeyFinding(parsedResults);
+                                  
                                   const getTestTitle = () => {
                                     if (testsOrdered.length === 0) {
                                       return test.category 
                                         ? test.category.charAt(0).toUpperCase() + test.category.slice(1)
                                         : "Laboratory Test";
                                     }
-                                    
                                     const count = testsOrdered.length;
                                     const testLabel = count === 1 ? "Lab Test" : "Lab Tests";
-                                    
-                                    // Show first 2 tests with ellipsis if more
                                     const preview = testsOrdered.slice(0, 2).join(", ");
                                     const hasMore = testsOrdered.length > 2;
-                                    
                                     return `${count} ${testLabel} (${preview}${hasMore ? "..." : ""})`;
                                   };
-                                  // --- End NEW ---
                                   
                                   return (
-                                    <Card key={test.testId || test.orderId} className="overflow-hidden">
-                                      <CardHeader className="bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 border-b">
-                                        <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-                                          <div className="flex-1 min-w-0 w-full sm:w-auto">
-                                            <CardTitle className="text-sm sm:text-base mb-1">
-                                              {getTestTitle()}
-                                            </CardTitle>
-                                             <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
-                                              <Badge variant={test.status === "completed" ? "default" : "secondary"} className="text-xs">
-                                                {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
+                                    <div 
+                                      key={test.testId || test.orderId}
+                                      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                    >
+                                      {/* Header Row */}
+                                      <div className="p-4 flex justify-between items-start gap-3">
+                                        <div className="flex items-center gap-2 flex-1">
+                                          <FlaskConical className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                          <div>
+                                            <p className="font-semibold text-base">{getTestTitle()}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                                <Check className="h-3 w-3 mr-1" />
+                                                Completed
                                               </Badge>
-                                              {!test.isPaid && (
-                                                <Badge variant="destructive" className="bg-red-600 text-xs">UNPAID</Badge>
-                                              )}
+                                              {!test.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
+                                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                Requested {formatClinicDayKey(test.requestedDate)}
+                                              </span>
                                             </div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              Requested: {formatClinicDayKey(test.requestedDate)}
-                                            </p>
-                                          </div>
-                                          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto justify-between sm:justify-start">
-                                              {test.status === "completed" && (
-                                                <Button variant="outline" size="sm" onClick={() => openResult("lab", test)} className="text-xs sm:text-sm flex-1 sm:flex-initial min-h-[36px]" data-testid={`view-details-lab-${test.id}`}>
-                                                  View Details
-                                                </Button>
-                                              )}
                                           </div>
                                         </div>
-                                      </CardHeader>
-                                      <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-                                        {/* --- NEW: Inline Results Display --- */}
-                                        {testsOrdered.length > 0 && (
-                                          <div>
-                                            <h5 className="font-medium text-xs sm:text-sm mb-1.5">Tests Ordered:</h5>
-                                            <div className="flex flex-wrap gap-1">
-                                              {testsOrdered.map((t, i) => <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>)}
+                                      </div>
+
+                                      {/* Tests Ordered */}
+                                      {testsOrdered.length > 0 && (
+                                        <div className="px-4 pb-2">
+                                          <div className="flex flex-wrap gap-1">
+                                            {testsOrdered.map((t, i) => <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>)}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Key Finding Preview */}
+                                      {keyFinding && (
+                                        <div className="mx-4 mb-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md" role="alert" aria-live="assertive">
+                                          <div className="flex items-start gap-2">
+                                            <AlertCircle className="h-4 w-4 text-red-700 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs font-semibold text-red-900 dark:text-red-100 mb-1">KEY FINDING</p>
+                                              <p className="text-sm text-red-900 dark:text-red-100 line-clamp-2">{keyFinding}</p>
                                             </div>
                                           </div>
-                                        )}
-                                      </CardContent>
-                                    </Card>
+                                        </div>
+                                      )}
+
+                                      {/* View Full Report Button */}
+                                      <div className="px-4 pb-4">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="w-full" 
+                                          onClick={() => openResult("lab", test)}
+                                          data-testid={`view-details-lab-${test.id}`}
+                                        >
+                                          View Full Report →
+                                        </Button>
+                                      </div>
+                                    </div>
                                   );
                                 })}
                               </div>
@@ -3684,28 +3700,71 @@ export default function Treatment() {
                           )}
 
                           {/* Ultrasound */}
-                          {/* ... (Keep Ultrasound rendering logic, maybe wrap in Card) ... */}
                           {(qoTab === "all" || qoTab === "ultrasound") && ultrasounds.filter((u: any) => u.status === "completed").length > 0 && (
-                             <div>
+                            <div>
                               <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Ultrasound Examinations</h4>
-                              <div className="space-y-2">
-                                {ultrasounds.filter((u: any) => u.status === "completed").map((u: any) => ( /* Consider wrapping in Card */
-                                  <div key={u.examId || u.orderId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-                                    <div className="flex justify-between items-start gap-3">
-                                        {/* ... existing Ultrasound content ... */}
-                                      <div className="flex-1">
-                                        <p className="font-medium">{getUltrasoundDisplayName(u)}</p>
-                                         <div className="flex items-center gap-2 my-1">
-                                           <Badge variant={u.status === "completed" ? "default" : "secondary"}>{u.status.charAt(0).toUpperCase() + u.status.slice(1)}</Badge>
-                                           {!u.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
+                              <div className="space-y-3">
+                                {ultrasounds.filter((u: any) => u.status === "completed").map((u: any) => (
+                                  <div 
+                                    key={u.examId || u.orderId} 
+                                    className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                  >
+                                    {/* Header Row */}
+                                    <div className="p-4 flex justify-between items-start gap-3">
+                                      <div className="flex items-center gap-2 flex-1">
+                                        <Radio className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                                        <div>
+                                          <p className="font-semibold text-base">{getUltrasoundDisplayName(u)}</p>
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                              <Check className="h-3 w-3 mr-1" />
+                                              Completed
+                                            </Badge>
+                                            {!u.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                              Completed {timeAgo(u.completedAt || u.resultDate || u.updatedAt)}
+                                            </span>
+                                          </div>
                                         </div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                                          {formatClinicDateTime(u.completedAt || u.resultDate || u.requestDate)}
-                                        </p>
                                       </div>
-                                      <div className="flex flex-col items-end gap-2">
-                                         {u.status === "completed" && (<Button variant="outline" size="sm" onClick={() => openResult("ultrasound", u)}>View Report</Button>)}
+                                    </div>
+
+                                    {/* Findings Preview */}
+                                    {u.findings && (
+                                      <div className="mx-4 mb-3 p-3 bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800 rounded-md">
+                                        <div className="flex items-start gap-2">
+                                          <Activity className="h-4 w-4 text-teal-700 dark:text-teal-400 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-semibold text-teal-900 dark:text-teal-100 mb-1">SONOGRAPHIC FINDINGS</p>
+                                            <p className="text-sm text-teal-900 dark:text-teal-100 line-clamp-2">{u.findings}</p>
+                                          </div>
+                                        </div>
                                       </div>
+                                    )}
+
+                                    {/* Impression Preview (if available) */}
+                                    {u.impression && (
+                                      <div className="mx-4 mb-3 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md">
+                                        <div className="flex items-start gap-2">
+                                          <FileText className="h-4 w-4 text-green-700 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-semibold text-green-900 dark:text-green-100 mb-1">KEY FINDING</p>
+                                            <p className="text-sm text-green-900 dark:text-green-100 line-clamp-2 font-medium">{u.impression}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* View Full Report Button */}
+                                    <div className="px-4 pb-4">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="w-full" 
+                                        onClick={() => openResult("ultrasound", u)}
+                                      >
+                                        View Full Report →
+                                      </Button>
                                     </div>
                                   </div>
                                 ))}
