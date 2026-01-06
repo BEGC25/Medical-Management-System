@@ -4950,7 +4950,7 @@ export default function Treatment() {
                     // Map status labels: closed → Treated, ready_to_bill → Ready to Bill, others → capitalize
                     const displayStatus = visitStatus === "closed" ? "Treated" : 
                                          visitStatus === "ready_to_bill" ? "Ready to Bill" : 
-                                         visitStatus.charAt(0).toUpperCase() + visitStatus.slice(1);
+                                         (visitStatus && visitStatus.length > 0) ? (visitStatus.charAt(0).toUpperCase() + visitStatus.slice(1)) : "Unknown";
                     return (
                       <div 
                         key={patient.patientId} 

@@ -247,7 +247,7 @@ export default function PatientSearch({
                             "bg-yellow-600 text-white"
                           }`}
                         >
-                          {p.visitStatus === "closed" ? "Treated" : p.visitStatus === "ready_to_bill" ? "Ready to Bill" : p.visitStatus}
+                          {p.visitStatus === "closed" ? "Treated" : p.visitStatus === "ready_to_bill" ? "Ready to Bill" : (p.visitStatus || "Unknown")}
                         </Badge>
                       ) : (
                         <span className="text-gray-400 text-xs">—</span>
