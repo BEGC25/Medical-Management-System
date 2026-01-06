@@ -4834,7 +4834,124 @@ export default function Treatment() {
       {/* Prescription print sheet */}
       {showPrescription && selectedPatient && ( <div> {/* ... content ... */} </div> )}
       {/* Queue modal */}
-      <Dialog open={queueOpen} onOpenChange={setQueueOpen}> {/* ... content ... */} </Dialog>
+      <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              Today's Patient Queue
+              <Badge variant="secondary" className="ml-2 bg-blue-600 text-white">
+                {visibleQueue.length} patients
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Search filter */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search patients in queue..."
+                value={queueFilter}
+                onChange={(e) => setQueueFilter(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Queue list */}
+            {queueLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+                <p className="text-sm text-gray-500 mt-2">Loading queue...</p>
+              </div>
+            ) : visibleQueue.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-medium">No patients in queue</p>
+                <p className="text-xs mt-1">
+                  {queueFilter 
+                    ? "Try a different search term" 
+                    : "Patients who visit today will appear here"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {visibleQueue.map((visit, index) => {
+                  const patientName = getPatientName(visit.patientId);
+                  return (
+                    <div 
+                      key={visit.treatmentId} 
+                      className="p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => {
+                        const patient = activePatients.find(p => p.patientId === visit.patientId);
+                        if (patient) {
+                          handlePatientSelect(patient);
+                          setQueueOpen(false);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-gray-900 dark:text-white">
+                                {patientName}
+                              </h4>
+                              <Badge variant="outline" className="text-xs">
+                                {visit.patientId}
+                              </Badge>
+                            </div>
+                            {visit.chiefComplaint && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                <span className="font-medium">Chief Complaint:</span> {visit.chiefComplaint}
+                              </p>
+                            )}
+                            {visit.diagnosis && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                <span className="font-medium">Diagnosis:</span> {visit.diagnosis}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                              <Badge 
+                                variant={visit.priority === "urgent" ? "destructive" : "secondary"}
+                                className="capitalize"
+                              >
+                                {visit.priority || "routine"}
+                              </Badge>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatClinicDayKey(visit.visitDate, 'h:mm a')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const patient = activePatients.find(p => p.patientId === visit.patientId);
+                            if (patient) {
+                              handlePatientSelect(patient);
+                              setQueueOpen(false);
+                            }
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Lab Test Dialog */}
       <Dialog open={editLabModalOpen} onOpenChange={setEditLabModalOpen}>
