@@ -27,6 +27,8 @@ let batchCounter = 0;
 let ledgerCounter = 0;
 
 const XRAY_RELATED_TYPES = ["xray", "xray_exam"] as const;
+const LAB_RELATED_TYPES = ["lab", "lab_test"] as const;
+const ULTRASOUND_RELATED_TYPES = ["ultrasound", "ultrasound_exam"] as const;
 
 function generatePatientId(): string {
   patientCounter++;
@@ -903,7 +905,7 @@ export class MemStorage implements IStorage {
           .where(
             and(
               eq(orderLines.relatedId, testId),
-              eq(orderLines.relatedType, "lab_test")
+              inArray(orderLines.relatedType, LAB_RELATED_TYPES)
             )
           );
       }
@@ -1104,7 +1106,7 @@ export class MemStorage implements IStorage {
           .where(
             and(
               eq(orderLines.relatedId, examId),
-              eq(orderLines.relatedType, "ultrasound_exam")
+              inArray(orderLines.relatedType, ULTRASOUND_RELATED_TYPES)
             )
           );
       }
