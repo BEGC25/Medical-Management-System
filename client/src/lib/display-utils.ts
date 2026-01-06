@@ -2,10 +2,41 @@
  * Display utility functions for medical orders
  * 
  * These functions generate consistent, human-readable display names for
- * diagnostic orders across the application (Treatment, X-Ray, Ultrasound, Payment pages).
+ * diagnostic orders and status labels across the application (Treatment, X-Ray, Ultrasound, Payment pages).
  */
 
 import type { XrayExam, UltrasoundExam } from '@shared/schema';
+
+/**
+ * Map visit status backend values to user-friendly display labels
+ * 
+ * @param visitStatus - The backend visit status value (e.g., "open", "closed", "ready_to_bill")
+ * @returns User-friendly label (e.g., "Open", "Treated", "Ready to Bill", "Unknown")
+ * 
+ * @example
+ * getVisitStatusLabel("closed") // "Treated"
+ * getVisitStatusLabel("ready_to_bill") // "Ready to Bill"
+ * getVisitStatusLabel("open") // "Open"
+ * getVisitStatusLabel(null) // "Unknown"
+ */
+export function getVisitStatusLabel(visitStatus: string | null | undefined): string {
+  if (!visitStatus) return "Unknown";
+  
+  // Map known status values to user-friendly labels
+  switch (visitStatus.toLowerCase()) {
+    case "closed":
+      return "Treated";
+    case "ready_to_bill":
+      return "Ready to Bill";
+    case "open":
+      return "Open";
+    default:
+      // For unknown values, capitalize first letter
+      return visitStatus.length > 0 
+        ? visitStatus.charAt(0).toUpperCase() + visitStatus.slice(1)
+        : "Unknown";
+  }
+}
 
 /**
  * Convert a string to Title Case

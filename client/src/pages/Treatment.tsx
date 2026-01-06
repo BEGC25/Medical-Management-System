@@ -83,7 +83,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 import { timeAgo } from '@/lib/time-utils';
-import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
+import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, getVisitStatusLabel, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
 import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments } from '@/lib/patient-utils';
 import type { PatientWithStatus } from "@shared/schema";
@@ -4947,10 +4947,7 @@ export default function Treatment() {
                   })
                   .map((patient, index) => {
                     const visitStatus = patient.visitStatus || "open";
-                    // Map status labels: closed → Treated, ready_to_bill → Ready to Bill, others → capitalize
-                    const displayStatus = visitStatus === "closed" ? "Treated" : 
-                                         visitStatus === "ready_to_bill" ? "Ready to Bill" : 
-                                         (visitStatus && visitStatus.length > 0) ? (visitStatus.charAt(0).toUpperCase() + visitStatus.slice(1)) : "Unknown";
+                    const displayStatus = getVisitStatusLabel(visitStatus);
                     return (
                       <div 
                         key={patient.patientId} 
@@ -5088,7 +5085,7 @@ export default function Treatment() {
                                   "bg-yellow-600 text-white"
                                 }`}
                               >
-                                {visitStatus === "closed" ? "Treated" : visitStatus === "ready_to_bill" ? "Ready to Bill" : visitStatus}
+                                {getVisitStatusLabel(visitStatus)}
                               </Badge>
                             </div>
                             
