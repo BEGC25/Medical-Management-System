@@ -67,6 +67,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -396,6 +397,7 @@ export default function Laboratory() {
   // Results state
   const [selectedLabTest, setSelectedLabTest] = useState<LabTest | null>(null);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"view" | "edit">("edit"); // View mode for completed results
   const [detailedResults, setDetailedResults] = useState<
     Record<string, Record<string, string>>
   >({});
@@ -663,6 +665,9 @@ export default function Laboratory() {
   const handleLabTestSelect = (labTest: LabTest) => {
     setSelectedLabTest(labTest);
     setResultsModalOpen(true);
+    
+    // Set view mode based on completion status
+    setViewMode(labTest.status === "completed" ? "view" : "edit");
     const loaded = parseJSON<Record<string, Record<string, string>>>(labTest.results, {});
     setDetailedResults(loaded);
 
@@ -1047,7 +1052,7 @@ return (
               <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
-              Completed Tests
+              Completed Results (Lab)
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
@@ -1647,7 +1652,223 @@ return (
             </DialogDescription>
           </DialogHeader>
 
-          {selectedLabTest && (
+
+          {/* VIEW MODE - Unified diagnostic result UI */}
+          {selectedLabTest && viewMode === "view" && (
+            <div className="space-y-4 px-6 pb-6">
+              {/* Modal Title */}
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Lab • {selectedLabTest.testId}
+                </h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewMode("edit")}
+                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  >
+                    Edit Results
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={printLabReport}
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print
+                  </Button>
+                </div>
+              </div>
+
+              {/* Patient + Status Row */}
+              <ResultPatientHeader
+                patientName={fullName(reportPatient) || selectedLabTest.patientId}
+                patientId={selectedLabTest.patientId}
+                statuses={[
+                  { variant: selectedLabTest.paymentStatus === "paid" ? "paid" : "unpaid" },
+                  { variant: "completed" },
+                  { variant: selectedLabTest.priority as any },
+                ]}
+              />
+
+              {/* Hero Card */}
+              <ResultHeaderCard
+                modality="lab"
+                title={`${selectedLabTest.category.charAt(0).toUpperCase() + selectedLabTest.category.slice(1)} Tests`}
+                subtitle={`${parseJSON<string[]>(selectedLabTest.tests, []).length} test(s) ordered`}
+                requestedAt={selectedLabTest.requestedDate}
+                completedAt={selectedLabTest.completedDate}
+              />
+
+              {/* Tests Ordered Section */}
+              <ResultSectionCard
+                title="Tests Ordered"
+                tone="accent-blue"
+              >
+                <div className="flex flex-wrap gap-2">
+                  {parseJSON<string[]>(selectedLabTest.tests, []).map((test, i) => (
+                    <Badge key={i} variant="outline" className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                      {test}
+                    </Badge>
+                  ))}
+                </div>
+              </ResultSectionCard>
+
+              {/* Laboratory Results Section */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Laboratory Results</h3>
+                <div className="space-y-3">
+                  {(() => {
+                    const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
+                    return Object.entries(results).map(([testName, testData]) => {
+                      const fields = resultFields[testName];
+                      return (
+                        <ResultSectionCard
+                          key={testName}
+                          title={testName}
+                          tone="neutral"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                            {Object.entries(testData).map(([fieldName, value]) => {
+                              const config = fields?.[fieldName];
+                              const isNormal = config?.normal === value;
+                              const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
+                              
+                              return (
+                                <div key={fieldName} className="flex justify-between items-center text-sm border-b border-gray-100 dark:border-gray-800 py-2">
+                                  <span className="font-medium text-gray-700 dark:text-gray-300">{fieldName}:</span>
+                                  <span className={cx(
+                                    "font-semibold",
+                                    isNormal && "text-green-600 dark:text-green-400",
+                                    isAbnormal && "text-red-600 dark:text-red-400"
+                                  )}>
+                                    {value} {config?.unit || ""}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </ResultSectionCard>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+
+              {/* Clinical Interpretation with KeyFindingCard */}
+              {(() => {
+                const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
+                const criticalFindings: string[] = [];
+                const warnings: string[] = [];
+
+                // Helper function to check if titer is significant
+                const getTiterValue = (titer: string): number => {
+                  const match = titer?.match(/1:(\d+)/);
+                  return match ? parseInt(match[1]) : 0;
+                };
+
+                // Analyze results for critical findings (same logic as print report)
+                Object.entries(results).forEach(([testName, testData]) => {
+                  // MALARIA DETECTION
+                  if (testName === "Blood Film for Malaria (BFFM)") {
+                    const parasites = testData["Malaria Parasites"];
+                    if (parasites && parasites !== "Not seen" && parasites !== "Negative") {
+                      criticalFindings.push(`POSITIVE for ${parasites} malaria - Requires immediate treatment`);
+                    }
+                    if (testData["Gametocytes"] === "Seen") {
+                      warnings.push(`Gametocytes present - Patient is infectious`);
+                    }
+                  }
+
+                  // WIDAL TEST (TYPHOID)
+                  if (testName === "Widal Test (Typhoid)") {
+                    const oAg = getTiterValue(testData["S. Typhi (O)Ag"]);
+                    const hAg = getTiterValue(testData["S. Typhi (H)Ag"]);
+                    
+                    if (oAg >= 320 || hAg >= 320) {
+                      criticalFindings.push(`VERY HIGH typhoid titers - Strongly suggests active typhoid infection`);
+                    } else if (oAg >= 160 || hAg >= 160) {
+                      warnings.push(`HIGH typhoid titers - Probable typhoid fever, start treatment`);
+                    } else if (oAg >= 80 || hAg >= 80) {
+                      warnings.push(`Elevated typhoid titers - Consider typhoid fever`);
+                    }
+                  }
+
+                  // BRUCELLA TEST
+                  if (testName === "Brucella Test (B.A.T)") {
+                    const abortus = getTiterValue(testData["B. Abortus"]);
+                    const malitensis = getTiterValue(testData["B. Malitensis"]);
+                    
+                    if (abortus >= 160 || malitensis >= 160) {
+                      criticalFindings.push(`POSITIVE for Brucellosis - Zoonotic infection requiring treatment`);
+                    } else if (abortus >= 80 || malitensis >= 80) {
+                      warnings.push(`Possible Brucellosis - Consider patient history and clinical correlation`);
+                    }
+                  }
+
+                  // VDRL TEST (SYPHILIS)
+                  if (testName === "VDRL Test (Syphilis)") {
+                    const result = testData["VDRL Result"];
+                    if (result === "Reactive" || result === "Positive") {
+                      criticalFindings.push(`POSITIVE for Syphilis (VDRL Reactive) - Requires confirmatory testing and treatment`);
+                    }
+                  }
+
+                  // HEPATITIS B (HBsAg)
+                  if (testName === "Hepatitis B Test (HBsAg)") {
+                    const result = testData["HBsAg Result"];
+                    if (result === "Reactive" || result === "Positive") {
+                      criticalFindings.push(`POSITIVE for Hepatitis B - Patient is HBsAg positive, infectious`);
+                    }
+                  }
+
+                  // URINE ANALYSIS - Critical findings
+                  if (testName === "Urine Analysis") {
+                    const appearance = testData["Appearance"];
+                    const protein = testData["Protein"];
+                    
+                    if (appearance?.toLowerCase().includes("bloody") || appearance?.toLowerCase().includes("red")) {
+                      criticalFindings.push(`Bloody urine detected - Possible bleeding, trauma, or severe infection`);
+                    }
+                    
+                    if (protein && (protein.includes("+++") || protein.includes("++++"))) {
+                      criticalFindings.push(`Severe proteinuria - Kidney damage likely, needs urgent evaluation`);
+                    } else if (protein && protein !== "Negative" && protein !== "-") {
+                      warnings.push(`Proteinuria detected - Kidney function needs assessment`);
+                    }
+                  }
+                });
+
+                // Render appropriate KeyFindingCard based on findings
+                if (criticalFindings.length > 0) {
+                  return (
+                    <KeyFindingCard
+                      severity="critical"
+                      summary={criticalFindings[0]}
+                      items={warnings.map(w => ({ text: w }))}
+                    />
+                  );
+                } else if (warnings.length > 0) {
+                  return (
+                    <KeyFindingCard
+                      severity="attention"
+                      summary={warnings[0]}
+                      items={warnings.slice(1).map(w => ({ text: w }))}
+                    />
+                  );
+                } else {
+                  return (
+                    <KeyFindingCard
+                      severity="normal"
+                      summary="All test results are within normal limits. No critical findings or abnormalities detected."
+                    />
+                  );
+                }
+              })()}
+            </div>
+          )}
+          {selectedLabTest && viewMode === "edit" && (
             <div className="space-y-6">
               {/* Photo uploader */}
               <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-blue-50 dark:bg-blue-900/20">

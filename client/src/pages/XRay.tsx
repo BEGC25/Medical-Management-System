@@ -74,6 +74,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from '@/components/diagnostics';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -225,6 +226,7 @@ export default function XRay() {
   // Results state
   const [selectedXrayExam, setSelectedXrayExam] = useState<XrayExam | null>(null);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"view" | "edit">("edit"); // View mode for completed results
   const [reportPatient, setReportPatient] = useState<Patient | null>(null);
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; name: string }>>([]);
   const [findings, setFindings] = useState('');
@@ -502,6 +504,9 @@ export default function XRay() {
   const handleXrayExamSelect = (exam: XrayExam) => {
     setSelectedXrayExam(exam);
     setResultsModalOpen(true);
+    
+    // Set view mode based on completion status
+    setViewMode(exam.status === "completed" ? "view" : "edit");
     setUploadedImages([]);
     
     // Set local state for all fields
@@ -903,14 +908,14 @@ export default function XRay() {
           </CardContent>
         </Card>
 
-        {/* RIGHT – Completed Tests */}
+        {/* RIGHT – Completed Results (X-Ray) */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
           <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
-              Completed Tests
+              Completed Results (X-Ray)
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
@@ -1689,6 +1694,144 @@ export default function XRay() {
             )}
           </div>
 
+          {/* VIEW MODE - Unified diagnostic result UI */}
+          {viewMode === "view" && selectedXrayExam && (
+            <div className="space-y-4 px-6 pb-6">
+              {/* Modal Title */}
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  X-Ray • {selectedXrayExam.examId}
+                </h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewMode("edit")}
+                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  >
+                    Edit Results
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={printXrayReport}
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print
+                  </Button>
+                </div>
+              </div>
+
+              {/* Patient + Status Row */}
+              <ResultPatientHeader
+                patientName={fullName(reportPatient) || selectedXrayExam.patientId}
+                patientId={selectedXrayExam.patientId}
+                statuses={[
+                  { variant: selectedXrayExam.paymentStatus === "paid" ? "paid" : "unpaid" },
+                  { variant: "completed" },
+                  { variant: "routine" },
+                ]}
+              />
+
+              {/* Hero Card */}
+              <ResultHeaderCard
+                modality="xray"
+                title={getXrayDisplayName(selectedXrayExam)}
+                subtitle={selectedXrayExam.bodyPart || undefined}
+                requestedAt={selectedXrayExam.requestedDate}
+                completedAt={selectedXrayExam.reportDate}
+              />
+
+              {/* Radiological Findings Section */}
+              {selectedXrayExam.findings && (
+                <ResultSectionCard
+                  title="Radiological Findings"
+                  tone="accent-blue"
+                >
+                  <div className="whitespace-pre-wrap">{selectedXrayExam.findings}</div>
+                </ResultSectionCard>
+              )}
+
+              {/* Technical Details Section */}
+              {(selectedXrayExam.viewDescriptions || selectedXrayExam.technicalFactors || selectedXrayExam.imageQuality) && (
+                <ResultSectionCard
+                  title="Technical Details"
+                  tone="neutral"
+                >
+                  <div className="space-y-2 text-sm">
+                    {selectedXrayExam.viewDescriptions && (
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Views Obtained:</span>
+                        <div className="mt-1 whitespace-pre-wrap text-gray-600 dark:text-gray-400">{selectedXrayExam.viewDescriptions}</div>
+                      </div>
+                    )}
+                    {selectedXrayExam.imageQuality && (
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Image Quality:</span>{' '}
+                        <span className={cx(
+                          "font-semibold",
+                          selectedXrayExam.imageQuality === "excellent" && "text-green-600 dark:text-green-400",
+                          selectedXrayExam.imageQuality === "good" && "text-blue-600 dark:text-blue-400",
+                          selectedXrayExam.imageQuality === "adequate" && "text-yellow-600 dark:text-yellow-400",
+                          selectedXrayExam.imageQuality === "limited" && "text-red-600 dark:text-red-400"
+                        )}>
+                          {selectedXrayExam.imageQuality.charAt(0).toUpperCase() + selectedXrayExam.imageQuality.slice(1)}
+                        </span>
+                      </div>
+                    )}
+                    {selectedXrayExam.technicalFactors && (
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Technical Factors:</span>
+                        <div className="mt-1 whitespace-pre-wrap text-gray-600 dark:text-gray-400">{selectedXrayExam.technicalFactors}</div>
+                      </div>
+                    )}
+                  </div>
+                </ResultSectionCard>
+              )}
+
+              {/* Impression / Key Findings using KeyFindingCard */}
+              {selectedXrayExam.impression && (
+                <KeyFindingCard
+                  severity={(() => {
+                    const imp = selectedXrayExam.impression.toLowerCase();
+                    // Check for critical/abnormal indicators
+                    if (imp.includes("fracture") || imp.includes("pneumothorax") || imp.includes("mass") || 
+                        imp.includes("acute") || imp.includes("emergency") || imp.includes("urgent") ||
+                        imp.includes("cardiomegaly") || imp.includes("consolidation") || imp.includes("effusion")) {
+                      return "critical";
+                    }
+                    // Check for attention indicators
+                    if (imp.includes("mild") || imp.includes("borderline") || imp.includes("degenerative") ||
+                        imp.includes("chronic") || imp.includes("follow") || imp.includes("correlation")) {
+                      return "attention";
+                    }
+                    // Check for normal indicators
+                    if (imp.includes("normal") || imp.includes("no acute") || imp.includes("unremarkable") ||
+                        imp.includes("clear") || imp.includes("negative")) {
+                      return "normal";
+                    }
+                    // Default to attention if can't determine
+                    return "attention";
+                  })()}
+                  title="Impression / Key Findings"
+                  summary={selectedXrayExam.impression}
+                />
+              )}
+
+              {/* Recommendations Section */}
+              {selectedXrayExam.recommendations && (
+                <ResultSectionCard
+                  title="Recommendations"
+                  tone="accent-amber"
+                >
+                  <div className="whitespace-pre-wrap">{selectedXrayExam.recommendations}</div>
+                </ResultSectionCard>
+              )}
+            </div>
+          )}
+
+          {/* EDIT MODE */}
+          {viewMode === "edit" && (
           <Form {...resultsForm}>
             <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
               
@@ -2618,6 +2761,7 @@ export default function XRay() {
               </div>
             </form>
           </Form>
+          )}
         </DialogContent>
       </Dialog>
 

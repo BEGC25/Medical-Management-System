@@ -79,6 +79,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from '@/components/diagnostics';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -209,6 +210,7 @@ export default function Ultrasound() {
   // Results state
   const [selectedUltrasoundExam, setSelectedUltrasoundExam] = useState<UltrasoundExam | null>(null);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"view" | "edit">("edit"); // View mode for completed results
   const [reportPatient, setReportPatient] = useState<Patient | null>(null);
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; name: string }>>([]);
   const [findings, setFindings] = useState('');
@@ -472,6 +474,9 @@ export default function Ultrasound() {
   const handleUltrasoundExamSelect = (exam: UltrasoundExam) => {
     setSelectedUltrasoundExam(exam);
     setResultsModalOpen(true);
+    
+    // Set view mode based on completion status
+    setViewMode(exam.status === "completed" ? "view" : "edit");
     setUploadedImages([]);
     
     // Set local state for all fields
@@ -1024,14 +1029,14 @@ export default function Ultrasound() {
           </CardContent>
         </Card>
 
-        {/* RIGHT – Completed Tests */}
+        {/* RIGHT – Completed Results (Ultrasound) */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
           <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
-              Completed Tests
+              Completed Results (Ultrasound)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1851,6 +1856,123 @@ export default function Ultrasound() {
             )}
           </div>
 
+          {/* VIEW MODE - Unified diagnostic result UI */}
+          {viewMode === "view" && selectedUltrasoundExam && (
+            <div className="space-y-4 px-6 pb-6">
+              {/* Modal Title */}
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Ultrasound • {selectedUltrasoundExam.examId}
+                </h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewMode("edit")}
+                    className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                  >
+                    Edit Results
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={printUltrasoundReport}
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print
+                  </Button>
+                </div>
+              </div>
+
+              {/* Patient + Status Row */}
+              <ResultPatientHeader
+                patientName={fullName(reportPatient) || selectedUltrasoundExam.patientId}
+                patientId={selectedUltrasoundExam.patientId}
+                statuses={[
+                  { variant: selectedUltrasoundExam.paymentStatus === "paid" ? "paid" : "unpaid" },
+                  { variant: "completed" },
+                  { variant: "routine" },
+                ]}
+              />
+
+              {/* Hero Card */}
+              <ResultHeaderCard
+                modality="ultrasound"
+                title={getUltrasoundDisplayName(selectedUltrasoundExam)}
+                subtitle={selectedUltrasoundExam.specificExam || undefined}
+                requestedAt={selectedUltrasoundExam.requestedDate}
+                completedAt={selectedUltrasoundExam.reportDate}
+              />
+
+              {/* Sonographic Findings Section */}
+              {selectedUltrasoundExam.findings && (
+                <ResultSectionCard
+                  title="Sonographic Findings"
+                  tone="accent-purple"
+                >
+                  <div className="whitespace-pre-wrap">{selectedUltrasoundExam.findings}</div>
+                </ResultSectionCard>
+              )}
+
+              {/* Impression / Key Findings using KeyFindingCard */}
+              {selectedUltrasoundExam.impression && (
+                <KeyFindingCard
+                  severity={(() => {
+                    const imp = selectedUltrasoundExam.impression.toLowerCase();
+                    // Check for critical/abnormal indicators
+                    if (imp.includes("mass") || imp.includes("tumor") || imp.includes("malignancy") || 
+                        imp.includes("acute") || imp.includes("emergency") || imp.includes("urgent") ||
+                        imp.includes("ectopic") || imp.includes("rupture") || imp.includes("abscess") ||
+                        imp.includes("infarction") || imp.includes("thrombus")) {
+                      return "critical";
+                    }
+                    // Check for attention indicators
+                    if (imp.includes("cyst") || imp.includes("polyp") || imp.includes("fibroid") ||
+                        imp.includes("mild") || imp.includes("borderline") || imp.includes("follow") ||
+                        imp.includes("correlation") || imp.includes("enlarged") || imp.includes("suspicious")) {
+                      return "attention";
+                    }
+                    // Check for normal indicators - using the phrasing from problem statement
+                    if (imp.includes("normal") || imp.includes("no abnormal") || imp.includes("unremarkable") ||
+                        imp.includes("negative") || imp.includes("within normal limits")) {
+                      return "normal";
+                    }
+                    // Default to attention if can't determine
+                    return "attention";
+                  })()}
+                  title="Impression / Key Findings"
+                  summary={selectedUltrasoundExam.impression.includes("normal scan") 
+                    ? selectedUltrasoundExam.impression.replace(/normal scan/gi, "no abnormal sonographic findings")
+                    : selectedUltrasoundExam.impression}
+                />
+              )}
+
+              {/* Recommendations Section */}
+              {selectedUltrasoundExam.recommendations && (
+                <ResultSectionCard
+                  title="Recommendations"
+                  tone="accent-amber"
+                >
+                  <div className="whitespace-pre-wrap">{selectedUltrasoundExam.recommendations}</div>
+                </ResultSectionCard>
+              )}
+
+              {/* Technical Details Section (optional) */}
+              {(selectedUltrasoundExam as any).technicalDetails && (
+                <ResultSectionCard
+                  title="Technical Details"
+                  tone="neutral"
+                >
+                  <div className="whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-400">
+                    {(selectedUltrasoundExam as any).technicalDetails}
+                  </div>
+                </ResultSectionCard>
+              )}
+            </div>
+          )}
+
+          {/* EDIT MODE */}
+          {viewMode === "edit" && (
           <Form {...resultsForm}>
             <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
               {/* Premium Image Upload Section - Collapsible */}
@@ -2824,6 +2946,7 @@ export default function Ultrasound() {
             </div>
             </form>
           </Form>
+          )}
         </DialogContent>
       </Dialog>
 
