@@ -2111,7 +2111,12 @@ router.put("/api/encounters/:encounterId", async (req, res) => {
     res.json(encounter);
   } catch (error) {
     console.error("Error updating encounter:", error);
-    res.status(500).json({ error: "Failed to update encounter" });
+    const errorMessage = error instanceof Error ? error.message : "Failed to update encounter";
+    if (errorMessage.includes("not found")) {
+      res.status(404).json({ error: errorMessage });
+    } else {
+      res.status(500).json({ error: errorMessage });
+    }
   }
 });
 
@@ -2119,7 +2124,8 @@ router.post("/api/encounters/:encounterId/close", async (req, res) => {
   try {
     const { encounterId } = req.params;
 
-    // Verify encounter exists first
+    // Verify encounter exists first to avoid expensive operations (diagnostics fetching, etc.)
+    // if the encounter doesn't exist. Also provides clearer 404 error before validation.
     const encounter = await storage.getEncounterById(encounterId);
     if (!encounter) {
       return res.status(404).json({ error: "Encounter not found" });
