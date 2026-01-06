@@ -593,6 +593,7 @@ export default function Treatment() {
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [quickFilter, setQuickFilter] = useState<"today" | "active" | "pending" | null>("today"); // Quick filter from stat cards
+  const [isRefreshing, setIsRefreshing] = useState(false); // Refresh state
 
   // Build preset parameter for API calls - no more local date math
   // Server handles all date range calculations using Africa/Juba timezone
@@ -1800,6 +1801,26 @@ export default function Treatment() {
     // Users can then search for specific patients or use date filters
   };
 
+  // Refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/patients"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/treatments"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/unpaid-orders/all"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/prescriptions"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] }),
+      ]);
+      toast({
+        title: "Refreshed",
+        description: "Treatment data has been updated",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // Voice dictation - multi-field support for Visit Notes
   const startVoiceInput = (fieldName: keyof typeof isRecording) => {
     if (!('webkitSpeechRecognition' in window)) {
@@ -1956,17 +1977,27 @@ export default function Treatment() {
     <div className="space-y-6">
       {/* World-Class Department Header - More Compact */}
       <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-4 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl blur-sm opacity-75"></div>
-            <div className="relative h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Stethoscope className="h-6 w-6 text-white" />
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl blur-sm opacity-75"></div>
+              <div className="relative h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Stethoscope className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
             </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Patient encounters, clinical documentation & care management</p>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
         
         {/* Statistics Cards - Compact & Clickable */}
@@ -2038,7 +2069,7 @@ export default function Treatment() {
 
       <Card className="print:hidden">
         <CardHeader>
-          <CardTitle>Patient Selection & Documentation</CardTitle>
+          <CardTitle>Patient Selection</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Patient selection / Header */}
@@ -2053,7 +2084,6 @@ export default function Treatment() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Choose a patient to begin documenting their visit</p>
                 </div>
               </div>
 
@@ -2156,7 +2186,7 @@ export default function Treatment() {
                     onViewPatient={handlePatientSelect}
                     showActions={false}
                     viewMode={
-                      showDateFilter ? "all" :
+                      showDateFilter ? "today" :
                       dateFilter === "last7" || dateFilter === "last30" || dateFilter === "custom" ? "dateRange" :
                       "date"
                     }
