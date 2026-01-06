@@ -854,11 +854,6 @@ export default function Treatment() {
     return Array.from(categories).sort();
   }, [drugs]);
   
-  // Statistics for header
-  const { data: patientCounts } = useQuery<{ today: number; all: number }>({
-    queryKey: ["/api/patients/counts"],
-  });
-  
   const { data: unpaidOrders } = useQuery({
     queryKey: ["/api/unpaid-orders/all"],
   });
@@ -1803,17 +1798,18 @@ export default function Treatment() {
   const todayPatients = patientsWithStatus.length || 0;
   
   // B) Rename "Today's Queue" to "Open Visits" and use patientsWithStatus as source of truth
-  // Filter to ONLY patients with open visits (exclude treated/closed and ready_to_bill)
+  // Filter to ONLY patients with truly open visits (exclude treated/closed and ready_to_bill)
+  // ready_to_bill patients have completed treatment and should not appear in the doctor's queue
   const openVisitsPatients = patientsWithStatus.filter(p => p.visitStatus === "open");
   const activeEncountersCount = openVisitsPatients.length;
   
   // Count PATIENTS with diagnostic orders waiting (Lab/X-ray/Ultrasound only, exclude pharmacy)
-  // Only count patients with OPEN visits
+  // Include both open AND ready_to_bill visits since results may still be pending even if visit is ready for billing
   const ordersWaitingCount = patientsWithStatus
     ? patientsWithStatus.filter(p => {
         // Must have diagnostic orders waiting
         if (!hasDiagnosticOrdersWaiting(p)) return false;
-        // Must have open visit (exclude closed)
+        // Include open and ready_to_bill, exclude closed
         const visitStatus = p.visitStatus;
         return !visitStatus || visitStatus === "open" || visitStatus === "ready_to_bill";
       }).length
