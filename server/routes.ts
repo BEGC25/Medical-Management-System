@@ -888,7 +888,23 @@ router.put("/api/lab-tests/:testId", async (req, res) => {
 // Cancel pending lab test (soft delete for audit trail)
 router.delete("/api/lab-tests/:testId", async (req, res) => {
   try {
-    const success = await storage.deleteLabTest(req.params.testId);
+    const { testId } = req.params;
+    
+    // Verify the test exists and get its status
+    const allTests = await storage.getLabTests();
+    const labTest = allTests.find(t => t.testId === testId);
+    
+    if (!labTest) {
+      return res.status(404).json({ error: "Lab test not found" });
+    }
+    
+    // Only allow deleting pending tests to prevent data loss
+    if (labTest.status !== "pending") {
+      return res.status(400).json({ error: "Can only delete pending tests" });
+    }
+    
+    // Delete the lab test and associated order_lines
+    const success = await storage.deleteLabTest(testId);
     if (success) {
       res.json({ message: "Lab test deleted successfully" });
     } else {
