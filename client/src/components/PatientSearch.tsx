@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
 import { formatClinicDay } from "@/lib/date-utils";
 import { hasPendingOrders } from "@/lib/patient-utils";
+import { getVisitStatusLabel } from "@/lib/display-utils";
 
 interface PatientSearchProps {
   onSelectPatient?: (patient: Patient) => void;
@@ -247,7 +248,7 @@ export default function PatientSearch({
                             "bg-yellow-600 text-white"
                           }`}
                         >
-                          {p.visitStatus === "ready_to_bill" ? "Ready to Bill" : p.visitStatus}
+                          {getVisitStatusLabel(p.visitStatus)}
                         </Badge>
                       ) : (
                         <span className="text-gray-400 text-xs">—</span>
