@@ -85,7 +85,7 @@ import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, 
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
-import { hasPendingOrders } from '@/lib/patient-utils';
+import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments } from '@/lib/patient-utils';
 import type { PatientWithStatus } from "@shared/schema";
 
 // ---------- helpers ----------
@@ -613,6 +613,10 @@ export default function Treatment() {
   // Queue modal - use preset 'today' for consistent filtering
   const [queueOpen, setQueueOpen] = useState(false);
   const [queueFilter, setQueueFilter] = useState("");
+  
+  // Orders Waiting modal - for diagnostic orders pending
+  const [ordersWaitingOpen, setOrdersWaitingOpen] = useState(false);
+  const [ordersWaitingFilter, setOrdersWaitingFilter] = useState("");
 
   // Lab test selection state (for category-based ordering)
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
@@ -1795,14 +1799,46 @@ export default function Treatment() {
 
   // Statistics calculations
   const todayPatients = patientCounts?.today || 0;
-  const activeEncountersCount = visibleQueue.length;
   
-  // Count PATIENTS with PENDING (unprocessed) diagnostic orders, not UNPAID orders
-  // Pending = Lab/X-Ray/Ultrasound hasn't processed the order yet (clinical concern)
-  // Unpaid = Patient hasn't paid yet (billing concern)
-  const pendingOrdersCount = patientsWithStatus
-    ? patientsWithStatus.filter(hasPendingOrders).length
+  // Filter queue to exclude closed visits - only show open and ready_to_bill
+  const openVisitsQueue = visibleQueue.filter((v) => {
+    const patientWithStatus = patientsWithStatus.find(p => p.patientId === v.patientId);
+    const visitStatus = patientWithStatus?.visitStatus;
+    // Show only open or ready_to_bill visits, exclude closed
+    return !visitStatus || visitStatus === "open" || visitStatus === "ready_to_bill";
+  });
+  const activeEncountersCount = openVisitsQueue.length;
+  
+  // Count PATIENTS with diagnostic orders waiting (Lab/X-ray/Ultrasound only, exclude pharmacy)
+  // Only count patients with OPEN visits
+  const ordersWaitingCount = patientsWithStatus
+    ? patientsWithStatus.filter(p => {
+        // Must have diagnostic orders waiting
+        if (!hasDiagnosticOrdersWaiting(p)) return false;
+        // Must have open visit (exclude closed)
+        const visitStatus = p.visitStatus;
+        return !visitStatus || visitStatus === "open" || visitStatus === "ready_to_bill";
+      }).length
     : 0;
+  
+  // Filter patients with orders waiting for the modal
+  const patientsWithOrdersWaiting = patientsWithStatus
+    ? patientsWithStatus.filter(p => {
+        // Must have diagnostic orders waiting
+        if (!hasDiagnosticOrdersWaiting(p)) return false;
+        // Must have open visit
+        const visitStatus = p.visitStatus;
+        if (visitStatus === "closed") return false;
+        // Apply search filter if any
+        if (!ordersWaitingFilter) return true;
+        const needle = ordersWaitingFilter.toLowerCase();
+        const name = `${p.firstName} ${p.lastName}`.toLowerCase();
+        return (
+          name.includes(needle) ||
+          p.patientId.toLowerCase().includes(needle)
+        );
+      })
+    : [];
 
   // Quick filter handlers for stat cards
   const handleTodayClick = () => {
@@ -1821,12 +1857,8 @@ export default function Treatment() {
   };
 
   const handlePendingOrdersClick = () => {
-    setQuickFilter("pending");
-    setDateFilter("today"); // Show today's patients by default
-    setShowDateFilter(true); // Enable search mode so all patients are visible
-    setSearchTerm(""); // Clear search to show all
-    // The patient list already shows payment badges, so doctors can see who has pending payments
-    // Users can then search for specific patients or use date filters
+    // Open the Orders Waiting modal
+    setOrdersWaitingOpen(true);
   };
 
   // Refresh handler
@@ -2072,11 +2104,11 @@ export default function Treatment() {
             <p className="text-[9px] text-gray-500 dark:text-gray-400">Click to view queue</p>
           </button>
 
-          {/* Pending Orders - Clickable */}
+          {/* Orders Waiting - Clickable */}
           <button
             type="button"
             onClick={handlePendingOrdersClick}
-            data-testid="stat-card-pending"
+            data-testid="stat-card-orders-waiting"
             className={`group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-2 border ${
               quickFilter === "pending" 
                 ? "border-amber-500 dark:border-amber-500 ring-2 ring-amber-300 dark:ring-amber-700" 
@@ -2087,10 +2119,10 @@ export default function Treatment() {
               <div className="h-7 w-7 bg-gradient-to-br from-amber-500 to-orange-600 rounded-md flex items-center justify-center shadow-sm">
                 <ClipboardList className="h-3.5 w-3.5 text-white" />
               </div>
-              <span className="text-lg font-bold text-amber-700 dark:text-amber-400">{pendingOrdersCount}</span>
+              <span className="text-lg font-bold text-amber-700 dark:text-amber-400">{ordersWaitingCount}</span>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Pending Orders</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Click to search</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Orders Waiting</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">Lab/X-ray/Ultrasound</p>
           </button>
         </div>
       </div>
@@ -4867,9 +4899,9 @@ export default function Treatment() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
-              Today's Patient Queue
+              Today's Patient Queue (Open Visits Only)
               <Badge variant="secondary" className="ml-2 bg-blue-600 text-white">
-                {visibleQueue.length} patients
+                {openVisitsQueue.length} patients
               </Badge>
             </DialogTitle>
           </DialogHeader>
@@ -4893,20 +4925,22 @@ export default function Treatment() {
                 <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
                 <p className="text-sm text-gray-500 mt-2">Loading queue...</p>
               </div>
-            ) : visibleQueue.length === 0 ? (
+            ) : openVisitsQueue.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm font-medium">No patients in queue</p>
+                <p className="text-sm font-medium">No open visits in queue</p>
                 <p className="text-xs mt-1">
                   {queueFilter 
                     ? "Try a different search term" 
-                    : "Patients who visit today will appear here"}
+                    : "Open visits will appear here"}
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                {visibleQueue.map((visit, index) => {
+                {openVisitsQueue.map((visit, index) => {
                   const patientName = getPatientName(visit.patientId);
+                  const patientWithStatus = patientsWithStatus.find(p => p.patientId === visit.patientId);
+                  const visitStatus = patientWithStatus?.visitStatus || "open";
                   return (
                     <div 
                       key={visit.treatmentId} 
@@ -4925,6 +4959,17 @@ export default function Treatment() {
                               </h4>
                               <Badge variant="outline" className="text-xs">
                                 {visit.patientId}
+                              </Badge>
+                              {/* Visit Status Badge */}
+                              <Badge 
+                                variant={visitStatus === "open" ? "default" : visitStatus === "closed" ? "secondary" : "outline"}
+                                className={`text-xs capitalize ${
+                                  visitStatus === "open" ? "bg-green-600 text-white" :
+                                  visitStatus === "closed" ? "bg-gray-600 text-white" :
+                                  "bg-yellow-600 text-white"
+                                }`}
+                              >
+                                {visitStatus === "ready_to_bill" ? "Ready to Bill" : visitStatus}
                               </Badge>
                             </div>
                             {visit.chiefComplaint && (
@@ -4957,6 +5002,133 @@ export default function Treatment() {
                           onClick={(e) => {
                             e.stopPropagation();
                             handlePatientFromQueue(visit.patientId);
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Orders Waiting Modal - Diagnostic Orders Only */}
+      <Dialog open={ordersWaitingOpen} onOpenChange={setOrdersWaitingOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-amber-600" />
+              Orders Waiting (Lab / X-ray / Ultrasound)
+              <Badge variant="secondary" className="ml-2 bg-amber-600 text-white">
+                {patientsWithOrdersWaiting.length} patients
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Info text */}
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+              <p className="text-sm text-amber-900 dark:text-amber-100">
+                <strong>Diagnostic orders waiting for processing:</strong> These patients have pending Lab, X-ray, or Ultrasound orders that need to be completed.
+              </p>
+            </div>
+
+            {/* Search filter */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search patients..."
+                value={ordersWaitingFilter}
+                onChange={(e) => setOrdersWaitingFilter(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Patient list */}
+            {patientsWithOrdersWaiting.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-medium">No diagnostic orders waiting</p>
+                <p className="text-xs mt-1">
+                  {ordersWaitingFilter 
+                    ? "Try a different search term" 
+                    : "Patients with pending diagnostic orders will appear here"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {patientsWithOrdersWaiting.map((patient, index) => {
+                  const pendingDepts = getDiagnosticPendingDepartments(patient);
+                  const visitStatus = patient.visitStatus || "open";
+                  return (
+                    <div 
+                      key={patient.patientId} 
+                      className="p-4 bg-gradient-to-r from-amber-50/50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-amber-200 dark:border-amber-800/50 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => {
+                        handlePatientFromQueue(patient.patientId);
+                        setOrdersWaitingOpen(false);
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h4 className="font-semibold text-gray-900 dark:text-white">
+                                {patient.firstName} {patient.lastName}
+                              </h4>
+                              <Badge variant="outline" className="text-xs">
+                                {patient.patientId}
+                              </Badge>
+                              {/* Visit Status Badge */}
+                              <Badge 
+                                variant={visitStatus === "open" ? "default" : "outline"}
+                                className={`text-xs capitalize ${
+                                  visitStatus === "open" ? "bg-green-600 text-white" :
+                                  visitStatus === "closed" ? "bg-gray-600 text-white" :
+                                  "bg-yellow-600 text-white"
+                                }`}
+                              >
+                                {visitStatus === "ready_to_bill" ? "Ready to Bill" : visitStatus}
+                              </Badge>
+                            </div>
+                            
+                            {/* Pending departments */}
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Waiting:</span>
+                              {pendingDepts.map((dept, i) => (
+                                <Badge 
+                                  key={i}
+                                  variant="secondary" 
+                                  className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700"
+                                >
+                                  {dept}
+                                </Badge>
+                              ))}
+                            </div>
+                            
+                            {/* Patient info */}
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {patient.age && <span>{patient.age} years • </span>}
+                              {patient.gender && <span>{patient.gender}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="border-amber-300 hover:bg-amber-50 dark:border-amber-700 dark:hover:bg-amber-900/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePatientFromQueue(patient.patientId);
+                            setOrdersWaitingOpen(false);
                           }}
                         >
                           View

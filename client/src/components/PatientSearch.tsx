@@ -167,6 +167,9 @@ export default function PatientSearch({
                   Contact
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Visit Status
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Consultation
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
@@ -233,6 +236,23 @@ export default function PatientSearch({
                         —
                       </td>
                     )}
+
+                    <td className="px-4 py-3 text-sm">
+                      {p.visitStatus ? (
+                        <Badge 
+                          variant={p.visitStatus === "open" ? "default" : p.visitStatus === "closed" ? "secondary" : "outline"}
+                          className={`text-xs capitalize ${
+                            p.visitStatus === "open" ? "bg-green-600 text-white" :
+                            p.visitStatus === "closed" ? "bg-gray-600 text-white" :
+                            "bg-yellow-600 text-white"
+                          }`}
+                        >
+                          {p.visitStatus === "ready_to_bill" ? "Ready to Bill" : p.visitStatus}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
+                    </td>
 
                     <td className="px-4 py-3 text-sm">
                       {due > 0 ? (

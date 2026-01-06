@@ -524,6 +524,11 @@ export interface ServiceStatus {
   hasPendingServices: boolean;
   balance: number;
   balanceToday: number;
+  // Diagnostic-specific pending counts for doctor workflow
+  labPending?: number;
+  xrayPending?: number;
+  ultrasoundPending?: number;
+  diagnosticPending?: number; // Sum of lab + xray + ultrasound pending only
 }
 
 // Patient with service status for queries with withStatus=true
@@ -531,4 +536,5 @@ export type PatientWithStatus = Patient & {
   serviceStatus: ServiceStatus;
   dateOfService?: string; // Clinic day of most recent encounter (YYYY-MM-DD format)
   lastVisit?: string; // Deprecated: Use dateOfService instead - kept for backward compatibility
+  visitStatus?: "open" | "ready_to_bill" | "closed"; // Status of most recent encounter
 };
