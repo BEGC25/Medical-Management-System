@@ -186,6 +186,7 @@ export interface IStorage {
   getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]>;
   updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest>;
   updateLabTestAttachments(testId: string, attachments: any[]): Promise<schema.LabTest>;
+  deleteLabTest(testId: string): Promise<boolean>;
 
   // X-Ray Exams
   createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam>;
@@ -890,6 +891,29 @@ export class MemStorage implements IStorage {
     return labTest;
   }
 
+  async deleteLabTest(testId: string): Promise<boolean> {
+    const result = await db.transaction(async (tx) => {
+      const deletedTest = await tx.delete(labTests)
+        .where(eq(labTests.testId, testId))
+        .returning();
+
+      // Also remove any related order lines so the request disappears from the Treatment page
+      if (deletedTest.length > 0) {
+        await tx.delete(orderLines)
+          .where(
+            and(
+              eq(orderLines.relatedId, testId),
+              eq(orderLines.relatedType, "lab_test")
+            )
+          );
+      }
+
+      return deletedTest;
+    });
+
+    return result.length > 0;
+  }
+
   async createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam> {
     const examId = await generateXrayId();
     const now = new Date().toISOString();
@@ -1069,9 +1093,24 @@ export class MemStorage implements IStorage {
   }
 
   async deleteUltrasoundExam(examId: string): Promise<boolean> {
-    const result = await db.delete(ultrasoundExams)
-      .where(eq(ultrasoundExams.examId, examId))
-      .returning();
+    const result = await db.transaction(async (tx) => {
+      const deletedExam = await tx.delete(ultrasoundExams)
+        .where(eq(ultrasoundExams.examId, examId))
+        .returning();
+
+      // Also remove any related order lines so the request disappears from the Treatment page
+      if (deletedExam.length > 0) {
+        await tx.delete(orderLines)
+          .where(
+            and(
+              eq(orderLines.relatedId, examId),
+              eq(orderLines.relatedType, "ultrasound_exam")
+            )
+          );
+      }
+
+      return deletedExam;
+    });
 
     return result.length > 0;
   }

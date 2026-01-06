@@ -898,26 +898,28 @@ router.delete("/api/lab-tests/:testId", async (req, res) => {
       return res.status(404).json({ error: "Lab test not found" });
     }
     
-    // Only allow cancelling pending tests
+    // Only allow deleting pending tests
     if (labTest.status !== "pending") {
-      return res.status(400).json({ error: "Can only cancel pending tests" });
+      return res.status(400).json({ error: "Can only delete pending tests" });
     }
     
     // Check permissions: admin or doctor only
     const allowedRoles = ["admin", "doctor"];
     if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ error: "Only doctors and admins can cancel lab tests" });
+      return res.status(403).json({ error: "Only doctors and admins can delete lab tests" });
     }
     
-    // Mark as cancelled instead of hard delete
-    const cancelledTest = await storage.updateLabTest(testId, {
-      status: "cancelled",
-    });
+    // Delete the lab test and associated order_lines
+    const success = await storage.deleteLabTest(testId);
     
-    res.json({ message: "Lab test cancelled successfully", labTest: cancelledTest });
+    if (success) {
+      res.json({ message: "Lab test deleted successfully" });
+    } else {
+      res.status(404).json({ error: "Lab test not found" });
+    }
   } catch (error) {
-    console.error("Error cancelling lab test:", error);
-    res.status(500).json({ error: "Failed to cancel lab test" });
+    console.error("Error deleting lab test:", error);
+    res.status(500).json({ error: "Failed to delete lab test" });
   }
 });
 
