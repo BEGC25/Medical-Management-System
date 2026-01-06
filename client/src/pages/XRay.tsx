@@ -380,7 +380,6 @@ export default function XRay() {
     })();
   }, [selectedXrayExam]);
 
-
   // Refresh handler
   const handleRefresh = async () => {
     setIsRefreshing(true);

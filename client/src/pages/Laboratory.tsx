@@ -465,7 +465,6 @@ export default function Laboratory() {
   // Use the date filter preset directly for API calls (Phase 2)
   const { data: allLabTests = [], refetch: refetchLabTests } = useLabTests(dateFilter, customStartDate, customEndDate);
   
-  
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   // Server already filters by date using timezone-aware utilities, no need for client-side filtering

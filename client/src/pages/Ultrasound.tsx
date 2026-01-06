@@ -365,7 +365,6 @@ export default function Ultrasound() {
     })();
   }, [selectedUltrasoundExam]);
 
-
   // Refresh handler
   const handleRefresh = async () => {
     setIsRefreshing(true);
