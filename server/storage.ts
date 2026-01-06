@@ -976,6 +976,12 @@ export class MemStorage implements IStorage {
       .where(eq(xrayExams.examId, examId))
       .returning();
 
+    // Also remove any related order lines so the request disappears from the Treatment page
+    if (result.length > 0) {
+      await db.delete(orderLines)
+        .where(eq(orderLines.relatedId, examId));
+    }
+
     return result.length > 0;
   }
 

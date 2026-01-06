@@ -24,9 +24,14 @@ export default function VisitRedirector() {
     const findOrCreateVisit = async () => {
       try {
         const today = getClinicDayKey();
+        const params = new URLSearchParams({
+          patientId,
+          status: "open",
+          preset: "today",
+        });
         
         // Check for existing open visit today
-        const response = await fetch(`/api/encounters?patientId=${patientId}&date=${today}&status=open`);
+        const response = await fetch(`/api/encounters?${params.toString()}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch visits');
@@ -45,12 +50,23 @@ export default function VisitRedirector() {
             body: JSON.stringify({
               patientId,
               visitDate: today,
+              clinicDay: today,
               attendingClinician: 'Dr. System', // Will be updated with actual user
             }),
           });
 
           if (!createResponse.ok) {
-            throw new Error('Failed to create visit');
+            // Fallback: if creation fails (e.g., existing open visit), try to reuse the latest open encounter
+            const fallback = await fetch(`/api/encounters?patientId=${patientId}&status=open`);
+            if (fallback.ok) {
+              const openVisits = await fallback.json();
+              if (openVisits.length > 0) {
+                setLocation(`/treatment/${openVisits[0].encounterId}`);
+                return;
+              }
+            }
+            const errorText = await createResponse.text();
+            throw new Error(errorText || 'Failed to create visit');
           }
 
           const newVisit = await createResponse.json();
