@@ -865,7 +865,7 @@ export default function Treatment() {
 
   // Fetch patients with pending (unprocessed) orders for the stat card
   // Use preset 'today' to get today's patients with service status
-  const { data: patientsWithStatus = [] } = useQuery<PatientWithStatus[]>({
+  const { data: patientsWithStatus = [], isLoading: patientsWithStatusLoading } = useQuery<PatientWithStatus[]>({
     queryKey: ["/api/patients", { withStatus: true, preset: 'today' }],
     queryFn: async () => {
       const url = new URL("/api/patients", window.location.origin);
@@ -4918,7 +4918,7 @@ export default function Treatment() {
             </div>
 
             {/* Queue list */}
-            {patientsWithStatus === undefined ? (
+            {patientsWithStatusLoading ? (
               <div className="text-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
                 <p className="text-sm text-gray-500 mt-2">Loading open visits...</p>
@@ -4947,7 +4947,10 @@ export default function Treatment() {
                   })
                   .map((patient, index) => {
                     const visitStatus = patient.visitStatus || "open";
-                    const displayStatus = visitStatus === "closed" ? "Treated" : visitStatus === "ready_to_bill" ? "Ready to Bill" : "Open";
+                    // Map status labels: closed → Treated, ready_to_bill → Ready to Bill, others → capitalize
+                    const displayStatus = visitStatus === "closed" ? "Treated" : 
+                                         visitStatus === "ready_to_bill" ? "Ready to Bill" : 
+                                         visitStatus.charAt(0).toUpperCase() + visitStatus.slice(1);
                     return (
                       <div 
                         key={patient.patientId} 
