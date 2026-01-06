@@ -1730,6 +1730,14 @@ export default function Treatment() {
     window.location.href = `/treatment/new?patientId=${patient.patientId}`;
   };
 
+  const handlePatientFromQueue = (patientId: string) => {
+    const patient = activePatients.find(p => p.patientId === patientId);
+    if (patient) {
+      handlePatientSelect(patient);
+      setQueueOpen(false);
+    }
+  };
+
   const handleNewTreatment = () => {
     form.reset();
     setSelectedPatient(null);
@@ -4883,13 +4891,7 @@ export default function Treatment() {
                     <div 
                       key={visit.treatmentId} 
                       className="p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer"
-                      onClick={() => {
-                        const patient = activePatients.find(p => p.patientId === visit.patientId);
-                        if (patient) {
-                          handlePatientSelect(patient);
-                          setQueueOpen(false);
-                        }
-                      }}
+                      onClick={() => handlePatientFromQueue(visit.patientId)}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3 flex-1">
@@ -4934,11 +4936,7 @@ export default function Treatment() {
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const patient = activePatients.find(p => p.patientId === visit.patientId);
-                            if (patient) {
-                              handlePatientSelect(patient);
-                              setQueueOpen(false);
-                            }
+                            handlePatientFromQueue(visit.patientId);
                           }}
                         >
                           View
