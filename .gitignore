@@ -10,3 +10,4 @@ test-*.js
 # Archive directory (legacy backup files)
 archive/
 test-payments-preset.js
+clinic.db
