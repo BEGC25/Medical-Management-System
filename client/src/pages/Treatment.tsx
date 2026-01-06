@@ -758,12 +758,13 @@ export default function Treatment() {
   }, [visitId]);
 
   // patients (for names in queue)
+  // Always load patient data for queue names and filtering
   const { data: allPatients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
-    enabled: queueOpen || !visitId,
   });
 
   // queue - using preset 'today' for consistent filtering
+  // Always load queue data so the badge count is accurate
   const { data: queueVisits = [], isLoading: queueLoading } = useQuery<Treatment[]>({
     queryKey: ["/api/treatments", { preset: 'today' }],
     queryFn: async () => {
@@ -775,7 +776,6 @@ export default function Treatment() {
       }
       return response.json();
     },
-    enabled: queueOpen,
   });
 
   // filter out soft-deleted patients
