@@ -1305,8 +1305,7 @@ export default function Treatment() {
   // Delete lab test mutation
   const deleteLabTestMutation = useMutation({
     mutationFn: async (testId: string) => {
-      const response = await apiRequest("DELETE", `/api/lab-tests/${testId}`);
-      return response.json();
+      await apiRequest("DELETE", `/api/lab-tests/${testId}`);
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Lab test cancelled successfully" });
@@ -1402,8 +1401,7 @@ export default function Treatment() {
   // X-Ray mutations
   const deleteXrayMutation = useMutation({
     mutationFn: async (examId: string) => {
-      const response = await apiRequest("DELETE", `/api/xray-exams/${examId}`);
-      return response.json();
+      await apiRequest("DELETE", `/api/xray-exams/${examId}`);
     },
     onSuccess: () => {
       toast({ title: "Success", description: "X-Ray exam cancelled successfully" });
@@ -1482,8 +1480,7 @@ export default function Treatment() {
   // Ultrasound mutations
   const deleteUltrasoundMutation = useMutation({
     mutationFn: async (examId: string) => {
-      const response = await apiRequest("DELETE", `/api/ultrasound-exams/${examId}`);
-      return response.json();
+      await apiRequest("DELETE", `/api/ultrasound-exams/${examId}`);
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Ultrasound exam cancelled successfully" });
@@ -3423,9 +3420,10 @@ export default function Treatment() {
                                                 <Button
                                                   size="sm"
                                                   variant="outline"
-                                                  onClick={() => handleDeleteLabTest(order.testId || order.orderId)}
+                                                  onClick={() => handleDeleteLabTest(order.testId)}
                                                   className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                                                   data-testid={`button-delete-lab-${order.orderId}`}
+                                                  disabled={!order.testId}
                                                 >
                                                   <Trash2 className="w-3 h-3 mr-1" />
                                                   Delete
@@ -3447,9 +3445,10 @@ export default function Treatment() {
                                                 <Button
                                                   size="sm"
                                                   variant="outline"
-                                                  onClick={() => handleDeleteXray(order.examId || order.orderId)}
+                                                  onClick={() => handleDeleteXray(order.examId)}
                                                   className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                                                   data-testid={`button-delete-xray-${order.orderId}`}
+                                                  disabled={!order.examId}
                                                 >
                                                   <Trash2 className="w-3 h-3 mr-1" />
                                                   Delete
@@ -3471,9 +3470,10 @@ export default function Treatment() {
                                                 <Button
                                                   size="sm"
                                                   variant="outline"
-                                                  onClick={() => handleDeleteUltrasound(order.examId || order.orderId)}
+                                                  onClick={() => handleDeleteUltrasound(order.examId)}
                                                   className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                                                   data-testid={`button-delete-ultrasound-${order.orderId}`}
+                                                  disabled={!order.examId}
                                                 >
                                                   <Trash2 className="w-3 h-3 mr-1" />
                                                   Delete
