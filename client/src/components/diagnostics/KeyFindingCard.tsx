@@ -38,7 +38,7 @@ export function KeyFindingCard({
             <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
           <div className="flex-1">
-            <div className="text-base font-bold text-green-900 dark:text-green-100 mb-2">
+            <div className="text-lg font-bold text-green-900 dark:text-green-100 mb-2">
               {displayTitle}
             </div>
             <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed">

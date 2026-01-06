@@ -11,13 +11,16 @@ interface ResultPatientHeaderProps {
 }
 
 export function ResultPatientHeader({ patientName, patientId, statuses }: ResultPatientHeaderProps) {
+  // Filter out "completed" status - it will be shown in the header card instead
+  const filteredStatuses = statuses.filter(s => s.variant !== 'completed');
+  
   return (
-    <div className="flex items-center gap-2 flex-wrap text-sm">
+    <div className="flex items-center justify-between gap-3 text-sm mb-3">
       <span className="font-medium text-gray-700 dark:text-gray-300">
         Patient: <span className="font-semibold text-gray-900 dark:text-gray-100">{patientName}</span> ({patientId})
       </span>
       <div className="flex items-center gap-1.5 flex-wrap">
-        {statuses.map((status, idx) => (
+        {filteredStatuses.map((status, idx) => (
           <StatusChip key={idx} variant={status.variant}>
             {status.label}
           </StatusChip>

@@ -1740,6 +1740,7 @@ export default function XRay() {
                 subtitle={selectedXrayExam.bodyPart || undefined}
                 requestedAt={selectedXrayExam.requestedDate}
                 completedAt={selectedXrayExam.reportDate}
+                status="completed"
               />
 
               {/* Radiological Findings Section */}

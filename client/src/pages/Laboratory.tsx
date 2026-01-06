@@ -1699,6 +1699,7 @@ return (
                 subtitle={`${parseJSON<string[]>(selectedLabTest.tests, []).length} test(s) ordered`}
                 requestedAt={selectedLabTest.requestedDate}
                 completedAt={selectedLabTest.completedDate}
+                status="completed"
               />
 
               {/* Tests Ordered Section */}
