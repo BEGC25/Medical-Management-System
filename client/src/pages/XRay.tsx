@@ -908,14 +908,14 @@ export default function XRay() {
           </CardContent>
         </Card>
 
-        {/* RIGHT – Completed Tests */}
+        {/* RIGHT – Completed Results (X-Ray) */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
           <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
-              Completed Tests
+              Completed Results (X-Ray)
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">

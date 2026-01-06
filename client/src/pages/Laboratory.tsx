@@ -1052,7 +1052,7 @@ return (
               <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
-              Completed Tests
+              Completed Results (Lab)
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
