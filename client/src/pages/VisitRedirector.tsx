@@ -24,14 +24,11 @@ export default function VisitRedirector() {
     const findOrCreateVisit = async () => {
       try {
         const today = getClinicDayKey();
-        const params = new URLSearchParams({
-          patientId,
-          status: "open",
-          preset: "today",
-        });
+        const baseParams = new URLSearchParams({ patientId, status: "open" });
+        const todayParams = new URLSearchParams({ patientId, status: "open", preset: "today" });
         
         // Check for existing open visit today
-        const response = await fetch(`/api/encounters?${params.toString()}`);
+        const response = await fetch(`/api/encounters?${todayParams.toString()}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch visits');
@@ -50,23 +47,33 @@ export default function VisitRedirector() {
             body: JSON.stringify({
               patientId,
               visitDate: today,
-              clinicDay: today,
               attendingClinician: 'Dr. System', // Will be updated with actual user
             }),
           });
 
           if (!createResponse.ok) {
             // Fallback: if creation fails (e.g., existing open visit), try to reuse the latest open encounter
-            const fallback = await fetch(`/api/encounters?patientId=${patientId}&status=open`);
-            if (fallback.ok) {
-              const openVisits = await fallback.json();
-              if (openVisits.length > 0) {
-                setLocation(`/treatment/${openVisits[0].encounterId}`);
-                return;
+            let fallbackError = "";
+            try {
+              const fallback = await fetch(`/api/encounters?${baseParams.toString()}`);
+              if (fallback.ok) {
+                const openVisits = await fallback.json();
+                if (openVisits.length > 0) {
+                  setLocation(`/treatment/${openVisits[0].encounterId}`);
+                  return;
+                }
+              } else {
+                fallbackError = await fallback.text();
               }
+            } catch (err) {
+              fallbackError = err instanceof Error ? err.message : String(err);
             }
             const errorText = await createResponse.text();
-            throw new Error(errorText || 'Failed to create visit');
+            const primaryError = errorText || 'Failed to create visit';
+            const detailedError = fallbackError
+              ? `${primaryError}. Fallback lookup failed: ${fallbackError}`
+              : primaryError;
+            throw new Error(detailedError);
           }
 
           const newVisit = await createResponse.json();
