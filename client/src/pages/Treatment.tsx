@@ -1800,7 +1800,7 @@ export default function Treatment() {
   // Statistics calculations
   // A) Fix "Patients Today" - count patients with encounters today (matches table source)
   // Use patientsWithStatus which already filters by encounters today via preset='today'
-  const todayPatients = patientsWithStatus?.length || 0;
+  const todayPatients = patientsWithStatus.length || 0;
   
   // B) Rename "Today's Queue" to "Open Visits" and use patientsWithStatus as source of truth
   // Filter to ONLY patients with open visits (exclude treated/closed and ready_to_bill)

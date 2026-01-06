@@ -20,7 +20,8 @@ import type { XrayExam, UltrasoundExam } from '@shared/schema';
  * getVisitStatusLabel(null) // "Unknown"
  */
 export function getVisitStatusLabel(visitStatus: string | null | undefined): string {
-  if (!visitStatus) return "Unknown";
+  // Handle null, undefined, or empty string
+  if (!visitStatus || visitStatus.trim().length === 0) return "Unknown";
   
   // Map known status values to user-friendly labels
   switch (visitStatus.toLowerCase()) {
@@ -32,9 +33,7 @@ export function getVisitStatusLabel(visitStatus: string | null | undefined): str
       return "Open";
     default:
       // For unknown values, capitalize first letter
-      return visitStatus.length > 0 
-        ? visitStatus.charAt(0).toUpperCase() + visitStatus.slice(1)
-        : "Unknown";
+      return visitStatus.charAt(0).toUpperCase() + visitStatus.slice(1);
   }
 }
 
