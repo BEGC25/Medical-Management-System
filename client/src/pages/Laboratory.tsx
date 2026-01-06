@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   User,
   Zap,
+  RefreshCw,
 } from "lucide-react";
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 
@@ -462,8 +463,10 @@ export default function Laboratory() {
   /* ----------------------------- Data ----------------------------- */
 
   // Use the date filter preset directly for API calls (Phase 2)
-  const { data: allLabTests = [] } = useLabTests(dateFilter, customStartDate, customEndDate);
+  const { data: allLabTests = [], refetch: refetchLabTests } = useLabTests(dateFilter, customStartDate, customEndDate);
   
+  // Refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
   // Server already filters by date using timezone-aware utilities, no need for client-side filtering
   // Just separate by status
   const dateFilteredPending = allLabTests.filter((t) => t.status === "pending");
@@ -555,6 +558,26 @@ export default function Laboratory() {
     })();
   }, [selectedLabTest]);
 
+
+  // Refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchLabTests();
+      toast({
+        title: "Refreshed",
+        description: "Laboratory data has been refreshed successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh laboratory data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   /* --------------------------- Mutations -------------------------- */
 
   const createLabTestMutation = useMutation({
@@ -805,15 +828,27 @@ return (
                   </p>
                 </div>
               </div>
-              <Button
-                type="button"
-                onClick={() => setRequestOpen(true)}
-                className="bg-gradient-to-r from-teal-600 to-emerald-500 hover:shadow-lg hover:shadow-teal-500/40 transition-all duration-300"
-                data-testid="button-new-lab-request"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Request
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  variant="outline"
+                  size="sm"
+                  className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300 dark:border-teal-800 dark:text-teal-400 dark:hover:bg-teal-950 transition-all duration-200 shadow-sm"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setRequestOpen(true)}
+                  className="bg-gradient-to-r from-teal-600 to-emerald-500 hover:shadow-lg hover:shadow-teal-500/40 transition-all duration-300"
+                  data-testid="button-new-lab-request"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Request
+                </Button>
+              </div>
             </div>
 
             {/* Compact Stats Bar (Like Patient Page) */}
