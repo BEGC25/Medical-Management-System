@@ -31,6 +31,7 @@ import {
   Bone,
   Lungs,
   FileDown,
+  RefreshCw,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -294,8 +295,11 @@ export default function Ultrasound() {
 
   /* ----------------------------- Data ----------------------------- */
 
-  const { data: allUltrasoundExams = [] } = useUltrasoundExams(dateFilter, customStartDate, customEndDate);
+  const { data: allUltrasoundExams = [], refetch: refetchUltrasoundExams } = useUltrasoundExams(dateFilter, customStartDate, customEndDate);
   const { data: ultrasoundServices = [] } = useUltrasoundServices();
+  
+  // Refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Server now handles all date filtering - no need for client-side date filtering
   // Split by status for the two tabs
@@ -361,6 +365,26 @@ export default function Ultrasound() {
     })();
   }, [selectedUltrasoundExam]);
 
+
+  // Refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchUltrasoundExams();
+      toast({
+        title: "Refreshed",
+        description: "Ultrasound data has been refreshed successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh ultrasound data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   /* --------------------------- Mutations -------------------------- */
 
   const createUltrasoundExamMutation = useMutation({
@@ -893,14 +917,26 @@ export default function Ultrasound() {
                   </p>
                 </div>
               </div>
-              <Button 
-                onClick={() => setRequestOpen(true)}
-                className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg shadow-indigo-500/30"
-                data-testid="button-new-request"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Request
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  variant="outline"
+                  size="sm"
+                  className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950 transition-all duration-200 shadow-sm"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+                <Button 
+                  onClick={() => setRequestOpen(true)}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg shadow-indigo-500/30"
+                  data-testid="button-new-request"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Request
+                </Button>
+              </div>
             </div>
 
             {/* Stats Bar */}

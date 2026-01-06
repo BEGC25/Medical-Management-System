@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDepartmentName } from "@/lib/display-utils";
-import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard, FlaskConical } from "lucide-react";
+import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard, FlaskConical, RefreshCw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -89,6 +89,9 @@ export default function Payment() {
   
   // NEW: Active category filter for pending payments (replaces Tabs)
   const [activeCategory, setActiveCategory] = useState<"laboratory" | "xray" | "ultrasound" | "pharmacy">("laboratory");
+  
+  // Refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -365,6 +368,29 @@ export default function Payment() {
       });
     },
   });
+
+  // Refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refetchAllUnpaid(),
+        refetchHistory(),
+      ]);
+      toast({
+        title: "Refreshed",
+        description: "Payment data has been refreshed successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh payment data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleSelectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -658,6 +684,18 @@ export default function Payment() {
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">Process patient payments and manage outstanding balances</p>
             </div>
+            
+            {/* Refresh Button */}
+            <Button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              variant="outline"
+              size="sm"
+              className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300 dark:border-teal-800 dark:text-teal-400 dark:hover:bg-teal-950 transition-all duration-200 shadow-sm"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
           
           {/* Integrated Search Bar */}
