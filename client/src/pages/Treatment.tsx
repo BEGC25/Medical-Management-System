@@ -85,6 +85,8 @@ import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, 
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
+import { hasPendingOrders } from '@/lib/patient-utils';
+import type { PatientWithStatus } from "@shared/schema";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -858,7 +860,7 @@ export default function Treatment() {
 
   // Fetch patients with pending (unprocessed) orders for the stat card
   // Use preset 'today' to get today's patients with service status
-  const { data: patientsWithStatus = [] } = useQuery<any[]>({
+  const { data: patientsWithStatus = [] } = useQuery<PatientWithStatus[]>({
     queryKey: ["/api/patients", { withStatus: true, preset: 'today' }],
     queryFn: async () => {
       const url = new URL("/api/patients", window.location.origin);
@@ -1798,11 +1800,7 @@ export default function Treatment() {
   // Pending = Lab/X-Ray/Ultrasound hasn't processed the order yet (clinical concern)
   // Unpaid = Patient hasn't paid yet (billing concern)
   const pendingOrdersCount = patientsWithStatus
-    ? patientsWithStatus.filter((p: any) => {
-        const s = p.serviceStatus || {};
-        // Check if patient has any pending services (status='pending' in lab/xray/ultrasound)
-        return s.hasPendingServices === true || (s.pendingServices ?? 0) > 0;
-      }).length
+    ? patientsWithStatus.filter(hasPendingOrders).length
     : 0;
 
   // Quick filter handlers for stat cards

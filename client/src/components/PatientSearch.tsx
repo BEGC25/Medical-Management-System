@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
 import { formatClinicDay } from "@/lib/date-utils";
+import { hasPendingOrders } from "@/lib/patient-utils";
 
 interface PatientSearchProps {
   onSelectPatient?: (patient: Patient) => void;
@@ -137,14 +138,7 @@ export default function PatientSearch({
 
   // Filter patients with pending orders if requested
   const patients = filterPendingOnly && rawPatients
-    ? rawPatients.filter((p: any) => {
-        const s = p.serviceStatus || {};
-        // Check if patient has any PENDING (unprocessed) services
-        // serviceStatus has: pendingServices (count), hasPendingServices (boolean)
-        // Pending means the order is waiting to be processed by lab/xray/ultrasound department
-        const hasPendingOrders = s.hasPendingServices === true || (s.pendingServices ?? 0) > 0;
-        return hasPendingOrders;
-      })
+    ? rawPatients.filter(hasPendingOrders)
     : rawPatients;
 
   return (

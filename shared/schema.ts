@@ -513,3 +513,22 @@ export type InsertPharmacyOrder = z.infer<typeof insertPharmacyOrderSchema>;
 export type InsertDrug = z.infer<typeof insertDrugSchema>;
 export type InsertDrugBatch = z.infer<typeof insertDrugBatchSchema>;
 export type InsertInventoryLedger = z.infer<typeof insertInventoryLedgerSchema>;
+
+// Service status interface for patient queries with status information
+export interface ServiceStatus {
+  totalServices: number;
+  unpaidServices: number;
+  pendingServices: number;
+  completedServices: number;
+  hasUnpaidServices: boolean;
+  hasPendingServices: boolean;
+  balance: number;
+  balanceToday: number;
+}
+
+// Patient with service status for queries with withStatus=true
+export type PatientWithStatus = Patient & {
+  serviceStatus: ServiceStatus;
+  dateOfService?: string; // Clinic day of most recent encounter
+  lastVisit?: string; // Alias for dateOfService
+};
