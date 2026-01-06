@@ -85,6 +85,8 @@ import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, 
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
+import { hasPendingOrders } from '@/lib/patient-utils';
+import type { PatientWithStatus } from "@shared/schema";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -757,13 +759,15 @@ export default function Treatment() {
     }
   }, [visitId]);
 
-  // patients (for names in queue)
+  // patients (for names in queue and basic patient list)
+  // This is a basic patient query without status data - for performance
+  // The patientsWithStatus query below includes full service status for stat cards
   const { data: allPatients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
-    enabled: queueOpen || !visitId,
   });
 
   // queue - using preset 'today' for consistent filtering
+  // Always load queue data so the badge count is accurate
   const { data: queueVisits = [], isLoading: queueLoading } = useQuery<Treatment[]>({
     queryKey: ["/api/treatments", { preset: 'today' }],
     queryFn: async () => {
@@ -775,7 +779,6 @@ export default function Treatment() {
       }
       return response.json();
     },
-    enabled: queueOpen,
   });
 
   // filter out soft-deleted patients
@@ -854,6 +857,22 @@ export default function Treatment() {
   
   const { data: unpaidOrders } = useQuery({
     queryKey: ["/api/unpaid-orders/all"],
+  });
+
+  // Fetch patients with pending (unprocessed) orders for the stat card
+  // Use preset 'today' to get today's patients with service status
+  const { data: patientsWithStatus = [] } = useQuery<PatientWithStatus[]>({
+    queryKey: ["/api/patients", { withStatus: true, preset: 'today' }],
+    queryFn: async () => {
+      const url = new URL("/api/patients", window.location.origin);
+      url.searchParams.set("withStatus", "true");
+      url.searchParams.set("preset", "today");
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error("Failed to fetch patients with status");
+      }
+      return response.json();
+    },
   });
 
   // visit via /treatment/:visitId
@@ -1777,11 +1796,12 @@ export default function Treatment() {
   // Statistics calculations
   const todayPatients = patientCounts?.today || 0;
   const activeEncountersCount = visibleQueue.length;
-  const pendingOrdersCount = unpaidOrders 
-    ? ((unpaidOrders as any).laboratory?.length || 0) + 
-      ((unpaidOrders as any).xray?.length || 0) + 
-      ((unpaidOrders as any).ultrasound?.length || 0) + 
-      ((unpaidOrders as any).pharmacy?.length || 0)
+  
+  // Count PATIENTS with PENDING (unprocessed) diagnostic orders, not UNPAID orders
+  // Pending = Lab/X-Ray/Ultrasound hasn't processed the order yet (clinical concern)
+  // Unpaid = Patient hasn't paid yet (billing concern)
+  const pendingOrdersCount = patientsWithStatus
+    ? patientsWithStatus.filter(hasPendingOrders).length
     : 0;
 
   // Quick filter handlers for stat cards

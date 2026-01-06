@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
 import { formatClinicDay } from "@/lib/date-utils";
+import { hasPendingOrders } from "@/lib/patient-utils";
 
 interface PatientSearchProps {
   onSelectPatient?: (patient: Patient) => void;
@@ -137,14 +138,7 @@ export default function PatientSearch({
 
   // Filter patients with pending orders if requested
   const patients = filterPendingOnly && rawPatients
-    ? rawPatients.filter((p: any) => {
-        const s = p.serviceStatus || {};
-        // Check if patient has any unpaid services or balance
-        // serviceStatus has: unpaidServices (count), hasUnpaidServices (boolean), balance, balanceToday
-        const hasUnpaidBalance = (s.balance ?? 0) > 0 || (s.balanceToday ?? 0) > 0;
-        const hasUnpaidOrders = s.hasUnpaidServices === true || (s.unpaidServices ?? 0) > 0;
-        return hasUnpaidBalance || hasUnpaidOrders;
-      })
+    ? rawPatients.filter(hasPendingOrders)
     : rawPatients;
 
   return (
