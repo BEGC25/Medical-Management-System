@@ -2134,19 +2134,19 @@ export default function Treatment() {
 
   // ---------- UI ----------
   return (
-    <div className="space-y-6">
-      {/* World-Class Department Header - More Compact */}
-      <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-4 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
+    <div className="space-y-4 md:space-y-6">
+      {/* World-Class Department Header - Mobile Responsive */}
+      <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-3 md:p-4 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl blur-sm opacity-75"></div>
-              <div className="relative h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Stethoscope className="h-6 w-6 text-white" />
+              <div className="relative h-10 w-10 md:h-12 md:w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Stethoscope className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
             </div>
           </div>
           <Button
@@ -2154,9 +2154,10 @@ export default function Treatment() {
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
+            className="self-end sm:self-auto"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
         
@@ -5012,12 +5013,14 @@ export default function Treatment() {
       {showPrescription && selectedPatient && ( <div> {/* ... content ... */} </div> )}
       {/* Queue modal */}
       <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              Open Visits (Today)
-              <Badge variant="secondary" className="ml-2 bg-blue-600 text-white">
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <span>Open Visits (Today)</span>
+              </div>
+              <Badge variant="secondary" className="ml-0 sm:ml-2 bg-blue-600 text-white self-start">
                 {openVisitsPatients.length} patients
               </Badge>
             </DialogTitle>
@@ -5126,12 +5129,14 @@ export default function Treatment() {
 
       {/* Orders Waiting Modal - Diagnostic Orders Only */}
       <Dialog open={ordersWaitingOpen} onOpenChange={setOrdersWaitingOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-amber-600" />
-              Orders Waiting (Lab / X-ray / Ultrasound)
-              <Badge variant="secondary" className="ml-2 bg-amber-600 text-white">
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-amber-600" />
+                <span className="text-sm sm:text-base">Orders Waiting (Lab / X-ray / Ultrasound)</span>
+              </div>
+              <Badge variant="secondary" className="ml-0 sm:ml-2 bg-amber-600 text-white self-start">
                 {patientsWithOrdersWaiting.length} patients
               </Badge>
             </DialogTitle>
@@ -5253,12 +5258,14 @@ export default function Treatment() {
 
       {/* Results Ready Modal - NEW */}
       <Dialog open={resultsReadyOpen} onOpenChange={setResultsReadyOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-purple-600" />
-              Results Ready
-              <Badge variant="secondary" className="ml-2 bg-purple-600 text-white">
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-purple-600" />
+                <span>Results Ready</span>
+              </div>
+              <Badge variant="secondary" className="ml-0 sm:ml-2 bg-purple-600 text-white self-start">
                 {resultsReadyCount} patients
               </Badge>
             </DialogTitle>
