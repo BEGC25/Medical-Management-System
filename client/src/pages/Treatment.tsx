@@ -77,7 +77,9 @@ import {
   type Service,
   type Drug,
   type PharmacyOrder,
-  type LabTest // Assuming LabTest type includes interpretation field
+  type LabTest, // Assuming LabTest type includes interpretation field
+  type XrayExam,
+  type UltrasoundExam,
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
@@ -863,7 +865,7 @@ export default function Treatment() {
   });
 
   // Fetch today's completed diagnostic results for Results Ready stat card
-  const { data: completedLabTests = [] } = useQuery({
+  const { data: completedLabTests = [] } = useQuery<LabTest[]>({
     queryKey: ["/api/lab-tests", { preset: 'today', status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/lab-tests", window.location.origin);
@@ -875,7 +877,7 @@ export default function Treatment() {
     },
   });
 
-  const { data: completedXrays = [] } = useQuery({
+  const { data: completedXrays = [] } = useQuery<XrayExam[]>({
     queryKey: ["/api/xray-exams", { preset: 'today', status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/xray-exams", window.location.origin);
@@ -887,7 +889,7 @@ export default function Treatment() {
     },
   });
 
-  const { data: completedUltrasounds = [] } = useQuery({
+  const { data: completedUltrasounds = [] } = useQuery<UltrasoundExam[]>({
     queryKey: ["/api/ultrasound-exams", { preset: 'today', status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/ultrasound-exams", window.location.origin);
@@ -1861,10 +1863,10 @@ export default function Treatment() {
   // C) Results Ready - patients with completed diagnostic results today
   // Group completed results by patient
   const resultsReadyByPatient = useMemo(() => {
-    const patientMap = new Map<string, { patient: any; departments: string[] }>();
+    const patientMap = new Map<string, { patient: PatientWithStatus; departments: string[] }>();
     
     // Process completed lab tests
-    completedLabTests.forEach((test: any) => {
+    completedLabTests.forEach((test: LabTest) => {
       const patientId = test.patientId;
       if (!patientMap.has(patientId)) {
         const patient = patientsWithStatus.find(p => p.patientId === patientId);
@@ -1879,7 +1881,7 @@ export default function Treatment() {
     });
     
     // Process completed X-rays
-    completedXrays.forEach((exam: any) => {
+    completedXrays.forEach((exam: XrayExam) => {
       const patientId = exam.patientId;
       if (!patientMap.has(patientId)) {
         const patient = patientsWithStatus.find(p => p.patientId === patientId);
@@ -1894,7 +1896,7 @@ export default function Treatment() {
     });
     
     // Process completed Ultrasounds
-    completedUltrasounds.forEach((exam: any) => {
+    completedUltrasounds.forEach((exam: UltrasoundExam) => {
       const patientId = exam.patientId;
       if (!patientMap.has(patientId)) {
         const patient = patientsWithStatus.find(p => p.patientId === patientId);
@@ -2155,6 +2157,7 @@ export default function Treatment() {
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="self-end sm:self-auto"
+            aria-label="Refresh treatment data"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
