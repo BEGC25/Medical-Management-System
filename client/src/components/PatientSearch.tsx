@@ -139,11 +139,11 @@ export default function PatientSearch({
   const patients = filterPendingOnly && rawPatients
     ? rawPatients.filter((p: any) => {
         const s = p.serviceStatus || {};
-        // Check if patient has any unpaid services or balance
-        // serviceStatus has: unpaidServices (count), hasUnpaidServices (boolean), balance, balanceToday
-        const hasUnpaidBalance = (s.balance ?? 0) > 0 || (s.balanceToday ?? 0) > 0;
-        const hasUnpaidOrders = s.hasUnpaidServices === true || (s.unpaidServices ?? 0) > 0;
-        return hasUnpaidBalance || hasUnpaidOrders;
+        // Check if patient has any PENDING (unprocessed) services
+        // serviceStatus has: pendingServices (count), hasPendingServices (boolean)
+        // Pending means the order is waiting to be processed by lab/xray/ultrasound department
+        const hasPendingOrders = s.hasPendingServices === true || (s.pendingServices ?? 0) > 0;
+        return hasPendingOrders;
       })
     : rawPatients;
 
