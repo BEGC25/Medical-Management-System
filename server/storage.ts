@@ -26,6 +26,8 @@ let drugCodeCounter = 0;
 let batchCounter = 0;
 let ledgerCounter = 0;
 
+const XRAY_RELATED_TYPES = ["xray", "xray_exam"] as const;
+
 function generatePatientId(): string {
   patientCounter++;
   return `BGC${patientCounter}`;
@@ -972,9 +974,24 @@ export class MemStorage implements IStorage {
   }
 
   async deleteXrayExam(examId: string): Promise<boolean> {
-    const result = await db.delete(xrayExams)
-      .where(eq(xrayExams.examId, examId))
-      .returning();
+    const result = await db.transaction(async (tx) => {
+      const deletedExam = await tx.delete(xrayExams)
+        .where(eq(xrayExams.examId, examId))
+        .returning();
+
+      // Also remove any related order lines so the request disappears from the Treatment page
+      if (deletedExam.length > 0) {
+        await tx.delete(orderLines)
+          .where(
+            and(
+              eq(orderLines.relatedId, examId),
+              inArray(orderLines.relatedType, XRAY_RELATED_TYPES)
+            )
+          );
+      }
+
+      return deletedExam;
+    });
 
     return result.length > 0;
   }
@@ -1442,7 +1459,7 @@ export class MemStorage implements IStorage {
       ))
       .leftJoin(orderLines, and(
         eq(orderLines.relatedId, xrayExams.examId),
-        sql`${orderLines.relatedType} IN ('xray', 'xray_exam')`
+        inArray(orderLines.relatedType, XRAY_RELATED_TYPES)
       ))
       .where(and(
         eq(xrayExams.paymentStatus, 'unpaid'),
@@ -1558,7 +1575,7 @@ export class MemStorage implements IStorage {
       for (const orderLine of allOrderLines) {
         if ((orderLine.relatedType === 'lab_test' || orderLine.relatedType === 'lab') && orderLine.relatedId) {
           labTestToEncounter.set(orderLine.relatedId, orderLine.encounterId);
-        } else if ((orderLine.relatedType === 'xray_exam' || orderLine.relatedType === 'xray') && orderLine.relatedId) {
+        } else if (XRAY_RELATED_TYPES.includes(orderLine.relatedType as any) && orderLine.relatedId) {
           xrayToEncounter.set(orderLine.relatedId, orderLine.encounterId);
         } else if ((orderLine.relatedType === 'ultrasound_exam' || orderLine.relatedType === 'ultrasound') && orderLine.relatedId) {
           ultrasoundToEncounter.set(orderLine.relatedId, orderLine.encounterId);
@@ -1682,7 +1699,7 @@ export class MemStorage implements IStorage {
             } else {
               testPatientId = lab.patientId;
             }
-          } else if (ol.relatedType === 'xray' || ol.relatedType === 'xray_exam') {
+          } else if (XRAY_RELATED_TYPES.includes(ol.relatedType as any)) {
             const xray = completedXrays.find(x => x.examId === ol.relatedId);
             testPatientId = xray?.patientId;
           } else if (ol.relatedType === 'ultrasound' || ol.relatedType === 'ultrasound_exam') {
@@ -1691,13 +1708,13 @@ export class MemStorage implements IStorage {
           }
           
           return testPatientId === patientId && 
-                 ['lab', 'lab_test', 'xray', 'xray_exam', 'ultrasound', 'ultrasound_exam'].includes(ol.relatedType);
+                 ['lab', 'lab_test', ...XRAY_RELATED_TYPES, 'ultrasound', 'ultrasound_exam'].includes(ol.relatedType as any);
         });
         
         // Map ordered tests to their types
         const orderedTestTypes = orderedTests.map(ol => {
           if (ol.relatedType === 'lab' || ol.relatedType === 'lab_test') return 'Lab';
-          if (ol.relatedType === 'xray' || ol.relatedType === 'xray_exam') return 'X-Ray';
+          if (XRAY_RELATED_TYPES.includes(ol.relatedType as any)) return 'X-Ray';
           if (ol.relatedType === 'ultrasound' || ol.relatedType === 'ultrasound_exam') return 'Ultrasound';
           return null;
         }).filter(Boolean);
