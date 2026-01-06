@@ -2303,7 +2303,7 @@ export class MemStorage implements IStorage {
   }
 
   // Filter patients by ENCOUNTER/VISIT date range (encounters.clinicDay) - for Treatment page
-  async getPatientsByEncounterDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any; dateOfService?: string; lastVisit?: string })[]> {
+  async getPatientsByEncounterDateRangeWithStatus(startDate: string, endDate: string): Promise<(schema.Patient & { serviceStatus: any; dateOfService?: string; lastVisit?: string; visitStatus?: string })[]> {
     console.log(`[storage] getPatientsByEncounterDateRangeWithStatus called with`, { startDate, endDate });
 
     // Query encounters using the SAME pattern as the working Patient page
@@ -2311,7 +2311,8 @@ export class MemStorage implements IStorage {
     const encounterRows = await db.select({ 
         patientId: encounters.patientId, 
         visitDate: encounters.visitDate,
-        clinicDay: encounters.clinicDay 
+        clinicDay: encounters.clinicDay,
+        status: encounters.status  // Include encounter status
       })
       .from(encounters)
       .where(
@@ -2322,10 +2323,10 @@ export class MemStorage implements IStorage {
       )
       .orderBy(desc(encounters.visitDate));
 
-    const uniquePatientMap = new Map<string, { patientId: string; dateOfService?: string }>();
+    const uniquePatientMap = new Map<string, { patientId: string; dateOfService?: string; visitStatus?: string }>();
     for (const row of encounterRows) {
       if (!uniquePatientMap.has(row.patientId)) {
-        uniquePatientMap.set(row.patientId, { patientId: row.patientId, dateOfService: row.clinicDay });
+        uniquePatientMap.set(row.patientId, { patientId: row.patientId, dateOfService: row.clinicDay, visitStatus: row.status });
       }
     }
 
@@ -2337,7 +2338,7 @@ export class MemStorage implements IStorage {
       .where(and(eq(patients.isDeleted, 0), sql`${patients.patientId} IN (${sql.join(uniquePatientIds.map(id => sql`${id}`), sql`, `)})`))
       .orderBy(desc(patients.createdAt));
 
-    // Attach serviceStatus and dateOfService fields
+    // Attach serviceStatus, dateOfService, and visitStatus fields
     const results = await Promise.all(patientsRows.map(async (p: any) => {
       const serviceStatus = await this.getPatientServiceStatus(p.patientId);
       return {
@@ -2345,6 +2346,7 @@ export class MemStorage implements IStorage {
         serviceStatus,
         dateOfService: uniquePatientMap.get(p.patientId)?.dateOfService,
         lastVisit: uniquePatientMap.get(p.patientId)?.dateOfService,
+        visitStatus: uniquePatientMap.get(p.patientId)?.visitStatus,
       };
     }));
 
@@ -2451,6 +2453,11 @@ export class MemStorage implements IStorage {
       // Add balance fields that the UI expects
       balance: consultationBalance, // Simplified balance calculation
       balanceToday: consultationBalance, // Simplified balance calculation
+      // Diagnostic-specific pending counts for doctor workflow (exclude pharmacy)
+      labPending,
+      xrayPending,
+      ultrasoundPending: usPending,
+      diagnosticPending: labPending + xrayPending + usPending,
     };
 
     return totals;
