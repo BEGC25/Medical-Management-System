@@ -2839,6 +2839,16 @@ router.get("/api/pharmacy/prescriptions/paid", async (_req, res) => {
   }
 });
 
+router.get("/api/pharmacy/prescriptions/unpaid", async (_req, res) => {
+  try {
+    const prescriptions = await storage.getUnpaidPrescriptions();
+    res.json(prescriptions);
+  } catch (error) {
+    console.error("Error fetching unpaid prescriptions:", error);
+    res.status(500).json({ error: "Failed to fetch unpaid prescriptions" });
+  }
+});
+
 router.get("/api/pharmacy/prescriptions/dispensed", async (_req, res) => {
   try {
     const prescriptions = await storage.getDispensedPrescriptions();

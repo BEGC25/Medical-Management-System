@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, X } from "lucide-react";
+import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PharmacyHelp from "@/components/PharmacyHelp";
 
 // Helper function to format dates consistently
 function formatDate(dateString: string): string {
@@ -62,21 +63,20 @@ export default function Pharmacy() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<PrescriptionWithPatient | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<string>("");
-  const [showBanner, setShowBanner] = useState(true);
   const { toast } = useToast();
 
-  // Fetch ALL pharmacy orders with patient data
-  const { data: allPrescriptions = [], isLoading } = useQuery<PrescriptionWithPatient[]>({
-    queryKey: ['/api/pharmacy-orders'],
-  });
-
   // Fetch paid prescriptions ready for dispensing
-  const { data: paidPrescriptions = [] } = useQuery<PrescriptionWithPatient[]>({
+  const { data: paidPrescriptions = [], isLoading: isLoadingPaid } = useQuery<PrescriptionWithPatient[]>({
     queryKey: ['/api/pharmacy/prescriptions/paid'],
   });
 
+  // Fetch unpaid prescriptions
+  const { data: unpaidPrescriptions = [], isLoading: isLoadingUnpaid } = useQuery<PrescriptionWithPatient[]>({
+    queryKey: ['/api/pharmacy/prescriptions/unpaid'],
+  });
+
   // Fetch dispensed prescriptions history
-  const { data: dispensedPrescriptions = [] } = useQuery<PrescriptionWithPatient[]>({
+  const { data: dispensedPrescriptions = [], isLoading: isLoadingDispensed } = useQuery<PrescriptionWithPatient[]>({
     queryKey: ['/api/pharmacy/prescriptions/dispensed'],
   });
 
@@ -91,12 +91,8 @@ export default function Pharmacy() {
     },
     enabled: !!selectedOrder?.drugId,
   });
-
-  // Split prescriptions by payment status
-  const unpaidPrescriptions = allPrescriptions.filter(
-    (rx) => rx.paymentStatus === 'unpaid' && rx.status === 'prescribed'
-  );
   
+  // Filter prescriptions by search term
   const filteredPaidOrders = paidPrescriptions.filter((order) => 
     (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -121,6 +117,20 @@ export default function Pharmacy() {
     (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Handle refresh
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/prescriptions/paid'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/prescriptions/unpaid'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/prescriptions/dispensed'] });
+    if (selectedOrder?.drugId) {
+      queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/batches/fefo', selectedOrder.drugId] });
+    }
+    toast({
+      title: "Refreshed",
+      description: "Pharmacy data has been updated.",
+    });
+  };
+
   // Dispense medication mutation
   const dispenseMutation = useMutation({
     mutationFn: async (data: { orderId: string; batchId: string; quantity: number; dispensedBy: string }) => {
@@ -129,6 +139,7 @@ export default function Pharmacy() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/prescriptions/paid'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/prescriptions/dispensed'] });
       setSelectedOrder(null);
       setSelectedBatch("");
       toast({
@@ -160,6 +171,17 @@ export default function Pharmacy() {
       return;
     }
 
+    // Find selected batch to validate quantity
+    const batch = batches.find(b => b.batchId === selectedBatch);
+    if (batch && selectedOrder.quantity > batch.quantityOnHand) {
+      toast({
+        variant: "destructive",
+        title: "Insufficient Stock",
+        description: `Selected batch only has ${batch.quantityOnHand} units available, but ${selectedOrder.quantity} units are required.`,
+      });
+      return;
+    }
+
     dispenseMutation.mutate({
       orderId: selectedOrder.orderId,
       batchId: selectedBatch,
@@ -169,6 +191,7 @@ export default function Pharmacy() {
   };
 
   const hasAllergies = selectedOrder?.patient?.allergies && selectedOrder.patient.allergies.trim() !== '';
+  const isLoading = isLoadingPaid || isLoadingUnpaid || isLoadingDispensed;
 
   if (isLoading) {
     return (
@@ -183,7 +206,7 @@ export default function Pharmacy() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-medical-blue rounded-xl">
             <Pill className="w-6 h-6 text-white" />
@@ -193,46 +216,28 @@ export default function Pharmacy() {
             <p className="text-gray-600 dark:text-gray-300">Prescription Management & Dispensing</p>
           </div>
         </div>
-        <Link href="/pharmacy-inventory">
-          <Button className="bg-blue-600 hover:bg-blue-700" data-testid="button-manage-inventory">
-            <Package className="w-4 h-4 mr-2" />
-            Manage Inventory
-            <ArrowRight className="w-4 h-4 ml-2" />
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefresh}
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            data-testid="button-refresh"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
           </Button>
-        </Link>
+          <Link href="/pharmacy-inventory">
+            <Button className="bg-blue-600 hover:bg-blue-700" data-testid="button-manage-inventory">
+              <Package className="w-4 h-4 mr-2" />
+              Manage Inventory
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Info Banner */}
-      {showBanner && (
-        <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Getting Started with Pharmacy</h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  To dispense medications, you first need to <strong>add drugs to your inventory</strong>. 
-                  Click the "Manage Inventory" button above to:
-                </p>
-                <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 ml-4 list-disc space-y-1">
-                  <li>Add drugs to your catalog (name, strength, form)</li>
-                  <li>Receive stock batches with lot numbers and expiry dates</li>
-                  <li>Set prices for each batch</li>
-                </ul>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowBanner(false)}
-                className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
-                aria-label="Close banner"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Help Section */}
+      <PharmacyHelp />
 
       {/* Search */}
       <Card>
@@ -492,7 +497,7 @@ export default function Pharmacy() {
 
       {/* Dispense Dialog with Batch Selection */}
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl" data-testid="dialog-dispense">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-dispense">
           <DialogHeader>
             <DialogTitle>Dispense Medication</DialogTitle>
             <DialogDescription>
@@ -588,6 +593,75 @@ export default function Pharmacy() {
                     })}
                   </SelectContent>
                 </Select>
+                
+                {/* Selected Batch Info */}
+                {selectedBatch && batches.length > 0 && (() => {
+                  const batch = batches.find(b => b.batchId === selectedBatch);
+                  if (!batch) return null;
+                  
+                  const expiryDate = new Date(batch.expiryDate);
+                  const daysToExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                  const isExpiringSoon = daysToExpiry < 90;
+                  const hasInsufficientStock = selectedOrder.quantity > batch.quantityOnHand;
+                  
+                  return (
+                    <div className={`mt-3 p-3 rounded-lg border ${
+                      hasInsufficientStock 
+                        ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800' 
+                        : isExpiringSoon 
+                          ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-800'
+                          : 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-800'
+                    }`}>
+                      <h5 className="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Selected Batch Details</h5>
+                      <div className="space-y-1 text-sm">
+                        <p className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-300">Lot Number:</span>
+                          <span className="font-medium">{batch.lotNumber}</span>
+                        </p>
+                        <p className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-300">Expiry Date:</span>
+                          <span className={`font-medium ${isExpiringSoon ? 'text-amber-700 dark:text-amber-400' : ''}`}>
+                            {expiryDate.toLocaleDateString()} {isExpiringSoon && `(${daysToExpiry} days)`}
+                          </span>
+                        </p>
+                        <p className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-300">Available Stock:</span>
+                          <span className={`font-medium ${hasInsufficientStock ? 'text-red-700 dark:text-red-400' : ''}`}>
+                            {batch.quantityOnHand} units
+                          </span>
+                        </p>
+                        <p className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-300">Required:</span>
+                          <span className="font-medium">{selectedOrder.quantity} units</span>
+                        </p>
+                      </div>
+                      
+                      {hasInsufficientStock && (
+                        <div className="mt-2 pt-2 border-t border-red-300 dark:border-red-800">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-red-700 dark:text-red-300 font-semibold">
+                              ⚠️ INSUFFICIENT STOCK: This batch only has {batch.quantityOnHand} units available, 
+                              but {selectedOrder.quantity} units are required. Dispensing is blocked.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {isExpiringSoon && !hasInsufficientStock && (
+                        <div className="mt-2 pt-2 border-t border-amber-300 dark:border-amber-800">
+                          <div className="flex items-start gap-2">
+                            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                              This batch expires in less than 90 days. Consider dispensing it first (FEFO principle).
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                
                 {batches.length === 0 && (
                   <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-3 rounded-lg mt-2">
                     <div className="flex items-start gap-2">
@@ -614,8 +688,13 @@ export default function Pharmacy() {
                 </Button>
                 <Button
                   onClick={handleConfirmDispense}
-                  disabled={!selectedBatch || dispenseMutation.isPending || batches.length === 0}
-                  className="bg-green-600 hover:bg-green-700"
+                  disabled={
+                    !selectedBatch || 
+                    dispenseMutation.isPending || 
+                    batches.length === 0 ||
+                    (selectedBatch && batches.find(b => b.batchId === selectedBatch)?.quantityOnHand < selectedOrder.quantity)
+                  }
+                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="button-confirm-dispense"
                 >
                   {dispenseMutation.isPending ? "Dispensing..." : "Confirm Dispense"}
