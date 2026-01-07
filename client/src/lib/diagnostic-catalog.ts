@@ -92,7 +92,7 @@ export const XRAY_BODY_PARTS = {
     'Cervical spine', 'Thoracic spine', 'Lumbar spine', 'Sacrum/Coccyx'
   ],
   chest: [
-    'Chest PA & Lateral', 'Chest AP', 'Ribs'
+    'PA', 'AP', 'Lateral', 'PA & Lateral', 'AP & Lateral', 'Portable AP', 'Lordotic View', 'Ribs'
   ],
   abdomen: [
     'Abdomen (KUB)', 'Abdomen (Upright)'

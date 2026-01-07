@@ -1230,11 +1230,10 @@ export default function Treatment() {
       const examTypeLabel: Record<string, string> = {
         'chest': 'Chest X-Ray',
         'extremities': 'Extremity X-Ray',
-        'extremity': 'Extremity X-Ray',
         'abdomen': 'Abdominal X-Ray',
         'spine': 'Spine X-Ray',
         'skull': 'Skull X-Ray',
-        'dental': 'Dental X-Ray'
+        'pelvis': 'Pelvic X-Ray'
       };
 
       // Use component state for exam type
@@ -3313,7 +3312,7 @@ export default function Treatment() {
                                           <Button
                                             size="lg"
                                             onClick={() => {
-                                              if (!xrayBodyPart && (xrayExamType === 'extremity' || xrayExamType === 'chest')) {
+                                              if (!xrayBodyPart && (xrayExamType === 'extremities' || xrayExamType === 'chest')) {
                                                 toast({ 
                                                   title: "Selection Required", 
                                                   description: "Please select a body part or view", 
