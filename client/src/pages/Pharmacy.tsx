@@ -3,7 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,10 +60,34 @@ interface PrescriptionWithPatient extends PharmacyOrder {
   patient: Patient;
 }
 
+// Skeleton loader for prescription cards
+function PrescriptionCardSkeleton() {
+  return (
+    <Card className="border-gray-200 dark:border-gray-700">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-16" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+          <Skeleton className="h-9 w-24" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Pharmacy() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<PrescriptionWithPatient | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<string>("");
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Fetch paid prescriptions ready for dispensing
@@ -191,390 +216,669 @@ export default function Pharmacy() {
   };
 
   const hasAllergies = selectedOrder?.patient?.allergies && selectedOrder.patient.allergies.trim() !== '';
-  const isLoading = isLoadingPaid || isLoadingUnpaid || isLoadingDispensed;
 
+  // Premium loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex items-center space-x-2">
-          <Pill className="w-6 h-6 animate-pulse text-medical-blue" />
-          <span className="text-gray-600 dark:text-gray-300">Loading pharmacy orders...</span>
+      <div className="min-h-screen pr-96">
+        <PharmacyHelp />
+        <div className="space-y-6 p-6">
+          {/* Header Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <Skeleton className="w-12 h-12 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-7 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-40" />
+            </div>
+          </div>
+
+          {/* Search Skeleton */}
+          <Card className="shadow-premium-sm border-gray-200 dark:border-gray-700">
+            <CardContent className="pt-6">
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+
+          {/* Tabs Skeleton */}
+          <div className="space-y-6">
+            <Skeleton className="h-10 w-full max-w-md" />
+            <div className="space-y-3">
+              <PrescriptionCardSkeleton />
+              <PrescriptionCardSkeleton />
+              <PrescriptionCardSkeleton />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-medical-blue rounded-xl">
-            <Pill className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pharmacy</h1>
-            <p className="text-gray-600 dark:text-gray-300">Prescription Management & Dispensing</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            onClick={handleRefresh}
-            variant="outline"
-            className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-            data-testid="button-refresh"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          <Link href="/pharmacy-inventory">
-            <Button className="bg-blue-600 hover:bg-blue-700" data-testid="button-manage-inventory">
-              <Package className="w-4 h-4 mr-2" />
-              Manage Inventory
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Help Section */}
+    <div className="min-h-screen pr-96 transition-all duration-300">
+      {/* Right-side help panel - rendered as a fixed sidebar */}
       <PharmacyHelp />
 
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center space-x-2">
-            <Search className="w-5 h-5 text-gray-400" />
-            <Label htmlFor="search" className="sr-only">Search prescriptions</Label>
-            <Input
-              id="search"
-              placeholder="Search by Patient ID, Name, Order ID, or Drug..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-              data-testid="input-search-prescriptions"
-            />
+      {/* Main content */}
+      <div className="space-y-6 p-6">
+        {/* Premium Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-premium-md 
+                          hover:shadow-premium-lg transition-all duration-200 hover:scale-105">
+              <Pill className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Pharmacy</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Prescription Management & Dispensing</p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleRefresh}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 
+                       transition-all duration-200 hover:shadow-premium-sm hover:scale-105"
+              data-testid="button-refresh"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Link href="/pharmacy-inventory">
+              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 
+                               shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105" 
+                      data-testid="button-manage-inventory">
+                <Package className="w-4 h-4 mr-2" />
+                Manage Inventory
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
 
-      {/* Tabs for different prescription states */}
-      <Tabs defaultValue="ready" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="ready" data-testid="tab-ready">
-            Ready to Dispense ({filteredPaidOrders.length})
-          </TabsTrigger>
-          <TabsTrigger value="dispensed" data-testid="tab-dispensed">
-            Dispensed History ({filteredDispensedOrders.length})
-          </TabsTrigger>
-          {filteredUnpaidOrders.length > 0 && (
-            <TabsTrigger value="unpaid" data-testid="tab-unpaid">
-              Awaiting Payment ({filteredUnpaidOrders.length})
-            </TabsTrigger>
-          )}
-        </TabsList>
-
-        {/* Ready to Dispense Tab */}
-        <TabsContent value="ready">
-          {filteredPaidOrders.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Check className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">No prescriptions ready to dispense</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {filteredPaidOrders.map((order) => (
-                <Card 
-                  key={order.id}
-                  className="border-green-200 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                  data-testid={`order-paid-${order.orderId}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
-                            {order.patient?.firstName} {order.patient?.lastName}
-                          </h3>
-                          <Badge className="bg-gray-600 text-white">
-                            {order.patient?.patientId}
-                          </Badge>
-                          <Badge className="bg-green-600 text-white">
-                            ✓ PAID
-                          </Badge>
-                          {order.patient?.allergies && order.patient.allergies.trim() !== '' && (
-                            <Badge className="bg-red-600 text-white">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              ALLERGIES
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                          Order: {order.orderId} | Drug: {order.drugName || <span className="text-red-600 font-semibold">Not specified</span>}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                          Dosage: {order.dosage || 'As prescribed'}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Quantity: {order.quantity}
-                        </p>
-                        {order.route && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            Route: {order.route}
-                          </p>
-                        )}
-                        {order.duration && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            Duration: {order.duration}
-                          </p>
-                        )}
-                        {order.instructions && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 italic">
-                            Instructions: {order.instructions}
-                          </p>
-                        )}
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                          Prescribed: {formatDate(order.createdAt)}
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => handleDispenseClick(order)}
-                        className="bg-green-600 hover:bg-green-700"
-                        data-testid={`button-dispense-${order.orderId}`}
-                      >
-                        <Pill className="w-4 h-4 mr-2" />
-                        Dispense
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Dispensed History Tab */}
-        <TabsContent value="dispensed">
-          {filteredDispensedOrders.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">No dispensed medications yet</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {filteredDispensedOrders.map((order) => (
-                <Card 
-                  key={order.id}
-                  className="border-blue-200 bg-blue-50 dark:bg-blue-900/20"
-                  data-testid={`order-dispensed-${order.orderId}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
-                            {order.patient?.firstName} {order.patient?.lastName}
-                          </h3>
-                          <Badge className="bg-gray-600 text-white">
-                            {order.patient?.patientId}
-                          </Badge>
-                          <Badge className="bg-blue-600 text-white">
-                            ✓ DISPENSED
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                          Order: {order.orderId} | Drug: {order.drugName}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                          Dosage: {order.dosage || 'As prescribed'}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Quantity: {order.quantity}
-                        </p>
-                        {order.route && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            Route: {order.route}
-                          </p>
-                        )}
-                        {order.duration && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            Duration: {order.duration}
-                          </p>
-                        )}
-                        {order.instructions && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 italic">
-                            Instructions: {order.instructions}
-                          </p>
-                        )}
-                        <div className="flex gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
-                          <p>Prescribed: {formatDate(order.createdAt)}</p>
-                          {order.dispensedAt && (
-                            <p className="font-semibold text-blue-600 dark:text-blue-400">
-                              Dispensed: {formatDateTime(order.dispensedAt)}
-                            </p>
-                          )}
-                        </div>
-                        {order.dispensedBy && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Dispensed by: {order.dispensedBy}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Unpaid Orders Tab */}
-        <TabsContent value="unpaid">
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                {filteredUnpaidOrders.map((order) => (
-                <div 
-                  key={order.id} 
-                  className="border border-orange-200 bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4"
-                  data-testid={`order-unpaid-${order.orderId}`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {order.patient?.firstName} {order.patient?.lastName}
-                        </h3>
-                        <Badge className="bg-gray-600 text-white">
-                          {order.patient?.patientId}
-                        </Badge>
-                        <Badge className="bg-orange-600 text-white">
-                          UNPAID
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                        Order: {order.orderId} | Drug: {order.drugName || <span className="text-orange-600 font-semibold">Not specified</span>}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        Dosage: {order.dosage || 'As prescribed'}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Quantity: {order.quantity}
-                      </p>
-                      {order.route && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Route: {order.route}
-                        </p>
-                      )}
-                      {order.duration && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Duration: {order.duration}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        Prescribed: {formatDate(order.createdAt)}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <Badge variant="outline" className="bg-orange-100 border-orange-300 text-orange-800">
-                        Payment Required
-                      </Badge>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 text-right">
-                        Patient must pay at reception before dispensing
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {/* Premium Search Card */}
+        <Card className="shadow-premium-md border-gray-200 dark:border-gray-700 
+                       hover:shadow-premium-lg transition-all duration-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <Search className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </div>
+              <Label htmlFor="search" className="sr-only">Search prescriptions</Label>
+              <Input
+                id="search"
+                placeholder="Search by Patient ID, Name, Order ID, or Drug..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 
+                         transition-all duration-200"
+                data-testid="input-search-prescriptions"
+              />
             </div>
           </CardContent>
         </Card>
-        </TabsContent>
-      </Tabs>
 
-      {/* Dispense Dialog with Batch Selection */}
+        {/* Premium Tabs */}
+        <Tabs defaultValue="ready" className="space-y-6">
+          <TabsList className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shadow-inner-premium">
+            <TabsTrigger 
+              value="ready" 
+              data-testid="tab-ready"
+              className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
+                       data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
+                       data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Ready to Dispense ({filteredPaidOrders.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="dispensed" 
+              data-testid="tab-dispensed"
+              className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
+                       data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
+                       data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
+            >
+              <Package className="w-4 h-4 mr-2" />
+              Dispensed History ({filteredDispensedOrders.length})
+            </TabsTrigger>
+            {filteredUnpaidOrders.length > 0 && (
+              <TabsTrigger 
+                value="unpaid" 
+                data-testid="tab-unpaid"
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
+                         data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
+                         data-[state=active]:text-orange-600 dark:data-[state=active]:text-orange-400"
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Awaiting Payment ({filteredUnpaidOrders.length})
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* Ready to Dispense Tab - Premium */}
+          <TabsContent value="ready" className="space-y-4">
+            {filteredPaidOrders.length === 0 ? (
+              <Card className="shadow-premium-md border-gray-200 dark:border-gray-700">
+                <CardContent className="p-16 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-6 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 
+                                  rounded-2xl shadow-premium-sm">
+                      <Check className="w-16 h-16 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">All Caught Up!</h3>
+                      <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                        No prescriptions ready to dispense at the moment. 
+                        Paid prescriptions will appear here automatically.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredPaidOrders.map((order) => {
+                  const isExpanded = expandedCard === order.orderId;
+                  return (
+                    <Card 
+                      key={order.id}
+                      className="border-green-200 dark:border-green-800/50 bg-gradient-to-br from-green-50 to-emerald-50 
+                               dark:from-green-900/10 dark:to-emerald-900/10
+                               hover:shadow-premium-md hover:border-green-300 dark:hover:border-green-700
+                               transition-all duration-200 hover:-translate-y-0.5"
+                      data-testid={`order-paid-${order.orderId}`}
+                    >
+                      <CardContent className="p-5">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1 space-y-3">
+                            {/* Header with badges */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                                {order.patient?.firstName} {order.patient?.lastName}
+                              </h3>
+                              <Badge className="bg-gray-700 text-white shadow-premium-sm">
+                                {order.patient?.patientId}
+                              </Badge>
+                              <Badge className="bg-green-600 text-white shadow-premium-sm">
+                                ✓ PAID
+                              </Badge>
+                              {order.patient?.allergies && order.patient.allergies.trim() !== '' && (
+                                <Badge className="bg-red-600 text-white shadow-premium-sm animate-pulse-premium">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  ALLERGIES
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            {/* Primary info */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-gray-600 dark:text-gray-400">Order:</span>
+                                <span className="font-medium text-gray-900 dark:text-white">{order.orderId}</span>
+                                <span className="text-gray-400">|</span>
+                                <span className="text-gray-600 dark:text-gray-400">Drug:</span>
+                                <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                  {order.drugName || <span className="text-red-600 font-semibold">Not specified</span>}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm">
+                                <div>
+                                  <span className="text-gray-600 dark:text-gray-400">Dosage:</span>
+                                  <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                                    {order.dosage || 'As prescribed'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600 dark:text-gray-400">Quantity:</span>
+                                  <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                                    {order.quantity}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Expandable details */}
+                            {isExpanded && (
+                              <div className="pt-3 border-t border-green-200 dark:border-green-800 space-y-2 animate-slide-in-up">
+                                {order.route && (
+                                  <div className="text-sm">
+                                    <span className="text-gray-600 dark:text-gray-400">Route:</span>
+                                    <span className="ml-2 text-gray-900 dark:text-white">{order.route}</span>
+                                  </div>
+                                )}
+                                {order.duration && (
+                                  <div className="text-sm">
+                                    <span className="text-gray-600 dark:text-gray-400">Duration:</span>
+                                    <span className="ml-2 text-gray-900 dark:text-white">{order.duration}</span>
+                                  </div>
+                                )}
+                                {order.instructions && (
+                                  <div className="text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                                    <span className="text-gray-600 dark:text-gray-400 font-medium">Instructions:</span>
+                                    <p className="mt-1 text-gray-900 dark:text-white italic">{order.instructions}</p>
+                                  </div>
+                                )}
+                                <div className="text-xs text-gray-500 dark:text-gray-400 pt-2">
+                                  Prescribed: {formatDate(order.createdAt)}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Expand toggle */}
+                            {(order.route || order.duration || order.instructions) && (
+                              <button
+                                onClick={() => setExpandedCard(isExpanded ? null : order.orderId)}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1
+                                         transition-colors duration-200"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronUp className="w-3 h-3" />
+                                    Show Less
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="w-3 h-3" />
+                                    Show Details
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Action button */}
+                          <Button
+                            onClick={() => handleDispenseClick(order)}
+                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 
+                                     shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105
+                                     flex-shrink-0"
+                            data-testid={`button-dispense-${order.orderId}`}
+                          >
+                            <Pill className="w-4 h-4 mr-2" />
+                            Dispense
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Dispensed History Tab - Premium */}
+          <TabsContent value="dispensed" className="space-y-4">
+            {filteredDispensedOrders.length === 0 ? (
+              <Card className="shadow-premium-md border-gray-200 dark:border-gray-700">
+                <CardContent className="p-16 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-6 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 
+                                  rounded-2xl shadow-premium-sm">
+                      <Package className="w-16 h-16 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Dispensed Medications Yet</h3>
+                      <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                        Once you dispense medications, they will appear here for tracking and auditing.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredDispensedOrders.map((order) => {
+                  const isExpanded = expandedCard === order.orderId;
+                  return (
+                    <Card 
+                      key={order.id}
+                      className="border-blue-200 dark:border-blue-800/50 bg-gradient-to-br from-blue-50 to-indigo-50 
+                               dark:from-blue-900/10 dark:to-indigo-900/10
+                               hover:shadow-premium-md hover:border-blue-300 dark:hover:border-blue-700
+                               transition-all duration-200"
+                      data-testid={`order-dispensed-${order.orderId}`}
+                    >
+                      <CardContent className="p-5">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 space-y-3">
+                            {/* Header with badges */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                                {order.patient?.firstName} {order.patient?.lastName}
+                              </h3>
+                              <Badge className="bg-gray-700 text-white shadow-premium-sm">
+                                {order.patient?.patientId}
+                              </Badge>
+                              <Badge className="bg-blue-600 text-white shadow-premium-sm">
+                                ✓ DISPENSED
+                              </Badge>
+                            </div>
+                            
+                            {/* Primary info */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-gray-600 dark:text-gray-400">Order:</span>
+                                <span className="font-medium text-gray-900 dark:text-white">{order.orderId}</span>
+                                <span className="text-gray-400">|</span>
+                                <span className="text-gray-600 dark:text-gray-400">Drug:</span>
+                                <span className="font-semibold text-blue-600 dark:text-blue-400">{order.drugName}</span>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm">
+                                <div>
+                                  <span className="text-gray-600 dark:text-gray-400">Dosage:</span>
+                                  <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                                    {order.dosage || 'As prescribed'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600 dark:text-gray-400">Quantity:</span>
+                                  <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                                    {order.quantity}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Dispensing info */}
+                            <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-blue-200 dark:border-blue-800">
+                              <div>
+                                <span>Prescribed:</span>
+                                <span className="ml-1">{formatDate(order.createdAt)}</span>
+                              </div>
+                              {order.dispensedAt && (
+                                <div className="font-semibold text-blue-600 dark:text-blue-400">
+                                  <span>Dispensed:</span>
+                                  <span className="ml-1">{formatDateTime(order.dispensedAt)}</span>
+                                </div>
+                              )}
+                            </div>
+                            {order.dispensedBy && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                Dispensed by: <span className="font-medium">{order.dispensedBy}</span>
+                              </div>
+                            )}
+
+                            {/* Expandable details */}
+                            {isExpanded && (order.route || order.duration || order.instructions) && (
+                              <div className="pt-3 border-t border-blue-200 dark:border-blue-800 space-y-2 animate-slide-in-up">
+                                {order.route && (
+                                  <div className="text-sm">
+                                    <span className="text-gray-600 dark:text-gray-400">Route:</span>
+                                    <span className="ml-2 text-gray-900 dark:text-white">{order.route}</span>
+                                  </div>
+                                )}
+                                {order.duration && (
+                                  <div className="text-sm">
+                                    <span className="text-gray-600 dark:text-gray-400">Duration:</span>
+                                    <span className="ml-2 text-gray-900 dark:text-white">{order.duration}</span>
+                                  </div>
+                                )}
+                                {order.instructions && (
+                                  <div className="text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                                    <span className="text-gray-600 dark:text-gray-400 font-medium">Instructions:</span>
+                                    <p className="mt-1 text-gray-900 dark:text-white italic">{order.instructions}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Expand toggle */}
+                            {(order.route || order.duration || order.instructions) && (
+                              <button
+                                onClick={() => setExpandedCard(isExpanded ? null : order.orderId)}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1
+                                         transition-colors duration-200"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronUp className="w-3 h-3" />
+                                    Show Less
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="w-3 h-3" />
+                                    Show Details
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Unpaid Orders Tab - Premium */}
+          <TabsContent value="unpaid" className="space-y-4">
+            {filteredUnpaidOrders.length === 0 ? (
+              <Card className="shadow-premium-md border-gray-200 dark:border-gray-700">
+                <CardContent className="p-16 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-6 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 
+                                  rounded-2xl shadow-premium-sm">
+                      <Clock className="w-16 h-16 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Unpaid Prescriptions</h3>
+                      <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                        All prescriptions have been paid for. Unpaid ones will appear here.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredUnpaidOrders.map((order) => (
+                  <Card
+                    key={order.id}
+                    className="border-orange-200 dark:border-orange-800/50 bg-gradient-to-br from-orange-50 to-amber-50 
+                             dark:from-orange-900/10 dark:to-amber-900/10
+                             hover:shadow-premium-md hover:border-orange-300 dark:hover:border-orange-700
+                             transition-all duration-200"
+                    data-testid={`order-unpaid-${order.orderId}`}
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1 space-y-3">
+                          {/* Header with badges */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                              {order.patient?.firstName} {order.patient?.lastName}
+                            </h3>
+                            <Badge className="bg-gray-700 text-white shadow-premium-sm">
+                              {order.patient?.patientId}
+                            </Badge>
+                            <Badge className="bg-orange-600 text-white shadow-premium-sm">
+                              UNPAID
+                            </Badge>
+                          </div>
+                          
+                          {/* Primary info */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-600 dark:text-gray-400">Order:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">{order.orderId}</span>
+                              <span className="text-gray-400">|</span>
+                              <span className="text-gray-600 dark:text-gray-400">Drug:</span>
+                              <span className="font-semibold text-orange-600 dark:text-orange-400">
+                                {order.drugName || <span className="text-orange-600 font-semibold">Not specified</span>}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-600 dark:text-gray-400">Dosage:</span>
+                                <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                                  {order.dosage || 'As prescribed'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600 dark:text-gray-400">Quantity:</span>
+                                <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                                  {order.quantity}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 pt-2">
+                              Prescribed: {formatDate(order.createdAt)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Payment reminder */}
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          <Badge variant="outline" className="bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/30 
+                                                            dark:border-orange-700 dark:text-orange-300 shadow-premium-sm">
+                            Payment Required
+                          </Badge>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 text-right max-w-[200px]">
+                            Patient must pay at reception before dispensing
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Premium Dispense Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-dispense">
-          <DialogHeader>
-            <DialogTitle>Dispense Medication</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto shadow-premium-2xl" data-testid="dialog-dispense">
+          <DialogHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
+            <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Dispense Medication</DialogTitle>
+            <DialogDescription className="text-sm text-gray-600 dark:text-gray-400">
               Select batch and confirm dispensing for {selectedOrder?.patient?.firstName} {selectedOrder?.patient?.lastName}
             </DialogDescription>
           </DialogHeader>
 
           {selectedOrder && (
-            <div className="space-y-4">
-              {/* Patient Info */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Patient Information</h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-300">Patient ID:</span>
-                    <span className="ml-2 font-medium" data-testid="text-patient-id">{selectedOrder.patient?.patientId}</span>
+            <div className="space-y-5 pt-2">
+              {/* Patient Info - Premium */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 
+                            p-4 rounded-xl border border-blue-200 dark:border-blue-800 shadow-premium-sm">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></div>
+                  Patient Information
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400 text-xs">Patient ID</span>
+                    <p className="font-semibold text-gray-900 dark:text-white" data-testid="text-patient-id">
+                      {selectedOrder.patient?.patientId}
+                    </p>
                   </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-300">Age:</span>
-                    <span className="ml-2 font-medium">{selectedOrder.patient?.age || 'N/A'}</span>
+                  <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400 text-xs">Age</span>
+                    <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.patient?.age || 'N/A'}</p>
                   </div>
-                  <div className="col-span-2">
-                    <span className="text-gray-600 dark:text-gray-300">Gender:</span>
-                    <span className="ml-2 font-medium">{selectedOrder.patient?.gender || 'N/A'}</span>
+                  <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg col-span-2">
+                    <span className="text-gray-600 dark:text-gray-400 text-xs">Gender</span>
+                    <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.patient?.gender || 'N/A'}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Allergy Warning */}
+              {/* Allergy Warning - Premium */}
               {hasAllergies && (
-                <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 p-4 rounded-lg" data-testid="alert-allergies">
+                <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 
+                              border-2 border-red-500 dark:border-red-700 p-4 rounded-xl shadow-premium-md
+                              animate-pulse-premium" 
+                     data-testid="alert-allergies">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold text-red-900 dark:text-red-100 mb-1">⚠️ ALLERGY WARNING</h3>
-                      <p className="text-sm text-red-800 dark:text-red-200">
-                        Patient has known allergies: <strong>{selectedOrder.patient?.allergies}</strong>
+                    <div className="p-2 bg-red-600 rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-white flex-shrink-0" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-red-900 dark:text-red-100 mb-1.5 text-lg">⚠️ ALLERGY WARNING</h3>
+                      <p className="text-sm text-red-800 dark:text-red-200 mb-1">
+                        Patient has known allergies: <strong className="font-bold">{selectedOrder.patient?.allergies}</strong>
                       </p>
-                      <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                        Please verify drug compatibility before dispensing
+                      <p className="text-xs text-red-700 dark:text-red-300">
+                        ⚡ Please verify drug compatibility before dispensing
                       </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Prescription Details */}
-              <div className="bg-gray-50 dark:bg-gray-900/20 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Prescription Details</h3>
-                <div className="space-y-1 text-sm">
-                  <p><span className="text-gray-600 dark:text-gray-300">Drug:</span> <span className="font-medium ml-2" data-testid="text-drug-name">{selectedOrder.drugName}</span></p>
-                  <p><span className="text-gray-600 dark:text-gray-300">Dosage:</span> <span className="font-medium ml-2">{selectedOrder.dosage || 'As prescribed'}</span></p>
-                  <p><span className="text-gray-600 dark:text-gray-300">Quantity:</span> <span className="font-medium ml-2" data-testid="text-quantity">{selectedOrder.quantity}</span></p>
-                  <p><span className="text-gray-600 dark:text-gray-300">Instructions:</span> <span className="font-medium ml-2">{selectedOrder.instructions || 'Follow prescription'}</span></p>
+              {/* Prescription Details - Premium */}
+              <div className="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/50 dark:to-slate-900/50 
+                            p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-premium-sm">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <div className="w-1 h-5 bg-gradient-to-b from-gray-500 to-slate-500 rounded-full"></div>
+                  Prescription Details
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400">Drug:</span>
+                    <span className="font-semibold text-blue-600 dark:text-blue-400" data-testid="text-drug-name">
+                      {selectedOrder.drugName}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400">Dosage:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {selectedOrder.dosage || 'As prescribed'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400">Quantity:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white" data-testid="text-quantity">
+                      {selectedOrder.quantity}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400">Instructions:</span>
+                    <span className="font-medium text-gray-900 dark:text-white text-right">
+                      {selectedOrder.instructions || 'Follow prescription'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Batch Selection (FEFO) */}
+              {/* Batch Selection (FEFO) - Premium */}
               <div>
-                <Label htmlFor="batch" className="text-sm font-medium mb-2 block">
+                <Label htmlFor="batch" className="text-sm font-semibold mb-3 block text-gray-900 dark:text-white">
                   Select Batch (First Expiry First Out)
                 </Label>
                 <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-                  <SelectTrigger id="batch" data-testid="select-batch">
+                  <SelectTrigger 
+                    id="batch" 
+                    data-testid="select-batch"
+                    className="border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 
+                             shadow-premium-sm hover:shadow-premium-md transition-all duration-200"
+                  >
                     <SelectValue placeholder="Select a batch to dispense" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="shadow-premium-lg">
                     {batches.map((batch) => {
                       const expiryDate = new Date(batch.expiryDate);
                       const daysToExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                       const isExpiringSoon = daysToExpiry < 90;
                       
                       return (
-                        <SelectItem key={batch.batchId} value={batch.batchId} data-testid={`batch-option-${batch.batchId}`}>
+                        <SelectItem 
+                          key={batch.batchId} 
+                          value={batch.batchId} 
+                          data-testid={`batch-option-${batch.batchId}`}
+                          className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-150"
+                        >
                           <div className="flex items-center gap-2">
-                            <Package className="w-4 h-4" />
-                            <span>Lot: {batch.lotNumber}</span>
+                            <Package className="w-4 h-4 text-blue-600" />
+                            <span className="font-medium">Lot: {batch.lotNumber}</span>
                             <span className="text-xs text-gray-500">
                               | Exp: {expiryDate.toLocaleDateString()}
                             </span>
@@ -582,7 +886,7 @@ export default function Pharmacy() {
                               | Stock: {batch.quantityOnHand}
                             </span>
                             {isExpiringSoon && (
-                              <Badge className="bg-amber-500 text-white text-xs">
+                              <Badge className="bg-amber-500 text-white text-xs shadow-premium-sm">
                                 <Clock className="w-3 h-3 mr-1" />
                                 {daysToExpiry}d
                               </Badge>
@@ -594,7 +898,7 @@ export default function Pharmacy() {
                   </SelectContent>
                 </Select>
                 
-                {/* Selected Batch Info */}
+                {/* Selected Batch Info - Premium */}
                 {selectedBatch && batches.length > 0 && (() => {
                   const batch = batches.find(b => b.batchId === selectedBatch);
                   if (!batch) return null;
@@ -605,42 +909,45 @@ export default function Pharmacy() {
                   const hasInsufficientStock = selectedOrder.quantity > batch.quantityOnHand;
                   
                   return (
-                    <div className={`mt-3 p-3 rounded-lg border ${
+                    <div className={`mt-4 p-4 rounded-xl border-2 shadow-premium-md transition-all duration-200 ${
                       hasInsufficientStock 
-                        ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800' 
+                        ? 'bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-400 dark:border-red-700' 
                         : isExpiringSoon 
-                          ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-800'
-                          : 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-800'
+                          ? 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-400 dark:border-amber-700'
+                          : 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-400 dark:border-blue-700'
                     }`}>
-                      <h5 className="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Selected Batch Details</h5>
-                      <div className="space-y-1 text-sm">
-                        <p className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-300">Lot Number:</span>
-                          <span className="font-medium">{batch.lotNumber}</span>
-                        </p>
-                        <p className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-300">Expiry Date:</span>
-                          <span className={`font-medium ${isExpiringSoon ? 'text-amber-700 dark:text-amber-400' : ''}`}>
+                      <h5 className="text-sm font-bold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        Selected Batch Details
+                      </h5>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400">Lot Number:</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{batch.lotNumber}</span>
+                        </div>
+                        <div className="flex justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400">Expiry Date:</span>
+                          <span className={`font-semibold ${isExpiringSoon ? 'text-amber-700 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
                             {expiryDate.toLocaleDateString()} {isExpiringSoon && `(${daysToExpiry} days)`}
                           </span>
-                        </p>
-                        <p className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-300">Available Stock:</span>
-                          <span className={`font-medium ${hasInsufficientStock ? 'text-red-700 dark:text-red-400' : ''}`}>
+                        </div>
+                        <div className="flex justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400">Available Stock:</span>
+                          <span className={`font-semibold ${hasInsufficientStock ? 'text-red-700 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
                             {batch.quantityOnHand} units
                           </span>
-                        </p>
-                        <p className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-300">Required:</span>
-                          <span className="font-medium">{selectedOrder.quantity} units</span>
-                        </p>
+                        </div>
+                        <div className="flex justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                          <span className="text-gray-600 dark:text-gray-400">Required:</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{selectedOrder.quantity} units</span>
+                        </div>
                       </div>
                       
                       {hasInsufficientStock && (
-                        <div className="mt-2 pt-2 border-t border-red-300 dark:border-red-800">
-                          <div className="flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-xs text-red-700 dark:text-red-300 font-semibold">
+                        <div className="mt-3 pt-3 border-t-2 border-red-400 dark:border-red-700">
+                          <div className="flex items-start gap-2 bg-red-100 dark:bg-red-900/40 p-3 rounded-lg">
+                            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-red-800 dark:text-red-200 font-semibold leading-relaxed">
                               ⚠️ INSUFFICIENT STOCK: This batch only has {batch.quantityOnHand} units available, 
                               but {selectedOrder.quantity} units are required. Dispensing is blocked.
                             </p>
@@ -649,10 +956,10 @@ export default function Pharmacy() {
                       )}
                       
                       {isExpiringSoon && !hasInsufficientStock && (
-                        <div className="mt-2 pt-2 border-t border-amber-300 dark:border-amber-800">
-                          <div className="flex items-start gap-2">
-                            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                        <div className="mt-3 pt-3 border-t-2 border-amber-400 dark:border-amber-700">
+                          <div className="flex items-start gap-2 bg-amber-100 dark:bg-amber-900/40 p-3 rounded-lg">
+                            <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
                               This batch expires in less than 90 days. Consider dispensing it first (FEFO principle).
                             </p>
                           </div>
@@ -663,13 +970,20 @@ export default function Pharmacy() {
                 })()}
                 
                 {batches.length === 0 && (
-                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-3 rounded-lg mt-2">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 
+                                border-2 border-orange-300 dark:border-orange-700 p-4 rounded-xl mt-3 shadow-premium-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-orange-600 rounded-lg">
+                        <AlertCircle className="w-5 h-5 text-white flex-shrink-0" />
+                      </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-orange-900 dark:text-orange-100">No stock available for this drug</p>
-                        <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                          Go to <Link href="/pharmacy-inventory" className="underline font-semibold">Pharmacy Inventory</Link> to add this drug and receive stock batches.
+                        <p className="text-sm font-bold text-orange-900 dark:text-orange-100 mb-1">
+                          No stock available for this drug
+                        </p>
+                        <p className="text-xs text-orange-700 dark:text-orange-300">
+                          Go to <Link href="/pharmacy-inventory" className="underline font-semibold hover:text-orange-900 dark:hover:text-orange-100">
+                            Pharmacy Inventory
+                          </Link> to add this drug and receive stock batches.
                         </p>
                       </div>
                     </div>
@@ -677,12 +991,14 @@ export default function Pharmacy() {
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              {/* Actions - Premium */}
+              <div className="flex justify-end gap-3 pt-5 border-t-2 border-gray-200 dark:border-gray-700">
                 <Button
                   variant="outline"
                   onClick={() => setSelectedOrder(null)}
                   data-testid="button-cancel-dispense"
+                  className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800
+                           transition-all duration-200 hover:shadow-premium-sm"
                 >
                   Cancel
                 </Button>
@@ -694,10 +1010,23 @@ export default function Pharmacy() {
                     batches.length === 0 ||
                     (selectedBatch && batches.find(b => b.batchId === selectedBatch)?.quantityOnHand < selectedOrder.quantity)
                   }
-                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 
+                           disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500
+                           shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105
+                           disabled:hover:scale-100 disabled:hover:shadow-premium-md"
                   data-testid="button-confirm-dispense"
                 >
-                  {dispenseMutation.isPending ? "Dispensing..." : "Confirm Dispense"}
+                  {dispenseMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Dispensing...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Confirm Dispense
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
