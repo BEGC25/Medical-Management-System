@@ -316,7 +316,7 @@ export interface IStorage {
 
   // Pharmacy Inventory - Ledger
   createInventoryLedger(data: schema.InsertInventoryLedger): Promise<schema.InventoryLedger>;
-  getInventoryLedger(drugId?: number, batchId?: string): Promise<schema.InventoryLedger[]>;
+  getInventoryLedger(drugId?: number, batchId?: string): Promise<(schema.InventoryLedger & { drugName: string; drugStrength: string | null })[]>;
 
   // Pharmacy Inventory - Stock Queries
   getDrugStockLevel(drugId: number): Promise<number>; // Total quantity on hand
@@ -2890,18 +2890,29 @@ export class MemStorage implements IStorage {
     return ledgerEntry;
   }
 
-  async getInventoryLedger(drugId?: number, batchId?: string): Promise<schema.InventoryLedger[]> {
+  async getInventoryLedger(drugId?: number, batchId?: string): Promise<(schema.InventoryLedger & { drugName: string; drugStrength: string | null })[]> {
     const conditions = [];
     if (drugId) conditions.push(eq(inventoryLedger.drugId, drugId));
     if (batchId) conditions.push(eq(inventoryLedger.batchId, batchId));
 
     if (conditions.length > 0) {
-      return await db.select().from(inventoryLedger)
+      return await db.select({
+        ...inventoryLedger,
+        drugName: drugs.name,
+        drugStrength: drugs.strength,
+      }).from(inventoryLedger)
+        .leftJoin(drugs, eq(inventoryLedger.drugId, drugs.id))
         .where(and(...conditions))
         .orderBy(desc(inventoryLedger.createdAt));
     }
 
-    return await db.select().from(inventoryLedger).orderBy(desc(inventoryLedger.createdAt));
+    return await db.select({
+      ...inventoryLedger,
+      drugName: drugs.name,
+      drugStrength: drugs.strength,
+    }).from(inventoryLedger)
+      .leftJoin(drugs, eq(inventoryLedger.drugId, drugs.id))
+      .orderBy(desc(inventoryLedger.createdAt));
   }
 
   // Pharmacy Inventory - Stock Query Methods

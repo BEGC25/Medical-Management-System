@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp, CheckCircle, User, Printer } from "lucide-react";
+import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp, CheckCircle, User, Printer, HelpCircle } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -357,6 +357,16 @@ export default function Pharmacy() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button 
+              onClick={() => setHelpCollapsed(!helpCollapsed)}
+              variant="outline"
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 
+                       transition-all duration-200 hover:shadow-premium-sm hover:scale-105"
+              data-testid="button-help"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Help
+            </Button>
             <Button 
               onClick={handleRefresh}
               variant="outline"

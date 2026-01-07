@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -322,6 +322,16 @@ export default function PharmacyInventory() {
         </div>
         <div className="flex gap-2">
           <Button
+            onClick={() => setHelpCollapsed(!helpCollapsed)}
+            variant="outline"
+            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 
+                     transition-all duration-200 hover:shadow-premium-sm hover:scale-105"
+            data-testid="button-help"
+          >
+            <HelpCircle className="w-4 h-4 mr-2" />
+            Help
+          </Button>
+          <Button
             onClick={() => setShowAddDrug(true)}
             className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700
                      shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105"
@@ -469,7 +479,7 @@ export default function PharmacyInventory() {
             </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
                     <TableHead className="font-semibold">Drug Name</TableHead>
                     <TableHead className="font-semibold">Strength</TableHead>
@@ -516,7 +526,7 @@ export default function PharmacyInventory() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    drugsWithStock.map((drug) => {
+                    drugsWithStock.map((drug, index) => {
                     const stockLevel = drug.stockOnHand;
                     const isOutOfStock = stockLevel === 0;
                     const isLowStock = stockLevel > 0 && stockLevel <= drug.reorderLevel;
@@ -538,27 +548,31 @@ export default function PharmacyInventory() {
                         className={`
                           transition-all duration-150 ease-in-out cursor-pointer
                           border-b border-gray-100 dark:border-gray-800
+                          ${index % 2 === 0 
+                            ? "bg-white dark:bg-gray-900" 
+                            : "bg-slate-50 dark:bg-gray-800/50"
+                          }
                           ${isLowStock 
-                            ? "bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100/70 dark:hover:bg-red-900/20" 
-                            : "hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-blue-50/30 dark:hover:from-purple-900/10 dark:hover:to-blue-900/10"
+                            ? "hover:bg-red-100/70 dark:hover:bg-red-900/20" 
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800"
                           }
                         `}
                       >
-                        <TableCell className="font-semibold text-gray-900 dark:text-white">{drug.name}</TableCell>
-                        <TableCell className="text-gray-700 dark:text-gray-300">{drug.strength || '-'}</TableCell>
-                        <TableCell className="capitalize text-gray-700 dark:text-gray-300">{drug.form}</TableCell>
-                        <TableCell className="text-right tabular-nums">
+                        <TableCell className="font-semibold text-gray-900 dark:text-white py-5">{drug.name}</TableCell>
+                        <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.strength || '-'}</TableCell>
+                        <TableCell className="capitalize text-gray-700 dark:text-gray-300 py-5">{drug.form}</TableCell>
+                        <TableCell className="text-right tabular-nums py-5">
                           <span className={`font-bold text-base ${isOutOfStock ? "text-gray-400 dark:text-gray-600" : isLowStock ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                             {stockLevel}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums text-gray-900 dark:text-white font-semibold">
-                          {currentPrice ? `${Math.round(currentPrice).toLocaleString()} SSP` : '-'}
+                        <TableCell className="text-right font-mono tabular-nums text-gray-900 dark:text-white font-semibold py-5">
+                          {currentPrice ? `${Math.round(currentPrice).toLocaleString()}` : '-'}
                         </TableCell>
-                        <TableCell className="text-gray-700 dark:text-gray-300">
-                          {nearestExpiry || '-'}
+                        <TableCell className="text-gray-700 dark:text-gray-300 py-5">
+                          {nearestExpiry ? new Date(nearestExpiry).toLocaleDateString() : '-'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-5">
                           {isOutOfStock ? (
                             <Badge 
                               variant="outline" 
@@ -583,7 +597,7 @@ export default function PharmacyInventory() {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right py-5">
                           <div className="flex gap-1 justify-end">
                             <Button
                               size="sm"
@@ -633,14 +647,14 @@ export default function PharmacyInventory() {
             </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
                     <TableHead className="font-semibold">Drug Code</TableHead>
                     <TableHead className="font-semibold">Name</TableHead>
                     <TableHead className="font-semibold">Generic Name</TableHead>
                     <TableHead className="font-semibold">Strength</TableHead>
                     <TableHead className="font-semibold">Form</TableHead>
-                    <TableHead className="font-semibold">Reorder Level</TableHead>
+                    <TableHead className="text-right font-semibold">Reorder Level</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
@@ -671,21 +685,24 @@ export default function PharmacyInventory() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    drugs.map((drug) => (
+                    drugs.map((drug, index) => (
                     <TableRow 
                       key={drug.id} 
                       data-testid={`drug-row-${drug.id}`}
-                      className="transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
-                               hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-indigo-50/30 
-                               dark:hover:from-purple-900/10 dark:hover:to-indigo-900/10"
+                      className={`transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
+                               ${index % 2 === 0 
+                                 ? "bg-white dark:bg-gray-900" 
+                                 : "bg-slate-50 dark:bg-gray-800/50"
+                               }
+                               hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-l-4 hover:border-l-purple-500`}
                     >
-                      <TableCell className="font-medium text-gray-900 dark:text-white">{drug.drugCode}</TableCell>
-                      <TableCell className="font-semibold text-gray-900 dark:text-white">{drug.name}</TableCell>
-                      <TableCell className="text-gray-700 dark:text-gray-300">{drug.genericName || '-'}</TableCell>
-                      <TableCell className="text-gray-700 dark:text-gray-300">{drug.strength || '-'}</TableCell>
-                      <TableCell className="capitalize text-gray-700 dark:text-gray-300">{drug.form}</TableCell>
-                      <TableCell className="text-gray-900 dark:text-white font-semibold">{drug.reorderLevel}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium text-gray-900 dark:text-white py-5">{drug.drugCode}</TableCell>
+                      <TableCell className="font-semibold text-gray-900 dark:text-white py-5">{drug.name}</TableCell>
+                      <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.genericName || '-'}</TableCell>
+                      <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.strength || '-'}</TableCell>
+                      <TableCell className="capitalize text-gray-700 dark:text-gray-300 py-5">{drug.form}</TableCell>
+                      <TableCell className="text-right tabular-nums text-gray-900 dark:text-white font-semibold py-5">{drug.reorderLevel}</TableCell>
+                      <TableCell className="py-5">
                         <Badge 
                           className={drug.isActive 
                             ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-premium-sm transition-all duration-150 hover:shadow-premium-md hover:from-green-700 hover:to-emerald-700 font-medium" 
@@ -695,7 +712,7 @@ export default function PharmacyInventory() {
                           {drug.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right py-5">
                         <div className="flex gap-1 justify-end">
                           <Button
                             size="sm"
@@ -1012,31 +1029,42 @@ export default function PharmacyInventory() {
                 </div>
               ) : (
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                     <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
                       <TableHead className="font-semibold">Transaction ID</TableHead>
+                      <TableHead className="font-semibold">Drug Name</TableHead>
                       <TableHead className="font-semibold">Type</TableHead>
                       <TableHead className="text-right font-semibold">Quantity</TableHead>
-                      <TableHead className="text-right font-semibold">Value</TableHead>
+                      <TableHead className="text-right font-semibold">Value (SSP)</TableHead>
                       <TableHead className="font-semibold">Performed By</TableHead>
                       <TableHead className="font-semibold">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredLedgerEntries.map((entry, index) => (
+                    {filteredLedgerEntries.map((entry, index) => {
+                      const drugDisplay = entry.drugName 
+                        ? `${entry.drugName}${entry.drugStrength ? ' ' + entry.drugStrength : ''}`
+                        : 'Unknown Drug';
+                      
+                      return (
                       <TableRow 
                         key={entry.id} 
                         data-testid={`ledger-${entry.transactionId}`}
                         className={`
                           transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
                           ${index % 2 === 0 
-                            ? "bg-white dark:bg-gray-900 hover:bg-gray-50/70 dark:hover:bg-gray-800/70" 
-                            : "bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100/70 dark:hover:bg-gray-700/70"
+                            ? "bg-white dark:bg-gray-900 hover:bg-slate-100 dark:hover:bg-slate-800" 
+                            : "bg-slate-50 dark:bg-gray-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/70"
                           }
                         `}
                       >
-                        <TableCell className="font-medium text-gray-900 dark:text-white">{entry.transactionId}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-medium text-gray-900 dark:text-white py-5">{entry.transactionId}</TableCell>
+                        <TableCell className="font-medium text-gray-900 dark:text-white py-5" title={drugDisplay}>
+                          <div className="max-w-[200px] truncate">
+                            {drugDisplay}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-5">
                           <Badge 
                             className={entry.transactionType === 'receive' 
                               ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-premium-sm transition-all duration-150 hover:shadow-premium-md font-medium" 
@@ -1046,16 +1074,17 @@ export default function PharmacyInventory() {
                             {entry.transactionType}
                           </Badge>
                         </TableCell>
-                        <TableCell className={`text-right tabular-nums font-semibold ${entry.quantity < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                        <TableCell className={`text-right tabular-nums font-semibold py-5 ${entry.quantity < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                           {entry.quantity > 0 ? '+' : ''}{entry.quantity}
                         </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums text-gray-900 dark:text-white font-semibold">
-                          SSP {Math.round(entry.totalValue || 0).toLocaleString()}
+                        <TableCell className={`text-right font-mono tabular-nums font-semibold py-5 ${(entry.totalValue || 0) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                          {(entry.totalValue || 0) > 0 ? '+' : ''}{Math.round(entry.totalValue || 0).toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-gray-700 dark:text-gray-300">{entry.performedBy}</TableCell>
-                        <TableCell className="text-gray-700 dark:text-gray-300">{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-gray-700 dark:text-gray-300 py-5">{entry.performedBy}</TableCell>
+                        <TableCell className="text-gray-700 dark:text-gray-300 py-5">{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
