@@ -77,34 +77,66 @@ export function getDiagnosticPendingDepartments(patient: PatientWithStatus): str
 }
 
 /**
+ * Map of ready results by patient ID
+ * 
+ * This structure holds completed diagnostic results grouped by patient.
+ * Each patient can have ready results in Lab, X-ray, and/or Ultrasound departments.
+ */
+export interface ResultsReadyMap {
+  [patientId: string]: {
+    lab?: number;
+    xray?: number;
+    ultrasound?: number;
+  };
+}
+
+/**
  * Get compact indicator badges for the patient table
  * 
- * Returns an object with waiting indicators for doctor workflow.
- * This helps doctors quickly identify which patients have pending diagnostic orders.
- * 
- * Note: "Results Ready" indicators are calculated separately in Treatment.tsx 
- * based on completed diagnostic queries.
+ * Returns an object with both waiting and ready indicators for doctor workflow.
+ * This helps doctors quickly identify:
+ * - Which patients have pending diagnostic orders (waiting)
+ * - Which patients have completed results ready for review (ready)
  * 
  * @param patient - Patient object with serviceStatus
- * @returns Object with 'waiting' array of department names
+ * @param resultsReadyMap - Optional map of completed results by patient ID
+ * @returns Object with 'waiting' and 'ready' arrays of department names with counts
  */
-export function getPatientIndicators(patient: PatientWithStatus): { 
-  waiting: string[]
+export function getPatientIndicators(
+  patient: PatientWithStatus,
+  resultsReadyMap?: ResultsReadyMap
+): { 
+  waiting: string[];
+  ready: string[];
 } {
   const serviceStatus = patient.serviceStatus;
-  const indicators = { waiting: [] as string[] };
+  const indicators = { waiting: [] as string[], ready: [] as string[] };
   
   if (!serviceStatus) return indicators;
   
   // Waiting indicators (pending orders)
   if ((serviceStatus.labPending ?? 0) > 0) {
-    indicators.waiting.push('Lab');
+    indicators.waiting.push(`Lab (${serviceStatus.labPending})`);
   }
   if ((serviceStatus.xrayPending ?? 0) > 0) {
-    indicators.waiting.push('X-ray');
+    indicators.waiting.push(`X-ray (${serviceStatus.xrayPending})`);
   }
   if ((serviceStatus.ultrasoundPending ?? 0) > 0) {
-    indicators.waiting.push('Ultrasound');
+    indicators.waiting.push(`Ultrasound (${serviceStatus.ultrasoundPending})`);
+  }
+  
+  // Ready indicators (completed results)
+  if (resultsReadyMap && resultsReadyMap[patient.patientId]) {
+    const ready = resultsReadyMap[patient.patientId];
+    if ((ready.lab ?? 0) > 0) {
+      indicators.ready.push(`Lab (${ready.lab})`);
+    }
+    if ((ready.xray ?? 0) > 0) {
+      indicators.ready.push(`X-ray (${ready.xray})`);
+    }
+    if ((ready.ultrasound ?? 0) > 0) {
+      indicators.ready.push(`Ultrasound (${ready.ultrasound})`);
+    }
   }
   
   return indicators;

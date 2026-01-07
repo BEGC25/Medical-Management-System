@@ -1950,6 +1950,37 @@ export default function Treatment() {
   
   const resultsReadyCount = resultsReadyByPatient.length;
   
+  // Build a map of ready results by patient ID with counts for the table
+  const resultsReadyMap = useMemo(() => {
+    const map: Record<string, { lab?: number; xray?: number; ultrasound?: number }> = {};
+    
+    // Count completed lab tests per patient
+    completedLabTests.forEach((test: LabTest) => {
+      if (!map[test.patientId]) {
+        map[test.patientId] = {};
+      }
+      map[test.patientId].lab = (map[test.patientId].lab ?? 0) + 1;
+    });
+    
+    // Count completed X-rays per patient
+    completedXrays.forEach((exam: XrayExam) => {
+      if (!map[exam.patientId]) {
+        map[exam.patientId] = {};
+      }
+      map[exam.patientId].xray = (map[exam.patientId].xray ?? 0) + 1;
+    });
+    
+    // Count completed Ultrasounds per patient
+    completedUltrasounds.forEach((exam: UltrasoundExam) => {
+      if (!map[exam.patientId]) {
+        map[exam.patientId] = {};
+      }
+      map[exam.patientId].ultrasound = (map[exam.patientId].ultrasound ?? 0) + 1;
+    });
+    
+    return map;
+  }, [completedLabTests, completedXrays, completedUltrasounds]);
+  
   // Filter patients with orders waiting for the modal
   const patientsWithOrdersWaiting = patientsWithStatus
     ? patientsWithStatus.filter(p => {
@@ -2415,6 +2446,7 @@ export default function Treatment() {
                     onShouldSearchChange={setShouldSearch}
                     filterPendingOnly={quickFilter === "pending"}
                     preset={presetParams.preset} // Pass preset for backend filtering and cache isolation
+                    resultsReadyMap={resultsReadyMap} // Pass completed results map for table indicators
                   />
                 </div>
               </>

@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Search, AlertCircle } from "lucide-react";
+import { Search, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
 import { formatClinicDay } from "@/lib/date-utils";
-import { hasPendingOrders, getPatientIndicators } from "@/lib/patient-utils";
+import { hasPendingOrders, getPatientIndicators, type ResultsReadyMap } from "@/lib/patient-utils";
 import { getVisitStatusLabel } from "@/lib/display-utils";
 
 interface PatientSearchProps {
@@ -22,6 +22,7 @@ interface PatientSearchProps {
   onShouldSearchChange?: (should: boolean) => void;
   filterPendingOnly?: boolean; // Filter to show only patients with unpaid orders
   preset?: string; // Optional preset for cache key differentiation (e.g., "today", "yesterday", "last7", "last30")
+  resultsReadyMap?: ResultsReadyMap; // Map of completed diagnostic results by patient ID
 }
 
 // Format date as "19 Oct 2025" in clinic timezone (Africa/Juba)
@@ -60,6 +61,7 @@ export default function PatientSearch({
   searchTerm,
   filterPendingOnly = false,
   preset,
+  resultsReadyMap,
 }: PatientSearchProps) {
   // Always-on search: if 3+ chars, force "search"
   const effectiveMode = searchTerm.trim().length >= 3 ? "search" : viewMode;
@@ -171,7 +173,7 @@ export default function PatientSearch({
                   Visit Status
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Indicators
+                  Diagnostics
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
                   Date of Service
@@ -257,21 +259,36 @@ export default function PatientSearch({
 
                     <td className="px-4 py-3 text-sm">
                       {(() => {
-                        const indicators = getPatientIndicators(p);
+                        const indicators = getPatientIndicators(p, resultsReadyMap);
                         
-                        if (indicators.waiting.length === 0) {
+                        // Show empty state only if both are empty
+                        if (indicators.waiting.length === 0 && indicators.ready.length === 0) {
                           return <span className="text-gray-400 text-xs">—</span>;
                         }
                         
                         return (
                           <div className="flex flex-wrap gap-1">
-                            <Badge 
-                              variant="outline" 
-                              className="text-[10px] bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 flex items-center gap-1"
-                            >
-                              <AlertCircle className="w-2.5 h-2.5" />
-                              Waiting: {indicators.waiting.join('/')}
-                            </Badge>
+                            {/* Waiting badge - show if there are pending orders */}
+                            {indicators.waiting.length > 0 && (
+                              <Badge 
+                                variant="outline" 
+                                className="text-[10px] bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 flex items-center gap-1"
+                              >
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                Waiting: {indicators.waiting.join(', ')}
+                              </Badge>
+                            )}
+                            
+                            {/* Ready badge - show if there are completed results */}
+                            {indicators.ready.length > 0 && (
+                              <Badge 
+                                variant="outline" 
+                                className="text-[10px] bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 flex items-center gap-1"
+                              >
+                                <CheckCircle className="w-2.5 h-2.5" />
+                                Ready: {indicators.ready.join(', ')}
+                              </Badge>
+                            )}
                           </div>
                         );
                       })()}
