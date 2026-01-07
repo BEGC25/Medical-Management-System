@@ -327,6 +327,7 @@ export interface IStorage {
   // Pharmacy - Dispense Operations
   dispenseDrug(orderId: string, batchId: string, quantity: number, dispensedBy: string): Promise<schema.PharmacyOrder>;
   getPaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
+  getUnpaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
   getPharmacyOrdersWithPatients(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]>;
 
   // Reports
@@ -3011,6 +3012,22 @@ export class MemStorage implements IStorage {
       .where(and(
         eq(pharmacyOrders.status, 'prescribed'),
         eq(pharmacyOrders.paymentStatus, 'paid')
+      ))
+      .orderBy(desc(pharmacyOrders.createdAt));
+
+    return orders.map(o => ({ ...o.order, patient: o.patient }));
+  }
+
+  async getUnpaidPrescriptions(): Promise<(schema.PharmacyOrder & { patient: schema.Patient })[]> {
+    const orders = await db.select({ order: pharmacyOrders, patient: patients })
+      .from(pharmacyOrders)
+      .innerJoin(patients, and(
+          eq(pharmacyOrders.patientId, patients.patientId),
+          eq(patients.isDeleted, 0)
+      ))
+      .where(and(
+        eq(pharmacyOrders.status, 'prescribed'),
+        eq(pharmacyOrders.paymentStatus, 'unpaid')
       ))
       .orderBy(desc(pharmacyOrders.createdAt));
 
