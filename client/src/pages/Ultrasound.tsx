@@ -81,6 +81,7 @@ import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLI
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
 import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from '@/components/diagnostics';
+import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -1292,16 +1293,7 @@ export default function Ultrasound() {
                 </label>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { value: 'cardiac', label: 'Cardiac/Echo', icon: '🫀', description: 'Heart & vessels' },
-                    { value: 'obstetric', label: 'Obstetric', icon: '🤰', description: 'Pregnancy imaging' },
-                    { value: 'abdominal', label: 'Abdominal', icon: '🫄', description: 'Abdomen & organs' },
-                    { value: 'musculoskeletal', label: 'Musculoskeletal', icon: '🦴', description: 'Bones & joints' },
-                    { value: 'thoracic', label: 'Thoracic', icon: '🫁', description: 'Chest & lungs' },
-                    { value: 'vascular', label: 'Vascular', icon: '🧠', description: 'Blood vessels' },
-                    { value: 'pelvic', label: 'Pelvic', icon: '🩻', description: 'Pelvic organs' },
-                    { value: 'other', label: 'Other/Custom', icon: '🎯', description: 'Custom exam' },
-                  ].map((exam) => (
+                  {ULTRASOUND_EXAM_TYPES.map((exam) => (
                     <button
                       key={exam.value}
                       type="button"
@@ -1340,7 +1332,8 @@ export default function Ultrasound() {
               </div>
 
               {/* Specific Exam Type Lists (Like X-Ray) */}
-              {examType === 'cardiac' && (
+              {/* Specific Exam (Quick Select) - Dynamic based on exam type */}
+              {examType && ULTRASOUND_SPECIFIC_EXAMS[examType as keyof typeof ULTRASOUND_SPECIFIC_EXAMS] && (
                 <div className="mb-4">
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-indigo-600" />
@@ -1348,269 +1341,7 @@ export default function Ultrasound() {
                   </label>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'Transthoracic Echocardiogram (TTE)',
-                      'Stress Echocardiogram',
-                      'Limited Cardiac Study',
-                      'Bubble Study',
-                      'Pericardial Effusion Assessment',
-                    ].map((exam) => (
-                      <button
-                        key={exam}
-                        type="button"
-                        onClick={() => {
-                          setSpecificExam(exam);
-                        }}
-                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
-                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
-                        }`}
-                      >
-                        {exam}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {examType === 'obstetric' && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-600" />
-                    Specific Exam (Quick Select)
-                  </label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'First Trimester Dating Scan (6-13 weeks)',
-                      'Nuchal Translucency Scan (11-14 weeks)',
-                      'Anatomy Scan (18-22 weeks)',
-                      'Growth Scan (Third Trimester)',
-                      'Biophysical Profile (BPP)',
-                      'Fetal Well-being Assessment',
-                      'Multiple Gestation Scan',
-                      'Doppler Study - Umbilical Artery',
-                      'Cervical Length Assessment',
-                    ].map((exam) => (
-                      <button
-                        key={exam}
-                        type="button"
-                        onClick={() => {
-                          setSpecificExam(exam);
-                        }}
-                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
-                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
-                        }`}
-                      >
-                        {exam}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {examType === 'abdominal' && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-600" />
-                    Specific Exam (Quick Select)
-                  </label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'Complete Abdomen',
-                      'RUQ - Liver & Gallbladder',
-                      'Renal (Kidneys & Bladder)',
-                      'Appendix Study',
-                      'Bowel Assessment',
-                      'Spleen',
-                      'Pancreas',
-                      'Abdominal Aorta',
-                      'Ascites Assessment',
-                    ].map((exam) => (
-                      <button
-                        key={exam}
-                        type="button"
-                        onClick={() => {
-                          setSpecificExam(exam);
-                        }}
-                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
-                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
-                        }`}
-                      >
-                        {exam}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {examType === 'musculoskeletal' && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-600" />
-                    Specific Exam (Quick Select)
-                  </label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'Shoulder (Left)',
-                      'Shoulder (Right)',
-                      'Elbow (Left)',
-                      'Elbow (Right)',
-                      'Wrist (Left)',
-                      'Wrist (Right)',
-                      'Hip (Left)',
-                      'Hip (Right)',
-                      'Knee (Left)',
-                      'Knee (Right)',
-                      'Ankle (Left)',
-                      'Ankle (Right)',
-                      'Rotator Cuff',
-                      'Achilles Tendon',
-                      'Baker\'s Cyst',
-                      'Soft Tissue Mass',
-                    ].map((exam) => (
-                      <button
-                        key={exam}
-                        type="button"
-                        onClick={() => {
-                          setSpecificExam(exam);
-                        }}
-                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
-                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
-                        }`}
-                      >
-                        {exam}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {examType === 'thoracic' && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-600" />
-                    Specific Exam (Quick Select)
-                  </label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'Pleural Effusion Assessment',
-                      'Lung Ultrasound (POCUS)',
-                      'Chest Wall Mass',
-                      'Thyroid Gland',
-                      'Neck Lymph Nodes',
-                      'Parotid/Salivary Glands',
-                    ].map((exam) => (
-                      <button
-                        key={exam}
-                        type="button"
-                        onClick={() => {
-                          setSpecificExam(exam);
-                        }}
-                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
-                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
-                        }`}
-                      >
-                        {exam}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {examType === 'vascular' && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-600" />
-                    Specific Exam (Quick Select)
-                  </label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'Carotid Doppler (Bilateral)',
-                      'Lower Extremity DVT (Left)',
-                      'Lower Extremity DVT (Right)',
-                      'Upper Extremity DVT (Left)',
-                      'Upper Extremity DVT (Right)',
-                      'Renal Artery Doppler',
-                      'Mesenteric Doppler',
-                      'Portal Vein Doppler',
-                      'AV Fistula Study',
-                      'Varicose Veins Assessment',
-                    ].map((exam) => (
-                      <button
-                        key={exam}
-                        type="button"
-                        onClick={() => {
-                          setSpecificExam(exam);
-                        }}
-                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
-                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
-                        }`}
-                      >
-                        {exam}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {examType === 'pelvic' && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-600" />
-                    Specific Exam (Quick Select)
-                  </label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'Transvaginal Pelvic Scan',
-                      'Transabdominal Pelvic Scan',
-                      'Ovarian Cyst Evaluation',
-                      'Follicular Study',
-                      'IUD Position Check',
-                      'Endometrial Thickness',
-                      'Scrotal Ultrasound',
-                      'Testicular Doppler',
-                      'Prostate (Transabdominal)',
-                    ].map((exam) => (
-                      <button
-                        key={exam}
-                        type="button"
-                        onClick={() => {
-                          setSpecificExam(exam);
-                        }}
-                        className={`p-3 text-left border-2 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm ${
-                          specificExam === exam ? 'border-indigo-500 bg-indigo-50 font-semibold' : 'border-gray-200'
-                        }`}
-                      >
-                        {exam}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {examType === 'other' && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-600" />
-                    Specific Exam (Quick Select)
-                  </label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      'Breast Ultrasound (Left)',
-                      'Breast Ultrasound (Right)',
-                      'Axillary Lymph Nodes',
-                      'Inguinal Hernia',
-                      'Umbilical Hernia',
-                      'Superficial Mass/Lesion',
-                      'Foreign Body Localization',
-                      'Guided Procedure (Biopsy/Aspiration)',
-                    ].map((exam) => (
+                    {ULTRASOUND_SPECIFIC_EXAMS[examType as keyof typeof ULTRASOUND_SPECIFIC_EXAMS].map((exam) => (
                       <button
                         key={exam}
                         type="button"
