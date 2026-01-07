@@ -612,6 +612,17 @@ export default function Treatment() {
     return { preset: dateFilter };
   }, [dateFilter, customStartDate, customEndDate]);
 
+  // Helper to apply preset parameters to a URL
+  const applyPresetToUrl = (url: URL, params: typeof presetParams) => {
+    if (params.preset === 'custom' && 'from' in params && 'to' in params) {
+      url.searchParams.set("preset", "custom");
+      url.searchParams.set("from", params.from);
+      url.searchParams.set("to", params.to);
+    } else {
+      url.searchParams.set("preset", params.preset);
+    }
+  };
+
   // Queue modal - use preset 'today' for consistent filtering
   const [queueOpen, setQueueOpen] = useState(false);
   const [queueFilter, setQueueFilter] = useState("");
@@ -870,13 +881,7 @@ export default function Treatment() {
     queryKey: ["/api/lab-tests", { ...presetParams, status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/lab-tests", window.location.origin);
-      if (presetParams.preset === 'custom' && 'from' in presetParams && 'to' in presetParams) {
-        url.searchParams.set("preset", "custom");
-        url.searchParams.set("from", presetParams.from);
-        url.searchParams.set("to", presetParams.to);
-      } else {
-        url.searchParams.set("preset", presetParams.preset);
-      }
+      applyPresetToUrl(url, presetParams);
       url.searchParams.set("status", "completed");
       const response = await fetch(url.toString());
       if (!response.ok) return [];
@@ -888,13 +893,7 @@ export default function Treatment() {
     queryKey: ["/api/xray-exams", { ...presetParams, status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/xray-exams", window.location.origin);
-      if (presetParams.preset === 'custom' && 'from' in presetParams && 'to' in presetParams) {
-        url.searchParams.set("preset", "custom");
-        url.searchParams.set("from", presetParams.from);
-        url.searchParams.set("to", presetParams.to);
-      } else {
-        url.searchParams.set("preset", presetParams.preset);
-      }
+      applyPresetToUrl(url, presetParams);
       url.searchParams.set("status", "completed");
       const response = await fetch(url.toString());
       if (!response.ok) return [];
@@ -906,13 +905,7 @@ export default function Treatment() {
     queryKey: ["/api/ultrasound-exams", { ...presetParams, status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/ultrasound-exams", window.location.origin);
-      if (presetParams.preset === 'custom' && 'from' in presetParams && 'to' in presetParams) {
-        url.searchParams.set("preset", "custom");
-        url.searchParams.set("from", presetParams.from);
-        url.searchParams.set("to", presetParams.to);
-      } else {
-        url.searchParams.set("preset", presetParams.preset);
-      }
+      applyPresetToUrl(url, presetParams);
       url.searchParams.set("status", "completed");
       const response = await fetch(url.toString());
       if (!response.ok) return [];
@@ -929,13 +922,7 @@ export default function Treatment() {
       const url = new URL("/api/patients", window.location.origin);
       url.searchParams.set("withStatus", "true");
       url.searchParams.set("filterBy", "encounters"); // Match the table source
-      if (presetParams.preset === 'custom' && 'from' in presetParams && 'to' in presetParams) {
-        url.searchParams.set("preset", "custom");
-        url.searchParams.set("from", presetParams.from);
-        url.searchParams.set("to", presetParams.to);
-      } else {
-        url.searchParams.set("preset", presetParams.preset);
-      }
+      applyPresetToUrl(url, presetParams);
       const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error("Failed to fetch patients with status");
