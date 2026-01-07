@@ -89,6 +89,7 @@ import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, get
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
 import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators } from '@/lib/patient-utils';
 import type { PatientWithStatus } from "@shared/schema";
+import { LAB_TEST_CATALOG, XRAY_EXAM_TYPES, XRAY_BODY_PARTS, XRAY_PRESETS, ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS, ULTRASOUND_PRESETS, type LabTestCategory, type XrayExamType, type UltrasoundExamType } from "@/lib/diagnostic-catalog";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -482,49 +483,8 @@ const resultFields: Record< // Keep this config for metadata
   // ... (keep other resultFields definitions) ...
 };
 
-// Lab test categories (from Laboratory page)
-const commonTests = {
-  hematology: [
-    "Blood Film for Malaria (BFFM)",
-    "Complete Blood Count (CBC)",
-    "Hemoglobin (HB)",
-    "Total White Blood Count (TWBC)",
-    "Blood Group & Rh",
-    "ESR (Erythrocyte Sedimentation Rate)",
-    "Rheumatoid Factor",
-  ],
-  serology: [
-    "Widal Test (Typhoid)",
-    "Brucella Test (B.A.T)",
-    "Hepatitis B Test (HBsAg)",
-    "Hepatitis C Test (HCV)",
-    "H. Pylori Test",
-    "VDRL Test (Syphilis)",
-  ],
-  reproductive: [
-    "Pregnancy Test (HCG)",
-    "Gonorrhea Test",
-    "Chlamydia Test",
-    "Reproductive Hormones",
-  ],
-  parasitology: [
-    "Toxoplasma Test",
-    "Filariasis Tests",
-    "Schistosomiasis Test",
-    "Leishmaniasis Test",
-  ],
-  hormones: ["Thyroid Hormones", "Reproductive Hormones", "Cardiac & Other Markers"],
-  tuberculosis: ["Tuberculosis Tests"],
-  emergency: ["Meningitis Tests", "Yellow Fever Test", "Typhus Test"],
-  urine: ["Urine Analysis", "Urine Microscopy"],
-  biochemistry: [
-    "Renal Function Test (RFT)",
-    "Liver Function Test (LFT)",
-    "Random Blood Sugar (RBS)",
-    "Fasting Blood Sugar (FBS)",
-  ],
-  stool: ["Stool Examination"],
-};
+// Lab test categories - use shared diagnostic catalog
+const commonTests = LAB_TEST_CATALOG;
 
 // ---------- component ----------
 export default function Treatment() {
@@ -637,7 +597,7 @@ export default function Treatment() {
 
   // Lab test selection state (for category-based ordering)
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
-  const [currentLabCategory, setCurrentLabCategory] = useState<keyof typeof commonTests>("hematology");
+  const [currentLabCategory, setCurrentLabCategory] = useState<LabTestCategory>("blood");
   const [labPriority, setLabPriority] = useState<"routine" | "urgent" | "stat">("routine");
   const [labClinicalInfo, setLabClinicalInfo] = useState("");
 
@@ -645,7 +605,7 @@ export default function Treatment() {
   const [editLabModalOpen, setEditLabModalOpen] = useState(false);
   const [labTestToEdit, setLabTestToEdit] = useState<any>(null);
   const [editLabTests, setEditLabTests] = useState<string[]>([]);
-  const [editLabCategory, setEditLabCategory] = useState<keyof typeof commonTests>("hematology");
+  const [editLabCategory, setEditLabCategory] = useState<LabTestCategory>("blood");
   const [editLabPriority, setEditLabPriority] = useState<"routine" | "urgent" | "stat">("routine");
   const [editLabClinicalInfo, setEditLabClinicalInfo] = useState("");
 
@@ -675,7 +635,7 @@ export default function Treatment() {
   const [ultrasoundSpecificExam, setUltrasoundSpecificExam] = useState('');
   
   // Enhanced Lab state
-  const [labCategory, setLabCategory] = useState<keyof typeof commonTests>('hematology');
+  const [labCategory, setLabCategory] = useState<LabTestCategory>('blood');
   const [labSpecificTests, setLabSpecificTests] = useState<string[]>([]);
 
   // Allergies state
@@ -1270,11 +1230,10 @@ export default function Treatment() {
       const examTypeLabel: Record<string, string> = {
         'chest': 'Chest X-Ray',
         'extremities': 'Extremity X-Ray',
-        'extremity': 'Extremity X-Ray',
         'abdomen': 'Abdominal X-Ray',
         'spine': 'Spine X-Ray',
         'skull': 'Skull X-Ray',
-        'dental': 'Dental X-Ray'
+        'pelvis': 'Pelvic X-Ray'
       };
 
       // Use component state for exam type
@@ -1319,14 +1278,15 @@ export default function Treatment() {
 
   // Order Ultrasound mutation (creates exam record + order line)
   const orderUltrasoundMutation = useMutation({
-    mutationFn: async ({ service, examType }: { service: Service; examType: string }) => {
+    mutationFn: async ({ service }: { service: Service }) => {
       if (!selectedPatient) throw new Error("No patient selected");
       if (!currentEncounter) throw new Error("No active encounter");
 
       // 1. Create ultrasound exam record with clinical notes
       const ultrasoundData = {
         patientId: selectedPatient.patientId,
-        examType: examType || service.name,
+        examType: ultrasoundExamType, // General exam type (e.g., 'abdominal', 'obstetric')
+        specificExam: ultrasoundSpecificExam || undefined, // Specific exam (e.g., 'RUQ - Liver & Gallbladder')
         clinicalIndication: ultrasoundClinicalInfo,
         requestedDate: new Date().toISOString(),
       };
@@ -1343,12 +1303,17 @@ export default function Treatment() {
         'breast': 'Breast Ultrasound',
         'musculoskeletal': 'Musculoskeletal Ultrasound',
         'vascular': 'Vascular Ultrasound',
-        'renal': 'Renal Ultrasound'
+        'renal': 'Renal Ultrasound',
+        'cardiac': 'Cardiac Ultrasound',
+        'soft_tissue': 'Soft Tissue Ultrasound',
+        'scrotal': 'Scrotal Ultrasound',
+        'neck': 'Neck Ultrasound',
       };
 
-      // Use component state for the base exam type, and examType param for specific exam if provided
-      const baseExamType = ultrasoundExamType;
-      const fullDescription = examTypeLabel[baseExamType] || examType || 'Ultrasound Examination';
+      // Use specific exam if available, otherwise use exam type
+      const fullDescription = ultrasoundSpecificExam 
+        ? `${examTypeLabel[ultrasoundExamType] || 'Ultrasound'} - ${ultrasoundSpecificExam}`
+        : examTypeLabel[ultrasoundExamType] || 'Ultrasound Examination';
 
       // 2. Create corresponding order_line
       const orderLineData = {
@@ -1371,6 +1336,7 @@ export default function Treatment() {
     onSuccess: () => {
       toast({ title: "Success", description: "Ultrasound exam ordered successfully" });
       setUltrasoundClinicalInfo("");
+      setUltrasoundSpecificExam(""); // Clear specific exam selection
       queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
@@ -1436,13 +1402,13 @@ export default function Treatment() {
     
     // Set the correct category so checkboxes show the right tests
     if (test.category && test.category in commonTests) {
-      setEditLabCategory(test.category as keyof typeof commonTests);
+      setEditLabCategory(test.category as LabTestCategory);
     } else if (tests.length > 0) {
       // Fallback: Find category by checking which category contains the first test
       const firstTest = tests[0];
       for (const [category, testList] of Object.entries(commonTests)) {
         if (testList.includes(firstTest)) {
-          setEditLabCategory(category as keyof typeof commonTests);
+          setEditLabCategory(category as LabTestCategory);
           break;
         }
       }
@@ -2976,12 +2942,12 @@ export default function Treatment() {
                                       <h3 className="font-semibold text-base text-gray-900 dark:text-white">Test Category</h3>
                                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         {[
-                                          { value: 'hematology' as const, label: 'Blood Tests', description: 'Hematology & CBC', icon: '🩸' },
+                                          { value: 'blood' as const, label: 'Blood Tests', description: 'Hematology & serology', icon: '🩸' },
                                           { value: 'urine' as const, label: 'Urine Analysis', description: 'Urinalysis panels', icon: '🧪' },
                                           { value: 'stool' as const, label: 'Stool Analysis', description: 'Parasitology', icon: '💩' },
-                                          { value: 'serology' as const, label: 'Serology', description: 'Infectious diseases', icon: '🦠' },
-                                          { value: 'biochemistry' as const, label: 'Chemistry', description: 'Biochemistry tests', icon: '⚗️' },
-                                          { value: 'hormones' as const, label: 'Hormones', description: 'Endocrine panels', icon: '💉' },
+                                          { value: 'microbiology' as const, label: 'Microbiology', description: 'Infectious diseases', icon: '🦠' },
+                                          { value: 'chemistry' as const, label: 'Chemistry', description: 'Biochemistry tests', icon: '⚗️' },
+                                          { value: 'hormonal' as const, label: 'Hormones', description: 'Endocrine panels', icon: '💉' },
                                         ].map((cat) => {
                                           const isSelected = labCategory === cat.value;
                                           return (
@@ -3169,38 +3135,31 @@ export default function Treatment() {
                                           <div className="space-y-3">
                                             <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select Exam Type</h3>
                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                              {[
-                                                { id: 'chest', emoji: '🫁', name: 'Chest X-Ray', desc: 'Thoracic imaging' },
-                                                { id: 'extremity', emoji: '🦴', name: 'Extremity', desc: 'Arms, legs, joints' },
-                                                { id: 'abdominal', emoji: '🫄', name: 'Abdominal', desc: 'Abdomen & pelvis' },
-                                                { id: 'spine', emoji: '🦴', name: 'Spine', desc: 'Cervical to lumbar' },
-                                                { id: 'skull', emoji: '💀', name: 'Skull/Head', desc: 'Cranial imaging' },
-                                                { id: 'pelvic', emoji: '🦴', name: 'Pelvic', desc: 'Hip & pelvis' },
-                                              ].map((type) => (
+                                              {XRAY_EXAM_TYPES.map((type) => (
                                                 <button
-                                                  key={type.id}
+                                                  key={type.value}
                                                   type="button"
                                                   onClick={() => {
-                                                    setXrayExamType(type.id);
+                                                    setXrayExamType(type.value);
                                                     setXrayBodyPart('');
                                                   }}
                                                   className={`relative p-4 rounded-lg border-2 transition-all duration-200 text-left ${
-                                                    xrayExamType === type.id
+                                                    xrayExamType === type.value
                                                       ? 'bg-gradient-to-br from-blue-600 to-cyan-500 border-blue-500 text-white shadow-lg scale-[1.02]'
                                                       : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md'
                                                   }`}
                                                 >
-                                                  {xrayExamType === type.id && (
+                                                  {xrayExamType === type.value && (
                                                     <div className="absolute top-2 right-2 bg-white rounded-full p-1">
                                                       <Check className="h-4 w-4 text-blue-600" />
                                                     </div>
                                                   )}
-                                                  <div className="text-3xl mb-2">{type.emoji}</div>
-                                                  <div className={`font-semibold text-sm mb-1 ${xrayExamType === type.id ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                                                    {type.name}
+                                                  <div className="text-3xl mb-2">{type.icon}</div>
+                                                  <div className={`font-semibold text-sm mb-1 ${xrayExamType === type.value ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                                                    {type.label}
                                                   </div>
-                                                  <div className={`text-xs ${xrayExamType === type.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                    {type.desc}
+                                                  <div className={`text-xs ${xrayExamType === type.value ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                    {type.description}
                                                   </div>
                                                 </button>
                                               ))}
@@ -3211,12 +3170,7 @@ export default function Treatment() {
                                           <div className="space-y-3">
                                             <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Presets</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                              {[
-                                                { emoji: '🚑', name: 'Trauma Screen', examType: 'extremity', bodyPart: 'Multiple', indication: 'Suspected fracture' },
-                                                { emoji: '🫁', name: 'Respiratory Assessment', examType: 'chest', bodyPart: 'PA & Lateral', indication: 'Pneumonia evaluation' },
-                                                { emoji: '🦴', name: 'Back Pain Evaluation', examType: 'spine', bodyPart: 'Lumbar spine', indication: 'Back pain assessment' },
-                                                { emoji: '✅', name: 'Post-Operative Check', examType: 'chest', bodyPart: 'Chest AP', indication: 'Post-op monitoring' },
-                                              ].map((preset) => (
+                                              {XRAY_PRESETS.map((preset) => (
                                                 <button
                                                   key={preset.name}
                                                   type="button"
@@ -3228,7 +3182,7 @@ export default function Treatment() {
                                                   }}
                                                   className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
                                                 >
-                                                  <span className="text-2xl">{preset.emoji}</span>
+                                                  <span className="text-2xl">{preset.icon}</span>
                                                   <div className="flex-1">
                                                     <div className="font-semibold text-sm text-gray-900 dark:text-white">{preset.name}</div>
                                                     <div className="text-xs text-gray-500 dark:text-gray-400">{preset.indication}</div>
@@ -3240,14 +3194,11 @@ export default function Treatment() {
                                           </div>
 
                                           {/* Conditional Body Part Selectors */}
-                                          {xrayExamType === 'extremity' && (
+                                          {xrayExamType === 'extremities' && XRAY_BODY_PARTS.extremities && (
                                             <div className="space-y-3">
                                               <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select Body Part</h3>
                                               <div className="grid grid-cols-4 gap-2">
-                                                {['Left Hand', 'Right Hand', 'Left Wrist', 'Right Wrist', 
-                                                  'Left Elbow', 'Right Elbow', 'Left Shoulder', 'Right Shoulder',
-                                                  'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle',
-                                                  'Left Foot', 'Right Foot', 'Left Hip', 'Right Hip'].map((part) => (
+                                                {XRAY_BODY_PARTS.extremities.map((part) => (
                                                   <button
                                                     key={part}
                                                     type="button"
@@ -3265,11 +3216,11 @@ export default function Treatment() {
                                             </div>
                                           )}
 
-                                          {xrayExamType === 'chest' && (
+                                          {xrayExamType === 'chest' && XRAY_BODY_PARTS.chest && (
                                             <div className="space-y-3">
                                               <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select View</h3>
                                               <div className="grid grid-cols-3 gap-2">
-                                                {['PA', 'AP', 'Lateral', 'AP & Lateral', 'Portable AP', 'Lordotic View'].map((view) => (
+                                                {XRAY_BODY_PARTS.chest.map((view) => (
                                                   <button
                                                     key={view}
                                                     type="button"
@@ -3368,7 +3319,7 @@ export default function Treatment() {
                                           <Button
                                             size="lg"
                                             onClick={() => {
-                                              if (!xrayBodyPart && (xrayExamType === 'extremity' || xrayExamType === 'chest')) {
+                                              if (!xrayBodyPart && (xrayExamType === 'extremities' || xrayExamType === 'chest')) {
                                                 toast({ 
                                                   title: "Selection Required", 
                                                   description: "Please select a body part or view", 
@@ -3401,29 +3352,11 @@ export default function Treatment() {
                                     if (qoTab === 'ultrasound') {
                                       const ultrasoundService = services.find((s: any) => matchesCategory(s, 'ultrasound'));
                                       
-                                      // Ultrasound exam types mapping
-                                      const ultrasoundExamTypes = [
-                                        { value: 'cardiac', label: 'Cardiac/Echo', description: 'Heart & vessels', icon: '❤️' },
-                                        { value: 'obstetric', label: 'Obstetric', description: 'Pregnancy imaging', icon: '🤰' },
-                                        { value: 'abdominal', label: 'Abdominal', description: 'Abdomen & organs', icon: '👶' },
-                                        { value: 'musculoskeletal', label: 'Musculoskeletal', description: 'Bones & joints', icon: '🔧' },
-                                        { value: 'thoracic', label: 'Thoracic', description: 'Chest & lungs', icon: '🫁' },
-                                        { value: 'vascular', label: 'Vascular', description: 'Blood vessels', icon: '🧠' },
-                                        { value: 'pelvic', label: 'Pelvic', description: 'Pelvic organs', icon: '🩻' },
-                                        { value: 'other', label: 'Other/Custom', description: 'Custom exam', icon: '🎯' },
-                                      ];
+                                      // Use shared Ultrasound catalog for consistency with department pages
+                                      const ultrasoundExamTypes = ULTRASOUND_EXAM_TYPES;
 
-                                      // Specific exams based on type
-                                      const ultrasoundSpecificExams: Record<string, string[]> = {
-                                        abdominal: ['Complete Abdomen', 'RUQ - Liver & Gallbladder', 'Renal (Kidneys & Bladder)', 'Appendix Study', 'Spleen'],
-                                        obstetric: ['Dating Scan', 'Anatomy Scan', 'Growth Scan', 'Biophysical Profile'],
-                                        pelvic: ['Transvaginal', 'Transabdominal', 'Bladder Assessment'],
-                                        cardiac: ['2D Echo', 'Doppler Study', 'Stress Echo'],
-                                        vascular: ['Carotid Doppler', 'Venous Doppler (Legs)', 'Arterial Doppler'],
-                                        thoracic: ['Pleural Assessment', 'Lung Ultrasound'],
-                                        musculoskeletal: ['Joint Assessment', 'Soft Tissue Mass', 'Tendon Evaluation'],
-                                        other: [],
-                                      };
+                                      // Get specific exams for selected type from shared catalog
+                                      const ultrasoundSpecificExams = ULTRASOUND_SPECIFIC_EXAMS;
 
                                       return (
                                         <div className="space-y-6">
@@ -3521,10 +3454,8 @@ export default function Treatment() {
                                                 });
                                                 return;
                                               }
-                                              const examDescription = ultrasoundSpecificExam || ultrasoundExamType;
                                               orderUltrasoundMutation.mutate({ 
-                                                service: ultrasoundService, 
-                                                examType: examDescription
+                                                service: ultrasoundService
                                               });
                                             }}
                                             disabled={orderUltrasoundMutation.isPending || !ultrasoundService}
@@ -5473,7 +5404,7 @@ export default function Treatment() {
               </label>
               <Select
                 value={editLabCategory}
-                onValueChange={(val) => setEditLabCategory(val as keyof typeof commonTests)}
+                onValueChange={(val) => setEditLabCategory(val as LabTestCategory)}
               >
                 <SelectTrigger>
                   <SelectValue />
