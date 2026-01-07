@@ -60,32 +60,17 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
     <div className={`
       fixed right-0 top-0 h-screen z-40 
       transition-all duration-300 ease-in-out
-      ${isCollapsed ? 'w-12' : 'w-96'}
+      ${isCollapsed ? 'w-0' : 'w-96'}
     `}>
-      {/* Toggle Button with Tooltip */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              onClick={handleToggle}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full 
-                         bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
-                         text-white shadow-premium-lg rounded-r-none rounded-l-xl px-3 py-6 z-50
-                         transition-all duration-200 hover:shadow-premium-xl"
-              aria-label={isCollapsed ? "Show help panel" : "Hide help panel"}
-            >
-              {isCollapsed ? (
-                <ChevronLeft className="w-5 h-5" />
-              ) : (
-                <ChevronRight className="w-5 h-5" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left" className="bg-gray-900 text-white border-gray-700">
-            <p>{isCollapsed ? "Show Help" : "Hide Help"}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {/* Backdrop overlay when help is open */}
+      {!isCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black/30 dark:bg-black/50 z-30 backdrop-blur-sm
+                     transition-opacity duration-300"
+          onClick={handleToggle}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Help Panel */}
       <div className={`
