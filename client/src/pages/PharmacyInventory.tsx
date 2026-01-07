@@ -41,6 +41,13 @@ import { getClinicDayKey } from "@/lib/date-utils";
 import PharmacyInventoryHelp from "@/components/PharmacyInventoryHelp";
 import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
 
+// Constants
+const DEFAULT_REORDER_LEVEL = 10;
+const EXPIRY_WARNING_DAYS = 90;
+
+// Drug form types
+type DrugForm = "tablet" | "capsule" | "syrup" | "injection" | "cream" | "ointment" | "drops" | "inhaler" | "other";
+
 /**
  * Helper function to check if a date is within the specified filter range
  * @param dateStr - The date string to check (can be null/undefined)
@@ -141,9 +148,9 @@ export default function PharmacyInventory() {
     genericName: "",
     category: "",
     unitOfMeasure: "tablet",
-    form: "tablet" as "tablet" | "capsule" | "syrup" | "injection" | "cream" | "ointment" | "drops" | "inhaler" | "other",
+    form: "tablet" as DrugForm,
     strength: "",
-    reorderLevel: 10,
+    reorderLevel: DEFAULT_REORDER_LEVEL,
   });
   const [newBatch, setNewBatch] = useState({
     drugId: 0,
@@ -183,7 +190,7 @@ export default function PharmacyInventory() {
   const { data: expiringDrugs = [] } = useQuery<(DrugBatch & { drugName: string })[]>({
     queryKey: ['/api/pharmacy/alerts/expiring'],
     queryFn: async () => {
-      const response = await fetch('/api/pharmacy/alerts/expiring?days=90');
+      const response = await fetch(`/api/pharmacy/alerts/expiring?days=${EXPIRY_WARNING_DAYS}`);
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -213,9 +220,9 @@ export default function PharmacyInventory() {
         genericName: "",
         category: "",
         unitOfMeasure: "tablet",
-        form: "tablet" as "tablet" | "capsule" | "syrup" | "injection" | "cream" | "ointment" | "drops" | "inhaler" | "other",
+        form: "tablet" as DrugForm,
         strength: "",
-        reorderLevel: 10,
+        reorderLevel: DEFAULT_REORDER_LEVEL,
       });
       toast({
         title: "Drug Added",
@@ -839,7 +846,7 @@ export default function PharmacyInventory() {
             <CardHeader>
               <CardTitle className="text-amber-700 dark:text-amber-400 flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Expiring Soon (90 days) - ({expiringDrugs?.length || 0})
+                Expiring Soon ({EXPIRY_WARNING_DAYS} days) - ({expiringDrugs?.length || 0})
               </CardTitle>
               <CardDescription>Priority: use these batches first (FEFO)</CardDescription>
             </CardHeader>
@@ -854,7 +861,7 @@ export default function PharmacyInventory() {
                     <div className="space-y-1">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No Expiring Items</h3>
                       <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        No batches expiring in the next 90 days.
+                        No batches expiring in the next {EXPIRY_WARNING_DAYS} days.
                       </p>
                     </div>
                   </div>
@@ -1159,7 +1166,7 @@ export default function PharmacyInventory() {
                 <Label htmlFor="form">Form</Label>
                 <Select
                   value={newDrug.form}
-                  onValueChange={(value: any) => setNewDrug({ ...newDrug, form: value })}
+                  onValueChange={(value: DrugForm) => setNewDrug({ ...newDrug, form: value })}
                 >
                   <SelectTrigger id="form" data-testid="select-form">
                     <SelectValue placeholder="Select form" />
@@ -1195,7 +1202,7 @@ export default function PharmacyInventory() {
                   id="reorderLevel"
                   type="number"
                   value={newDrug.reorderLevel}
-                  onChange={(e) => setNewDrug({ ...newDrug, reorderLevel: parseInt(e.target.value) || 10 })}
+                  onChange={(e) => setNewDrug({ ...newDrug, reorderLevel: parseInt(e.target.value) || DEFAULT_REORDER_LEVEL })}
                   data-testid="input-reorder-level"
                 />
                 <p className="text-xs text-gray-500 mt-1">Alert when stock falls below this number</p>
@@ -1523,7 +1530,7 @@ export default function PharmacyInventory() {
                   <Label htmlFor="edit-form">Form</Label>
                   <Select
                     value={editingDrug.form}
-                    onValueChange={(value: any) => setEditingDrug({ ...editingDrug, form: value })}
+                    onValueChange={(value: DrugForm) => setEditingDrug({ ...editingDrug, form: value })}
                   >
                     <SelectTrigger id="edit-form" data-testid="select-edit-form">
                       <SelectValue placeholder="Select form" />
@@ -1559,7 +1566,7 @@ export default function PharmacyInventory() {
                     id="edit-reorderLevel"
                     type="number"
                     value={editingDrug.reorderLevel}
-                    onChange={(e) => setEditingDrug({ ...editingDrug, reorderLevel: parseInt(e.target.value) || 10 })}
+                    onChange={(e) => setEditingDrug({ ...editingDrug, reorderLevel: parseInt(e.target.value) || DEFAULT_REORDER_LEVEL })}
                     data-testid="input-edit-reorder-level"
                   />
                 </div>
@@ -1681,7 +1688,7 @@ export default function PharmacyInventory() {
                       .map((batch) => {
                         const expiryDate = new Date(batch.expiryDate);
                         const daysToExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                        const isExpiringSoon = daysToExpiry <= 90;
+                        const isExpiringSoon = daysToExpiry <= EXPIRY_WARNING_DAYS;
                         const isExpired = daysToExpiry < 0;
 
                         return (
