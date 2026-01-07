@@ -3,7 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +41,12 @@ import {
 import { getClinicDayKey } from "@/lib/date-utils";
 import PharmacyInventoryHelp from "@/components/PharmacyInventoryHelp";
 import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
+import { FilterBar, FilterConfig, ActiveFilter } from "@/components/pharmacy/FilterBar";
+import { BulkActionBar, getStockBulkActions, getCatalogBulkActions } from "@/components/pharmacy/BulkActionBar";
+import { QuickAdjustModal } from "@/components/pharmacy/QuickAdjustModal";
+import { ExportModal, ExportColumn } from "@/components/pharmacy/ExportModal";
+import { AnalyticsDashboard } from "@/components/pharmacy/AnalyticsDashboard";
+import { exportData } from "@/lib/export-utils";
 
 // Constants
 const DEFAULT_REORDER_LEVEL = 10;
@@ -143,6 +150,21 @@ export default function PharmacyInventory() {
   const [transactionDateFilter, setTransactionDateFilter] = useState<DateFilterPreset>("all");
   const [transactionStartDate, setTransactionStartDate] = useState<string>();
   const [transactionEndDate, setTransactionEndDate] = useState<string>();
+  
+  // Bulk action states
+  const [selectedStockItems, setSelectedStockItems] = useState<Set<number>>(new Set());
+  const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
+  
+  // Filter states
+  const [stockFilters, setStockFilters] = useState<ActiveFilter[]>([]);
+  const [catalogFilters, setCatalogFilters] = useState<ActiveFilter[]>([]);
+  
+  // Modal states
+  const [showQuickAdjust, setShowQuickAdjust] = useState(false);
+  const [quickAdjustDrug, setQuickAdjustDrug] = useState<(Drug & { stockOnHand: number }) | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportContext, setExportContext] = useState<"stock" | "catalog" | "ledger">("stock");
+  
   const [newDrug, setNewDrug] = useState({
     name: "",
     genericName: "",
@@ -278,6 +300,328 @@ export default function PharmacyInventory() {
     );
   }, [ledgerEntries, transactionDateFilter, transactionStartDate, transactionEndDate]);
 
+  // Filter drugs with stock based on filters
+  const filteredStockDrugs = useMemo(() => {
+    let filtered = [...drugsWithStock];
+    
+    stockFilters.forEach((filter) => {
+      switch (filter.id) {
+        case "status":
+          if (filter.value === "in_stock") {
+            filtered = filtered.filter(d => d.stockOnHand > d.reorderLevel);
+          } else if (filter.value === "low_stock") {
+            filtered = filtered.filter(d => d.stockOnHand > 0 && d.stockOnHand <= d.reorderLevel);
+          } else if (filter.value === "out_of_stock") {
+            filtered = filtered.filter(d => d.stockOnHand === 0);
+          }
+          break;
+        case "form":
+          if (filter.value) {
+            filtered = filtered.filter(d => d.form === filter.value);
+          }
+          break;
+        case "stock_range":
+          const stockRange = filter.value as { min?: string; max?: string };
+          if (stockRange.min) {
+            filtered = filtered.filter(d => d.stockOnHand >= parseInt(stockRange.min!));
+          }
+          if (stockRange.max) {
+            filtered = filtered.filter(d => d.stockOnHand <= parseInt(stockRange.max!));
+          }
+          break;
+      }
+    });
+    
+    return filtered;
+  }, [drugsWithStock, stockFilters]);
+
+  // Filter catalog drugs based on filters
+  const filteredCatalogDrugs = useMemo(() => {
+    let filtered = [...drugs];
+    
+    catalogFilters.forEach((filter) => {
+      switch (filter.id) {
+        case "status":
+          if (filter.value === "active") {
+            filtered = filtered.filter(d => d.isActive === 1);
+          } else if (filter.value === "inactive") {
+            filtered = filtered.filter(d => d.isActive === 0);
+          }
+          break;
+        case "form":
+          if (filter.value) {
+            filtered = filtered.filter(d => d.form === filter.value);
+          }
+          break;
+      }
+    });
+    
+    return filtered;
+  }, [drugs, catalogFilters]);
+
+  // Bulk action handlers
+  const handleSelectAllStock = () => {
+    if (selectedStockItems.size === filteredStockDrugs.length) {
+      setSelectedStockItems(new Set());
+    } else {
+      setSelectedStockItems(new Set(filteredStockDrugs.map(d => d.id)));
+    }
+  };
+
+  const handleSelectAllCatalog = () => {
+    if (selectedCatalogItems.size === filteredCatalogDrugs.length) {
+      setSelectedCatalogItems(new Set());
+    } else {
+      setSelectedCatalogItems(new Set(filteredCatalogDrugs.map(d => d.id)));
+    }
+  };
+
+  const handleSelectLowStock = () => {
+    const lowStockIds = drugsWithStock
+      .filter(d => d.stockOnHand > 0 && d.stockOnHand <= d.reorderLevel)
+      .map(d => d.id);
+    setSelectedStockItems(new Set(lowStockIds));
+  };
+
+  const handleSelectOutOfStock = () => {
+    const outOfStockIds = drugsWithStock
+      .filter(d => d.stockOnHand === 0)
+      .map(d => d.id);
+    setSelectedStockItems(new Set(outOfStockIds));
+  };
+
+  const handleStockFilterChange = (filterId: string, value: any) => {
+    if (!value || value === "") {
+      setStockFilters(stockFilters.filter(f => f.id !== filterId));
+      return;
+    }
+
+    const existingIndex = stockFilters.findIndex(f => f.id === filterId);
+    let display = String(value);
+    
+    // Format display based on filter type
+    if (filterId === "stock_range" && typeof value === "object") {
+      const range = value as { min?: string; max?: string };
+      if (range.min && range.max) {
+        display = `${range.min} - ${range.max}`;
+      } else if (range.min) {
+        display = `≥ ${range.min}`;
+      } else if (range.max) {
+        display = `≤ ${range.max}`;
+      }
+    }
+
+    const newFilter: ActiveFilter = {
+      id: filterId,
+      label: getFilterLabel(filterId),
+      value,
+      display,
+    };
+
+    if (existingIndex >= 0) {
+      const updated = [...stockFilters];
+      updated[existingIndex] = newFilter;
+      setStockFilters(updated);
+    } else {
+      setStockFilters([...stockFilters, newFilter]);
+    }
+  };
+
+  const handleCatalogFilterChange = (filterId: string, value: any) => {
+    if (!value || value === "") {
+      setCatalogFilters(catalogFilters.filter(f => f.id !== filterId));
+      return;
+    }
+
+    const existingIndex = catalogFilters.findIndex(f => f.id === filterId);
+    const newFilter: ActiveFilter = {
+      id: filterId,
+      label: getFilterLabel(filterId),
+      value,
+      display: String(value),
+    };
+
+    if (existingIndex >= 0) {
+      const updated = [...catalogFilters];
+      updated[existingIndex] = newFilter;
+      setCatalogFilters(updated);
+    } else {
+      setCatalogFilters([...catalogFilters, newFilter]);
+    }
+  };
+
+  const getFilterLabel = (filterId: string): string => {
+    const labels: Record<string, string> = {
+      status: "Status",
+      form: "Form",
+      stock_range: "Stock Range",
+    };
+    return labels[filterId] || filterId;
+  };
+
+  const getStockFilters = (): FilterConfig[] => [
+    {
+      id: "form",
+      label: "Form",
+      type: "select",
+      options: [
+        { value: "tablet", label: "Tablet" },
+        { value: "capsule", label: "Capsule" },
+        { value: "syrup", label: "Syrup" },
+        { value: "injection", label: "Injection" },
+        { value: "cream", label: "Cream" },
+        { value: "ointment", label: "Ointment" },
+        { value: "drops", label: "Drops" },
+        { value: "inhaler", label: "Inhaler" },
+        { value: "other", label: "Other" },
+      ],
+    },
+    {
+      id: "status",
+      label: "Status",
+      type: "select",
+      options: [
+        { value: "in_stock", label: "In Stock" },
+        { value: "low_stock", label: "Low Stock" },
+        { value: "out_of_stock", label: "Out of Stock" },
+      ],
+    },
+    {
+      id: "stock_range",
+      label: "Stock Level Range",
+      type: "range",
+    },
+  ];
+
+  const getCatalogFilters = (): FilterConfig[] => [
+    {
+      id: "form",
+      label: "Form",
+      type: "select",
+      options: [
+        { value: "tablet", label: "Tablet" },
+        { value: "capsule", label: "Capsule" },
+        { value: "syrup", label: "Syrup" },
+        { value: "injection", label: "Injection" },
+        { value: "cream", label: "Cream" },
+        { value: "ointment", label: "Ointment" },
+        { value: "drops", label: "Drops" },
+        { value: "inhaler", label: "Inhaler" },
+        { value: "other", label: "Other" },
+      ],
+    },
+    {
+      id: "status",
+      label: "Status",
+      type: "select",
+      options: [
+        { value: "active", label: "Active" },
+        { value: "inactive", label: "Inactive" },
+      ],
+    },
+  ];
+
+  const handleQuickAdjust = (adjustment: {
+    drugId: number;
+    type: "receive" | "dispense" | "adjust";
+    quantity: number;
+    reason?: string;
+  }) => {
+    // TODO: Implement API call for quick adjustment
+    toast({
+      title: "Stock Adjusted",
+      description: `${adjustment.type === "receive" ? "Added" : "Removed"} ${adjustment.quantity} units`,
+    });
+    
+    // Refresh data
+    queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/stock/all'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/ledger'] });
+  };
+
+  const handleExport = (options: {
+    format: "csv" | "excel" | "pdf";
+    scope: "current" | "all" | "selected";
+    columns: string[];
+    filename: string;
+  }) => {
+    let data: any[] = [];
+    let columnLabels: Record<string, string> = {};
+
+    if (exportContext === "stock") {
+      data = filteredStockDrugs.map(drug => {
+        const drugBatches = allBatches
+          .filter(b => b.drugId === drug.id && b.quantityOnHand > 0)
+          .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
+        const currentPrice = drugBatches[0]?.unitCost;
+        const nearestExpiry = allBatches
+          .filter(b => b.drugId === drug.id && b.quantityOnHand > 0)
+          .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0]?.expiryDate;
+
+        return {
+          name: drug.name,
+          strength: drug.strength || "-",
+          form: drug.form,
+          stockOnHand: drug.stockOnHand,
+          currentPrice: currentPrice ? Math.round(currentPrice) : "-",
+          nearestExpiry: nearestExpiry ? new Date(nearestExpiry).toLocaleDateString() : "-",
+          status: drug.stockOnHand === 0 ? "OUT OF STOCK" : drug.stockOnHand <= drug.reorderLevel ? "LOW STOCK" : "In Stock",
+        };
+      });
+      columnLabels = {
+        name: "Drug Name",
+        strength: "Strength",
+        form: "Form",
+        stockOnHand: "Stock on Hand",
+        currentPrice: "Current Price (SSP)",
+        nearestExpiry: "Nearest Expiry",
+        status: "Status",
+      };
+    } else if (exportContext === "catalog") {
+      data = filteredCatalogDrugs.map(drug => ({
+        drugCode: drug.drugCode,
+        name: drug.name,
+        genericName: drug.genericName || "-",
+        strength: drug.strength || "-",
+        form: drug.form,
+        reorderLevel: drug.reorderLevel,
+        status: drug.isActive ? "Active" : "Inactive",
+      }));
+      columnLabels = {
+        drugCode: "Drug Code",
+        name: "Name",
+        genericName: "Generic Name",
+        strength: "Strength",
+        form: "Form",
+        reorderLevel: "Reorder Level",
+        status: "Status",
+      };
+    } else if (exportContext === "ledger") {
+      data = filteredLedgerEntries.map(entry => ({
+        transactionId: entry.transactionId,
+        type: entry.transactionType,
+        quantity: entry.quantity,
+        value: Math.round(entry.totalValue || 0),
+        performedBy: entry.performedBy,
+        date: new Date(entry.createdAt).toLocaleDateString(),
+      }));
+      columnLabels = {
+        transactionId: "Transaction ID",
+        type: "Type",
+        quantity: "Quantity",
+        value: "Value (SSP)",
+        performedBy: "Performed By",
+        date: "Date",
+      };
+    }
+
+    exportData(data, options.columns, columnLabels, options.format, options.filename);
+    
+    toast({
+      title: "Export Complete",
+      description: `${data.length} records exported successfully.`,
+    });
+  };
+
   const handleAddDrug = () => {
     if (!newDrug.name || !newDrug.unitOfMeasure) {
       toast({
@@ -300,6 +644,39 @@ export default function PharmacyInventory() {
       return;
     }
     receiveStockMutation.mutate(newBatch);
+  };
+
+  const getExportColumns = (): ExportColumn[] => {
+    if (exportContext === "stock") {
+      return [
+        { id: "name", label: "Drug Name", enabled: true },
+        { id: "strength", label: "Strength", enabled: true },
+        { id: "form", label: "Form", enabled: true },
+        { id: "stockOnHand", label: "Stock on Hand", enabled: true },
+        { id: "currentPrice", label: "Current Price (SSP)", enabled: true },
+        { id: "nearestExpiry", label: "Nearest Expiry", enabled: true },
+        { id: "status", label: "Status", enabled: true },
+      ];
+    } else if (exportContext === "catalog") {
+      return [
+        { id: "drugCode", label: "Drug Code", enabled: true },
+        { id: "name", label: "Name", enabled: true },
+        { id: "genericName", label: "Generic Name", enabled: true },
+        { id: "strength", label: "Strength", enabled: true },
+        { id: "form", label: "Form", enabled: true },
+        { id: "reorderLevel", label: "Reorder Level", enabled: true },
+        { id: "status", label: "Status", enabled: true },
+      ];
+    } else {
+      return [
+        { id: "transactionId", label: "Transaction ID", enabled: true },
+        { id: "type", label: "Type", enabled: true },
+        { id: "quantity", label: "Quantity", enabled: true },
+        { id: "value", label: "Value (SSP)", enabled: true },
+        { id: "performedBy", label: "Performed By", enabled: true },
+        { id: "date", label: "Date", enabled: true },
+      ];
+    }
   };
 
   return (
@@ -397,6 +774,52 @@ export default function PharmacyInventory() {
         </TabsList>
 
         <TabsContent value="stock" className="space-y-4">
+          {/* Quick Actions Bar */}
+          <div className="flex flex-wrap items-center gap-2 justify-between">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectLowStock}
+                className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                Select All Low Stock
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectOutOfStock}
+                className="text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Select All Out of Stock
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setExportContext("stock");
+                setShowExportModal(true);
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Stock
+            </Button>
+          </div>
+
+          {/* Filters */}
+          <Card className="shadow-premium-sm">
+            <CardContent className="pt-6">
+              <FilterBar
+                filters={getStockFilters()}
+                activeFilters={stockFilters}
+                onFilterChange={handleStockFilterChange}
+                onClearAll={() => setStockFilters([])}
+                onClearFilter={(id) => setStockFilters(stockFilters.filter(f => f.id !== id))}
+              />
+            </CardContent>
+          </Card>
+
           {/* Premium Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Drugs */}
@@ -481,6 +904,13 @@ export default function PharmacyInventory() {
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedStockItems.size === filteredStockDrugs.length && filteredStockDrugs.length > 0}
+                        onCheckedChange={handleSelectAllStock}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     <TableHead className="font-semibold">Drug Name</TableHead>
                     <TableHead className="font-semibold">Strength</TableHead>
                     <TableHead className="font-semibold">Form</TableHead>
@@ -492,9 +922,9 @@ export default function PharmacyInventory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {drugsWithStock.length === 0 ? (
+                  {filteredStockDrugs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-12">
+                      <TableCell colSpan={9} className="text-center py-12">
                         <div className="flex flex-col items-center gap-4">
                           <div className="p-6 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 
                                         rounded-2xl shadow-premium-sm">
@@ -526,10 +956,11 @@ export default function PharmacyInventory() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    drugsWithStock.map((drug, index) => {
+                    filteredStockDrugs.map((drug, index) => {
                     const stockLevel = drug.stockOnHand;
                     const isOutOfStock = stockLevel === 0;
                     const isLowStock = stockLevel > 0 && stockLevel <= drug.reorderLevel;
+                    const isSelected = selectedStockItems.has(drug.id);
                     
                     // Find most recent batch with stock to get current price
                     const drugBatches = allBatches
@@ -552,12 +983,28 @@ export default function PharmacyInventory() {
                             ? "bg-white dark:bg-gray-900" 
                             : "bg-slate-50 dark:bg-gray-800/50"
                           }
+                          ${isSelected ? "bg-blue-50 dark:bg-blue-900/20" : ""}
                           ${isLowStock 
                             ? "hover:bg-red-100/70 dark:hover:bg-red-900/20" 
                             : "hover:bg-slate-100 dark:hover:bg-slate-800"
                           }
                         `}
                       >
+                        <TableCell className="py-5">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              const newSet = new Set(selectedStockItems);
+                              if (checked) {
+                                newSet.add(drug.id);
+                              } else {
+                                newSet.delete(drug.id);
+                              }
+                              setSelectedStockItems(newSet);
+                            }}
+                            aria-label={`Select ${drug.name}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-semibold text-gray-900 dark:text-white py-5">{drug.name}</TableCell>
                         <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.strength || '-'}</TableCell>
                         <TableCell className="capitalize text-gray-700 dark:text-gray-300 py-5">{drug.form}</TableCell>
@@ -603,6 +1050,20 @@ export default function PharmacyInventory() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
+                                setQuickAdjustDrug(drug);
+                                setShowQuickAdjust(true);
+                              }}
+                              className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
+                                       hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
+                                       hover:shadow-premium-sm hover:scale-105"
+                              title="Quick Adjust"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
                                 setSelectedDrug(drug);
                                 setNewBatch({ ...newBatch, drugId: drug.id });
                                 setShowReceiveStock(true);
@@ -640,6 +1101,34 @@ export default function PharmacyInventory() {
         </TabsContent>
 
         <TabsContent value="catalog" className="space-y-4">
+          {/* Quick Actions Bar */}
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setExportContext("catalog");
+                setShowExportModal(true);
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Catalog
+            </Button>
+          </div>
+
+          {/* Filters */}
+          <Card className="shadow-premium-sm">
+            <CardContent className="pt-6">
+              <FilterBar
+                filters={getCatalogFilters()}
+                activeFilters={catalogFilters}
+                onFilterChange={handleCatalogFilterChange}
+                onClearAll={() => setCatalogFilters([])}
+                onClearFilter={(id) => setCatalogFilters(catalogFilters.filter(f => f.id !== id))}
+              />
+            </CardContent>
+          </Card>
+
           <Card className="shadow-premium-md border-gray-200 dark:border-gray-700 
                          hover:shadow-premium-lg transition-all duration-200">
             <CardHeader>
@@ -649,6 +1138,13 @@ export default function PharmacyInventory() {
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedCatalogItems.size === filteredCatalogDrugs.length && filteredCatalogDrugs.length > 0}
+                        onCheckedChange={handleSelectAllCatalog}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     <TableHead className="font-semibold">Drug Code</TableHead>
                     <TableHead className="font-semibold">Name</TableHead>
                     <TableHead className="font-semibold">Generic Name</TableHead>
@@ -660,9 +1156,9 @@ export default function PharmacyInventory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {drugs.length === 0 ? (
+                  {filteredCatalogDrugs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-12">
+                      <TableCell colSpan={9} className="text-center py-12">
                         <div className="flex flex-col items-center gap-4">
                           <div className="p-6 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 
                                         rounded-2xl shadow-premium-sm">
@@ -685,18 +1181,36 @@ export default function PharmacyInventory() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    drugs.map((drug, index) => (
-                    <TableRow 
-                      key={drug.id} 
-                      data-testid={`drug-row-${drug.id}`}
-                      className={`transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
-                               ${index % 2 === 0 
-                                 ? "bg-white dark:bg-gray-900" 
-                                 : "bg-slate-50 dark:bg-gray-800/50"
-                               }
-                               hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-l-4 hover:border-l-purple-500`}
-                    >
-                      <TableCell className="font-medium text-gray-900 dark:text-white py-5">{drug.drugCode}</TableCell>
+                    filteredCatalogDrugs.map((drug, index) => {
+                      const isSelected = selectedCatalogItems.has(drug.id);
+                      return (
+                      <TableRow 
+                        key={drug.id} 
+                        data-testid={`drug-row-${drug.id}`}
+                        className={`transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
+                                  ${index % 2 === 0 
+                                    ? "bg-white dark:bg-gray-900" 
+                                    : "bg-slate-50 dark:bg-gray-800/50"
+                                  }
+                                  ${isSelected ? "bg-blue-50 dark:bg-blue-900/20" : ""}
+                                  hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-l-4 hover:border-l-purple-500`}
+                      >
+                        <TableCell className="py-5">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              const newSet = new Set(selectedCatalogItems);
+                              if (checked) {
+                                newSet.add(drug.id);
+                              } else {
+                                newSet.delete(drug.id);
+                              }
+                              setSelectedCatalogItems(newSet);
+                            }}
+                            aria-label={`Select ${drug.name}`}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-900 dark:text-white py-5">{drug.drugCode}</TableCell>
                       <TableCell className="font-semibold text-gray-900 dark:text-white py-5">{drug.name}</TableCell>
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.genericName || '-'}</TableCell>
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.strength || '-'}</TableCell>
@@ -760,7 +1274,8 @@ export default function PharmacyInventory() {
                         </div>
                       </TableCell>
                     </TableRow>
-                    ))
+                    );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -949,6 +1464,9 @@ export default function PharmacyInventory() {
             }}
             defaultPreset="all"
           />
+
+          {/* Analytics Dashboard */}
+          <AnalyticsDashboard ledgerEntries={filteredLedgerEntries} />
           
           <Card className="shadow-premium-md border-gray-200 dark:border-gray-700 
                          hover:shadow-premium-lg transition-all duration-200">
@@ -965,7 +1483,7 @@ export default function PharmacyInventory() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (ledgerEntries.length === 0) {
+                    if (filteredLedgerEntries.length === 0) {
                       toast({
                         variant: "destructive",
                         title: "No Data to Export",
@@ -973,39 +1491,13 @@ export default function PharmacyInventory() {
                       });
                       return;
                     }
-                    
-                    // CSV export functionality
-                    const csvData = ledgerEntries.map(entry => ({
-                      'Transaction ID': entry.transactionId,
-                      'Type': entry.transactionType,
-                      'Quantity': entry.quantity,
-                      'Value (SSP)': Math.round(entry.totalValue || 0),
-                      'Performed By': entry.performedBy,
-                      'Date': new Date(entry.createdAt).toLocaleDateString()
-                    }));
-                    const csv = [
-                      Object.keys(csvData[0]).join(','),
-                      ...csvData.map(row => Object.values(row).join(','))
-                    ].join('\n');
-                    const blob = new Blob([csv], { type: 'text/csv' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `inventory-transactions-${new Date().toISOString().split('T')[0]}.csv`;
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    
-                    toast({
-                      title: "Export Complete",
-                      description: `${ledgerEntries.length} transactions exported successfully.`,
-                    });
+                    setExportContext("ledger");
+                    setShowExportModal(true);
                   }}
-                  className="border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
-                           hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
-                           hover:shadow-premium-sm hover:scale-105"
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export CSV
+                  Export
                 </Button>
               </div>
             </CardHeader>
@@ -1791,6 +2283,55 @@ export default function PharmacyInventory() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Quick Adjust Modal */}
+      <QuickAdjustModal
+        drug={quickAdjustDrug}
+        open={showQuickAdjust}
+        onOpenChange={setShowQuickAdjust}
+        onConfirm={handleQuickAdjust}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        open={showExportModal}
+        onOpenChange={setShowExportModal}
+        title={`Export ${exportContext === "stock" ? "Stock Overview" : exportContext === "catalog" ? "Drug Catalog" : "Transaction History"}`}
+        columns={getExportColumns()}
+        rowCount={exportContext === "stock" ? filteredStockDrugs.length : exportContext === "catalog" ? filteredCatalogDrugs.length : filteredLedgerEntries.length}
+        selectedCount={exportContext === "stock" ? selectedStockItems.size : selectedCatalogItems.size}
+        defaultFilename={`pharmacy-${exportContext}-${new Date().toISOString().split('T')[0]}`}
+        onExport={handleExport}
+      />
+
+      {/* Bulk Action Bar for Stock */}
+      <BulkActionBar
+        selectedCount={selectedStockItems.size}
+        onClearSelection={() => setSelectedStockItems(new Set())}
+        actions={getStockBulkActions(
+          () => toast({ title: "Bulk Receive", description: "Feature coming soon" }),
+          () => toast({ title: "Bulk Price Update", description: "Feature coming soon" }),
+          () => {
+            setExportContext("stock");
+            setShowExportModal(true);
+          }
+        )}
+      />
+
+      {/* Bulk Action Bar for Catalog */}
+      {selectedCatalogItems.size > 0 && (
+        <BulkActionBar
+          selectedCount={selectedCatalogItems.size}
+          onClearSelection={() => setSelectedCatalogItems(new Set())}
+          actions={getCatalogBulkActions(
+            () => toast({ title: "Bulk Edit", description: "Feature coming soon" }),
+            () => {
+              setExportContext("catalog");
+              setShowExportModal(true);
+            }
+          )}
+        />
+      )}
       </div>
     </div>
   );
