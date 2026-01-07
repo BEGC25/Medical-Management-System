@@ -129,11 +129,15 @@ export default function Patients() {
 
   // Read query parameters and apply them to search
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const searchParam = params.get("search") || params.get("patientId");
-    if (searchParam) {
-      setSearchQuery(searchParam);
-      setShowSearch(true);
+    // Parse query params from location string
+    const queryString = location.split('?')[1];
+    if (queryString) {
+      const params = new URLSearchParams(queryString);
+      const searchParam = params.get("search") || params.get("patientId");
+      if (searchParam) {
+        setSearchQuery(searchParam);
+        setShowSearch(true);
+      }
     }
   }, [location]);
 

@@ -149,6 +149,9 @@ export default function Pharmacy() {
     if (preset === "all") return true;
     
     const date = new Date(dateStr);
+    // Validate that the date is valid
+    if (isNaN(date.getTime())) return true; // Include invalid dates to avoid hiding data
+    
     const now = new Date();
     
     if (preset === "today") {

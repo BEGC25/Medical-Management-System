@@ -194,7 +194,7 @@ export function PharmacyReceipt({ order, onClose }: PharmacyReceiptProps) {
           {/* Footer */}
           <div className="border-t-2 border-gray-300 pt-6 mt-8">
             <div className="text-center text-xs text-gray-500 mb-4">
-              Receipt generated on {new Date().toLocaleDateString('en-US', { 
+              Receipt generated on {new Date().toLocaleString('en-US', { 
                 month: 'long', 
                 day: 'numeric', 
                 year: 'numeric',
