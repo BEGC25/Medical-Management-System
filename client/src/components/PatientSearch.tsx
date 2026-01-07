@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Search, CreditCard, AlertCircle, CheckCircle } from "lucide-react";
+import { Search, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
@@ -258,32 +258,20 @@ export default function PatientSearch({
                     <td className="px-4 py-3 text-sm">
                       {(() => {
                         const indicators = getPatientIndicators(p);
-                        const hasAny = indicators.waiting.length > 0 || indicators.ready.length > 0;
                         
-                        if (!hasAny) {
+                        if (indicators.waiting.length === 0) {
                           return <span className="text-gray-400 text-xs">—</span>;
                         }
                         
                         return (
                           <div className="flex flex-wrap gap-1">
-                            {indicators.waiting.length > 0 && (
-                              <Badge 
-                                variant="outline" 
-                                className="text-[10px] bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 flex items-center gap-1"
-                              >
-                                <AlertCircle className="w-2.5 h-2.5" />
-                                {indicators.waiting.join('/')}
-                              </Badge>
-                            )}
-                            {indicators.ready.length > 0 && (
-                              <Badge 
-                                variant="outline" 
-                                className="text-[10px] bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 flex items-center gap-1"
-                              >
-                                <CheckCircle className="w-2.5 h-2.5" />
-                                {indicators.ready.join('/')}
-                              </Badge>
-                            )}
+                            <Badge 
+                              variant="outline" 
+                              className="text-[10px] bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 flex items-center gap-1"
+                            >
+                              <AlertCircle className="w-2.5 h-2.5" />
+                              Waiting: {indicators.waiting.join('/')}
+                            </Badge>
                           </div>
                         );
                       })()}
