@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Sparkles, DollarSign, PackageX } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +39,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getClinicDayKey } from "@/lib/date-utils";
+import PharmacyHelpPanel from "@/components/PharmacyHelpPanel";
+import StockLevelBar from "@/components/StockLevelBar";
+import ExpiryIndicator from "@/components/ExpiryIndicator";
+import DashboardMetricCard from "@/components/DashboardMetricCard";
 
 // Common drugs list for quick selection
 const COMMON_DRUGS = [
@@ -214,128 +219,302 @@ export default function PharmacyInventory() {
     receiveStockMutation.mutate(newBatch);
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-purple-600 rounded-xl">
-            <Package className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pharmacy Inventory</h1>
-            <p className="text-gray-600 dark:text-gray-300">Manage drugs, stock, and inventory</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setShowAddDrug(true)}
-            className="bg-purple-600 hover:bg-purple-700"
-            data-testid="button-add-drug"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Drug
-          </Button>
-          <Button
-            onClick={() => setShowReceiveStock(true)}
-            className="bg-blue-600 hover:bg-blue-700"
-            data-testid="button-receive-stock"
-          >
-            <Package className="w-4 h-4 mr-2" />
-            Receive Stock
-          </Button>
-        </div>
-      </div>
+  // Calculate dashboard metrics
+  const totalDrugs = drugs.length;
+  const totalStockValue = drugsWithStock.reduce((sum, drug) => {
+    const drugBatches = allBatches.filter(b => b.drugId === drug.id && b.quantityOnHand > 0);
+    const drugValue = drugBatches.reduce((batchSum, batch) => 
+      batchSum + (batch.quantityOnHand * batch.unitCost), 0);
+    return sum + drugValue;
+  }, 0);
+  const lowStockCount = lowStockDrugs.length;
+  const expiringCount = expiringDrugs.length;
 
-      <Tabs defaultValue="stock" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="stock" data-testid="tab-stock">📦 Stock Overview</TabsTrigger>
-          <TabsTrigger value="catalog" data-testid="tab-catalog">Drug Catalog ({drugs.length})</TabsTrigger>
-          <TabsTrigger value="alerts" data-testid="tab-alerts">
-            ⚠️ Alerts ({lowStockDrugs.length + expiringDrugs.length})
-          </TabsTrigger>
-          <TabsTrigger value="ledger" data-testid="tab-ledger">Transaction History</TabsTrigger>
-        </TabsList>
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 pb-24"
+    >
+      {/* Premium Header */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-8 shadow-premium-xl"
+      >
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,rgba(255,255,255,0.5))]" />
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <motion.div
+              whileHover={{ rotate: 360, scale: 1.1 }}
+              transition={{ duration: 0.6 }}
+              className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl shadow-lg"
+            >
+              <Package className="w-8 h-8 text-white" />
+            </motion.div>
+            <div>
+              <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+                Pharmacy Inventory
+                <Sparkles className="w-6 h-6" />
+              </h1>
+              <p className="text-purple-100">Manage drugs, stock, and inventory</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={() => setShowAddDrug(true)}
+                className="bg-white text-purple-600 hover:bg-purple-50 shadow-lg"
+                data-testid="button-add-drug"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Drug
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={() => setShowReceiveStock(true)}
+                className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg"
+                data-testid="button-receive-stock"
+              >
+                <Package className="w-4 h-4 mr-2" />
+                Receive Stock
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Unified Help Panel */}
+      <PharmacyHelpPanel />
+
+      {/* Dashboard Metrics */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <DashboardMetricCard
+            title="Total Drugs"
+            value={totalDrugs}
+            subtitle="in catalog"
+            icon={Package}
+            gradient="from-blue-500 to-indigo-600"
+            delay={0}
+          />
+          <DashboardMetricCard
+            title="Stock Value"
+            value={`${Math.round(totalStockValue).toLocaleString()} SSP`}
+            subtitle="total inventory value"
+            icon={DollarSign}
+            gradient="from-green-500 to-emerald-600"
+            delay={0.05}
+          />
+          <DashboardMetricCard
+            title="Low Stock Items"
+            value={lowStockCount}
+            subtitle="need reordering"
+            icon={TrendingDown}
+            gradient="from-red-500 to-orange-600"
+            delay={0.1}
+          />
+          <DashboardMetricCard
+            title="Expiring Soon"
+            value={expiringCount}
+            subtitle="next 90 days"
+            icon={Clock}
+            gradient="from-amber-500 to-yellow-600"
+            delay={0.15}
+          />
+        </div>
+      </motion.div>
+
+      {/* Premium Tabs */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
+        <Tabs defaultValue="stock" className="space-y-6">
+          <TabsList className="bg-white dark:bg-gray-900 p-1.5 rounded-xl shadow-premium-md border border-gray-200 dark:border-gray-800 inline-flex">
+            <TabsTrigger 
+              value="stock" 
+              data-testid="tab-stock"
+              className="relative rounded-lg px-6 py-3 text-sm font-medium transition-all data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
+              <motion.div className="flex items-center gap-2" whileHover={{ scale: 1.05 }}>
+                <Package className="w-4 h-4" />
+                Stock Overview
+              </motion.div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="catalog" 
+              data-testid="tab-catalog"
+              className="relative rounded-lg px-6 py-3 text-sm font-medium transition-all data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
+              <motion.div className="flex items-center gap-2" whileHover={{ scale: 1.05 }}>
+                <FileText className="w-4 h-4" />
+                Catalog
+                <Badge className="ml-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
+                  {drugs.length}
+                </Badge>
+              </motion.div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="alerts" 
+              data-testid="tab-alerts"
+              className="relative rounded-lg px-6 py-3 text-sm font-medium transition-all data-[state=active]:bg-gradient-to-br data-[state=active]:from-red-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
+              <motion.div 
+                className="flex items-center gap-2" 
+                whileHover={{ scale: 1.05 }}
+                animate={(lowStockCount + expiringCount) > 0 ? { scale: [1, 1.05, 1] } : {}}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <AlertTriangle className="w-4 h-4" />
+                Alerts
+                <Badge className="ml-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+                  {lowStockCount + expiringCount}
+                </Badge>
+              </motion.div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="ledger" 
+              data-testid="tab-ledger"
+              className="relative rounded-lg px-6 py-3 text-sm font-medium transition-all data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
+              <motion.div className="flex items-center gap-2" whileHover={{ scale: 1.05 }}>
+                <FileText className="w-4 h-4" />
+                History
+              </motion.div>
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="stock" className="space-y-4">
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">📦 What is "Stock Overview"?</h3>
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              This shows <strong>all your drugs at a glance</strong> - how many you have in stock, current selling prices, 
-              when they expire, and if any are running low. Use this to quickly check what's available in your pharmacy.
-            </p>
-          </div>
-          <Card>
+          <Card className="border-0 shadow-premium-md bg-gradient-to-br from-white via-white to-blue-50/20 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20">
             <CardHeader>
-              <CardTitle>Current Stock & Prices</CardTitle>
-              <CardDescription>See all drugs, quantities in stock, and current prices</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-blue-600" />
+                Current Stock & Prices
+              </CardTitle>
+              <CardDescription>Real-time inventory with pricing and expiry tracking</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Drug Name</TableHead>
-                    <TableHead>Strength</TableHead>
-                    <TableHead>Form</TableHead>
-                    <TableHead className="text-right">Stock on Hand</TableHead>
-                    <TableHead className="text-right">Current Price (SSP)</TableHead>
-                    <TableHead>Nearest Expiry</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {drugsWithStock.map((drug) => {
-                    const stockLevel = drug.stockOnHand;
-                    const isOutOfStock = stockLevel === 0;
-                    const isLowStock = stockLevel > 0 && stockLevel <= drug.reorderLevel;
-                    
-                    // Find most recent batch with stock to get current price
-                    const drugBatches = allBatches
-                      .filter(b => b.drugId === drug.id && b.quantityOnHand > 0)
-                      .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
-                    const currentPrice = drugBatches[0]?.unitCost;
-                    
-                    // Find nearest expiry date
-                    const nearestExpiry = allBatches
-                      .filter(b => b.drugId === drug.id && b.quantityOnHand > 0)
-                      .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0]?.expiryDate;
-                    
-                    return (
-                      <TableRow key={drug.id} className={isLowStock ? "bg-red-50 dark:bg-red-900/20" : ""}>
-                        <TableCell className="font-semibold">{drug.name}</TableCell>
-                        <TableCell>{drug.strength || '-'}</TableCell>
-                        <TableCell className="capitalize">{drug.form}</TableCell>
-                        <TableCell className="text-right">
-                          <span className={`font-bold ${isOutOfStock ? "text-gray-400" : isLowStock ? "text-red-600" : "text-green-600"}`}>
-                            {stockLevel}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {currentPrice ? `${Math.round(currentPrice).toLocaleString()} SSP` : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {nearestExpiry || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {isOutOfStock ? (
-                            <Badge variant="outline" className="border-gray-400">OUT OF STOCK</Badge>
-                          ) : isLowStock ? (
-                            <Badge variant="destructive">LOW STOCK</Badge>
-                          ) : (
-                            <Badge className="bg-green-600">In Stock</Badge>
-                          )}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-gray-50 dark:bg-gray-900 z-10">
+                    <TableRow className="border-b-2 border-gray-200 dark:border-gray-800">
+                      <TableHead className="font-bold">Drug Name</TableHead>
+                      <TableHead>Strength</TableHead>
+                      <TableHead>Form</TableHead>
+                      <TableHead className="w-48">Stock on Hand</TableHead>
+                      <TableHead className="text-right">Current Price (SSP)</TableHead>
+                      <TableHead>Nearest Expiry</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {drugsWithStock.map((drug, index) => {
+                      const stockLevel = drug.stockOnHand;
+                      const isOutOfStock = stockLevel === 0;
+                      const isLowStock = stockLevel > 0 && stockLevel <= drug.reorderLevel;
+                      
+                      // Find most recent batch with stock to get current price
+                      const drugBatches = allBatches
+                        .filter(b => b.drugId === drug.id && b.quantityOnHand > 0)
+                        .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
+                      const currentPrice = drugBatches[0]?.unitCost;
+                      
+                      // Find nearest expiry date
+                      const nearestExpiryBatch = allBatches
+                        .filter(b => b.drugId === drug.id && b.quantityOnHand > 0)
+                        .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0];
+                      const nearestExpiry = nearestExpiryBatch?.expiryDate;
+                      
+                      return (
+                        <motion.tr
+                          key={drug.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.02 }}
+                          className={`border-b border-gray-100 dark:border-gray-800 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-colors ${
+                            index % 2 === 0 ? 'bg-gray-50/50 dark:bg-gray-900/50' : ''
+                          } ${isLowStock ? "bg-red-50/80 dark:bg-red-900/20" : ""}`}
+                        >
+                          <TableCell className="font-semibold text-gray-900 dark:text-white">{drug.name}</TableCell>
+                          <TableCell className="text-gray-700 dark:text-gray-300">{drug.strength || '-'}</TableCell>
+                          <TableCell className="capitalize text-gray-700 dark:text-gray-300">{drug.form}</TableCell>
+                          <TableCell>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`font-bold text-sm ${isOutOfStock ? "text-gray-400" : isLowStock ? "text-red-600" : "text-green-600"}`}>
+                                  {stockLevel} units
+                                </span>
+                              </div>
+                              <StockLevelBar 
+                                current={stockLevel} 
+                                reorderLevel={drug.reorderLevel}
+                                maxDisplay={drug.reorderLevel * 3}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-semibold text-gray-900 dark:text-white">
+                            {currentPrice ? `${Math.round(currentPrice).toLocaleString()} SSP` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {nearestExpiry ? (
+                              <ExpiryIndicator expiryDate={nearestExpiry} showIcon={true} showText={true} />
+                            ) : (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isOutOfStock ? (
+                              <Badge variant="outline" className="border-gray-400 bg-gray-100 dark:bg-gray-800">
+                                <PackageX className="w-3 h-3 mr-1" />
+                                OUT OF STOCK
+                              </Badge>
+                            ) : isLowStock ? (
+                              <motion.div
+                                animate={{ scale: [1, 1.05, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                              >
+                                <Badge className="bg-gradient-to-br from-red-500 to-red-600 text-white shadow-sm">
+                                  <TrendingDown className="w-3 h-3 mr-1" />
+                                  LOW STOCK
+                                </Badge>
+                              </motion.div>
+                            ) : (
+                              <Badge className="bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-sm">
+                                <Package className="w-3 h-3 mr-1" />
+                                In Stock
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </motion.tr>
+                      );
+                    })}
+                    {drugs.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-gray-500 dark:text-gray-400 py-12">
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex flex-col items-center gap-3"
+                          >
+                            <Package className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                            <p className="text-lg font-medium">No drugs in catalog</p>
+                            <p className="text-sm">Click "Add Drug" to get started</p>
+                          </motion.div>
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                  {drugs.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-gray-500 py-8">
-                        No drugs in catalog. Click "Add Drug" to get started.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -552,6 +731,7 @@ export default function PharmacyInventory() {
           </Card>
         </TabsContent>
       </Tabs>
+    </motion.div>
 
       {/* Add Drug Dialog */}
       <Dialog open={showAddDrug} onOpenChange={setShowAddDrug}>
@@ -882,6 +1062,6 @@ export default function PharmacyInventory() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }
