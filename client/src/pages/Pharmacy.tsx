@@ -28,6 +28,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PharmacyHelp from "@/components/PharmacyHelp";
 import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
+import { PharmacyReceipt } from "@/components/pharmacy/PharmacyReceipt";
 
 // Helper function to format dates consistently
 function formatDate(dateString: string): string {
@@ -101,6 +102,9 @@ export default function Pharmacy() {
   const [unpaidDateFilter, setUnpaidDateFilter] = useState<DateFilterPreset>("all");
   const [unpaidStartDate, setUnpaidStartDate] = useState<string>();
   const [unpaidEndDate, setUnpaidEndDate] = useState<string>();
+  
+  // Print receipt state
+  const [printOrder, setPrintOrder] = useState<PrescriptionWithPatient | null>(null);
   
   const { toast } = useToast();
 
@@ -562,17 +566,29 @@ export default function Pharmacy() {
                             )}
                           </div>
 
-                          {/* Action button */}
-                          <Button
-                            onClick={() => handleDispenseClick(order)}
-                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 
-                                     shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105
-                                     flex-shrink-0"
-                            data-testid={`button-dispense-${order.orderId}`}
-                          >
-                            <Pill className="w-4 h-4 mr-2" />
-                            Dispense
-                          </Button>
+                          {/* Action buttons column */}
+                          <div className="flex flex-col gap-2 flex-shrink-0">
+                            <Button
+                              onClick={() => handleDispenseClick(order)}
+                              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 
+                                       shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105"
+                              data-testid={`button-dispense-${order.orderId}`}
+                            >
+                              <Pill className="w-4 h-4 mr-2" />
+                              Dispense
+                            </Button>
+                            <Link href={`/patients?search=${order.patient?.patientId}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full border-green-300 dark:border-green-700 text-green-600 dark:text-green-400
+                                         hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200"
+                              >
+                                <User className="w-3.5 h-3.5 mr-1.5" />
+                                Patient
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -746,7 +762,7 @@ export default function Pharmacy() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {/* Print handler will be added */}}
+                              onClick={() => setPrintOrder(order)}
                               className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300
                                        hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200"
                             >
@@ -850,15 +866,26 @@ export default function Pharmacy() {
                           </div>
                         </div>
 
-                        {/* Payment reminder */}
+                        {/* Payment reminder and actions */}
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
                           <Badge variant="outline" className="bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/30 
                                                             dark:border-orange-700 dark:text-orange-300 shadow-premium-sm">
                             Payment Required
                           </Badge>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 text-right max-w-[200px]">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 text-right max-w-[200px] mb-2">
                             Patient must pay at reception before dispensing
                           </p>
+                          <Link href={`/patients?search=${order.patient?.patientId}`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400
+                                       hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all duration-200"
+                            >
+                              <User className="w-3.5 h-3.5 mr-1.5" />
+                              View Patient
+                            </Button>
+                          </Link>
                         </div>
                       </div>
                     </CardContent>
@@ -1149,6 +1176,9 @@ export default function Pharmacy() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Print Receipt Dialog */}
+      <PharmacyReceipt order={printOrder} onClose={() => setPrintOrder(null)} />
     </div>
   );
 }
