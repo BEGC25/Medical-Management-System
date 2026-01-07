@@ -1101,6 +1101,34 @@ export default function PharmacyInventory() {
         </TabsContent>
 
         <TabsContent value="catalog" className="space-y-4">
+          {/* Quick Actions Bar */}
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setExportContext("catalog");
+                setShowExportModal(true);
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Catalog
+            </Button>
+          </div>
+
+          {/* Filters */}
+          <Card className="shadow-premium-sm">
+            <CardContent className="pt-6">
+              <FilterBar
+                filters={getCatalogFilters()}
+                activeFilters={catalogFilters}
+                onFilterChange={handleCatalogFilterChange}
+                onClearAll={() => setCatalogFilters([])}
+                onClearFilter={(id) => setCatalogFilters(catalogFilters.filter(f => f.id !== id))}
+              />
+            </CardContent>
+          </Card>
+
           <Card className="shadow-premium-md border-gray-200 dark:border-gray-700 
                          hover:shadow-premium-lg transition-all duration-200">
             <CardHeader>
@@ -1110,6 +1138,13 @@ export default function PharmacyInventory() {
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedCatalogItems.size === filteredCatalogDrugs.length && filteredCatalogDrugs.length > 0}
+                        onCheckedChange={handleSelectAllCatalog}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     <TableHead className="font-semibold">Drug Code</TableHead>
                     <TableHead className="font-semibold">Name</TableHead>
                     <TableHead className="font-semibold">Generic Name</TableHead>
@@ -1121,9 +1156,9 @@ export default function PharmacyInventory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {drugs.length === 0 ? (
+                  {filteredCatalogDrugs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-12">
+                      <TableCell colSpan={9} className="text-center py-12">
                         <div className="flex flex-col items-center gap-4">
                           <div className="p-6 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 
                                         rounded-2xl shadow-premium-sm">
@@ -1146,18 +1181,36 @@ export default function PharmacyInventory() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    drugs.map((drug, index) => (
-                    <TableRow 
-                      key={drug.id} 
-                      data-testid={`drug-row-${drug.id}`}
-                      className={`transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
-                               ${index % 2 === 0 
-                                 ? "bg-white dark:bg-gray-900" 
-                                 : "bg-slate-50 dark:bg-gray-800/50"
-                               }
-                               hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-l-4 hover:border-l-purple-500`}
-                    >
-                      <TableCell className="font-medium text-gray-900 dark:text-white py-5">{drug.drugCode}</TableCell>
+                    filteredCatalogDrugs.map((drug, index) => {
+                      const isSelected = selectedCatalogItems.has(drug.id);
+                      return (
+                      <TableRow 
+                        key={drug.id} 
+                        data-testid={`drug-row-${drug.id}`}
+                        className={`transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
+                                  ${index % 2 === 0 
+                                    ? "bg-white dark:bg-gray-900" 
+                                    : "bg-slate-50 dark:bg-gray-800/50"
+                                  }
+                                  ${isSelected ? "bg-blue-50 dark:bg-blue-900/20" : ""}
+                                  hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-l-4 hover:border-l-purple-500`}
+                      >
+                        <TableCell className="py-5">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              const newSet = new Set(selectedCatalogItems);
+                              if (checked) {
+                                newSet.add(drug.id);
+                              } else {
+                                newSet.delete(drug.id);
+                              }
+                              setSelectedCatalogItems(newSet);
+                            }}
+                            aria-label={`Select ${drug.name}`}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-900 dark:text-white py-5">{drug.drugCode}</TableCell>
                       <TableCell className="font-semibold text-gray-900 dark:text-white py-5">{drug.name}</TableCell>
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.genericName || '-'}</TableCell>
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.strength || '-'}</TableCell>
@@ -1221,7 +1274,8 @@ export default function PharmacyInventory() {
                         </div>
                       </TableCell>
                     </TableRow>
-                    ))
+                    );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -1429,7 +1483,7 @@ export default function PharmacyInventory() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (ledgerEntries.length === 0) {
+                    if (filteredLedgerEntries.length === 0) {
                       toast({
                         variant: "destructive",
                         title: "No Data to Export",
@@ -1437,39 +1491,13 @@ export default function PharmacyInventory() {
                       });
                       return;
                     }
-                    
-                    // CSV export functionality
-                    const csvData = ledgerEntries.map(entry => ({
-                      'Transaction ID': entry.transactionId,
-                      'Type': entry.transactionType,
-                      'Quantity': entry.quantity,
-                      'Value (SSP)': Math.round(entry.totalValue || 0),
-                      'Performed By': entry.performedBy,
-                      'Date': new Date(entry.createdAt).toLocaleDateString()
-                    }));
-                    const csv = [
-                      Object.keys(csvData[0]).join(','),
-                      ...csvData.map(row => Object.values(row).join(','))
-                    ].join('\n');
-                    const blob = new Blob([csv], { type: 'text/csv' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `inventory-transactions-${new Date().toISOString().split('T')[0]}.csv`;
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    
-                    toast({
-                      title: "Export Complete",
-                      description: `${ledgerEntries.length} transactions exported successfully.`,
-                    });
+                    setExportContext("ledger");
+                    setShowExportModal(true);
                   }}
-                  className="border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
-                           hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
-                           hover:shadow-premium-sm hover:scale-105"
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export CSV
+                  Export
                 </Button>
               </div>
             </CardHeader>
