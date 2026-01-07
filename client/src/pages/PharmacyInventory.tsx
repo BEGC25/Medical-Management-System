@@ -391,7 +391,7 @@ export default function PharmacyInventory() {
   };
 
   const handleStockFilterChange = (filterId: string, value: any) => {
-    if (!value || value === "") {
+    if (!value || value === "" || value === "all") {
       setStockFilters(stockFilters.filter(f => f.id !== filterId));
       return;
     }
@@ -428,7 +428,7 @@ export default function PharmacyInventory() {
   };
 
   const handleCatalogFilterChange = (filterId: string, value: any) => {
-    if (!value || value === "") {
+    if (!value || value === "" || value === "all") {
       setCatalogFilters(catalogFilters.filter(f => f.id !== filterId));
       return;
     }
