@@ -75,3 +75,37 @@ export function getDiagnosticPendingDepartments(patient: PatientWithStatus): str
   
   return departments;
 }
+
+/**
+ * Get compact indicator badges for the patient table
+ * 
+ * Returns an object with waiting indicators for doctor workflow.
+ * This helps doctors quickly identify which patients have pending diagnostic orders.
+ * 
+ * Note: "Results Ready" indicators are calculated separately in Treatment.tsx 
+ * based on completed diagnostic queries.
+ * 
+ * @param patient - Patient object with serviceStatus
+ * @returns Object with 'waiting' array of department names
+ */
+export function getPatientIndicators(patient: PatientWithStatus): { 
+  waiting: string[]
+} {
+  const serviceStatus = patient.serviceStatus;
+  const indicators = { waiting: [] as string[] };
+  
+  if (!serviceStatus) return indicators;
+  
+  // Waiting indicators (pending orders)
+  if ((serviceStatus.labPending ?? 0) > 0) {
+    indicators.waiting.push('Lab');
+  }
+  if ((serviceStatus.xrayPending ?? 0) > 0) {
+    indicators.waiting.push('X-ray');
+  }
+  if ((serviceStatus.ultrasoundPending ?? 0) > 0) {
+    indicators.waiting.push('Ultrasound');
+  }
+  
+  return indicators;
+}
