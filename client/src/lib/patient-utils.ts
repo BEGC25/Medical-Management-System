@@ -91,6 +91,19 @@ export interface ResultsReadyMap {
 }
 
 /**
+ * Helper to add a department indicator with count to an array
+ * 
+ * @param indicators - Array to append to
+ * @param count - Count of items in this department
+ * @param departmentName - Name of the department
+ */
+function addDepartmentIndicator(indicators: string[], count: number | undefined, departmentName: string): void {
+  if ((count ?? 0) > 0) {
+    indicators.push(`${departmentName} (${count})`);
+  }
+}
+
+/**
  * Get compact indicator badges for the patient table
  * 
  * Returns an object with both waiting and ready indicators for doctor workflow.
@@ -115,28 +128,16 @@ export function getPatientIndicators(
   if (!serviceStatus) return indicators;
   
   // Waiting indicators (pending orders)
-  if ((serviceStatus.labPending ?? 0) > 0) {
-    indicators.waiting.push(`Lab (${serviceStatus.labPending})`);
-  }
-  if ((serviceStatus.xrayPending ?? 0) > 0) {
-    indicators.waiting.push(`X-ray (${serviceStatus.xrayPending})`);
-  }
-  if ((serviceStatus.ultrasoundPending ?? 0) > 0) {
-    indicators.waiting.push(`Ultrasound (${serviceStatus.ultrasoundPending})`);
-  }
+  addDepartmentIndicator(indicators.waiting, serviceStatus.labPending, 'Lab');
+  addDepartmentIndicator(indicators.waiting, serviceStatus.xrayPending, 'X-ray');
+  addDepartmentIndicator(indicators.waiting, serviceStatus.ultrasoundPending, 'Ultrasound');
   
   // Ready indicators (completed results)
   if (resultsReadyMap && resultsReadyMap[patient.patientId]) {
     const ready = resultsReadyMap[patient.patientId];
-    if ((ready.lab ?? 0) > 0) {
-      indicators.ready.push(`Lab (${ready.lab})`);
-    }
-    if ((ready.xray ?? 0) > 0) {
-      indicators.ready.push(`X-ray (${ready.xray})`);
-    }
-    if ((ready.ultrasound ?? 0) > 0) {
-      indicators.ready.push(`Ultrasound (${ready.ultrasound})`);
-    }
+    addDepartmentIndicator(indicators.ready, ready.lab, 'Lab');
+    addDepartmentIndicator(indicators.ready, ready.xray, 'X-ray');
+    addDepartmentIndicator(indicators.ready, ready.ultrasound, 'Ultrasound');
   }
   
   return indicators;

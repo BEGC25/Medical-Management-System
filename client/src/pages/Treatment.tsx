@@ -1954,29 +1954,18 @@ export default function Treatment() {
   const resultsReadyMap = useMemo(() => {
     const map: Record<string, { lab?: number; xray?: number; ultrasound?: number }> = {};
     
-    // Count completed lab tests per patient
-    completedLabTests.forEach((test: LabTest) => {
-      if (!map[test.patientId]) {
-        map[test.patientId] = {};
+    // Helper to increment count for a specific department
+    const incrementCount = (patientId: string, department: 'lab' | 'xray' | 'ultrasound') => {
+      if (!map[patientId]) {
+        map[patientId] = {};
       }
-      map[test.patientId].lab = (map[test.patientId].lab ?? 0) + 1;
-    });
+      map[patientId][department] = (map[patientId][department] ?? 0) + 1;
+    };
     
-    // Count completed X-rays per patient
-    completedXrays.forEach((exam: XrayExam) => {
-      if (!map[exam.patientId]) {
-        map[exam.patientId] = {};
-      }
-      map[exam.patientId].xray = (map[exam.patientId].xray ?? 0) + 1;
-    });
-    
-    // Count completed Ultrasounds per patient
-    completedUltrasounds.forEach((exam: UltrasoundExam) => {
-      if (!map[exam.patientId]) {
-        map[exam.patientId] = {};
-      }
-      map[exam.patientId].ultrasound = (map[exam.patientId].ultrasound ?? 0) + 1;
-    });
+    // Count completed diagnostics per patient
+    completedLabTests.forEach((test: LabTest) => incrementCount(test.patientId, 'lab'));
+    completedXrays.forEach((exam: XrayExam) => incrementCount(exam.patientId, 'xray'));
+    completedUltrasounds.forEach((exam: UltrasoundExam) => incrementCount(exam.patientId, 'ultrasound'));
     
     return map;
   }, [completedLabTests, completedXrays, completedUltrasounds]);
