@@ -69,6 +69,7 @@ import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
 import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
+import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -100,50 +101,8 @@ function fullName(p?: Patient | null) {
 /* ------------------------------------------------------------------ */
 
 // Database schema expects: "blood", "urine", "stool", "microbiology", "chemistry", "hormonal", "other"
-const commonTests = {
-  blood: [
-    "Blood Film for Malaria (BFFM)",
-    "Complete Blood Count (CBC)",
-    "Hemoglobin (HB)",
-    "Total White Blood Count (TWBC)",
-    "Blood Group & Rh",
-    "ESR (Erythrocyte Sedimentation Rate)",
-    "Rheumatoid Factor",
-    "Widal Test (Typhoid)",
-    "Brucella Test (B.A.T)",
-    "Hepatitis B Test (HBsAg)",
-    "Hepatitis C Test (HCV)",
-    "H. Pylori Test",
-    "VDRL Test (Syphilis)",
-  ],
-  hormonal: [
-    "Pregnancy Test (HCG)",
-    "Gonorrhea Test",
-    "Chlamydia Test",
-    "Reproductive Hormones",
-    "Thyroid Hormones",
-    "Cardiac & Other Markers",
-  ],
-  microbiology: [
-    "Toxoplasma Test",
-    "Filariasis Tests",
-    "Schistosomiasis Test",
-    "Leishmaniasis Test",
-    "Tuberculosis Tests",
-    "Meningitis Tests",
-    "Yellow Fever Test",
-    "Typhus Test",
-  ],
-  urine: ["Urine Analysis", "Urine Microscopy"],
-  chemistry: [
-    "Renal Function Test (RFT)",
-    "Liver Function Test (LFT)",
-    "Random Blood Sugar (RBS)",
-    "Fasting Blood Sugar (FBS)",
-  ],
-  stool: ["Stool Examination"],
-  other: ["Custom Test"],
-};
+// Use shared diagnostic catalog for consistency with Treatment page
+const commonTests = LAB_TEST_CATALOG;
 
 /* ---------------------- Result field configs ---------------------- */
 /* (Unmodified from your file, except kept inline for brevity)        */

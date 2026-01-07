@@ -89,6 +89,7 @@ import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, get
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
 import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators } from '@/lib/patient-utils';
 import type { PatientWithStatus } from "@shared/schema";
+import { LAB_TEST_CATALOG, XRAY_EXAM_TYPES, XRAY_BODY_PARTS, XRAY_PRESETS, ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS, ULTRASOUND_PRESETS, type LabTestCategory, type XrayExamType, type UltrasoundExamType } from "@/lib/diagnostic-catalog";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -482,49 +483,8 @@ const resultFields: Record< // Keep this config for metadata
   // ... (keep other resultFields definitions) ...
 };
 
-// Lab test categories (from Laboratory page)
-const commonTests = {
-  hematology: [
-    "Blood Film for Malaria (BFFM)",
-    "Complete Blood Count (CBC)",
-    "Hemoglobin (HB)",
-    "Total White Blood Count (TWBC)",
-    "Blood Group & Rh",
-    "ESR (Erythrocyte Sedimentation Rate)",
-    "Rheumatoid Factor",
-  ],
-  serology: [
-    "Widal Test (Typhoid)",
-    "Brucella Test (B.A.T)",
-    "Hepatitis B Test (HBsAg)",
-    "Hepatitis C Test (HCV)",
-    "H. Pylori Test",
-    "VDRL Test (Syphilis)",
-  ],
-  reproductive: [
-    "Pregnancy Test (HCG)",
-    "Gonorrhea Test",
-    "Chlamydia Test",
-    "Reproductive Hormones",
-  ],
-  parasitology: [
-    "Toxoplasma Test",
-    "Filariasis Tests",
-    "Schistosomiasis Test",
-    "Leishmaniasis Test",
-  ],
-  hormones: ["Thyroid Hormones", "Reproductive Hormones", "Cardiac & Other Markers"],
-  tuberculosis: ["Tuberculosis Tests"],
-  emergency: ["Meningitis Tests", "Yellow Fever Test", "Typhus Test"],
-  urine: ["Urine Analysis", "Urine Microscopy"],
-  biochemistry: [
-    "Renal Function Test (RFT)",
-    "Liver Function Test (LFT)",
-    "Random Blood Sugar (RBS)",
-    "Fasting Blood Sugar (FBS)",
-  ],
-  stool: ["Stool Examination"],
-};
+// Lab test categories - use shared diagnostic catalog
+const commonTests = LAB_TEST_CATALOG;
 
 // ---------- component ----------
 export default function Treatment() {
@@ -637,7 +597,7 @@ export default function Treatment() {
 
   // Lab test selection state (for category-based ordering)
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
-  const [currentLabCategory, setCurrentLabCategory] = useState<keyof typeof commonTests>("hematology");
+  const [currentLabCategory, setCurrentLabCategory] = useState<LabTestCategory>("blood");
   const [labPriority, setLabPriority] = useState<"routine" | "urgent" | "stat">("routine");
   const [labClinicalInfo, setLabClinicalInfo] = useState("");
 
@@ -645,7 +605,7 @@ export default function Treatment() {
   const [editLabModalOpen, setEditLabModalOpen] = useState(false);
   const [labTestToEdit, setLabTestToEdit] = useState<any>(null);
   const [editLabTests, setEditLabTests] = useState<string[]>([]);
-  const [editLabCategory, setEditLabCategory] = useState<keyof typeof commonTests>("hematology");
+  const [editLabCategory, setEditLabCategory] = useState<LabTestCategory>("blood");
   const [editLabPriority, setEditLabPriority] = useState<"routine" | "urgent" | "stat">("routine");
   const [editLabClinicalInfo, setEditLabClinicalInfo] = useState("");
 
@@ -675,7 +635,7 @@ export default function Treatment() {
   const [ultrasoundSpecificExam, setUltrasoundSpecificExam] = useState('');
   
   // Enhanced Lab state
-  const [labCategory, setLabCategory] = useState<keyof typeof commonTests>('hematology');
+  const [labCategory, setLabCategory] = useState<LabTestCategory>('blood');
   const [labSpecificTests, setLabSpecificTests] = useState<string[]>([]);
 
   // Allergies state
@@ -1436,13 +1396,13 @@ export default function Treatment() {
     
     // Set the correct category so checkboxes show the right tests
     if (test.category && test.category in commonTests) {
-      setEditLabCategory(test.category as keyof typeof commonTests);
+      setEditLabCategory(test.category as LabTestCategory);
     } else if (tests.length > 0) {
       // Fallback: Find category by checking which category contains the first test
       const firstTest = tests[0];
       for (const [category, testList] of Object.entries(commonTests)) {
         if (testList.includes(firstTest)) {
-          setEditLabCategory(category as keyof typeof commonTests);
+          setEditLabCategory(category as LabTestCategory);
           break;
         }
       }
@@ -2976,12 +2936,12 @@ export default function Treatment() {
                                       <h3 className="font-semibold text-base text-gray-900 dark:text-white">Test Category</h3>
                                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         {[
-                                          { value: 'hematology' as const, label: 'Blood Tests', description: 'Hematology & CBC', icon: '🩸' },
+                                          { value: 'blood' as const, label: 'Blood Tests', description: 'Hematology & serology', icon: '🩸' },
                                           { value: 'urine' as const, label: 'Urine Analysis', description: 'Urinalysis panels', icon: '🧪' },
                                           { value: 'stool' as const, label: 'Stool Analysis', description: 'Parasitology', icon: '💩' },
-                                          { value: 'serology' as const, label: 'Serology', description: 'Infectious diseases', icon: '🦠' },
-                                          { value: 'biochemistry' as const, label: 'Chemistry', description: 'Biochemistry tests', icon: '⚗️' },
-                                          { value: 'hormones' as const, label: 'Hormones', description: 'Endocrine panels', icon: '💉' },
+                                          { value: 'microbiology' as const, label: 'Microbiology', description: 'Infectious diseases', icon: '🦠' },
+                                          { value: 'chemistry' as const, label: 'Chemistry', description: 'Biochemistry tests', icon: '⚗️' },
+                                          { value: 'hormonal' as const, label: 'Hormones', description: 'Endocrine panels', icon: '💉' },
                                         ].map((cat) => {
                                           const isSelected = labCategory === cat.value;
                                           return (
@@ -5473,7 +5433,7 @@ export default function Treatment() {
               </label>
               <Select
                 value={editLabCategory}
-                onValueChange={(val) => setEditLabCategory(val as keyof typeof commonTests)}
+                onValueChange={(val) => setEditLabCategory(val as LabTestCategory)}
               >
                 <SelectTrigger>
                   <SelectValue />
