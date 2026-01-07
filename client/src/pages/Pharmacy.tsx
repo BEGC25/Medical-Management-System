@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,6 +104,9 @@ export default function Pharmacy() {
   const { data: dispensedPrescriptions = [], isLoading: isLoadingDispensed } = useQuery<PrescriptionWithPatient[]>({
     queryKey: ['/api/pharmacy/prescriptions/dispensed'],
   });
+
+  // Combined loading state
+  const isLoading = isLoadingPaid || isLoadingUnpaid || isLoadingDispensed;
 
   // Fetch batches for selected drug (FEFO sorted)
   const { data: batches = [] } = useQuery<DrugBatch[]>({
