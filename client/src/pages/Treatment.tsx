@@ -3129,38 +3129,31 @@ export default function Treatment() {
                                           <div className="space-y-3">
                                             <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select Exam Type</h3>
                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                              {[
-                                                { id: 'chest', emoji: '🫁', name: 'Chest X-Ray', desc: 'Thoracic imaging' },
-                                                { id: 'extremity', emoji: '🦴', name: 'Extremity', desc: 'Arms, legs, joints' },
-                                                { id: 'abdominal', emoji: '🫄', name: 'Abdominal', desc: 'Abdomen & pelvis' },
-                                                { id: 'spine', emoji: '🦴', name: 'Spine', desc: 'Cervical to lumbar' },
-                                                { id: 'skull', emoji: '💀', name: 'Skull/Head', desc: 'Cranial imaging' },
-                                                { id: 'pelvic', emoji: '🦴', name: 'Pelvic', desc: 'Hip & pelvis' },
-                                              ].map((type) => (
+                                              {XRAY_EXAM_TYPES.map((type) => (
                                                 <button
-                                                  key={type.id}
+                                                  key={type.value}
                                                   type="button"
                                                   onClick={() => {
-                                                    setXrayExamType(type.id);
+                                                    setXrayExamType(type.value);
                                                     setXrayBodyPart('');
                                                   }}
                                                   className={`relative p-4 rounded-lg border-2 transition-all duration-200 text-left ${
-                                                    xrayExamType === type.id
+                                                    xrayExamType === type.value
                                                       ? 'bg-gradient-to-br from-blue-600 to-cyan-500 border-blue-500 text-white shadow-lg scale-[1.02]'
                                                       : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md'
                                                   }`}
                                                 >
-                                                  {xrayExamType === type.id && (
+                                                  {xrayExamType === type.value && (
                                                     <div className="absolute top-2 right-2 bg-white rounded-full p-1">
                                                       <Check className="h-4 w-4 text-blue-600" />
                                                     </div>
                                                   )}
-                                                  <div className="text-3xl mb-2">{type.emoji}</div>
-                                                  <div className={`font-semibold text-sm mb-1 ${xrayExamType === type.id ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                                                    {type.name}
+                                                  <div className="text-3xl mb-2">{type.icon}</div>
+                                                  <div className={`font-semibold text-sm mb-1 ${xrayExamType === type.value ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                                                    {type.label}
                                                   </div>
-                                                  <div className={`text-xs ${xrayExamType === type.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                    {type.desc}
+                                                  <div className={`text-xs ${xrayExamType === type.value ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                    {type.description}
                                                   </div>
                                                 </button>
                                               ))}
@@ -3171,12 +3164,7 @@ export default function Treatment() {
                                           <div className="space-y-3">
                                             <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Presets</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                              {[
-                                                { emoji: '🚑', name: 'Trauma Screen', examType: 'extremity', bodyPart: 'Multiple', indication: 'Suspected fracture' },
-                                                { emoji: '🫁', name: 'Respiratory Assessment', examType: 'chest', bodyPart: 'PA & Lateral', indication: 'Pneumonia evaluation' },
-                                                { emoji: '🦴', name: 'Back Pain Evaluation', examType: 'spine', bodyPart: 'Lumbar spine', indication: 'Back pain assessment' },
-                                                { emoji: '✅', name: 'Post-Operative Check', examType: 'chest', bodyPart: 'Chest AP', indication: 'Post-op monitoring' },
-                                              ].map((preset) => (
+                                              {XRAY_PRESETS.map((preset) => (
                                                 <button
                                                   key={preset.name}
                                                   type="button"
@@ -3188,7 +3176,7 @@ export default function Treatment() {
                                                   }}
                                                   className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
                                                 >
-                                                  <span className="text-2xl">{preset.emoji}</span>
+                                                  <span className="text-2xl">{preset.icon}</span>
                                                   <div className="flex-1">
                                                     <div className="font-semibold text-sm text-gray-900 dark:text-white">{preset.name}</div>
                                                     <div className="text-xs text-gray-500 dark:text-gray-400">{preset.indication}</div>
@@ -3200,14 +3188,11 @@ export default function Treatment() {
                                           </div>
 
                                           {/* Conditional Body Part Selectors */}
-                                          {xrayExamType === 'extremity' && (
+                                          {xrayExamType === 'extremities' && XRAY_BODY_PARTS.extremities && (
                                             <div className="space-y-3">
                                               <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select Body Part</h3>
                                               <div className="grid grid-cols-4 gap-2">
-                                                {['Left Hand', 'Right Hand', 'Left Wrist', 'Right Wrist', 
-                                                  'Left Elbow', 'Right Elbow', 'Left Shoulder', 'Right Shoulder',
-                                                  'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle',
-                                                  'Left Foot', 'Right Foot', 'Left Hip', 'Right Hip'].map((part) => (
+                                                {XRAY_BODY_PARTS.extremities.map((part) => (
                                                   <button
                                                     key={part}
                                                     type="button"
@@ -3225,11 +3210,11 @@ export default function Treatment() {
                                             </div>
                                           )}
 
-                                          {xrayExamType === 'chest' && (
+                                          {xrayExamType === 'chest' && XRAY_BODY_PARTS.chest && (
                                             <div className="space-y-3">
                                               <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select View</h3>
                                               <div className="grid grid-cols-3 gap-2">
-                                                {['PA', 'AP', 'Lateral', 'AP & Lateral', 'Portable AP', 'Lordotic View'].map((view) => (
+                                                {XRAY_BODY_PARTS.chest.map((view) => (
                                                   <button
                                                     key={view}
                                                     type="button"
@@ -3361,29 +3346,11 @@ export default function Treatment() {
                                     if (qoTab === 'ultrasound') {
                                       const ultrasoundService = services.find((s: any) => matchesCategory(s, 'ultrasound'));
                                       
-                                      // Ultrasound exam types mapping
-                                      const ultrasoundExamTypes = [
-                                        { value: 'cardiac', label: 'Cardiac/Echo', description: 'Heart & vessels', icon: '❤️' },
-                                        { value: 'obstetric', label: 'Obstetric', description: 'Pregnancy imaging', icon: '🤰' },
-                                        { value: 'abdominal', label: 'Abdominal', description: 'Abdomen & organs', icon: '👶' },
-                                        { value: 'musculoskeletal', label: 'Musculoskeletal', description: 'Bones & joints', icon: '🔧' },
-                                        { value: 'thoracic', label: 'Thoracic', description: 'Chest & lungs', icon: '🫁' },
-                                        { value: 'vascular', label: 'Vascular', description: 'Blood vessels', icon: '🧠' },
-                                        { value: 'pelvic', label: 'Pelvic', description: 'Pelvic organs', icon: '🩻' },
-                                        { value: 'other', label: 'Other/Custom', description: 'Custom exam', icon: '🎯' },
-                                      ];
+                                      // Use shared Ultrasound catalog for consistency with department pages
+                                      const ultrasoundExamTypes = ULTRASOUND_EXAM_TYPES;
 
-                                      // Specific exams based on type
-                                      const ultrasoundSpecificExams: Record<string, string[]> = {
-                                        abdominal: ['Complete Abdomen', 'RUQ - Liver & Gallbladder', 'Renal (Kidneys & Bladder)', 'Appendix Study', 'Spleen'],
-                                        obstetric: ['Dating Scan', 'Anatomy Scan', 'Growth Scan', 'Biophysical Profile'],
-                                        pelvic: ['Transvaginal', 'Transabdominal', 'Bladder Assessment'],
-                                        cardiac: ['2D Echo', 'Doppler Study', 'Stress Echo'],
-                                        vascular: ['Carotid Doppler', 'Venous Doppler (Legs)', 'Arterial Doppler'],
-                                        thoracic: ['Pleural Assessment', 'Lung Ultrasound'],
-                                        musculoskeletal: ['Joint Assessment', 'Soft Tissue Mass', 'Tendon Evaluation'],
-                                        other: [],
-                                      };
+                                      // Get specific exams for selected type from shared catalog
+                                      const ultrasoundSpecificExams = ULTRASOUND_SPECIFIC_EXAMS;
 
                                       return (
                                         <div className="space-y-6">
