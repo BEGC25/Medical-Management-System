@@ -1278,14 +1278,15 @@ export default function Treatment() {
 
   // Order Ultrasound mutation (creates exam record + order line)
   const orderUltrasoundMutation = useMutation({
-    mutationFn: async ({ service, examType }: { service: Service; examType: string }) => {
+    mutationFn: async ({ service }: { service: Service }) => {
       if (!selectedPatient) throw new Error("No patient selected");
       if (!currentEncounter) throw new Error("No active encounter");
 
       // 1. Create ultrasound exam record with clinical notes
       const ultrasoundData = {
         patientId: selectedPatient.patientId,
-        examType: examType || service.name,
+        examType: ultrasoundExamType, // General exam type (e.g., 'abdominal', 'obstetric')
+        specificExam: ultrasoundSpecificExam || undefined, // Specific exam (e.g., 'RUQ - Liver & Gallbladder')
         clinicalIndication: ultrasoundClinicalInfo,
         requestedDate: new Date().toISOString(),
       };
@@ -1302,12 +1303,17 @@ export default function Treatment() {
         'breast': 'Breast Ultrasound',
         'musculoskeletal': 'Musculoskeletal Ultrasound',
         'vascular': 'Vascular Ultrasound',
-        'renal': 'Renal Ultrasound'
+        'renal': 'Renal Ultrasound',
+        'cardiac': 'Cardiac Ultrasound',
+        'soft_tissue': 'Soft Tissue Ultrasound',
+        'scrotal': 'Scrotal Ultrasound',
+        'neck': 'Neck Ultrasound',
       };
 
-      // Use component state for the base exam type, and examType param for specific exam if provided
-      const baseExamType = ultrasoundExamType;
-      const fullDescription = examTypeLabel[baseExamType] || examType || 'Ultrasound Examination';
+      // Use specific exam if available, otherwise use exam type
+      const fullDescription = ultrasoundSpecificExam 
+        ? `${examTypeLabel[ultrasoundExamType] || 'Ultrasound'} - ${ultrasoundSpecificExam}`
+        : examTypeLabel[ultrasoundExamType] || 'Ultrasound Examination';
 
       // 2. Create corresponding order_line
       const orderLineData = {
@@ -1330,6 +1336,7 @@ export default function Treatment() {
     onSuccess: () => {
       toast({ title: "Success", description: "Ultrasound exam ordered successfully" });
       setUltrasoundClinicalInfo("");
+      setUltrasoundSpecificExam(""); // Clear specific exam selection
       queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
     },
@@ -3447,10 +3454,8 @@ export default function Treatment() {
                                                 });
                                                 return;
                                               }
-                                              const examDescription = ultrasoundSpecificExam || ultrasoundExamType;
                                               orderUltrasoundMutation.mutate({ 
-                                                service: ultrasoundService, 
-                                                examType: examDescription
+                                                service: ultrasoundService
                                               });
                                             }}
                                             disabled={orderUltrasoundMutation.isPending || !ultrasoundService}
