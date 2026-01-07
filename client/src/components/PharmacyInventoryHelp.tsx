@@ -245,7 +245,7 @@ export default function PharmacyInventoryHelp({ collapsed, onCollapsedChange }: 
                         <h5 className="font-semibold text-gray-900 dark:text-gray-100 text-xs mb-1">FEFO Principle</h5>
                         <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
                           Always use batches expiring soonest first. The system automatically sorts 
-                          batches by expiry date. Batches expiring in &lt;90 days are highlighted.
+                          batches by expiry date. Batches expiring in {'<'}90 days are highlighted.
                         </p>
                       </div>
                     </div>

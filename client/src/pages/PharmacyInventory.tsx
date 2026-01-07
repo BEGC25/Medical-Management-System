@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,14 @@ import { getClinicDayKey } from "@/lib/date-utils";
 import PharmacyInventoryHelp from "@/components/PharmacyInventoryHelp";
 import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
 
-// Helper function to check if a date is within the filter range
+/**
+ * Helper function to check if a date is within the specified filter range
+ * @param dateStr - The date string to check (can be null/undefined)
+ * @param preset - The date filter preset (all, today, last7days, last30days, custom)
+ * @param startDate - Start date for custom range (optional)
+ * @param endDate - End date for custom range (optional)
+ * @returns true if the date is within the filter range, false otherwise
+ */
 function isDateInRange(dateStr: string | null | undefined, preset: DateFilterPreset, startDate?: string, endDate?: string): boolean {
   if (!dateStr) return true;
   if (preset === "all") return true;
@@ -256,6 +263,13 @@ export default function PharmacyInventory() {
       setSelectedDrug(null);
     },
   });
+
+  // Filter ledger entries based on date filter
+  const filteredLedgerEntries = useMemo(() => {
+    return ledgerEntries.filter(entry => 
+      isDateInRange(entry.createdAt, transactionDateFilter, transactionStartDate, transactionEndDate)
+    );
+  }, [ledgerEntries, transactionDateFilter, transactionStartDate, transactionEndDate]);
 
   const handleAddDrug = () => {
     if (!newDrug.name || !newDrug.unitOfMeasure) {
@@ -875,6 +889,15 @@ export default function PharmacyInventory() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
+                    if (ledgerEntries.length === 0) {
+                      toast({
+                        variant: "destructive",
+                        title: "No Data to Export",
+                        description: "There are no transactions to export.",
+                      });
+                      return;
+                    }
+                    
                     // CSV export functionality
                     const csvData = ledgerEntries.map(entry => ({
                       'Transaction ID': entry.transactionId,
@@ -885,7 +908,7 @@ export default function PharmacyInventory() {
                       'Date': new Date(entry.createdAt).toLocaleDateString()
                     }));
                     const csv = [
-                      Object.keys(csvData[0] || {}).join(','),
+                      Object.keys(csvData[0]).join(','),
                       ...csvData.map(row => Object.values(row).join(','))
                     ].join('\n');
                     const blob = new Blob([csv], { type: 'text/csv' });
@@ -894,6 +917,7 @@ export default function PharmacyInventory() {
                     a.href = url;
                     a.download = `inventory-transactions-${new Date().toISOString().split('T')[0]}.csv`;
                     a.click();
+                    window.URL.revokeObjectURL(url);
                   }}
                   className="border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
                            hover:bg-blue-50 dark:hover:bg-blue-900/20"
@@ -904,61 +928,55 @@ export default function PharmacyInventory() {
               </div>
             </CardHeader>
             <CardContent>
-              {(() => {
-                const filteredLedger = ledgerEntries.filter(entry => 
-                  isDateInRange(entry.createdAt, transactionDateFilter, transactionStartDate, transactionEndDate)
-                );
-                
-                return filteredLedger.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="p-6 bg-gradient-to-br from-gray-100 to-slate-100 dark:from-gray-900/30 dark:to-slate-900/30 
-                                    rounded-2xl shadow-premium-sm">
-                        <FileText className="w-16 h-16 text-gray-600 dark:text-gray-400" />
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Transactions Found</h3>
-                        <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                          {ledgerEntries.length === 0 
-                            ? "No transactions recorded yet. Start by receiving stock."
-                            : "No transactions match the selected date range. Try adjusting the filter."}
-                        </p>
-                      </div>
+              {filteredLedgerEntries.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-6 bg-gradient-to-br from-gray-100 to-slate-100 dark:from-gray-900/30 dark:to-slate-900/30 
+                                  rounded-2xl shadow-premium-sm">
+                      <FileText className="w-16 h-16 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Transactions Found</h3>
+                      <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                        {ledgerEntries.length === 0 
+                          ? "No transactions recorded yet. Start by receiving stock."
+                          : "No transactions match the selected date range. Try adjusting the filter."}
+                      </p>
                     </div>
                   </div>
-                ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Transaction ID</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Performed By</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLedger.map((entry) => (
-                    <TableRow key={entry.id} data-testid={`ledger-${entry.transactionId}`}>
-                      <TableCell className="font-medium">{entry.transactionId}</TableCell>
-                      <TableCell>
-                        <Badge className={entry.transactionType === 'receive' ? "bg-green-600" : "bg-blue-600"}>
-                          {entry.transactionType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className={entry.quantity < 0 ? "text-red-600" : "text-green-600"}>
-                        {entry.quantity > 0 ? '+' : ''}{entry.quantity}
-                      </TableCell>
-                      <TableCell>SSP {Math.round(entry.totalValue || 0).toLocaleString()}</TableCell>
-                      <TableCell>{entry.performedBy}</TableCell>
-                      <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Transaction ID</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Performed By</TableHead>
+                      <TableHead>Date</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-                );
-              })()}
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLedgerEntries.map((entry) => (
+                      <TableRow key={entry.id} data-testid={`ledger-${entry.transactionId}`}>
+                        <TableCell className="font-medium">{entry.transactionId}</TableCell>
+                        <TableCell>
+                          <Badge className={entry.transactionType === 'receive' ? "bg-green-600" : "bg-blue-600"}>
+                            {entry.transactionType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={entry.quantity < 0 ? "text-red-600" : "text-green-600"}>
+                          {entry.quantity > 0 ? '+' : ''}{entry.quantity}
+                        </TableCell>
+                        <TableCell>SSP {Math.round(entry.totalValue || 0).toLocaleString()}</TableCell>
+                        <TableCell>{entry.performedBy}</TableCell>
+                        <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
