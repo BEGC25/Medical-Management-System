@@ -87,7 +87,7 @@ import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, 
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, getVisitStatusLabel, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
-import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments } from '@/lib/patient-utils';
+import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators } from '@/lib/patient-utils';
 import type { PatientWithStatus } from "@shared/schema";
 
 // ---------- helpers ----------
@@ -864,12 +864,19 @@ export default function Treatment() {
     queryKey: ["/api/unpaid-orders/all"],
   });
 
-  // Fetch today's completed diagnostic results for Results Ready stat card
+  // Fetch completed diagnostic results for Results Ready stat card
+  // Use selected date filter (presetParams) instead of hard-coded 'today'
   const { data: completedLabTests = [] } = useQuery<LabTest[]>({
-    queryKey: ["/api/lab-tests", { preset: 'today', status: 'completed' }],
+    queryKey: ["/api/lab-tests", { ...presetParams, status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/lab-tests", window.location.origin);
-      url.searchParams.set("preset", "today");
+      if (presetParams.preset === 'custom' && 'from' in presetParams && 'to' in presetParams) {
+        url.searchParams.set("preset", "custom");
+        url.searchParams.set("from", presetParams.from);
+        url.searchParams.set("to", presetParams.to);
+      } else {
+        url.searchParams.set("preset", presetParams.preset);
+      }
       url.searchParams.set("status", "completed");
       const response = await fetch(url.toString());
       if (!response.ok) return [];
@@ -878,10 +885,16 @@ export default function Treatment() {
   });
 
   const { data: completedXrays = [] } = useQuery<XrayExam[]>({
-    queryKey: ["/api/xray-exams", { preset: 'today', status: 'completed' }],
+    queryKey: ["/api/xray-exams", { ...presetParams, status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/xray-exams", window.location.origin);
-      url.searchParams.set("preset", "today");
+      if (presetParams.preset === 'custom' && 'from' in presetParams && 'to' in presetParams) {
+        url.searchParams.set("preset", "custom");
+        url.searchParams.set("from", presetParams.from);
+        url.searchParams.set("to", presetParams.to);
+      } else {
+        url.searchParams.set("preset", presetParams.preset);
+      }
       url.searchParams.set("status", "completed");
       const response = await fetch(url.toString());
       if (!response.ok) return [];
@@ -890,10 +903,16 @@ export default function Treatment() {
   });
 
   const { data: completedUltrasounds = [] } = useQuery<UltrasoundExam[]>({
-    queryKey: ["/api/ultrasound-exams", { preset: 'today', status: 'completed' }],
+    queryKey: ["/api/ultrasound-exams", { ...presetParams, status: 'completed' }],
     queryFn: async () => {
       const url = new URL("/api/ultrasound-exams", window.location.origin);
-      url.searchParams.set("preset", "today");
+      if (presetParams.preset === 'custom' && 'from' in presetParams && 'to' in presetParams) {
+        url.searchParams.set("preset", "custom");
+        url.searchParams.set("from", presetParams.from);
+        url.searchParams.set("to", presetParams.to);
+      } else {
+        url.searchParams.set("preset", presetParams.preset);
+      }
       url.searchParams.set("status", "completed");
       const response = await fetch(url.toString());
       if (!response.ok) return [];
@@ -902,15 +921,21 @@ export default function Treatment() {
   });
 
   // Fetch patients with pending (unprocessed) orders for the stat card
-  // Use preset 'today' to get today's patients with service status
+  // Use selected date filter (presetParams) instead of hard-coded 'today'
   // Also add filterBy=encounters to match what PatientSearch uses
   const { data: patientsWithStatus = [], isLoading: patientsWithStatusLoading } = useQuery<PatientWithStatus[]>({
-    queryKey: ["/api/patients", { withStatus: true, filterBy: 'encounters', preset: 'today' }],
+    queryKey: ["/api/patients", { withStatus: true, filterBy: 'encounters', ...presetParams }],
     queryFn: async () => {
       const url = new URL("/api/patients", window.location.origin);
       url.searchParams.set("withStatus", "true");
       url.searchParams.set("filterBy", "encounters"); // Match the table source
-      url.searchParams.set("preset", "today");
+      if (presetParams.preset === 'custom' && 'from' in presetParams && 'to' in presetParams) {
+        url.searchParams.set("preset", "custom");
+        url.searchParams.set("from", presetParams.from);
+        url.searchParams.set("to", presetParams.to);
+      } else {
+        url.searchParams.set("preset", presetParams.preset);
+      }
       const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error("Failed to fetch patients with status");
@@ -1837,9 +1862,32 @@ export default function Treatment() {
     ? allPrescriptions.filter((rx) => rx.encounterId === currentEncounter.encounterId)
     : allPrescriptions;
 
+  // Helper function to get date filter label for stat cards
+  const getDateFilterLabel = (): { main: string; sub: string } => {
+    switch (dateFilter) {
+      case "today":
+        return { main: "Patients", sub: "Today" };
+      case "yesterday":
+        return { main: "Patients", sub: "Yesterday" };
+      case "last7":
+        return { main: "Patients", sub: "Last 7 Days" };
+      case "last30":
+        return { main: "Patients", sub: "Last 30 Days" };
+      case "custom":
+        if (customStartDate && customEndDate) {
+          return { main: "Patients", sub: "Custom Range" };
+        }
+        return { main: "Patients", sub: "Custom" };
+      default:
+        return { main: "Patients", sub: "Today" };
+    }
+  };
+
+  const dateLabel = getDateFilterLabel();
+
   // Statistics calculations
-  // A) Fix "Patients Today" - count patients with encounters today (matches table source)
-  // Use patientsWithStatus which already filters by encounters today via preset='today'
+  // A) Count patients with encounters in selected date range (matches table source)
+  // Use patientsWithStatus which filters by encounters using the selected preset
   const todayPatients = patientsWithStatus.length || 0;
   
   // B) Rename "Today's Queue" to "Open Visits" and use patientsWithStatus as source of truth
@@ -2183,8 +2231,8 @@ export default function Treatment() {
               </div>
               <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{todayPatients}</span>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Patients Today</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Click to filter</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{dateLabel.main}</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">{dateLabel.sub}</p>
           </button>
 
           {/* Active Visits - Clickable */}
@@ -2243,7 +2291,7 @@ export default function Treatment() {
               <span className="text-lg font-bold text-purple-700 dark:text-purple-400">{resultsReadyCount}</span>
             </div>
             <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Results Ready</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Completed today</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">{dateLabel.sub}</p>
           </button>
         </div>
       </div>

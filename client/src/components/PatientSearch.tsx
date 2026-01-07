@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Search, CreditCard } from "lucide-react";
+import { Search, CreditCard, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Patient } from "@shared/schema";
 import { formatClinicDay } from "@/lib/date-utils";
-import { hasPendingOrders } from "@/lib/patient-utils";
+import { hasPendingOrders, getPatientIndicators } from "@/lib/patient-utils";
 import { getVisitStatusLabel } from "@/lib/display-utils";
 
 interface PatientSearchProps {
@@ -171,7 +171,7 @@ export default function PatientSearch({
                   Visit Status
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Consultation
+                  Indicators
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
                   Date of Service
@@ -256,16 +256,37 @@ export default function PatientSearch({
                     </td>
 
                     <td className="px-4 py-3 text-sm">
-                      {due > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-red-700 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
-                          <CreditCard className="w-3 h-3" />
-                          {Math.round(due).toLocaleString()} SSP Due
-                        </span>
-                      ) : (
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          Paid
-                        </Badge>
-                      )}
+                      {(() => {
+                        const indicators = getPatientIndicators(p);
+                        const hasAny = indicators.waiting.length > 0 || indicators.ready.length > 0;
+                        
+                        if (!hasAny) {
+                          return <span className="text-gray-400 text-xs">—</span>;
+                        }
+                        
+                        return (
+                          <div className="flex flex-wrap gap-1">
+                            {indicators.waiting.length > 0 && (
+                              <Badge 
+                                variant="outline" 
+                                className="text-[10px] bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 flex items-center gap-1"
+                              >
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                {indicators.waiting.join('/')}
+                              </Badge>
+                            )}
+                            {indicators.ready.length > 0 && (
+                              <Badge 
+                                variant="outline" 
+                                className="text-[10px] bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 flex items-center gap-1"
+                              >
+                                <CheckCircle className="w-2.5 h-2.5" />
+                                {indicators.ready.join('/')}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     <td className="px-4 py-3 text-sm text-right hidden lg:table-cell">

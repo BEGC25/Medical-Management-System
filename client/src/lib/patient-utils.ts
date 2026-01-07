@@ -75,3 +75,46 @@ export function getDiagnosticPendingDepartments(patient: PatientWithStatus): str
   
   return departments;
 }
+
+/**
+ * Get compact indicator badges for the patient table
+ * 
+ * Returns an object with waiting and ready arrays for doctor workflow.
+ * This helps doctors quickly identify which patients need attention.
+ * 
+ * @param patient - Patient object with serviceStatus
+ * @returns Object with 'waiting' and 'ready' arrays of department names
+ */
+export function getPatientIndicators(patient: PatientWithStatus): { 
+  waiting: string[], 
+  ready: string[] 
+} {
+  const serviceStatus = patient.serviceStatus;
+  const indicators = { waiting: [] as string[], ready: [] as string[] };
+  
+  if (!serviceStatus) return indicators;
+  
+  // Waiting indicators (pending orders)
+  if ((serviceStatus.labPending ?? 0) > 0) {
+    indicators.waiting.push('Lab');
+  }
+  if ((serviceStatus.xrayPending ?? 0) > 0) {
+    indicators.waiting.push('X-ray');
+  }
+  if ((serviceStatus.ultrasoundPending ?? 0) > 0) {
+    indicators.waiting.push('Ultrasound');
+  }
+  
+  // Ready indicators (completed results)
+  if ((serviceStatus.labCompleted ?? 0) > 0) {
+    indicators.ready.push('Lab');
+  }
+  if ((serviceStatus.xrayCompleted ?? 0) > 0) {
+    indicators.ready.push('X-ray');
+  }
+  if ((serviceStatus.ultrasoundCompleted ?? 0) > 0) {
+    indicators.ready.push('Ultrasound');
+  }
+  
+  return indicators;
+}
