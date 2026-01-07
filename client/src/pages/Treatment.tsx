@@ -1950,6 +1950,26 @@ export default function Treatment() {
   
   const resultsReadyCount = resultsReadyByPatient.length;
   
+  // Build a map of ready results by patient ID with counts for the table
+  const resultsReadyMap = useMemo(() => {
+    const map: Record<string, { lab?: number; xray?: number; ultrasound?: number }> = {};
+    
+    // Helper to increment count for a specific department
+    const incrementCount = (patientId: string, department: 'lab' | 'xray' | 'ultrasound') => {
+      if (!map[patientId]) {
+        map[patientId] = {};
+      }
+      map[patientId][department] = (map[patientId][department] ?? 0) + 1;
+    };
+    
+    // Count completed diagnostics per patient
+    completedLabTests.forEach((test: LabTest) => incrementCount(test.patientId, 'lab'));
+    completedXrays.forEach((exam: XrayExam) => incrementCount(exam.patientId, 'xray'));
+    completedUltrasounds.forEach((exam: UltrasoundExam) => incrementCount(exam.patientId, 'ultrasound'));
+    
+    return map;
+  }, [completedLabTests, completedXrays, completedUltrasounds]);
+  
   // Filter patients with orders waiting for the modal
   const patientsWithOrdersWaiting = patientsWithStatus
     ? patientsWithStatus.filter(p => {
@@ -2415,6 +2435,7 @@ export default function Treatment() {
                     onShouldSearchChange={setShouldSearch}
                     filterPendingOnly={quickFilter === "pending"}
                     preset={presetParams.preset} // Pass preset for backend filtering and cache isolation
+                    resultsReadyMap={resultsReadyMap} // Pass completed results map for table indicators
                   />
                 </div>
               </>
