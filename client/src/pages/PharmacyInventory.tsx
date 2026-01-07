@@ -301,7 +301,7 @@ export default function PharmacyInventory() {
       <PharmacyInventoryHelp collapsed={helpCollapsed} onCollapsedChange={setHelpCollapsed} />
 
       {/* Main content */}
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-premium-md 
@@ -463,15 +463,15 @@ export default function PharmacyInventory() {
             <CardContent>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Drug Name</TableHead>
-                    <TableHead>Strength</TableHead>
-                    <TableHead>Form</TableHead>
-                    <TableHead className="text-right">Stock on Hand</TableHead>
-                    <TableHead className="text-right">Current Price (SSP)</TableHead>
-                    <TableHead>Nearest Expiry</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <TableHead className="font-semibold">Drug Name</TableHead>
+                    <TableHead className="font-semibold">Strength</TableHead>
+                    <TableHead className="font-semibold">Form</TableHead>
+                    <TableHead className="text-right font-semibold">Stock on Hand</TableHead>
+                    <TableHead className="text-right font-semibold">Current Price (SSP)</TableHead>
+                    <TableHead className="font-semibold">Nearest Expiry</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -526,28 +526,54 @@ export default function PharmacyInventory() {
                       .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0]?.expiryDate;
                     
                     return (
-                      <TableRow key={drug.id} className={isLowStock ? "bg-red-50 dark:bg-red-900/20" : ""}>
-                        <TableCell className="font-semibold">{drug.name}</TableCell>
-                        <TableCell>{drug.strength || '-'}</TableCell>
-                        <TableCell className="capitalize">{drug.form}</TableCell>
-                        <TableCell className="text-right">
-                          <span className={`font-bold ${isOutOfStock ? "text-gray-400" : isLowStock ? "text-red-600" : "text-green-600"}`}>
+                      <TableRow 
+                        key={drug.id} 
+                        className={`
+                          transition-all duration-150 ease-in-out cursor-pointer
+                          border-b border-gray-100 dark:border-gray-800
+                          ${isLowStock 
+                            ? "bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100/70 dark:hover:bg-red-900/20" 
+                            : "hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-blue-50/30 dark:hover:from-purple-900/10 dark:hover:to-blue-900/10"
+                          }
+                        `}
+                      >
+                        <TableCell className="font-semibold text-gray-900 dark:text-white">{drug.name}</TableCell>
+                        <TableCell className="text-gray-700 dark:text-gray-300">{drug.strength || '-'}</TableCell>
+                        <TableCell className="capitalize text-gray-700 dark:text-gray-300">{drug.form}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          <span className={`font-bold text-base ${isOutOfStock ? "text-gray-400 dark:text-gray-600" : isLowStock ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                             {stockLevel}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono tabular-nums text-gray-900 dark:text-white font-semibold">
                           {currentPrice ? `${Math.round(currentPrice).toLocaleString()} SSP` : '-'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700 dark:text-gray-300">
                           {nearestExpiry || '-'}
                         </TableCell>
                         <TableCell>
                           {isOutOfStock ? (
-                            <Badge variant="outline" className="border-gray-400">OUT OF STOCK</Badge>
+                            <Badge 
+                              variant="outline" 
+                              className="border-gray-400 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 
+                                       shadow-premium-sm transition-all duration-150 hover:shadow-premium-md font-medium"
+                            >
+                              OUT OF STOCK
+                            </Badge>
                           ) : isLowStock ? (
-                            <Badge variant="destructive">LOW STOCK</Badge>
+                            <Badge 
+                              className="bg-gradient-to-r from-red-600 to-red-500 text-white shadow-premium-sm 
+                                       transition-all duration-150 hover:shadow-premium-md hover:from-red-700 hover:to-red-600 font-medium"
+                            >
+                              LOW STOCK
+                            </Badge>
                           ) : (
-                            <Badge className="bg-green-600">In Stock</Badge>
+                            <Badge 
+                              className="bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-premium-sm 
+                                       transition-all duration-150 hover:shadow-premium-md hover:from-green-700 hover:to-emerald-700 font-medium"
+                            >
+                              In Stock
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -560,8 +586,9 @@ export default function PharmacyInventory() {
                                 setNewBatch({ ...newBatch, drugId: drug.id });
                                 setShowReceiveStock(true);
                               }}
-                              className="h-8 px-2 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
-                                       hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                              className="h-8 px-2.5 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
+                                       hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
+                                       hover:shadow-premium-sm hover:scale-105"
                               title="Receive Stock"
                             >
                               <ShoppingCart className="w-3.5 h-3.5" />
@@ -573,8 +600,9 @@ export default function PharmacyInventory() {
                                 setBatchesDrug(drug);
                                 setShowBatchesModal(true);
                               }}
-                              className="h-8 px-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
-                                       hover:bg-gray-50 dark:hover:bg-gray-800"
+                              className="h-8 px-2.5 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
+                                       hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-150
+                                       hover:shadow-premium-sm hover:scale-105"
                               title="View Batches"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -599,15 +627,15 @@ export default function PharmacyInventory() {
             <CardContent>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Drug Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Generic Name</TableHead>
-                    <TableHead>Strength</TableHead>
-                    <TableHead>Form</TableHead>
-                    <TableHead>Reorder Level</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <TableHead className="font-semibold">Drug Code</TableHead>
+                    <TableHead className="font-semibold">Name</TableHead>
+                    <TableHead className="font-semibold">Generic Name</TableHead>
+                    <TableHead className="font-semibold">Strength</TableHead>
+                    <TableHead className="font-semibold">Form</TableHead>
+                    <TableHead className="font-semibold">Reorder Level</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -637,15 +665,26 @@ export default function PharmacyInventory() {
                     </TableRow>
                   ) : (
                     drugs.map((drug) => (
-                    <TableRow key={drug.id} data-testid={`drug-row-${drug.id}`}>
-                      <TableCell className="font-medium">{drug.drugCode}</TableCell>
-                      <TableCell>{drug.name}</TableCell>
-                      <TableCell>{drug.genericName || '-'}</TableCell>
-                      <TableCell>{drug.strength || '-'}</TableCell>
-                      <TableCell className="capitalize">{drug.form}</TableCell>
-                      <TableCell>{drug.reorderLevel}</TableCell>
+                    <TableRow 
+                      key={drug.id} 
+                      data-testid={`drug-row-${drug.id}`}
+                      className="transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
+                               hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-indigo-50/30 
+                               dark:hover:from-purple-900/10 dark:hover:to-indigo-900/10"
+                    >
+                      <TableCell className="font-medium text-gray-900 dark:text-white">{drug.drugCode}</TableCell>
+                      <TableCell className="font-semibold text-gray-900 dark:text-white">{drug.name}</TableCell>
+                      <TableCell className="text-gray-700 dark:text-gray-300">{drug.genericName || '-'}</TableCell>
+                      <TableCell className="text-gray-700 dark:text-gray-300">{drug.strength || '-'}</TableCell>
+                      <TableCell className="capitalize text-gray-700 dark:text-gray-300">{drug.form}</TableCell>
+                      <TableCell className="text-gray-900 dark:text-white font-semibold">{drug.reorderLevel}</TableCell>
                       <TableCell>
-                        <Badge className={drug.isActive ? "bg-green-600" : "bg-gray-600"}>
+                        <Badge 
+                          className={drug.isActive 
+                            ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-premium-sm transition-all duration-150 hover:shadow-premium-md hover:from-green-700 hover:to-emerald-700 font-medium" 
+                            : "bg-gradient-to-r from-gray-600 to-slate-600 text-white shadow-premium-sm transition-all duration-150 hover:shadow-premium-md hover:from-gray-700 hover:to-slate-700 font-medium"
+                          }
+                        >
                           {drug.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
@@ -658,8 +697,9 @@ export default function PharmacyInventory() {
                               setEditingDrug(drug);
                               setShowEditDrug(true);
                             }}
-                            className="h-8 px-2 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
-                                     hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                            className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
+                                     hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
+                                     hover:shadow-premium-sm hover:scale-105"
                             title="Edit Drug"
                           >
                             <Edit className="w-3.5 h-3.5" />
@@ -672,8 +712,9 @@ export default function PharmacyInventory() {
                               setNewBatch({ ...newBatch, drugId: drug.id });
                               setShowReceiveStock(true);
                             }}
-                            className="h-8 px-2 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
-                                     hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            className="h-8 px-2.5 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
+                                     hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
+                                     hover:shadow-premium-sm hover:scale-105"
                             title="Receive Stock"
                           >
                             <ShoppingCart className="w-3.5 h-3.5" />
@@ -685,8 +726,9 @@ export default function PharmacyInventory() {
                               setBatchesDrug(drug);
                               setShowBatchesModal(true);
                             }}
-                            className="h-8 px-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
-                                     hover:bg-gray-50 dark:hover:bg-gray-800"
+                            className="h-8 px-2.5 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
+                                     hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-150
+                                     hover:shadow-premium-sm hover:scale-105"
                             title="View Batches"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -718,7 +760,7 @@ export default function PharmacyInventory() {
                 <div className="text-center py-8">
                   <div className="flex flex-col items-center gap-3">
                     <div className="p-4 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 
-                                  rounded-2xl shadow-premium-sm">
+                                  rounded-2xl shadow-premium-sm animate-float">
                       <Package className="w-12 h-12 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="space-y-1">
@@ -734,8 +776,10 @@ export default function PharmacyInventory() {
                 {lowStockDrugs.map((drug) => (
                   <div
                     key={drug.id}
-                    className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 
-                             rounded-lg p-4 shadow-premium-sm hover:shadow-premium-md transition-all duration-200"
+                    className="border-2 border-red-200 dark:border-red-800/50 rounded-xl p-4 
+                             bg-gradient-to-br from-red-50 via-pink-50 to-red-50 dark:from-red-900/20 dark:via-pink-900/15 dark:to-red-900/20
+                             shadow-premium-md hover:shadow-premium-lg transition-all duration-200 
+                             hover:-translate-y-0.5 animate-slide-in-up"
                     data-testid={`alert-low-stock-${drug.id}`}
                   >
                     <div className="flex justify-between items-start gap-4">
@@ -760,7 +804,9 @@ export default function PharmacyInventory() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 items-end">
-                        <Badge className="bg-red-600 text-white shadow-premium-sm"
+                        <Badge 
+                          className="bg-gradient-to-r from-red-600 to-red-500 text-white shadow-premium-md
+                                   hover:shadow-premium-lg transition-all duration-150 hover:scale-105 font-medium"
                         >
                           <AlertTriangle className="w-3 h-3 mr-1" />
                           LOW STOCK
@@ -802,7 +848,7 @@ export default function PharmacyInventory() {
                 <div className="text-center py-8">
                   <div className="flex flex-col items-center gap-3">
                     <div className="p-4 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 
-                                  rounded-2xl shadow-premium-sm">
+                                  rounded-2xl shadow-premium-sm animate-float">
                       <Clock className="w-12 h-12 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="space-y-1">
@@ -823,10 +869,11 @@ export default function PharmacyInventory() {
                   return (
                     <div
                       key={batch.batchId}
-                      className={`border-2 rounded-lg p-4 shadow-premium-sm hover:shadow-premium-md transition-all duration-200 ${
+                      className={`border-2 rounded-xl p-4 shadow-premium-md hover:shadow-premium-lg 
+                               transition-all duration-200 hover:-translate-y-0.5 animate-slide-in-up ${
                         isExpired 
-                          ? "border-red-500 bg-gradient-to-br from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30" 
-                          : "border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20"
+                          ? "border-red-500 dark:border-red-700/70 bg-gradient-to-br from-red-100 via-pink-100 to-red-100 dark:from-red-900/30 dark:via-pink-900/25 dark:to-red-900/30" 
+                          : "border-amber-300 dark:border-amber-700/70 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 dark:from-amber-900/20 dark:via-orange-900/15 dark:to-amber-900/20"
                       }`}
                       data-testid={`alert-expiring-${batch.batchId}`}
                     >
@@ -849,7 +896,12 @@ export default function PharmacyInventory() {
                             </div>
                           </div>
                         </div>
-                        <Badge className={`${isExpired ? "bg-red-600" : "bg-amber-600"} text-white shadow-premium-sm`}>
+                        <Badge 
+                          className={`${isExpired 
+                            ? "bg-gradient-to-r from-red-600 to-red-500 shadow-premium-md" 
+                            : "bg-gradient-to-r from-amber-600 to-orange-600 shadow-premium-md"
+                          } text-white hover:shadow-premium-lg transition-all duration-150 hover:scale-105 font-medium`}
+                        >
                           <Clock className="w-3 h-3 mr-1" />
                           {isExpired ? "EXPIRED" : `${daysToExpiry}d`}
                         </Badge>
@@ -918,9 +970,15 @@ export default function PharmacyInventory() {
                     a.download = `inventory-transactions-${new Date().toISOString().split('T')[0]}.csv`;
                     a.click();
                     window.URL.revokeObjectURL(url);
+                    
+                    toast({
+                      title: "Export Complete",
+                      description: `${ledgerEntries.length} transactions exported successfully.`,
+                    });
                   }}
                   className="border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
-                           hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                           hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
+                           hover:shadow-premium-sm hover:scale-105"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Export CSV
@@ -948,30 +1006,47 @@ export default function PharmacyInventory() {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Transaction ID</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead>Performed By</TableHead>
-                      <TableHead>Date</TableHead>
+                    <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
+                      <TableHead className="font-semibold">Transaction ID</TableHead>
+                      <TableHead className="font-semibold">Type</TableHead>
+                      <TableHead className="text-right font-semibold">Quantity</TableHead>
+                      <TableHead className="text-right font-semibold">Value</TableHead>
+                      <TableHead className="font-semibold">Performed By</TableHead>
+                      <TableHead className="font-semibold">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredLedgerEntries.map((entry) => (
-                      <TableRow key={entry.id} data-testid={`ledger-${entry.transactionId}`}>
-                        <TableCell className="font-medium">{entry.transactionId}</TableCell>
+                    {filteredLedgerEntries.map((entry, index) => (
+                      <TableRow 
+                        key={entry.id} 
+                        data-testid={`ledger-${entry.transactionId}`}
+                        className={`
+                          transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
+                          ${index % 2 === 0 
+                            ? "bg-white dark:bg-gray-900 hover:bg-gray-50/70 dark:hover:bg-gray-800/70" 
+                            : "bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100/70 dark:hover:bg-gray-700/70"
+                          }
+                        `}
+                      >
+                        <TableCell className="font-medium text-gray-900 dark:text-white">{entry.transactionId}</TableCell>
                         <TableCell>
-                          <Badge className={entry.transactionType === 'receive' ? "bg-green-600" : "bg-blue-600"}>
+                          <Badge 
+                            className={entry.transactionType === 'receive' 
+                              ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-premium-sm transition-all duration-150 hover:shadow-premium-md font-medium" 
+                              : "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-premium-sm transition-all duration-150 hover:shadow-premium-md font-medium"
+                            }
+                          >
                             {entry.transactionType}
                           </Badge>
                         </TableCell>
-                        <TableCell className={entry.quantity < 0 ? "text-red-600" : "text-green-600"}>
+                        <TableCell className={`text-right tabular-nums font-semibold ${entry.quantity < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                           {entry.quantity > 0 ? '+' : ''}{entry.quantity}
                         </TableCell>
-                        <TableCell>SSP {Math.round(entry.totalValue || 0).toLocaleString()}</TableCell>
-                        <TableCell>{entry.performedBy}</TableCell>
-                        <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums text-gray-900 dark:text-white font-semibold">
+                          SSP {Math.round(entry.totalValue || 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-gray-700 dark:text-gray-300">{entry.performedBy}</TableCell>
+                        <TableCell className="text-gray-700 dark:text-gray-300">{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -1394,6 +1469,290 @@ export default function PharmacyInventory() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Drug Dialog */}
+      <Dialog open={showEditDrug} onOpenChange={setShowEditDrug}>
+        <DialogContent className="max-w-2xl shadow-premium-2xl" data-testid="dialog-edit-drug">
+          <DialogHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-premium-md">
+                <Edit className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold">Edit Drug</DialogTitle>
+                <DialogDescription>Update drug information in the catalog</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          {editingDrug && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Drug Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={editingDrug.name}
+                  onChange={(e) => setEditingDrug({ ...editingDrug, name: e.target.value })}
+                  placeholder="Drug name"
+                  data-testid="input-edit-drug-name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-genericName">Generic Name (Optional)</Label>
+                <Input
+                  id="edit-genericName"
+                  value={editingDrug.genericName || ""}
+                  onChange={(e) => setEditingDrug({ ...editingDrug, genericName: e.target.value })}
+                  placeholder="e.g., Acetaminophen"
+                  data-testid="input-edit-generic-name"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-strength">Strength</Label>
+                  <Input
+                    id="edit-strength"
+                    value={editingDrug.strength || ""}
+                    onChange={(e) => setEditingDrug({ ...editingDrug, strength: e.target.value })}
+                    placeholder="e.g., 500mg"
+                    data-testid="input-edit-strength"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-form">Form</Label>
+                  <Select
+                    value={editingDrug.form}
+                    onValueChange={(value: any) => setEditingDrug({ ...editingDrug, form: value })}
+                  >
+                    <SelectTrigger id="edit-form" data-testid="select-edit-form">
+                      <SelectValue placeholder="Select form" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tablet">Tablet</SelectItem>
+                      <SelectItem value="capsule">Capsule</SelectItem>
+                      <SelectItem value="syrup">Syrup</SelectItem>
+                      <SelectItem value="injection">Injection</SelectItem>
+                      <SelectItem value="cream">Cream</SelectItem>
+                      <SelectItem value="ointment">Ointment</SelectItem>
+                      <SelectItem value="drops">Drops</SelectItem>
+                      <SelectItem value="inhaler">Inhaler</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-category">Category</Label>
+                  <Input
+                    id="edit-category"
+                    value={editingDrug.category || ""}
+                    onChange={(e) => setEditingDrug({ ...editingDrug, category: e.target.value })}
+                    placeholder="e.g., Analgesic"
+                    data-testid="input-edit-category"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-reorderLevel">Reorder Level</Label>
+                  <Input
+                    id="edit-reorderLevel"
+                    type="number"
+                    value={editingDrug.reorderLevel}
+                    onChange={(e) => setEditingDrug({ ...editingDrug, reorderLevel: parseInt(e.target.value) || 10 })}
+                    data-testid="input-edit-reorder-level"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowEditDrug(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await apiRequest('PUT', `/api/pharmacy/drugs/${editingDrug.id}`, {
+                        name: editingDrug.name,
+                        genericName: editingDrug.genericName,
+                        category: editingDrug.category,
+                        form: editingDrug.form,
+                        strength: editingDrug.strength,
+                        reorderLevel: editingDrug.reorderLevel,
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/drugs'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/stock/all'] });
+                      setShowEditDrug(false);
+                      toast({
+                        title: "Drug Updated",
+                        description: "Drug information has been updated successfully.",
+                      });
+                    } catch (error) {
+                      toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: "Failed to update drug information.",
+                      });
+                    }
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700
+                           shadow-premium-md hover:shadow-premium-lg transition-all duration-200"
+                  data-testid="button-save-edit-drug"
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Drug Batches Dialog */}
+      <Dialog open={showBatchesModal} onOpenChange={setShowBatchesModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto shadow-premium-2xl" data-testid="dialog-view-batches">
+          <DialogHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-premium-md">
+                <Eye className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold">
+                  {batchesDrug?.name || "Drug"} - Batch Details
+                </DialogTitle>
+                <DialogDescription>View all batches and inventory details</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          {batchesDrug && (
+            <div className="space-y-6">
+              {/* Drug Summary */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 
+                            p-4 rounded-xl border border-blue-200 dark:border-blue-800 shadow-premium-sm">
+                <h5 className="text-sm font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Drug Information
+                </h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400">Code:</span>
+                    <span className="ml-2 font-semibold text-gray-900 dark:text-white">
+                      {batchesDrug.drugCode}
+                    </span>
+                  </div>
+                  <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400">Strength:</span>
+                    <span className="ml-2 font-semibold text-gray-900 dark:text-white">
+                      {batchesDrug.strength || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400">Form:</span>
+                    <span className="ml-2 font-semibold text-gray-900 dark:text-white capitalize">
+                      {batchesDrug.form}
+                    </span>
+                  </div>
+                  <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400">Reorder Level:</span>
+                    <span className="ml-2 font-semibold text-gray-900 dark:text-white">
+                      {batchesDrug.reorderLevel}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Batches Table */}
+              <div>
+                <h5 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Active Batches</h5>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>Batch ID</TableHead>
+                      <TableHead>Lot Number</TableHead>
+                      <TableHead>Expiry Date</TableHead>
+                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead className="text-right">Unit Cost (SSP)</TableHead>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead>Received</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allBatches
+                      .filter(b => b.drugId === batchesDrug.id && b.quantityOnHand > 0)
+                      .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())
+                      .map((batch) => {
+                        const expiryDate = new Date(batch.expiryDate);
+                        const daysToExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        const isExpiringSoon = daysToExpiry <= 90;
+                        const isExpired = daysToExpiry < 0;
+
+                        return (
+                          <TableRow 
+                            key={batch.batchId}
+                            className={`
+                              transition-colors duration-150
+                              ${isExpired 
+                                ? "bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30" 
+                                : isExpiringSoon 
+                                  ? "bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30" 
+                                  : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                              }
+                            `}
+                          >
+                            <TableCell className="font-medium">{batch.batchId}</TableCell>
+                            <TableCell>{batch.lotNumber || 'N/A'}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className={isExpired ? "text-red-600 dark:text-red-400 font-semibold" : isExpiringSoon ? "text-amber-600 dark:text-amber-400 font-semibold" : ""}>
+                                  {expiryDate.toLocaleDateString()}
+                                </span>
+                                {isExpired ? (
+                                  <Badge className="bg-red-600 text-white text-xs">EXPIRED</Badge>
+                                ) : isExpiringSoon ? (
+                                  <Badge className="bg-amber-600 text-white text-xs">{daysToExpiry}d</Badge>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">{batch.quantityOnHand}</TableCell>
+                            <TableCell className="text-right font-mono">{Math.round(batch.unitCost).toLocaleString()}</TableCell>
+                            <TableCell>{batch.supplier || 'N/A'}</TableCell>
+                            <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                              {new Date(batch.receivedAt).toLocaleDateString()}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+                {allBatches.filter(b => b.drugId === batchesDrug.id && b.quantityOnHand > 0).length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="p-4 bg-gradient-to-br from-gray-100 to-slate-100 dark:from-gray-900/30 dark:to-slate-900/30 
+                                    rounded-2xl shadow-premium-sm">
+                        <Package className="w-12 h-12 text-gray-600 dark:text-gray-400" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No Active Batches</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                          This drug has no batches with stock currently.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setSelectedDrug(batchesDrug);
+                          setNewBatch({ ...newBatch, drugId: batchesDrug.id });
+                          setShowBatchesModal(false);
+                          setShowReceiveStock(true);
+                        }}
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 mt-2"
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Receive Stock
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
       </div>

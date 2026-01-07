@@ -53,11 +53,22 @@ export default function PharmacyInventoryHelp({ collapsed, onCollapsedChange }: 
   };
 
   return (
-    <div className={`
-      fixed right-0 top-0 h-screen z-40 
-      transition-all duration-300 ease-in-out
-      ${isCollapsed ? 'w-12' : 'w-96'}
-    `}>
+    <>
+      {/* Backdrop overlay when help is open - only on smaller screens */}
+      {!isCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black/10 dark:bg-black/30 z-30 backdrop-blur-[2px] 
+                     transition-opacity duration-300 lg:hidden"
+          onClick={handleToggle}
+          aria-hidden="true"
+        />
+      )}
+      
+      <div className={`
+        fixed right-0 top-0 h-screen z-40 
+        transition-all duration-300 ease-in-out
+        ${isCollapsed ? 'w-12' : 'w-96'}
+      `}>
       {/* Toggle Button with Tooltip */}
       <TooltipProvider>
         <Tooltip>
@@ -352,5 +363,6 @@ export default function PharmacyInventoryHelp({ collapsed, onCollapsedChange }: 
         </ScrollArea>
       </div>
     </div>
+    </>
   );
 }
