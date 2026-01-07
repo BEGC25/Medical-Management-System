@@ -98,7 +98,14 @@ export const XRAY_BODY_PARTS = {
     'Abdomen (KUB)', 'Abdomen (Upright)'
   ],
   skull: [
-    'Skull', 'Facial bones', 'Mandible', 'Sinuses'
+    'AP (Caldwell)',
+    'Lateral',
+    "Towne's View",
+    "Waters View (Sinuses)",
+    'Submentovertex (Base)',
+    'Skull Series (4 views)',
+    'Facial bones',
+    'Mandible',
   ],
   pelvis: [
     'Pelvis AP', 'Hip'
@@ -143,18 +150,20 @@ export type XrayExamType = typeof XRAY_EXAM_TYPES[number]['value'];
  * =================================================================== */
 
 export const ULTRASOUND_EXAM_TYPES = [
-  { value: 'abdominal', label: 'Abdominal', icon: '🫄', description: 'Liver, gallbladder, kidneys, spleen' },
+  { value: 'cardiac', label: 'Cardiac (Echo)', icon: '🫀', description: 'Heart structure & function' },
   { value: 'obstetric', label: 'Obstetric', icon: '🤰', description: 'Pregnancy & fetal assessment' },
+  { value: 'abdominal', label: 'Abdominal', icon: '🫄', description: 'Liver, gallbladder, kidneys, spleen' },
+  { value: 'musculoskeletal', label: 'Musculoskeletal', icon: '🦴', description: 'Joints, tendons, soft tissue' },
+  { value: 'thoracic', label: 'Thoracic', icon: '🫁', description: 'Chest & lungs' },
+  { value: 'vascular', label: 'Vascular (Doppler)', icon: '🩸', description: 'Blood vessel assessment' },
   { value: 'pelvic', label: 'Pelvic', icon: '🩻', description: 'Uterus, ovaries, bladder' },
-  { value: 'cardiac', label: 'Cardiac (Echo)', icon: '❤️', description: 'Heart structure & function' },
   { value: 'renal', label: 'Renal', icon: '🫘', description: 'Kidneys & urinary tract' },
   { value: 'thyroid', label: 'Thyroid', icon: '🦴', description: 'Thyroid gland assessment' },
-  { value: 'breast', label: 'Breast', icon: '🩺', description: 'Breast tissue evaluation' },
-  { value: 'musculoskeletal', label: 'Musculoskeletal', icon: '🦴', description: 'Joints, tendons, soft tissue' },
-  { value: 'vascular', label: 'Vascular (Doppler)', icon: '🩸', description: 'Blood vessel assessment' },
+  { value: 'breast', label: 'Breast', icon: '🎀', description: 'Breast tissue evaluation' },
   { value: 'soft_tissue', label: 'Soft Tissue', icon: '🔬', description: 'Superficial masses & lesions' },
   { value: 'scrotal', label: 'Scrotal', icon: '🔵', description: 'Testicular assessment' },
   { value: 'neck', label: 'Neck', icon: '🦴', description: 'Neck masses & lymph nodes' },
+  { value: 'other', label: 'Other/Custom', icon: '🎯', description: 'Custom exam' },
 ] as const;
 
 export const ULTRASOUND_SPECIFIC_EXAMS = {
@@ -241,6 +250,15 @@ export const ULTRASOUND_SPECIFIC_EXAMS = {
     'Neck Mass Evaluation',
     'Lymph Node Assessment',
     'Salivary Gland Scan',
+  ],
+  thoracic: [
+    'Pleural Effusion Assessment',
+    'Thyroid Gland Scan',
+    'Chest Wall Mass',
+    'Lung Surface Evaluation',
+  ],
+  other: [
+    'Custom Examination',
   ],
 } as const;
 
