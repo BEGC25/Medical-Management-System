@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation } from "wouter";
 import {
   UserPlus,
   Save,
@@ -113,6 +114,7 @@ export default function Patients() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [location] = useLocation();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -124,6 +126,20 @@ export default function Patients() {
 
   // Ref for search input (for keyboard shortcuts)
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Read query parameters and apply them to search
+  useEffect(() => {
+    // Parse query params from location string
+    const queryString = location.split('?')[1];
+    if (queryString) {
+      const params = new URLSearchParams(queryString);
+      const searchParam = params.get("search") || params.get("patientId");
+      if (searchParam) {
+        setSearchQuery(searchParam);
+        setShowSearch(true);
+      }
+    }
+  }, [location]);
 
   // Keyboard shortcuts
   useEffect(() => {
