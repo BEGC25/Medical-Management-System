@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
+import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp, CheckCircle, User, Printer } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PharmacyHelp from "@/components/PharmacyHelp";
+import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
 
 // Helper function to format dates consistently
 function formatDate(dateString: string): string {
@@ -88,7 +89,25 @@ export default function Pharmacy() {
   const [selectedOrder, setSelectedOrder] = useState<PrescriptionWithPatient | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<string>("");
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [helpCollapsed, setHelpCollapsed] = useState(() => {
+    const saved = localStorage.getItem("pharmacyHelpCollapsed");
+    return saved === "true";
+  });
+  
+  // Date filter states
+  const [dispensedDateFilter, setDispensedDateFilter] = useState<DateFilterPreset>("all");
+  const [dispensedStartDate, setDispensedStartDate] = useState<string>();
+  const [dispensedEndDate, setDispensedEndDate] = useState<string>();
+  const [unpaidDateFilter, setUnpaidDateFilter] = useState<DateFilterPreset>("all");
+  const [unpaidStartDate, setUnpaidStartDate] = useState<string>();
+  const [unpaidEndDate, setUnpaidEndDate] = useState<string>();
+  
   const { toast } = useToast();
+
+  // Persist help collapsed state
+  useEffect(() => {
+    localStorage.setItem("pharmacyHelpCollapsed", String(helpCollapsed));
+  }, [helpCollapsed]);
 
   // Fetch paid prescriptions ready for dispensing
   const { data: paidPrescriptions = [], isLoading: isLoadingPaid } = useQuery<PrescriptionWithPatient[]>({
@@ -120,6 +139,43 @@ export default function Pharmacy() {
     enabled: !!selectedOrder?.drugId,
   });
   
+  // Helper function to check if a date is within the filter range
+  const isDateInRange = (dateStr: string | null | undefined, preset: DateFilterPreset, startDate?: string, endDate?: string): boolean => {
+    if (!dateStr) return true; // If no date, include it
+    if (preset === "all") return true;
+    
+    const date = new Date(dateStr);
+    const now = new Date();
+    
+    if (preset === "today") {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return date >= today && date < tomorrow;
+    }
+    
+    if (preset === "last7days") {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return date >= sevenDaysAgo;
+    }
+    
+    if (preset === "last30days") {
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return date >= thirtyDaysAgo;
+    }
+    
+    if (preset === "custom" && startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999); // Include the entire end date
+      return date >= start && date <= end;
+    }
+    
+    return true;
+  };
+  
   // Filter prescriptions by search term
   const filteredPaidOrders = paidPrescriptions.filter((order) => 
     (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,21 +185,33 @@ export default function Pharmacy() {
     (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const filteredUnpaidOrders = unpaidPrescriptions.filter((order) => 
-    (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.patient?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUnpaidOrders = unpaidPrescriptions.filter((order) => {
+    const matchesSearch = 
+      (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.patient?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesDate = isDateInRange(order.createdAt, unpaidDateFilter, unpaidStartDate, unpaidEndDate);
+    
+    return matchesSearch && matchesDate;
+  });
 
-  const filteredDispensedOrders = dispensedPrescriptions.filter((order) => 
-    (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.patient?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDispensedOrders = dispensedPrescriptions.filter((order) => {
+    const matchesSearch = 
+      (order.patient?.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.patient?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.patient?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.drugName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filter by dispensedAt if available, otherwise fall back to createdAt
+    const dateToFilter = order.dispensedAt || order.createdAt;
+    const matchesDate = isDateInRange(dateToFilter, dispensedDateFilter, dispensedStartDate, dispensedEndDate);
+    
+    return matchesSearch && matchesDate;
+  });
 
   // Handle refresh
   const handleRefresh = () => {
@@ -223,8 +291,8 @@ export default function Pharmacy() {
   // Premium loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen pr-96">
-        <PharmacyHelp />
+      <div className={`min-h-screen transition-all duration-300 ${helpCollapsed ? 'pr-0' : 'pr-96'}`}>
+        <PharmacyHelp collapsed={helpCollapsed} onCollapsedChange={setHelpCollapsed} />
         <div className="space-y-6 p-6">
           {/* Header Skeleton */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -263,9 +331,9 @@ export default function Pharmacy() {
   }
 
   return (
-    <div className="min-h-screen pr-96 transition-all duration-300">
+    <div className={`min-h-screen transition-all duration-300 ${helpCollapsed ? 'pr-0' : 'pr-96'}`}>
       {/* Right-side help panel - rendered as a fixed sidebar */}
-      <PharmacyHelp />
+      <PharmacyHelp collapsed={helpCollapsed} onCollapsedChange={setHelpCollapsed} />
 
       {/* Main content */}
       <div className="space-y-6 p-6">
@@ -516,6 +584,16 @@ export default function Pharmacy() {
 
           {/* Dispensed History Tab - Premium */}
           <TabsContent value="dispensed" className="space-y-4">
+            {/* Date Filter */}
+            <DateFilter 
+              onFilterChange={(preset, start, end) => {
+                setDispensedDateFilter(preset);
+                setDispensedStartDate(start);
+                setDispensedEndDate(end);
+              }}
+              defaultPreset="all"
+            />
+            
             {filteredDispensedOrders.length === 0 ? (
               <Card className="shadow-premium-md border-gray-200 dark:border-gray-700">
                 <CardContent className="p-16 text-center">
@@ -547,7 +625,7 @@ export default function Pharmacy() {
                       data-testid={`order-dispensed-${order.orderId}`}
                     >
                       <CardContent className="p-5">
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start gap-4">
                           <div className="flex-1 space-y-3">
                             {/* Header with badges */}
                             <div className="flex items-center gap-2 flex-wrap">
@@ -651,6 +729,31 @@ export default function Pharmacy() {
                               </button>
                             )}
                           </div>
+
+                          {/* Quick Action Buttons */}
+                          <div className="flex flex-col gap-2 flex-shrink-0">
+                            <Link href={`/patients?search=${order.patient?.patientId}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
+                                         hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
+                              >
+                                <User className="w-3.5 h-3.5 mr-1.5" />
+                                View Patient
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {/* Print handler will be added */}}
+                              className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300
+                                       hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200"
+                            >
+                              <Printer className="w-3.5 h-3.5 mr-1.5" />
+                              Print
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -662,6 +765,16 @@ export default function Pharmacy() {
 
           {/* Unpaid Orders Tab - Premium */}
           <TabsContent value="unpaid" className="space-y-4">
+            {/* Date Filter */}
+            <DateFilter 
+              onFilterChange={(preset, start, end) => {
+                setUnpaidDateFilter(preset);
+                setUnpaidStartDate(start);
+                setUnpaidEndDate(end);
+              }}
+              defaultPreset="all"
+            />
+            
             {filteredUnpaidOrders.length === 0 ? (
               <Card className="shadow-premium-md border-gray-200 dark:border-gray-700">
                 <CardContent className="p-16 text-center">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -19,15 +20,34 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
-export default function PharmacyHelp() {
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+interface PharmacyHelpProps {
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
+}
+
+export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyHelpProps) {
+  // Support both controlled and uncontrolled modes
+  const [internalCollapsed, setInternalCollapsed] = useState(() => {
     const saved = localStorage.getItem("pharmacyHelpCollapsed");
     return saved === "true";
   });
 
+  const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed;
+  
+  const handleToggle = () => {
+    const newValue = !isCollapsed;
+    if (onCollapsedChange) {
+      onCollapsedChange(newValue);
+    } else {
+      setInternalCollapsed(newValue);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem("pharmacyHelpCollapsed", String(isCollapsed));
-  }, [isCollapsed]);
+    if (collapsed === undefined) {
+      localStorage.setItem("pharmacyHelpCollapsed", String(internalCollapsed));
+    }
+  }, [internalCollapsed, collapsed]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -42,21 +62,30 @@ export default function PharmacyHelp() {
       transition-all duration-300 ease-in-out
       ${isCollapsed ? 'w-12' : 'w-96'}
     `}>
-      {/* Toggle Button */}
-      <Button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full 
-                   bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
-                   text-white shadow-premium-lg rounded-r-none rounded-l-xl px-3 py-6 z-50
-                   transition-all duration-200 hover:shadow-premium-xl"
-        aria-label={isCollapsed ? "Show help panel" : "Hide help panel"}
-      >
-        {isCollapsed ? (
-          <ChevronLeft className="w-5 h-5" />
-        ) : (
-          <ChevronRight className="w-5 h-5" />
-        )}
-      </Button>
+      {/* Toggle Button with Tooltip */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleToggle}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full 
+                         bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
+                         text-white shadow-premium-lg rounded-r-none rounded-l-xl px-3 py-6 z-50
+                         transition-all duration-200 hover:shadow-premium-xl"
+              aria-label={isCollapsed ? "Show help panel" : "Hide help panel"}
+            >
+              {isCollapsed ? (
+                <ChevronLeft className="w-5 h-5" />
+              ) : (
+                <ChevronRight className="w-5 h-5" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-gray-900 text-white border-gray-700">
+            <p>{isCollapsed ? "Show Help" : "Hide Help"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Help Panel */}
       <div className={`
