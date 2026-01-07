@@ -76,6 +76,7 @@ import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } fr
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
 import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from '@/components/diagnostics';
+import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -1144,14 +1145,7 @@ export default function XRay() {
                 </label>
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {[
-                    { value: 'chest', label: 'Chest X-Ray', icon: '🫁', description: 'Thoracic imaging' },
-                    { value: 'extremities', label: 'Extremity', icon: '🦴', description: 'Arms, legs, joints' },
-                    { value: 'abdomen', label: 'Abdominal', icon: '🫄', description: 'Abdomen & pelvis' },
-                    { value: 'spine', label: 'Spine', icon: '🦴', description: 'Cervical to lumbar' },
-                    { value: 'skull', label: 'Skull/Head', icon: '💀', description: 'Cranial imaging' },
-                    { value: 'pelvis', label: 'Pelvic', icon: '🦴', description: 'Hip & pelvis' },
-                  ].map((exam) => (
+                  {XRAY_EXAM_TYPES.map((exam) => (
                     <button
                       key={exam.value}
                       type="button"
@@ -1408,14 +1402,7 @@ export default function XRay() {
                   </label>
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {[
-                      'AP (Caldwell)',
-                      'Lateral',
-                      "Towne's View",
-                      "Waters View (Sinuses)",
-                      'Submentovertex (Base)',
-                      'Skull Series (4 views)'
-                    ].map((view) => (
+                    {XRAY_BODY_PARTS.skull.map((view) => (
                       <Button
                         key={view}
                         type="button"

@@ -658,6 +658,9 @@ export default function Treatment() {
     examination: false,
     diagnosis: false,
     treatmentPlan: false,
+    labClinicalInfo: false,
+    xrayClinicalInfo: false,
+    ultrasoundClinicalInfo: false,
   });
   
   // Refs for voice input
@@ -665,6 +668,9 @@ export default function Treatment() {
   const examinationRef = useRef<HTMLTextAreaElement>(null);
   const diagnosisRef = useRef<HTMLTextAreaElement>(null);
   const treatmentPlanRef = useRef<HTMLTextAreaElement>(null);
+  const labClinicalInfoRef = useRef<HTMLTextAreaElement>(null);
+  const xrayClinicalInfoRef = useRef<HTMLTextAreaElement>(null);
+  const ultrasoundClinicalInfoRef = useRef<HTMLTextAreaElement>(null);
   
   // Recognition instance (shared across all fields)
   const recognitionInstanceRef = useRef<any>(null);
@@ -2060,6 +2066,15 @@ export default function Treatment() {
         case 'treatmentPlan':
           form.setValue('treatmentPlan', transcript);
           break;
+        case 'labClinicalInfo':
+          setLabClinicalInfo(transcript);
+          break;
+        case 'xrayClinicalInfo':
+          setXrayClinicalInfo(transcript);
+          break;
+        case 'ultrasoundClinicalInfo':
+          setUltrasoundClinicalInfo(transcript);
+          break;
       }
     };
 
@@ -3097,8 +3112,21 @@ export default function Treatment() {
 
                                     {/* Clinical Information */}
                                     <div className="space-y-2">
-                                      <label className="text-sm font-medium">Clinical Information</label>
+                                      <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium">Clinical Information</label>
+                                        <Button
+                                          type="button"
+                                          size="sm" 
+                                          variant="outline"
+                                          onClick={() => startVoiceInput('labClinicalInfo')}
+                                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                        >
+                                          <Mic className={`w-3 h-3 mr-1 ${isRecording.labClinicalInfo ? 'animate-pulse text-red-500' : ''}`} />
+                                          {isRecording.labClinicalInfo ? 'Stop' : 'Dictate'}
+                                        </Button>
+                                      </div>
                                       <Textarea
+                                        ref={labClinicalInfoRef}
                                         placeholder="Symptoms, suspected diagnosis, relevant clinical information..."
                                         rows={3}
                                         value={labClinicalInfo}
@@ -3238,10 +3266,111 @@ export default function Treatment() {
                                             </div>
                                           )}
 
+                                          {xrayExamType === 'spine' && XRAY_BODY_PARTS.spine && (
+                                            <div className="space-y-3">
+                                              <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select Spine Region</h3>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                {XRAY_BODY_PARTS.spine.map((part) => (
+                                                  <button
+                                                    key={part}
+                                                    type="button"
+                                                    onClick={() => setXrayBodyPart(part)}
+                                                    className={`p-3 text-sm rounded border-2 transition-all ${
+                                                      xrayBodyPart === part
+                                                        ? 'bg-blue-600 text-white border-blue-500'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600'
+                                                    }`}
+                                                  >
+                                                    {part}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {xrayExamType === 'skull' && XRAY_BODY_PARTS.skull && (
+                                            <div className="space-y-3">
+                                              <h3 className="font-semibold text-base text-gray-900 dark:text-white">View/Projection (Quick Select)</h3>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                {XRAY_BODY_PARTS.skull.map((view) => (
+                                                  <button
+                                                    key={view}
+                                                    type="button"
+                                                    onClick={() => setXrayBodyPart(view)}
+                                                    className={`p-3 text-sm rounded border-2 transition-all ${
+                                                      xrayBodyPart === view
+                                                        ? 'bg-blue-600 text-white border-blue-500'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600'
+                                                    }`}
+                                                  >
+                                                    {view}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {xrayExamType === 'abdomen' && XRAY_BODY_PARTS.abdomen && (
+                                            <div className="space-y-3">
+                                              <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select View</h3>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                {XRAY_BODY_PARTS.abdomen.map((view) => (
+                                                  <button
+                                                    key={view}
+                                                    type="button"
+                                                    onClick={() => setXrayBodyPart(view)}
+                                                    className={`p-3 text-sm rounded border-2 transition-all ${
+                                                      xrayBodyPart === view
+                                                        ? 'bg-blue-600 text-white border-blue-500'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600'
+                                                    }`}
+                                                  >
+                                                    {view}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {xrayExamType === 'pelvis' && XRAY_BODY_PARTS.pelvis && (
+                                            <div className="space-y-3">
+                                              <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select View</h3>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                {XRAY_BODY_PARTS.pelvis.map((view) => (
+                                                  <button
+                                                    key={view}
+                                                    type="button"
+                                                    onClick={() => setXrayBodyPart(view)}
+                                                    className={`p-3 text-sm rounded border-2 transition-all ${
+                                                      xrayBodyPart === view
+                                                        ? 'bg-blue-600 text-white border-blue-500'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600'
+                                                    }`}
+                                                  >
+                                                    {view}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
                                           {/* Clinical Information */}
                                           <div className="space-y-2">
-                                            <label className="text-sm font-medium">Clinical Indication</label>
+                                            <div className="flex items-center justify-between">
+                                              <label className="text-sm font-medium">Clinical Indication</label>
+                                              <Button
+                                                type="button"
+                                                size="sm" 
+                                                variant="outline"
+                                                onClick={() => startVoiceInput('xrayClinicalInfo')}
+                                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                              >
+                                                <Mic className={`w-3 h-3 mr-1 ${isRecording.xrayClinicalInfo ? 'animate-pulse text-red-500' : ''}`} />
+                                                {isRecording.xrayClinicalInfo ? 'Stop' : 'Dictate'}
+                                              </Button>
+                                            </div>
                                             <Textarea
+                                              ref={xrayClinicalInfoRef}
                                               placeholder="Clinical indication, suspected diagnosis, relevant history..."
                                               rows={3}
                                               value={xrayClinicalInfo}
@@ -3319,7 +3448,8 @@ export default function Treatment() {
                                           <Button
                                             size="lg"
                                             onClick={() => {
-                                              if (!xrayBodyPart && (xrayExamType === 'extremities' || xrayExamType === 'chest')) {
+                                              const requiresBodyPart = ['extremities', 'chest', 'spine', 'skull', 'abdomen', 'pelvis'].includes(xrayExamType);
+                                              if (!xrayBodyPart && requiresBodyPart) {
                                                 toast({ 
                                                   title: "Selection Required", 
                                                   description: "Please select a body part or view", 
@@ -3425,11 +3555,24 @@ export default function Treatment() {
 
                                           {/* Prominent Clinical Info Field */}
                                           <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg space-y-2">
-                                            <div className="flex items-center gap-2 mb-2">
-                                              <label className="text-sm font-semibold text-purple-900 dark:text-purple-300">Clinical Information</label>
-                                              <Badge className="bg-purple-600 text-white text-xs">Recommended</Badge>
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div className="flex items-center gap-2">
+                                                <label className="text-sm font-semibold text-purple-900 dark:text-purple-300">Clinical Information</label>
+                                                <Badge className="bg-purple-600 text-white text-xs">Recommended</Badge>
+                                              </div>
+                                              <Button
+                                                type="button"
+                                                size="sm" 
+                                                variant="outline"
+                                                onClick={() => startVoiceInput('ultrasoundClinicalInfo')}
+                                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                              >
+                                                <Mic className={`w-3 h-3 mr-1 ${isRecording.ultrasoundClinicalInfo ? 'animate-pulse text-red-500' : ''}`} />
+                                                {isRecording.ultrasoundClinicalInfo ? 'Stop' : 'Dictate'}
+                                              </Button>
                                             </div>
                                             <Textarea
+                                              ref={ultrasoundClinicalInfoRef}
                                               placeholder="Clinical indication, suspected diagnosis, relevant history..."
                                               rows={3}
                                               value={ultrasoundClinicalInfo}
