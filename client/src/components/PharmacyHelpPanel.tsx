@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { HelpCircle, X, Pill, Package, BookOpen, CheckCircle, Clock, AlertCircle, AlertTriangle, FileText, TrendingDown } from "lucide-react";
+import { HelpCircle, X, Pill, Package, BookOpen, CheckCircle, Clock, AlertCircle, AlertTriangle, FileText, TrendingDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -397,5 +397,4 @@ export default function PharmacyHelpPanel() {
   );
 }
 
-// Import for Plus icon
-import { Plus } from "lucide-react";
+
