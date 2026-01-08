@@ -42,10 +42,19 @@ type ReceiptDetail = {
   cashier: string
 }
 
-function todayYMD() {
-  const d = new Date()
+function formatDateYMD(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function todayYMD() {
+  return formatDateYMD(new Date())
+}
+
+function yesterdayYMD() {
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  return formatDateYMD(yesterday)
 }
 
 const CURRENCY = "SSP"
@@ -268,7 +277,6 @@ export default function ReportsDailyCash() {
                 className={`justify-start text-left font-normal min-w-[200px] ${
                   !date && "text-muted-foreground"
                 }`}
-                disabled={closingStatus.closed}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {date ? format(new Date(date), "PPP") : <span>Pick a date</span>}
@@ -287,6 +295,25 @@ export default function ReportsDailyCash() {
               />
             </PopoverContent>
           </Popover>
+          
+          {/* Quick date shortcuts */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDate(todayYMD())}
+            className="font-medium"
+          >
+            Today
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDate(yesterdayYMD())}
+            className="font-medium"
+          >
+            Yesterday
+          </Button>
+          
           {closingStatus.closed && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
               <Lock className="h-3.5 w-3.5" />
