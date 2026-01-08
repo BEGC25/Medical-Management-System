@@ -1,6 +1,18 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 
+// Extend express-session types to include our user
+declare module "express-session" {
+  interface SessionData {
+    user?: {
+      id: number;
+      username: string;
+      role: string;
+      fullName?: string;
+    };
+  }
+}
+
 const router = Router();
 
 type Runner = (sql: string, params?: any[]) => Promise<any[]>;
@@ -60,7 +72,7 @@ router.get("/api/reports/daily-cash-closing/status", async (req: Request, res: R
 router.post("/api/reports/daily-cash-closing/close", async (req: Request, res: Response) => {
   try {
     // Admin-only check
-    const user = (req as any).user;
+    const user = req.session?.user;
     if (!user || user.role !== 'admin') {
       return res.status(403).json({ error: "Only administrators can close the day" });
     }
