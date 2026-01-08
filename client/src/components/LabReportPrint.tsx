@@ -178,13 +178,16 @@ export function LabReportPrint({
         {includeInterpretation && (() => {
           const criticalFindings = interpretation.criticalFindings.map(f => `🔴 ${f}`);
           const warnings = interpretation.warnings.map(w => `⚠️ ${w}`);
+          const hasCritical = criticalFindings.length > 0;
+          const hasWarnings = warnings.length > 0;
+          const hasFindings = hasCritical || hasWarnings;
 
-          return (criticalFindings.length > 0 || warnings.length > 0) ? (
-            <div className="mb-3 bg-yellow-50 border border-yellow-300 rounded p-3">
-              <h2 className="text-sm font-bold mb-1 text-yellow-900 flex items-center">
+          return (
+            <div className={`mb-3 rounded p-3 border ${hasFindings ? 'bg-yellow-50 border-yellow-300' : 'bg-green-50 border-green-300'}`}>
+              <h2 className={`text-sm font-bold mb-1 flex items-center ${hasFindings ? 'text-yellow-900' : 'text-green-900'}`}>
                 <span className="text-base mr-1">ℹ️</span> Clinical Interpretation
               </h2>
-              {criticalFindings.length > 0 && (
+              {hasCritical && (
                 <div className="mb-2">
                   <p className="font-semibold text-red-800 mb-1 text-xs">Critical Findings Requiring Attention:</p>
                   <div className="space-y-0.5">
@@ -196,7 +199,7 @@ export function LabReportPrint({
                   </div>
                 </div>
               )}
-              {warnings.length > 0 && (
+              {hasWarnings && (
                 <div className="space-y-0.5">
                   {warnings.map((warning, i) => (
                     <div key={i} className="bg-yellow-100 border-l-2 border-yellow-600 p-1.5 text-xs">
@@ -205,8 +208,13 @@ export function LabReportPrint({
                   ))}
                 </div>
               )}
+              {!hasFindings && (
+                <div className="text-xs text-green-800 bg-green-100 border-l-2 border-green-600 p-1.5">
+                  ✓ All test results are within normal limits. No critical findings or abnormalities detected.
+                </div>
+              )}
             </div>
-          ) : null;
+          );
         })()}
 
         {/* Footer */}
