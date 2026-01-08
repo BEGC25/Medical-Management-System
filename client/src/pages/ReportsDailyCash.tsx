@@ -47,6 +47,13 @@ function formatDateYMD(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+// Parse YYYY-MM-DD as a local date (not UTC) to avoid timezone shift bugs.
+// DO NOT use new Date('YYYY-MM-DD') - it parses as UTC and causes off-by-one in Africa/Juba (UTC+2).
+function ymdToLocalDate(ymd: string): Date {
+  const [year, month, day] = ymd.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 function todayYMD() {
   return formatDateYMD(new Date())
 }
@@ -279,13 +286,15 @@ export default function ReportsDailyCash() {
                 }`}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(new Date(date), "PPP") : <span>Pick a date</span>}
+                {/* Use ymdToLocalDate to avoid UTC parsing timezone shift */}
+                {date ? format(ymdToLocalDate(date), "PPP") : <span>Pick a date</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-50" align="start">
+              {/* Use ymdToLocalDate to avoid UTC parsing timezone shift */}
               <Calendar
                 mode="single"
-                selected={date ? new Date(date) : undefined}
+                selected={date ? ymdToLocalDate(date) : undefined}
                 onSelect={(selectedDate) => {
                   if (selectedDate) {
                     setDate(format(selectedDate, 'yyyy-MM-dd'))
