@@ -58,18 +58,18 @@ export function ResultsFiltersBar({ filters, patients, onFilterChange, resultCou
           {/* Date Filter */}
           <div>
             <Label htmlFor="date-filter" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5 block">
-              Date Range
+              Date Filter
             </Label>
             <select
               id="date-filter"
               value={filters.dateFilter}
               onChange={(e) => onFilterChange({ dateFilter: e.target.value })}
               className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
-              aria-label="Filter by date range"
+              aria-label="Filter by date"
             >
-              <option value="today">Today Only</option>
-              <option value="date">Select Date</option>
               <option value="all">All Dates</option>
+              <option value="today">Today</option>
+              <option value="date">Specific Date</option>
             </select>
           </div>
 

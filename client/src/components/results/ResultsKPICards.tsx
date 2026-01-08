@@ -21,7 +21,12 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
         onClick={() => onTypeFilterChange('all')}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onTypeFilterChange('all')}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onTypeFilterChange('all');
+          }
+        }}
         aria-label="Filter to show all results"
       >
         <CardContent className="p-6">
@@ -49,7 +54,12 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
         onClick={() => onTypeFilterChange('lab')}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onTypeFilterChange('lab')}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onTypeFilterChange('lab');
+          }
+        }}
         aria-label="Filter to show lab tests only"
       >
         <CardContent className="p-6">
@@ -77,7 +87,12 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
         onClick={() => onTypeFilterChange('xray')}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onTypeFilterChange('xray')}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onTypeFilterChange('xray');
+          }
+        }}
         aria-label="Filter to show X-rays only"
       >
         <CardContent className="p-6">
@@ -105,7 +120,12 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
         onClick={() => onTypeFilterChange('ultrasound')}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onTypeFilterChange('ultrasound')}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onTypeFilterChange('ultrasound');
+          }
+        }}
         aria-label="Filter to show ultrasounds only"
       >
         <CardContent className="p-6">

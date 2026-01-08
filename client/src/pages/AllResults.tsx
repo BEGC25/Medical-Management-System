@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { canAccessPage, ROLES, UserRole } from "@shared/auth-roles";
@@ -37,6 +37,7 @@ import { formatDepartmentName } from "@/lib/display-utils";
 import { ResultsHeader } from "@/components/results/ResultsHeader";
 import { ResultsKPICards } from "@/components/results/ResultsKPICards";
 import { ResultsFiltersBar } from "@/components/results/ResultsFilters";
+import { FilterChips } from "@/components/results/FilterChips";
 import { ResultsList } from "@/components/results/ResultsList";
 import { ResultsPreview } from "@/components/results/ResultsPreview";
 import { getResultValueColor } from "@/components/results/utils";
@@ -119,7 +120,7 @@ export default function AllResults() {
   const [selectedPatient, setSelectedPatient] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<string>("today");
+  const [dateFilter, setDateFilter] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<string>(getClinicDayKey());
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -135,11 +136,12 @@ export default function AllResults() {
     } else if (dateFilter === "date") {
       return { date: selectedDate };
     } else {
-      return {} as Record<string, string>; // Load all data only when explicitly requested
+      // "all" - Load all data
+      return {} as Record<string, string>;
     }
   };
 
-  // Only fetch data when needed, default to today's results for performance
+  // Fetch data based on date filter selection
   const { data: labTests = [] } = useQuery<LabTest[]>({
     queryKey: ["/api/lab-tests", getQueryParams()],
     queryFn: async () => {
@@ -170,7 +172,7 @@ export default function AllResults() {
     },
   });
 
-  // Only load patients when needed for search - not all patients
+  // Only load patients when needed for search
   const { data: patients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients", "withStatus"],
     queryFn: async () => {
@@ -178,27 +180,28 @@ export default function AllResults() {
       if (!response.ok) throw new Error('Failed to fetch patients');
       return response.json();
     },
-    enabled: dateFilter === "today" || dateFilter === "date", // Only load when showing filtered results
   });
 
   // Combine all results for a unified view
+  // Use createdAt as primary date field (industry standard for operational "results inbox" views)
+  // Fall back to completedDate if createdAt is not available
   const allResults = [
     ...labTests.map(test => ({
       ...test,
       type: 'lab' as const,
-      date: test.completedDate || test.requestedDate,
+      date: test.createdAt || test.completedDate || test.requestedDate,
       patient: patients.find(p => p.patientId === test.patientId)
     })),
     ...xrayExams.map(exam => ({
       ...exam,
       type: 'xray' as const,
-      date: exam.completedDate || exam.requestedDate,
+      date: exam.createdAt || exam.completedDate || exam.requestedDate,
       patient: patients.find(p => p.patientId === exam.patientId)
     })),
     ...ultrasoundExams.map(exam => ({
       ...exam,
       type: 'ultrasound' as const,
-      date: exam.completedDate || exam.requestedDate,
+      date: exam.createdAt || exam.completedDate || exam.requestedDate,
       patient: patients.find(p => p.patientId === exam.patientId)
     }))
   ];
@@ -219,6 +222,22 @@ export default function AllResults() {
 
     return matchesSearch && matchesPatient && matchesStatus && matchesType;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  // Auto-select first result when results change
+  useEffect(() => {
+    if (filteredResults.length > 0) {
+      // If no result is selected, or if the selected result is not in the filtered list, select the first one
+      const isSelectedInList = selectedResult && filteredResults.some(r => r.id === selectedResult.id && r.type === selectedResult.type);
+      
+      if (!selectedResult || !isSelectedInList) {
+        setSelectedResult(filteredResults[0]);
+      }
+    } else {
+      // Clear selection if no results
+      setSelectedResult(null);
+    }
+  }, [filteredResults.length, filteredResults[0]?.id, filteredResults[0]?.type]);
+
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -1363,6 +1382,15 @@ export default function AllResults() {
     if (newFilters.selectedDate !== undefined) setSelectedDate(newFilters.selectedDate);
   };
 
+  const handleClearAllFilters = () => {
+    setSearchTerm("");
+    setSelectedPatient("");
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setDateFilter("all");
+    setSelectedDate(getClinicDayKey());
+  };
+
   return (
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
       {/* Sticky Header */}
@@ -1386,6 +1414,14 @@ export default function AllResults() {
             resultCount={filteredResults.length}
           />
 
+          {/* Active Filter Chips */}
+          <FilterChips
+            filters={filters}
+            patients={patients}
+            onFilterChange={handleFilterChange}
+            onClearAll={handleClearAllFilters}
+          />
+
           {/* Two-Pane Layout */}
           <div className="flex-1 min-h-0">
             <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
@@ -1400,6 +1436,7 @@ export default function AllResults() {
                   <ResultsList
                     results={filteredResults}
                     selectedResultId={selectedResult?.id || null}
+                    selectedResultType={selectedResult?.type}
                     onSelectResult={setSelectedResult}
                   />
                 </div>
