@@ -61,6 +61,19 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isCollapsed, handleToggle]);
 
+  // Prevent background scroll when help is open
+  useEffect(() => {
+    if (!isCollapsed) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isCollapsed]);
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -70,15 +83,14 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
 
   return (
     <div className={`
-      fixed right-0 top-0 h-screen z-40 
+      fixed right-0 top-0 h-screen z-50 
       transition-all duration-300 ease-in-out
       ${isCollapsed ? 'w-0' : 'w-96'}
     `}>
-      {/* Backdrop overlay when help is open */}
+      {/* Dimmed backdrop for focus */}
       {!isCollapsed && (
         <div 
-          className="fixed inset-0 bg-black/20 z-30 backdrop-blur-none
-                     transition-opacity duration-300"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 transition-opacity duration-300"
           onClick={handleToggle}
           aria-hidden="true"
         />
@@ -87,7 +99,7 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
       {/* Help Panel */}
       <div className={`
         h-full bg-white dark:bg-gray-900 border-l-2 border-blue-200 dark:border-blue-800
-        shadow-premium-2xl transition-all duration-300
+        shadow-premium-2xl transition-all duration-300 relative z-50
         ${isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}
       `}>
         <ScrollArea className="h-full">

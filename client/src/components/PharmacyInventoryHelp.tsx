@@ -45,6 +45,19 @@ export default function PharmacyInventoryHelp({ collapsed, onCollapsedChange }: 
     }
   }, [internalCollapsed, collapsed]);
 
+  // Prevent background scroll when help is open
+  useEffect(() => {
+    if (!isCollapsed) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isCollapsed]);
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -54,18 +67,17 @@ export default function PharmacyInventoryHelp({ collapsed, onCollapsedChange }: 
 
   return (
     <>
-      {/* Backdrop overlay when help is open */}
+      {/* Dimmed backdrop for focus */}
       {!isCollapsed && (
         <div 
-          className="fixed inset-0 bg-black/20 z-30 backdrop-blur-none
-                     transition-opacity duration-300"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 transition-opacity duration-300"
           onClick={handleToggle}
           aria-hidden="true"
         />
       )}
       
       <div className={`
-        fixed right-0 top-0 h-screen z-40 
+        fixed right-0 top-0 h-screen z-50 
         transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-0' : 'w-96'}
       `}>
