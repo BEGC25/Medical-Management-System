@@ -49,6 +49,18 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
     }
   }, [internalCollapsed, collapsed]);
 
+  // ESC key handler to close help panel
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isCollapsed) {
+        handleToggle();
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isCollapsed]);
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -65,7 +77,7 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
       {/* Backdrop overlay when help is open */}
       {!isCollapsed && (
         <div 
-          className="fixed inset-0 bg-black/30 dark:bg-black/50 z-30 backdrop-blur-sm
+          className="fixed inset-0 bg-black/20 z-30 backdrop-blur-none
                      transition-opacity duration-300"
           onClick={handleToggle}
           aria-hidden="true"
