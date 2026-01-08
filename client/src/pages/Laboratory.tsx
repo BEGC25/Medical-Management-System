@@ -1650,7 +1650,7 @@ return (
 
           {/* VIEW MODE - Unified diagnostic result UI */}
           {selectedLabTest && viewMode === "view" && (
-            <div className="space-y-4 px-6 pb-6">
+            <div className="space-y-4 px-6 pb-6 max-h-[65vh] overflow-y-auto">
               {/* Modal Title */}
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
