@@ -148,3 +148,89 @@
 - ✅ Single source of truth for interpretation
 - ✅ TypeScript type safety maintained
 - ✅ Consistent with existing code style
+# Lab Report Printing Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Lab Interpretation Logic                      │
+│                  (Single Source of Truth)                        │
+│                                                                  │
+│  File: client/src/lib/lab-interpretation.ts                    │
+│  Function: interpretLabResults(results)                         │
+│  Returns: { criticalFindings: [], warnings: [] }                │
+└──────────────┬──────────────────────────────┬───────────────────┘
+               │                              │
+               ▼                              ▼
+┌──────────────────────────┐    ┌──────────────────────────────┐
+│   Laboratory Page        │    │   Treatment Page             │
+│   (Lab Technicians)      │    │   (Doctors/Admins)          │
+├──────────────────────────┤    ├──────────────────────────────┤
+│ • View Modal             │    │ • ResultDrawer               │
+│   - Shows interpretation │    │   - Shows interpretation     │
+│   - Scrollable           │    │   - Scrollable               │
+│                          │    │                              │
+│ • Print Patient Copy     │    │ • Print Clinical Copy        │
+│   - NO interpretation    │    │   - WITH interpretation      │
+│   - A4 format            │    │   - A4 format                │
+│   - No empty page        │    │   - No empty page            │
+└──────────┬───────────────┘    └──────────┬───────────────────┘
+           │                               │
+           ▼                               ▼
+┌──────────────────────────────────────────────────────────────────┐
+│              LabReportPrint Component                            │
+│              (Reusable Print Layout)                             │
+│                                                                  │
+│  File: client/src/components/LabReportPrint.tsx                │
+│                                                                  │
+│  Props:                                                          │
+│  • containerId: "lab-report-print" | "lab-clinical-print"      │
+│  • visible: boolean                                              │
+│  • labTest: LabTestData                                         │
+│  • patient: PatientData                                         │
+│  • resultFields: ResultFieldsConfig                             │
+│  • includeInterpretation: boolean ← KEY PROP                    │
+│  • formValues: CompletedDate, Status, Notes                     │
+│                                                                  │
+│  Layout:                                                         │
+│  1. Header (Clinic Logo + Branding)                            │
+│  2. Report Type: "(Patient Copy)" or "(Clinical Copy)"         │
+│  3. Patient Information                                         │
+│  4. Test Information                                            │
+│  5. Laboratory Results (color-coded abnormals)                 │
+│  6. Clinical Interpretation (if includeInterpretation=true)    │
+│  7. Footer (Signature line, Notes)                             │
+└──────────────────────────────────────────────────────────────────┘
+
+Print CSS Rules (client/src/index.css)
+┌──────────────────────────────────────────────────────────────────┐
+│ @media print {                                                   │
+│   • Only show active print container                            │
+│   • Position absolute, full width                               │
+│   • Max-height to prevent overflow                              │
+│   • page-break-inside: avoid for sections                       │
+│   • Remove shadows/borders                                       │
+│ }                                                                │
+└──────────────────────────────────────────────────────────────────┘
+
+User Roles & Access Control
+┌──────────────────────────────────────────────────────────────────┐
+│ Lab Technicians:                                                 │
+│   ✓ Can print Patient Copy (no interpretation)                  │
+│   ✗ Cannot print Clinical Copy                                  │
+│                                                                  │
+│ Doctors/Admins:                                                  │
+│   ✓ Can print Clinical Copy (with interpretation)               │
+│   ✓ Can view interpretation in ResultDrawer                     │
+│   ✓ Can copy results to treatment notes                         │
+└──────────────────────────────────────────────────────────────────┘
+
+Data Flow for Printing
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. User clicks "Print" button                                   │
+│ 2. Component sets print state to true                           │
+│ 3. LabReportPrint component renders with data                   │
+│ 4. setTimeout ensures DOM is ready                              │
+│ 5. window.print() opens print dialog                            │
+│ 6. Print CSS hides everything except print container            │
+│ 7. afterprint event resets print state                          │
+└─────────────────────────────────────────────────────────────────┘
