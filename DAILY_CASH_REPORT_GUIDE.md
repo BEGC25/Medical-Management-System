@@ -5,10 +5,13 @@ This document describes the implementation of premium, mobile-optimized Daily Ca
 
 ## Database Changes
 
-### Migration File
-**Location:** `migrations/0007_add_daily_cash_closings.sql`
+### Migration Files
+**SQLite (Development):** `migrations/0007_add_daily_cash_closings.sql`  
+**PostgreSQL (Production):** `migrations/0007_add_daily_cash_closings_pg.sql`
 
-This migration creates:
+**IMPORTANT:** Production environments must use the PostgreSQL-specific migration file.
+
+These migrations create:
 1. `daily_cash_closings` table - stores daily cash closing records
 2. `finance_vw_daily_cash` view - aggregates payment data by department
 
@@ -20,14 +23,32 @@ cd /home/runner/work/Medical-Management-System/Medical-Management-System
 sqlite3 clinic.db < migrations/0007_add_daily_cash_closings.sql
 ```
 
-#### PostgreSQL (Production)
+#### PostgreSQL (Production) - **REQUIRED FOR PRODUCTION**
 ```bash
-psql "$DATABASE_URL" < migrations/0007_add_daily_cash_closings.sql
+psql "$DATABASE_URL" < migrations/0007_add_daily_cash_closings_pg.sql
 ```
 
 ### Database Schema
 
-#### daily_cash_closings Table
+#### daily_cash_closings Table (PostgreSQL Production)
+```sql
+CREATE TABLE daily_cash_closings (
+  id SERIAL PRIMARY KEY,
+  date DATE NOT NULL UNIQUE,               -- YYYY-MM-DD format
+  expected_amount NUMERIC(10,2) NOT NULL,  -- Total expected from receipts
+  counted_amount NUMERIC(10,2) NOT NULL,   -- Physical cash counted
+  variance NUMERIC(10,2) NOT NULL,         -- counted_amount - expected_amount
+  handed_over_by TEXT NOT NULL,            -- Receptionist name
+  received_by TEXT NOT NULL,               -- Admin/Manager name
+  notes TEXT,                              -- Optional notes
+  closed_by_user_id INTEGER,               -- User ID who closed (if available)
+  closed_by_username TEXT,                 -- Username who closed
+  closed_at TIMESTAMPTZ NOT NULL,          -- When day was closed
+  created_at TIMESTAMPTZ NOT NULL          -- Record creation timestamp
+);
+```
+
+#### daily_cash_closings Table (SQLite Development)
 ```sql
 CREATE TABLE daily_cash_closings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -256,7 +277,6 @@ Updated routes to allow RECEPTION access:
 1. Cannot undo a day closing (by design - immutable record)
 2. Receipt drill-down shows only cash payments
 3. View depends on payment_items table structure
-4. Time extraction assumes SQLite datetime format
 
 ## Future Enhancements
 
@@ -289,9 +309,10 @@ If you see "The SQL view is missing on this database":
 ## File Changes Summary
 
 ### New Files
-- `migrations/0007_add_daily_cash_closings.sql` - Database migration
-- `server/reports.daily-cash-closing.ts` - Close day endpoints
-- `server/reports.daily-cash-receipts.ts` - Receipt details endpoint
+- `migrations/0007_add_daily_cash_closings.sql` - Database migration (SQLite)
+- `migrations/0007_add_daily_cash_closings_pg.sql` - Database migration (PostgreSQL) **REQUIRED FOR PRODUCTION**
+- `server/reports.daily-cash-closing.ts` - Close day endpoints (PostgreSQL-compatible)
+- `server/reports.daily-cash-receipts.ts` - Receipt details endpoint (PostgreSQL-compatible)
 - `DAILY_CASH_REPORT_GUIDE.md` - This documentation
 
 ### Modified Files
@@ -301,7 +322,9 @@ If you see "The SQL view is missing on this database":
 
 ## Deployment Instructions
 
-1. Run database migration
+**CRITICAL:** Use the PostgreSQL migration for production environments!
+
+1. Run database migration (PostgreSQL): `psql "$DATABASE_URL" < migrations/0007_add_daily_cash_closings_pg.sql`
 2. Deploy server code
 3. Deploy client code
 4. Test with admin account

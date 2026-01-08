@@ -42,6 +42,7 @@ function ymd(v?: string) {
 
 // GET /api/reports/daily-cash-closing/status?date=YYYY-MM-DD
 // Returns the closing status for a specific date
+// NOTE: Uses PostgreSQL placeholders ($1, $2, etc.) for production compatibility
 router.get("/api/reports/daily-cash-closing/status", async (req: Request, res: Response) => {
   try {
     // Prevent caching of financial data
@@ -53,7 +54,7 @@ router.get("/api/reports/daily-cash-closing/status", async (req: Request, res: R
     const day = ymd(String(req.query.date || ""));
 
     const rows = await run(
-      `SELECT * FROM daily_cash_closings WHERE date = ?`,
+      `SELECT * FROM daily_cash_closings WHERE date = $1`,
       [day]
     );
 
@@ -69,6 +70,7 @@ router.get("/api/reports/daily-cash-closing/status", async (req: Request, res: R
 
 // POST /api/reports/daily-cash-closing/close
 // Close the day for a specific date (admin-only)
+// NOTE: Uses PostgreSQL placeholders ($1, $2, etc.) for production compatibility
 router.post("/api/reports/daily-cash-closing/close", async (req: Request, res: Response) => {
   try {
     // Admin-only check
@@ -114,12 +116,12 @@ router.post("/api/reports/daily-cash-closing/close", async (req: Request, res: R
       await run(
         `INSERT INTO daily_cash_closings 
          (date, expected_amount, counted_amount, variance, handed_over_by, received_by, notes, closed_by_username, closed_by_user_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [date, expected_amount || 0, counted_amount, variance, handed_over_by.trim(), received_by.trim(), notes || null, closed_by_username, closed_by_user_id]
       );
       
       // Fetch the newly created record
-      const rows = await run(`SELECT * FROM daily_cash_closings WHERE date = ?`, [date]);
+      const rows = await run(`SELECT * FROM daily_cash_closings WHERE date = $1`, [date]);
       
       res.json({ success: true, closing: rows[0] });
     } catch (err: any) {
