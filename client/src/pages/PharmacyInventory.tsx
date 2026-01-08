@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -235,6 +236,7 @@ const COMMON_DRUGS = [
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function PharmacyInventory() {
+  const [, setLocation] = useLocation();
   const [showAddDrug, setShowAddDrug] = useState(false);
   const [showReceiveStock, setShowReceiveStock] = useState(false);
   const [selectedDrug, setSelectedDrug] = useState<Drug | null>(null);
@@ -764,11 +766,20 @@ export default function PharmacyInventory() {
         id: "status", 
         label: "Status", 
         value: "low_stock", 
-        display: "low_stock" 
+        display: "Low Stock" 
       }]);
     } else if (cardType === "expiring-soon") {
       // For expiring soon, we'll just navigate to the alerts tab instead
       setActiveTab("alerts");
+      
+      // Scroll to expiring soon section after a brief delay
+      setTimeout(() => {
+        const expiringSection = document.getElementById("expiring-soon-section");
+        if (expiringSection) {
+          expiringSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+      return;
     }
     
     // Scroll to table after a brief delay
@@ -822,6 +833,16 @@ export default function PharmacyInventory() {
       <div className="space-y-6 p-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          {/* Back button */}
+          <button
+            onClick={() => setLocation('/pharmacy')}
+            className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors group"
+            title="Back to Pharmacy"
+            aria-label="Back to Pharmacy"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-purple-600 transition-colors" />
+          </button>
+          
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center 
                         shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-200 hover:scale-105">
             <Package className="w-7 h-7 text-white" />
@@ -1438,14 +1459,21 @@ export default function PharmacyInventory() {
 
         <TabsContent value="alerts" className="space-y-4">
           {/* Low Stock Alerts */}
-          <Card className="shadow-premium-md border-red-200 dark:border-red-800/50 
+          <Card id="low-stock-section" className="shadow-premium-md border-red-200 dark:border-red-800/50 
                          hover:shadow-premium-lg transition-all duration-200">
             <CardHeader>
-              <CardTitle className="text-red-700 dark:text-red-400 flex items-center gap-2">
-                <TrendingDown className="w-5 h-5" />
-                Low Stock Alerts ({lowStockDrugs?.length || 0})
-              </CardTitle>
-              <CardDescription>Drugs below reorder level - take action now</CardDescription>
+              <div className="flex items-center gap-3">
+                <TrendingDown className="w-5 h-5 text-red-600" />
+                <div className="flex-1">
+                  <CardTitle className="text-red-700 dark:text-red-400 text-xl font-bold">
+                    Low Stock Alerts
+                  </CardTitle>
+                  <CardDescription>Drugs below reorder level - take action now</CardDescription>
+                </div>
+                <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-base px-3 py-1">
+                  {lowStockDrugs?.length || 0}
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent>
               {lowStockDrugs.length === 0 ? (
@@ -1526,14 +1554,21 @@ export default function PharmacyInventory() {
           </Card>
 
           {/* Expiring Soon Alerts */}
-          <Card className="shadow-premium-md border-amber-200 dark:border-amber-800/50 
+          <Card id="expiring-soon-section" className="shadow-premium-md border-amber-200 dark:border-amber-800/50 
                          hover:shadow-premium-lg transition-all duration-200">
             <CardHeader>
-              <CardTitle className="text-amber-700 dark:text-amber-400 flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Expiring Soon ({EXPIRY_WARNING_DAYS} days) - ({expiringDrugs?.length || 0})
-              </CardTitle>
-              <CardDescription>Priority: use these batches first (FEFO)</CardDescription>
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-amber-600" />
+                <div className="flex-1">
+                  <CardTitle className="text-amber-700 dark:text-amber-400 text-xl font-bold">
+                    Expiring Soon
+                  </CardTitle>
+                  <CardDescription>Items expiring in the next {EXPIRY_WARNING_DAYS} days - use FEFO (First Expiry First Out)</CardDescription>
+                </div>
+                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-base px-3 py-1">
+                  {expiringDrugs?.length || 0}
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent>
               {(!expiringDrugs || expiringDrugs.length === 0) ? (
