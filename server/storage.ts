@@ -2942,7 +2942,8 @@ export class MemStorage implements IStorage {
 
     for (const drug of allDrugs) {
       const stockLevel = await this.getDrugStockLevel(drug.id);
-      if (stockLevel <= drug.reorderLevel) {
+      // Low stock means: stock is low but not zero (0 < stock <= reorderLevel)
+      if (stockLevel > 0 && stockLevel <= drug.reorderLevel) {
         lowStockDrugs.push({ ...drug, stockOnHand: stockLevel });
       }
     }

@@ -1105,9 +1105,11 @@ export default function PharmacyInventory() {
                             <Package className="w-16 h-16 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div className="space-y-2">
-                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Drugs in Inventory</h3>
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Stock Matches Filter</h3>
                             <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                              Get started by adding drugs to your catalog and receiving stock.
+                              {stockFilters.length > 0 
+                                ? "No drugs match the current filter. Try adjusting or clearing filters."
+                                : "No stock received yet. Get started by receiving stock for drugs in your catalog."}
                             </p>
                           </div>
                           <div className="flex gap-2 mt-2">
@@ -1654,7 +1656,11 @@ export default function PharmacyInventory() {
           />
 
           {/* Analytics Dashboard */}
-          <AnalyticsDashboard ledgerEntries={filteredLedgerEntries} />
+          <AnalyticsDashboard 
+            ledgerEntries={filteredLedgerEntries} 
+            dateFilterPreset={transactionDateFilter}
+            customDateRange={transactionDateFilter === "custom" ? { start: transactionStartDate, end: transactionEndDate } : undefined}
+          />
           
           <Card className="shadow-premium-md border-gray-200 dark:border-gray-700 
                          hover:shadow-premium-lg transition-all duration-200">

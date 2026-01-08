@@ -21,6 +21,8 @@ import {
 interface AnalyticsDashboardProps {
   ledgerEntries: InventoryLedger[];
   className?: string;
+  dateFilterPreset?: "all" | "today" | "last7days" | "last30days" | "custom";
+  customDateRange?: { start?: string; end?: string };
 }
 
 interface MetricCardProps {
@@ -57,7 +59,28 @@ function MetricCard({ title, value, trend, icon, colorClass }: MetricCardProps) 
   );
 }
 
-export function AnalyticsDashboard({ ledgerEntries, className = "" }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ ledgerEntries, className = "", dateFilterPreset = "all", customDateRange }: AnalyticsDashboardProps) {
+  // Generate dynamic chart title based on filter
+  const getChartTitle = () => {
+    switch (dateFilterPreset) {
+      case "today":
+        return "Transaction Timeline (Today)";
+      case "last7days":
+        return "Transaction Timeline (Last 7 Days)";
+      case "last30days":
+        return "Transaction Timeline (Last 30 Days)";
+      case "custom":
+        if (customDateRange?.start && customDateRange?.end) {
+          const start = new Date(customDateRange.start).toLocaleDateString();
+          const end = new Date(customDateRange.end).toLocaleDateString();
+          return `Transaction Timeline (${start} - ${end})`;
+        }
+        return "Transaction Timeline (Custom Range)";
+      default:
+        return "Transaction Timeline (All Time)";
+    }
+  };
+
   const analytics = useMemo(() => {
     const dispensed = ledgerEntries.filter((e) => e.transactionType === "dispense");
     const received = ledgerEntries.filter((e) => e.transactionType === "receive");
@@ -175,7 +198,7 @@ export function AnalyticsDashboard({ ledgerEntries, className = "" }: AnalyticsD
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="w-5 h-5" />
-              Transaction Timeline (Last 30 Days)
+              {getChartTitle()}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -253,7 +276,7 @@ export function AnalyticsDashboard({ ledgerEntries, className = "" }: AnalyticsD
               <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="quantity" fill="#3b82f6" name="Quantity" />
+              <Bar dataKey="quantity" fill="#f97316" name="Quantity Dispensed" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
