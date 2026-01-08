@@ -89,7 +89,7 @@ export default function ResultDrawer(props: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 flex flex-col overflow-hidden">
+      <DialogContent className="max-w-4xl min-h-[50vh] max-h-[90vh] p-0 flex flex-col">
         <DialogHeader className="px-6 pt-6 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             {kind === "lab" && "Lab Test"}{kind === "xray" && "X-Ray"}{kind === "ultrasound" && "Ultrasound"}{" "}
