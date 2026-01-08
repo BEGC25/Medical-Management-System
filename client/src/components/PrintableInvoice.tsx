@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Encounter, OrderLine, Patient } from '@shared/schema';
+import { formatCurrency, calculateOrderLinesTotal } from '@/lib/utils';
 
 interface PrintableInvoiceProps {
   visit: Encounter;
@@ -14,12 +15,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   orderLines,
   invoiceId,
 }) => {
-  const total = orderLines.reduce((sum, line) => {
-    const price = typeof line.totalPrice === 'string' 
-      ? parseFloat(line.totalPrice) 
-      : line.totalPrice;
-    return sum + (isNaN(price) ? 0 : price);
-  }, 0);
+  const total = calculateOrderLinesTotal(orderLines);
   
   return (
     <div className="hidden print:block" id="printable-invoice">
@@ -62,8 +58,8 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               <tr key={idx} className="border-b border-gray-200">
                 <td className="p-3">{line.description}</td>
                 <td className="text-center p-3">{line.quantity}</td>
-                <td className="text-right p-3">{Math.round(line.unitPriceSnapshot)} SSP</td>
-                <td className="text-right p-3">{Math.round(line.totalPrice)} SSP</td>
+                <td className="text-right p-3">{formatCurrency(line.unitPriceSnapshot)}</td>
+                <td className="text-right p-3">{formatCurrency(line.totalPrice)}</td>
               </tr>
             ))}
           </tbody>
@@ -74,7 +70,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           <div className="w-64">
             <div className="flex justify-between p-3 bg-blue-600 text-white font-bold text-xl">
               <span>TOTAL:</span>
-              <span>{Math.round(total)} SSP</span>
+              <span>{formatCurrency(total)}</span>
             </div>
           </div>
         </div>
