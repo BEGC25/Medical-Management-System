@@ -1906,7 +1906,7 @@ export default function PharmacyInventory() {
                         .filter(drug => 
                           !comboboxSearch || 
                           drug.name.toLowerCase().includes(comboboxSearch.toLowerCase()) ||
-                          drug.genericName.toLowerCase().includes(comboboxSearch.toLowerCase()) ||
+                          (drug.genericName?.toLowerCase() || '').includes(comboboxSearch.toLowerCase()) ||
                           drug.category.toLowerCase().includes(comboboxSearch.toLowerCase())
                         )
                         .map((drug) => (
