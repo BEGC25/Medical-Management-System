@@ -63,6 +63,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import PatientSearch from "@/components/PatientSearch";
 
 import ResultDrawer from "@/components/ResultDrawer";
@@ -494,6 +495,7 @@ export default function Treatment() {
   const searchParams = new URLSearchParams(window.location.search);
   const patientIdFromQuery = searchParams.get("patientId") || undefined;
 
+  const { user } = useAuth();
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescription, setShowPrescription] = useState(false);
   const [savedTreatment, setSavedTreatment] = useState<Treatment | null>(null);
@@ -5141,7 +5143,7 @@ export default function Treatment() {
       {/* Edit Prescription Dialog */}
       <Dialog open={!!editingPrescription} onOpenChange={(open) => !open && setEditingPrescription(null)}> {/* ... content ... */} </Dialog>
       {/* Universal Result Drawer */}
-      <ResultDrawer open={resultDrawer.open} onOpenChange={(open) => (open ? null : closeResult())} kind={resultDrawer.kind} data={resultDrawer.data} patient={selectedPatient ?? undefined} resultFields={resultFields} onCopyToNotes={(txt) => form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())} />
+      <ResultDrawer open={resultDrawer.open} onOpenChange={(open) => (open ? null : closeResult())} kind={resultDrawer.kind} data={resultDrawer.data} patient={selectedPatient ?? undefined} resultFields={resultFields} userRole={user?.role} onCopyToNotes={(txt) => form.setValue("examination", `${(form.getValues("examination") || "")}\n${txt}`.trim())} />
       {/* Prescription print sheet */}
       {showPrescription && selectedPatient && ( <div> {/* ... content ... */} </div> )}
       {/* Queue modal */}
