@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import type { AnyResult } from "./types";
+import { getResultValueColor } from "./utils";
 
 interface ResultsPreviewProps {
   result: AnyResult | null;
@@ -57,12 +58,7 @@ export function ResultsPreview({ result, onViewFullDetails }: ResultsPreviewProp
                     <span className="text-slate-700 dark:text-slate-300 font-medium">
                       {field}:
                     </span>
-                    <span className={`font-mono text-right ${
-                      (value as string).includes('+') || (value as string).includes('Positive') || 
-                      (value as string).includes('Seen') || (value as string).includes('Turbid')
-                        ? 'text-red-600 dark:text-red-400 font-bold' 
-                        : 'text-green-600 dark:text-green-400'
-                    }`}>
+                    <span className={`font-mono text-right ${getResultValueColor(value as string)}`}>
                       {value as string}
                     </span>
                   </div>

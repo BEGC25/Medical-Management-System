@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { canAccessPage, ROLES } from "@shared/auth-roles";
+import { canAccessPage, ROLES, UserRole } from "@shared/auth-roles";
 import { Redirect } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ import { ResultsKPICards } from "@/components/results/ResultsKPICards";
 import { ResultsFiltersBar } from "@/components/results/ResultsFilters";
 import { ResultsList } from "@/components/results/ResultsList";
 import { ResultsPreview } from "@/components/results/ResultsPreview";
+import { getResultValueColor } from "@/components/results/utils";
 
 interface Patient {
   id: number;
@@ -110,7 +111,7 @@ export default function AllResults() {
   const { user } = useAuth();
   
   // Role-based access control - only admins can view all results
-  if (!user || !canAccessPage(user.role as any, '/all-results')) {
+  if (!user || !canAccessPage(user.role as UserRole, '/all-results')) {
     return <Redirect to="/unauthorized" />;
   }
 
@@ -121,6 +122,8 @@ export default function AllResults() {
   const [dateFilter, setDateFilter] = useState<string>("today");
   const [selectedDate, setSelectedDate] = useState<string>(getClinicDayKey());
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [detailsResult, setDetailsResult] = useState<any | null>(null);
 
   // Get today's date in clinic timezone for filtering
   const today = getClinicDayKey();
@@ -314,14 +317,7 @@ export default function AllResults() {
                     <span className="text-gray-700 dark:text-gray-300 font-medium">
                       {field}:
                     </span>
-                    <span className={`font-mono text-right ${
-                      // Highlight abnormal values
-                      (value as string).includes('+') || (value as string).includes('P. falciparum') || 
-                      (value as string).includes('Positive') || (value as string).includes('Seen') || 
-                      (value as string).includes('Turbid') || (value as string).includes('1:160')
-                        ? 'text-red-600 dark:text-red-400 font-bold' 
-                        : 'text-green-600 dark:text-green-400'
-                    }`}>
+                    <span className={`font-mono text-right ${getResultValueColor(value as string)}`}>
                       {value as string}
                     </span>
                   </div>
@@ -341,17 +337,11 @@ export default function AllResults() {
     }
   };
 
-  const renderResultDetails = (result: any) => {
+  const renderResultDetails = (result: any, open: boolean, onOpenChange: (open: boolean) => void) => {
     const patient = result.patient;
     
     return (
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" data-result-id={`${result.type}-${result.id}`}>
-            <Eye className="h-4 w-4 mr-1" />
-            View Details
-          </Button>
-        </DialogTrigger>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" id="lab-result-detail">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1423,9 +1413,8 @@ export default function AllResults() {
                 <ResultsPreview
                   result={selectedResult}
                   onViewFullDetails={(result) => {
-                    // This will trigger the full details dialog
-                    const dialogButton = document.querySelector(`[data-result-id="${result.type}-${result.id}"]`) as HTMLButtonElement;
-                    if (dialogButton) dialogButton.click();
+                    setDetailsResult(result);
+                    setDetailsDialogOpen(true);
                   }}
                 />
               </ResizablePanel>
@@ -1434,14 +1423,8 @@ export default function AllResults() {
         </div>
       </div>
 
-      {/* Hidden dialog triggers for full details */}
-      <div className="hidden">
-        {filteredResults.map((result) => (
-          <div key={`${result.type}-${result.id}`}>
-            {renderResultDetails(result)}
-          </div>
-        ))}
-      </div>
+      {/* Single controlled full details dialog */}
+      {detailsResult && renderResultDetails(detailsResult, detailsDialogOpen, setDetailsDialogOpen)}
     </div>
   );
 }
