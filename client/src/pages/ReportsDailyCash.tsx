@@ -45,8 +45,10 @@ function todayYMD() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+const CURRENCY = "SSP"
+
 function formatSSP(amount: number): string {
-  return `SSP ${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+  return `${CURRENCY} ${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
 export default function ReportsDailyCash() {
@@ -365,7 +367,7 @@ export default function ReportsDailyCash() {
                 <tr>
                   <th className="px-3 sm:px-4 py-3 text-left font-bold text-gray-700">Department</th>
                   <th className="px-3 sm:px-4 py-3 text-right font-bold text-gray-700">Receipts</th>
-                  <th className="px-3 sm:px-4 py-3 text-right font-bold text-gray-700">Total Cash (SSP)</th>
+                  <th className="px-3 sm:px-4 py-3 text-right font-bold text-gray-700">Total Cash ({CURRENCY})</th>
                   <th className="px-3 sm:px-4 py-3 print:hidden"></th>
                 </tr>
               </thead>
