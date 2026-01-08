@@ -317,7 +317,8 @@
 /* The printable card */
 #prescription-print.prescription,
 #lab-request-print.prescription,
-#lab-report-print.prescription {
+#lab-report-print.prescription,
+#lab-clinical-print.prescription {
   width: var(--page-w);
   min-height: calc(var(--page-h) - 2 * var(--page-m));
   margin: 0 auto;
@@ -352,10 +353,12 @@
   #prescription-print, #prescription-print * { visibility: visible; }
   #lab-request-print, #lab-request-print * { visibility: visible; }
   #lab-report-print, #lab-report-print * { visibility: visible; }
+  #lab-clinical-print, #lab-clinical-print * { visibility: visible; }
   
   #prescription-print { position: absolute; left: 0; top: 0; width: 100%; }
   #lab-request-print { position: absolute; left: 0; top: 0; width: 100%; }
   #lab-report-print { position: absolute; left: 0; top: 0; width: 100%; }
+  #lab-clinical-print { position: absolute; left: 0; top: 0; width: 100%; }
 
   /* remove shadows/borders that can cause overflow */
   .no-print { display: none !important; }
@@ -364,7 +367,7 @@
   .bg-gray-50 { background-color: white !important; }
   
   /* Prevent empty second page by ensuring content fits on one page */
-  #lab-report-print, #lab-request-print, #prescription-print {
+  #lab-report-print, #lab-request-print, #lab-clinical-print, #prescription-print {
     max-height: calc(var(--page-h) - 2 * var(--page-m));
     overflow: hidden;
     page-break-after: avoid;
@@ -373,6 +376,7 @@
   /* Avoid breaking inside important sections */
   .avoid-break,
   #lab-report-print > div,
+  #lab-clinical-print > div,
   #lab-request-print > div {
     page-break-inside: avoid;
     break-inside: avoid;

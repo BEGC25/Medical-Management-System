@@ -5,7 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
+import { LabReportPrint } from "@/components/LabReportPrint";
 import { interpretLabResults } from "@/lib/lab-interpretation";
+import { Printer } from "lucide-react";
 
 type Patient = {
   firstName?: string;
@@ -40,8 +42,10 @@ export default function ResultDrawer(props: {
   onAcknowledge?: (orderLineId: number, value: boolean) => void;
   onAddToSummary?: (orderLineId: number, add: boolean) => void;
   onCopyToNotes?: (txt: string) => void;
+  userRole?: "admin" | "reception" | "doctor" | "lab" | "radiology" | "pharmacy";
 }) {
-  const { open, onOpenChange, kind, data, patient, resultFields } = props;
+  const { open, onOpenChange, kind, data, patient, resultFields, userRole } = props;
+  const [showClinicalPrint, setShowClinicalPrint] = React.useState(false);
 
   // Common bits
   const paid = (data?.paymentStatus ?? data?.isPaid) === "paid" || data?.isPaid === 1 || data?.isPaid === true;
@@ -107,6 +111,32 @@ export default function ResultDrawer(props: {
               {data?.priority && <Badge variant="outline">{data.priority}</Badge>}
             </div>
           </div>
+          
+          {/* Action Buttons */}
+          {kind === "lab" && completed && (userRole === "doctor" || userRole === "admin") && (
+            <div className="mt-3 flex justify-end gap-2">
+              {props.onCopyToNotes && (
+                <Button size="sm" variant="outline" onClick={copySummary}>
+                  Copy to Notes
+                </Button>
+              )}
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  setShowClinicalPrint(true);
+                  setTimeout(() => {
+                    const done = () => setShowClinicalPrint(false);
+                    window.addEventListener("afterprint", done, { once: true });
+                    window.print();
+                  }, 100);
+                }}
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Print Clinical Copy
+              </Button>
+            </div>
+          )}
         </div>
 
         <ScrollArea className="px-6 pb-6 h-[65vh]">
@@ -447,6 +477,28 @@ export default function ResultDrawer(props: {
           <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
         </div>
       </DialogContent>
+      
+      {/* Clinical Print Component for Lab Results (Doctors/Admins only) */}
+      {kind === "lab" && data && patient && resultFields && (
+        <LabReportPrint
+          containerId="lab-clinical-print"
+          visible={showClinicalPrint}
+          labTest={{
+            testId: data.testId || "",
+            patientId: data.patientId || patient.patientId || "",
+            category: data.category || "",
+            priority: data.priority || "",
+            tests: data.tests || [],
+            results: data.results || {},
+            completedDate: data.completedDate || data.completedAt,
+            resultStatus: data.resultStatus || data.status,
+            technicianNotes: data.technicianNotes,
+          }}
+          patient={patient}
+          resultFields={resultFields}
+          includeInterpretation={true}
+        />
+      )}
     </Dialog>
   );
 }
