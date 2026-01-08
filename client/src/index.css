@@ -362,6 +362,21 @@
   .shadow-md, .shadow-lg { box-shadow: none !important; }
   .rounded-lg { border-radius: 0 !important; }
   .bg-gray-50 { background-color: white !important; }
+  
+  /* Prevent empty second page by ensuring content fits on one page */
+  #lab-report-print, #lab-request-print, #prescription-print {
+    max-height: calc(var(--page-h) - 2 * var(--page-m));
+    overflow: hidden;
+    page-break-after: avoid;
+  }
+  
+  /* Avoid breaking inside important sections */
+  .avoid-break,
+  #lab-report-print > div,
+  #lab-request-print > div {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
 }
 
 /* Screen preview helpers */
