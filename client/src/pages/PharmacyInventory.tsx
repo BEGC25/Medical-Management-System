@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { getClinicDayKey } from "@/lib/date-utils";
 import PharmacyInventoryHelp from "@/components/PharmacyInventoryHelp";
 import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
@@ -246,6 +259,10 @@ export default function PharmacyInventory() {
   const [showBatchesModal, setShowBatchesModal] = useState(false);
   const [batchesDrug, setBatchesDrug] = useState<Drug | null>(null);
   
+  // Combobox state for Add Drug quick select
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const [comboboxSearch, setComboboxSearch] = useState("");
+  
   // Help panel state
   const [helpCollapsed, setHelpCollapsed] = useState(() => {
     const saved = localStorage.getItem("pharmacyInventoryHelpCollapsed");
@@ -273,6 +290,9 @@ export default function PharmacyInventory() {
   
   // Tab state for programmatic navigation
   const [activeTab, setActiveTab] = useState("stock");
+  
+  // Alert view state for filtering alerts (all, lowStock, expiringSoon)
+  const [activeAlertView, setActiveAlertView] = useState<'all' | 'lowStock' | 'expiringSoon'>('all');
   
   const [newDrug, setNewDrug] = useState({
     name: "",
@@ -757,20 +777,27 @@ export default function PharmacyInventory() {
 
   // Handle card clicks to filter and navigate
   const handleCardClick = (cardType: "low-stock" | "expiring-soon") => {
-    // Switch to Stock Overview tab
-    setActiveTab("stock");
-    
-    // Apply appropriate filter
     if (cardType === "low-stock") {
+      // Navigate to stock overview with low stock filter
+      setActiveTab("stock");
       setStockFilters([{ 
         id: "status", 
         label: "Status", 
         value: "low_stock", 
         display: "Low Stock" 
       }]);
+      
+      // Scroll to table after a brief delay
+      setTimeout(() => {
+        const stockTable = document.getElementById("stock-table");
+        if (stockTable) {
+          stockTable.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
     } else if (cardType === "expiring-soon") {
-      // For expiring soon, we'll just navigate to the alerts tab instead
+      // Navigate to alerts tab and show ONLY expiring soon section
       setActiveTab("alerts");
+      setActiveAlertView("expiringSoon");
       
       // Scroll to expiring soon section after a brief delay
       setTimeout(() => {
@@ -779,16 +806,7 @@ export default function PharmacyInventory() {
           expiringSection.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       }, 100);
-      return;
     }
-    
-    // Scroll to table after a brief delay
-    setTimeout(() => {
-      const stockTable = document.getElementById("stock-table");
-      if (stockTable) {
-        stockTable.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 100);
   };
 
   const getExportColumns = (): ExportColumn[] => {
@@ -825,13 +843,13 @@ export default function PharmacyInventory() {
   };
 
   return (
-    <div className={`min-h-screen transition-all duration-300 ${helpCollapsed ? 'pr-0' : 'pr-96'}`}>
+    <div className={`min-h-screen transition-all duration-300 ${helpCollapsed ? 'pr-0' : 'pr-0 lg:pr-96'}`}>
       {/* Right-side help panel - rendered as a fixed sidebar */}
       <PharmacyInventoryHelp collapsed={helpCollapsed} onCollapsedChange={setHelpCollapsed} />
 
       {/* Main content */}
-      <div className="space-y-6 p-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="space-y-6 p-3 md:p-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-4">
           {/* Back button */}
           <button
@@ -848,85 +866,92 @@ export default function PharmacyInventory() {
             <Package className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               Pharmacy Inventory
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-0.5">Manage drugs, stock, and inventory</p>
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium mt-0.5">Manage drugs, stock, and inventory</p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 md:gap-3">
           <Button
             onClick={() => setHelpCollapsed(!helpCollapsed)}
             variant="outline"
+            size="sm"
             className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 
-                     transition-all duration-200 hover:shadow-premium-sm hover:scale-105"
+                     transition-all duration-200 hover:shadow-premium-sm hover:scale-105 md:size-default"
             data-testid="button-help"
           >
-            <HelpCircle className="w-4 h-4 mr-2" />
-            Help
+            <HelpCircle className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Help</span>
           </Button>
           <Button
             onClick={() => setShowAddDrug(true)}
+            size="sm"
             className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700
-                     shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105"
+                     shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105 md:size-default"
             data-testid="button-add-drug"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Drug
+            <Plus className="w-4 h-4 md:mr-2" />
+            <span className="hidden sm:inline">Add Drug</span>
           </Button>
           <Button
             onClick={() => setShowReceiveStock(true)}
+            size="sm"
             className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700
-                     shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105"
+                     shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:scale-105 md:size-default"
             data-testid="button-receive-stock"
           >
-            <Package className="w-4 h-4 mr-2" />
-            Receive Stock
+            <Package className="w-4 h-4 md:mr-2" />
+            <span className="hidden sm:inline">Receive Stock</span>
           </Button>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shadow-inner-premium">
+        <TabsList className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shadow-inner-premium grid grid-cols-2 md:grid-cols-4 w-full md:w-auto">
           <TabsTrigger 
             value="stock" 
             data-testid="tab-stock"
             className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
                      data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
+                     data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-xs md:text-sm"
           >
-            <Package className="w-4 h-4 mr-2" />
-            Stock Overview
+            <Package className="w-4 h-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Stock</span>
+            <span className="sm:hidden">Stock</span>
           </TabsTrigger>
           <TabsTrigger 
             value="catalog" 
             data-testid="tab-catalog"
             className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
                      data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400"
+                     data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 text-xs md:text-sm"
           >
-            <Archive className="w-4 h-4 mr-2" />
-            Drug Catalog ({drugs.length})
+            <Archive className="w-4 h-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Catalog ({drugs.length})</span>
+            <span className="sm:hidden">Catalog</span>
           </TabsTrigger>
           <TabsTrigger 
             value="alerts" 
             data-testid="tab-alerts"
             className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
                      data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400"
+                     data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400 text-xs md:text-sm"
           >
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            Alerts ({lowStockDrugs.length + expiringDrugs.length})
+            <AlertTriangle className="w-4 h-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Alerts ({lowStockDrugs.length + expiringDrugs.length})</span>
+            <span className="sm:hidden">Alerts</span>
           </TabsTrigger>
           <TabsTrigger 
             value="ledger" 
             data-testid="tab-ledger"
             className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
                      data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-gray-600 dark:data-[state=active]:text-gray-400"
+                     data-[state=active]:text-gray-600 dark:data-[state=active]:text-gray-400 text-xs md:text-sm"
           >
-            <FileText className="w-4 h-4 mr-2" />
-            Transaction History
+            <FileText className="w-4 h-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">History</span>
+            <span className="sm:hidden">History</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1074,7 +1099,7 @@ export default function PharmacyInventory() {
               <CardTitle>Current Stock & Prices</CardTitle>
               <CardDescription>See all drugs, quantities in stock, and current prices</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
@@ -1310,7 +1335,7 @@ export default function PharmacyInventory() {
             <CardHeader>
               <CardTitle>Drug Catalog</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
@@ -1460,7 +1485,45 @@ export default function PharmacyInventory() {
         </TabsContent>
 
         <TabsContent value="alerts" className="space-y-4">
+          {/* Alert Filter Chips */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={activeAlertView === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveAlertView('all')}
+              className={activeAlertView === 'all' 
+                ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700" 
+                : ""}
+            >
+              <FilterIcon className="w-3.5 h-3.5 mr-1.5" />
+              All Alerts
+            </Button>
+            <Button
+              variant={activeAlertView === 'lowStock' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveAlertView('lowStock')}
+              className={activeAlertView === 'lowStock' 
+                ? "bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700" 
+                : "border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"}
+            >
+              <TrendingDown className="w-3.5 h-3.5 mr-1.5" />
+              Low Stock Only ({lowStockDrugs?.length || 0})
+            </Button>
+            <Button
+              variant={activeAlertView === 'expiringSoon' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveAlertView('expiringSoon')}
+              className={activeAlertView === 'expiringSoon' 
+                ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700" 
+                : "border-amber-300 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"}
+            >
+              <Clock className="w-3.5 h-3.5 mr-1.5" />
+              Expiring Soon Only ({expiringDrugs?.length || 0})
+            </Button>
+          </div>
+
           {/* Low Stock Alerts */}
+          {(activeAlertView === 'all' || activeAlertView === 'lowStock') && (
           <Card id="low-stock-section" className="shadow-premium-md border-red-200 dark:border-red-800/50 
                          hover:shadow-premium-lg transition-all duration-200">
             <CardHeader>
@@ -1504,13 +1567,13 @@ export default function PharmacyInventory() {
                              hover:-translate-y-0.5 animate-slide-in-up"
                     data-testid={`alert-low-stock-${drug.id}`}
                   >
-                    <div className="flex justify-between items-start gap-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 dark:text-white text-lg">{drug.name}</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                           Code: {drug.drugCode} | Strength: {drug.strength || 'N/A'}
                         </p>
-                        <div className="mt-2 flex items-center gap-4 text-sm">
+                        <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
                           <div className="flex items-center gap-2">
                             <span className="text-gray-600 dark:text-gray-400">Current Stock:</span>
                             <span className="font-bold text-red-600 dark:text-red-400 text-base">
@@ -1525,7 +1588,7 @@ export default function PharmacyInventory() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2 items-end">
+                      <div className="flex sm:flex-col gap-2 items-start sm:items-end w-full sm:w-auto">
                         <Badge 
                           className="bg-gradient-to-r from-red-600 to-red-500 text-white shadow-premium-md
                                    hover:shadow-premium-lg transition-all duration-150 hover:scale-105 font-medium"
@@ -1554,8 +1617,10 @@ export default function PharmacyInventory() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Expiring Soon Alerts */}
+          {(activeAlertView === 'all' || activeAlertView === 'expiringSoon') && (
           <Card id="expiring-soon-section" className="shadow-premium-md border-amber-200 dark:border-amber-800/50 
                          hover:shadow-premium-lg transition-all duration-200">
             <CardHeader>
@@ -1642,6 +1707,7 @@ export default function PharmacyInventory() {
               )}
             </CardContent>
           </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="ledger" className="space-y-4">
@@ -1714,6 +1780,7 @@ export default function PharmacyInventory() {
                   </div>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                     <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
@@ -1773,6 +1840,7 @@ export default function PharmacyInventory() {
                     })}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -1809,37 +1877,74 @@ export default function PharmacyInventory() {
             </div>
           </div>
           <div className="space-y-4">
-            {/* Quick Select from Common Drugs */}
+            {/* Quick Select from Common Drugs - Searchable Combobox */}
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
               <Label htmlFor="commonDrug">Quick Select (Common Drugs)</Label>
-              <Select
-                value=""
-                onValueChange={(value) => {
-                  const drug = COMMON_DRUGS.find(d => d.name === value);
-                  if (drug) {
-                    setNewDrug({
-                      ...newDrug,
-                      name: drug.name,
-                      genericName: drug.genericName || "",
-                      strength: drug.strength,
-                      form: drug.form as any,
-                      unitOfMeasure: drug.form,
-                      category: drug.category || "",
-                    });
-                  }
-                }}
-              >
-                <SelectTrigger id="commonDrug" data-testid="select-common-drug">
-                  <SelectValue placeholder="Select from common drugs list..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {COMMON_DRUGS.map((drug) => (
-                    <SelectItem key={drug.name} value={drug.name}>
-                      {drug.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCombobox}
+                    className="w-full justify-between mt-1.5"
+                    data-testid="select-common-drug"
+                  >
+                    {comboboxSearch || "Search and select from common drugs list..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Type to search drugs..." 
+                      value={comboboxSearch}
+                      onValueChange={setComboboxSearch}
+                    />
+                    <CommandEmpty>No drug found.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {COMMON_DRUGS
+                        .filter(drug => 
+                          !comboboxSearch || 
+                          drug.name.toLowerCase().includes(comboboxSearch.toLowerCase()) ||
+                          drug.genericName.toLowerCase().includes(comboboxSearch.toLowerCase()) ||
+                          drug.category.toLowerCase().includes(comboboxSearch.toLowerCase())
+                        )
+                        .map((drug) => (
+                          <CommandItem
+                            key={drug.name}
+                            value={drug.name}
+                            onSelect={() => {
+                              setNewDrug({
+                                ...newDrug,
+                                name: drug.name,
+                                genericName: drug.genericName || "",
+                                strength: drug.strength,
+                                form: drug.form as any,
+                                unitOfMeasure: drug.form,
+                                category: drug.category || "",
+                              });
+                              setComboboxSearch(drug.name);
+                              setOpenCombobox(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                comboboxSearch === drug.name ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span>{drug.name}</span>
+                              <span className="text-xs text-gray-500">
+                                {drug.category} {drug.genericName ? `• ${drug.genericName}` : ""}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 Or type custom drug name below
               </p>
@@ -2129,9 +2234,9 @@ export default function PharmacyInventory() {
                 <Input
                   id="quantity"
                   type="number"
-                  value={newBatch.quantityOnHand}
+                  value={newBatch.quantityOnHand || ''}
                   onChange={(e) => {
-                    const qty = parseInt(e.target.value) || 0;
+                    const qty = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
                     setNewBatch({ 
                       ...newBatch, 
                       quantityOnHand: qty,
@@ -2139,7 +2244,7 @@ export default function PharmacyInventory() {
                       cartonsReceived: 0
                     });
                   }}
-                  placeholder="Enter quantity"
+                  placeholder="e.g., 100"
                   data-testid="input-quantity"
                 />
                 <p className="text-xs text-gray-500 mt-1">How many tablets/bottles you got</p>
@@ -2150,9 +2255,12 @@ export default function PharmacyInventory() {
                   id="unitCost"
                   type="number"
                   step="0.01"
-                  value={newBatch.unitCost}
-                  onChange={(e) => setNewBatch({ ...newBatch, unitCost: parseFloat(e.target.value) || 0 })}
-                  placeholder="Cost per unit"
+                  value={newBatch.unitCost || ''}
+                  onChange={(e) => {
+                    const cost = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
+                    setNewBatch({ ...newBatch, unitCost: cost });
+                  }}
+                  placeholder="e.g., 5.50"
                   data-testid="input-unit-cost"
                 />
                 <p className="text-xs text-gray-500 mt-1">Price per one tablet/bottle</p>
