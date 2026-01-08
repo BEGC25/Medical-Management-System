@@ -1833,6 +1833,39 @@ return (
                       warnings.push(`Proteinuria detected - Kidney function needs assessment`);
                     }
                   }
+
+                  // COMPLETE BLOOD COUNT (CBC)
+                  if (testName === "Complete Blood Count (CBC)") {
+                    const hb = parseFloat(testData["Hemoglobin"]);
+                    const wbc = parseFloat(testData["WBC Count"] || testData["WBC"]);
+                    const platelets = parseFloat(testData["Platelets"]);
+                    
+                    // Severe anemia
+                    if (!isNaN(hb) && hb < 7) {
+                      criticalFindings.push(`SEVERE anemia (Hb: ${hb} g/dL) - Requires urgent blood transfusion consideration`);
+                    } else if (!isNaN(hb) && hb < 10) {
+                      warnings.push(`Moderate anemia (Hb: ${hb} g/dL) - Requires treatment`);
+                    }
+                    
+                    // Elevated WBC
+                    if (!isNaN(wbc) && wbc > 15) {
+                      warnings.push(`Elevated WBC (${wbc} x10³/µL) - Possible severe infection or leukemia`);
+                    } else if (!isNaN(wbc) && wbc > 11) {
+                      warnings.push(`Elevated WBC (${wbc} x10³/µL) - Possible infection`);
+                    }
+
+                    // Low WBC
+                    if (!isNaN(wbc) && wbc < 4) {
+                      warnings.push(`Low WBC (${wbc} x10³/µL) - Immunosuppression, needs evaluation`);
+                    }
+
+                    // Thrombocytopenia
+                    if (!isNaN(platelets) && platelets < 50) {
+                      criticalFindings.push(`Severe thrombocytopenia (Platelets: ${platelets} x10³/µL) - Bleeding risk, urgent care needed`);
+                    } else if (!isNaN(platelets) && platelets < 150) {
+                      warnings.push(`Low platelets (${platelets} x10³/µL) - Monitor for bleeding`);
+                    }
+                  }
                 });
 
                 // Render appropriate KeyFindingCard based on findings
@@ -2188,7 +2221,7 @@ return (
 
       {/* PRINT — Request */}
       {showLabRequest && selectedPatient && (
-        <div>
+        <div id="lab-request-print" className="prescription">
           <Card className="border-2 border-medical-green">
             <CardContent className="p-6">
               {/* Print layout - kept exactly as-is from your original file */}
@@ -2212,15 +2245,7 @@ return (
 
       {/* PRINT — Report */}
       {showLabReport && selectedLabTest && (
-        <div className="print-only">
-          <style>{`
-            @media print {
-              body * { visibility: hidden; }
-              .print-only, .print-only * { visibility: visible; }
-              .print-only { position: absolute; left: 0; top: 0; width: 100%; }
-              @page { margin: 1cm; }
-            }
-          `}</style>
+        <div id="lab-report-print" className="prescription">
           <div className="bg-white p-6 max-w-4xl mx-auto">
             {/* Header - Modern Professional with Logo */}
             <div className="mb-4 pb-3 border-b-2 border-blue-600">
