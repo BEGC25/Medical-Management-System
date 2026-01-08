@@ -70,15 +70,14 @@ router.get("/api/reports/daily-cash-receipts", async (req: Request, res: Respons
         p.patient_id,
         pat.first_name || ' ' || pat.last_name AS patient_name,
         SUM(pi.total_price) AS amount,
-        p.received_by AS cashier,
-        pi.related_type AS service_type
+        p.received_by AS cashier
       FROM payments p
       LEFT JOIN payment_items pi ON p.payment_id = pi.payment_id
       LEFT JOIN patients pat ON p.patient_id = pat.patient_id
       WHERE p.clinic_day = ?
         AND p.payment_method = 'cash'
         ${departmentFilter}
-      GROUP BY p.payment_id, p.payment_date, p.created_at, p.patient_id, pat.first_name, pat.last_name, p.received_by, pi.related_type
+      GROUP BY p.payment_id, p.payment_date, p.created_at, p.patient_id, pat.first_name, pat.last_name, p.received_by
       ORDER BY p.created_at
       `,
       [day]

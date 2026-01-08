@@ -36,7 +36,6 @@ type ReceiptDetail = {
   patient_name: string
   amount: number
   cashier: string
-  service_type: string
 }
 
 function todayYMD() {
