@@ -42,10 +42,13 @@ type ReceiptDetail = {
   cashier: string
 }
 
-function todayYMD() {
-  const d = new Date()
+function formatDateYMD(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function todayYMD() {
+  return formatDateYMD(new Date())
 }
 
 const CURRENCY = "SSP"
@@ -302,8 +305,7 @@ export default function ReportsDailyCash() {
             onClick={() => {
               const yesterday = new Date()
               yesterday.setDate(yesterday.getDate() - 1)
-              const pad = (n: number) => String(n).padStart(2, "0")
-              setDate(`${yesterday.getFullYear()}-${pad(yesterday.getMonth() + 1)}-${pad(yesterday.getDate())}`)
+              setDate(formatDateYMD(yesterday))
             }}
             className="font-medium"
           >
