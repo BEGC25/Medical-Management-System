@@ -93,8 +93,7 @@ router.post("/api/reports/daily-cash-closing/close", async (req: Request, res: R
     
     const variance = counted_amount - (expected_amount || 0);
     
-    // Get user info from session (set by requireAuth middleware)
-    const user = (req as any).user;
+    // Use user info from session (already retrieved for admin check)
     const closed_by_username = user?.username || 'unknown';
     const closed_by_user_id = user?.id || null;
     

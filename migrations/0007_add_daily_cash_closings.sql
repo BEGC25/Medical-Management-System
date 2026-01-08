@@ -45,7 +45,7 @@ SELECT
   END AS department,
   p.received_by AS cashier_id,
   SUM(pi.total_price) AS total_amount,
-  COUNT(DISTINCT p.id) AS receipt_count
+  COUNT(DISTINCT p.payment_id) AS receipt_count
 FROM payments p
 LEFT JOIN payment_items pi ON p.payment_id = pi.payment_id
 WHERE p.clinic_day IS NOT NULL
