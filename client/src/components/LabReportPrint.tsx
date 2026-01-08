@@ -85,7 +85,7 @@ export function LabReportPrint({
   const interpretation = interpretLabResults(results);
 
   return (
-    <div id={containerId} className="prescription">
+    <div id={containerId} className="prescription" style={{ minHeight: 'auto', height: 'auto' }}>
       <div className="bg-white p-6 max-w-4xl mx-auto">
         {/* Header - Modern Professional with Logo */}
         <div className="mb-4 pb-3 border-b-2 border-blue-600">
