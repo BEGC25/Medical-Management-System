@@ -1,20 +1,222 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Users, Receipt, FileText, Plus, Eye, Clock } from "lucide-react";
+import { CalendarDays, Users, Receipt, FileText, Plus, Eye, Clock, DollarSign, Activity, CheckCircle, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
 import { getClinicDayKey } from "@/lib/date-utils";
+
+// Currency formatting helper
+const formatCurrency = (amount: number | string, currency: string = 'SSP'): string => {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return isNaN(numAmount) ? `0.00 ${currency}` : `${numAmount.toFixed(2)} ${currency}`;
+};
 
 interface EncounterWithPatient extends Encounter {
   patient?: Patient;
   orderLines?: OrderLine[];
   totalAmount?: number;
+  serviceCount?: number;
+}
+
+// Encounter Card Component with Total Display
+function EncounterCard({ 
+  encounter, 
+  onViewDetails, 
+  onGenerateInvoice, 
+  isGenerating 
+}: { 
+  encounter: EncounterWithPatient; 
+  onViewDetails: () => void; 
+  onGenerateInvoice: () => void; 
+  isGenerating: boolean;
+}) {
+  const [total, setTotal] = useState<number | null>(null);
+  const [serviceCount, setServiceCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch encounter totals
+  useEffect(() => {
+    const fetchTotal = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/encounters/${encounter.encounterId}`);
+        if (response.ok) {
+          const details = await response.json();
+          const calculatedTotal = (details.orderLines || []).reduce((sum: number, line: OrderLine) => {
+            const price = typeof line.totalPrice === 'string' 
+              ? parseFloat(line.totalPrice) 
+              : line.totalPrice;
+            return sum + (isNaN(price) ? 0 : price);
+          }, 0);
+          setTotal(calculatedTotal);
+          setServiceCount(details.orderLines?.length || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch encounter total:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTotal();
+  }, [encounter.encounterId]);
+
+  const statusConfig = (() => {
+    switch (encounter.status) {
+      case 'open':
+        return { 
+          color: 'bg-blue-100 text-blue-800 border-blue-200', 
+          borderColor: '#3b82f6',
+          icon: Activity, 
+          label: 'Open' 
+        };
+      case 'ready_to_bill':
+        return { 
+          color: 'bg-green-100 text-green-800 border-green-200', 
+          borderColor: '#10b981',
+          icon: CheckCircle, 
+          label: 'Ready to Bill' 
+        };
+      case 'closed':
+        return { 
+          color: 'bg-gray-100 text-gray-800 border-gray-200', 
+          borderColor: '#6b7280',
+          icon: CheckCircle, 
+          label: 'Closed' 
+        };
+      default:
+        return { 
+          color: 'bg-gray-100 text-gray-800 border-gray-200', 
+          borderColor: '#6b7280',
+          icon: AlertCircle, 
+          label: encounter.status 
+        };
+    }
+  })();
+
+  const StatusIcon = statusConfig.icon;
+
+  return (
+    <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: statusConfig.borderColor }}>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between gap-4">
+          {/* Left side - Patient and encounter info */}
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="font-semibold text-lg">
+                {encounter.patient 
+                  ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
+                  : `Patient ID: ${encounter.patientId}`
+                }
+              </h3>
+              <Badge className={`${statusConfig.color} border flex items-center gap-1`}>
+                <StatusIcon className="h-3 w-3" />
+                {statusConfig.label}
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+              <p className="flex items-center gap-1">
+                <Receipt className="h-3.5 w-3.5" />
+                ID: {encounter.encounterId}
+              </p>
+              <p className="flex items-center gap-1">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {new Date(encounter.visitDate).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </p>
+              {encounter.attendingClinician && (
+                <p className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  {encounter.attendingClinician}
+                </p>
+              )}
+              {encounter.createdAt && (
+                <p className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {new Date(encounter.createdAt).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </p>
+              )}
+            </div>
+
+            {/* Service count and total */}
+            <div className="flex gap-4 mt-3 pt-3 border-t">
+              {isLoading ? (
+                <div className="flex gap-4">
+                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1 text-sm">
+                    <Activity className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium">{serviceCount}</span>
+                    <span className="text-gray-600">service{serviceCount !== 1 ? 's' : ''}</span>
+                  </div>
+                  {total !== null && (
+                    <div className="flex items-center gap-1 text-sm">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <span className="font-semibold text-green-700">{formatCurrency(total)}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+          
+          {/* Right side - Actions */}
+          <div className="flex flex-col gap-2 min-w-fit">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onViewDetails}
+              className="hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View Details
+            </Button>
+            {encounter.status === 'open' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-block">
+                      <Button 
+                        size="sm"
+                        onClick={onGenerateInvoice}
+                        disabled={isGenerating || serviceCount === 0}
+                        className="bg-green-600 hover:bg-green-700 shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        {isGenerating ? "Generating..." : "Generate Invoice"}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {serviceCount === 0 && (
+                    <TooltipContent>
+                      <p>Cannot generate invoice: No services in this encounter</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 // Simple patient search component for billing
@@ -69,6 +271,7 @@ export default function Billing() {
   const [selectedEncounter, setSelectedEncounter] = useState<EncounterWithPatient | null>(null);
   const [showNewEncounterDialog, setShowNewEncounterDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [encounterToInvoice, setEncounterToInvoice] = useState<string | null>(null);
 
   // Get encounters
   const { data: encounters = [], isLoading } = useQuery<Encounter[]>({
@@ -132,31 +335,45 @@ export default function Billing() {
     },
   });
 
-  // Generate invoice mutation
+  // Generate invoice mutation with validation
   const generateInvoiceMutation = useMutation({
     mutationFn: async (encounterId: string) => {
-      const response = await fetch(`/api/encounters/${encounterId}/generate-invoice`, {
+      // Pre-validation: Check if encounter has order lines
+      const response = await fetch(`/api/encounters/${encounterId}`);
+      if (!response.ok) throw new Error('Failed to fetch encounter details');
+      
+      const details = await response.json();
+      
+      if (!details.orderLines || details.orderLines.length === 0) {
+        throw new Error("Cannot generate invoice for encounter with no services");
+      }
+
+      // Generate the invoice
+      const invoiceResponse = await fetch(`/api/encounters/${encounterId}/generate-invoice`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ generatedBy: "admin" }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
+      if (!invoiceResponse.ok) {
+        const error = await invoiceResponse.json();
         throw new Error(error.error || "Failed to generate invoice");
       }
 
-      return response.json();
+      return invoiceResponse.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      setEncounterToInvoice(null);
       toast({
-        title: "Invoice Generated",
+        title: "✓ Invoice Generated",
         description: "Invoice has been generated successfully.",
+        className: "bg-green-50 border-green-200",
       });
     },
     onError: (error: Error) => {
+      setEncounterToInvoice(null);
       toast({
         title: "Failed to Generate Invoice",
         description: error.message,
@@ -196,10 +413,20 @@ export default function Billing() {
       if (!response.ok) throw new Error('Failed to fetch encounter details');
       
       const details = await response.json();
+      
+      // FIX: Ensure proper numeric addition, not string concatenation
+      const totalAmount = (details.orderLines || []).reduce((sum: number, line: OrderLine) => {
+        const price = typeof line.totalPrice === 'string' 
+          ? parseFloat(line.totalPrice) 
+          : line.totalPrice;
+        return sum + (isNaN(price) ? 0 : price);
+      }, 0);
+      
       setSelectedEncounter({
         ...encounter,
         orderLines: details.orderLines,
-        totalAmount: details.orderLines.reduce((sum: number, line: OrderLine) => sum + line.totalPrice, 0)
+        totalAmount,
+        serviceCount: details.orderLines?.length || 0
       });
     } catch (error) {
       toast({
@@ -212,56 +439,64 @@ export default function Billing() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Receipt className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Billing Management</h1>
-        </div>
-        
-        <Dialog open={showNewEncounterDialog} onOpenChange={setShowNewEncounterDialog}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              New Encounter
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Encounter</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Select Patient</label>
-                <BillingPatientSearch onPatientSelect={setSelectedPatient} />
-                {selectedPatient && (
-                  <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                    <p className="font-medium">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-                    <p className="text-sm text-gray-600">ID: {selectedPatient.patientId}</p>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowNewEncounterDialog(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCreateEncounter}
-                  disabled={!selectedPatient || createEncounterMutation.isPending}
-                >
-                  {createEncounterMutation.isPending ? "Creating..." : "Create Encounter"}
-                </Button>
-              </div>
+      {/* Header with gradient */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-3 rounded-lg">
+              <Receipt className="h-8 w-8" />
             </div>
-          </DialogContent>
-        </Dialog>
+            <div>
+              <h1 className="text-3xl font-bold">Billing Management</h1>
+              <p className="text-blue-100 mt-1">Manage patient encounters and generate invoices</p>
+            </div>
+          </div>
+          
+          <Dialog open={showNewEncounterDialog} onOpenChange={setShowNewEncounterDialog}>
+            <DialogTrigger asChild>
+              <Button className="bg-white text-blue-700 hover:bg-blue-50 shadow-md">
+                <Plus className="h-4 w-4 mr-2" />
+                New Encounter
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Encounter</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Select Patient</label>
+                  <BillingPatientSearch onPatientSelect={setSelectedPatient} />
+                  {selectedPatient && (
+                    <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                      <p className="font-medium">{selectedPatient.firstName} {selectedPatient.lastName}</p>
+                      <p className="text-sm text-gray-600">ID: {selectedPatient.patientId}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowNewEncounterDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleCreateEncounter}
+                    disabled={!selectedPatient || createEncounterMutation.isPending}
+                  >
+                    {createEncounterMutation.isPending ? "Creating..." : "Create Encounter"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card>
+      {/* Filters with improved styling */}
+      <Card className="shadow-sm">
         <CardContent className="pt-6">
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 items-center flex-wrap">
             <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" />
+              <CalendarDays className="h-4 w-4 text-gray-500" />
               <Input
                 type="date"
                 value={selectedDate}
@@ -276,9 +511,18 @@ export default function Billing() {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="ready_to_bill">Ready to Bill</SelectItem>
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
+            
+            {/* Quick Stats */}
+            <div className="ml-auto flex gap-4">
+              <div className="text-center px-4 py-2 bg-blue-50 rounded-lg border border-blue-100">
+                <p className="text-xs text-gray-600 font-medium">Today's Encounters</p>
+                <p className="text-2xl font-bold text-blue-700">{enhancedEncounters.length}</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -288,141 +532,173 @@ export default function Billing() {
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
+              <Card key={i} className="overflow-hidden">
                 <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="space-y-3 animate-pulse">
+                    <div className="flex justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="h-5 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded w-1/3 animate-shimmer"></div>
+                        <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded w-1/2 animate-shimmer"></div>
+                        <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded w-1/4 animate-shimmer"></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-9 w-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded animate-shimmer"></div>
+                        <div className="h-9 w-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded animate-shimmer"></div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : enhancedEncounters.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Encounters Found</h3>
-              <p className="text-gray-600 mb-4">
-                No encounters found for the selected date and status.
+          <Card className="border-dashed border-2">
+            <CardContent className="pt-12 pb-12 text-center">
+              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-4">
+                <Users className="h-12 w-12 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Encounters Found</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                No encounters found for the selected date and status. Create a new encounter to get started.
               </p>
-              <Button onClick={() => setShowNewEncounterDialog(true)}>
+              <Button onClick={() => setShowNewEncounterDialog(true)} size="lg" className="shadow-md">
+                <Plus className="h-4 w-4 mr-2" />
                 Create New Encounter
               </Button>
             </CardContent>
           </Card>
         ) : (
           enhancedEncounters.map((encounter) => (
-            <Card key={encounter.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">
-                        {encounter.patient 
-                          ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
-                          : `Patient ID: ${encounter.patientId}`
-                        }
-                      </h3>
-                      <Badge variant={encounter.status === 'open' ? 'default' : 'secondary'}>
-                        {encounter.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Encounter ID: {encounter.encounterId}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Date: {new Date(encounter.visitDate).toLocaleDateString()}
-                    </p>
-                    {encounter.attendingClinician && (
-                      <p className="text-sm text-gray-600">
-                        Clinician: {encounter.attendingClinician}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleViewEncounter(encounter)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                    {encounter.status === 'open' && (
-                      <Button 
-                        size="sm"
-                        onClick={() => generateInvoiceMutation.mutate(encounter.encounterId)}
-                        disabled={generateInvoiceMutation.isPending}
-                      >
-                        <FileText className="h-4 w-4 mr-1" />
-                        Generate Invoice
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <EncounterCard
+              key={encounter.id}
+              encounter={encounter}
+              onViewDetails={() => handleViewEncounter(encounter)}
+              onGenerateInvoice={() => setEncounterToInvoice(encounter.encounterId)}
+              isGenerating={generateInvoiceMutation.isPending}
+            />
           ))
         )}
       </div>
 
       {/* Encounter Details Dialog */}
       <Dialog open={!!selectedEncounter} onOpenChange={() => setSelectedEncounter(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Encounter Details</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">Encounter Details</DialogTitle>
+            <DialogDescription>
+              Complete breakdown of services and charges for this encounter
+            </DialogDescription>
           </DialogHeader>
           {selectedEncounter && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium">Patient Information</h4>
-                  <p>{selectedEncounter.patient?.firstName} {selectedEncounter.patient?.lastName}</p>
-                  <p className="text-sm text-gray-600">ID: {selectedEncounter.patientId}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium">Encounter Information</h4>
-                  <p>ID: {selectedEncounter.encounterId}</p>
-                  <p className="text-sm text-gray-600">Date: {new Date(selectedEncounter.visitDate).toLocaleDateString()}</p>
-                  <p className="text-sm text-gray-600">Status: {selectedEncounter.status}</p>
-                </div>
+            <div className="space-y-6">
+              {/* Patient and Encounter Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-blue-900">Patient Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1">
+                    <p className="font-semibold text-lg">{selectedEncounter.patient?.firstName} {selectedEncounter.patient?.lastName}</p>
+                    <p className="text-sm text-gray-700">ID: {selectedEncounter.patientId}</p>
+                    {selectedEncounter.patient?.phoneNumber && (
+                      <p className="text-sm text-gray-700">Phone: {selectedEncounter.patient.phoneNumber}</p>
+                    )}
+                    {selectedEncounter.patient?.email && (
+                      <p className="text-sm text-gray-700">Email: {selectedEncounter.patient.email}</p>
+                    )}
+                  </CardContent>
+                </Card>
+                <Card className="bg-gray-50 border-gray-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-900">Encounter Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1">
+                    <p className="text-sm"><span className="font-medium">ID:</span> {selectedEncounter.encounterId}</p>
+                    <p className="text-sm"><span className="font-medium">Date:</span> {new Date(selectedEncounter.visitDate).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</p>
+                    {selectedEncounter.createdAt && (
+                      <p className="text-sm"><span className="font-medium">Time:</span> {new Date(selectedEncounter.createdAt).toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}</p>
+                    )}
+                    <p className="text-sm"><span className="font-medium">Status:</span> <Badge className="ml-1">{selectedEncounter.status}</Badge></p>
+                  </CardContent>
+                </Card>
               </div>
               
+              {/* Order Lines Section */}
               <div>
-                <h4 className="font-medium mb-2">Order Lines</h4>
+                <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Receipt className="h-5 w-5 text-blue-600" />
+                  Services & Charges
+                </h4>
                 {selectedEncounter.orderLines && selectedEncounter.orderLines.length > 0 ? (
                   <div className="space-y-2">
-                    {selectedEncounter.orderLines.map((line) => (
-                      <div key={line.id} className="flex justify-between items-center p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{line.description}</p>
-                          <p className="text-sm text-gray-600">
-                            Qty: {line.quantity} × {line.unitPriceSnapshot} SSP
-                          </p>
-                          <Badge variant="outline" className="mt-1">
+                    {selectedEncounter.orderLines.map((line, index) => (
+                      <div key={line.id} className={`flex justify-between items-start p-4 rounded-lg border-l-4 ${
+                        index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                      } border-blue-400 hover:shadow-sm transition-shadow`}>
+                        <div className="flex-1">
+                          <p className="font-semibold text-base">{line.description}</p>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                            <span>Quantity: <span className="font-medium text-gray-900">{line.quantity}</span></span>
+                            <span>Unit Price: <span className="font-medium text-gray-900">{formatCurrency(line.unitPriceSnapshot)}</span></span>
+                          </div>
+                          <Badge variant="outline" className="mt-2">
                             {line.status}
                           </Badge>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">{line.totalPrice} SSP</p>
+                        <div className="text-right ml-4">
+                          <p className="text-sm text-gray-600 mb-1">Total</p>
+                          <p className="font-bold text-lg text-blue-700">{formatCurrency(line.totalPrice)}</p>
                         </div>
                       </div>
                     ))}
-                    <div className="border-t pt-2 flex justify-between items-center font-medium">
-                      <span>Total:</span>
-                      <span>{selectedEncounter.totalAmount} SSP</span>
+                    
+                    {/* Grand Total */}
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg mt-4 flex justify-between items-center">
+                      <span className="text-lg font-semibold">Grand Total:</span>
+                      <span className="text-2xl font-bold">{formatCurrency(selectedEncounter.totalAmount || 0)}</span>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-gray-600">No order lines found for this encounter.</p>
+                  <Card className="border-dashed">
+                    <CardContent className="pt-8 pb-8 text-center">
+                      <FileText className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-600">No services found for this encounter.</p>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog for Invoice Generation */}
+      <AlertDialog open={!!encounterToInvoice} onOpenChange={(open) => !open && setEncounterToInvoice(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate Invoice</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to generate an invoice for this encounter? This action will create a billing record and mark the encounter as ready for payment.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => encounterToInvoice && generateInvoiceMutation.mutate(encounterToInvoice)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Generate Invoice
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
