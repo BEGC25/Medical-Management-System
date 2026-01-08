@@ -280,11 +280,7 @@ export default function ReportsDailyCash() {
                 selected={date ? new Date(date) : undefined}
                 onSelect={(selectedDate) => {
                   if (selectedDate) {
-                    const pad = (n: number) => String(n).padStart(2, "0")
-                    const yyyy = selectedDate.getFullYear()
-                    const mm = pad(selectedDate.getMonth() + 1)
-                    const dd = pad(selectedDate.getDate())
-                    setDate(`${yyyy}-${mm}-${dd}`)
+                    setDate(format(selectedDate, 'yyyy-MM-dd'))
                   }
                 }}
                 initialFocus
@@ -340,7 +336,7 @@ export default function ReportsDailyCash() {
                   <XCircle className="h-4 w-4 text-red-600" />
                 )}
               </div>
-              <div className={`text-lg sm:text-xl font-bold ${
+              <div className={`text-lg sm:text-xl font-bold tabular-nums ${
                 variance === 0 ? "text-green-700" : variance > 0 ? "text-red-700" : "text-orange-700"
               }`}>
                 {closingStatus.closing ? getVarianceText(variance) : "—"}
