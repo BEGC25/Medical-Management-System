@@ -8,10 +8,11 @@ import { formatDepartmentName } from "@/lib/display-utils";
 interface ResultsListProps {
   results: AnyResult[];
   selectedResultId: number | null;
+  selectedResultType?: string;
   onSelectResult: (result: AnyResult) => void;
 }
 
-export function ResultsList({ results, selectedResultId, onSelectResult }: ResultsListProps) {
+export function ResultsList({ results, selectedResultId, selectedResultType, onSelectResult }: ResultsListProps) {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'lab':
@@ -91,7 +92,7 @@ export function ResultsList({ results, selectedResultId, onSelectResult }: Resul
       <div className="space-y-2 p-4">
         {results.map((result) => {
           const colors = getDepartmentColors(result.type);
-          const isSelected = selectedResultId === result.id;
+          const isSelected = selectedResultId === result.id && (!selectedResultType || selectedResultType === result.type);
           
           return (
             <div
