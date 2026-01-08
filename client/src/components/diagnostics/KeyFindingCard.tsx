@@ -64,7 +64,7 @@ export function KeyFindingCard({
         {items.length > 0 && (
           <div className="space-y-1">
             {items.map((item, i) => (
-              <div key={i} className="bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-600 dark:border-yellow-500 p-2 text-sm text-yellow-900 dark:text-yellow-100">
+              <div key={i} className="bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-600 dark:border-yellow-500 pl-3 pr-4 py-2 text-sm text-yellow-900 dark:text-yellow-100">
                 {item.text}
               </div>
             ))}
@@ -96,7 +96,7 @@ export function KeyFindingCard({
       {items.length > 0 && (
         <div className="space-y-1">
           {items.map((item, i) => (
-            <div key={i} className="bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-600 dark:border-yellow-500 p-2 text-sm text-yellow-900 dark:text-yellow-100">
+            <div key={i} className="bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-600 dark:border-yellow-500 pl-3 pr-4 py-2 text-sm text-yellow-900 dark:text-yellow-100">
               {item.text}
             </div>
           ))}
