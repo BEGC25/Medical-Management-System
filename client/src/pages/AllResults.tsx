@@ -29,7 +29,9 @@ import {
   Download,
   Eye,
   Printer,
-  Plus
+  Plus,
+  Scan,
+  MonitorSpeaker
 } from "lucide-react";
 import { format } from "date-fns";
 import { getClinicDayKey } from "@/lib/date-utils";
@@ -131,14 +133,9 @@ export default function AllResults() {
 
   // Build query parameters based on filter selection
   const getQueryParams = (): Record<string, string> => {
-    if (dateFilter === "today") {
-      return { date: today };
-    } else if (dateFilter === "date") {
-      return { date: selectedDate };
-    } else {
-      // "all" - Load all data
-      return {} as Record<string, string>;
-    }
+    // Always load all data for client-side filtering
+    // This ensures precise date filtering using clinic timezone
+    return {};
   };
 
   // Fetch data based on date filter selection
@@ -220,23 +217,34 @@ export default function AllResults() {
     const matchesStatus = statusFilter === "all" || result.status === statusFilter;
     const matchesType = typeFilter === "all" || result.type === typeFilter;
 
-    return matchesSearch && matchesPatient && matchesStatus && matchesType;
+    // Date filtering using clinic timezone
+    let matchesDate = true;
+    if (dateFilter === "today") {
+      // Extract the date portion from createdAt timestamp in clinic timezone
+      const resultDate = getClinicDayKey(new Date(result.createdAt));
+      matchesDate = resultDate === today;
+    } else if (dateFilter === "date" && selectedDate) {
+      const resultDate = getClinicDayKey(new Date(result.createdAt));
+      matchesDate = resultDate === selectedDate;
+    }
+
+    return matchesSearch && matchesPatient && matchesStatus && matchesType && matchesDate;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Auto-select first result when results change
+  // Clear selection if the selected result is no longer in the filtered list
   useEffect(() => {
-    if (filteredResults.length > 0) {
-      // If no result is selected, or if the selected result is not in the filtered list, select the first one
-      const isSelectedInList = selectedResult && filteredResults.some(r => r.id === selectedResult.id && r.type === selectedResult.type);
+    if (selectedResult && filteredResults.length > 0) {
+      const isSelectedInList = filteredResults.some(r => r.id === selectedResult.id && r.type === selectedResult.type);
       
-      if (!selectedResult || !isSelectedInList) {
-        setSelectedResult(filteredResults[0]);
+      if (!isSelectedInList) {
+        // Selected result is no longer in the list, clear selection
+        setSelectedResult(null);
       }
-    } else {
-      // Clear selection if no results
+    } else if (filteredResults.length === 0) {
+      // No results, clear selection
       setSelectedResult(null);
     }
-  }, [filteredResults.length, filteredResults[0]?.id, filteredResults[0]?.type]);
+  }, [filteredResults.length, filteredResults[0]?.id, filteredResults[0]?.type, selectedResult]);
 
 
   const getStatusIcon = (status: string) => {
@@ -255,9 +263,9 @@ export default function AllResults() {
       case 'lab':
         return <Microscope className="h-4 w-4 text-blue-500" />;
       case 'xray':
-        return <FileText className="h-4 w-4 text-amber-500" />;
+        return <Scan className="h-4 w-4 text-amber-500" />;
       case 'ultrasound':
-        return <Stethoscope className="h-4 w-4 text-teal-500" />;
+        return <MonitorSpeaker className="h-4 w-4 text-teal-500" />;
       default:
         return <FileText className="h-4 w-4 text-gray-500" />;
     }

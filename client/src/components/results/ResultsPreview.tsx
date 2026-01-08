@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { 
   User, Calendar, Microscope, Camera, Stethoscope, 
-  AlertCircle, Eye, Printer, Plus, FileText
+  AlertCircle, Eye, Printer, Plus, FileText, Scan, MonitorSpeaker
 } from "lucide-react";
 import { format } from "date-fns";
 import type { AnyResult } from "./types";
@@ -31,9 +31,9 @@ export function ResultsPreview({ result, onViewFullDetails }: ResultsPreviewProp
       case 'lab':
         return <Microscope className="h-5 w-5 text-blue-500" />;
       case 'xray':
-        return <Camera className="h-5 w-5 text-amber-500" />;
+        return <Scan className="h-5 w-5 text-amber-500" />;
       case 'ultrasound':
-        return <Stethoscope className="h-5 w-5 text-teal-500" />;
+        return <MonitorSpeaker className="h-5 w-5 text-teal-500" />;
       default:
         return <FileText className="h-5 w-5 text-slate-500" />;
     }

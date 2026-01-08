@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Microscope, Stethoscope, Camera } from "lucide-react";
+import { FileText, Microscope, Camera, Scan, MonitorSpeaker } from "lucide-react";
 import type { ResultsKPI, ResultType } from "./types";
 
 interface ResultsKPICardsProps {
@@ -104,7 +104,7 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
               </p>
             </div>
             <div className="rounded-xl bg-amber-100 dark:bg-amber-900 p-3 shadow-md">
-              <Camera className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+              <Scan className="h-7 w-7 text-amber-600 dark:text-amber-400" />
             </div>
           </div>
         </CardContent>
@@ -137,7 +137,7 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
               </p>
             </div>
             <div className="rounded-xl bg-teal-100 dark:bg-teal-900 p-3 shadow-md">
-              <Stethoscope className="h-7 w-7 text-teal-600 dark:text-teal-400" />
+              <MonitorSpeaker className="h-7 w-7 text-teal-600 dark:text-teal-400" />
             </div>
           </div>
         </CardContent>
