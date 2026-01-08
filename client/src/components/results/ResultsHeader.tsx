@@ -20,7 +20,7 @@ export function ResultsHeader({ searchTerm, onSearchChange }: ResultsHeaderProps
   }, [localSearch, onSearchChange]);
 
   return (
-    <div className="sticky top-0 z-10 bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-850 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-md">
+    <div className="sticky top-0 z-10 bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-md">
       <div className="container mx-auto px-6 py-6">
         {/* Title Section */}
         <div className="flex items-start justify-between mb-4 gap-6">

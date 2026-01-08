@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Microscope, Camera, Scan, MonitorSpeaker } from "lucide-react";
+import { FileText, Microscope, Scan, MonitorSpeaker } from "lucide-react";
 import type { ResultsKPI, ResultType } from "./types";
 
 interface ResultsKPICardsProps {

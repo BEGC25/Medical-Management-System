@@ -229,7 +229,7 @@ export default function AllResults() {
     }
 
     return matchesSearch && matchesPatient && matchesStatus && matchesType && matchesDate;
-  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Clear selection if the selected result is no longer in the filtered list
   useEffect(() => {
@@ -244,7 +244,7 @@ export default function AllResults() {
       // No results, clear selection
       setSelectedResult(null);
     }
-  }, [filteredResults.length, filteredResults[0]?.id, filteredResults[0]?.type, selectedResult]);
+  }, [selectedResult, filteredResults.length]);
 
 
   const getStatusIcon = (status: string) => {

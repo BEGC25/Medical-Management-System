@@ -3,8 +3,16 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { 
-  User, Calendar, Microscope, Camera, Stethoscope, 
-  AlertCircle, Eye, Printer, Plus, FileText, Scan, MonitorSpeaker
+  User, 
+  Calendar, 
+  Microscope, 
+  AlertCircle, 
+  Eye, 
+  Printer, 
+  Plus, 
+  FileText, 
+  Scan, 
+  MonitorSpeaker
 } from "lucide-react";
 import { format } from "date-fns";
 import type { AnyResult } from "./types";
