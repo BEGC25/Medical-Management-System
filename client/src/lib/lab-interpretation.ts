@@ -243,9 +243,9 @@ function interpretRBS(testData: Record<string, string>): { critical: string[]; w
   const glucose = parseFloat(testData["Blood Glucose"]);
   
   if (!isNaN(glucose) && glucose > 200) {
-    warnings.push(`Elevated random blood glucose (${glucose} mg/dL) - Suggests diabetes; confirmatory fasting test recommended`);
+    warnings.push(`Elevated random blood glucose (${glucose} mg/dL) - Suggestive of diabetes; confirmatory fasting test recommended; correlate clinically`);
   } else if (!isNaN(glucose) && glucose < 70) {
-    critical.push(`Hypoglycemia detected (${glucose} mg/dL) - Immediate glucose administration may be needed`);
+    critical.push(`Hypoglycemia detected (${glucose} mg/dL) - URGENT: Consider immediate glucose administration if symptomatic; investigate underlying cause`);
   }
   
   return { critical, warnings };
@@ -261,11 +261,11 @@ function interpretFBS(testData: Record<string, string>): { critical: string[]; w
   const glucose = parseFloat(testData["Blood Glucose"]);
   
   if (!isNaN(glucose) && glucose >= 126) {
-    warnings.push(`Fasting glucose ${glucose} mg/dL meets diabetes criteria - Recommend HbA1c and clinical correlation`);
+    warnings.push(`Fasting glucose ${glucose} mg/dL meets diabetes criteria - Consider HbA1c and clinical correlation; diabetes management plan recommended`);
   } else if (!isNaN(glucose) && glucose >= 100 && glucose < 126) {
-    warnings.push(`Impaired fasting glucose (${glucose} mg/dL) - Prediabetes, lifestyle modifications recommended`);
+    warnings.push(`Impaired fasting glucose (${glucose} mg/dL) - Suggestive of prediabetes; lifestyle modifications and monitoring recommended`);
   } else if (!isNaN(glucose) && glucose < 70) {
-    critical.push(`Fasting hypoglycemia (${glucose} mg/dL) - Investigate cause; immediate treatment if symptomatic`);
+    critical.push(`Fasting hypoglycemia (${glucose} mg/dL) - URGENT: Investigate cause; consider immediate treatment if symptomatic`);
   }
   
   return { critical, warnings };
@@ -280,7 +280,7 @@ function interpretHIV(testData: Record<string, string>): { critical: string[]; w
   
   const result = testData["HIV Antibody"];
   if (result === "Positive") {
-    critical.push(`HIV antibody POSITIVE - Confirmatory testing required; refer to specialist for counseling and management`);
+    critical.push(`HIV antibody POSITIVE - Confirmatory testing required; refer to specialist for counseling, CD4 count, and management plan`);
   }
   
   return { critical, warnings };
@@ -347,9 +347,11 @@ function interpretESR(testData: Record<string, string>): { critical: string[]; w
   const esr = parseFloat(testData["ESR (1 hour)"]);
   
   if (!isNaN(esr) && esr > 100) {
-    warnings.push(`Markedly elevated ESR (${esr} mm/hr) - Suggests significant inflammation, infection, or malignancy; further workup needed`);
+    warnings.push(`Markedly elevated ESR (${esr} mm/hr) - Suggestive of significant inflammation, infection, or malignancy; further workup needed`);
   } else if (!isNaN(esr) && esr > 50) {
-    warnings.push(`Elevated ESR (${esr} mm/hr) - Indicates inflammation; correlate with clinical presentation`);
+    warnings.push(`Elevated ESR (${esr} mm/hr) - Suggestive of inflammation or infection; correlate clinically with patient presentation`);
+  } else if (!isNaN(esr) && esr > 20) {
+    warnings.push(`Mildly elevated ESR (${esr} mm/hr) - Consider inflammation; correlate with clinical findings`);
   }
   
   return { critical, warnings };
@@ -423,6 +425,283 @@ function interpretPregnancyTest(testData: Record<string, string>): { critical: s
 }
 
 /**
+ * Interpret Gonorrhea Test results
+ */
+function interpretGonorrheaTest(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["Gonorrhea"];
+  if (result === "Positive") {
+    critical.push(`Gonorrhea test POSITIVE - Sexually transmitted infection detected; initiate appropriate antibiotic therapy and partner notification`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Chlamydia Test results
+ */
+function interpretChlamydiaTest(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["Chlamydia"];
+  if (result === "Positive") {
+    critical.push(`Chlamydia test POSITIVE - Sexually transmitted infection detected; initiate antibiotic therapy and partner notification`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Reproductive Hormones results
+ */
+function interpretReproductiveHormones(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  // This is a complex panel - provide general guidance for abnormal values
+  // Individual hormone levels would need specific reference ranges by age/gender
+  warnings.push(`Reproductive hormone panel completed - Results should be interpreted by specialist considering patient age, gender, menstrual cycle phase, and clinical context`);
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Thyroid Hormones results
+ */
+function interpretThyroidHormones(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const tsh = parseFloat(testData["TSH"]);
+  const t3 = parseFloat(testData["T3"]);
+  const t4 = parseFloat(testData["T4"]);
+  
+  if (!isNaN(tsh) && tsh > 10) {
+    warnings.push(`Markedly elevated TSH (${tsh} μIU/mL) - Suggestive of hypothyroidism; consider thyroid hormone replacement`);
+  } else if (!isNaN(tsh) && tsh > 4) {
+    warnings.push(`Elevated TSH (${tsh} μIU/mL) - Consider subclinical hypothyroidism; correlate with free T4 levels`);
+  } else if (!isNaN(tsh) && tsh < 0.4) {
+    warnings.push(`Suppressed TSH (${tsh} μIU/mL) - Suggestive of hyperthyroidism; correlate with free T4 and T3 levels`);
+  }
+  
+  if (!isNaN(t4) && t4 < 5) {
+    warnings.push(`Low T4 (${t4} μg/dL) - Suggestive of hypothyroidism; confirm with repeat testing`);
+  } else if (!isNaN(t4) && t4 > 12) {
+    warnings.push(`Elevated T4 (${t4} μg/dL) - Suggestive of hyperthyroidism; confirm with clinical correlation`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Cardiac & Other Markers results
+ */
+function interpretCardiacMarkers(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  // Generic interpretation for cardiac markers panel
+  warnings.push(`Cardiac marker panel completed - Results should be interpreted in context of patient symptoms, ECG findings, and clinical presentation; urgent cardiology consultation if acute coronary syndrome suspected`);
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Toxoplasma Test results
+ */
+function interpretToxoplasmaTest(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["Toxoplasma IgG"] || testData["Toxoplasma IgM"] || testData["Toxoplasma"];
+  if (result === "Positive") {
+    warnings.push(`Toxoplasma antibody POSITIVE - May indicate past or current infection; correlate with clinical presentation, especially in pregnant women and immunocompromised patients`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Filariasis Tests results
+ */
+function interpretFilariasisTests(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["Filaria Antigen"] || testData["Microfilaria"];
+  if (result === "Positive" || result === "Seen") {
+    warnings.push(`Filariasis test POSITIVE - Parasitic infection detected; initiate anti-filarial therapy per guidelines`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Schistosomiasis Test results
+ */
+function interpretSchistosomiasisTest(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["Schistosoma Antibody"] || testData["Schistosoma Ova"];
+  if (result === "Positive" || result === "Seen") {
+    warnings.push(`Schistosomiasis test POSITIVE - Parasitic infection detected; initiate praziquantel therapy and monitor for complications`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Leishmaniasis Test results
+ */
+function interpretLeishmaniasisTest(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["Leishmania Antibody"] || testData["Leishmania"];
+  if (result === "Positive") {
+    critical.push(`Leishmaniasis test POSITIVE - Parasitic infection detected; specialist consultation for appropriate therapy (amphotericin B or antimonials)`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Tuberculosis Tests results
+ */
+function interpretTuberculosisTests(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["TB GeneXpert"] || testData["Mantoux Test"] || testData["TB Antibody"];
+  if (result === "Positive" || result === "Detected") {
+    critical.push(`Tuberculosis test POSITIVE - Mycobacterial infection detected; initiate DOTS therapy per national guidelines and ensure infection control measures`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Meningitis Tests results
+ */
+function interpretMeningitisTests(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["CSF Analysis"] || testData["Meningitis PCR"];
+  if (result && result.toLowerCase().includes("positive")) {
+    critical.push(`Meningitis test suggests infection - URGENT: Initiate empiric antibiotic/antiviral therapy immediately pending culture results; specialist consultation required`);
+  } else {
+    warnings.push(`Meningitis panel completed - Interpret CSF findings (WBC, protein, glucose) in clinical context; consider repeat lumbar puncture if high clinical suspicion`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Yellow Fever Test results
+ */
+function interpretYellowFeverTest(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["Yellow Fever IgM"] || testData["Yellow Fever"];
+  if (result === "Positive") {
+    critical.push(`Yellow Fever test POSITIVE - Viral hemorrhagic fever detected; URGENT: Isolate patient, supportive care, and notify public health authorities immediately`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Typhus Test results
+ */
+function interpretTyphusTest(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const result = testData["Typhus Antibody"] || testData["Rickettsia"];
+  if (result === "Positive") {
+    warnings.push(`Typhus test POSITIVE - Rickettsial infection detected; initiate doxycycline therapy promptly`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Urine Microscopy results
+ */
+function interpretUrineMicroscopy(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const wbc = testData["WBC/HPF"] || testData["Pus Cells"];
+  const rbc = testData["RBC/HPF"] || testData["Red Cells"];
+  const bacteria = testData["Bacteria"];
+  const casts = testData["Casts"];
+  
+  if (wbc && wbc !== "0-2" && wbc !== "Negative" && wbc !== "None") {
+    warnings.push(`Pyuria detected (${wbc}) - Suggestive of urinary tract infection; consider urine culture and antibiotic therapy`);
+  }
+  
+  if (rbc && rbc !== "0-2" && rbc !== "Negative" && rbc !== "None") {
+    warnings.push(`Hematuria detected (${rbc}) - Consider renal pathology, stones, infection, or malignancy; further workup needed`);
+  }
+  
+  if (bacteria === "Positive" || bacteria === "Many") {
+    warnings.push(`Bacteriuria detected - Suggestive of urinary tract infection; consider urine culture for sensitivity`);
+  }
+  
+  if (casts && casts !== "None" && casts !== "Negative") {
+    warnings.push(`Urinary casts present (${casts}) - Suggestive of renal parenchymal disease; nephrology consultation may be needed`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Stool Examination results
+ */
+function interpretStoolExamination(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const appearance = testData["Appearance"];
+  const ova = testData["Ova/Parasites"];
+  const occultBlood = testData["Occult Blood"];
+  
+  if (appearance === "Bloody") {
+    critical.push(`Bloody stool detected - URGENT: Rule out severe colitis, dysentery, or gastrointestinal bleeding; immediate evaluation needed`);
+  }
+  
+  if (ova && ova !== "None seen" && ova !== "Negative") {
+    warnings.push(`Intestinal parasites detected (${ova}) - Initiate appropriate antiparasitic therapy per guidelines`);
+  }
+  
+  if (occultBlood === "Positive") {
+    warnings.push(`Occult blood POSITIVE - Suggestive of gastrointestinal bleeding; consider endoscopy and further workup for source`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Custom Test results
+ */
+function interpretCustomTest(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  // Custom test - provide generic guidance
+  warnings.push(`Custom test panel completed - Clinical interpretation should be based on test-specific reference ranges and patient clinical context`);
+  
+  return { critical, warnings };
+}
+
+/**
  * Main function to interpret all lab test results
  * 
  * @param results Object containing all lab test results, keyed by test name
@@ -431,7 +710,7 @@ function interpretPregnancyTest(testData: Record<string, string>): { critical: s
 export function interpretLabResults(results: Record<string, Record<string, string>>): LabInterpretation {
   const allCritical: string[] = [];
   const allWarnings: string[] = [];
-  let hasUnknownPanels = false;
+  const unknownPanels: string[] = [];
   
   Object.entries(results).forEach(([testName, testData]) => {
     let interpretation: { critical: string[]; warnings: string[] } | null = null;
@@ -477,9 +756,41 @@ export function interpretLabResults(results: Record<string, Record<string, strin
       interpretation = interpretTWBC(testData);
     } else if (testName === "Pregnancy Test (HCG)") {
       interpretation = interpretPregnancyTest(testData);
+    } else if (testName === "Gonorrhea Test") {
+      interpretation = interpretGonorrheaTest(testData);
+    } else if (testName === "Chlamydia Test") {
+      interpretation = interpretChlamydiaTest(testData);
+    } else if (testName === "Reproductive Hormones") {
+      interpretation = interpretReproductiveHormones(testData);
+    } else if (testName === "Thyroid Hormones") {
+      interpretation = interpretThyroidHormones(testData);
+    } else if (testName === "Cardiac & Other Markers") {
+      interpretation = interpretCardiacMarkers(testData);
+    } else if (testName === "Toxoplasma Test") {
+      interpretation = interpretToxoplasmaTest(testData);
+    } else if (testName === "Filariasis Tests") {
+      interpretation = interpretFilariasisTests(testData);
+    } else if (testName === "Schistosomiasis Test") {
+      interpretation = interpretSchistosomiasisTest(testData);
+    } else if (testName === "Leishmaniasis Test") {
+      interpretation = interpretLeishmaniasisTest(testData);
+    } else if (testName === "Tuberculosis Tests") {
+      interpretation = interpretTuberculosisTests(testData);
+    } else if (testName === "Meningitis Tests") {
+      interpretation = interpretMeningitisTests(testData);
+    } else if (testName === "Yellow Fever Test") {
+      interpretation = interpretYellowFeverTest(testData);
+    } else if (testName === "Typhus Test") {
+      interpretation = interpretTyphusTest(testData);
+    } else if (testName === "Urine Microscopy") {
+      interpretation = interpretUrineMicroscopy(testData);
+    } else if (testName === "Stool Examination") {
+      interpretation = interpretStoolExamination(testData);
+    } else if (testName === "Custom Test") {
+      interpretation = interpretCustomTest(testData);
     } else {
-      // Unknown panel - mark for fallback message
-      hasUnknownPanels = true;
+      // Unknown panel - track it
+      unknownPanels.push(testName);
     }
     
     if (interpretation) {
@@ -488,9 +799,9 @@ export function interpretLabResults(results: Record<string, Record<string, strin
     }
   });
   
-  // Add fallback message if there are unknown panels and no other findings
-  if (hasUnknownPanels && allCritical.length === 0 && allWarnings.length === 0) {
-    allWarnings.push("No automated interpretation rules are configured yet for this test panel. Please review results clinically.");
+  // Add a neutral fallback message for unknown panels (even if there are other findings)
+  if (unknownPanels.length > 0) {
+    allWarnings.push(`Note: Automated interpretation not yet available for: ${unknownPanels.join(", ")}. Please review results clinically and correlate with patient presentation.`);
   }
   
   return {

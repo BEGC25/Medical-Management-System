@@ -1495,14 +1495,6 @@ return (
                           }`}>
                             {test}
                           </span>
-                          
-                          {/* Estimated duration badge */}
-                          <Badge variant="outline" className={`text-xs ${
-                            isSelected ? 'border-teal-400 text-teal-700' : 'border-gray-300 text-gray-600'
-                          }`}>
-                            <Clock className="w-3 h-3 mr-1" />
-                            ~30min
-                          </Badge>
                         </label>
                       );
                     })}
