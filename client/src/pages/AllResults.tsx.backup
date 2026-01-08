@@ -1,8 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { canAccessPage, ROLES, UserRole } from "@shared/auth-roles";
-import { Redirect } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle
-} from "@/components/ui/resizable";
 import { 
   Search, 
   FileText, 
@@ -34,12 +26,6 @@ import {
 import { format } from "date-fns";
 import { getClinicDayKey } from "@/lib/date-utils";
 import { formatDepartmentName } from "@/lib/display-utils";
-import { ResultsHeader } from "@/components/results/ResultsHeader";
-import { ResultsKPICards } from "@/components/results/ResultsKPICards";
-import { ResultsFiltersBar } from "@/components/results/ResultsFilters";
-import { ResultsList } from "@/components/results/ResultsList";
-import { ResultsPreview } from "@/components/results/ResultsPreview";
-import { getResultValueColor } from "@/components/results/utils";
 
 interface Patient {
   id: number;
@@ -108,22 +94,12 @@ interface UltrasoundExam {
 }
 
 export default function AllResults() {
-  const { user } = useAuth();
-  
-  // Role-based access control - only admins can view all results
-  if (!user || !canAccessPage(user.role as UserRole, '/all-results')) {
-    return <Redirect to="/unauthorized" />;
-  }
-
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("today");
   const [selectedDate, setSelectedDate] = useState<string>(getClinicDayKey());
-  const [selectedResult, setSelectedResult] = useState<any | null>(null);
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [detailsResult, setDetailsResult] = useState<any | null>(null);
 
   // Get today's date in clinic timezone for filtering
   const today = getClinicDayKey();
@@ -317,7 +293,14 @@ export default function AllResults() {
                     <span className="text-gray-700 dark:text-gray-300 font-medium">
                       {field}:
                     </span>
-                    <span className={`font-mono text-right ${getResultValueColor(value as string)}`}>
+                    <span className={`font-mono text-right ${
+                      // Highlight abnormal values
+                      (value as string).includes('+') || (value as string).includes('P. falciparum') || 
+                      (value as string).includes('Positive') || (value as string).includes('Seen') || 
+                      (value as string).includes('Turbid') || (value as string).includes('1:160')
+                        ? 'text-red-600 dark:text-red-400 font-bold' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
                       {value as string}
                     </span>
                   </div>
@@ -337,11 +320,17 @@ export default function AllResults() {
     }
   };
 
-  const renderResultDetails = (result: any, open: boolean, onOpenChange: (open: boolean) => void) => {
+  const renderResultDetails = (result: any) => {
     const patient = result.patient;
     
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Eye className="h-4 w-4 mr-1" />
+            View Details
+          </Button>
+        </DialogTrigger>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" id="lab-result-detail">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1335,96 +1324,235 @@ export default function AllResults() {
     );
   };
 
-  // Calculate KPIs
-  const kpi = {
-    total: allResults.length,
-    lab: allResults.filter(r => r.type === 'lab').length,
-    xray: allResults.filter(r => r.type === 'xray').length,
-    ultrasound: allResults.filter(r => r.type === 'ultrasound').length,
-    completed: allResults.filter(r => r.status === 'completed').length,
-    pending: allResults.filter(r => r.status === 'pending').length,
-  };
-
-  const filters = {
-    searchTerm,
-    selectedPatient,
-    statusFilter,
-    typeFilter,
-    dateFilter,
-    selectedDate,
-  };
-
-  const handleFilterChange = (newFilters: Partial<typeof filters>) => {
-    if (newFilters.searchTerm !== undefined) setSearchTerm(newFilters.searchTerm);
-    if (newFilters.selectedPatient !== undefined) setSelectedPatient(newFilters.selectedPatient);
-    if (newFilters.statusFilter !== undefined) setStatusFilter(newFilters.statusFilter);
-    if (newFilters.typeFilter !== undefined) setTypeFilter(newFilters.typeFilter);
-    if (newFilters.dateFilter !== undefined) setDateFilter(newFilters.dateFilter);
-    if (newFilters.selectedDate !== undefined) setSelectedDate(newFilters.selectedDate);
-  };
-
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
-      {/* Sticky Header */}
-      <ResultsHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        <div className="container mx-auto px-6 py-6 h-full flex flex-col gap-6">
-          {/* KPI Cards */}
-          <ResultsKPICards 
-            kpi={kpi}
-            typeFilter={typeFilter}
-            onTypeFilterChange={setTypeFilter}
-          />
-
-          {/* Filters */}
-          <ResultsFiltersBar
-            filters={filters}
-            patients={patients}
-            onFilterChange={handleFilterChange}
-            resultCount={filteredResults.length}
-          />
-
-          {/* Two-Pane Layout */}
-          <div className="flex-1 min-h-0">
-            <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-              {/* Left: Results List */}
-              <ResizablePanel defaultSize={40} minSize={30}>
-                <div className="h-full flex flex-col">
-                  <div className="border-b border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-800">
-                    <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-                      Results ({filteredResults.length})
-                    </h3>
-                  </div>
-                  <ResultsList
-                    results={filteredResults}
-                    selectedResultId={selectedResult?.id || null}
-                    onSelectResult={setSelectedResult}
-                  />
-                </div>
-              </ResizablePanel>
-
-              {/* Handle */}
-              <ResizableHandle withHandle />
-
-              {/* Right: Preview Panel */}
-              <ResizablePanel defaultSize={60} minSize={40}>
-                <ResultsPreview
-                  result={selectedResult}
-                  onViewFullDetails={(result) => {
-                    setDetailsResult(result);
-                    setDetailsDialogOpen(true);
-                  }}
-                />
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          All Patient Results
+        </h1>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Digital-Only Viewing • No Printer Required
         </div>
       </div>
 
-      {/* Single controlled full details dialog */}
-      {detailsResult && renderResultDetails(detailsResult, detailsDialogOpen, setDetailsDialogOpen)}
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Search & Filter Results</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by patient name or ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <select
+              value={selectedPatient}
+              onChange={(e) => setSelectedPatient(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-800"
+            >
+              <option value="">All Patients</option>
+              {patients.map((patient) => (
+                <option key={patient.id} value={patient.patientId}>
+                  {patient.firstName} {patient.lastName} ({patient.patientId})
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-800"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+            </select>
+
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-800"
+            >
+              <option value="today">Today Only</option>
+              <option value="date">Select Date</option>
+              <option value="all">All Dates</option>
+            </select>
+          </div>
+          
+          {dateFilter === "date" && (
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-48"
+              />
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <AlertCircle className="h-4 w-4" />
+            <span>
+              Showing {filteredResults.length} results for{" "}
+              {dateFilter === "today" ? "today" : 
+               dateFilter === "date" ? `${selectedDate}` : 
+               "all dates"}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Results Summary - Clickable for filtering */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card 
+          className={`cursor-pointer transition-all shadow-lg hover:shadow-2xl bg-gradient-to-br from-gray-50 to-white ${typeFilter === 'all' ? 'ring-2 ring-gray-400' : ''}`}
+          onClick={() => setTypeFilter('all')}
+          data-testid="card-all-results"
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Total Results</p>
+                <p className="text-3xl font-bold tabular-nums text-gray-900 mt-2">{allResults.length}</p>
+              </div>
+              <div className="rounded-lg bg-gray-100 p-2.5 shadow-md">
+                <FileText className="h-6 w-6 text-gray-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card 
+          className={`cursor-pointer transition-all shadow-lg hover:shadow-2xl bg-gradient-to-br from-blue-50 to-white ${typeFilter === 'lab' ? 'ring-2 ring-blue-400' : ''}`}
+          onClick={() => setTypeFilter('lab')}
+          data-testid="card-lab-tests"
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Lab Tests</p>
+                <p className="text-3xl font-bold tabular-nums text-blue-600 mt-2">
+                  {allResults.filter(r => r.type === 'lab').length}
+                </p>
+              </div>
+              <div className="rounded-lg bg-blue-100 p-2.5 shadow-md">
+                <Microscope className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card 
+          className={`cursor-pointer transition-all shadow-lg hover:shadow-2xl bg-gradient-to-br from-amber-50 to-white ${typeFilter === 'xray' ? 'ring-2 ring-amber-400' : ''}`}
+          onClick={() => setTypeFilter('xray')}
+          data-testid="card-xrays"
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-700">X-Rays</p>
+                <p className="text-3xl font-bold tabular-nums text-amber-600 mt-2">
+                  {allResults.filter(r => r.type === 'xray').length}
+                </p>
+              </div>
+              <div className="rounded-lg bg-amber-100 p-2.5 shadow-md">
+                <FileText className="h-6 w-6 text-amber-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card 
+          className={`cursor-pointer transition-all shadow-lg hover:shadow-2xl bg-gradient-to-br from-teal-50 to-white ${typeFilter === 'ultrasound' ? 'ring-2 ring-teal-400' : ''}`}
+          onClick={() => setTypeFilter('ultrasound')}
+          data-testid="card-ultrasounds"
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Ultrasounds</p>
+                <p className="text-3xl font-bold tabular-nums text-teal-600 mt-2">
+                  {allResults.filter(r => r.type === 'ultrasound').length}
+                </p>
+              </div>
+              <div className="rounded-lg bg-teal-100 p-2.5 shadow-md">
+                <Stethoscope className="h-6 w-6 text-teal-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Results List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Results ({filteredResults.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredResults.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No results found</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredResults.map((result, index) => {
+                const departmentColors = getDepartmentColors(result.type);
+                return (
+                  <div 
+                    key={`${result.type}-${result.id}`} 
+                    className={`border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 ${departmentColors.border} ${departmentColors.bg}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-2 rounded-full ${departmentColors.headerBg}`}>
+                          {getTypeIcon(result.type)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">
+                              {result.patient?.firstName} {result.patient?.lastName}
+                            </h3>
+                            <Badge variant="outline" className="text-xs">
+                              {result.patient?.patientId}
+                            </Badge>
+                            <Badge variant="outline" className={`text-xs font-medium ${departmentColors.badgeColor}`}>
+                              {getDepartmentName(result.type)}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            <span className={`font-medium ${departmentColors.textColor}`}>
+                              {result.type === 'lab' && `Lab: ${(result as any).testId}`}
+                              {result.type === 'xray' && `X-Ray: ${(result as any).examId}`}
+                              {result.type === 'ultrasound' && `US: ${(result as any).examId}`}
+                            </span>
+                            <span>•</span>
+                            <span>{format(new Date(result.date), 'MMM dd, yyyy')}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(result.status)}
+                          <Badge className={`text-xs ${getStatusColor(result.status)}`}>
+                            {result.status}
+                          </Badge>
+                        </div>
+                        {renderResultDetails(result)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
