@@ -2953,6 +2953,8 @@ import path from "path";
 import { setupAuth } from "./auth";
 import dailyCashRouter from "./reports.daily-cash";
 import dailyCashCsvRouter from "./reports.daily-cash.csv";
+import dailyCashClosingRouter from "./reports.daily-cash-closing";
+import dailyCashReceiptsRouter from "./reports.daily-cash-receipts";
 
 // Function to register routes with the express app
 export async function registerRoutes(app: any) {
@@ -2964,6 +2966,8 @@ export async function registerRoutes(app: any) {
   app.use(router);
   app.use(dailyCashRouter);
   app.use(dailyCashCsvRouter);
+  app.use(dailyCashReceiptsRouter);
+  app.use(dailyCashClosingRouter);
 
   // Return a basic HTTP server for compatibility
   return createServer(app);

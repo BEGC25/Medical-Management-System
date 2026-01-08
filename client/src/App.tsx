@@ -51,10 +51,10 @@ function AppLayout() {
         <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
           <Switch>
             {/* Dashboard - All roles */}
-            <ProtectedRoute path="/" component={Dashboard} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
+            <ProtectedRoute path="/" component={Dashboard} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY, ROLES.RECEPTION]} />
             
             {/* Patient Management - All roles */}
-            <ProtectedRoute path="/patients" component={Patients} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY]} />
+            <ProtectedRoute path="/patients" component={Patients} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY, ROLES.RECEPTION]} />
             
             {/* Treatment - Admin & Doctor */}
             <ProtectedRoute path="/treatment/new" component={VisitRedirector} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
@@ -70,10 +70,10 @@ function AppLayout() {
             <ProtectedRoute path="/pharmacy" component={Pharmacy} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
             <ProtectedRoute path="/pharmacy-inventory" component={PharmacyInventory} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]} />
             
-            {/* Financial - Admin Only */}
-            <ProtectedRoute path="/payment" component={Payment} allowedRoles={[ROLES.ADMIN]} />
+            {/* Financial - Admin & Reception */}
+            <ProtectedRoute path="/payment" component={Payment} allowedRoles={[ROLES.ADMIN, ROLES.RECEPTION]} />
             <ProtectedRoute path="/billing" component={Billing} allowedRoles={[ROLES.ADMIN]} />
-            <ProtectedRoute path="/reports/daily-cash" component={ReportsDailyCash} allowedRoles={[ROLES.ADMIN]} />
+            <ProtectedRoute path="/reports/daily-cash" component={ReportsDailyCash} allowedRoles={[ROLES.ADMIN, ROLES.RECEPTION]} />
             <ProtectedRoute path="/all-results" component={AllResults} allowedRoles={[ROLES.ADMIN]} />
             
             {/* Settings - Admin Only */}
