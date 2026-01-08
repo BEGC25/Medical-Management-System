@@ -320,7 +320,7 @@
 #lab-report-print.prescription,
 #lab-clinical-print.prescription {
   width: var(--page-w);
-  min-height: calc(var(--page-h) - 2 * var(--page-m));
+  height: auto; /* Let content determine height - prevents empty overflow pages */
   margin: 0 auto;
   padding: 8mm 10mm;
   box-sizing: border-box;
@@ -348,30 +348,40 @@
 @media print {
   @page { size: A4; margin: var(--page-m); }
 
-  /* show ONLY the prescription */
+  /* Hide everything initially */
   body * { visibility: hidden; }
-  #prescription-print, #prescription-print * { visibility: visible; }
-  #lab-request-print, #lab-request-print * { visibility: visible; }
-  #lab-report-print, #lab-report-print * { visibility: visible; }
-  #lab-clinical-print, #lab-clinical-print * { visibility: visible; }
   
-  #prescription-print { position: absolute; left: 0; top: 0; width: 100%; }
-  #lab-request-print { position: absolute; left: 0; top: 0; width: 100%; }
-  #lab-report-print { position: absolute; left: 0; top: 0; width: 100%; }
-  #lab-clinical-print { position: absolute; left: 0; top: 0; width: 100%; }
+  /* Only show the visible print containers and their content */
+  #prescription-print:not(:empty), #prescription-print:not(:empty) * { visibility: visible; }
+  #lab-request-print:not(:empty), #lab-request-print:not(:empty) * { visibility: visible; }
+  #lab-report-print:not(:empty), #lab-report-print:not(:empty) * { visibility: visible; }
+  #lab-clinical-print:not(:empty), #lab-clinical-print:not(:empty) * { visibility: visible; }
+  
+  /* Position only the active container to avoid conflicts */
+  #prescription-print:not(:empty),
+  #lab-request-print:not(:empty),
+  #lab-report-print:not(:empty),
+  #lab-clinical-print:not(:empty) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
 
-  /* remove shadows/borders that can cause overflow */
+  /* Ensure proper page breaking */
+  .prescription {
+    page-break-after: auto;
+    page-break-before: auto;
+  }
+
+  /* Remove shadows/borders that can cause overflow */
   .no-print { display: none !important; }
   .shadow-md, .shadow-lg { box-shadow: none !important; }
   .rounded-lg { border-radius: 0 !important; }
   .bg-gray-50 { background-color: white !important; }
   
-  /* Avoid breaking inside important sections */
-  .avoid-break,
-  #lab-report-print > div,
-  #lab-clinical-print > div,
-  #lab-request-print > div,
-  #prescription-print > div {
+  /* Only avoid breaks for small sections, not large containers */
+  .avoid-break {
     page-break-inside: avoid;
     break-inside: avoid;
   }
