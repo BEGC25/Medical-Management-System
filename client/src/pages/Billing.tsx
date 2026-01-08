@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useToast } from "@/hooks/use-toast";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
 import { getClinicDayKey } from "@/lib/date-utils";
+import { PrintableInvoice } from "@/components/PrintableInvoice";
 
 // Currency formatting helper - SSP doesn't use decimal places
 const formatCurrency = (amount: number | string, currency: string = 'SSP'): string => {
@@ -26,7 +27,7 @@ interface EncounterWithPatient extends Encounter {
   serviceCount?: number;
 }
 
-// Encounter Card Component with Total Display
+// Visit Card Component with Total Display
 function EncounterCard({ 
   encounter, 
   onViewDetails, 
@@ -527,7 +528,7 @@ export default function Billing() {
         </CardContent>
       </Card>
 
-      {/* Encounters List */}
+      {/* Visits List */}
       <div className="grid gap-4">
         {isLoading ? (
           <div className="space-y-4">
@@ -580,7 +581,7 @@ export default function Billing() {
         )}
       </div>
 
-      {/* Encounter Details Dialog */}
+      {/* Visit Details Dialog */}
       <Dialog open={!!selectedEncounter} onOpenChange={() => setSelectedEncounter(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto print-invoice">
           <DialogHeader>
@@ -684,6 +685,16 @@ export default function Billing() {
                 <Button onClick={() => setSelectedEncounter(null)}>Close</Button>
               </div>
             </div>
+          )}
+          
+          {/* Hidden printable invoice component */}
+          {selectedEncounter && selectedEncounter.patient && selectedEncounter.orderLines && (
+            <PrintableInvoice
+              visit={selectedEncounter}
+              patient={selectedEncounter.patient}
+              orderLines={selectedEncounter.orderLines}
+              invoiceId={selectedEncounter.encounterId}
+            />
           )}
         </DialogContent>
       </Dialog>
