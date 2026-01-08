@@ -106,7 +106,12 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
                 }
               `}
               onClick={() => onSelectResult(result)}
-              onKeyDown={(e) => e.key === 'Enter' && onSelectResult(result)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectResult(result);
+                }
+              }}
               role="button"
               tabIndex={0}
               aria-label={`View details for ${result.patient?.firstName} ${result.patient?.lastName}`}
