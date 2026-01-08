@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Users, Receipt, FileText, Plus, Eye, Clock, DollarSign, Activity, CheckCircle, AlertCircle } from "lucide-react";
+import { CalendarDays, Users, Receipt, FileText, Plus, Eye, Clock, Activity, CheckCircle, AlertCircle, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,10 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
 import { getClinicDayKey } from "@/lib/date-utils";
 
-// Currency formatting helper
+// Currency formatting helper - SSP doesn't use decimal places
 const formatCurrency = (amount: number | string, currency: string = 'SSP'): string => {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return isNaN(numAmount) ? `0.00 ${currency}` : `${numAmount.toFixed(2)} ${currency}`;
+  return isNaN(numAmount) ? `0 ${currency}` : `${Math.round(numAmount)} ${currency}`;
 };
 
 interface EncounterWithPatient extends Encounter {
@@ -168,7 +168,7 @@ function EncounterCard({
                   </div>
                   {total !== null && (
                     <div className="flex items-center gap-1 text-sm">
-                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <Receipt className="h-4 w-4 text-green-600" />
                       <span className="font-semibold text-green-700">{formatCurrency(total)}</span>
                     </div>
                   )}
@@ -206,7 +206,7 @@ function EncounterCard({
                   </TooltipTrigger>
                   {serviceCount === 0 && (
                     <TooltipContent>
-                      <p>Cannot generate invoice: No services in this encounter</p>
+                      <p>Cannot generate invoice: No services in this visit</p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -322,13 +322,13 @@ export default function Billing() {
       setShowNewEncounterDialog(false);
       setSelectedPatient(null);
       toast({
-        title: "Encounter Created",
-        description: "New patient encounter has been created successfully.",
+        title: "Visit Created",
+        description: "New patient visit has been created successfully.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to Create Encounter",
+        title: "Failed to Create Visit",
         description: error.message,
         variant: "destructive",
       });
@@ -345,7 +345,7 @@ export default function Billing() {
       const details = await response.json();
       
       if (!details.orderLines || details.orderLines.length === 0) {
-        throw new Error("Cannot generate invoice for encounter with no services");
+        throw new Error("Cannot generate invoice: This visit has no services. Please add services before generating an invoice.");
       }
 
       // Generate the invoice
@@ -395,7 +395,7 @@ export default function Billing() {
     if (!selectedPatient) {
       toast({
         title: "No Patient Selected",
-        description: "Please select a patient to create an encounter.",
+        description: "Please select a patient to create a visit.",
         variant: "destructive",
       });
       return;
@@ -430,8 +430,8 @@ export default function Billing() {
       });
     } catch (error) {
       toast({
-        title: "Failed to Load Encounter",
-        description: "Could not load encounter details.",
+        title: "Failed to Load Visit",
+        description: "Could not load visit details.",
         variant: "destructive",
       });
     }
@@ -448,7 +448,7 @@ export default function Billing() {
             </div>
             <div>
               <h1 className="text-3xl font-bold">Billing Management</h1>
-              <p className="text-blue-100 mt-1">Manage patient encounters and generate invoices</p>
+              <p className="text-blue-100 mt-1">Manage patient visits and generate invoices</p>
             </div>
           </div>
           
@@ -456,12 +456,12 @@ export default function Billing() {
             <DialogTrigger asChild>
               <Button className="bg-white text-blue-700 hover:bg-blue-50 shadow-md">
                 <Plus className="h-4 w-4 mr-2" />
-                New Encounter
+                New Visit
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Encounter</DialogTitle>
+                <DialogTitle>Create New Visit</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -482,7 +482,7 @@ export default function Billing() {
                     onClick={handleCreateEncounter}
                     disabled={!selectedPatient || createEncounterMutation.isPending}
                   >
-                    {createEncounterMutation.isPending ? "Creating..." : "Create Encounter"}
+                    {createEncounterMutation.isPending ? "Creating..." : "Create Visit"}
                   </Button>
                 </div>
               </div>
@@ -519,7 +519,7 @@ export default function Billing() {
             {/* Quick Stats */}
             <div className="ml-auto flex gap-4">
               <div className="text-center px-4 py-2 bg-blue-50 rounded-lg border border-blue-100">
-                <p className="text-xs text-gray-600 font-medium">Today's Encounters</p>
+                <p className="text-xs text-gray-600 font-medium">Today's Visits</p>
                 <p className="text-2xl font-bold text-blue-700">{enhancedEncounters.length}</p>
               </div>
             </div>
@@ -557,13 +557,13 @@ export default function Billing() {
               <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-4">
                 <Users className="h-12 w-12 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Encounters Found</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Visits Found</h3>
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                No encounters found for the selected date and status. Create a new encounter to get started.
+                No visits found for the selected date and status. Create a new visit to get started.
               </p>
               <Button onClick={() => setShowNewEncounterDialog(true)} size="lg" className="shadow-md">
                 <Plus className="h-4 w-4 mr-2" />
-                Create New Encounter
+                Create New Visit
               </Button>
             </CardContent>
           </Card>
@@ -582,11 +582,11 @@ export default function Billing() {
 
       {/* Encounter Details Dialog */}
       <Dialog open={!!selectedEncounter} onOpenChange={() => setSelectedEncounter(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto print-invoice">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Encounter Details</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">Visit Details</DialogTitle>
             <DialogDescription>
-              Complete breakdown of services and charges for this encounter
+              Complete breakdown of services and charges for this visit
             </DialogDescription>
           </DialogHeader>
           {selectedEncounter && (
@@ -610,10 +610,10 @@ export default function Billing() {
                 </Card>
                 <Card className="bg-gray-50 border-gray-200">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-900">Encounter Information</CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-900">Visit Information</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1">
-                    <p className="text-sm"><span className="font-medium">ID:</span> {selectedEncounter.encounterId}</p>
+                    <p className="text-sm"><span className="font-medium">Visit ID:</span> {selectedEncounter.encounterId}</p>
                     <p className="text-sm"><span className="font-medium">Date:</span> {new Date(selectedEncounter.visitDate).toLocaleDateString('en-US', { 
                       year: 'numeric', 
                       month: 'long', 
@@ -669,15 +669,58 @@ export default function Billing() {
                   <Card className="border-dashed">
                     <CardContent className="pt-8 pb-8 text-center">
                       <FileText className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-600">No services found for this encounter.</p>
+                      <p className="text-gray-600">No services found for this visit.</p>
                     </CardContent>
                   </Card>
                 )}
+              </div>
+
+              {/* Print Button */}
+              <div className="flex justify-end gap-2 mt-6 print:hidden">
+                <Button variant="outline" onClick={() => window.print()}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Invoice
+                </Button>
+                <Button onClick={() => setSelectedEncounter(null)}>Close</Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          .print\\:hidden {
+            display: none !important;
+          }
+          
+          .print-invoice {
+            max-width: 100%;
+            padding: 20px;
+            font-size: 12pt;
+          }
+          
+          .print-invoice::before {
+            content: "Bahr El Ghazal Clinic";
+            display: block;
+            font-size: 18pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+          }
+          
+          /* Hide dialog overlay when printing */
+          [role="dialog"] {
+            position: static !important;
+            max-width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+          }
+        }
+      `}</style>
 
       {/* Confirmation Dialog for Invoice Generation */}
       <AlertDialog open={!!encounterToInvoice} onOpenChange={(open) => !open && setEncounterToInvoice(null)}>
@@ -685,7 +728,7 @@ export default function Billing() {
           <AlertDialogHeader>
             <AlertDialogTitle>Generate Invoice</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to generate an invoice for this encounter? This action will create a billing record and mark the encounter as ready for payment.
+              Are you sure you want to generate an invoice for this visit? This action will create a billing record and mark the visit as ready for payment.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

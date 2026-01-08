@@ -2708,13 +2708,26 @@ export class MemStorage implements IStorage {
     // Get encounter and its order lines
     const encounter = await this.getEncounterById(encounterId); // Already checks patient deleted status
     if (!encounter) {
-      throw new Error("Encounter not found or belongs to a deleted patient");
+      throw new Error("Visit not found or belongs to a deleted patient");
     }
 
     const orderLinesData = await this.getOrderLinesByEncounter(encounterId);
+    
+    // Validate that visit has services
+    if (!orderLinesData || orderLinesData.length === 0) {
+      throw new Error("Cannot generate invoice: This visit has no services. Please add services before generating an invoice.");
+    }
 
-    // Calculate totals
-    const subtotal = orderLinesData.reduce((sum, line) => sum + line.totalPrice, 0);
+    // Calculate totals with validation
+    const subtotal = orderLinesData.reduce((sum, line) => {
+      const price = typeof line.totalPrice === 'number' ? line.totalPrice : parseFloat(String(line.totalPrice));
+      if (isNaN(price)) {
+        console.warn(`[Invoice] Invalid price for order line ${line.id}: ${line.totalPrice}`);
+        return sum;
+      }
+      return sum + price;
+    }, 0);
+    
     const discount = 0; // Could be configurable
     const tax = 0; // Could be configurable
     const grandTotal = subtotal - discount + tax;

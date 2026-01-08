@@ -2588,14 +2588,33 @@ router.post("/api/encounters/:encounterId/generate-invoice", async (req: any, re
       req.user?.email ||
       "System";
 
+    // Check if invoice already exists for this encounter
+    const existingInvoices = await storage.getInvoices();
+    const duplicate = existingInvoices.find(inv => inv.encounterId === encounterId);
+    if (duplicate) {
+      console.log(`[Invoice] Duplicate invoice attempt for encounter ${encounterId}, existing invoice: ${duplicate.invoiceId}`);
+      return res.status(400).json({ 
+        error: `Invoice already exists for this visit (Invoice ID: ${duplicate.invoiceId})`,
+        invoiceId: duplicate.invoiceId 
+      });
+    }
+
     const invoice = await storage.generateInvoiceFromEncounter(
       encounterId,
       generatedBy
     );
+    console.log(`[Invoice] Successfully generated invoice ${invoice.invoiceId} for encounter ${encounterId}`);
     res.status(201).json(invoice);
-  } catch (error) {
-    console.error("Error generating invoice:", error);
-    res.status(500).json({ error: "Failed to generate invoice" });
+  } catch (error: any) {
+    console.error("[Invoice] DETAILED Error generating invoice:", error);
+    console.error("[Invoice] Error stack:", error.stack);
+    
+    // Return specific error message
+    const errorMessage = error.message || "Failed to generate invoice";
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
