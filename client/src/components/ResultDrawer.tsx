@@ -89,17 +89,17 @@ export default function ResultDrawer(props: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-        <DialogHeader className="px-6 pt-6">
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 pt-6 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             {kind === "lab" && "Lab Test"}{kind === "xray" && "X-Ray"}{kind === "ultrasound" && "Ultrasound"}{" "}
             {data?.testId || data?.examId || data?.orderId ? `• ${data.testId ?? data.examId ?? data.orderId}` : ""}
           </DialogTitle>
         </DialogHeader>
 
-        <Separator className="my-3" />
+        <Separator className="my-3 shrink-0" />
 
-        <div className="px-6 pb-4">
+        <div className="px-6 pb-4 shrink-0">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <div className="font-medium">Patient:</div>
@@ -139,7 +139,7 @@ export default function ResultDrawer(props: {
           )}
         </div>
 
-        <ScrollArea className="px-6 pb-6 h-[65vh]">
+        <ScrollArea className="px-6 pb-6 flex-1 min-h-0">
           {/* LAB CONTENT */}
           {kind === "lab" && (
             <div className="space-y-6">
@@ -461,9 +461,9 @@ export default function ResultDrawer(props: {
           )}
         </ScrollArea>
 
-        <Separator />
+        <Separator className="shrink-0" />
 
-        <div className="px-6 py-4 flex flex-wrap gap-2">
+        <div className="px-6 py-4 flex flex-wrap gap-2 shrink-0">
           {typeof orderLineId === "number" && props.onAcknowledge && (
             <Button variant="outline" onClick={() => props.onAcknowledge!(orderLineId, true)}>Acknowledge</Button>
           )}
