@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
 import { getClinicDayKey } from "@/lib/date-utils";
@@ -70,20 +71,40 @@ function EncounterCard({
   const statusConfig = (() => {
     switch (encounter.status) {
       case 'open':
-        return { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: Activity, label: 'Open' };
+        return { 
+          color: 'bg-blue-100 text-blue-800 border-blue-200', 
+          borderColor: '#3b82f6',
+          icon: Activity, 
+          label: 'Open' 
+        };
       case 'ready_to_bill':
-        return { color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle, label: 'Ready to Bill' };
+        return { 
+          color: 'bg-green-100 text-green-800 border-green-200', 
+          borderColor: '#10b981',
+          icon: CheckCircle, 
+          label: 'Ready to Bill' 
+        };
       case 'closed':
-        return { color: 'bg-gray-100 text-gray-800 border-gray-200', icon: CheckCircle, label: 'Closed' };
+        return { 
+          color: 'bg-gray-100 text-gray-800 border-gray-200', 
+          borderColor: '#6b7280',
+          icon: CheckCircle, 
+          label: 'Closed' 
+        };
       default:
-        return { color: 'bg-gray-100 text-gray-800 border-gray-200', icon: AlertCircle, label: encounter.status };
+        return { 
+          color: 'bg-gray-100 text-gray-800 border-gray-200', 
+          borderColor: '#6b7280',
+          icon: AlertCircle, 
+          label: encounter.status 
+        };
     }
   })();
 
   const StatusIcon = statusConfig.icon;
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: statusConfig.color.includes('blue') ? '#3b82f6' : statusConfig.color.includes('green') ? '#10b981' : '#6b7280' }}>
+    <Card className="hover:shadow-lg transition-all duration-200 border-l-4" style={{ borderLeftColor: statusConfig.borderColor }}>
       <CardContent className="pt-6">
         <div className="flex items-start justify-between gap-4">
           {/* Left side - Patient and encounter info */}
@@ -168,15 +189,28 @@ function EncounterCard({
               View Details
             </Button>
             {encounter.status === 'open' && (
-              <Button 
-                size="sm"
-                onClick={onGenerateInvoice}
-                disabled={isGenerating || serviceCount === 0}
-                className="bg-green-600 hover:bg-green-700 shadow-sm transition-all hover:shadow-md"
-              >
-                <FileText className="h-4 w-4 mr-1" />
-                {isGenerating ? "Generating..." : "Generate Invoice"}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-block">
+                      <Button 
+                        size="sm"
+                        onClick={onGenerateInvoice}
+                        disabled={isGenerating || serviceCount === 0}
+                        className="bg-green-600 hover:bg-green-700 shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        {isGenerating ? "Generating..." : "Generate Invoice"}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {serviceCount === 0 && (
+                    <TooltipContent>
+                      <p>Cannot generate invoice: No services in this encounter</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </div>
@@ -356,20 +390,6 @@ export default function Billing() {
       patient,
     };
   });
-
-  // Get status badge variant and color
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case 'open':
-        return { variant: 'default' as const, color: 'bg-blue-100 text-blue-800 border-blue-200', icon: Activity };
-      case 'ready_to_bill':
-        return { variant: 'default' as const, color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle };
-      case 'closed':
-        return { variant: 'secondary' as const, color: 'bg-gray-100 text-gray-800 border-gray-200', icon: CheckCircle };
-      default:
-        return { variant: 'outline' as const, color: 'bg-gray-100 text-gray-800 border-gray-200', icon: AlertCircle };
-    }
-  };
 
   const handleCreateEncounter = () => {
     if (!selectedPatient) {
