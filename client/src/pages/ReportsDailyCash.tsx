@@ -51,6 +51,12 @@ function todayYMD() {
   return formatDateYMD(new Date())
 }
 
+function yesterdayYMD() {
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  return formatDateYMD(yesterday)
+}
+
 const CURRENCY = "SSP"
 
 function formatSSP(amount: number): string {
@@ -302,11 +308,7 @@ export default function ReportsDailyCash() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              const yesterday = new Date()
-              yesterday.setDate(yesterday.getDate() - 1)
-              setDate(formatDateYMD(yesterday))
-            }}
+            onClick={() => setDate(yesterdayYMD())}
             className="font-medium"
           >
             Yesterday
