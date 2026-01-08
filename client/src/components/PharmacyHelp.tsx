@@ -83,14 +83,14 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
 
   return (
     <div className={`
-      fixed right-0 top-0 h-screen z-40 
+      fixed right-0 top-0 h-screen z-50 
       transition-all duration-300 ease-in-out
       ${isCollapsed ? 'w-0' : 'w-96'}
     `}>
       {/* Dimmed backdrop for focus */}
       {!isCollapsed && (
         <div 
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 transition-opacity duration-300"
           onClick={handleToggle}
           aria-hidden="true"
         />
