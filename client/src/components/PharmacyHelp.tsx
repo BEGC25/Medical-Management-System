@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -34,14 +34,14 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
 
   const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed;
   
-  const handleToggle = () => {
+  const handleToggle = useCallback(() => {
     const newValue = !isCollapsed;
     if (onCollapsedChange) {
       onCollapsedChange(newValue);
     } else {
       setInternalCollapsed(newValue);
     }
-  };
+  }, [isCollapsed, onCollapsedChange]);
 
   useEffect(() => {
     if (collapsed === undefined) {
@@ -59,7 +59,7 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
     
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isCollapsed]);
+  }, [isCollapsed, handleToggle]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
