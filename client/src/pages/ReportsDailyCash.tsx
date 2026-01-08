@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
-import { Calendar, Download, RefreshCcw, Receipt, CircleDollarSign, Printer, CheckCircle, XCircle, Lock, ChevronRight } from "lucide-react"
+import { Calendar as CalendarIcon, Download, RefreshCcw, Receipt, CircleDollarSign, Printer, CheckCircle, XCircle, Lock, ChevronRight } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { ROLES } from "@shared/auth-roles"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { format } from "date-fns"
 
 type ApiRow = {
   department: string
@@ -47,7 +51,13 @@ function todayYMD() {
 const CURRENCY = "SSP"
 
 function formatSSP(amount: number): string {
-  return `${CURRENCY} ${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+  return `${CURRENCY} ${Math.round(amount).toLocaleString('en-US')}`
+}
+
+function getVarianceText(variance: number): string {
+  if (variance === 0) return "Balanced"
+  if (variance < 0) return `Short by ${formatSSP(Math.abs(variance))}`
+  return `Over by ${formatSSP(variance)}`
 }
 
 export default function ReportsDailyCash() {
@@ -251,16 +261,36 @@ export default function ReportsDailyCash() {
         {/* Controls - single row, mobile friendly */}
         <div className="flex flex-wrap items-center gap-3 print:hidden">
           <label className="text-sm font-medium">Date</label>
-          <div className="relative">
-            <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="pl-8 pr-3 py-2 text-sm rounded-lg border bg-white min-w-[140px]"
-              disabled={closingStatus.closed}
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={`justify-start text-left font-normal min-w-[200px] ${
+                  !date && "text-muted-foreground"
+                }`}
+                disabled={closingStatus.closed}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(new Date(date), "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-50" align="start">
+              <Calendar
+                mode="single"
+                selected={date ? new Date(date) : undefined}
+                onSelect={(selectedDate) => {
+                  if (selectedDate) {
+                    const pad = (n: number) => String(n).padStart(2, "0")
+                    const yyyy = selectedDate.getFullYear()
+                    const mm = pad(selectedDate.getMonth() + 1)
+                    const dd = pad(selectedDate.getDate())
+                    setDate(`${yyyy}-${mm}-${dd}`)
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
           {closingStatus.closed && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
               <Lock className="h-3.5 w-3.5" />
@@ -310,11 +340,16 @@ export default function ReportsDailyCash() {
                   <XCircle className="h-4 w-4 text-red-600" />
                 )}
               </div>
-              <div className={`text-xl sm:text-2xl font-bold tabular-nums ${
+              <div className={`text-lg sm:text-xl font-bold ${
                 variance === 0 ? "text-green-700" : variance > 0 ? "text-red-700" : "text-orange-700"
               }`}>
-                {closingStatus.closing ? formatSSP(variance) : "—"}
+                {closingStatus.closing ? getVarianceText(variance) : "—"}
               </div>
+              {closingStatus.closing && variance !== 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {formatSSP(variance)}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -448,12 +483,12 @@ export default function ReportsDailyCash() {
                 </label>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   min="0"
                   value={countedCash}
                   onChange={(e) => setCountedCash(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0.00"
+                  placeholder="0"
                 />
               </div>
               
@@ -662,7 +697,7 @@ export default function ReportsDailyCash() {
               <p className="font-semibold">Closing Summary:</p>
               <p className="text-sm mt-2">Expected: {formatSSP(closingStatus.closing.expected_amount)}</p>
               <p className="text-sm">Counted: {formatSSP(closingStatus.closing.counted_amount)}</p>
-              <p className="text-sm">Variance: {formatSSP(variance)}</p>
+              <p className="text-sm">Variance: {getVarianceText(variance)}</p>
               {closingStatus.closing.notes && (
                 <p className="text-sm mt-2">Notes: {closingStatus.closing.notes}</p>
               )}
