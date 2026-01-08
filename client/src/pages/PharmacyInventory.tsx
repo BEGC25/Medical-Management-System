@@ -101,33 +101,137 @@ function isDateInRange(dateStr: string | null | undefined, preset: DateFilterPre
   return true;
 }
 
-// Common drugs list for quick selection
+// Common drugs list for quick selection - Comprehensive list
 const COMMON_DRUGS = [
-  { name: "Paracetamol 500mg", strength: "500mg", form: "tablet" },
-  { name: "Amoxicillin 500mg", strength: "500mg", form: "tablet" },
-  { name: "Ampicillin 500mg", strength: "500mg", form: "tablet" },
-  { name: "Metronidazole 400mg", strength: "400mg", form: "tablet" },
-  { name: "Ciprofloxacin 500mg", strength: "500mg", form: "tablet" },
-  { name: "Doxycycline 100mg", strength: "100mg", form: "capsule" },
-  { name: "Artemether+Lumefantrine (Coartem)", strength: "20mg/120mg", form: "tablet" },
-  { name: "Quinine 300mg", strength: "300mg", form: "tablet" },
-  { name: "Chloroquine 250mg", strength: "250mg", form: "tablet" },
-  { name: "Ibuprofen 400mg", strength: "400mg", form: "tablet" },
-  { name: "Diclofenac 50mg", strength: "50mg", form: "tablet" },
-  { name: "Omeprazole 20mg", strength: "20mg", form: "capsule" },
-  { name: "Albendazole 400mg", strength: "400mg", form: "tablet" },
-  { name: "Mebendazole 100mg", strength: "100mg", form: "tablet" },
-  { name: "ORS (Oral Rehydration Salts)", strength: "20.5g", form: "other" },
-  { name: "Zinc Sulfate 20mg", strength: "20mg", form: "tablet" },
-  { name: "Vitamin B Complex", strength: "various", form: "tablet" },
-  { name: "Folic Acid 5mg", strength: "5mg", form: "tablet" },
-  { name: "Ferrous Sulfate 200mg", strength: "200mg", form: "tablet" },
-  { name: "Cotrimoxazole 960mg", strength: "960mg", form: "tablet" },
-  { name: "Cough Syrup", strength: "100ml", form: "syrup" },
-  { name: "Salbutamol Inhaler", strength: "100mcg", form: "inhaler" },
-  { name: "Hydrocortisone Cream 1%", strength: "1%", form: "cream" },
-  { name: "Gentian Violet Solution", strength: "0.5%", form: "other" },
-  { name: "Eye Drops (Chloramphenicol)", strength: "0.5%", form: "drops" },
+  // Analgesics (Pain Relief)
+  { name: "Paracetamol 500mg", genericName: "Acetaminophen", strength: "500mg", form: "tablet", category: "Analgesic" },
+  { name: "Paracetamol 650mg", genericName: "Acetaminophen", strength: "650mg", form: "tablet", category: "Analgesic" },
+  { name: "Paracetamol Syrup 120mg/5ml", genericName: "Acetaminophen", strength: "120mg/5ml", form: "syrup", category: "Analgesic" },
+  { name: "Ibuprofen 200mg", genericName: "Ibuprofen", strength: "200mg", form: "tablet", category: "Analgesic" },
+  { name: "Ibuprofen 400mg", genericName: "Ibuprofen", strength: "400mg", form: "tablet", category: "Analgesic" },
+  { name: "Ibuprofen 600mg", genericName: "Ibuprofen", strength: "600mg", form: "tablet", category: "Analgesic" },
+  { name: "Ibuprofen Syrup 100mg/5ml", genericName: "Ibuprofen", strength: "100mg/5ml", form: "syrup", category: "Analgesic" },
+  { name: "Aspirin 75mg", genericName: "Acetylsalicylic Acid", strength: "75mg", form: "tablet", category: "Analgesic" },
+  { name: "Aspirin 300mg", genericName: "Acetylsalicylic Acid", strength: "300mg", form: "tablet", category: "Analgesic" },
+  { name: "Aspirin 500mg", genericName: "Acetylsalicylic Acid", strength: "500mg", form: "tablet", category: "Analgesic" },
+  { name: "Diclofenac 50mg", genericName: "Diclofenac", strength: "50mg", form: "tablet", category: "Analgesic" },
+  { name: "Diclofenac 75mg", genericName: "Diclofenac", strength: "75mg", form: "tablet", category: "Analgesic" },
+  { name: "Diclofenac SR 100mg", genericName: "Diclofenac", strength: "100mg", form: "tablet", category: "Analgesic" },
+  
+  // Antibiotics
+  { name: "Amoxicillin 250mg", genericName: "Amoxicillin", strength: "250mg", form: "capsule", category: "Antibiotic" },
+  { name: "Amoxicillin 500mg", genericName: "Amoxicillin", strength: "500mg", form: "capsule", category: "Antibiotic" },
+  { name: "Amoxicillin Syrup 125mg/5ml", genericName: "Amoxicillin", strength: "125mg/5ml", form: "syrup", category: "Antibiotic" },
+  { name: "Amoxicillin Syrup 250mg/5ml", genericName: "Amoxicillin", strength: "250mg/5ml", form: "syrup", category: "Antibiotic" },
+  { name: "Amoxicillin-Clavulanate 375mg", genericName: "Amoxicillin-Clavulanate", strength: "375mg", form: "tablet", category: "Antibiotic" },
+  { name: "Amoxicillin-Clavulanate 625mg", genericName: "Amoxicillin-Clavulanate", strength: "625mg", form: "tablet", category: "Antibiotic" },
+  { name: "Amoxicillin-Clavulanate 1000mg", genericName: "Amoxicillin-Clavulanate", strength: "1000mg", form: "tablet", category: "Antibiotic" },
+  { name: "Azithromycin 250mg", genericName: "Azithromycin", strength: "250mg", form: "tablet", category: "Antibiotic" },
+  { name: "Azithromycin 500mg", genericName: "Azithromycin", strength: "500mg", form: "tablet", category: "Antibiotic" },
+  { name: "Azithromycin Syrup 200mg/5ml", genericName: "Azithromycin", strength: "200mg/5ml", form: "syrup", category: "Antibiotic" },
+  { name: "Ciprofloxacin 250mg", genericName: "Ciprofloxacin", strength: "250mg", form: "tablet", category: "Antibiotic" },
+  { name: "Ciprofloxacin 500mg", genericName: "Ciprofloxacin", strength: "500mg", form: "tablet", category: "Antibiotic" },
+  { name: "Ciprofloxacin 750mg", genericName: "Ciprofloxacin", strength: "750mg", form: "tablet", category: "Antibiotic" },
+  { name: "Metronidazole 200mg", genericName: "Metronidazole", strength: "200mg", form: "tablet", category: "Antibiotic" },
+  { name: "Metronidazole 400mg", genericName: "Metronidazole", strength: "400mg", form: "tablet", category: "Antibiotic" },
+  { name: "Metronidazole 500mg", genericName: "Metronidazole", strength: "500mg", form: "tablet", category: "Antibiotic" },
+  { name: "Cephalexin 250mg", genericName: "Cephalexin", strength: "250mg", form: "capsule", category: "Antibiotic" },
+  { name: "Cephalexin 500mg", genericName: "Cephalexin", strength: "500mg", form: "capsule", category: "Antibiotic" },
+  { name: "Doxycycline 100mg", genericName: "Doxycycline", strength: "100mg", form: "capsule", category: "Antibiotic" },
+  { name: "Clindamycin 150mg", genericName: "Clindamycin", strength: "150mg", form: "capsule", category: "Antibiotic" },
+  { name: "Clindamycin 300mg", genericName: "Clindamycin", strength: "300mg", form: "capsule", category: "Antibiotic" },
+  { name: "Ampicillin 500mg", genericName: "Ampicillin", strength: "500mg", form: "tablet", category: "Antibiotic" },
+  { name: "Cotrimoxazole 960mg", genericName: "Trimethoprim-Sulfamethoxazole", strength: "960mg", form: "tablet", category: "Antibiotic" },
+  
+  // Antihypertensives (Blood Pressure)
+  { name: "Amlodipine 5mg", genericName: "Amlodipine", strength: "5mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Amlodipine 10mg", genericName: "Amlodipine", strength: "10mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Losartan 50mg", genericName: "Losartan", strength: "50mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Losartan 100mg", genericName: "Losartan", strength: "100mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Atenolol 25mg", genericName: "Atenolol", strength: "25mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Atenolol 50mg", genericName: "Atenolol", strength: "50mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Atenolol 100mg", genericName: "Atenolol", strength: "100mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Lisinopril 5mg", genericName: "Lisinopril", strength: "5mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Lisinopril 10mg", genericName: "Lisinopril", strength: "10mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Lisinopril 20mg", genericName: "Lisinopril", strength: "20mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Hydrochlorothiazide 12.5mg", genericName: "Hydrochlorothiazide", strength: "12.5mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Hydrochlorothiazide 25mg", genericName: "Hydrochlorothiazide", strength: "25mg", form: "tablet", category: "Antihypertensive" },
+  
+  // Antidiabetics
+  { name: "Metformin 500mg", genericName: "Metformin", strength: "500mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Metformin 850mg", genericName: "Metformin", strength: "850mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Metformin 1000mg", genericName: "Metformin", strength: "1000mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Metformin XR 500mg", genericName: "Metformin Extended Release", strength: "500mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Glimepiride 1mg", genericName: "Glimepiride", strength: "1mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Glimepiride 2mg", genericName: "Glimepiride", strength: "2mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Glimepiride 4mg", genericName: "Glimepiride", strength: "4mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Sitagliptin 50mg", genericName: "Sitagliptin", strength: "50mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Sitagliptin 100mg", genericName: "Sitagliptin", strength: "100mg", form: "tablet", category: "Antidiabetic" },
+  
+  // Gastrointestinal
+  { name: "Omeprazole 20mg", genericName: "Omeprazole", strength: "20mg", form: "capsule", category: "Gastrointestinal" },
+  { name: "Omeprazole 40mg", genericName: "Omeprazole", strength: "40mg", form: "capsule", category: "Gastrointestinal" },
+  { name: "Ranitidine 150mg", genericName: "Ranitidine", strength: "150mg", form: "tablet", category: "Gastrointestinal" },
+  { name: "Ranitidine 300mg", genericName: "Ranitidine", strength: "300mg", form: "tablet", category: "Gastrointestinal" },
+  { name: "Antacid Tablet 400mg/400mg", genericName: "Aluminum/Magnesium Hydroxide", strength: "400mg/400mg", form: "tablet", category: "Gastrointestinal" },
+  { name: "Antacid Syrup", genericName: "Aluminum/Magnesium Hydroxide", strength: "various", form: "syrup", category: "Gastrointestinal" },
+  { name: "Loperamide 2mg", genericName: "Loperamide", strength: "2mg", form: "capsule", category: "Gastrointestinal" },
+  { name: "Bisacodyl 5mg", genericName: "Bisacodyl", strength: "5mg", form: "tablet", category: "Gastrointestinal" },
+  { name: "ORS (Oral Rehydration Salts)", genericName: "ORS", strength: "20.5g", form: "other", category: "Gastrointestinal" },
+  
+  // Antihistamines
+  { name: "Cetirizine 5mg", genericName: "Cetirizine", strength: "5mg", form: "tablet", category: "Antihistamine" },
+  { name: "Cetirizine 10mg", genericName: "Cetirizine", strength: "10mg", form: "tablet", category: "Antihistamine" },
+  { name: "Cetirizine Syrup 5mg/5ml", genericName: "Cetirizine", strength: "5mg/5ml", form: "syrup", category: "Antihistamine" },
+  { name: "Loratadine 10mg", genericName: "Loratadine", strength: "10mg", form: "tablet", category: "Antihistamine" },
+  { name: "Chlorpheniramine 4mg", genericName: "Chlorpheniramine", strength: "4mg", form: "tablet", category: "Antihistamine" },
+  { name: "Chlorpheniramine Syrup 2mg/5ml", genericName: "Chlorpheniramine", strength: "2mg/5ml", form: "syrup", category: "Antihistamine" },
+  
+  // Respiratory
+  { name: "Salbutamol 2mg", genericName: "Albuterol", strength: "2mg", form: "tablet", category: "Respiratory" },
+  { name: "Salbutamol 4mg", genericName: "Albuterol", strength: "4mg", form: "tablet", category: "Respiratory" },
+  { name: "Salbutamol Inhaler 100mcg", genericName: "Albuterol", strength: "100mcg", form: "inhaler", category: "Respiratory" },
+  { name: "Montelukast 4mg Chewable", genericName: "Montelukast", strength: "4mg", form: "tablet", category: "Respiratory" },
+  { name: "Montelukast 5mg Chewable", genericName: "Montelukast", strength: "5mg", form: "tablet", category: "Respiratory" },
+  { name: "Montelukast 10mg", genericName: "Montelukast", strength: "10mg", form: "tablet", category: "Respiratory" },
+  { name: "Pseudoephedrine 30mg", genericName: "Pseudoephedrine", strength: "30mg", form: "tablet", category: "Respiratory" },
+  { name: "Pseudoephedrine 60mg", genericName: "Pseudoephedrine", strength: "60mg", form: "tablet", category: "Respiratory" },
+  { name: "Cough Syrup", genericName: "Various", strength: "100ml", form: "syrup", category: "Respiratory" },
+  
+  // Vitamins & Supplements
+  { name: "Vitamin C 500mg", genericName: "Ascorbic Acid", strength: "500mg", form: "tablet", category: "Vitamin" },
+  { name: "Vitamin C 1000mg", genericName: "Ascorbic Acid", strength: "1000mg", form: "tablet", category: "Vitamin" },
+  { name: "Vitamin D3 1000 IU", genericName: "Cholecalciferol", strength: "1000 IU", form: "capsule", category: "Vitamin" },
+  { name: "Vitamin D3 2000 IU", genericName: "Cholecalciferol", strength: "2000 IU", form: "capsule", category: "Vitamin" },
+  { name: "Vitamin D3 5000 IU", genericName: "Cholecalciferol", strength: "5000 IU", form: "capsule", category: "Vitamin" },
+  { name: "Multivitamin Adult Formula", genericName: "Multivitamin", strength: "various", form: "tablet", category: "Vitamin" },
+  { name: "Folic Acid 400mcg", genericName: "Folic Acid", strength: "400mcg", form: "tablet", category: "Vitamin" },
+  { name: "Folic Acid 5mg", genericName: "Folic Acid", strength: "5mg", form: "tablet", category: "Vitamin" },
+  { name: "Iron (Ferrous Sulfate) 200mg", genericName: "Ferrous Sulfate", strength: "200mg", form: "tablet", category: "Vitamin" },
+  { name: "Vitamin B Complex", genericName: "Vitamin B Complex", strength: "various", form: "tablet", category: "Vitamin" },
+  { name: "Zinc Sulfate 20mg", genericName: "Zinc Sulfate", strength: "20mg", form: "tablet", category: "Vitamin" },
+  
+  // Antimalarials
+  { name: "Artemether+Lumefantrine (Coartem)", genericName: "Artemether-Lumefantrine", strength: "20mg/120mg", form: "tablet", category: "Antimalarial" },
+  { name: "Quinine 300mg", genericName: "Quinine", strength: "300mg", form: "tablet", category: "Antimalarial" },
+  { name: "Chloroquine 250mg", genericName: "Chloroquine", strength: "250mg", form: "tablet", category: "Antimalarial" },
+  
+  // Antiparasitics
+  { name: "Albendazole 400mg", genericName: "Albendazole", strength: "400mg", form: "tablet", category: "Antiparasitic" },
+  { name: "Mebendazole 100mg", genericName: "Mebendazole", strength: "100mg", form: "tablet", category: "Antiparasitic" },
+  
+  // Other Common Drugs
+  { name: "Prednisolone 5mg", genericName: "Prednisolone", strength: "5mg", form: "tablet", category: "Corticosteroid" },
+  { name: "Prednisolone 10mg", genericName: "Prednisolone", strength: "10mg", form: "tablet", category: "Corticosteroid" },
+  { name: "Prednisolone 20mg", genericName: "Prednisolone", strength: "20mg", form: "tablet", category: "Corticosteroid" },
+  { name: "Warfarin 2mg", genericName: "Warfarin", strength: "2mg", form: "tablet", category: "Anticoagulant" },
+  { name: "Warfarin 5mg", genericName: "Warfarin", strength: "5mg", form: "tablet", category: "Anticoagulant" },
+  { name: "Levothyroxine 50mcg", genericName: "Levothyroxine", strength: "50mcg", form: "tablet", category: "Thyroid" },
+  { name: "Levothyroxine 75mcg", genericName: "Levothyroxine", strength: "75mcg", form: "tablet", category: "Thyroid" },
+  { name: "Levothyroxine 100mcg", genericName: "Levothyroxine", strength: "100mcg", form: "tablet", category: "Thyroid" },
+  { name: "Hydrocortisone Cream 1%", genericName: "Hydrocortisone", strength: "1%", form: "cream", category: "Topical" },
+  { name: "Gentian Violet Solution", genericName: "Gentian Violet", strength: "0.5%", form: "other", category: "Topical" },
+  { name: "Eye Drops (Chloramphenicol)", genericName: "Chloramphenicol", strength: "0.5%", form: "drops", category: "Ophthalmic" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function PharmacyInventory() {
@@ -164,6 +268,9 @@ export default function PharmacyInventory() {
   const [quickAdjustDrug, setQuickAdjustDrug] = useState<(Drug & { stockOnHand: number }) | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportContext, setExportContext] = useState<"stock" | "catalog" | "ledger">("stock");
+  
+  // Tab state for programmatic navigation
+  const [activeTab, setActiveTab] = useState("stock");
   
   const [newDrug, setNewDrug] = useState({
     name: "",
@@ -646,6 +753,33 @@ export default function PharmacyInventory() {
     receiveStockMutation.mutate(newBatch);
   };
 
+  // Handle card clicks to filter and navigate
+  const handleCardClick = (cardType: "low-stock" | "expiring-soon") => {
+    // Switch to Stock Overview tab
+    setActiveTab("stock");
+    
+    // Apply appropriate filter
+    if (cardType === "low-stock") {
+      setStockFilters([{ 
+        id: "status", 
+        label: "Status", 
+        value: "low_stock", 
+        display: "low_stock" 
+      }]);
+    } else if (cardType === "expiring-soon") {
+      // For expiring soon, we'll just navigate to the alerts tab instead
+      setActiveTab("alerts");
+    }
+    
+    // Scroll to table after a brief delay
+    setTimeout(() => {
+      const stockTable = document.getElementById("stock-table");
+      if (stockTable) {
+        stockTable.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  };
+
   const getExportColumns = (): ExportColumn[] => {
     if (exportContext === "stock") {
       return [
@@ -687,17 +821,19 @@ export default function PharmacyInventory() {
       {/* Main content */}
       <div className="space-y-6 p-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-premium-md 
-                        hover:shadow-premium-lg transition-all duration-200 hover:scale-105">
-            <Package className="w-6 h-6 text-white" />
+        <div className="flex items-center space-x-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center 
+                        shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-200 hover:scale-105">
+            <Package className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Pharmacy Inventory</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Manage drugs, stock, and inventory</p>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              Pharmacy Inventory
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-0.5">Manage drugs, stock, and inventory</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button
             onClick={() => setHelpCollapsed(!helpCollapsed)}
             variant="outline"
@@ -729,7 +865,7 @@ export default function PharmacyInventory() {
         </div>
       </div>
 
-      <Tabs defaultValue="stock" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shadow-inner-premium">
           <TabsTrigger 
             value="stock" 
@@ -839,8 +975,15 @@ export default function PharmacyInventory() {
             </Card>
 
             {/* Low Stock Count */}
-            <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5
-                           border-red-200 dark:border-red-800/50 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/10 dark:to-pink-900/10">
+            <Card 
+              className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5 hover:scale-105
+                         border-red-200 dark:border-red-800/50 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/10 dark:to-pink-900/10
+                         cursor-pointer hover:border-red-300 dark:hover:border-red-700"
+              onClick={() => handleCardClick("low-stock")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleCardClick("low-stock")}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -855,8 +998,15 @@ export default function PharmacyInventory() {
             </Card>
 
             {/* Expiring Soon */}
-            <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5
-                           border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10">
+            <Card 
+              className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5 hover:scale-105
+                         border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10
+                         cursor-pointer hover:border-amber-300 dark:hover:border-amber-700"
+              onClick={() => handleCardClick("expiring-soon")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleCardClick("expiring-soon")}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -894,8 +1044,11 @@ export default function PharmacyInventory() {
             </Card>
           </div>
 
-          <Card className="shadow-premium-md border-gray-200 dark:border-gray-700 
-                         hover:shadow-premium-lg transition-all duration-200">
+          <Card 
+            className="shadow-premium-md border-gray-200 dark:border-gray-700 
+                       hover:shadow-premium-lg transition-all duration-200" 
+            id="stock-table"
+          >
             <CardHeader>
               <CardTitle>Current Stock & Prices</CardTitle>
               <CardDescription>See all drugs, quantities in stock, and current prices</CardDescription>
@@ -1563,7 +1716,7 @@ export default function PharmacyInventory() {
                               : "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-premium-sm transition-all duration-150 hover:shadow-premium-md font-medium"
                             }
                           >
-                            {entry.transactionType}
+                            {entry.transactionType === 'receive' ? 'Received' : entry.transactionType === 'dispense' ? 'Dispensed' : entry.transactionType}
                           </Badge>
                         </TableCell>
                         <TableCell className={`text-right tabular-nums font-semibold py-5 ${entry.quantity < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
@@ -1626,9 +1779,11 @@ export default function PharmacyInventory() {
                     setNewDrug({
                       ...newDrug,
                       name: drug.name,
+                      genericName: drug.genericName || "",
                       strength: drug.strength,
                       form: drug.form as any,
                       unitOfMeasure: drug.form,
+                      category: drug.category || "",
                     });
                   }
                 }}

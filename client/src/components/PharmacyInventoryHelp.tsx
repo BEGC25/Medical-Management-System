@@ -57,7 +57,7 @@ export default function PharmacyInventoryHelp({ collapsed, onCollapsedChange }: 
       {/* Backdrop overlay when help is open */}
       {!isCollapsed && (
         <div 
-          className="fixed inset-0 bg-black/30 dark:bg-black/50 z-30 backdrop-blur-sm
+          className="fixed inset-0 bg-black/20 z-30 backdrop-blur-none
                      transition-opacity duration-300"
           onClick={handleToggle}
           aria-hidden="true"
