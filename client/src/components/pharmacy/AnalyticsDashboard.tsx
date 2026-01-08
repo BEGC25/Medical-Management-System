@@ -276,7 +276,7 @@ export function AnalyticsDashboard({ ledgerEntries, className = "", dateFilterPr
               <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="quantity" fill="#f97316" name="Quantity Dispensed" />
+              <Bar dataKey="quantity" fill="#d97706" name="Quantity Dispensed" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
