@@ -2609,11 +2609,10 @@ router.post("/api/encounters/:encounterId/generate-invoice", async (req: any, re
     console.error("[Invoice] DETAILED Error generating invoice:", error);
     console.error("[Invoice] Error stack:", error.stack);
     
-    // Return specific error message
+    // Return specific error message (never expose stack trace to client)
     const errorMessage = error.message || "Failed to generate invoice";
     res.status(500).json({ 
-      error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: errorMessage
     });
   }
 });

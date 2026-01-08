@@ -2720,7 +2720,7 @@ export class MemStorage implements IStorage {
 
     // Calculate totals with validation
     const subtotal = orderLinesData.reduce((sum, line) => {
-      const price = typeof line.totalPrice === 'number' ? line.totalPrice : parseFloat(String(line.totalPrice));
+      const price = Number(line.totalPrice);
       if (isNaN(price)) {
         console.warn(`[Invoice] Invalid price for order line ${line.id}: ${line.totalPrice}`);
         return sum;
