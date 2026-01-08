@@ -92,8 +92,12 @@ export function AnalyticsDashboard({ ledgerEntries, className = "" }: AnalyticsD
     // Top dispensed drugs
     const drugDispenseMap = new Map<number, { name: string; quantity: number; value: number }>();
     dispensed.forEach((entry) => {
+      const drugName = entry.drugName 
+        ? `${entry.drugName}${entry.drugStrength ? ' ' + entry.drugStrength : ''}`
+        : `Drug ${entry.drugId}`;
+      
       const current = drugDispenseMap.get(entry.drugId) || {
-        name: `Drug ${entry.drugId}`,
+        name: drugName,
         quantity: 0,
         value: 0,
       };
@@ -112,10 +116,14 @@ export function AnalyticsDashboard({ ledgerEntries, className = "" }: AnalyticsD
       typeMap.set(entry.transactionType, (typeMap.get(entry.transactionType) || 0) + 1);
     });
 
-    const distributionData = Array.from(typeMap.entries()).map(([type, count]) => ({
-      name: type.charAt(0).toUpperCase() + type.slice(1),
-      value: count,
-    }));
+    const distributionData = Array.from(typeMap.entries()).map(([type, count]) => {
+      // Convert to past tense for better clarity
+      const displayName = type === "dispense" ? "Dispensed" : type === "receive" ? "Received" : type.charAt(0).toUpperCase() + type.slice(1);
+      return {
+        name: displayName,
+        value: count,
+      };
+    });
 
     return {
       totalDispensedValue,
