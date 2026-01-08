@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -34,20 +34,32 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
 
   const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed;
   
-  const handleToggle = () => {
+  const handleToggle = useCallback(() => {
     const newValue = !isCollapsed;
     if (onCollapsedChange) {
       onCollapsedChange(newValue);
     } else {
       setInternalCollapsed(newValue);
     }
-  };
+  }, [isCollapsed, onCollapsedChange]);
 
   useEffect(() => {
     if (collapsed === undefined) {
       localStorage.setItem("pharmacyHelpCollapsed", String(internalCollapsed));
     }
   }, [internalCollapsed, collapsed]);
+
+  // ESC key handler to close help panel
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isCollapsed) {
+        handleToggle();
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isCollapsed, handleToggle]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -65,7 +77,7 @@ export default function PharmacyHelp({ collapsed, onCollapsedChange }: PharmacyH
       {/* Backdrop overlay when help is open */}
       {!isCollapsed && (
         <div 
-          className="fixed inset-0 bg-black/30 dark:bg-black/50 z-30 backdrop-blur-sm
+          className="fixed inset-0 bg-black/20 z-30 backdrop-blur-none
                      transition-opacity duration-300"
           onClick={handleToggle}
           aria-hidden="true"
