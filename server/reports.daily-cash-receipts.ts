@@ -30,6 +30,7 @@ function ymd(v?: string) {
 
 // GET /api/reports/daily-cash-receipts?date=YYYY-MM-DD&department=xxx
 // Returns receipt-level details for a specific date and department (cash only)
+// NOTE: Uses PostgreSQL-compatible syntax for time extraction and string concatenation
 router.get("/api/reports/daily-cash-receipts", async (req: Request, res: Response) => {
   try {
     // Prevent caching of financial data
@@ -61,20 +62,21 @@ router.get("/api/reports/daily-cash-receipts", async (req: Request, res: Respons
 
     // Query to get receipt details
     // Join payments, payment_items, and patients to get comprehensive details
+    // PostgreSQL-compatible time extraction and string concatenation
     const rows = await run(
       `
       SELECT 
         p.payment_id AS receipt_id,
         p.payment_date,
-        substr(p.created_at, 12, 5) AS time,
+        to_char((p.created_at::timestamptz AT TIME ZONE 'Africa/Juba')::time, 'HH24:MI') AS time,
         p.patient_id,
-        pat.first_name || ' ' || pat.last_name AS patient_name,
+        concat(pat.first_name, ' ', pat.last_name) AS patient_name,
         SUM(pi.total_price) AS amount,
         p.received_by AS cashier
       FROM payments p
       LEFT JOIN payment_items pi ON p.payment_id = pi.payment_id
       LEFT JOIN patients pat ON p.patient_id = pat.patient_id
-      WHERE p.clinic_day = ?
+      WHERE p.clinic_day = $1
         AND p.payment_method = 'cash'
         ${departmentFilter}
       GROUP BY p.payment_id, p.payment_date, p.created_at, p.patient_id, pat.first_name, pat.last_name, p.received_by

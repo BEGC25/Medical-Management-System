@@ -8,15 +8,17 @@ cd /home/runner/work/Medical-Management-System/Medical-Management-System
 sqlite3 clinic.db < migrations/0007_add_daily_cash_closings.sql
 ```
 
-### For PostgreSQL (Production)
+### For PostgreSQL (Production) - **REQUIRED FOR PRODUCTION**
 ```bash
-# Using psql
-psql "$DATABASE_URL" < migrations/0007_add_daily_cash_closings.sql
+# Using psql with DATABASE_URL environment variable
+psql "$DATABASE_URL" < migrations/0007_add_daily_cash_closings_pg.sql
 
 # Or using DATABASE_URL from .env
 source .env
-psql "$DATABASE_URL" < migrations/0007_add_daily_cash_closings.sql
+psql "$DATABASE_URL" < migrations/0007_add_daily_cash_closings_pg.sql
 ```
+
+**IMPORTANT:** Production environments using PostgreSQL (Neon, Render, etc.) must use the `0007_add_daily_cash_closings_pg.sql` file, not the SQLite version.
 
 ## Verification
 

@@ -1,29 +1,31 @@
 -- Add daily_cash_closings table and finance_vw_daily_cash view
--- SQLite Edition for Local Development
+-- PostgreSQL Edition for Production (Neon/PostgreSQL)
 -- This migration supports the Daily Cash Report enhancements
 -- Date: 2026-01-08
 --
--- IMPORTANT: For PostgreSQL production environments, use:
---   migrations/0007_add_daily_cash_closings_pg.sql
--- This file is for SQLite (local development) only.
+-- PRODUCTION CONTEXT:
+-- - Database: Neon (PostgreSQL) or any PostgreSQL database
+-- - Execute with: psql "$DATABASE_URL" < migrations/0007_add_daily_cash_closings_pg.sql
+--
+-- Safe for production: All changes are additive and idempotent, no data loss.
 
 -- ===========================================================================
 -- Step 1: Create daily_cash_closings table
 -- ===========================================================================
 
 CREATE TABLE IF NOT EXISTS daily_cash_closings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  date TEXT NOT NULL UNIQUE, -- YYYY-MM-DD format
-  expected_amount REAL NOT NULL,
-  counted_amount REAL NOT NULL,
-  variance REAL NOT NULL,
+  id SERIAL PRIMARY KEY,
+  date DATE NOT NULL UNIQUE, -- YYYY-MM-DD format
+  expected_amount NUMERIC(10, 2) NOT NULL,
+  counted_amount NUMERIC(10, 2) NOT NULL,
+  variance NUMERIC(10, 2) NOT NULL,
   handed_over_by TEXT NOT NULL,
   received_by TEXT NOT NULL,
   notes TEXT,
   closed_by_user_id INTEGER,
   closed_by_username TEXT,
-  closed_at TEXT NOT NULL DEFAULT (datetime('now')),
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  closed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Create index on date for efficient lookups
@@ -37,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_daily_cash_closings_date ON daily_cash_closings(d
 -- It joins payment_items with payments to get department information
 -- and filters for cash payments only
 
-CREATE VIEW IF NOT EXISTS finance_vw_daily_cash AS
+CREATE OR REPLACE VIEW finance_vw_daily_cash AS
 SELECT 
   p.clinic_day AS collection_date,
   p.payment_method,
@@ -61,6 +63,12 @@ GROUP BY p.clinic_day, p.payment_method, department, p.received_by;
 -- ===========================================================================
 
 -- Summary:
--- ✓ daily_cash_closings table created for storing daily closing data
+-- ✓ daily_cash_closings table created for storing daily closing data (PostgreSQL types)
 -- ✓ finance_vw_daily_cash view created for aggregating payment data
 -- ✓ Indexes created for efficient lookups
+
+-- Verification Queries (run these manually after migration to confirm):
+-- SELECT * FROM daily_cash_closings LIMIT 5;
+-- SELECT * FROM finance_vw_daily_cash WHERE collection_date = CURRENT_DATE;
+-- SELECT tablename FROM pg_tables WHERE tablename='daily_cash_closings';
+-- SELECT viewname FROM pg_views WHERE viewname='finance_vw_daily_cash';
