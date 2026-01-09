@@ -1985,7 +1985,8 @@ export class MemStorage implements IStorage {
     for (const update of updates) {
       await db.update(services)
         .set({ code: update.code })
-        .where(eq(services.id, update.id));
+        .where(eq(services.id, update.id))
+        .run();
     }
   }
 
