@@ -279,16 +279,20 @@ function generateServiceCode(serviceName: string, category: string): string {
   
   const prefix = categoryPrefixes[category] || "SVC";
   
-  // 1. Check for abbreviation in parentheses
-  const abbrevMatch = serviceName.match(/\(([A-Z]+)\)/);
+  // 1. Check for abbreviation in parentheses (case-insensitive)
+  const abbrevMatch = serviceName.match(/\(([A-Za-z0-9-]+)\)/);
   if (abbrevMatch) {
-    return `${prefix}-${abbrevMatch[1]}`;
+    return `${prefix}-${abbrevMatch[1].toUpperCase()}`;
   }
   
-  // 2. Extract first significant word(s)
-  const words = serviceName.split(' ').filter(w => 
-    !['for', 'and', 'or', 'the', 'a', 'an', 'of', 'with'].includes(w.toLowerCase())
-  );
+  // 2. Extract first significant word(s), filtering common words and handling empty strings
+  const words = serviceName.split(' ')
+    .map(w => w.trim())
+    .filter(w => w.length > 0 && !['for', 'and', 'or', 'the', 'a', 'an', 'of', 'with'].includes(w.toLowerCase()));
+  
+  if (words.length === 0) {
+    return `${prefix}-SERVICE`;
+  }
   
   if (words.length === 1) {
     return `${prefix}-${words[0].substring(0, 8).toUpperCase()}`;
