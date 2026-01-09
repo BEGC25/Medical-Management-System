@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Users, Receipt, FileText, Plus, Eye, Clock, Activity, CheckCircle, AlertCircle, Printer } from "lucide-react";
+import { Users, Receipt, FileText, Plus, Eye, Clock, Activity, CheckCircle, AlertCircle, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -488,7 +488,7 @@ export default function Billing() {
           <div className="flex gap-4 items-center flex-wrap">
             <DatePicker
               date={selectedDate}
-              onDateChange={(date) => date && setSelectedDate(date)}
+              onDateChange={(date) => setSelectedDate(date || new Date())}
               placeholder="Select visit date"
               className="w-[240px]"
             />

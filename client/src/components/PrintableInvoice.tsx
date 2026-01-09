@@ -76,12 +76,6 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         {/* Total */}
         <div className="flex justify-end mb-12">
           <div className="w-80">
-            <div className="border-t-2 border-gray-300 pt-3 mb-3">
-              <div className="flex justify-between text-lg mb-2">
-                <span className="font-semibold">Subtotal:</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
-            </div>
             <div className="bg-blue-600 text-white p-4 rounded">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-xl">GRAND TOTAL:</span>
