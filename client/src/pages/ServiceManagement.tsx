@@ -2,9 +2,9 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Plus, Search, Edit2, X, Check, Filter, 
-  Stethoscope, Beaker, Activity, Radio, Pill, Syringe,
+  Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
-  DollarSign, Package, XCircle
+  DollarSign, Package, XCircle, Wand2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,21 +44,63 @@ type ServiceFormData = z.infer<typeof serviceFormSchema>;
 // Category icons mapping
 const CATEGORY_ICONS = {
   consultation: Stethoscope,
-  laboratory: Beaker,
-  radiology: Activity,
-  ultrasound: Radio,
+  laboratory: FlaskConical,
+  radiology: Radio,
+  ultrasound: Activity,
   pharmacy: Pill,
   procedure: Syringe,
 };
 
-// Category colors
+// Category colors with gradient support
 const CATEGORY_COLORS = {
-  consultation: { bg: "bg-blue-500", text: "text-blue-700", light: "bg-blue-50" },
-  laboratory: { bg: "bg-amber-500", text: "text-amber-700", light: "bg-amber-50" },
-  radiology: { bg: "bg-purple-500", text: "text-purple-700", light: "bg-purple-50" },
-  ultrasound: { bg: "bg-teal-500", text: "text-teal-700", light: "bg-teal-50" },
-  pharmacy: { bg: "bg-pink-500", text: "text-pink-700", light: "bg-pink-50" },
-  procedure: { bg: "bg-green-500", text: "text-green-700", light: "bg-green-50" },
+  consultation: { 
+    bg: "bg-blue-500", 
+    text: "text-blue-700", 
+    light: "bg-blue-50",
+    gradient: "from-blue-500 to-indigo-600",
+    ring: "ring-blue-500",
+    iconColor: "text-blue-600"
+  },
+  laboratory: { 
+    bg: "bg-amber-500", 
+    text: "text-amber-700", 
+    light: "bg-amber-50",
+    gradient: "from-amber-500 to-orange-600",
+    ring: "ring-amber-500",
+    iconColor: "text-amber-600"
+  },
+  radiology: { 
+    bg: "bg-purple-500", 
+    text: "text-purple-700", 
+    light: "bg-purple-50",
+    gradient: "from-purple-500 to-violet-600",
+    ring: "ring-purple-500",
+    iconColor: "text-purple-600"
+  },
+  ultrasound: { 
+    bg: "bg-teal-500", 
+    text: "text-teal-700", 
+    light: "bg-teal-50",
+    gradient: "from-teal-500 to-cyan-600",
+    ring: "ring-teal-500",
+    iconColor: "text-teal-600"
+  },
+  pharmacy: { 
+    bg: "bg-pink-500", 
+    text: "text-pink-700", 
+    light: "bg-pink-50",
+    gradient: "from-pink-500 to-rose-600",
+    ring: "ring-pink-500",
+    iconColor: "text-pink-600"
+  },
+  procedure: { 
+    bg: "bg-green-500", 
+    text: "text-green-700", 
+    light: "bg-green-50",
+    gradient: "from-green-500 to-emerald-600",
+    ring: "ring-green-500",
+    iconColor: "text-green-600"
+  },
 };
 
 // Smart code suggestions by category
@@ -224,6 +266,64 @@ const PREDEFINED_SERVICES = {
   pharmacy: {},
 };
 
+// Code generation utility functions
+function generateServiceCode(serviceName: string, category: string): string {
+  const categoryPrefixes: Record<string, string> = {
+    consultation: "CONS",
+    laboratory: "LAB",
+    radiology: "RAD",
+    ultrasound: "US",
+    pharmacy: "PHARM",
+    procedure: "PROC"
+  };
+  
+  const prefix = categoryPrefixes[category] || "SVC";
+  
+  // 1. Check for abbreviation in parentheses (case-insensitive)
+  const abbrevMatch = serviceName.match(/\(([A-Za-z0-9-]+)\)/);
+  if (abbrevMatch) {
+    return `${prefix}-${abbrevMatch[1].toUpperCase()}`;
+  }
+  
+  // 2. Extract first significant word(s), filtering common words and handling empty strings
+  const words = serviceName.split(' ')
+    .map(w => w.trim())
+    .filter(w => w.length > 0 && !['for', 'and', 'or', 'the', 'a', 'an', 'of', 'with'].includes(w.toLowerCase()));
+  
+  if (words.length === 0) {
+    return `${prefix}-SERVICE`;
+  }
+  
+  if (words.length === 1) {
+    return `${prefix}-${words[0].substring(0, 8).toUpperCase()}`;
+  }
+  
+  if (words.length === 2) {
+    return `${prefix}-${words[0].substring(0, 4).toUpperCase()}${words[1].substring(0, 4).toUpperCase()}`;
+  }
+  
+  // 3. Use first letters of first 2-3 words
+  const descriptor = words.slice(0, Math.min(3, words.length))
+    .map(w => w[0])
+    .join('')
+    .toUpperCase();
+    
+  return `${prefix}-${descriptor}`;
+}
+
+// Ensure uniqueness
+function ensureUniqueCode(code: string, existingCodes: string[]): string {
+  let uniqueCode = code;
+  let counter = 1;
+  
+  while (existingCodes.includes(uniqueCode)) {
+    uniqueCode = `${code}${counter}`;
+    counter++;
+  }
+  
+  return uniqueCode;
+}
+
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -254,6 +354,9 @@ export default function ServiceManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [predefinedSearch, setPredefinedSearch] = useState("");
+  const [showCodeGenerator, setShowCodeGenerator] = useState(false);
+  const [codePreview, setCodePreview] = useState<Array<{id: number, name: string, category: string, generatedCode: string}>>([]);
+  const [isGeneratingCodes, setIsGeneratingCodes] = useState(false);
   const itemsPerPage = 10;
   
   const { toast } = useToast();
@@ -345,6 +448,28 @@ export default function ServiceManagement() {
       toast({
         title: "✓ Success",
         description: "Service status updated",
+      });
+    },
+  });
+
+  const bulkUpdateCodesMutation = useMutation({
+    mutationFn: async (updates: Array<{ id: number; code: string }>) => {
+      return await apiRequest("PUT", "/api/services/bulk-update-codes", { updates });
+    },
+    onSuccess: (_, updates) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      setShowCodeGenerator(false);
+      setCodePreview([]);
+      toast({
+        title: "✓ Success",
+        description: `Generated codes for ${updates.length} services`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate codes",
+        variant: "destructive",
       });
     },
   });
@@ -536,6 +661,59 @@ export default function ServiceManagement() {
 
   const hasActiveFilters = searchTerm || categoryFilter.length > 0 || statusFilter !== "all" || priceRange.min || priceRange.max;
 
+  // Calculate category counts
+  const categoryCounts = useMemo(() => {
+    return services.reduce((acc, service) => {
+      acc[service.category] = (acc[service.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [services]);
+
+  // Get services without codes
+  const servicesWithoutCodes = useMemo(() => {
+    return services.filter(s => !s.code || s.code.trim() === '' || s.code === '-');
+  }, [services]);
+
+  // Handle opening code generator
+  const handleOpenCodeGenerator = () => {
+    const existingCodes = services.map(s => s.code).filter(Boolean) as string[];
+    
+    const preview = servicesWithoutCodes.map(service => {
+      const baseCode = generateServiceCode(service.name, service.category);
+      const uniqueCode = ensureUniqueCode(baseCode, existingCodes);
+      existingCodes.push(uniqueCode);
+      
+      return {
+        id: service.id,
+        name: service.name,
+        category: service.category,
+        generatedCode: uniqueCode
+      };
+    });
+    
+    setCodePreview(preview);
+    setShowCodeGenerator(true);
+  };
+
+  // Handle editing a generated code
+  const handleEditGeneratedCode = (id: number, newCode: string) => {
+    setCodePreview(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, generatedCode: newCode.toUpperCase() } : item
+      )
+    );
+  };
+
+  // Handle applying generated codes
+  const handleApplyGeneratedCodes = () => {
+    const updates = codePreview.map(item => ({
+      id: item.id,
+      code: item.generatedCode
+    }));
+    
+    bulkUpdateCodesMutation.mutate(updates);
+  };
+
   // Get placeholder for code based on category
   const getCodePlaceholder = (category: string) => {
     const placeholders = {
@@ -581,17 +759,29 @@ export default function ServiceManagement() {
             Manage pricing and catalog for all clinic services
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={handleAddNew} 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl font-semibold transition-all transform hover:scale-105" 
-              data-testid="button-add-service"
+        <div className="flex gap-2">
+          {/* Generate Missing Codes Button */}
+          {servicesWithoutCodes.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={handleOpenCodeGenerator}
+              className="border-purple-300 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:border-purple-400 transition-all"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Service
+              <Wand2 className="w-4 h-4 mr-2" />
+              Generate Missing Codes ({servicesWithoutCodes.length})
             </Button>
-          </DialogTrigger>
+          )}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={handleAddNew} 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl font-semibold transition-all transform hover:scale-105" 
+                data-testid="button-add-service"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Service
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">
@@ -630,14 +820,17 @@ export default function ServiceManagement() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {Object.entries(CATEGORY_ICONS).map(([cat, Icon]) => (
-                              <SelectItem key={cat} value={cat}>
-                                <div className="flex items-center gap-2">
-                                  <Icon className="w-4 h-4" />
-                                  <span className="capitalize">{cat}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
+                            {Object.entries(CATEGORY_ICONS).map(([cat, Icon]) => {
+                              const categoryColor = CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS];
+                              return (
+                                <SelectItem key={cat} value={cat}>
+                                  <div className="flex items-center gap-2">
+                                    <Icon className={`w-4 h-4 ${categoryColor?.iconColor || 'text-gray-600'}`} />
+                                    <span className="capitalize">{cat}</span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -831,7 +1024,101 @@ export default function ServiceManagement() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {/* Code Generator Dialog */}
+      <Dialog open={showCodeGenerator} onOpenChange={setShowCodeGenerator}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Auto-Generate Service Codes</DialogTitle>
+            <DialogDescription>
+              Automatically create unique codes for {servicesWithoutCodes.length} services
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Info Banner */}
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                Codes will be generated using format: <code className="bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded font-mono">CATEGORY-DESCRIPTOR</code>
+                <br />
+                Examples: LAB-CBC, RAD-CHEST, US-ABD, CONS-GEN
+              </p>
+            </div>
+            
+            {/* Preview Table */}
+            <div className="max-h-96 overflow-y-auto border rounded-lg">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Service Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Category</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Generated Code</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {codePreview.map((service) => {
+                    const CategoryIcon = CATEGORY_ICONS[service.category as keyof typeof CATEGORY_ICONS];
+                    const categoryColor = CATEGORY_COLORS[service.category as keyof typeof CATEGORY_COLORS];
+                    
+                    return (
+                      <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm">{service.name}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <Badge className={`${categoryColor.bg} text-white capitalize flex items-center gap-1 w-fit`}>
+                            <CategoryIcon className="w-3 h-3" />
+                            {service.category}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            value={service.generatedCode}
+                            onChange={(e) => handleEditGeneratedCode(service.id, e.target.value)}
+                            className="font-mono text-sm uppercase h-8 max-w-[200px]"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const newCode = generateServiceCode(service.name, service.category);
+                              handleEditGeneratedCode(service.id, newCode);
+                            }}
+                            className="h-8"
+                          >
+                            Reset
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Actions */}
+            <div className="flex justify-between pt-4 border-t">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCodeGenerator(false)}
+                disabled={bulkUpdateCodesMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleApplyGeneratedCodes}
+                disabled={bulkUpdateCodesMutation.isPending}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                {bulkUpdateCodesMutation.isPending ? "Applying..." : `Apply Codes to ${codePreview.length} Services`}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -934,6 +1221,60 @@ export default function ServiceManagement() {
                 >
                   Clear All Filters
                 </Button>
+              )}
+            </div>
+
+            {/* Premium Category Filter Pills */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filter by Category</label>
+                {categoryFilter.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCategoryFilter([])}
+                    className="text-xs text-gray-600 hover:text-gray-800"
+                  >
+                    Clear Categories
+                  </Button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(CATEGORY_ICONS).map(([cat, Icon]) => {
+                  const categoryColor = CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS];
+                  const isActive = categoryFilter.includes(cat);
+                  const count = categoryCounts[cat] || 0;
+                  
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => toggleCategoryFilter(cat)}
+                      className={`
+                        flex items-center gap-2 px-4 py-2 rounded-xl h-11 font-medium
+                        transition-all duration-200 ease-in-out
+                        ${isActive 
+                          ? `bg-gradient-to-r ${categoryColor.gradient} text-white shadow-lg ring-2 ${categoryColor.ring} transform scale-105` 
+                          : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm'
+                        }
+                        hover:shadow-md hover:scale-105 active:scale-95
+                      `}
+                    >
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-white' : categoryColor.iconColor}`} />
+                      <span className="capitalize">{cat}</span>
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-xs px-2 py-0.5 ${isActive ? 'bg-white/20 text-white border-white/30' : 'bg-gray-100 dark:bg-gray-700'}`}
+                      >
+                        {count}
+                      </Badge>
+                    </button>
+                  );
+                })}
+              </div>
+              {categoryFilter.length > 0 && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Showing {filteredServices.length} of {services.length} services
+                </p>
               )}
             </div>
 

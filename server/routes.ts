@@ -1355,6 +1355,34 @@ router.put("/api/services/:id", async (req, res) => {
   }
 });
 
+// Bulk update service codes
+router.put("/api/services/bulk-update-codes", async (req, res) => {
+  try {
+    const { updates } = req.body;
+    
+    // Validate request body
+    if (!Array.isArray(updates)) {
+      return res.status(400).json({ error: "Invalid updates format - must be an array" });
+    }
+    
+    // Validate each update object
+    for (const update of updates) {
+      if (!update.id || typeof update.id !== 'number') {
+        return res.status(400).json({ error: "Invalid update: missing or invalid id" });
+      }
+      if (!update.code || typeof update.code !== 'string') {
+        return res.status(400).json({ error: "Invalid update: missing or invalid code" });
+      }
+    }
+    
+    await storage.bulkUpdateServiceCodes(updates);
+    res.json({ success: true, count: updates.length });
+  } catch (error) {
+    console.error("Error bulk updating service codes:", error);
+    res.status(500).json({ error: "Failed to bulk update service codes" });
+  }
+});
+
 /* ---------------------------------- Payments --------------------------------- */
 
 router.post("/api/payments", async (req: any, res) => {
