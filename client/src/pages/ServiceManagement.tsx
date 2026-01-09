@@ -4,16 +4,27 @@ import {
   Plus, Search, Edit2, X, Check, Filter, 
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
-  DollarSign, Package, XCircle, Wand2
+  DollarSign, Package, XCircle, Wand2, MoreVertical, Copy,
+  CheckCircle, Trash2, AlertCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CountUp } from "@/components/CountUp";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
@@ -357,6 +368,7 @@ export default function ServiceManagement() {
   const [showCodeGenerator, setShowCodeGenerator] = useState(false);
   const [codePreview, setCodePreview] = useState<Array<{id: number, name: string, category: string, generatedCode: string}>>([]);
   const [isGeneratingCodes, setIsGeneratingCodes] = useState(false);
+  const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const itemsPerPage = 10;
   
   const { toast } = useToast();
@@ -474,6 +486,68 @@ export default function ServiceManagement() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/services/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      toast({
+        title: "✓ Success",
+        description: "Service deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete service",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      return Promise.all(ids.map(id => apiRequest("DELETE", `/api/services/${id}`)));
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      setSelectedServices([]);
+      toast({
+        title: "✓ Success",
+        description: `Deleted ${ids.length} services`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete services",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkActivateMutation = useMutation({
+    mutationFn: async ({ ids, isActive }: { ids: number[]; isActive: number }) => {
+      return Promise.all(ids.map(id => apiRequest("PUT", `/api/services/${id}`, { isActive })));
+    },
+    onSuccess: (_, { ids, isActive }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      setSelectedServices([]);
+      toast({
+        title: "✓ Success",
+        description: `${isActive ? 'Activated' : 'Deactivated'} ${ids.length} services`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update services",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (data: ServiceFormData) => {
     // Validate for duplicate names in same category
     const duplicateName = services.find(
@@ -526,6 +600,86 @@ export default function ServiceManagement() {
     } else {
       createMutation.mutate(formattedData);
     }
+  };
+
+  const handleSaveAndAddAnother = (data: ServiceFormData) => {
+    // Validate and save
+    const formattedData = {
+      ...data,
+      code: data.code?.trim().toUpperCase() || null,
+      description: data.description?.trim() || null,
+      isActive: data.isActive ? 1 : 0,
+    };
+    
+    createMutation.mutate(formattedData, {
+      onSuccess: () => {
+        // Reset form but keep category
+        const currentCategory = form.watch('category');
+        form.reset({
+          code: "",
+          name: "",
+          category: currentCategory,
+          description: "",
+          price: 0,
+          isActive: 1,
+        });
+        setUseCustomName(false);
+        toast({
+          title: "✓ Service Added",
+          description: "Add another service or close dialog",
+        });
+      }
+    });
+  };
+
+  const handleDuplicate = (service: Service) => {
+    const newService = {
+      ...service,
+      name: `${service.name} (Copy)`,
+      code: service.code ? `${service.code}-COPY` : null,
+    };
+    
+    form.reset({
+      code: newService.code || "",
+      name: newService.name,
+      category: newService.category,
+      description: newService.description || "",
+      price: Number(newService.price),
+      isActive: newService.isActive,
+    });
+    setEditingService(null);
+    setSelectedCategory(newService.category);
+    setUseCustomName(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (service: Service) => {
+    if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
+      deleteMutation.mutate(service.id);
+    }
+  };
+
+  const handleBulkActivate = () => {
+    if (selectedServices.length > 0) {
+      bulkActivateMutation.mutate({ ids: selectedServices, isActive: 1 });
+    }
+  };
+
+  const handleBulkDeactivate = () => {
+    if (selectedServices.length > 0) {
+      bulkActivateMutation.mutate({ ids: selectedServices, isActive: 0 });
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedServices.length > 0 && confirm(`Are you sure you want to delete ${selectedServices.length} services?`)) {
+      bulkDeleteMutation.mutate(selectedServices);
+    }
+  };
+
+  const filterByStatus = (status: 'active' | 'inactive') => {
+    setStatusFilter(status);
+    setCurrentPage(1);
   };
 
   const handleEdit = (service: Service) => {
@@ -625,6 +779,9 @@ export default function ServiceManagement() {
     }, {} as Record<string, number>);
     
     const totalRevenue = services.reduce((sum, s) => sum + Number(s.price), 0);
+    const prices = services.map(s => Number(s.price));
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
     
     return {
       total: services.length,
@@ -632,6 +789,8 @@ export default function ServiceManagement() {
       inactive: inactiveCount,
       byCategory,
       avgPrice: services.length > 0 ? totalRevenue / services.length : 0,
+      minPrice,
+      maxPrice,
     };
   }, [services]);
 
@@ -725,6 +884,28 @@ export default function ServiceManagement() {
       pharmacy: "e.g., PHARM-MED",
     };
     return placeholders[category as keyof typeof placeholders] || "e.g., CODE-001";
+  };
+
+  const getCodeExample = (category: string) => {
+    const examples = {
+      consultation: "CONS-[TYPE] (CONS-GEN, CONS-SPECIALIST)",
+      laboratory: "LAB-[TEST] (LAB-CBC, LAB-MALARIA)",
+      radiology: "RAD-[EXAM] (RAD-CHEST, RAD-SKULL)",
+      ultrasound: "US-[AREA] (US-ABDOMEN, US-PELVIS)",
+      pharmacy: "PHARM-[SERVICE] (PHARM-DISPENSE)",
+      procedure: "PROC-[TYPE] (PROC-INJECTION, PROC-DRESSING)"
+    };
+    return examples[category as keyof typeof examples] || "CATEGORY-DESCRIPTOR";
+  };
+
+  const getCategoryGradient = (category: string) => {
+    const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS];
+    return categoryColor?.gradient || "from-gray-500 to-gray-600";
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const Icon = CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS] || Package;
+    return <Icon className="w-4 h-4 text-white" />;
   };
 
   // Filter predefined services based on search
@@ -1122,50 +1303,129 @@ export default function ServiceManagement() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950 dark:to-gray-900 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        {/* Total Services Card */}
+        <Card 
+          className="border-2 border-blue-200 dark:border-blue-800 hover:shadow-lg hover:-translate-y-1 
+                     transition-all duration-300 cursor-pointer group"
+          onClick={() => {
+            setCategoryFilter([]);
+            setStatusFilter('all');
+            setCurrentPage(1);
+          }}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Services</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Total Services
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <CountUp
+                    end={stats.total}
+                    duration={2}
+                    className="text-3xl font-bold text-blue-600 dark:text-blue-400"
+                  />
+                  <span className="text-sm text-gray-500">services</span>
+                </div>
               </div>
-              <Package className="w-10 h-10 text-blue-500 opacity-50" />
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl 
+                            shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Package className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-900 border-green-200 shadow-md hover:shadow-lg transition-shadow">
+        {/* Active Services Card */}
+        <Card 
+          className="border-2 border-green-200 dark:border-green-800 hover:shadow-lg hover:-translate-y-1 
+                     transition-all duration-300 cursor-pointer group"
+          onClick={() => filterByStatus('active')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Services</p>
-                <p className="text-3xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Active Services
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <CountUp
+                    end={stats.active}
+                    duration={2}
+                    className="text-3xl font-bold text-green-600 dark:text-green-400"
+                  />
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(0) : 0}% of total
+                </p>
               </div>
-              <Check className="w-10 h-10 text-green-500 opacity-50" />
+              <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl 
+                            shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-gray-900 border-red-200 shadow-md hover:shadow-lg transition-shadow">
+        {/* Inactive Services Card */}
+        <Card 
+          className="border-2 border-red-200 dark:border-red-800 hover:shadow-lg hover:-translate-y-1 
+                     transition-all duration-300 cursor-pointer group"
+          onClick={() => filterByStatus('inactive')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Inactive Services</p>
-                <p className="text-3xl font-bold text-red-600">{stats.inactive}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Inactive Services
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <CountUp
+                    end={stats.inactive}
+                    duration={2}
+                    className="text-3xl font-bold text-red-600 dark:text-red-400"
+                  />
+                  <TrendingDown className="w-4 h-4 text-red-500" />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.total > 0 ? ((stats.inactive / stats.total) * 100).toFixed(0) : 0}% of total
+                </p>
               </div>
-              <XCircle className="w-10 h-10 text-red-500 opacity-50" />
+              <div className="p-3 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl 
+                            shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <XCircle className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-950 dark:to-gray-900 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
+        {/* Average Price Card */}
+        <Card className="border-2 border-purple-200 dark:border-purple-800 hover:shadow-lg hover:-translate-y-1 
+                       transition-all duration-300 group">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Price</p>
-                <p className="text-3xl font-bold text-purple-600">{Math.round(stats.avgPrice).toLocaleString()}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Avg Price
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <CountUp
+                    end={Math.round(stats.avgPrice)}
+                    duration={2}
+                    separator=","
+                    className="text-3xl font-bold text-purple-600 dark:text-purple-400"
+                  />
+                  <span className="text-sm text-gray-500">SSP</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Range: {stats.minPrice.toLocaleString()} - {stats.maxPrice.toLocaleString()}
+                </p>
               </div>
-              <DollarSign className="w-10 h-10 text-purple-500 opacity-50" />
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl 
+                            shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
