@@ -670,16 +670,6 @@ export default function Billing() {
               </div>
             </div>
           )}
-          
-          {/* Hidden printable invoice component */}
-          {selectedEncounter && selectedEncounter.patient && selectedEncounter.orderLines && (
-            <PrintableInvoice
-              visit={selectedEncounter}
-              patient={selectedEncounter.patient}
-              orderLines={selectedEncounter.orderLines}
-              invoiceId={selectedEncounter.encounterId}
-            />
-          )}
         </DialogContent>
       </Dialog>
 
@@ -703,6 +693,16 @@ export default function Billing() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Hidden printable invoice component - positioned outside Dialog for proper printing */}
+      {selectedEncounter && selectedEncounter.patient && selectedEncounter.orderLines && (
+        <PrintableInvoice
+          visit={selectedEncounter}
+          patient={selectedEncounter.patient}
+          orderLines={selectedEncounter.orderLines}
+          invoiceId={selectedEncounter.encounterId}
+        />
+      )}
     </div>
   );
 }

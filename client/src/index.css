@@ -344,6 +344,11 @@
 /* Avoid awkward breaks inside lists/sections */
 .avoid-break { break-inside: avoid; page-break-inside: avoid; }
 
+/* Hide invoice on screen, show on print */
+#printable-invoice {
+  display: none;
+}
+
 /* Print rules */
 @media print {
   @page { size: A4; margin: var(--page-m); }
@@ -352,18 +357,27 @@
   body * { visibility: hidden; }
   
   /* Only show the visible print containers and their content */
-  #prescription-print:not(:empty), #prescription-print:not(:empty) * { visibility: visible; }
-  #lab-request-print:not(:empty), #lab-request-print:not(:empty) * { visibility: visible; }
-  #lab-report-print:not(:empty), #lab-report-print:not(:empty) * { visibility: visible; }
-  #lab-clinical-print:not(:empty), #lab-clinical-print:not(:empty) * { visibility: visible; }
-  #printable-invoice:not(:empty), #printable-invoice:not(:empty) * { visibility: visible; }
+  #prescription-print, #prescription-print * { visibility: visible; }
+  #lab-request-print, #lab-request-print * { visibility: visible; }
+  #lab-report-print, #lab-report-print * { visibility: visible; }
+  #lab-clinical-print, #lab-clinical-print * { visibility: visible; }
+  
+  /* Special handling for printable invoice - needs display override */
+  #printable-invoice {
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  #printable-invoice * {
+    visibility: visible !important;
+  }
   
   /* Position only the active container to avoid conflicts */
-  #prescription-print:not(:empty),
-  #lab-request-print:not(:empty),
-  #lab-report-print:not(:empty),
-  #lab-clinical-print:not(:empty),
-  #printable-invoice:not(:empty) {
+  #prescription-print,
+  #lab-request-print,
+  #lab-report-print,
+  #lab-clinical-print,
+  #printable-invoice {
     position: absolute;
     left: 0;
     top: 0;
