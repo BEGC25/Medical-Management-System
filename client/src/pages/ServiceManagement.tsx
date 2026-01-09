@@ -2028,7 +2028,7 @@ export default function ServiceManagement() {
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 
                         bg-white dark:bg-gray-800 border-2 border-blue-500 
                         rounded-full shadow-2xl px-6 py-3 flex items-center gap-4
-                        animate-slide-up z-50">
+                        animate-slide-in-up z-50">
           <span className="font-semibold text-sm">
             {selectedServices.length} selected
           </span>
