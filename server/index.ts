@@ -12,7 +12,6 @@ const app = express();
 /** Mask DB URL for safe boot logging */
 function maskDbUrl(url?: string) {
   if (!url) return "";
-  // postgresql://user:***@host/db?...   (hide password only)
   return url.replace(/:\/\/([^:]+):[^@]+@/, "://$1:***@");
 }
 
@@ -21,75 +20,67 @@ console.log("[BOOT] NODE_ENV =", process.env.NODE_ENV);
 console.log("[BOOT] DATABASE_URL =", maskDbUrl(process.env.DATABASE_URL));
 console.log("[BOOT] DIRECT_DATABASE_URL =", maskDbUrl(process.env.DIRECT_DATABASE_URL));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// We're behind a proxy (Northflank / Render / Cloudflare, etc.)
+/**
+ * We are behind a proxy (Vercel -> backend, and/or platform LB).
+ * This is REQUIRED for secure cookies (req.secure) to work correctly.
+ */
 app.set("trust proxy", 1);
 
-/**
- * Build an allowlist:
- * - ALLOWED_ORIGINS: comma-separated fully-qualified origins
- * - NF_HOSTS: Northflank-injected hostnames (no scheme); we convert to https://<host>
- */
-function buildAllowedOrigins(): string[] {
-  const fromEnv =
-    process.env.ALLOWED_ORIGINS?.split(",").map((s) => s.trim()).filter(Boolean) ??
-    [];
+// ──────────────────────────────
+// CORS (ONE place only)
+// ──────────────────────────────
+const isDev = process.env.NODE_ENV === "development";
 
-  const fromNorthflankHosts =
-    process.env.NF_HOSTS?.split(",")
-      .map((h) => h.trim())
-      .filter(Boolean)
-      .map((h) => `https://${h}`) ?? [];
+const rawAllowed = (process.env.ALLOWED_ORIGINS || process.env.CORS_ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-  // Always allow local dev defaults (harmless in production because origin must match exactly)
-  const defaults = ["http://localhost:5173", "http://localhost:5000"];
+// Allow only *your* Vercel project domains (not every vercel.app on earth)
+const isAllowedVercelProject = (origin: string) =>
+  /^https:\/\/(medical-management-system).*\.vercel\.app$/.test(origin);
 
-  // De-dupe
-  return Array.from(new Set([...defaults, ...fromEnv, ...fromNorthflankHosts]));
-}
+// Optional: allow your Northflank code.run site if you ever open the UI there
+const isAllowedCodeRun = (origin: string) =>
+  /^https:\/\/site--bgc-managementsystem--.*\.code\.run$/.test(origin);
 
-const allowedOrigins = buildAllowedOrigins();
-
-function isAllowedOrigin(origin?: string | null): boolean {
-  if (!origin) return true; // curl/postman/mobile apps often send no Origin
-  if (allowedOrigins.includes(origin)) return true;
-
-  // Allow Vercel preview deployments
-  if (origin.endsWith(".vercel.app")) return true;
-
+function isOriginAllowed(origin?: string) {
+  if (!origin) return true; // curl/postman/no Origin
+  if (rawAllowed.includes(origin)) return true;
+  if (isAllowedVercelProject(origin)) return true;
+  if (isAllowedCodeRun(origin)) return true;
   return false;
 }
 
-/**
- * CORS:
- * - Only for /api (so your JS/CSS/static don’t get blocked)
- * - Never throw errors (prevents 500s)
- */
-const apiCors = cors({
-  origin: (origin, callback) => {
-    callback(null, isAllowedOrigin(origin));
-  },
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, cb) => cb(null, isDev ? true : isOriginAllowed(origin)),
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
-});
+};
 
-app.use("/api", apiCors);
-app.options("/api/*", apiCors);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
-// ✅ Setup session middleware BEFORE routes
+// Body parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// ──────────────────────────────
+// Session (ONE place only)
+// ──────────────────────────────
 const sessionSecret = process.env.SESSION_SECRET || "dev-secret-change-in-production";
+
+// Prefer your persistent store if you have one (storage.sessionStore)
+const sessionStore = (storage as any).sessionStore as session.Store | undefined;
 
 const sessionSettings: session.SessionOptions = {
   name: "sid",
   secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
-  // Use persistent store if your storage provides it
-  // (prevents MemoryStore warning and keeps sessions stable)
-  store: (storage as any).sessionStore || undefined,
+  proxy: true,
+  ...(sessionStore ? { store: sessionStore } : {}),
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -101,44 +92,11 @@ const sessionSettings: session.SessionOptions = {
 app.use(session(sessionSettings));
 console.log("✅ Session middleware configured");
 
-// Public uptime endpoint (for Northflank health checks)
-app.get("/health", (_req, res) => res.status(200).send("ok"));
-
-// Public diagnostics endpoint (DB-aware, if implemented)
-app.get("/api/health", async (_req: Request, res: Response) => {
-  res.setHeader("Cache-Control", "no-store");
-  try {
-    if (typeof (storage as any).healthCheck !== "function") {
-      // Keep endpoint alive even if you didn’t implement healthCheck yet
-      return res.json({ ok: true, note: "storage.healthCheck() not implemented" });
-    }
-
-    const row = await (storage as any).healthCheck();
-    return res.json({
-      ok: true,
-      now: row.now,
-      patients: Number(row.patients || 0),
-      services: Number(row.services || 0),
-      billing_settings: Number(row.billing_settings || 0),
-    });
-  } catch (e: any) {
-    console.error("[/api/health] error:", e);
-    return res.status(500).json({
-      ok: false,
-      error: e?.message || "DB error",
-      code: e?.code,
-      detail: e?.detail,
-      hint: e?.hint,
-      where: e?.where,
-    });
-  }
-});
-
 // Simple API request logger (captures JSON responses)
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJsonResponse: Record<string, any> | undefined;
 
   const originalResJson = res.json.bind(res);
   (res as any).json = (bodyJson: any) => {
@@ -157,7 +115,7 @@ app.use((req, res, next) => {
           // ignore stringify errors
         }
       }
-      if (line.length > 160) line = line.slice(0, 159) + "…";
+      if (line.length > 120) line = line.slice(0, 119) + "…";
       log(line);
     }
   });
@@ -168,11 +126,42 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Centralized error handler (do NOT crash the server)
+  // Simple uptime endpoint (for platform health checks)
+  app.get("/health", (_req, res) => res.status(200).send("ok"));
+
+  // DB-aware health endpoint (diagnostics)
+  app.get("/api/health", async (_req: Request, res: Response) => {
+    res.setHeader("Cache-Control", "no-store");
+    try {
+      if (typeof (storage as any).healthCheck !== "function") {
+        return res.json({ ok: true, note: "storage.healthCheck() not implemented" });
+      }
+      const row = await (storage as any).healthCheck();
+      return res.json({
+        ok: true,
+        now: row.now,
+        patients: Number(row.patients || 0),
+        services: Number(row.services || 0),
+        billing_settings: Number(row.billing_settings || 0),
+      });
+    } catch (e: any) {
+      console.error("[/api/health] error:", e);
+      return res.status(500).json({
+        ok: false,
+        error: e?.message || "DB error",
+        code: e?.code,
+        detail: e?.detail,
+        hint: e?.hint,
+        where: e?.where,
+      });
+    }
+  });
+
+  // Centralized error handler (DO NOT rethrow; it can crash the server)
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error("[ERROR]", err);
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-    console.error("[ERROR]", err);
     res.status(status).json({ message });
   });
 
@@ -183,19 +172,11 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use platform-injected PORT; fallback for local dev
   const port = Number(process.env.PORT) || 8080;
   const host = "0.0.0.0";
 
   server.listen(
-    {
-      port,
-      host,
-      reusePort: process.platform !== "win32",
-    },
-    () => {
-      log(`serving on port ${port}`);
-      console.log("[BOOT] Allowed origins:", allowedOrigins);
-    }
+    { port, host, reusePort: process.platform !== "win32" },
+    () => log(`serving on port ${port}`),
   );
 })();
