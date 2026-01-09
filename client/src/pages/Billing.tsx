@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Users, Receipt, FileText, Plus, Eye, Clock, Activity, CheckCircle, AlertCircle, Printer } from "lucide-react";
+import { Users, Receipt, FileText, Plus, Eye, Clock, Activity, CheckCircle, AlertCircle, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
 import { getClinicDayKey } from "@/lib/date-utils";
 import { PrintableInvoice } from "@/components/PrintableInvoice";
 import { formatCurrency, calculateOrderLinesTotal } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface EncounterWithPatient extends Encounter {
   patient?: Patient;
@@ -197,7 +199,7 @@ function EncounterCard({
                   </TooltipTrigger>
                   {serviceCount === 0 && (
                     <TooltipContent>
-                      <p>Cannot generate invoice: No services in this visit</p>
+                      <p>Cannot generate invoice: This visit has no services</p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -257,7 +259,7 @@ function BillingPatientSearch({ onPatientSelect }: { onPatientSelect: (patient: 
 export default function Billing() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedDate, setSelectedDate] = useState(getClinicDayKey());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedEncounter, setSelectedEncounter] = useState<EncounterWithPatient | null>(null);
   const [showNewEncounterDialog, setShowNewEncounterDialog] = useState(false);
@@ -266,11 +268,11 @@ export default function Billing() {
 
   // Get encounters
   const { data: encounters = [], isLoading } = useQuery<Encounter[]>({
-    queryKey: ["/api/encounters", { status: statusFilter, date: selectedDate }],
+    queryKey: ["/api/encounters", { status: statusFilter, date: format(selectedDate, 'yyyy-MM-dd') }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter && statusFilter !== "all") params.append('status', statusFilter);
-      if (selectedDate) params.append('date', selectedDate);
+      if (selectedDate) params.append('date', format(selectedDate, 'yyyy-MM-dd'));
       
       const response = await fetch(`/api/encounters?${params}`);
       if (!response.ok) throw new Error('Failed to fetch encounters');
@@ -296,14 +298,14 @@ export default function Billing() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patientId: data.patientId,
-          visitDate: selectedDate,
+          visitDate: format(selectedDate, 'yyyy-MM-dd'),
           attendingClinician: data.attendingClinician,
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to create encounter");
+        throw new Error(error.error || "Failed to create visit");
       }
 
       return response.json();
@@ -313,7 +315,7 @@ export default function Billing() {
       setShowNewEncounterDialog(false);
       setSelectedPatient(null);
       toast({
-        title: "Visit Created",
+        title: "✓ Visit Created",
         description: "New patient visit has been created successfully.",
       });
     },
@@ -433,7 +435,7 @@ export default function Billing() {
               <Receipt className="h-8 w-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Billing Management</h1>
+              <h1 className="text-3xl font-bold">Billing & Invoices</h1>
               <p className="text-blue-100 mt-1">Manage patient visits and generate invoices</p>
             </div>
           </div>
@@ -448,6 +450,9 @@ export default function Billing() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Visit</DialogTitle>
+                <DialogDescription>
+                  Select a patient to create a new visit record for billing
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -481,15 +486,12 @@ export default function Billing() {
       <Card className="shadow-sm">
         <CardContent className="pt-6">
           <div className="flex gap-4 items-center flex-wrap">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-gray-500" />
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
-              />
-            </div>
+            <DatePicker
+              date={selectedDate}
+              onDateChange={(date) => setSelectedDate(date || new Date())}
+              placeholder="Select visit date"
+              className="w-[240px]"
+            />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -589,9 +591,6 @@ export default function Billing() {
                     {selectedEncounter.patient?.phoneNumber && (
                       <p className="text-sm text-gray-700">Phone: {selectedEncounter.patient.phoneNumber}</p>
                     )}
-                    {selectedEncounter.patient?.email && (
-                      <p className="text-sm text-gray-700">Email: {selectedEncounter.patient.email}</p>
-                    )}
                   </CardContent>
                 </Card>
                 <Card className="bg-gray-50 border-gray-200">
@@ -687,33 +686,36 @@ export default function Billing() {
       {/* Print Styles */}
       <style>{`
         @media print {
+          /* Hide everything except the invoice */
+          body > *:not(#printable-invoice) {
+            display: none !important;
+          }
+          
+          #printable-invoice {
+            display: block !important;
+          }
+          
+          /* Hide all dialog overlays and backgrounds */
+          [role="dialog"],
+          [data-radix-dialog-overlay],
           .print\\:hidden {
             display: none !important;
           }
           
-          .print-invoice {
-            max-width: 100%;
-            padding: 20px;
-            font-size: 12pt;
+          /* Reset page margins for clean print */
+          @page {
+            margin: 0.5in;
+            size: letter;
           }
           
-          .print-invoice::before {
-            content: "Bahr El Ghazal Clinic";
-            display: block;
-            font-size: 18pt;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
+          body {
+            margin: 0;
+            padding: 0;
           }
           
-          /* Hide dialog overlay when printing */
-          [role="dialog"] {
-            position: static !important;
-            max-width: 100% !important;
-            max-height: none !important;
-            overflow: visible !important;
+          /* Ensure the printable invoice shows properly */
+          .hidden.print\\:block {
+            display: block !important;
           }
         }
       `}</style>
