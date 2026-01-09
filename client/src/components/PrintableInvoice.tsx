@@ -19,7 +19,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   const [logoError, setLogoError] = React.useState(false);
   
   return (
-    <div className="hidden print:block" id="printable-invoice">
+    <div id="printable-invoice">
       <style>{`
         @media print {
           @page {
