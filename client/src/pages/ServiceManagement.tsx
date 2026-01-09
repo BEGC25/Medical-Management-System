@@ -4,16 +4,27 @@ import {
   Plus, Search, Edit2, X, Check, Filter, 
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
-  DollarSign, Package, XCircle, Wand2
+  DollarSign, Package, XCircle, Wand2, MoreVertical, Copy,
+  CheckCircle, Trash2, AlertCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CountUp } from "@/components/CountUp";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
@@ -357,6 +368,7 @@ export default function ServiceManagement() {
   const [showCodeGenerator, setShowCodeGenerator] = useState(false);
   const [codePreview, setCodePreview] = useState<Array<{id: number, name: string, category: string, generatedCode: string}>>([]);
   const [isGeneratingCodes, setIsGeneratingCodes] = useState(false);
+  const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const itemsPerPage = 10;
   
   const { toast } = useToast();
@@ -474,6 +486,68 @@ export default function ServiceManagement() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/services/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      toast({
+        title: "✓ Success",
+        description: "Service deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete service",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      return Promise.all(ids.map(id => apiRequest("DELETE", `/api/services/${id}`)));
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      setSelectedServices([]);
+      toast({
+        title: "✓ Success",
+        description: `Deleted ${ids.length} services`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete services",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkActivateMutation = useMutation({
+    mutationFn: async ({ ids, isActive }: { ids: number[]; isActive: number }) => {
+      return Promise.all(ids.map(id => apiRequest("PUT", `/api/services/${id}`, { isActive })));
+    },
+    onSuccess: (_, { ids, isActive }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      setSelectedServices([]);
+      toast({
+        title: "✓ Success",
+        description: `${isActive ? 'Activated' : 'Deactivated'} ${ids.length} services`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update services",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (data: ServiceFormData) => {
     // Validate for duplicate names in same category
     const duplicateName = services.find(
@@ -526,6 +600,86 @@ export default function ServiceManagement() {
     } else {
       createMutation.mutate(formattedData);
     }
+  };
+
+  const handleSaveAndAddAnother = (data: ServiceFormData) => {
+    // Validate and save
+    const formattedData = {
+      ...data,
+      code: data.code?.trim().toUpperCase() || null,
+      description: data.description?.trim() || null,
+      isActive: data.isActive ? 1 : 0,
+    };
+    
+    createMutation.mutate(formattedData, {
+      onSuccess: () => {
+        // Reset form but keep category
+        const currentCategory = form.watch('category');
+        form.reset({
+          code: "",
+          name: "",
+          category: currentCategory,
+          description: "",
+          price: 0,
+          isActive: 1,
+        });
+        setUseCustomName(false);
+        toast({
+          title: "✓ Service Added",
+          description: "Add another service or close dialog",
+        });
+      }
+    });
+  };
+
+  const handleDuplicate = (service: Service) => {
+    const newService = {
+      ...service,
+      name: `${service.name} (Copy)`,
+      code: service.code ? `${service.code}-COPY` : null,
+    };
+    
+    form.reset({
+      code: newService.code || "",
+      name: newService.name,
+      category: newService.category,
+      description: newService.description || "",
+      price: Number(newService.price),
+      isActive: newService.isActive,
+    });
+    setEditingService(null);
+    setSelectedCategory(newService.category);
+    setUseCustomName(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (service: Service) => {
+    if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
+      deleteMutation.mutate(service.id);
+    }
+  };
+
+  const handleBulkActivate = () => {
+    if (selectedServices.length > 0) {
+      bulkActivateMutation.mutate({ ids: selectedServices, isActive: 1 });
+    }
+  };
+
+  const handleBulkDeactivate = () => {
+    if (selectedServices.length > 0) {
+      bulkActivateMutation.mutate({ ids: selectedServices, isActive: 0 });
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedServices.length > 0 && confirm(`Are you sure you want to delete ${selectedServices.length} services?`)) {
+      bulkDeleteMutation.mutate(selectedServices);
+    }
+  };
+
+  const filterByStatus = (status: 'active' | 'inactive') => {
+    setStatusFilter(status);
+    setCurrentPage(1);
   };
 
   const handleEdit = (service: Service) => {
@@ -625,6 +779,9 @@ export default function ServiceManagement() {
     }, {} as Record<string, number>);
     
     const totalRevenue = services.reduce((sum, s) => sum + Number(s.price), 0);
+    const prices = services.map(s => Number(s.price));
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
     
     return {
       total: services.length,
@@ -632,6 +789,8 @@ export default function ServiceManagement() {
       inactive: inactiveCount,
       byCategory,
       avgPrice: services.length > 0 ? totalRevenue / services.length : 0,
+      minPrice,
+      maxPrice,
     };
   }, [services]);
 
@@ -727,6 +886,28 @@ export default function ServiceManagement() {
     return placeholders[category as keyof typeof placeholders] || "e.g., CODE-001";
   };
 
+  const getCodeExample = (category: string) => {
+    const examples = {
+      consultation: "CONS-[TYPE] (CONS-GEN, CONS-SPECIALIST)",
+      laboratory: "LAB-[TEST] (LAB-CBC, LAB-MALARIA)",
+      radiology: "RAD-[EXAM] (RAD-CHEST, RAD-SKULL)",
+      ultrasound: "US-[AREA] (US-ABDOMEN, US-PELVIS)",
+      pharmacy: "PHARM-[SERVICE] (PHARM-DISPENSE)",
+      procedure: "PROC-[TYPE] (PROC-INJECTION, PROC-DRESSING)"
+    };
+    return examples[category as keyof typeof examples] || "CATEGORY-DESCRIPTOR";
+  };
+
+  const getCategoryGradient = (category: string) => {
+    const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS];
+    return categoryColor?.gradient || "from-gray-500 to-gray-600";
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const Icon = CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS] || Package;
+    return <Icon className="w-4 h-4 text-white" />;
+  };
+
   // Filter predefined services based on search
   const getFilteredPredefinedServices = () => {
     const categoryServices = PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES];
@@ -795,6 +976,7 @@ export default function ServiceManagement() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                {/* Row 1: Category & Status */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -840,9 +1022,34 @@ export default function ServiceManagement() {
                   
                   <FormField
                     control={form.control}
-                    name="code"
+                    name="isActive"
                     render={({ field }) => (
                       <FormItem>
+                        <div className="flex items-center justify-between p-3 border rounded-lg h-11">
+                          <div>
+                            <FormLabel className="text-base font-semibold">Status</FormLabel>
+                            <p className="text-xs text-gray-500">Service availability</p>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value === 1}
+                              onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Row 2: Service Code & Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-1">
                         <FormLabel className="font-semibold">
                           Service Code {watchedCategory === "consultation" && <span className="text-red-500">*</span>}
                         </FormLabel>
@@ -857,20 +1064,19 @@ export default function ServiceManagement() {
                           />
                         </FormControl>
                         <FormDescription className="text-xs">
-                          Format: CATEGORY-DESCRIPTOR (auto-capitalized)
+                          {getCodeExample(watchedCategory)}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-semibold">Service Name *</FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel className="font-semibold">Service Name *</FormLabel>
                       {!editingService && Object.keys(PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES] || {}).length > 0 && !useCustomName ? (
                         <div className="space-y-3">
                           <Input
@@ -945,6 +1151,7 @@ export default function ServiceManagement() {
                     </FormItem>
                   )}
                 />
+                </div>
 
                 <FormField
                   control={form.control}
@@ -973,32 +1180,100 @@ export default function ServiceManagement() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-semibold">Price (SSP) *</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      
+                      {/* Quick Price Buttons */}
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {[500, 1000, 2000, 5000, 10000].map((price) => (
+                          <Button
+                            key={price}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => form.setValue('price', price)}
+                            className={`text-xs ${field.value === price ? 'bg-blue-100 border-blue-500' : ''}`}
+                          >
+                            {price >= 1000 ? `${price / 1000}K` : price}
+                          </Button>
+                        ))}
+                        <div className="flex-1 min-w-[100px]">
                           <Input
-                            {...field}
                             type="number"
                             step="0.01"
                             min="0"
-                            placeholder="0.00"
+                            placeholder="Custom"
+                            value={field.value || ''}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             data-testid="input-service-price"
-                            className="pl-10 h-11"
+                            className="h-8"
                           />
                         </div>
-                      </FormControl>
+                      </div>
+                      
+                      {/* Selected Price Display */}
                       {field.value > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {Math.round(field.value).toLocaleString()} SSP
-                        </p>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Selected: <span className="font-bold text-lg text-blue-600">
+                            {(field.value || 0).toLocaleString()} SSP
+                          </span>
+                        </div>
                       )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                {/* Service Preview Card */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 
+                              border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg bg-gradient-to-br ${getCategoryGradient(form.watch('category'))}`}>
+                      {getCategoryIcon(form.watch('category'))}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Preview</h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">How this service will appear</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs text-gray-500">
+                            {form.watch('code') || '(No code)'}
+                          </span>
+                          <Badge variant={form.watch('category') === 'consultation' ? 'default' : 'secondary'} className="capitalize">
+                            {form.watch('category') || 'Category'}
+                          </Badge>
+                        </div>
+                        <h3 className="font-bold text-base mt-1">
+                          {form.watch('name') || 'Service Name'}
+                        </h3>
+                        {form.watch('description') && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {form.watch('description')}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {(form.watch('price') || 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500">SSP</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <Badge variant={form.watch('isActive') ? 'default' : 'secondary'}>
+                        {form.watch('isActive') ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <div className="text-xs text-gray-500">
+                        {editingService ? 'Editing Service' : 'New Service'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="flex justify-between sm:justify-between pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
@@ -1011,15 +1286,29 @@ export default function ServiceManagement() {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    data-testid="button-save-service"
-                  >
-                    {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Service"}
-                  </Button>
-                </div>
+                  
+                  <div className="flex gap-2">
+                    {!editingService && (
+                      <Button
+                        type="button"
+                        onClick={() => handleSaveAndAddAnother(form.getValues())}
+                        variant="secondary"
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                      >
+                        Save & Add Another
+                      </Button>
+                    )}
+                    
+                    <Button
+                      type="submit"
+                      disabled={createMutation.isPending || updateMutation.isPending}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      data-testid="button-save-service"
+                    >
+                      {createMutation.isPending || updateMutation.isPending ? "Saving..." : (editingService ? "Update Service" : "Save Service")}
+                    </Button>
+                  </div>
+                </DialogFooter>
               </form>
             </Form>
           </DialogContent>
@@ -1122,50 +1411,129 @@ export default function ServiceManagement() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950 dark:to-gray-900 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        {/* Total Services Card */}
+        <Card 
+          className="border-2 border-blue-200 dark:border-blue-800 hover:shadow-lg hover:-translate-y-1 
+                     transition-all duration-300 cursor-pointer group"
+          onClick={() => {
+            setCategoryFilter([]);
+            setStatusFilter('all');
+            setCurrentPage(1);
+          }}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Services</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Total Services
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <CountUp
+                    end={stats.total}
+                    duration={2}
+                    className="text-3xl font-bold text-blue-600 dark:text-blue-400"
+                  />
+                  <span className="text-sm text-gray-500">services</span>
+                </div>
               </div>
-              <Package className="w-10 h-10 text-blue-500 opacity-50" />
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl 
+                            shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Package className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-900 border-green-200 shadow-md hover:shadow-lg transition-shadow">
+        {/* Active Services Card */}
+        <Card 
+          className="border-2 border-green-200 dark:border-green-800 hover:shadow-lg hover:-translate-y-1 
+                     transition-all duration-300 cursor-pointer group"
+          onClick={() => filterByStatus('active')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Services</p>
-                <p className="text-3xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Active Services
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <CountUp
+                    end={stats.active}
+                    duration={2}
+                    className="text-3xl font-bold text-green-600 dark:text-green-400"
+                  />
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(0) : 0}% of total
+                </p>
               </div>
-              <Check className="w-10 h-10 text-green-500 opacity-50" />
+              <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl 
+                            shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-gray-900 border-red-200 shadow-md hover:shadow-lg transition-shadow">
+        {/* Inactive Services Card */}
+        <Card 
+          className="border-2 border-red-200 dark:border-red-800 hover:shadow-lg hover:-translate-y-1 
+                     transition-all duration-300 cursor-pointer group"
+          onClick={() => filterByStatus('inactive')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Inactive Services</p>
-                <p className="text-3xl font-bold text-red-600">{stats.inactive}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Inactive Services
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <CountUp
+                    end={stats.inactive}
+                    duration={2}
+                    className="text-3xl font-bold text-red-600 dark:text-red-400"
+                  />
+                  <TrendingDown className="w-4 h-4 text-red-500" />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.total > 0 ? ((stats.inactive / stats.total) * 100).toFixed(0) : 0}% of total
+                </p>
               </div>
-              <XCircle className="w-10 h-10 text-red-500 opacity-50" />
+              <div className="p-3 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl 
+                            shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <XCircle className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-950 dark:to-gray-900 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
+        {/* Average Price Card */}
+        <Card className="border-2 border-purple-200 dark:border-purple-800 hover:shadow-lg hover:-translate-y-1 
+                       transition-all duration-300 group">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Price</p>
-                <p className="text-3xl font-bold text-purple-600">{Math.round(stats.avgPrice).toLocaleString()}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Avg Price
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <CountUp
+                    end={Math.round(stats.avgPrice)}
+                    duration={2}
+                    separator=","
+                    className="text-3xl font-bold text-purple-600 dark:text-purple-400"
+                  />
+                  <span className="text-sm text-gray-500">SSP</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Range: {stats.minPrice.toLocaleString()} - {stats.maxPrice.toLocaleString()}
+                </p>
               </div>
-              <DollarSign className="w-10 h-10 text-purple-500 opacity-50" />
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl 
+                            shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1440,6 +1808,18 @@ export default function ServiceManagement() {
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 sticky top-0 z-10">
                     <tr>
+                      <th className="px-4 py-4 w-12">
+                        <Checkbox
+                          checked={selectedServices.length > 0 && selectedServices.length === paginatedServices.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedServices(paginatedServices.map(s => s.id));
+                            } else {
+                              setSelectedServices([]);
+                            }
+                          }}
+                        />
+                      </th>
                       <th 
                         className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         onClick={() => handleSort("code")}
@@ -1510,6 +1890,18 @@ export default function ServiceManagement() {
                           key={service.id} 
                           className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-200"
                         >
+                          <td className="px-4 py-4 w-12">
+                            <Checkbox
+                              checked={selectedServices.includes(service.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedServices([...selectedServices, service.id]);
+                                } else {
+                                  setSelectedServices(selectedServices.filter(id => id !== service.id));
+                                }
+                              }}
+                            />
+                          </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                               {service.code || "-"}
@@ -1551,34 +1943,49 @@ export default function ServiceManagement() {
                               </Badge>
                             </div>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEdit(service)}
-                                data-testid={`button-edit-service-${service.id}`}
-                                className="hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant={service.isActive ? "outline" : "default"}
-                                size="sm"
-                                onClick={() =>
-                                  toggleActiveMutation.mutate({
-                                    id: service.id,
-                                    isActive: service.isActive ? 0 : 1,
-                                  })
-                                }
-                                data-testid={`button-toggle-service-${service.id}`}
-                                className={service.isActive 
-                                  ? "hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors" 
-                                  : "bg-green-600 hover:bg-green-700"}
-                              >
-                                {service.isActive ? <X className="w-3 h-3" /> : <Check className="w-3 h-3" />}
-                              </Button>
-                            </div>
+                          <td className="px-4 py-4 whitespace-nowrap text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => handleEdit(service)}>
+                                  <Edit2 className="w-4 h-4 mr-2" />
+                                  Edit Service
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDuplicate(service)}>
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => toggleActiveMutation.mutate({
+                                  id: service.id,
+                                  isActive: service.isActive ? 0 : 1,
+                                })}>
+                                  {service.isActive ? (
+                                    <>
+                                      <XCircle className="w-4 h-4 mr-2" />
+                                      Deactivate
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      Activate
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(service)}
+                                  className="text-red-600 dark:text-red-400"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </td>
                         </tr>
                       );
@@ -1615,6 +2022,52 @@ export default function ServiceManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Bulk Action Bar */}
+      {selectedServices.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 
+                        bg-white dark:bg-gray-800 border-2 border-blue-500 
+                        rounded-full shadow-2xl px-6 py-3 flex items-center gap-4
+                        animate-slide-in-up z-50">
+          <span className="font-semibold text-sm">
+            {selectedServices.length} selected
+          </span>
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleBulkActivate}
+          >
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Activate
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleBulkDeactivate}
+          >
+            <XCircle className="w-4 h-4 mr-1" />
+            Deactivate
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleBulkDelete}
+            className="text-red-600"
+          >
+            <Trash2 className="w-4 h-4 mr-1" />
+            Delete
+          </Button>
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={() => setSelectedServices([])}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
