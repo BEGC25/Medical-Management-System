@@ -390,6 +390,15 @@ export const insertBillingSettingsSchema = createInsertSchema(billingSettings).o
 export const insertServiceSchema = createInsertSchema(services).omit({
   id: true,
   createdAt: true,
+}).refine((data) => {
+  // Make service code required for consultation category
+  if (data.category === 'consultation' && !data.code?.trim()) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Service code is required for consultation services",
+  path: ["code"],
 });
 
 export const insertEncounterSchema = createInsertSchema(encounters).omit({

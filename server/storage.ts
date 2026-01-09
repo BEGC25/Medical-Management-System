@@ -3145,24 +3145,26 @@ async function seedDefaultServices() {
     if (existingServices.length === 0) {
       console.log("Seeding default services...");
 
-      // Consultation services (updated to match policy)
-      await storage.createService({
-        code: "CONS-GEN",
-        name: "General Consultation",
-        category: "consultation",
-        description: "Basic medical consultation and examination",
-        price: 2000.00,
-        isActive: 1,
-      });
-
-      await storage.createService({
-        code: "CONS-FU",
-        name: "Follow-up Consultation",
-        category: "consultation",
-        description: "Follow-up visit for existing patients",
-        price: 1000.00,
-        isActive: 1,
-      });
+      // Consultation services - Commented out to allow clinics to set their own pricing
+      // Users should add consultation services manually through the UI to match clinic pricing
+      // Example:
+      // await storage.createService({
+      //   code: "CONS-GEN",
+      //   name: "General Consultation",
+      //   category: "consultation",
+      //   description: "Basic medical consultation and examination",
+      //   price: 5000.00, // Set according to your clinic's pricing
+      //   isActive: 1,
+      // });
+      //
+      // await storage.createService({
+      //   code: "CONS-FU",
+      //   name: "Follow-up Consultation",
+      //   category: "consultation",
+      //   description: "Follow-up visit for existing patients",
+      //   price: 2000.00, // Set according to your clinic's pricing
+      //   isActive: 1,
+      // });
 
       // Laboratory services
       await storage.createService({
