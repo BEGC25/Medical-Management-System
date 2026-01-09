@@ -21,9 +21,22 @@ import { type Service, type InsertService, insertServiceSchema } from "@shared/s
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 
-const serviceFormSchema = insertServiceSchema.extend({
+const serviceFormSchema = z.object({
+  code: z.string().optional().nullable(),
+  name: z.string().min(1, "Service name is required"),
+  category: z.enum(["consultation", "laboratory", "radiology", "ultrasound", "pharmacy", "procedure"]),
+  description: z.string().optional().nullable(),
   price: z.number().min(0, "Price must be 0 or greater"),
   isActive: z.union([z.number(), z.boolean()]).transform(val => typeof val === 'boolean' ? (val ? 1 : 0) : val),
+}).refine((data) => {
+  // Make service code required for consultation category
+  if (data.category === 'consultation' && !data.code?.trim()) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Service code is required for consultation services",
+  path: ["code"],
 });
 
 type ServiceFormData = z.infer<typeof serviceFormSchema>;

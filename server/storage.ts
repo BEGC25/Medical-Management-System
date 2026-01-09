@@ -1947,7 +1947,8 @@ export class MemStorage implements IStorage {
 
   // Payment Services
   async getServices(): Promise<schema.Service[]> {
-    return await db.select().from(services).where(eq(services.isActive, true)).orderBy(services.category, services.name);
+    // Return all services (both active and inactive) for management purposes
+    return await db.select().from(services).orderBy(services.category, services.name);
   }
 
   async getServicesByCategory(category: string): Promise<schema.Service[]> {
