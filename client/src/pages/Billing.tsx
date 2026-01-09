@@ -570,15 +570,15 @@ export default function Billing() {
 
       {/* Visit Details Dialog */}
       <Dialog open={!!selectedEncounter} onOpenChange={() => setSelectedEncounter(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto print-invoice">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto print:hidden">
+          <DialogHeader className="print:hidden">
             <DialogTitle className="text-2xl font-bold">Visit Details</DialogTitle>
             <DialogDescription>
               Complete breakdown of services and charges for this visit
             </DialogDescription>
           </DialogHeader>
           {selectedEncounter && (
-            <div className="space-y-6">
+            <div className="space-y-6 print:hidden">
               {/* Patient and Encounter Info Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-blue-50 border-blue-200">
