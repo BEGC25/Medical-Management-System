@@ -683,40 +683,6 @@ export default function Billing() {
         </DialogContent>
       </Dialog>
 
-      {/* Print Styles */}
-      <style>{`
-        @media print {
-          /* Hide everything except the invoice */
-          body * {
-            visibility: hidden !important;
-          }
-          
-          #printable-invoice,
-          #printable-invoice * {
-            visibility: visible !important;
-          }
-          
-          #printable-invoice {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            display: block !important;
-          }
-          
-          /* Reset page margins for clean print */
-          @page {
-            margin: 0.5in;
-            size: letter;
-          }
-          
-          body {
-            margin: 0;
-            padding: 0;
-          }
-        }
-      `}</style>
-
       {/* Confirmation Dialog for Invoice Generation */}
       <AlertDialog open={!!encounterToInvoice} onOpenChange={(open) => !open && setEncounterToInvoice(null)}>
         <AlertDialogContent>
