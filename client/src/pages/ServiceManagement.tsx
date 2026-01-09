@@ -950,7 +950,7 @@ export default function ServiceManagement() {
                         variant={categoryFilter.includes(cat) ? "default" : "outline"}
                         className={`cursor-pointer transition-all ${
                           categoryFilter.includes(cat) 
-                            ? CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS].bg + " text-white"
+                            ? (CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS]?.bg || "bg-gray-500") + " text-white"
                             : "hover:bg-gray-100"
                         }`}
                         onClick={() => toggleCategoryFilter(cat)}
