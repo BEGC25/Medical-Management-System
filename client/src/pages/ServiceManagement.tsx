@@ -976,6 +976,7 @@ export default function ServiceManagement() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                {/* Row 1: Category & Status */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -1021,9 +1022,34 @@ export default function ServiceManagement() {
                   
                   <FormField
                     control={form.control}
-                    name="code"
+                    name="isActive"
                     render={({ field }) => (
                       <FormItem>
+                        <div className="flex items-center justify-between p-3 border rounded-lg h-11">
+                          <div>
+                            <FormLabel className="text-base font-semibold">Status</FormLabel>
+                            <p className="text-xs text-gray-500">Service availability</p>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value === 1}
+                              onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Row 2: Service Code & Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-1">
                         <FormLabel className="font-semibold">
                           Service Code {watchedCategory === "consultation" && <span className="text-red-500">*</span>}
                         </FormLabel>
@@ -1038,20 +1064,19 @@ export default function ServiceManagement() {
                           />
                         </FormControl>
                         <FormDescription className="text-xs">
-                          Format: CATEGORY-DESCRIPTOR (auto-capitalized)
+                          {getCodeExample(watchedCategory)}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-semibold">Service Name *</FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel className="font-semibold">Service Name *</FormLabel>
                       {!editingService && Object.keys(PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES] || {}).length > 0 && !useCustomName ? (
                         <div className="space-y-3">
                           <Input
@@ -1126,6 +1151,7 @@ export default function ServiceManagement() {
                     </FormItem>
                   )}
                 />
+                </div>
 
                 <FormField
                   control={form.control}
@@ -1154,32 +1180,100 @@ export default function ServiceManagement() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-semibold">Price (SSP) *</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      
+                      {/* Quick Price Buttons */}
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {[500, 1000, 2000, 5000, 10000].map((price) => (
+                          <Button
+                            key={price}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => form.setValue('price', price)}
+                            className={`text-xs ${field.value === price ? 'bg-blue-100 border-blue-500' : ''}`}
+                          >
+                            {price >= 1000 ? `${price / 1000}K` : price}
+                          </Button>
+                        ))}
+                        <div className="flex-1 min-w-[100px]">
                           <Input
-                            {...field}
                             type="number"
                             step="0.01"
                             min="0"
-                            placeholder="0.00"
+                            placeholder="Custom"
+                            value={field.value || ''}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             data-testid="input-service-price"
-                            className="pl-10 h-11"
+                            className="h-8"
                           />
                         </div>
-                      </FormControl>
+                      </div>
+                      
+                      {/* Selected Price Display */}
                       {field.value > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {Math.round(field.value).toLocaleString()} SSP
-                        </p>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Selected: <span className="font-bold text-lg text-blue-600">
+                            {(field.value || 0).toLocaleString()} SSP
+                          </span>
+                        </div>
                       )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                {/* Service Preview Card */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 
+                              border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg bg-gradient-to-br ${getCategoryGradient(form.watch('category'))}`}>
+                      {getCategoryIcon(form.watch('category'))}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Preview</h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">How this service will appear</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs text-gray-500">
+                            {form.watch('code') || '(No code)'}
+                          </span>
+                          <Badge variant={form.watch('category') === 'consultation' ? 'default' : 'secondary'} className="capitalize">
+                            {form.watch('category') || 'Category'}
+                          </Badge>
+                        </div>
+                        <h3 className="font-bold text-base mt-1">
+                          {form.watch('name') || 'Service Name'}
+                        </h3>
+                        {form.watch('description') && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {form.watch('description')}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {(form.watch('price') || 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500">SSP</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <Badge variant={form.watch('isActive') ? 'default' : 'secondary'}>
+                        {form.watch('isActive') ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <div className="text-xs text-gray-500">
+                        {editingService ? 'Editing Service' : 'New Service'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="flex justify-between sm:justify-between pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
@@ -1192,15 +1286,29 @@ export default function ServiceManagement() {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    data-testid="button-save-service"
-                  >
-                    {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Service"}
-                  </Button>
-                </div>
+                  
+                  <div className="flex gap-2">
+                    {!editingService && (
+                      <Button
+                        type="button"
+                        onClick={() => handleSaveAndAddAnother(form.getValues())}
+                        variant="secondary"
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                      >
+                        Save & Add Another
+                      </Button>
+                    )}
+                    
+                    <Button
+                      type="submit"
+                      disabled={createMutation.isPending || updateMutation.isPending}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      data-testid="button-save-service"
+                    >
+                      {createMutation.isPending || updateMutation.isPending ? "Saving..." : (editingService ? "Update Service" : "Save Service")}
+                    </Button>
+                  </div>
+                </DialogFooter>
               </form>
             </Form>
           </DialogContent>
@@ -1700,6 +1808,18 @@ export default function ServiceManagement() {
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 sticky top-0 z-10">
                     <tr>
+                      <th className="px-4 py-4 w-12">
+                        <Checkbox
+                          checked={selectedServices.length > 0 && selectedServices.length === paginatedServices.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedServices(paginatedServices.map(s => s.id));
+                            } else {
+                              setSelectedServices([]);
+                            }
+                          }}
+                        />
+                      </th>
                       <th 
                         className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         onClick={() => handleSort("code")}
@@ -1770,6 +1890,18 @@ export default function ServiceManagement() {
                           key={service.id} 
                           className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-200"
                         >
+                          <td className="px-4 py-4 w-12">
+                            <Checkbox
+                              checked={selectedServices.includes(service.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedServices([...selectedServices, service.id]);
+                                } else {
+                                  setSelectedServices(selectedServices.filter(id => id !== service.id));
+                                }
+                              }}
+                            />
+                          </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                               {service.code || "-"}
@@ -1811,34 +1943,49 @@ export default function ServiceManagement() {
                               </Badge>
                             </div>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEdit(service)}
-                                data-testid={`button-edit-service-${service.id}`}
-                                className="hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant={service.isActive ? "outline" : "default"}
-                                size="sm"
-                                onClick={() =>
-                                  toggleActiveMutation.mutate({
-                                    id: service.id,
-                                    isActive: service.isActive ? 0 : 1,
-                                  })
-                                }
-                                data-testid={`button-toggle-service-${service.id}`}
-                                className={service.isActive 
-                                  ? "hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors" 
-                                  : "bg-green-600 hover:bg-green-700"}
-                              >
-                                {service.isActive ? <X className="w-3 h-3" /> : <Check className="w-3 h-3" />}
-                              </Button>
-                            </div>
+                          <td className="px-4 py-4 whitespace-nowrap text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => handleEdit(service)}>
+                                  <Edit2 className="w-4 h-4 mr-2" />
+                                  Edit Service
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDuplicate(service)}>
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => toggleActiveMutation.mutate({
+                                  id: service.id,
+                                  isActive: service.isActive ? 0 : 1,
+                                })}>
+                                  {service.isActive ? (
+                                    <>
+                                      <XCircle className="w-4 h-4 mr-2" />
+                                      Deactivate
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      Activate
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(service)}
+                                  className="text-red-600 dark:text-red-400"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </td>
                         </tr>
                       );
@@ -1875,6 +2022,52 @@ export default function ServiceManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Bulk Action Bar */}
+      {selectedServices.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 
+                        bg-white dark:bg-gray-800 border-2 border-blue-500 
+                        rounded-full shadow-2xl px-6 py-3 flex items-center gap-4
+                        animate-slide-up z-50">
+          <span className="font-semibold text-sm">
+            {selectedServices.length} selected
+          </span>
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleBulkActivate}
+          >
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Activate
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleBulkDeactivate}
+          >
+            <XCircle className="w-4 h-4 mr-1" />
+            Deactivate
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleBulkDelete}
+            className="text-red-600"
+          >
+            <Trash2 className="w-4 h-4 mr-1" />
+            Delete
+          </Button>
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={() => setSelectedServices([])}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
