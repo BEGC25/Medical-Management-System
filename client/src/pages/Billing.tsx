@@ -687,19 +687,21 @@ export default function Billing() {
       <style>{`
         @media print {
           /* Hide everything except the invoice */
-          body > *:not(#printable-invoice) {
-            display: none !important;
+          body * {
+            visibility: hidden !important;
+          }
+          
+          #printable-invoice,
+          #printable-invoice * {
+            visibility: visible !important;
           }
           
           #printable-invoice {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
             display: block !important;
-          }
-          
-          /* Hide all dialog overlays and backgrounds */
-          [role="dialog"],
-          [data-radix-dialog-overlay],
-          .print\\:hidden {
-            display: none !important;
           }
           
           /* Reset page margins for clean print */
@@ -711,11 +713,6 @@ export default function Billing() {
           body {
             margin: 0;
             padding: 0;
-          }
-          
-          /* Ensure the printable invoice shows properly */
-          .hidden.print\\:block {
-            display: block !important;
           }
         }
       `}</style>
