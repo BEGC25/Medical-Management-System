@@ -950,7 +950,7 @@ export default function ServiceManagement() {
                         variant={categoryFilter.includes(cat) ? "default" : "outline"}
                         className={`cursor-pointer transition-all ${
                           categoryFilter.includes(cat) 
-                            ? CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS].bg + " text-white"
+                            ? (CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS]?.bg || "bg-gray-500") + " text-white"
                             : "hover:bg-gray-100"
                         }`}
                         onClick={() => toggleCategoryFilter(cat)}
@@ -1162,7 +1162,7 @@ export default function ServiceManagement() {
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {paginatedServices.map((service) => {
                       const CategoryIcon = CATEGORY_ICONS[service.category as keyof typeof CATEGORY_ICONS];
-                      const categoryColor = CATEGORY_COLORS[service.category as keyof typeof CATEGORY_COLORS];
+                      const categoryColor = CATEGORY_COLORS[service.category as keyof typeof CATEGORY_COLORS] || { bg: "bg-gray-500", text: "text-gray-700", light: "bg-gray-50" };
                       
                       return (
                         <tr 
