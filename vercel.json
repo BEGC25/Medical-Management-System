@@ -1,6 +1,12 @@
 {
   "rewrites": [
-    { "source": "/api/:match*", "destination": "https://medical-management-system-m5pn.onrender.com/api/:match*" },
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/api/:match*",
+      "destination": "https://site--bgc-managementsystem--zrfrl7zmc66s.code.run/api/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
   ]
 }
