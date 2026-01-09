@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Plus, Search, Edit2, X, Check, Filter, 
-  Stethoscope, Flask, Activity, Radio, Pill, Syringe,
+  Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
   DollarSign, Package, XCircle, Wand2
 } from "lucide-react";
@@ -44,7 +44,7 @@ type ServiceFormData = z.infer<typeof serviceFormSchema>;
 // Category icons mapping
 const CATEGORY_ICONS = {
   consultation: Stethoscope,
-  laboratory: Flask,
+  laboratory: FlaskConical,
   radiology: Radio,
   ultrasound: Activity,
   pharmacy: Pill,
@@ -1020,6 +1020,7 @@ export default function ServiceManagement() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Code Generator Dialog */}
