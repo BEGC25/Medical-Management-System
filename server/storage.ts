@@ -1947,7 +1947,8 @@ export class MemStorage implements IStorage {
 
   // Payment Services
   async getServices(): Promise<schema.Service[]> {
-    // Return all services (both active and inactive) for management purposes
+    // Return all services (both active and inactive) for management and historical lookup purposes
+    // This ensures we can display/reference services that were previously active but are now inactive
     return await db.select().from(services).orderBy(services.category, services.name);
   }
 
