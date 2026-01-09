@@ -591,9 +591,6 @@ export default function Billing() {
                     {selectedEncounter.patient?.phoneNumber && (
                       <p className="text-sm text-gray-700">Phone: {selectedEncounter.patient.phoneNumber}</p>
                     )}
-                    {selectedEncounter.patient?.email && (
-                      <p className="text-sm text-gray-700">Email: {selectedEncounter.patient.email}</p>
-                    )}
                   </CardContent>
                 </Card>
                 <Card className="bg-gray-50 border-gray-200">

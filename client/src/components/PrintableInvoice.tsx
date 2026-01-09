@@ -45,7 +45,6 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
             <p className="font-semibold text-lg mb-1">{patient.firstName} {patient.lastName}</p>
             <p className="text-sm mb-1">Patient ID: {patient.patientId}</p>
             {patient.phoneNumber && <p className="text-sm mb-1">Phone: {patient.phoneNumber}</p>}
-            {patient.email && <p className="text-sm">Email: {patient.email}</p>}
           </div>
         </div>
 
