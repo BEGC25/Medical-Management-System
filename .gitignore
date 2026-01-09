@@ -12,3 +12,4 @@ archive/
 test-payments-preset.js
 clinic.db
 test-lab-interpretation.js
+*.backup
