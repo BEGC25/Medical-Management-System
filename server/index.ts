@@ -19,45 +19,56 @@ function maskDbUrl(url?: string) {
 // --- Boot-time diagnostics (printed once in platform logs)
 console.log("[BOOT] NODE_ENV =", process.env.NODE_ENV);
 console.log("[BOOT] DATABASE_URL =", maskDbUrl(process.env.DATABASE_URL));
-console.log("[BOOT] DIRECT_DATABASE_URL =", maskDbUrl(process.env.DIRECT_DATABASE_URL));
+console.log(
+  "[BOOT] DIRECT_DATABASE_URL =",
+  maskDbUrl(process.env.DIRECT_DATABASE_URL),
+);
 
 /** CORS configuration - permissive in development, strict in production */
 const isDevelopment = process.env.NODE_ENV === "development";
 
-if (isDevelopment) {
-  app.use(
-    cors({
+// Parse allowlist once (safe trim + remove blanks)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const corsOptions: cors.CorsOptions = isDevelopment
+  ? {
       origin: true, // allow all in dev
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-    }),
-  );
-} else {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim())
-    : [];
-
-  app.use(
-    cors({
+      allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+    }
+  : {
       origin: (origin, callback) => {
-        // allow tools with no Origin (curl, Postman, mobile)
+        // ✅ Allow requests with no Origin (same-origin, static assets, curl/postman, etc.)
         if (!origin) return callback(null, true);
+
+        // ✅ Allow configured origins
         if (allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error("Not allowed by CORS"));
+
+        // ✅ Allow any Vercel preview deployment
+        if (origin.endsWith(".vercel.app")) return callback(null, true);
+
+        // ✅ IMPORTANT: Do NOT throw or error (prevents 500s). Just disallow CORS.
+        return callback(null, false);
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-    }),
-  );
-}
+      allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+    };
+
+// IMPORTANT: apply CORS ONLY to API routes (static assets should not go through CORS)
+app.use("/api", cors(corsOptions));
+app.options("/api/*", cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // ✅ Setup session middleware BEFORE routes
-const sessionSecret = process.env.SESSION_SECRET || "dev-secret-change-in-production";
+const sessionSecret =
+  process.env.SESSION_SECRET || "dev-secret-change-in-production";
 
 // We're behind a proxy (Northflank / Render / Cloudflare, etc.)
 app.set("trust proxy", 1);
@@ -149,13 +160,12 @@ app.use((req, res, next) => {
     }
   });
 
-  // Centralized error handler
+  // Centralized error handler (do NOT throw — just log)
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    console.error("[ERROR]", err);
     res.status(status).json({ message });
-    // rethrow so it surfaces in logs
-    throw err;
   });
 
   // Mount Vite (dev) or serve built assets (prod)
