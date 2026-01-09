@@ -23,8 +23,9 @@ client/public/clinic-logo.jpg
 ## Logo Specifications
 
 ### Recommended Dimensions
-- Width: 300-500 pixels
-- Height: 300-500 pixels
+- Display size: 128x128 pixels (as configured in the invoice template)
+- Source image: 300-500 pixels for high-quality printing
+  - The larger source will be scaled down for display but maintain quality when printed
 - Aspect ratio: Square or slightly rectangular
 
 ### File Format
@@ -32,7 +33,8 @@ client/public/clinic-logo.jpg
 - Maximum file size: 500KB (for faster loading)
 
 ### Design Guidelines
-- Use high-resolution images for clear printing
+- Use high-resolution images (300-500px) for clear printing
+- The image will be displayed at 128x128px but using a higher resolution source ensures crisp output
 - Ensure good contrast against white background
 - Simple, professional designs work best for medical invoices
 - Avoid overly complex or detailed logos that may not print clearly

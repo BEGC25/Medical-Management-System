@@ -16,6 +16,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   invoiceId,
 }) => {
   const total = calculateOrderLinesTotal(orderLines);
+  const [logoError, setLogoError] = React.useState(false);
   
   return (
     <div className="hidden print:block" id="printable-invoice">
@@ -29,13 +30,16 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               <p className="text-lg text-gray-600">Medical Management System</p>
               <p className="text-sm text-gray-500 mt-1">Professional Healthcare Services</p>
             </div>
-            <div className="w-32 h-32 flex-shrink-0">
-              <img 
-                src="/clinic-logo.jpg" 
-                alt="Clinic Logo" 
-                className="w-full h-full object-contain"
-              />
-            </div>
+            {!logoError && (
+              <div className="w-32 h-32 flex-shrink-0">
+                <img 
+                  src="/clinic-logo.jpg" 
+                  alt="Clinic Logo" 
+                  className="w-full h-full object-contain"
+                  onError={() => setLogoError(true)}
+                />
+              </div>
+            )}
           </div>
         </div>
 
