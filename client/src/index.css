@@ -356,12 +356,14 @@
   #lab-request-print:not(:empty), #lab-request-print:not(:empty) * { visibility: visible; }
   #lab-report-print:not(:empty), #lab-report-print:not(:empty) * { visibility: visible; }
   #lab-clinical-print:not(:empty), #lab-clinical-print:not(:empty) * { visibility: visible; }
+  #printable-invoice:not(:empty), #printable-invoice:not(:empty) * { visibility: visible; }
   
   /* Position only the active container to avoid conflicts */
   #prescription-print:not(:empty),
   #lab-request-print:not(:empty),
   #lab-report-print:not(:empty),
-  #lab-clinical-print:not(:empty) {
+  #lab-clinical-print:not(:empty),
+  #printable-invoice:not(:empty) {
     position: absolute;
     left: 0;
     top: 0;

@@ -16,6 +16,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   invoiceId,
 }) => {
   const total = calculateOrderLinesTotal(orderLines);
+  const [logoError, setLogoError] = React.useState(false);
   
   return (
     <div className="hidden print:block" id="printable-invoice">
@@ -23,9 +24,23 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
       <div className="p-8 max-w-4xl mx-auto bg-white">
         {/* Header with Clinic Logo/Name */}
         <div className="border-b-4 border-blue-600 pb-6 mb-8">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">Bahr El Ghazal Clinic</h1>
-          <p className="text-lg text-gray-600">Medical Management System</p>
-          <p className="text-sm text-gray-500 mt-1">Professional Healthcare Services</p>
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold text-blue-600 mb-2">Bahr El Ghazal Clinic</h1>
+              <p className="text-lg text-gray-600">Medical Management System</p>
+              <p className="text-sm text-gray-500 mt-1">Professional Healthcare Services</p>
+            </div>
+            {!logoError && (
+              <div className="w-32 h-32 flex-shrink-0">
+                <img 
+                  src="/clinic-logo.jpg" 
+                  alt="Clinic Logo" 
+                  className="w-full h-full object-contain"
+                  onError={() => setLogoError(true)}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Invoice Info */}
@@ -86,10 +101,31 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t-2 border-gray-300 pt-6 text-center">
-          <p className="text-lg font-semibold text-gray-700 mb-2">Thank you for choosing Bahr El Ghazal Clinic</p>
-          <p className="text-sm text-gray-600 mb-1">This is an official invoice for medical services rendered.</p>
-          <p className="text-xs text-gray-500 mt-4">For inquiries, please contact the clinic administration.</p>
+        <div className="border-t-2 border-gray-300 pt-6">
+          <p className="text-lg font-semibold text-gray-700 mb-4 text-center">Thank you for choosing Bahr El Ghazal Clinic</p>
+          <p className="text-sm text-gray-600 mb-1 text-center">This is an official invoice for medical services rendered.</p>
+          
+          {/* Signature Lines */}
+          <div className="grid grid-cols-2 gap-8 mt-12 mb-8">
+            <div>
+              <div className="border-t-2 border-gray-400 pt-2 mt-16">
+                <p className="text-sm font-semibold text-gray-700">Authorized Signature</p>
+                <p className="text-xs text-gray-500">Billing Department</p>
+              </div>
+            </div>
+            <div>
+              <div className="border-t-2 border-gray-400 pt-2 mt-16">
+                <p className="text-sm font-semibold text-gray-700">Date</p>
+                <p className="text-xs text-gray-500">{new Date().toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</p>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-xs text-gray-500 text-center mt-4">For inquiries, please contact the clinic administration.</p>
         </div>
       </div>
     </div>
