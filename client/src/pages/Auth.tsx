@@ -104,12 +104,12 @@ export default function Auth() {
               className="flex items-center justify-center mb-6"
               variants={logoVariants}
             >
-              <div className="relative shadow-lg rounded-full">
+              <div className="relative shadow-lg">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full blur-2xl opacity-20 animate-glow-pulse" />
                 <img 
                   src={clinicLogo} 
                   alt="Bahr El Ghazal Clinic Logo" 
-                  className="h-48 w-48 object-contain relative z-10 drop-shadow-2xl rounded-full"
+                  className="h-48 w-48 object-contain relative z-10 drop-shadow-2xl"
                 />
               </div>
             </motion.div>
@@ -139,7 +139,7 @@ export default function Auth() {
                   {/* Username Input */}
                   <motion.div 
                     className="space-y-2"
-                    whileHover={{ scale: 1.005 }}
+                    whileHover={{ scale: 1.01 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                   >
                     <Label htmlFor="login-username" className="text-white/90 font-medium flex items-center gap-2 text-sm">
@@ -165,7 +165,7 @@ export default function Auth() {
                   {/* Password Input */}
                   <motion.div 
                     className="space-y-2"
-                    whileHover={{ scale: 1.005 }}
+                    whileHover={{ scale: 1.01 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                   >
                     <Label htmlFor="login-password" className="text-white/90 font-medium flex items-center gap-2 text-sm">
@@ -258,7 +258,7 @@ export default function Auth() {
             >
               <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-blue-400/40 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 ease-out cursor-pointer">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 group-hover:from-blue-500/30 group-hover:to-blue-600/30 shadow-lg shadow-blue-500/10 group-hover:shadow-blue-500/20 transition-all duration-300">
-                  <Shield className="h-7 w-7 text-blue-300 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" />
+                  <Shield className="h-7 w-7 text-blue-300 group-hover:scale-110 motion-safe:group-hover:rotate-3 transition-all duration-300" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-blue-100 transition-colors duration-300">
@@ -283,7 +283,7 @@ export default function Auth() {
             >
               <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-teal-400/40 hover:shadow-lg hover:shadow-teal-500/20 transition-all duration-300 ease-out cursor-pointer">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-600/20 group-hover:from-teal-500/30 group-hover:to-teal-600/30 shadow-lg shadow-teal-500/10 group-hover:shadow-teal-500/20 transition-all duration-300">
-                  <Users className="h-7 w-7 text-teal-300 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" />
+                  <Users className="h-7 w-7 text-teal-300 group-hover:scale-110 motion-safe:group-hover:rotate-3 transition-all duration-300" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-teal-100 transition-colors duration-300">
@@ -308,7 +308,7 @@ export default function Auth() {
             >
               <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-purple-400/40 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 ease-out cursor-pointer">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 group-hover:from-purple-500/30 group-hover:to-purple-600/30 shadow-lg shadow-purple-500/10 group-hover:shadow-purple-500/20 transition-all duration-300">
-                  <Activity className="h-7 w-7 text-purple-300 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" />
+                  <Activity className="h-7 w-7 text-purple-300 group-hover:scale-110 motion-safe:group-hover:rotate-3 transition-all duration-300" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-purple-100 transition-colors duration-300">
@@ -333,7 +333,7 @@ export default function Auth() {
             >
               <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-pink-400/40 hover:shadow-lg hover:shadow-pink-500/20 transition-all duration-300 ease-out cursor-pointer">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500/20 to-pink-600/20 group-hover:from-pink-500/30 group-hover:to-pink-600/30 shadow-lg shadow-pink-500/10 group-hover:shadow-pink-500/20 transition-all duration-300">
-                  <Stethoscope className="h-7 w-7 text-pink-300 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" />
+                  <Stethoscope className="h-7 w-7 text-pink-300 group-hover:scale-110 motion-safe:group-hover:rotate-3 transition-all duration-300" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-pink-100 transition-colors duration-300">
