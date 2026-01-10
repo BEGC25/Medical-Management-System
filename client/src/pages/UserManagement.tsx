@@ -211,16 +211,12 @@ export default function UserManagement() {
       await apiRequest("DELETE", `/api/users/${userId}`);
     },
     onSuccess: () => {
-      toast({
-        title: "User deleted",
-        description: "The user has been removed from the system",
-      });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
     },
     onError: (error: any) => {
       toast({
-        title: "Delete failed",
-        description: error.message,
+        title: "Failed to delete user",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
@@ -231,9 +227,11 @@ export default function UserManagement() {
       await apiRequest("PUT", `/api/users/${userId}/reset-password`, { newPassword });
     },
     onSuccess: () => {
+      const username = selectedUser?.fullName || selectedUser?.username || 'User';
       toast({
-        title: "Password reset",
-        description: "The user's password has been updated successfully",
+        title: "Password reset successfully",
+        description: `Password has been updated for ${username}`,
+        variant: "success",
       });
       setResetOpen(false);
       setNewPassword("");
@@ -241,8 +239,8 @@ export default function UserManagement() {
     },
     onError: (error: any) => {
       toast({
-        title: "Reset failed",
-        description: error.message,
+        title: "Failed to reset password",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
@@ -253,9 +251,11 @@ export default function UserManagement() {
       await apiRequest("PUT", `/api/users/${userId}`, updates);
     },
     onSuccess: () => {
+      const username = selectedUser?.fullName || selectedUser?.username || 'User';
       toast({
-        title: "User updated",
-        description: "User details have been updated successfully",
+        title: "User updated successfully",
+        description: `${username}'s details have been updated`,
+        variant: "success",
       });
       setEditOpen(false);
       setSelectedUser(null);
@@ -263,8 +263,8 @@ export default function UserManagement() {
     },
     onError: (error: any) => {
       toast({
-        title: "Update failed",
-        description: error.message,
+        title: "Failed to update user",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
@@ -322,7 +322,8 @@ export default function UserManagement() {
       onSuccess: () => {
         toast({
           title: "User created successfully",
-          description: `${newUser.username} has been added to the system`,
+          description: `${newUser.fullName || newUser.username} has been added to the system`,
+          variant: "success",
         });
         setCreateOpen(false);
         setNewUser({
@@ -333,6 +334,13 @@ export default function UserManagement() {
         });
         setPasswordStrength(null);
         queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Failed to create user",
+          description: error.message || "Please try again.",
+          variant: "destructive",
+        });
       },
     });
   };
@@ -1096,21 +1104,45 @@ export default function UserManagement() {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
                                       <AlertTriangle className="h-5 w-5" />
-                                      Delete User
+                                      Delete User?
                                     </AlertDialogTitle>
-                                    <AlertDialogDescription className="text-base">
-                                      Are you sure you want to delete <strong className="text-foreground">{u.username}</strong>? 
-                                      <br />
-                                      <span className="text-red-600 dark:text-red-400 font-medium">This action cannot be undone.</span>
+                                    <AlertDialogDescription className="text-base space-y-3">
+                                      <p>
+                                        Are you sure you want to delete{' '}
+                                        <strong className="text-foreground font-semibold">
+                                          {u.fullName || u.username} ({u.role.charAt(0).toUpperCase() + u.role.slice(1)})
+                                        </strong>?
+                                      </p>
+                                      <p className="text-red-600 dark:text-red-400 font-medium">
+                                        This action cannot be undone. All user data and access will be permanently removed.
+                                      </p>
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel className="transition-all duration-200 hover:scale-105">Cancel</AlertDialogCancel>
                                     <AlertDialogAction
-                                      onClick={() => deleteMutation.mutate(u.id)}
-                                      className="bg-red-600 hover:bg-red-700 transition-all duration-200 hover:scale-105"
+                                      onClick={() => {
+                                        deleteMutation.mutate(u.id, {
+                                          onSuccess: () => {
+                                            toast({
+                                              title: "User deleted successfully",
+                                              description: `${u.fullName || u.username} has been removed from the system`,
+                                              variant: "success",
+                                            });
+                                          }
+                                        });
+                                      }}
+                                      disabled={deleteMutation.isPending}
+                                      className="bg-red-600 hover:bg-red-700 transition-all duration-200 hover:scale-105 disabled:opacity-50"
                                     >
-                                      Delete
+                                      {deleteMutation.isPending ? (
+                                        <>
+                                          <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                          Deleting...
+                                        </>
+                                      ) : (
+                                        "Delete User"
+                                      )}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
