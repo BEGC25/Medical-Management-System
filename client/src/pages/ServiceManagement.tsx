@@ -5,7 +5,7 @@ import {
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
   DollarSign, Package, XCircle, Wand2, MoreVertical, Copy,
-  CheckCircle, Trash2, AlertCircle, Flask
+  CheckCircle, Trash2, AlertCircle, ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -133,7 +133,7 @@ const categoryConfig: Record<string, {
     text: CATEGORY_COLORS.consultation.text
   },
   laboratory: {
-    icon: Flask,
+    icon: FlaskConical,
     gradient: CATEGORY_COLORS.laboratory.gradient,
     color: "amber-500",
     bg: CATEGORY_COLORS.laboratory.light,
@@ -1721,18 +1721,23 @@ export default function ServiceManagement() {
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Price Range
                 </p>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                    {stats.minPrice.toLocaleString()}
-                  </span>
-                  <span className="text-gray-400">-</span>
-                  <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                    {stats.maxPrice.toLocaleString()}
-                  </span>
-                  <span className="text-xs text-gray-500">SSP</span>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                      {stats.minPrice.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-500">Min</div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-gray-400" />
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                      {stats.maxPrice.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-500">Max</div>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Lowest to highest service price
+                <p className="text-xs text-gray-500 mt-2">
+                  Spread: {(stats.maxPrice - stats.minPrice).toLocaleString()} SSP
                 </p>
               </div>
               <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl 
