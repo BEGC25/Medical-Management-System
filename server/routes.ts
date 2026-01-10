@@ -11,7 +11,6 @@ import {
   insertXrayExamSchema,
   insertUltrasoundExamSchema,
   insertPharmacyOrderSchema,
-  insertBillingSettingsSchema,
   insertEncounterSchema,
   insertOrderLineSchema,
   insertInvoiceSchema,
@@ -2038,35 +2037,6 @@ router.patch("/api/pharmacy-orders/:orderId/dispense", async (req: any, res) => 
   } catch (error) {
     console.error("Error dispensing pharmacy order:", error);
     res.status(500).json({ error: "Failed to dispense pharmacy order" });
-  }
-});
-
-/* ------------------------------- Billing System ------------------------------ */
-
-router.get("/api/billing/settings", async (_req, res) => {
-  try {
-    const settings = await storage.getBillingSettings();
-    res.json(settings);
-  } catch (error) {
-    console.error("Error fetching billing settings:", error);
-    res.status(500).json({ error: "Failed to fetch billing settings" });
-  }
-});
-
-// Admin only
-router.put("/api/billing/settings", requireAdmin, async (req, res) => {
-  try {
-    const result = insertBillingSettingsSchema.safeParse(req.body);
-    if (!result.success) {
-      return res
-        .status(400)
-        .json({ error: "Invalid billing settings data", details: result.error.errors });
-    }
-    const settings = await storage.updateBillingSettings(result.data);
-    res.json(settings);
-  } catch (error) {
-    console.error("Error updating billing settings:", error);
-    res.status(500).json({ error: "Failed to update billing settings" });
   }
 });
 

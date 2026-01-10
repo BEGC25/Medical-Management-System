@@ -119,18 +119,6 @@ export const ultrasoundExams = sqliteTable("ultrasound_exams", {
   createdAt: text("created_at").notNull(),
 });
 
-// Billing Settings Table
-export const billingSettings = sqliteTable("billing_settings", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  consultationFee: real("consultation_fee").notNull().default(2000.00),
-  requirePrepayment: integer("require_prepayment").notNull().default(0),
-  allowEmergencyGrace: integer("allow_emergency_grace").notNull().default(1),
-  currency: text("currency").notNull().default("SSP"),
-  updatedBy: text("updated_by").notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
-});
-
 // Payment System Tables
 export const services = sqliteTable("services", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -381,12 +369,6 @@ export const insertUltrasoundExamSchema = createInsertSchema(ultrasoundExams).om
   createdAt: true,
 });
 
-export const insertBillingSettingsSchema = createInsertSchema(billingSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertServiceSchema = createInsertSchema(services).omit({
   id: true,
   createdAt: true,
@@ -489,7 +471,6 @@ export type Treatment = typeof treatments.$inferSelect;
 export type LabTest = typeof labTests.$inferSelect;
 export type XrayExam = typeof xrayExams.$inferSelect;
 export type UltrasoundExam = typeof ultrasoundExams.$inferSelect;
-export type BillingSettings = typeof billingSettings.$inferSelect;
 export type Service = typeof services.$inferSelect;
 export type Encounter = typeof encounters.$inferSelect;
 export type ResultsRouting = typeof resultsRouting.$inferSelect;
@@ -509,7 +490,6 @@ export type InsertTreatment = z.infer<typeof insertTreatmentSchema>;
 export type InsertLabTest = z.infer<typeof insertLabTestSchema>;
 export type InsertXrayExam = z.infer<typeof insertXrayExamSchema>;
 export type InsertUltrasoundExam = z.infer<typeof insertUltrasoundExamSchema>;
-export type InsertBillingSettings = z.infer<typeof insertBillingSettingsSchema>;
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type InsertEncounter = z.infer<typeof insertEncounterSchema>;
 export type InsertResultsRouting = z.infer<typeof insertResultsRoutingSchema>;

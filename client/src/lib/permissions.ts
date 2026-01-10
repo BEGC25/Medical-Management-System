@@ -46,7 +46,6 @@ export interface Permissions {
   };
   settings: {
     serviceManagement: boolean;
-    billingSettings: boolean;
     systemSettings: boolean;
   };
 }
@@ -102,7 +101,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: true,
-          billingSettings: true,
           systemSettings: true,
         },
       };
@@ -150,7 +148,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };
@@ -198,7 +195,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };
@@ -246,7 +242,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };
@@ -294,7 +289,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };
@@ -342,7 +336,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };
@@ -390,7 +383,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };
@@ -442,9 +434,8 @@ export function countGrantedPermissions(permissions: Permissions): { granted: nu
   if (permissions.userManagement.delete) granted++;
 
   // Settings
-  total += 3;
+  total += 2;
   if (permissions.settings.serviceManagement) granted++;
-  if (permissions.settings.billingSettings) granted++;
   if (permissions.settings.systemSettings) granted++;
 
   return { granted, total };

@@ -6,11 +6,10 @@ This guide documents the new **system-wide, automatic, and zero-math** billing s
 
 ## Key Features Implemented
 
-### ✅ **Policy-Driven Consultation Fees**
-- **Admin-configurable**: Set consultation fee amount and currency through Billing Settings
-- **Prepayment policy**: Toggle whether patients must pay before seeing doctor
-- **Emergency grace**: Allow emergency patients to see doctor first, pay before discharge
-- **Automatic collection**: System adds consultation fee to patient's visit automatically
+### ✅ **Consultation Fees**
+- **Service Management**: Consultation fees are configured through the Service Management page
+- **Automatic collection**: System adds consultation fee to patient's visit when selected at registration
+- **Flexible collection**: Reception staff can choose whether to collect consultation fee for each patient
 
 ### ✅ **Encounter-Based Patient Visits**
 - **Automatic encounter creation**: Every patient visit creates an "encounter" (like a shopping cart)
@@ -34,17 +33,12 @@ This guide documents the new **system-wide, automatic, and zero-math** billing s
 
 ### Core Tables
 
-1. **billingSettings** - System-wide billing policies
-   - Consultation fee amount and currency
-   - Prepayment requirements
-   - Emergency grace periods
-
-2. **encounters** - Patient visit "shopping carts"
+1. **encounters** - Patient visit "shopping carts"
    - One per patient per day
    - Tracks attending clinician
    - Status: open → closed
 
-3. **orderLines** - Items in the encounter
+2. **orderLines** - Items in the encounter
    - Service details with price snapshots
    - Quantity and totals
    - Status tracking (requested → performed)
@@ -123,28 +117,18 @@ This guide documents the new **system-wide, automatic, and zero-math** billing s
 
 ## Admin Configuration
 
-### Billing Settings Page
+### Service Management
 
-**Access**: Navigation → Administration → Billing Settings
+**Access**: Navigation → Settings → Service Management
 
-**Key Settings:**
-- **Consultation Fee**: Set amount (e.g., 2000 SSP)
-- **Currency**: Set currency code (SSP, USD, etc.)
-- **Require Prepayment**: ON = patients must pay at registration
-- **Allow Emergency Grace**: If prepayment ON, allow emergency patients to see doctor first
-
-**Policy Examples:**
-- **Strict Prepayment**: "Require Prepayment" ON → all patients pay consultation at registration
-- **Flexible Payment**: "Require Prepayment" OFF → patients can pay anytime during visit
-- **Emergency Consideration**: Both settings ON → emergencies see doctor first, pay before discharge
+**Configuration:**
+- **Consultation Fees**: Configure consultation service pricing (code: CONS-GEN)
+- **Service Catalog**: Manage all billable services and their prices
+- **Currency**: All prices are in SSP (South Sudanese Pounds)
 
 ## Technical Implementation
 
-### API Endpoints Added
-
-**Billing Settings:**
-- `GET /api/billing/settings` - Get current policy
-- `PUT /api/billing/settings` - Update policy
+### API Endpoints
 
 **Encounters:**
 - `GET /api/encounters` - List encounters (filterable by date/status)
@@ -168,20 +152,8 @@ This guide documents the new **system-wide, automatic, and zero-math** billing s
 
 ### Database Schema
 
-**New Tables:**
+**Core Tables:**
 ```sql
--- Billing policies
-CREATE TABLE billing_settings (
-    id SERIAL PRIMARY KEY,
-    consultation_fee REAL NOT NULL DEFAULT 2000.00,
-    require_prepayment BOOLEAN NOT NULL DEFAULT false,
-    allow_emergency_grace BOOLEAN NOT NULL DEFAULT true,
-    currency TEXT NOT NULL DEFAULT 'SSP',
-    updated_by TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-);
-
 -- Patient visit carts
 CREATE TABLE encounters (
     id SERIAL PRIMARY KEY,

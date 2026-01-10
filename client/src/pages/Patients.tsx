@@ -91,7 +91,7 @@ function money(n?: number) {
 export default function Patients() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [collectConsultationFee, setCollectConsultationFee] = useState(false);
+  const [collectConsultationFee, setCollectConsultationFee] = useState(true); // Default to checked (simpler than unchecked)
 
   // NEW: quick-view panel state (we keep full row object to access serviceStatus)
   const [activePatient, setActivePatient] = useState<any | null>(null);
@@ -184,11 +184,6 @@ export default function Patients() {
     };
   };
 
-  // Billing settings
-  const { data: billingSettings } = useQuery({
-    queryKey: ["/api/billing/settings"],
-  });
-
   // Get consultation service from services list for accurate pricing
   const { data: servicesList } = useQuery({
     queryKey: ["/api/services"],
@@ -200,12 +195,6 @@ export default function Patients() {
   
   // Debug log to see what we're getting
   console.log("Consultation service found:", consultationService);
-
-  useEffect(() => {
-    if (billingSettings?.requirePrepayment) {
-      setCollectConsultationFee(true);
-    }
-  }, [billingSettings]);
 
   // Invalidate patients query when preset changes to prevent cache reuse
   useEffect(() => {
@@ -294,7 +283,7 @@ export default function Patients() {
     
     form.reset();
     setShowRegistrationForm(false);
-    setCollectConsultationFee(billingSettings?.requirePrepayment || false);
+    setCollectConsultationFee(true); // Reset to default (checked)
     queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
     queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
     queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
@@ -435,7 +424,7 @@ export default function Patients() {
       medicalHistory: "",
     });
     setEditingPatient(null);
-    setCollectConsultationFee(billingSettings?.requirePrepayment || false);
+    setCollectConsultationFee(true); // Default to checked
     setShowRegistrationForm(true);
   };
 
@@ -1599,7 +1588,7 @@ export default function Patients() {
                   )}
                 />
 
-                {!editingPatient && billingSettings && (
+                {!editingPatient && consultationService && (
                   <div className="flex items-center space-x-2 p-4 border border-teal-200 rounded-lg bg-teal-50 dark:bg-teal-900/20 dark:border-teal-800">
                     <Switch
                       id="collect-fee"
@@ -1615,14 +1604,7 @@ export default function Patients() {
                       className="text-sm font-medium cursor-pointer flex items-center gap-2"
                     >
                       <DollarSign className="w-4 h-4" />
-                      {(() => {
-                        const price = consultationService?.price || parseFloat(billingSettings.consultationFee);
-                        console.log("Displaying consultation fee:", price, "consultationService:", consultationService);
-                        return `Collect consultation fee (${money(price)})`;
-                      })()}
-                      {billingSettings.requirePrepayment && (
-                        <Badge variant="outline" className="ml-2 bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700">Recommended</Badge>
-                      )}
+                      {`Collect consultation fee (${money(consultationService.price)})`}
                     </label>
                   </div>
                 )}

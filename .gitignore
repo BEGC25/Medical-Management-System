@@ -14,3 +14,5 @@ test-payments-preset.js
 clinic.db
 test-lab-interpretation.js
 *.backup
+clinic.db.backup
+clinic.db.temp

@@ -7,7 +7,7 @@ import { hashPassword } from "./auth-service";
 import { today } from "./utils/date";
 import { getClinicDayKey } from "@shared/clinic-date";
 
-const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, billingSettings, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
+const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
 // Tables are automatically created by Drizzle
 console.log("✓ Database connection established");
@@ -241,10 +241,6 @@ export interface IStorage {
 
   // Payment status checking
   checkPaymentStatus(patientId: string, serviceType: 'laboratory' | 'radiology' | 'ultrasound', requestId: string): Promise<boolean>;
-
-  // Billing Settings
-  getBillingSettings(): Promise<schema.BillingSettings>;
-  updateBillingSettings(data: schema.InsertBillingSettings): Promise<schema.BillingSettings>;
 
   // Encounters
   createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter>;
@@ -2554,80 +2550,6 @@ export class MemStorage implements IStorage {
     };
 
     return totals;
-  }
-
-  // Billing Settings Methods
-  async getBillingSettings(): Promise<schema.BillingSettings> {
-    const settings = await db.select().from(billingSettings).limit(1);
-    if (settings.length === 0) {
-      // Create default settings
-      const now = new Date().toISOString();
-      const defaultSettings = {
-        consultationFee: 2000.00,
-        requirePrepayment: 0, // SQLite needs integers for booleans
-        allowEmergencyGrace: 1, // SQLite needs integers for booleans
-        currency: "SSP",
-        updatedBy: "system",
-        createdAt: now,
-        updatedAt: now,
-      };
-      const [newSettings] = await db.insert(billingSettings).values(defaultSettings).returning();
-
-      // Convert integers back to booleans for the response
-      return {
-        ...newSettings,
-        requirePrepayment: !!newSettings.requirePrepayment,
-        allowEmergencyGrace: !!newSettings.allowEmergencyGrace,
-      };
-    }
-
-    // Convert integers back to booleans for the response
-    return {
-      ...settings[0],
-      requirePrepayment: !!settings[0].requirePrepayment,
-      allowEmergencyGrace: !!settings[0].allowEmergencyGrace,
-    };
-  }
-
-  async updateBillingSettings(data: schema.InsertBillingSettings): Promise<schema.BillingSettings> {
-    const now = new Date().toISOString();
-
-    // Convert boolean values to integers for SQLite compatibility
-    const updateData = {
-      consultationFee: data.consultationFee,
-      requirePrepayment: data.requirePrepayment ? 1 : 0,
-      allowEmergencyGrace: data.allowEmergencyGrace ? 1 : 0,
-      currency: data.currency,
-      updatedBy: data.updatedBy,
-      updatedAt: now,
-    };
-
-    const existingSettings = await db.select().from(billingSettings).limit(1);
-    if (existingSettings.length === 0) {
-      const [newSettings] = await db.insert(billingSettings).values({
-        ...updateData,
-        createdAt: now,
-      }).returning();
-
-      // Convert integers back to booleans for the response
-      return {
-        ...newSettings,
-        requirePrepayment: !!newSettings.requirePrepayment,
-        allowEmergencyGrace: !!newSettings.allowEmergencyGrace,
-      };
-    } else {
-      const [updatedSettings] = await db.update(billingSettings)
-        .set(updateData)
-        .where(eq(billingSettings.id, existingSettings[0].id))
-        .returning();
-
-      // Convert integers back to booleans for the response
-      return {
-        ...updatedSettings,
-        requirePrepayment: !!updatedSettings.requirePrepayment,
-        allowEmergencyGrace: !!updatedSettings.allowEmergencyGrace,
-      };
-    }
   }
 
   // Encounter Methods
