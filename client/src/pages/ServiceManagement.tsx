@@ -4,7 +4,7 @@ import {
   Plus, Search, Edit2, X, Check, Filter, 
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
-  DollarSign, Package, XCircle, Wand2, MoreVertical, Copy,
+  DollarSign, Package, XCircle, MoreVertical, Copy,
   CheckCircle, Trash2, AlertCircle, ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -558,9 +558,6 @@ export default function ServiceManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [predefinedSearch, setPredefinedSearch] = useState("");
-  const [showCodeGenerator, setShowCodeGenerator] = useState(false);
-  const [codePreview, setCodePreview] = useState<Array<{id: number, name: string, category: string, generatedCode: string}>>([]);
-  const [isGeneratingCodes, setIsGeneratingCodes] = useState(false);
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const itemsPerPage = 10;
   
@@ -653,28 +650,6 @@ export default function ServiceManagement() {
       toast({
         title: "✓ Success",
         description: "Service status updated",
-      });
-    },
-  });
-
-  const bulkUpdateCodesMutation = useMutation({
-    mutationFn: async (updates: Array<{ id: number; code: string }>) => {
-      return await apiRequest("PUT", "/api/services/bulk-update-codes", { updates });
-    },
-    onSuccess: (_, updates) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-      setShowCodeGenerator(false);
-      setCodePreview([]);
-      toast({
-        title: "✓ Success",
-        description: `Generated codes for ${updates.length} services`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate codes",
-        variant: "destructive",
       });
     },
   });
@@ -963,8 +938,8 @@ export default function ServiceManagement() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const activeCount = services.filter(s => s.isActive === 1 || s.isActive === true).length;
-    const inactiveCount = services.filter(s => s.isActive === 0 || s.isActive === false).length;
+    const activeCount = services.filter(s => s.isActive === 1).length;
+    const inactiveCount = services.filter(s => s.isActive === 0).length;
     
     const byCategory = services.reduce((acc, service) => {
       acc[service.category] = (acc[service.category] || 0) + 1;
@@ -1031,51 +1006,6 @@ export default function ServiceManagement() {
       return acc;
     }, {} as Record<string, number>);
   }, [services]);
-
-  // Get services without codes
-  const servicesWithoutCodes = useMemo(() => {
-    return services.filter(s => !s.code || s.code.trim() === '' || s.code === '-');
-  }, [services]);
-
-  // Handle opening code generator
-  const handleOpenCodeGenerator = () => {
-    const existingCodes = services.map(s => s.code).filter(Boolean) as string[];
-    
-    const preview = servicesWithoutCodes.map(service => {
-      const baseCode = generateServiceCode(service.name, service.category);
-      const uniqueCode = ensureUniqueCode(baseCode, existingCodes);
-      existingCodes.push(uniqueCode);
-      
-      return {
-        id: service.id,
-        name: service.name,
-        category: service.category,
-        generatedCode: uniqueCode
-      };
-    });
-    
-    setCodePreview(preview);
-    setShowCodeGenerator(true);
-  };
-
-  // Handle editing a generated code
-  const handleEditGeneratedCode = (id: number, newCode: string) => {
-    setCodePreview(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, generatedCode: newCode.toUpperCase() } : item
-      )
-    );
-  };
-
-  // Handle applying generated codes
-  const handleApplyGeneratedCodes = () => {
-    const updates = codePreview.map(item => ({
-      id: item.id,
-      code: item.generatedCode
-    }));
-    
-    bulkUpdateCodesMutation.mutate(updates);
-  };
 
   // Get placeholder for code based on category
   const getCodePlaceholder = (category: string) => {
@@ -1145,17 +1075,6 @@ export default function ServiceManagement() {
           </p>
         </div>
         <div className="flex gap-2">
-          {/* Generate Missing Codes Button */}
-          {servicesWithoutCodes.length > 0 && (
-            <Button
-              variant="outline"
-              onClick={handleOpenCodeGenerator}
-              className="border-purple-300 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:border-purple-400 transition-all"
-            >
-              <Wand2 className="w-4 h-4 mr-2" />
-              Generate Missing Codes ({servicesWithoutCodes.length})
-            </Button>
-          )}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button 
@@ -1519,99 +1438,6 @@ export default function ServiceManagement() {
         </Dialog>
         </div>
       </div>
-
-      {/* Code Generator Dialog */}
-      <Dialog open={showCodeGenerator} onOpenChange={setShowCodeGenerator}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Auto-Generate Service Codes</DialogTitle>
-            <DialogDescription>
-              Automatically create unique codes for {servicesWithoutCodes.length} services
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Info Banner */}
-            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                Codes will be generated using format: <code className="bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded font-mono">CATEGORY-DESCRIPTOR</code>
-                <br />
-                Examples: LAB-CBC, RAD-CHEST, US-ABD, CONS-GEN
-              </p>
-            </div>
-            
-            {/* Preview Table */}
-            <div className="max-h-96 overflow-y-auto border rounded-lg">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Service Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Category</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Generated Code</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {codePreview.map((service) => {
-                    const CategoryIcon = CATEGORY_ICONS[service.category as keyof typeof CATEGORY_ICONS];
-                    const categoryColor = CATEGORY_COLORS[service.category as keyof typeof CATEGORY_COLORS];
-                    
-                    return (
-                      <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <td className="px-4 py-3 text-sm">{service.name}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <Badge className={`${categoryColor.bg} text-white capitalize flex items-center gap-1 w-fit`}>
-                            <CategoryIcon className="w-3 h-3" />
-                            {service.category}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Input
-                            value={service.generatedCode}
-                            onChange={(e) => handleEditGeneratedCode(service.id, e.target.value)}
-                            className="font-mono text-sm uppercase h-8 max-w-[200px]"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              const newCode = generateServiceCode(service.name, service.category);
-                              handleEditGeneratedCode(service.id, newCode);
-                            }}
-                            className="h-8"
-                          >
-                            Reset
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Actions */}
-            <div className="flex justify-between pt-4 border-t">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowCodeGenerator(false)}
-                disabled={bulkUpdateCodesMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleApplyGeneratedCodes}
-                disabled={bulkUpdateCodesMutation.isPending}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              >
-                {bulkUpdateCodesMutation.isPending ? "Applying..." : `Apply Codes to ${codePreview.length} Services`}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -2144,12 +1970,12 @@ export default function ServiceManagement() {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${service.isActive ? "bg-green-500" : "bg-red-500"} animate-pulse`} />
+                              <div className={`w-2 h-2 rounded-full ${service.isActive === 1 ? "bg-green-500" : "bg-red-500"} animate-pulse`} />
                               <Badge 
-                                variant={service.isActive ? "default" : "secondary"}
-                                className={`font-semibold shadow-sm ${service.isActive ? "bg-green-600" : "bg-gray-400"}`}
+                                variant={service.isActive === 1 ? "default" : "secondary"}
+                                className={`font-semibold shadow-sm ${service.isActive === 1 ? "bg-green-600" : "bg-gray-400"}`}
                               >
-                                {service.isActive ? "Active" : "Inactive"}
+                                {service.isActive === 1 ? "Active" : "Inactive"}
                               </Badge>
                             </div>
                           </td>
