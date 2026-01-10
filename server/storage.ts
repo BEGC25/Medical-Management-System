@@ -216,7 +216,17 @@ export interface IStorage {
   getServicesByCategory(category: string): Promise<schema.Service[]>;
   createService(data: schema.InsertService): Promise<schema.Service>;
   updateService(id: number, data: Partial<schema.Service>): Promise<schema.Service>;
-  deleteService(id: number): Promise<void>;
+  deleteService(id: number): Promise<{
+    success: boolean;
+    blocked?: boolean;
+    notFound?: boolean;
+    message?: string;
+    details?: {
+      orderLines?: number;
+      paymentItems?: number;
+      pharmacyOrders?: number;
+    };
+  }>;
   bulkUpdateServiceCodes(updates: Array<{ id: number; code: string }>): Promise<void>;
 
   // Payments
@@ -1981,10 +1991,71 @@ export class MemStorage implements IStorage {
     return service;
   }
 
-  async deleteService(id: number): Promise<void> {
+  async deleteService(id: number): Promise<{
+    success: boolean;
+    blocked?: boolean;
+    notFound?: boolean;
+    message?: string;
+    details?: {
+      orderLines?: number;
+      paymentItems?: number;
+      pharmacyOrders?: number;
+    };
+  }> {
+    // Check if service exists
+    const [service] = await db.select().from(services).where(eq(services.id, id));
+    if (!service) {
+      return {
+        success: false,
+        notFound: true,
+        message: "Service not found"
+      };
+    }
+
+    // Check for references in order_lines
+    const orderLinesCount = await db.select({ count: count() })
+      .from(orderLines)
+      .where(eq(orderLines.serviceId, id));
+    
+    // Check for references in payment_items
+    const paymentItemsCount = await db.select({ count: count() })
+      .from(paymentItems)
+      .where(eq(paymentItems.serviceId, id));
+    
+    // Check for references in pharmacy_orders
+    const pharmacyOrdersCount = await db.select({ count: count() })
+      .from(pharmacyOrders)
+      .where(eq(pharmacyOrders.serviceId, id));
+    
+    const orderLinesRefs = orderLinesCount[0]?.count || 0;
+    const paymentItemsRefs = paymentItemsCount[0]?.count || 0;
+    const pharmacyOrdersRefs = pharmacyOrdersCount[0]?.count || 0;
+    
+    const totalRefs = orderLinesRefs + paymentItemsRefs + pharmacyOrdersRefs;
+    
+    // If service is referenced, block deletion
+    if (totalRefs > 0) {
+      return {
+        success: false,
+        blocked: true,
+        message: "Cannot delete service because it is referenced by existing records",
+        details: {
+          orderLines: orderLinesRefs,
+          paymentItems: paymentItemsRefs,
+          pharmacyOrders: pharmacyOrdersRefs,
+        }
+      };
+    }
+    
+    // Safe to delete - no references found
     await db.delete(services)
       .where(eq(services.id, id))
       .run();
+    
+    return {
+      success: true,
+      message: "Service deleted successfully"
+    };
   }
 
   async bulkUpdateServiceCodes(updates: Array<{ id: number; code: string }>): Promise<void> {

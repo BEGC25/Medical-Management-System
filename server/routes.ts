@@ -1359,8 +1359,23 @@ router.put("/api/services/:id", async (req, res) => {
 router.delete("/api/services/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    await storage.deleteService(id);
-    res.json({ message: "Service deleted successfully" });
+    const result = await storage.deleteService(id);
+    
+    // Service not found
+    if (result.notFound) {
+      return res.status(404).json({ error: result.message });
+    }
+    
+    // Service is referenced and cannot be deleted
+    if (result.blocked) {
+      return res.status(409).json({ 
+        error: result.message,
+        details: result.details
+      });
+    }
+    
+    // Successfully deleted
+    res.json({ message: result.message });
   } catch (error) {
     console.error("Error deleting service:", error);
     res.status(500).json({ error: "Failed to delete service" });
