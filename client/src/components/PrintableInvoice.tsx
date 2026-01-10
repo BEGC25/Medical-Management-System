@@ -23,7 +23,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
       <style>{`
         @media print {
           @page {
-            margin: 0.5in;
+            margin: 0.3in;
             size: letter;
           }
           body {
@@ -34,22 +34,22 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
       `}</style>
       
       {/* Premium Professional Invoice Layout */}
-      <div className="p-8 max-w-4xl mx-auto bg-white font-sans">
+      <div className="p-4 max-w-4xl mx-auto bg-white font-sans">
         {/* Professional Header with Gradient Border */}
-        <div className="border-b-4 border-blue-700 pb-6 mb-8" style={{ borderImage: 'linear-gradient(to right, #1e40af, #3b82f6) 1' }}>
-          <div className="flex items-start justify-between mb-4">
+        <div className="border-b-2 border-blue-700 pb-2 mb-3" style={{ borderImage: 'linear-gradient(to right, #1e40af, #3b82f6) 1' }}>
+          <div className="flex items-start justify-between mb-1">
             <div className="flex-1">
-              <h1 className="text-5xl font-bold text-blue-700 mb-3" style={{ letterSpacing: '-0.02em' }}>
+              <h1 className="text-2xl font-bold text-blue-700 mb-1 leading-tight" style={{ letterSpacing: '-0.02em' }}>
                 Bahr El Ghazal Clinic
               </h1>
-              <div className="text-gray-700 space-y-1 mt-3">
-                <p className="text-base font-medium">Wau, South Sudan</p>
-                <p className="text-sm">Tel: +211 XXX XXX XXX</p>
-                <p className="text-sm">Email: info@bahrelghazalclinic.ss</p>
+              <div className="text-gray-700 leading-tight">
+                <p className="text-xs font-medium">Aweil, South Sudan</p>
+                <p className="text-xs">Tel: +211916759060/+211928754760</p>
+                <p className="text-xs">Email: bahr.ghazal.clinic@gmail.com</p>
               </div>
             </div>
             {!logoError && (
-              <div className="w-40 h-40 flex-shrink-0 ml-6">
+              <div className="w-16 h-16 flex-shrink-0 ml-4">
                 <img 
                   src="/clinic-logo.jpg" 
                   alt="Clinic Logo" 
@@ -59,85 +59,72 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               </div>
             )}
           </div>
-          <div className="mt-4 pt-4 border-t border-gray-300">
-            <p className="text-center text-lg font-semibold text-gray-800 tracking-wide">
+          <div className="mt-1 pt-1 border-t border-gray-300">
+            <p className="text-center text-sm font-semibold text-gray-800 tracking-wide">
               OFFICIAL MEDICAL INVOICE
             </p>
           </div>
         </div>
 
         {/* Invoice Details and Patient Information - Side by Side Cards */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-3 mb-3">
           {/* Invoice Details Box */}
-          <div className="border-2 border-gray-300 rounded-lg p-5 bg-gray-50">
-            <h2 className="font-bold text-xl mb-4 text-gray-800 border-b-2 border-blue-600 pb-2">
+          <div className="border border-gray-300 rounded p-2 bg-gray-50">
+            <h2 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-600 pb-1">
               INVOICE DETAILS
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-1 leading-tight">
               {invoiceId && (
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-gray-700">Invoice Number:</span>
-                  <span className="text-sm font-bold text-blue-700">{invoiceId}</span>
+                  <span className="text-xs font-semibold text-gray-700">Invoice:</span>
+                  <span className="text-xs font-bold text-blue-700">{invoiceId}</span>
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-700">Invoice Date:</span>
-                <span className="text-sm font-medium">{new Date(visit.visitDate).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                <span className="text-xs font-semibold text-gray-700">Date:</span>
+                <span className="text-xs font-medium">{new Date(visit.visitDate).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric',
+                  year: 'numeric'
                 })}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-700">Invoice Time:</span>
-                <span className="text-sm font-medium">{new Date(visit.visitDate).toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-700">Visit ID:</span>
-                <span className="text-sm font-medium">{visit.encounterId}</span>
+                <span className="text-xs font-semibold text-gray-700">Visit ID:</span>
+                <span className="text-xs font-medium">{visit.encounterId}</span>
               </div>
               {visit.attendingClinician && (
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-gray-700">Clinician:</span>
-                  <span className="text-sm font-medium">{visit.attendingClinician}</span>
+                  <span className="text-xs font-semibold text-gray-700">Clinician:</span>
+                  <span className="text-xs font-medium">{visit.attendingClinician}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Patient Information Box */}
-          <div className="border-2 border-gray-300 rounded-lg p-5 bg-blue-50">
-            <h3 className="font-bold text-xl mb-4 text-gray-800 border-b-2 border-blue-600 pb-2">
+          <div className="border border-gray-300 rounded p-2 bg-blue-50">
+            <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-600 pb-1">
               PATIENT INFORMATION
             </h3>
-            <div className="space-y-2">
-              <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Full Name</p>
-                <p className="text-base font-bold text-gray-900">{patient.firstName} {patient.lastName}</p>
+            <div className="space-y-1 leading-tight">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-semibold text-gray-700">Name:</span>
+                <span className="text-xs font-bold text-gray-900">{patient.firstName} {patient.lastName}</span>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Patient ID</p>
-                <p className="text-sm font-medium text-gray-900">{patient.patientId}</p>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-semibold text-gray-700">Patient ID:</span>
+                <span className="text-xs font-medium text-gray-900">{patient.patientId}</span>
               </div>
               {patient.phoneNumber && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Contact</p>
-                  <p className="text-sm font-medium text-gray-900">{patient.phoneNumber}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-gray-700">Phone:</span>
+                  <span className="text-xs font-medium text-gray-900">{patient.phoneNumber}</span>
                 </div>
               )}
-              {patient.age && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Age</p>
-                  <p className="text-sm font-medium text-gray-900">{patient.age}</p>
-                </div>
-              )}
-              {patient.gender && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Gender</p>
-                  <p className="text-sm font-medium text-gray-900">{patient.gender}</p>
+              {(patient.age || patient.gender) && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-gray-700">Age/Gender:</span>
+                  <span className="text-xs font-medium text-gray-900">{patient.age || 'N/A'} / {patient.gender || 'N/A'}</span>
                 </div>
               )}
             </div>
@@ -145,42 +132,36 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Services Table with Professional Styling */}
-        <div className="mb-8">
-          <h3 className="font-bold text-xl mb-4 text-gray-800 border-b-2 border-gray-400 pb-2">
+        <div className="mb-3">
+          <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-gray-400 pb-1">
             SERVICES RENDERED
           </h3>
-          <table className="w-full border-collapse border-2 border-gray-400">
+          <table className="w-full border-collapse border border-gray-400">
             <thead>
               <tr className="bg-blue-700 text-white">
-                <th className="text-left p-4 font-bold border-r border-blue-600">Service Description</th>
-                <th className="text-center p-4 font-bold w-24 border-r border-blue-600">Qty</th>
-                <th className="text-right p-4 font-bold w-32 border-r border-blue-600">Unit Price</th>
-                <th className="text-center p-4 font-bold w-28 border-r border-blue-600">Status</th>
-                <th className="text-right p-4 font-bold w-36">Total</th>
+                <th className="text-left p-1 text-xs font-bold border-r border-blue-600">Service Description</th>
+                <th className="text-center p-1 text-xs font-bold w-16 border-r border-blue-600">Qty</th>
+                <th className="text-right p-1 text-xs font-bold w-24 border-r border-blue-600">Unit Price</th>
+                <th className="text-right p-1 text-xs font-bold w-28">Total</th>
               </tr>
             </thead>
             <tbody>
               {orderLines.map((line, idx) => (
                 <tr 
                   key={idx} 
-                  className={`border-b-2 border-gray-300 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
+                  className={`border-b border-gray-300 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
                 >
-                  <td className="p-4 border-r border-gray-300">
-                    <span className="font-medium text-gray-900">{line.description}</span>
+                  <td className="p-1 px-2 border-r border-gray-300">
+                    <span className="font-medium text-xs text-gray-900">{line.description}</span>
                   </td>
-                  <td className="text-center p-4 border-r border-gray-300">
-                    <span className="font-semibold text-gray-800">{line.quantity}</span>
+                  <td className="text-center p-1 border-r border-gray-300">
+                    <span className="font-semibold text-xs text-gray-800">{line.quantity}</span>
                   </td>
-                  <td className="text-right p-4 border-r border-gray-300">
-                    <span className="text-gray-800">{formatCurrency(line.unitPriceSnapshot)}</span>
+                  <td className="text-right p-1 px-2 border-r border-gray-300">
+                    <span className="text-xs text-gray-800">{formatCurrency(line.unitPriceSnapshot)}</span>
                   </td>
-                  <td className="text-center p-4 border-r border-gray-300">
-                    <span className="text-xs font-semibold uppercase px-2 py-1 rounded bg-green-100 text-green-800">
-                      {line.status}
-                    </span>
-                  </td>
-                  <td className="text-right p-4">
-                    <span className="font-bold text-gray-900">{formatCurrency(line.totalPrice)}</span>
+                  <td className="text-right p-1 px-2">
+                    <span className="font-bold text-xs text-gray-900">{formatCurrency(line.totalPrice)}</span>
                   </td>
                 </tr>
               ))}
@@ -188,81 +169,40 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           </table>
         </div>
 
-        {/* Total Section with Breakdown */}
-        <div className="flex justify-end mb-12">
-          <div className="w-96 border-2 border-gray-400 rounded-lg overflow-hidden">
-            {/* Subtotal */}
-            <div className="bg-gray-100 border-b-2 border-gray-300 p-4">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700 text-lg">Subtotal:</span>
-                <span className="font-bold text-gray-900 text-lg">{formatCurrency(total)}</span>
-              </div>
-            </div>
-            {/* Tax (if applicable) */}
-            <div className="bg-gray-50 border-b-2 border-gray-300 p-4">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700">Tax (0%):</span>
-                <span className="font-medium text-gray-900">{formatCurrency(0)}</span>
-              </div>
-            </div>
+        {/* Total Section - Simplified */}
+        <div className="flex justify-end mb-3">
+          <div className="w-64 border border-gray-400 rounded overflow-hidden">
             {/* Grand Total */}
-            <div className="bg-blue-700 text-white p-5">
+            <div className="bg-blue-700 text-white p-2">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-xl">GRAND TOTAL:</span>
-                <span className="font-bold text-3xl">{formatCurrency(total)}</span>
+                <span className="font-bold text-sm">GRAND TOTAL:</span>
+                <span className="font-bold text-lg">{formatCurrency(total)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer Section */}
-        <div className="border-t-2 border-gray-400 pt-8 mt-8">
-          {/* Signature and Date Lines */}
-          <div className="grid grid-cols-2 gap-12 mb-8">
-            <div>
-              <div className="h-20 mb-2"></div>
-              <div className="border-t-2 border-gray-800 pt-2">
-                <p className="text-sm font-bold text-gray-800">Authorized By:</p>
-                <p className="text-xs text-gray-600 mt-1">Billing Department</p>
-              </div>
+        {/* Footer Section - Streamlined */}
+        <div className="border-t border-gray-400 pt-2 mt-2">
+          {/* Signature Line - Single Line */}
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex-1">
+              <div className="border-b border-gray-800 w-48 mb-1"></div>
+              <p className="text-xs font-bold text-gray-800">Authorized By:</p>
             </div>
-            <div>
-              <div className="h-20 mb-2"></div>
-              <div className="border-t-2 border-gray-800 pt-2">
-                <p className="text-sm font-bold text-gray-800">Date:</p>
-                <p className="text-xs text-gray-600 mt-1">{new Date().toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}</p>
-              </div>
+            <div className="flex-1 text-right">
+              <div className="border-b border-gray-800 w-48 mb-1 ml-auto"></div>
+              <p className="text-xs font-bold text-gray-800">Date:</p>
             </div>
           </div>
 
-          {/* Official Statement and Contact */}
-          <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 mb-4">
-            <p className="text-center text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+          {/* Official Statement */}
+          <div className="text-center mb-1">
+            <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
               This is a computer-generated invoice
             </p>
-            <p className="text-center text-xs text-gray-600">
-              Valid for submission to insurance companies, employers, and government agencies
-            </p>
-          </div>
-
-          {/* Contact Information */}
-          <div className="text-center space-y-1 mb-4">
-            <p className="text-sm font-medium text-gray-700">Bahr El Ghazal Clinic</p>
-            <p className="text-xs text-gray-600">Wau, South Sudan | Tel: +211 XXX XXX XXX</p>
-            <p className="text-xs text-gray-600">Email: info@bahrelghazalclinic.ss</p>
-          </div>
-
-          {/* Thank You Message */}
-          <div className="text-center pt-4 border-t border-gray-300">
-            <p className="text-base font-semibold text-blue-700 mb-1">
+            <p className="text-xs text-gray-700 mt-1">
               Thank you for choosing Bahr El Ghazal Clinic
-            </p>
-            <p className="text-xs text-gray-600">
-              Your health is our priority
             </p>
           </div>
         </div>
