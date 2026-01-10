@@ -938,8 +938,8 @@ export default function ServiceManagement() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const activeCount = services.filter(s => s.isActive === 1 || s.isActive === true).length;
-    const inactiveCount = services.filter(s => s.isActive === 0 || s.isActive === false).length;
+    const activeCount = services.filter(s => s.isActive === 1).length;
+    const inactiveCount = services.filter(s => s.isActive === 0).length;
     
     const byCategory = services.reduce((acc, service) => {
       acc[service.category] = (acc[service.category] || 0) + 1;
