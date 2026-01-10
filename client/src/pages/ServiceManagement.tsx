@@ -5,7 +5,7 @@ import {
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
   DollarSign, Package, XCircle, MoreVertical, Copy,
-  CheckCircle, Trash2, AlertCircle, ArrowRight
+  CheckCircle, Trash2, AlertCircle, ArrowRight, RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,31 @@ import { useToast } from "@/hooks/use-toast";
 import { type Service, type InsertService, insertServiceSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
+
+/**
+ * Normalize isActive value to handle different data types from database
+ * SQLite stores as INTEGER (0/1), but it may come back as number, boolean, or string
+ * @param service - The service object or isActive value
+ * @returns true if active, false if inactive
+ */
+function isServiceActive(service: Service | number | boolean | string | null | undefined): boolean {
+  if (service === null || service === undefined) return false;
+  
+  // If passed a service object, extract isActive
+  const value = typeof service === 'object' && 'isActive' in service 
+    ? service.isActive 
+    : service;
+  
+  // Handle different types:
+  // - number: 1 = active, 0 = inactive
+  // - boolean: true = active, false = inactive
+  // - string: "1" or "true" = active, "0" or "false" = inactive
+  if (typeof value === 'number') return value === 1;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value === '1' || value.toLowerCase() === 'true';
+  
+  return false;
+}
 
 const serviceFormSchema = z.object({
   code: z.string().optional().nullable(),
@@ -892,8 +917,8 @@ export default function ServiceManagement() {
       
       const matchesStatus = 
         statusFilter === "all" ||
-        (statusFilter === "active" && service.isActive === 1) ||
-        (statusFilter === "inactive" && service.isActive === 0);
+        (statusFilter === "active" && isServiceActive(service)) ||
+        (statusFilter === "inactive" && !isServiceActive(service));
       
       const matchesPriceRange = 
         (!priceRange.min || Number(service.price) >= Number(priceRange.min)) &&
@@ -938,8 +963,8 @@ export default function ServiceManagement() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const activeCount = services.filter(s => s.isActive === 1).length;
-    const inactiveCount = services.filter(s => s.isActive === 0).length;
+    const activeCount = services.filter(s => isServiceActive(s)).length;
+    const inactiveCount = services.filter(s => !isServiceActive(s)).length;
     
     const byCategory = services.reduce((acc, service) => {
       acc[service.category] = (acc[service.category] || 0) + 1;
@@ -1075,6 +1100,16 @@ export default function ServiceManagement() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/services"] })}
+            disabled={isLoading}
+            className="gap-2"
+            data-testid="button-refresh-services"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button 
@@ -1970,12 +2005,12 @@ export default function ServiceManagement() {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${service.isActive === 1 ? "bg-green-500" : "bg-red-500"} animate-pulse`} />
+                              <div className={`w-2 h-2 rounded-full ${isServiceActive(service) ? "bg-green-500" : "bg-red-500"} animate-pulse`} />
                               <Badge 
-                                variant={service.isActive === 1 ? "default" : "secondary"}
-                                className={`font-semibold shadow-sm ${service.isActive === 1 ? "bg-green-600" : "bg-gray-400"}`}
+                                variant={isServiceActive(service) ? "default" : "secondary"}
+                                className={`font-semibold shadow-sm ${isServiceActive(service) ? "bg-green-600" : "bg-gray-400"}`}
                               >
-                                {service.isActive === 1 ? "Active" : "Inactive"}
+                                {isServiceActive(service) ? "Active" : "Inactive"}
                               </Badge>
                             </div>
                           </td>

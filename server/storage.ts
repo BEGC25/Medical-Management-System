@@ -216,6 +216,7 @@ export interface IStorage {
   getServicesByCategory(category: string): Promise<schema.Service[]>;
   createService(data: schema.InsertService): Promise<schema.Service>;
   updateService(id: number, data: Partial<schema.Service>): Promise<schema.Service>;
+  deleteService(id: number): Promise<void>;
   bulkUpdateServiceCodes(updates: Array<{ id: number; code: string }>): Promise<void>;
 
   // Payments
@@ -1978,6 +1979,12 @@ export class MemStorage implements IStorage {
       .returning();
 
     return service;
+  }
+
+  async deleteService(id: number): Promise<void> {
+    await db.delete(services)
+      .where(eq(services.id, id))
+      .run();
   }
 
   async bulkUpdateServiceCodes(updates: Array<{ id: number; code: string }>): Promise<void> {
