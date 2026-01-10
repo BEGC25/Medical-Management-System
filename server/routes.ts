@@ -1355,6 +1355,18 @@ router.put("/api/services/:id", async (req, res) => {
   }
 });
 
+// Delete service
+router.delete("/api/services/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteService(id);
+    res.json({ message: "Service deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting service:", error);
+    res.status(500).json({ error: "Failed to delete service" });
+  }
+});
+
 // Bulk update service codes
 router.put("/api/services/bulk-update-codes", async (req, res) => {
   try {
