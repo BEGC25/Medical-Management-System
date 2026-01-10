@@ -33,6 +33,11 @@ function getPasswordStrength(password: string): { strength: 'weak' | 'medium' | 
   return { strength: 'strong', score: 100 };
 }
 
+// Capitalize role for display
+function capitalizeRole(role: string): string {
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
 // Role icons
 const getRoleIcon = (role: string) => {
   switch (role) {
@@ -212,7 +217,8 @@ export default function UserManagement() {
     },
     onSuccess: (_, userId) => {
       // Find the user info before invalidating queries
-      const userToDelete = (users as User[])?.find(u => u.id === userId);
+      const userList = users as User[] | undefined;
+      const userToDelete = userList?.find(u => u.id === userId);
       const username = userToDelete?.fullName || userToDelete?.username || 'User';
       
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -1113,7 +1119,7 @@ export default function UserManagement() {
                                       <p>
                                         Are you sure you want to delete{' '}
                                         <strong className="text-foreground font-semibold">
-                                          {u.fullName || u.username} ({u.role.charAt(0).toUpperCase() + u.role.slice(1)})
+                                          {u.fullName || u.username} ({capitalizeRole(u.role)})
                                         </strong>?
                                       </p>
                                       <p className="text-red-600 dark:text-red-400 font-medium">
