@@ -754,8 +754,40 @@
     animation: float-gentle 6s ease-in-out infinite;
   }
 
+  .animate-float-gentle-delay-2 {
+    animation: float-gentle 6s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+
+  .animate-float-gentle-delay-4 {
+    animation: float-gentle 6s ease-in-out infinite;
+    animation-delay: 4s;
+  }
+
   .animate-scale-in {
     animation: scale-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  /* Premium shimmer effect for cards */
+  .shimmer-effect {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-effect::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%) skewX(-12deg);
+    animation: shimmer-slide 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
   }
 
   /* Premium Input Glow Effect */
