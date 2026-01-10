@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import CountUp from "react-countup";
+import { motion } from "framer-motion";
 import { 
   FileSpreadsheet, 
   FileText, 
@@ -15,7 +17,8 @@ import {
   Download,
   Activity,
   Filter,
-  X
+  X,
+  Mail
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -500,43 +503,78 @@ export default function Reports() {
           />
 
           {/* Premium Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            <PremiumStatCard
-              title="Total Patients"
-              value={totalPatients}
-              subtitle="Registered in system"
-              icon={Users}
-              gradient="from-blue-600 via-blue-500 to-cyan-400"
-            />
-            <PremiumStatCard
-              title="Total Visits"
-              value={stats?.totalVisits || 0}
-              subtitle="In selected period"
-              icon={Stethoscope}
-              gradient="from-green-600 via-green-500 to-emerald-400"
-            />
-            <PremiumStatCard
-              title="Lab Tests"
-              value={stats?.labTests || 0}
-              subtitle="Tests ordered"
-              icon={TestTube}
-              gradient="from-orange-600 via-orange-500 to-amber-400"
-            />
-            <PremiumStatCard
-              title="X-Ray Exams"
-              value={stats?.xrays || 0}
-              subtitle="Exams performed"
-              icon={Scan}
-              gradient="from-purple-600 via-purple-500 to-pink-400"
-            />
-            <PremiumStatCard
-              title="Ultrasounds"
-              value={stats?.ultrasounds || 0}
-              subtitle="Scans performed"
-              icon={Activity}
-              gradient="from-teal-600 via-teal-500 to-cyan-400"
-            />
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ staggerChildren: 0.1 }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0 }}
+            >
+              <PremiumStatCard
+                title="Total Patients"
+                value={totalPatients}
+                subtitle="Registered in system"
+                icon={Users}
+                gradient="from-blue-600 via-blue-500 to-cyan-400"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <PremiumStatCard
+                title="Total Visits"
+                value={stats?.totalVisits || 0}
+                subtitle="In selected period"
+                icon={Stethoscope}
+                gradient="from-green-600 via-green-500 to-emerald-400"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <PremiumStatCard
+                title="Lab Tests"
+                value={stats?.labTests || 0}
+                subtitle="Tests ordered"
+                icon={TestTube}
+                gradient="from-orange-600 via-orange-500 to-amber-400"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
+              <PremiumStatCard
+                title="X-Ray Exams"
+                value={stats?.xrays || 0}
+                subtitle="Exams performed"
+                icon={Scan}
+                gradient="from-purple-600 via-purple-500 to-pink-400"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+            >
+              <PremiumStatCard
+                title="Ultrasounds"
+                value={stats?.ultrasounds || 0}
+                subtitle="Scans performed"
+                icon={Activity}
+                gradient="from-teal-600 via-teal-500 to-cyan-400"
+              />
+            </motion.div>
+          </motion.div>
 
           {/* Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -559,7 +597,12 @@ export default function Reports() {
           </div>
 
           {/* AI Insights */}
-          <InsightsCard insights={insights} isLoading={insightsLoading} />
+          <InsightsCard 
+            insights={insights} 
+            isLoading={insightsLoading}
+            stats={stats}
+            diagnosisData={diagnosisData}
+          />
 
           {/* Detailed Reports - Keep existing structure with enhanced styling */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -572,24 +615,37 @@ export default function Reports() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {recentPatients?.slice(0, 5).map((patient: any) => (
-                    <div key={patient.id} className="flex items-center justify-between py-3 px-2 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded transition-colors">
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-gray-200">
-                          {patient.firstName} {patient.lastName}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          ID: {patient.patientId}
-                        </p>
+                    <div 
+                      key={patient.id}
+                      className="flex items-center justify-between p-3 rounded-lg 
+                                 border border-gray-100 dark:border-gray-700
+                                 hover:bg-gray-50 dark:hover:bg-gray-800/50
+                                 transition-all duration-200
+                                 cursor-pointer
+                                 group"
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Avatar with initials */}
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 
+                                        flex items-center justify-center text-white font-semibold text-sm
+                                        group-hover:scale-110 transition-transform shadow-md">
+                          {patient.firstName?.[0]}{patient.lastName?.[0]}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800 dark:text-gray-200">
+                            {patient.firstName} {patient.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ID: {patient.patientId}
+                          </p>
+                        </div>
                       </div>
                       <div className="text-right">
                         <Badge variant={patient.status === "Treated" ? "default" : "secondary"}>
-                          {patient.status}
+                          {patient.status || "New"}
                         </Badge>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {patient.lastVisit || "No visits"}
-                        </p>
                       </div>
                     </div>
                   ))}
@@ -622,31 +678,55 @@ export default function Reports() {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 border rounded-lg dark:border-gray-700 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 hover:shadow-lg transition-shadow">
-                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-                        {stats?.newPatients || 0}
-                      </p>
+                    <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20 hover:shadow-lg transition-all duration-200">
+                      <div className="flex justify-center mb-2">
+                        <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                        <CountUp 
+                          end={stats?.newPatients || 0}
+                          duration={2}
+                        />
+                      </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">New Patients</p>
                     </div>
-                    <div className="text-center p-4 border rounded-lg dark:border-gray-700 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 hover:shadow-lg transition-shadow">
-                      <p className="text-3xl font-bold text-green-600 dark:text-green-400 tabular-nums">
-                        {stats?.totalVisits || 0}
-                      </p>
+                    <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-green-50 dark:bg-green-900/20 hover:shadow-lg transition-all duration-200">
+                      <div className="flex justify-center mb-2">
+                        <Stethoscope className="w-6 h-6 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-400 tabular-nums">
+                        <CountUp 
+                          end={stats?.totalVisits || 0}
+                          duration={2}
+                        />
+                      </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Visits</p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 border rounded-lg dark:border-gray-700 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 hover:shadow-lg transition-shadow">
-                      <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 tabular-nums">
-                        {stats?.pending?.labResults || 0}
-                      </p>
+                    <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 hover:shadow-lg transition-all duration-200">
+                      <div className="flex justify-center mb-2">
+                        <TestTube className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                      </div>
+                      <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 tabular-nums">
+                        <CountUp 
+                          end={stats?.pending?.labResults || 0}
+                          duration={2}
+                        />
+                      </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending Labs</p>
                     </div>
-                    <div className="text-center p-4 border rounded-lg dark:border-gray-700 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 hover:shadow-lg transition-shadow">
-                      <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 tabular-nums">
-                        {stats?.pending?.xrayReports || 0}
-                      </p>
+                    <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20 hover:shadow-lg transition-all duration-200">
+                      <div className="flex justify-center mb-2">
+                        <Scan className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 tabular-nums">
+                        <CountUp 
+                          end={stats?.pending?.xrayReports || 0}
+                          duration={2}
+                        />
+                      </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending X-Rays</p>
                     </div>
                   </div>
@@ -667,25 +747,32 @@ export default function Reports() {
               <div className="flex flex-wrap gap-4">
                 <Button 
                   onClick={exportToExcel}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 gap-2"
                 >
-                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  <FileSpreadsheet className="w-4 h-4" />
                   Export to Excel
                 </Button>
                 <Button 
                   onClick={exportToPDF}
-                  className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 gap-2"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
+                  <FileText className="w-4 h-4" />
                   Export to PDF
                 </Button>
                 <Button 
                   onClick={handlePrint}
                   variant="outline"
-                  className="border-2 hover:bg-gray-100 dark:hover:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-200"
+                  className="border-2 hover:bg-gray-100 dark:hover:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-200 gap-2"
                 >
-                  <Printer className="w-4 h-4 mr-2" />
+                  <Printer className="w-4 h-4" />
                   Print Report
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="gap-2 transition-all duration-200 hover:scale-105"
+                >
+                  <Mail className="w-4 h-4" />
+                  Email Report
                 </Button>
               </div>
             </CardContent>

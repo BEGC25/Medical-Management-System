@@ -21,12 +21,11 @@ const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
 export function DiagnosisBarChart({ data = [], isLoading }: DiagnosisBarChartProps) {
   // Take top 5 diagnoses
   const topDiagnoses = data.slice(0, 5);
-  const maxCount = topDiagnoses[0]?.count || 1;
+  const totalCases = data.reduce((sum, item) => sum + item.count, 0);
 
   const chartData = topDiagnoses.map((item, index) => ({
-    name: item.diagnosis || "Not specified",
+    diagnosis: item.diagnosis || "Not specified",
     count: item.count,
-    percentage: ((item.count / maxCount) * 100).toFixed(1),
     color: COLORS[index % COLORS.length],
   }));
 
@@ -63,24 +62,30 @@ export function DiagnosisBarChart({ data = [], isLoading }: DiagnosisBarChartPro
               />
               <YAxis
                 type="category"
-                dataKey="name"
+                dataKey="diagnosis"
                 stroke="#6b7280"
                 tick={{ fontSize: 12 }}
                 tickLine={{ stroke: "#e5e7eb" }}
                 width={100}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                content={({ active, payload }) => {
+                  if (active && payload?.length) {
+                    const percentage = totalCases > 0 ? ((payload[0].value as number / totalCases) * 100).toFixed(1) : 0;
+                    return (
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">{payload[0].payload.diagnosis}</p>
+                        <p className="text-sm">
+                          <span className="font-bold text-blue-600 dark:text-blue-400">{payload[0].value}</span> cases
+                          <span className="text-gray-500 dark:text-gray-400 ml-2">
+                            ({percentage}%)
+                          </span>
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
                 }}
-                formatter={(value: number, name: string, props: any) => [
-                  `${value} cases (${props.payload.percentage}% of max)`,
-                  "Count",
-                ]}
-                cursor={{ fill: "rgba(59, 130, 246, 0.1)" }}
               />
               <Bar
                 dataKey="count"

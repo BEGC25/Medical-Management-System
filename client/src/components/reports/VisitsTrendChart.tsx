@@ -62,13 +62,17 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
                 tickLine={{ stroke: "#e5e7eb" }}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                content={({ active, payload }) => {
+                  if (active && payload?.length) {
+                    return (
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">{payload[0].payload.date}</p>
+                        <p className="text-blue-600 dark:text-blue-400 font-bold">{payload[0].value} visits</p>
+                      </div>
+                    );
+                  }
+                  return null;
                 }}
-                labelStyle={{ fontWeight: 600, color: "#1f2937" }}
               />
               <Area
                 type="monotone"

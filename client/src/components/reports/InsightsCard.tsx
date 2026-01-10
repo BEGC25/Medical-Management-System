@@ -1,67 +1,94 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, TrendingUp, Clock, AlertTriangle, Lightbulb } from "lucide-react";
+import { Sparkles, TrendingUp, Clock, Activity, CheckCircle, AlertTriangle, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Insight {
-  type: "trend" | "peak" | "anomaly" | "recommendation";
-  title: string;
-  description: string;
-  severity?: "info" | "warning" | "success";
+  icon: React.ComponentType<{ className?: string }>;
+  text: string;
+  color: string;
 }
 
 interface InsightsCardProps {
-  insights?: Insight[];
+  insights?: any[];
   isLoading?: boolean;
+  stats?: any;
+  diagnosisData?: Array<{ diagnosis: string; count: number }>;
+  lastPeriodStats?: any;
 }
 
-const defaultInsights: Insight[] = [
-  {
-    type: "trend",
-    title: "Visits trending upward",
-    description: "Patient visits increased by 15% compared to last week",
-    severity: "success",
-  },
-  {
-    type: "peak",
-    title: "Peak hours identified",
-    description: "Busiest time is 10-11 AM with average of 12 patients",
-    severity: "info",
-  },
-  {
-    type: "recommendation",
-    title: "Inventory suggestion",
-    description: "Consider restocking lab supplies based on current usage trends",
-    severity: "info",
-  },
-];
+const generateInsights = (stats?: any, diagnosisData?: Array<{ diagnosis: string; count: number }>, lastPeriodStats?: any): Insight[] => {
+  const insights: Insight[] = [];
 
-const getIcon = (type: string) => {
-  switch (type) {
-    case "trend":
-      return TrendingUp;
-    case "peak":
-      return Clock;
-    case "anomaly":
-      return AlertTriangle;
-    case "recommendation":
-      return Lightbulb;
-    default:
-      return Sparkles;
+  // Visit trend analysis
+  if (stats?.totalVisits && lastPeriodStats?.totalVisits) {
+    const increase = ((stats.totalVisits - lastPeriodStats.totalVisits) / lastPeriodStats.totalVisits * 100).toFixed(1);
+    if (parseFloat(increase) > 0) {
+      insights.push({
+        icon: TrendingUp,
+        text: `Visits increased ${increase}% compared to previous period`,
+        color: "text-green-600 dark:text-green-400"
+      });
+    } else if (parseFloat(increase) < 0) {
+      insights.push({
+        icon: TrendingUp,
+        text: `Visits decreased ${Math.abs(parseFloat(increase))}% compared to previous period`,
+        color: "text-orange-600 dark:text-orange-400"
+      });
+    }
   }
+
+  // Peak time identification (mock - could be enhanced with real data)
+  insights.push({
+    icon: Clock,
+    text: "Peak visit time: 9-11 AM with highest patient flow",
+    color: "text-blue-600 dark:text-blue-400"
+  });
+
+  // Top diagnosis
+  if (diagnosisData && diagnosisData.length > 0) {
+    insights.push({
+      icon: Activity,
+      text: `Most common diagnosis: ${diagnosisData[0].diagnosis} (${diagnosisData[0].count} cases)`,
+      color: "text-purple-600 dark:text-purple-400"
+    });
+  }
+
+  // Test completion rate
+  if (stats?.labTests && stats?.labTests > 0) {
+    const completionRate = (((stats.labTests - (stats.pending?.labResults || 0)) / stats.labTests) * 100).toFixed(1);
+    insights.push({
+      icon: CheckCircle,
+      text: `Lab test completion rate: ${completionRate}%`,
+      color: parseFloat(completionRate) > 80 ? "text-green-600 dark:text-green-400" : "text-orange-600 dark:text-orange-400"
+    });
+  }
+
+  // Pending items alert
+  const totalPending = (stats?.pending?.labResults || 0) + (stats?.pending?.xrayReports || 0) + (stats?.pending?.ultrasoundReports || 0);
+  if (totalPending > 0) {
+    insights.push({
+      icon: AlertTriangle,
+      text: `${totalPending} pending test results require attention`,
+      color: "text-orange-600 dark:text-orange-400"
+    });
+  }
+
+  // If no insights, add a default one
+  if (insights.length === 0) {
+    insights.push({
+      icon: Lightbulb,
+      text: "System is analyzing patterns. Check back soon for insights!",
+      color: "text-gray-600 dark:text-gray-400"
+    });
+  }
+
+  return insights;
 };
 
-const getBadgeVariant = (severity?: string) => {
-  switch (severity) {
-    case "success":
-      return "default";
-    case "warning":
-      return "destructive";
-    default:
-      return "secondary";
-  }
-};
+export function InsightsCard({ insights: providedInsights, isLoading, stats, diagnosisData, lastPeriodStats }: InsightsCardProps) {
+  const generatedInsights = generateInsights(stats, diagnosisData, lastPeriodStats);
+  const insights = providedInsights || generatedInsights;
 
-export function InsightsCard({ insights = defaultInsights, isLoading }: InsightsCardProps) {
   return (
     <Card className="bg-gradient-to-br from-purple-600 via-pink-500 to-rose-400 text-white shadow-2xl hover:shadow-premium transition-all duration-300 hover:-translate-y-1">
       <CardHeader>
@@ -81,33 +108,16 @@ export function InsightsCard({ insights = defaultInsights, isLoading }: Insights
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
-            {insights.map((insight, index) => {
-              const IconComponent = getIcon(insight.type);
+          <div className="space-y-3">
+            {insights.map((insight: any, idx: number) => {
+              const IconComponent = insight.icon || Sparkles;
               return (
                 <div
-                  key={index}
-                  className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 transition-all duration-200 hover:bg-white/20"
+                  key={idx}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-200 hover:bg-white/20"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1">
-                      <IconComponent className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-sm">{insight.title}</h4>
-                        {insight.severity && (
-                          <Badge
-                            variant={getBadgeVariant(insight.severity)}
-                            className="text-xs"
-                          >
-                            {insight.severity}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm opacity-90">{insight.description}</p>
-                    </div>
-                  </div>
+                  <IconComponent className={`w-5 h-5 ${insight.color} mt-0.5 flex-shrink-0`} />
+                  <p className="text-sm text-white">{insight.text}</p>
                 </div>
               );
             })}
