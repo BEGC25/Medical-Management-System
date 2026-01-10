@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Stethoscope } from "lucide-react";
+import { Stethoscope, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   BarChart,
   Bar,
@@ -43,8 +44,22 @@ export function DiagnosisBarChart({ data = [], isLoading }: DiagnosisBarChartPro
             <div className="animate-pulse text-gray-400">Loading chart data...</div>
           </div>
         ) : chartData.length === 0 ? (
-          <div className="h-[300px] flex items-center justify-center">
-            <p className="text-gray-500 dark:text-gray-400">No diagnosis data available</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <Stethoscope className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              No diagnosis data available
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center max-w-xs">
+              Start treating patients and recording diagnoses to see analytics
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/treatment'}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Go to Treatment
+            </Button>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>

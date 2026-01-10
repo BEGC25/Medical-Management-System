@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Users, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   PieChart,
   Pie,
@@ -64,9 +65,23 @@ export function AgeDonutChart({ data = [], totalPatients = 0, isLoading }: AgeDo
           <div className="h-[350px] flex items-center justify-center">
             <div className="animate-pulse text-gray-400">Loading chart data...</div>
           </div>
-        ) : chartData.length === 0 ? (
-          <div className="h-[350px] flex items-center justify-center">
-            <p className="text-gray-500 dark:text-gray-400">No age distribution data available</p>
+        ) : chartData.length === 0 || totalPatients === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              No patient data available
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center max-w-xs">
+              Start registering patients to see age distribution analytics
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/registration'}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Register First Patient
+            </Button>
           </div>
         ) : (
           <div className="relative">
@@ -82,8 +97,8 @@ export function AgeDonutChart({ data = [], totalPatients = 0, isLoading }: AgeDo
                   innerRadius={60}
                   fill="#8884d8"
                   dataKey="value"
-                  animationDuration={1000}
-                  animationBegin={100}
+                  animationDuration={1200}
+                  animationBegin={0}
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
