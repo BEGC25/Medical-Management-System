@@ -210,8 +210,18 @@ export default function UserManagement() {
     mutationFn: async (userId: number) => {
       await apiRequest("DELETE", `/api/users/${userId}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, userId) => {
+      // Find the user info before invalidating queries
+      const userToDelete = (users as User[])?.find(u => u.id === userId);
+      const username = userToDelete?.fullName || userToDelete?.username || 'User';
+      
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      
+      toast({
+        title: "User deleted successfully",
+        description: `${username} has been removed from the system`,
+        variant: "success",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -334,13 +344,6 @@ export default function UserManagement() {
         });
         setPasswordStrength(null);
         queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Failed to create user",
-          description: error.message || "Please try again.",
-          variant: "destructive",
-        });
       },
     });
   };
@@ -1121,17 +1124,7 @@ export default function UserManagement() {
                                   <AlertDialogFooter>
                                     <AlertDialogCancel className="transition-all duration-200 hover:scale-105">Cancel</AlertDialogCancel>
                                     <AlertDialogAction
-                                      onClick={() => {
-                                        deleteMutation.mutate(u.id, {
-                                          onSuccess: () => {
-                                            toast({
-                                              title: "User deleted successfully",
-                                              description: `${u.fullName || u.username} has been removed from the system`,
-                                              variant: "success",
-                                            });
-                                          }
-                                        });
-                                      }}
+                                      onClick={() => deleteMutation.mutate(u.id)}
                                       disabled={deleteMutation.isPending}
                                       className="bg-red-600 hover:bg-red-700 transition-all duration-200 hover:scale-105 disabled:opacity-50"
                                     >

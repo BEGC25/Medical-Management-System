@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration failed",
-        description: error.message,
+        title: "Failed to create user",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
