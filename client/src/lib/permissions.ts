@@ -148,7 +148,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };
@@ -196,7 +195,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };
@@ -244,7 +242,6 @@ export function getPermissionsByRole(role: string): Permissions {
         },
         settings: {
           serviceManagement: false,
-          billingSettings: false,
           systemSettings: false,
         },
       };

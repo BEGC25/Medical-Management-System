@@ -153,7 +153,6 @@ export function PermissionsModal({ open, onOpenChange, user }: PermissionsModalP
             iconColor="bg-orange-100 dark:bg-orange-900/30"
           >
             <PermissionItem label="Service management" granted={permissions.settings.serviceManagement} />
-            <PermissionItem label="Billing settings access" granted={permissions.settings.billingSettings} />
             <PermissionItem label="System settings access" granted={permissions.settings.systemSettings} />
           </PermissionCategory>
         </div>
