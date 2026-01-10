@@ -123,8 +123,12 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               )}
               {(patient.age || patient.gender) && (
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold text-gray-700">Age/Gender:</span>
-                  <span className="text-xs font-medium text-gray-900">{patient.age || 'N/A'} / {patient.gender || 'N/A'}</span>
+                  <span className="text-xs font-semibold text-gray-700">
+                    {patient.age && patient.gender ? 'Age/Gender:' : patient.age ? 'Age:' : 'Gender:'}
+                  </span>
+                  <span className="text-xs font-medium text-gray-900">
+                    {patient.age && patient.gender ? `${patient.age} / ${patient.gender}` : patient.age || patient.gender}
+                  </span>
                 </div>
               )}
             </div>
