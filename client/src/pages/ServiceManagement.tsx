@@ -115,6 +115,7 @@ const CATEGORY_COLORS = {
 };
 
 // Category configuration with complete properties for code generator
+// Built from existing CATEGORY_ICONS and CATEGORY_COLORS to maintain consistency
 const categoryConfig: Record<string, {
   icon: any;
   gradient: string;
@@ -125,51 +126,51 @@ const categoryConfig: Record<string, {
 }> = {
   consultation: {
     icon: Stethoscope,
-    gradient: "from-blue-500 to-indigo-600",
+    gradient: CATEGORY_COLORS.consultation.gradient,
     color: "blue-500",
-    bg: "bg-blue-50",
-    ring: "ring-blue-500",
-    text: "text-blue-700"
+    bg: CATEGORY_COLORS.consultation.light,
+    ring: CATEGORY_COLORS.consultation.ring,
+    text: CATEGORY_COLORS.consultation.text
   },
   laboratory: {
     icon: Flask,
-    gradient: "from-amber-500 to-orange-600",
+    gradient: CATEGORY_COLORS.laboratory.gradient,
     color: "amber-500",
-    bg: "bg-amber-50",
-    ring: "ring-amber-500",
-    text: "text-amber-700"
+    bg: CATEGORY_COLORS.laboratory.light,
+    ring: CATEGORY_COLORS.laboratory.ring,
+    text: CATEGORY_COLORS.laboratory.text
   },
   radiology: {
     icon: Radio,
-    gradient: "from-purple-500 to-violet-600",
+    gradient: CATEGORY_COLORS.radiology.gradient,
     color: "purple-500",
-    bg: "bg-purple-50",
-    ring: "ring-purple-500",
-    text: "text-purple-700"
+    bg: CATEGORY_COLORS.radiology.light,
+    ring: CATEGORY_COLORS.radiology.ring,
+    text: CATEGORY_COLORS.radiology.text
   },
   ultrasound: {
     icon: Activity,
-    gradient: "from-teal-500 to-cyan-600",
+    gradient: CATEGORY_COLORS.ultrasound.gradient,
     color: "teal-500",
-    bg: "bg-teal-50",
-    ring: "ring-teal-500",
-    text: "text-teal-700"
+    bg: CATEGORY_COLORS.ultrasound.light,
+    ring: CATEGORY_COLORS.ultrasound.ring,
+    text: CATEGORY_COLORS.ultrasound.text
   },
   pharmacy: {
     icon: Pill,
-    gradient: "from-pink-500 to-rose-600",
+    gradient: CATEGORY_COLORS.pharmacy.gradient,
     color: "pink-500",
-    bg: "bg-pink-50",
-    ring: "ring-pink-500",
-    text: "text-pink-700"
+    bg: CATEGORY_COLORS.pharmacy.light,
+    ring: CATEGORY_COLORS.pharmacy.ring,
+    text: CATEGORY_COLORS.pharmacy.text
   },
   procedure: {
     icon: Syringe,
-    gradient: "from-green-500 to-emerald-600",
+    gradient: CATEGORY_COLORS.procedure.gradient,
     color: "green-500",
-    bg: "bg-green-50",
-    ring: "ring-green-500",
-    text: "text-green-700"
+    bg: CATEGORY_COLORS.procedure.light,
+    ring: CATEGORY_COLORS.procedure.ring,
+    text: CATEGORY_COLORS.procedure.text
   }
 };
 
@@ -1015,6 +1016,8 @@ export default function ServiceManagement() {
   // Handle predefined service selection and auto-generate code
   const handlePredefinedServiceSelect = (serviceName: string) => {
     const category = form.watch('category');
+    if (!category || !serviceName) return;
+    
     const generatedCode = generateServiceCode(serviceName, category);
     
     form.setValue('name', serviceName);
