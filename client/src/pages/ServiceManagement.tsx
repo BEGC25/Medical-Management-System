@@ -681,7 +681,22 @@ export default function ServiceManagement() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/services/${id}`);
+      const response = await fetch(`/api/services/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Create error object with status and response data
+        const error: any = new Error(data.error || 'Failed to delete service');
+        error.status = response.status;
+        error.details = data.details;
+        throw error;
+      }
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
@@ -690,7 +705,54 @@ export default function ServiceManagement() {
         description: "Service deleted successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      // Handle 409 Conflict - service is referenced
+      if (error.status === 409) {
+        const details = error.details;
+        const referenceList: string[] = [];
+        
+        if (details?.orderLines > 0) {
+          referenceList.push(`${details.orderLines} order line${details.orderLines > 1 ? 's' : ''}`);
+        }
+        if (details?.paymentItems > 0) {
+          referenceList.push(`${details.paymentItems} payment item${details.paymentItems > 1 ? 's' : ''}`);
+        }
+        if (details?.pharmacyOrders > 0) {
+          referenceList.push(`${details.pharmacyOrders} pharmacy order${details.pharmacyOrders > 1 ? 's' : ''}`);
+        }
+        
+        toast({
+          title: "❌ Cannot Delete Service",
+          description: (
+            <div className="space-y-2">
+              <p className="font-medium">{error.message}</p>
+              {referenceList.length > 0 && (
+                <p className="text-sm">Referenced by: {referenceList.join(', ')}</p>
+              )}
+              <p className="text-sm text-muted-foreground mt-2">
+                💡 <strong>Suggestion:</strong> Deactivate this service instead to prevent new usage while preserving historical records.
+              </p>
+            </div>
+          ),
+          variant: "destructive",
+          duration: 8000, // Show longer for important information
+        });
+        return;
+      }
+      
+      // Handle 404 Not Found
+      if (error.status === 404) {
+        toast({
+          title: "⚠️ Service Not Found",
+          description: "This service may have already been deleted.",
+          variant: "destructive",
+        });
+        // Refresh the list to sync state
+        queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+        return;
+      }
+      
+      // Handle other errors
       toast({
         title: "Error",
         description: error.message || "Failed to delete service",
