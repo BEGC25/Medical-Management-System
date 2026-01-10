@@ -12,7 +12,10 @@ import {
   Scan,
   TrendingUp,
   Calendar,
-  Download
+  Download,
+  Activity,
+  Filter,
+  X
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +23,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getClinicDayKey } from "@/lib/date-utils";
+import { PremiumStatCard } from "@/components/reports/PremiumStatCard";
+import { VisitsTrendChart } from "@/components/reports/VisitsTrendChart";
+import { TestsBarChart } from "@/components/reports/TestsBarChart";
+import { AgeDonutChart } from "@/components/reports/AgeDonutChart";
+import { DiagnosisBarChart } from "@/components/reports/DiagnosisBarChart";
+import { InsightsCard } from "@/components/reports/InsightsCard";
+import { ComparisonToggle } from "@/components/reports/ComparisonToggle";
+import { LoadingSkeleton } from "@/components/reports/LoadingSkeleton";
 
 interface ReportFilters {
   reportType: string;
@@ -55,13 +66,14 @@ export default function Reports() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
+  const [comparisonMode, setComparisonMode] = useState(false);
   const [filters, setFilters] = useState<ReportFilters>({
     reportType: "daily",
     fromDate: getClinicDayKey(),
     toDate: getClinicDayKey(),
   });
 
-  const { data: stats } = useQuery<DashboardStats>({
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats", filters],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -79,7 +91,7 @@ export default function Reports() {
   });
 
   // Fetch real diagnosis data from treatments
-  const { data: diagnosisData = [] } = useQuery<{ diagnosis: string; count: number }[]>({
+  const { data: diagnosisData = [], isLoading: diagnosisLoading } = useQuery<{ diagnosis: string; count: number }[]>({
     queryKey: ["/api/reports/diagnoses", filters],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -93,7 +105,7 @@ export default function Reports() {
   });
 
   // Fetch real patient age distribution
-  const { data: ageDistributionData = [] } = useQuery<{ ageRange: string; count: number; percentage: number }[]>({
+  const { data: ageDistributionData = [], isLoading: ageLoading } = useQuery<{ ageRange: string; count: number; percentage: number }[]>({
     queryKey: ["/api/reports/age-distribution"],
     queryFn: async () => {
       const response = await fetch('/api/reports/age-distribution');
@@ -113,8 +125,61 @@ export default function Reports() {
     },
   });
 
+  // Fetch trends data
+  const { data: trendsData = [], isLoading: trendsLoading } = useQuery<Array<{ date: string; visits: number }>>({
+    queryKey: ["/api/reports/trends", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        fromDate: filters.fromDate,
+        toDate: filters.toDate
+      });
+      const response = await fetch(`/api/reports/trends?${params}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  // Fetch AI insights
+  const { data: insights = [], isLoading: insightsLoading } = useQuery<any[]>({
+    queryKey: ["/api/reports/insights"],
+    queryFn: async () => {
+      const response = await fetch('/api/reports/insights');
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  const isLoading = statsLoading || diagnosisLoading || ageLoading || trendsLoading;
+
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const setQuickFilter = (preset: string) => {
+    const today = new Date();
+    let fromDate = getClinicDayKey();
+    let toDate = getClinicDayKey();
+
+    switch (preset) {
+      case "today":
+        // Already set
+        break;
+      case "this-week":
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
+        fromDate = weekStart.toISOString().split('T')[0];
+        break;
+      case "this-month":
+        fromDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+        break;
+      case "last-30-days":
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        fromDate = thirtyDaysAgo.toISOString().split('T')[0];
+        break;
+    }
+
+    setFilters(prev => ({ ...prev, fromDate, toDate }));
   };
 
   const generateReport = async () => {
@@ -309,351 +374,324 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2" />
-            Clinic Reports & Statistics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Report Filters */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-6">
-            <h3 className="font-medium text-gray-800 mb-4 dark:text-gray-200">Report Filters</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Report Type
-                </label>
-                <Select 
-                  value={filters.reportType} 
-                  onValueChange={(value) => handleFilterChange("reportType", value)}
+      {isLoading && <LoadingSkeleton />}
+      
+      {!isLoading && (
+        <>
+          {/* Header Card with Filters */}
+          <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/20 dark:border-gray-700/20 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <span className="text-2xl">Reports & Analytics</span>
+                </div>
+                <Badge className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                  Premium Dashboard
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Quick Filter Buttons */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQuickFilter("today")}
+                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily Summary</SelectItem>
-                    <SelectItem value="weekly">Weekly Report</SelectItem>
-                    <SelectItem value="monthly">Monthly Report</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  From Date
-                </label>
-                <Input 
-                  type="date" 
-                  value={filters.fromDate}
-                  onChange={(e) => handleFilterChange("fromDate", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  To Date
-                </label>
-                <Input 
-                  type="date" 
-                  value={filters.toDate}
-                  onChange={(e) => handleFilterChange("toDate", e.target.value)}
-                />
-              </div>
-              <div className="flex items-end">
-                <Button 
-                  onClick={generateReport}
-                  disabled={isGenerating}
-                  className="bg-medical-blue hover:bg-blue-700 w-full"
+                  <Calendar className="w-4 h-4 mr-1" />
+                  Today
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQuickFilter("this-week")}
+                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  {isGenerating ? "Generating..." : "Generate Report"}
+                  This Week
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQuickFilter("this-month")}
+                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                >
+                  This Month
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQuickFilter("last-30-days")}
+                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                >
+                  Last 30 Days
                 </Button>
               </div>
-            </div>
-            {lastGenerated && (
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                Last updated: {lastGenerated}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm">Total Patients</p>
-                <p className="text-3xl font-bold">{totalPatients}</p>
-                <p className="text-blue-100 text-sm">
-                  Registered in system
-                </p>
+              {/* Detailed Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Report Type
+                  </label>
+                  <Select 
+                    value={filters.reportType} 
+                    onValueChange={(value) => handleFilterChange("reportType", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily Summary</SelectItem>
+                      <SelectItem value="weekly">Weekly Report</SelectItem>
+                      <SelectItem value="monthly">Monthly Report</SelectItem>
+                      <SelectItem value="custom">Custom Range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    From Date
+                  </label>
+                  <Input 
+                    type="date" 
+                    value={filters.fromDate}
+                    onChange={(e) => handleFilterChange("fromDate", e.target.value)}
+                    className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    To Date
+                  </label>
+                  <Input 
+                    type="date" 
+                    value={filters.toDate}
+                    onChange={(e) => handleFilterChange("toDate", e.target.value)}
+                    className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    onClick={generateReport}
+                    disabled={isGenerating}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 w-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  >
+                    <Activity className="w-4 h-4 mr-2" />
+                    {isGenerating ? "Generating..." : "Update Report"}
+                  </Button>
+                </div>
               </div>
-              <Users className="text-blue-200 text-3xl w-8 h-8" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Total Visits</p>
-                <p className="text-3xl font-bold">{stats?.totalVisits || 0}</p>
-                <p className="text-green-100 text-sm">
-                  In selected period
-                </p>
-              </div>
-              <Stethoscope className="text-green-200 text-3xl w-8 h-8" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-100 text-sm">Lab Tests</p>
-                <p className="text-3xl font-bold">{stats?.labTests || 0}</p>
-                <p className="text-orange-100 text-sm">
-                  Tests ordered
-                </p>
-              </div>
-              <TestTube className="text-orange-200 text-3xl w-8 h-8" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-sm">X-Ray Exams</p>
-                <p className="text-3xl font-bold">{stats?.xrays || 0}</p>
-                <p className="text-purple-100 text-sm">
-                  Exams performed
-                </p>
-              </div>
-              <Scan className="text-purple-200 text-3xl w-8 h-8" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-teal-500 to-teal-600 text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-teal-100 text-sm">Ultrasounds</p>
-                <p className="text-3xl font-bold">{stats?.ultrasounds || 0}</p>
-                <p className="text-teal-100 text-sm">
-                  Scans performed
-                </p>
-              </div>
-              <Stethoscope className="text-teal-200 text-3xl w-8 h-8" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Detailed Reports */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Common Diagnoses */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Common Diagnoses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {diagnosisData.length > 0 ? (
-                diagnosisData.slice(0, 5).map((diagnosis, index) => {
-                  const maxCount = diagnosisData[0]?.count || 1;
-                  const percentage = (diagnosis.count / maxCount) * 100;
-                  return (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700 dark:text-gray-300">{diagnosis.diagnosis || 'Not specified'}</span>
-                        <div className="text-right">
-                          <span className="font-semibold text-gray-800 dark:text-gray-200">
-                            {diagnosis.count} {diagnosis.count === 1 ? 'case' : 'cases'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
-                          className={`${getColorForPercentage(percentage)} h-2 rounded-full transition-all duration-300`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No diagnosis data available for selected period
-                </p>
+              
+              {lastGenerated && (
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-3 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Last updated: {lastGenerated}
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Age Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Patient Age Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {ageDistributionData.length > 0 ? (
-                ageDistributionData.map((group, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700 dark:text-gray-300">{group.ageRange}</span>
+          {/* Comparison Toggle */}
+          <ComparisonToggle 
+            enabled={comparisonMode}
+            onToggle={setComparisonMode}
+          />
+
+          {/* Premium Stat Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <PremiumStatCard
+              title="Total Patients"
+              value={totalPatients}
+              subtitle="Registered in system"
+              icon={Users}
+              gradient="from-blue-600 via-blue-500 to-cyan-400"
+            />
+            <PremiumStatCard
+              title="Total Visits"
+              value={stats?.totalVisits || 0}
+              subtitle="In selected period"
+              icon={Stethoscope}
+              gradient="from-green-600 via-green-500 to-emerald-400"
+            />
+            <PremiumStatCard
+              title="Lab Tests"
+              value={stats?.labTests || 0}
+              subtitle="Tests ordered"
+              icon={TestTube}
+              gradient="from-orange-600 via-orange-500 to-amber-400"
+            />
+            <PremiumStatCard
+              title="X-Ray Exams"
+              value={stats?.xrays || 0}
+              subtitle="Exams performed"
+              icon={Scan}
+              gradient="from-purple-600 via-purple-500 to-pink-400"
+            />
+            <PremiumStatCard
+              title="Ultrasounds"
+              value={stats?.ultrasounds || 0}
+              subtitle="Scans performed"
+              icon={Activity}
+              gradient="from-teal-600 via-teal-500 to-cyan-400"
+            />
+          </div>
+
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <VisitsTrendChart data={trendsData} isLoading={trendsLoading} />
+            <TestsBarChart 
+              labTests={stats?.labTests}
+              xrays={stats?.xrays}
+              ultrasounds={stats?.ultrasounds}
+              isLoading={statsLoading}
+            />
+            <AgeDonutChart 
+              data={ageDistributionData}
+              totalPatients={totalPatients}
+              isLoading={ageLoading}
+            />
+            <DiagnosisBarChart 
+              data={diagnosisData}
+              isLoading={diagnosisLoading}
+            />
+          </div>
+
+          {/* AI Insights */}
+          <InsightsCard insights={insights} isLoading={insightsLoading} />
+
+          {/* Detailed Reports - Keep existing structure with enhanced styling */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Activity */}
+            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {recentPatients?.slice(0, 5).map((patient: any) => (
+                    <div key={patient.id} className="flex items-center justify-between py-3 px-2 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded transition-colors">
+                      <div>
+                        <p className="font-medium text-gray-800 dark:text-gray-200">
+                          {patient.firstName} {patient.lastName}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          ID: {patient.patientId}
+                        </p>
+                      </div>
                       <div className="text-right">
-                        <span className="font-semibold text-gray-800 dark:text-gray-200">
-                          {group.percentage}% ({group.count} {group.count === 1 ? 'patient' : 'patients'})
-                        </span>
+                        <Badge variant={patient.status === "Treated" ? "default" : "secondary"}>
+                          {patient.status}
+                        </Badge>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {patient.lastVisit || "No visits"}
+                        </p>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className={`${getColorForPercentage(group.percentage)} h-2 rounded-full transition-all duration-300`}
-                        style={{ width: `${group.percentage}%` }}
-                      ></div>
+                  ))}
+                  
+                  {!recentPatients?.length && (
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                      No recent activity
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Monthly Performance */}
+            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  Period Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                      <span className="font-medium text-gray-800 dark:text-gray-200">Selected Period</span>
+                    </div>
+                    <Badge className="bg-blue-600 text-white shadow-md">Active</Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 border rounded-lg dark:border-gray-700 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 hover:shadow-lg transition-shadow">
+                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                        {stats?.newPatients || 0}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">New Patients</p>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg dark:border-gray-700 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 hover:shadow-lg transition-shadow">
+                      <p className="text-3xl font-bold text-green-600 dark:text-green-400 tabular-nums">
+                        {stats?.totalVisits || 0}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Visits</p>
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No age distribution data available
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentPatients?.slice(0, 5).map((patient: any) => (
-                <div key={patient.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-                  <div>
-                    <p className="font-medium text-gray-800 dark:text-gray-200">
-                      {patient.firstName} {patient.lastName}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      ID: {patient.patientId}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={patient.status === "Treated" ? "default" : "secondary"}>
-                      {patient.status}
-                    </Badge>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {patient.lastVisit || "No visits"}
-                    </p>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 border rounded-lg dark:border-gray-700 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 hover:shadow-lg transition-shadow">
+                      <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 tabular-nums">
+                        {stats?.pending?.labResults || 0}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending Labs</p>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg dark:border-gray-700 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 hover:shadow-lg transition-shadow">
+                      <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 tabular-nums">
+                        {stats?.pending?.xrayReports || 0}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending X-Rays</p>
+                    </div>
                   </div>
                 </div>
-              ))}
-              
-              {!recentPatients?.length && (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No recent activity
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Monthly Trends */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="flex items-center">
-                  <Calendar className="w-5 h-5 text-medical-blue mr-3" />
-                  <span className="font-medium">This Month</span>
-                </div>
-                <Badge className="bg-medical-blue text-white">Active</Badge>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 border rounded-lg dark:border-gray-700">
-                  <p className="text-2xl font-bold text-medical-blue">
-                    {stats?.newPatients || 0}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">New Patients</p>
-                </div>
-                <div className="text-center p-3 border rounded-lg dark:border-gray-700">
-                  <p className="text-2xl font-bold text-health-green">
-                    {stats?.totalVisits || 0}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Visits</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 border rounded-lg dark:border-gray-700">
-                  <p className="text-2xl font-bold text-attention-orange">
-                    {stats?.pending?.labResults || 0}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Pending Labs</p>
-                </div>
-                <div className="text-center p-3 border rounded-lg dark:border-gray-700">
-                  <p className="text-2xl font-bold text-purple-600">
-                    {stats?.pending?.xrayReports || 0}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Pending X-Rays</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Export Options */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Download className="w-5 h-5 mr-2" />
-            Export Options
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <Button 
-              onClick={exportToExcel}
-              className="bg-health-green hover:bg-green-700"
-            >
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Export to Excel
-            </Button>
-            <Button 
-              onClick={exportToPDF}
-              className="bg-alert-red hover:bg-red-700"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Export to PDF
-            </Button>
-            <Button 
-              onClick={handlePrint}
-              variant="outline"
-            >
-              <Printer className="w-4 h-4 mr-2" />
-              Print Report
-            </Button>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Export Options */}
+          <Card className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                Export Options
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <Button 
+                  onClick={exportToExcel}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Export to Excel
+                </Button>
+                <Button 
+                  onClick={exportToPDF}
+                  className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export to PDF
+                </Button>
+                <Button 
+                  onClick={handlePrint}
+                  variant="outline"
+                  className="border-2 hover:bg-gray-100 dark:hover:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Report
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
