@@ -5,7 +5,7 @@ import {
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
   DollarSign, Package, XCircle, Wand2, MoreVertical, Copy,
-  CheckCircle, Trash2, AlertCircle
+  CheckCircle, Trash2, AlertCircle, Flask
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -114,6 +114,78 @@ const CATEGORY_COLORS = {
   },
 };
 
+// Category configuration with complete properties for code generator
+// Built from existing CATEGORY_ICONS and CATEGORY_COLORS to maintain consistency
+const categoryConfig: Record<string, {
+  icon: any;
+  gradient: string;
+  color: string;
+  bg: string;
+  ring: string;
+  text: string;
+}> = {
+  consultation: {
+    icon: Stethoscope,
+    gradient: CATEGORY_COLORS.consultation.gradient,
+    color: "blue-500",
+    bg: CATEGORY_COLORS.consultation.light,
+    ring: CATEGORY_COLORS.consultation.ring,
+    text: CATEGORY_COLORS.consultation.text
+  },
+  laboratory: {
+    icon: Flask,
+    gradient: CATEGORY_COLORS.laboratory.gradient,
+    color: "amber-500",
+    bg: CATEGORY_COLORS.laboratory.light,
+    ring: CATEGORY_COLORS.laboratory.ring,
+    text: CATEGORY_COLORS.laboratory.text
+  },
+  radiology: {
+    icon: Radio,
+    gradient: CATEGORY_COLORS.radiology.gradient,
+    color: "purple-500",
+    bg: CATEGORY_COLORS.radiology.light,
+    ring: CATEGORY_COLORS.radiology.ring,
+    text: CATEGORY_COLORS.radiology.text
+  },
+  ultrasound: {
+    icon: Activity,
+    gradient: CATEGORY_COLORS.ultrasound.gradient,
+    color: "teal-500",
+    bg: CATEGORY_COLORS.ultrasound.light,
+    ring: CATEGORY_COLORS.ultrasound.ring,
+    text: CATEGORY_COLORS.ultrasound.text
+  },
+  pharmacy: {
+    icon: Pill,
+    gradient: CATEGORY_COLORS.pharmacy.gradient,
+    color: "pink-500",
+    bg: CATEGORY_COLORS.pharmacy.light,
+    ring: CATEGORY_COLORS.pharmacy.ring,
+    text: CATEGORY_COLORS.pharmacy.text
+  },
+  procedure: {
+    icon: Syringe,
+    gradient: CATEGORY_COLORS.procedure.gradient,
+    color: "green-500",
+    bg: CATEGORY_COLORS.procedure.light,
+    ring: CATEGORY_COLORS.procedure.ring,
+    text: CATEGORY_COLORS.procedure.text
+  }
+};
+
+// Helper function to get category config with fallback
+function getCategoryConfig(category: string) {
+  return categoryConfig[category] || {
+    icon: Package,
+    gradient: "from-gray-500 to-gray-600",
+    color: "gray-500",
+    bg: "bg-gray-50",
+    ring: "ring-gray-500",
+    text: "text-gray-700"
+  };
+}
+
 // Smart code suggestions by category
 const CODE_SUGGESTIONS = {
   consultation: (name: string) => {
@@ -157,45 +229,166 @@ const CODE_SUGGESTIONS = {
 // Grouped predefined services by subcategory
 const PREDEFINED_SERVICES = {
   laboratory: {
-    "Blood Tests": [
+    "Blood Tests (Hematology)": [
       "Complete Blood Count (CBC)",
-      "Blood Sugar (Glucose)",
-      "Hemoglobin",
-      "Blood Group & Rh",
+      "Hemoglobin (Hb)",
+      "Hematocrit (HCT)",
+      "White Blood Cell Count (WBC)",
+      "Platelet Count",
       "ESR (Erythrocyte Sedimentation Rate)",
+      "Blood Group & Rh",
+      "Bleeding Time (BT)",
+      "Clotting Time (CT)",
+      "Prothrombin Time (PT)",
+      "INR (International Normalized Ratio)",
+      "Reticulocyte Count",
+    ],
+    "Blood Sugar & Diabetes": [
+      "Blood Sugar (Glucose)",
+      "Fasting Blood Sugar (FBS)",
+      "Random Blood Sugar (RBS)",
+      "2-Hour Post-Prandial (2HPP)",
+      "Oral Glucose Tolerance Test (OGTT)",
       "HbA1c (Diabetes)",
     ],
-    "Infectious Disease Tests": [
+    "Malaria & Parasites": [
       "Malaria Test (RDT)",
       "Malaria Microscopy",
-      "HIV Test",
-      "Hepatitis B Test",
-      "Hepatitis C Test",
-      "Syphilis (VDRL/RPR)",
-      "Tuberculosis (TB) Test",
-      "Widal Test (Typhoid)",
+      "Blood Film for Malaria (BFFM)",
+      "Microfilaria",
     ],
-    "Urine & Stool Tests": [
-      "Urinalysis",
-      "Urine Pregnancy Test",
-      "Stool Analysis",
-      "Stool for Ova and Parasites",
-      "Culture & Sensitivity (Urine)",
-      "Culture & Sensitivity (Stool)",
-    ],
-    "Biochemistry Tests": [
+    "Chemistry Panel": [
       "Liver Function Test (LFT)",
-      "Kidney Function Test (RFT)",
-      "Lipid Profile",
-      "Electrolytes (Na, K, Cl)",
-      "Thyroid Function Test (TFT)",
-      "Uric Acid",
+      "AST (SGOT)",
+      "ALT (SGPT)",
+      "Alkaline Phosphatase (ALP)",
+      "Bilirubin (Total & Direct)",
       "Total Protein",
       "Albumin",
-      "Bilirubin",
-      "AST/ALT",
-      "Creatinine",
+      "Globulin",
+      "Kidney Function Test (KFT/RFT)",
       "Urea/BUN",
+      "Creatinine",
+      "Uric Acid",
+      "Electrolytes (Na, K, Cl)",
+      "Sodium (Na)",
+      "Potassium (K)",
+      "Chloride (Cl)",
+      "Calcium (Ca)",
+      "Magnesium (Mg)",
+      "Phosphorus",
+    ],
+    "Lipid Profile": [
+      "Lipid Profile",
+      "Total Cholesterol",
+      "HDL Cholesterol",
+      "LDL Cholesterol",
+      "Triglycerides",
+      "VLDL",
+    ],
+    "Cardiac Markers": [
+      "Troponin I/T",
+      "CK-MB",
+      "Myoglobin",
+      "D-Dimer",
+      "BNP/NT-proBNP",
+    ],
+    "Thyroid Function": [
+      "Thyroid Function Test (TFT)",
+      "TSH (Thyroid Stimulating Hormone)",
+      "Free T3 (FT3)",
+      "Free T4 (FT4)",
+      "Total T3",
+      "Total T4",
+    ],
+    "Hormones (Reproductive)": [
+      "Testosterone",
+      "Estrogen (E2)",
+      "Progesterone",
+      "LH (Luteinizing Hormone)",
+      "FSH (Follicle Stimulating Hormone)",
+      "Prolactin",
+      "Beta-hCG (Pregnancy Test)",
+    ],
+    "Other Hormones": [
+      "Cortisol",
+      "ACTH",
+      "Growth Hormone",
+      "Vitamin D (25-OH)",
+      "Vitamin B12",
+      "Folate",
+      "Ferritin",
+      "Iron Studies (Serum Iron, TIBC)",
+    ],
+    "Serology (Infectious Diseases)": [
+      "HIV Test",
+      "Hepatitis B (HBsAg)",
+      "Hepatitis C (Anti-HCV)",
+      "Syphilis (VDRL/RPR)",
+      "TPHA (Treponema pallidum)",
+      "Widal Test (Typhoid)",
+      "Brucella Test (B.A.T)",
+      "H. Pylori Test",
+      "Dengue NS1 Antigen",
+      "Dengue IgM/IgG",
+      "COVID-19 Antigen/PCR",
+      "Rubella IgM/IgG",
+      "Toxoplasma IgM/IgG",
+      "Cytomegalovirus (CMV)",
+      "Epstein-Barr Virus (EBV)",
+    ],
+    "Urine Tests": [
+      "Urinalysis",
+      "Urine Microscopy",
+      "Urine Culture & Sensitivity",
+      "Urine Pregnancy Test",
+      "24-Hour Urine Protein",
+      "Urine Microalbumin",
+      "Urine Creatinine Clearance",
+    ],
+    "Stool Tests": [
+      "Stool Analysis",
+      "Stool for Ova and Parasites",
+      "Stool Culture & Sensitivity",
+      "Stool Occult Blood",
+      "Stool for H. Pylori Antigen",
+    ],
+    "Microbiology (Cultures)": [
+      "Blood Culture & Sensitivity",
+      "Sputum Culture & Sensitivity",
+      "Throat Swab Culture",
+      "Wound Swab Culture",
+      "Vaginal Swab Culture",
+      "Urethral Swab Culture",
+      "Gram Stain",
+      "AFB Stain (TB)",
+      "KOH Mount (Fungal)",
+    ],
+    "Special Tests": [
+      "C-Reactive Protein (CRP)",
+      "Rheumatoid Factor (RF)",
+      "Anti-CCP (Rheumatoid Arthritis)",
+      "ANA (Antinuclear Antibody)",
+      "Anti-dsDNA",
+      "Complement (C3, C4)",
+      "Immunoglobulins (IgA, IgG, IgM, IgE)",
+      "Amylase",
+      "Lipase",
+      "G6PD (Glucose-6-Phosphate Dehydrogenase)",
+      "Sickling Test",
+      "Hemoglobin Electrophoresis",
+    ],
+    "Tumor Markers": [
+      "PSA (Prostate Specific Antigen)",
+      "CEA (Carcinoembryonic Antigen)",
+      "CA 19-9",
+      "CA 125",
+      "AFP (Alpha-Fetoprotein)",
+    ],
+    "Coagulation": [
+      "PT/INR",
+      "aPTT",
+      "Fibrinogen",
     ],
   },
   radiology: {
@@ -770,8 +963,8 @@ export default function ServiceManagement() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const activeCount = services.filter(s => s.isActive === 1).length;
-    const inactiveCount = services.length - activeCount;
+    const activeCount = services.filter(s => s.isActive === 1 || s.isActive === true).length;
+    const inactiveCount = services.filter(s => s.isActive === 0 || s.isActive === false).length;
     
     const byCategory = services.reduce((acc, service) => {
       acc[service.category] = (acc[service.category] || 0) + 1;
@@ -819,6 +1012,17 @@ export default function ServiceManagement() {
   };
 
   const hasActiveFilters = searchTerm || categoryFilter.length > 0 || statusFilter !== "all" || priceRange.min || priceRange.max;
+
+  // Handle predefined service selection and auto-generate code
+  const handlePredefinedServiceSelect = (serviceName: string) => {
+    const category = form.watch('category');
+    if (!category || !serviceName) return;
+    
+    const generatedCode = generateServiceCode(serviceName, category);
+    
+    form.setValue('name', serviceName);
+    form.setValue('code', generatedCode);
+  };
 
   // Calculate category counts
   const categoryCounts = useMemo(() => {
@@ -1094,7 +1298,7 @@ export default function ServiceManagement() {
                                     key={serviceName}
                                     type="button"
                                     onClick={() => {
-                                      field.onChange(serviceName);
+                                      handlePredefinedServiceSelect(serviceName);
                                       setPredefinedSearch("");
                                     }}
                                     className={`w-full text-left px-3 py-2 rounded hover:bg-blue-50 transition-colors text-sm ${
@@ -1508,31 +1712,32 @@ export default function ServiceManagement() {
           </CardContent>
         </Card>
 
-        {/* Average Price Card */}
+        {/* Price Range Card */}
         <Card className="border-2 border-purple-200 dark:border-purple-800 hover:shadow-lg hover:-translate-y-1 
                        transition-all duration-300 group">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Avg Price
+                  Price Range
                 </p>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <CountUp
-                    end={Math.round(stats.avgPrice)}
-                    duration={2}
-                    separator=","
-                    className="text-3xl font-bold text-purple-600 dark:text-purple-400"
-                  />
-                  <span className="text-sm text-gray-500">SSP</span>
+                  <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    {stats.minPrice.toLocaleString()}
+                  </span>
+                  <span className="text-gray-400">-</span>
+                  <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    {stats.maxPrice.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-gray-500">SSP</span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Range: {stats.minPrice.toLocaleString()} - {stats.maxPrice.toLocaleString()}
+                  Lowest to highest service price
                 </p>
               </div>
               <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl 
                             shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <DollarSign className="w-6 h-6 text-white" />
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
