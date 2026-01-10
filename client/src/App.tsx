@@ -15,7 +15,6 @@ import Reports from "@/pages/Reports";
 import AllResults from "@/pages/AllResults";
 import Payment from "@/pages/Payment";
 import Billing from "@/pages/Billing";
-import BillingSettings from "@/pages/BillingSettings";
 import ServiceManagement from "@/pages/ServiceManagement";
 import UserManagement from "@/pages/UserManagement";
 import Auth from "@/pages/Auth";
@@ -77,7 +76,6 @@ function AppLayout() {
             <ProtectedRoute path="/all-results" component={AllResults} allowedRoles={[ROLES.ADMIN]} />
             
             {/* Settings - Admin Only */}
-            <ProtectedRoute path="/billing-settings" component={BillingSettings} allowedRoles={[ROLES.ADMIN]} />
             <ProtectedRoute path="/service-management" component={ServiceManagement} allowedRoles={[ROLES.ADMIN]} />
             <ProtectedRoute path="/users" component={UserManagement} allowedRoles={[ROLES.ADMIN]} />
             <ProtectedRoute path="/reports" component={Reports} allowedRoles={[ROLES.ADMIN]} />

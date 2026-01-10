@@ -99,7 +99,6 @@ export const ROLE_NAV_MAP: Record<UserRole, string[]> = {
     '/all-results',
     '/service-management',
     '/users',
-    '/billing-settings',
     '/reports',
   ],
   
@@ -175,7 +174,6 @@ export const PAGE_PERMISSIONS: Record<string, UserRole[]> = {
   // Settings (Admin only)
   '/service-management': [ROLES.ADMIN],
   '/users': [ROLES.ADMIN],
-  '/billing-settings': [ROLES.ADMIN],
   '/reports': [ROLES.ADMIN],
 };
 

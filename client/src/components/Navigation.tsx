@@ -44,7 +44,6 @@ const navItems = [
   // SETTINGS
   { path: "/service-management", label: "Service Management", icon: Tag, category: "Settings" },
   { path: "/users", label: "User Management", icon: UserCog, category: "Settings" },
-  { path: "/billing-settings", label: "Billing Settings", icon: Settings, category: "Settings" },
   
   // REPORTS
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },
