@@ -44,6 +44,20 @@ const getRoleIcon = (role: string) => {
   }
 };
 
+// Types for better type safety
+type UserRole = "admin" | "doctor" | "lab" | "radiology" | "pharmacy" | "reception";
+interface User {
+  id: number;
+  username: string;
+  fullName?: string | null;
+  role: UserRole;
+  createdAt: string;
+}
+
+interface RoleBreakdown {
+  [key: string]: number;
+}
+
 // Sort types
 type SortField = 'username' | 'fullName' | 'role' | 'createdAt';
 type SortDirection = 'asc' | 'desc' | null;
@@ -88,16 +102,17 @@ export default function UserManagement() {
   const stats = useMemo(() => {
     if (!users) return null;
     
-    const totalUsers = users.length;
-    const roleBreakdown = users.reduce((acc: any, user: any) => {
+    const typedUsers = users as User[];
+    const totalUsers = typedUsers.length;
+    const roleBreakdown: RoleBreakdown = typedUsers.reduce((acc, user) => {
       acc[user.role] = (acc[user.role] || 0) + 1;
       return acc;
-    }, {});
+    }, {} as RoleBreakdown);
     
     // Recently added (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentlyAdded = users.filter((u: any) => new Date(u.createdAt) > sevenDaysAgo).length;
+    const recentlyAdded = typedUsers.filter((u) => new Date(u.createdAt) > sevenDaysAgo).length;
     
     return {
       totalUsers,
@@ -110,12 +125,13 @@ export default function UserManagement() {
   const filteredAndSortedUsers = useMemo(() => {
     if (!users) return [];
     
-    let filtered = [...users];
+    const typedUsers = users as User[];
+    let filtered = [...typedUsers];
     
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((u: any) => 
+      filtered = filtered.filter((u) => 
         u.username?.toLowerCase().includes(query) ||
         u.fullName?.toLowerCase().includes(query) ||
         u.role?.toLowerCase().includes(query)
@@ -124,9 +140,9 @@ export default function UserManagement() {
     
     // Sort
     if (sortField && sortDirection) {
-      filtered.sort((a: any, b: any) => {
-        let aValue = a[sortField];
-        let bValue = b[sortField];
+      filtered.sort((a, b) => {
+        let aValue: string | number | null | undefined = a[sortField];
+        let bValue: string | number | null | undefined = b[sortField];
         
         // Handle null/undefined
         if (aValue === null || aValue === undefined) return sortDirection === 'asc' ? 1 : -1;
@@ -134,12 +150,12 @@ export default function UserManagement() {
         
         // Handle dates
         if (sortField === 'createdAt') {
-          aValue = new Date(aValue).getTime();
-          bValue = new Date(bValue).getTime();
+          aValue = new Date(aValue as string).getTime();
+          bValue = new Date(bValue as string).getTime();
         }
         
         // Handle strings
-        if (typeof aValue === 'string') {
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
           aValue = aValue.toLowerCase();
           bValue = bValue.toLowerCase();
         }
@@ -400,7 +416,7 @@ export default function UserManagement() {
                       id="new-fullname"
                       data-testid="input-new-fullname"
                       type="text"
-                      value={newUser.fullName}
+                      value={newUser.fullName || ""}
                       onChange={(e) => {
                         setNewUser({ ...newUser, fullName: e.target.value });
                         if (formErrors.fullName) {
@@ -801,7 +817,7 @@ export default function UserManagement() {
             </div>
             
             {/* Search Bar */}
-            {!isLoading && users && users.length > 0 && (
+            {!isLoading && users && (users as User[]).length > 0 ? (
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -825,7 +841,7 @@ export default function UserManagement() {
                   </button>
                 )}
               </div>
-            )}
+            ) : null}
           </CardHeader>
           <CardContent>
             {isLoading ? (
