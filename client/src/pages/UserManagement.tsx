@@ -12,11 +12,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { UserPlus, Shield, Trash2, Key, Edit, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, User, Lock, AtSign, BadgeCheck, X, AlertCircle, CheckCircle2, AlertTriangle, UserCircle, Stethoscope, FlaskConical, Radio, Pill, ShieldCheck } from "lucide-react";
+import { UserPlus, Shield, Trash2, Key, Edit, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, User, Lock, AtSign, BadgeCheck, X, AlertCircle, CheckCircle2, AlertTriangle, UserCircle, Stethoscope, FlaskConical, Radio, Pill, ShieldCheck, Eye } from "lucide-react";
 import { InsertUser } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
+import { PermissionsModal } from "@/components/PermissionsModal";
 
 // Password strength calculator
 function getPasswordStrength(password: string): { strength: 'weak' | 'medium' | 'strong', score: number } {
@@ -68,6 +69,7 @@ export default function UserManagement() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [newPassword, setNewPassword] = useState("");
   
@@ -348,6 +350,11 @@ export default function UserManagement() {
     setSelectedUser(userToReset);
     setNewPassword("");
     setResetOpen(true);
+  };
+
+  const handleViewPermissions = (userToView: any) => {
+    setSelectedUser(userToView);
+    setPermissionsOpen(true);
   };
 
   const submitEdit = (e: React.FormEvent) => {
@@ -695,6 +702,15 @@ export default function UserManagement() {
           </DialogContent>
         </Dialog>
 
+        {/* Permissions Modal */}
+        {selectedUser && (
+          <PermissionsModal
+            open={permissionsOpen}
+            onOpenChange={setPermissionsOpen}
+            user={selectedUser}
+          />
+        )}
+
         {/* Stats Section */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
@@ -1002,6 +1018,24 @@ export default function UserManagement() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
+                              {/* View Permissions Button with Tooltip */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewPermissions(u)}
+                                    data-testid={`button-view-permissions-${u.id}`}
+                                    className="h-9 w-9 p-0 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 hover:scale-110"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="animate-in fade-in-0 zoom-in-95 duration-200">
+                                  <p>View permissions</p>
+                                </TooltipContent>
+                              </Tooltip>
+
                               {/* Edit Button with Tooltip */}
                               <Tooltip>
                                 <TooltipTrigger asChild>
