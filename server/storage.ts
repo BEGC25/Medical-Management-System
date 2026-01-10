@@ -2012,24 +2012,25 @@ export class MemStorage implements IStorage {
       };
     }
 
-    // Check for references in order_lines
-    const orderLinesCount = await db.select({ count: count() })
-      .from(orderLines)
-      .where(eq(orderLines.serviceId, id));
+    // Check for references in all tables in parallel for better performance
+    const [orderLinesCount, paymentItemsCount, pharmacyOrdersCount] = await Promise.all([
+      db.select({ count: count() })
+        .from(orderLines)
+        .where(eq(orderLines.serviceId, id)),
+      db.select({ count: count() })
+        .from(paymentItems)
+        .where(eq(paymentItems.serviceId, id)),
+      db.select({ count: count() })
+        .from(pharmacyOrders)
+        .where(eq(pharmacyOrders.serviceId, id)),
+    ]);
     
-    // Check for references in payment_items
-    const paymentItemsCount = await db.select({ count: count() })
-      .from(paymentItems)
-      .where(eq(paymentItems.serviceId, id));
+    // Helper function to extract count value
+    const getCount = (result: { count: number }[]) => result[0]?.count || 0;
     
-    // Check for references in pharmacy_orders
-    const pharmacyOrdersCount = await db.select({ count: count() })
-      .from(pharmacyOrders)
-      .where(eq(pharmacyOrders.serviceId, id));
-    
-    const orderLinesRefs = orderLinesCount[0]?.count || 0;
-    const paymentItemsRefs = paymentItemsCount[0]?.count || 0;
-    const pharmacyOrdersRefs = pharmacyOrdersCount[0]?.count || 0;
+    const orderLinesRefs = getCount(orderLinesCount);
+    const paymentItemsRefs = getCount(paymentItemsCount);
+    const pharmacyOrdersRefs = getCount(pharmacyOrdersCount);
     
     const totalRefs = orderLinesRefs + paymentItemsRefs + pharmacyOrdersRefs;
     
