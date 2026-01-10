@@ -710,6 +710,99 @@
     animation: fade-in-up 0.4s ease-out;
   }
   
+  /* Premium Auth Page Animations */
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); }
+  }
+
+  @keyframes shimmer-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  @keyframes float-gentle {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    33% { transform: translateY(-8px) translateX(4px); }
+    66% { transform: translateY(-4px) translateX(-4px); }
+  }
+
+  @keyframes scale-in {
+    0% { transform: scale(0.95); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .animate-gradient-shift {
+    animation: gradient-shift 8s ease infinite;
+    background-size: 200% 200%;
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+
+  .animate-shimmer-slide {
+    animation: shimmer-slide 2s ease-in-out infinite;
+  }
+
+  .animate-float-gentle {
+    animation: float-gentle 6s ease-in-out infinite;
+  }
+
+  .animate-float-gentle-delay-2 {
+    animation: float-gentle 6s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+
+  .animate-float-gentle-delay-4 {
+    animation: float-gentle 6s ease-in-out infinite;
+    animation-delay: 4s;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  /* Premium shimmer effect for cards */
+  .shimmer-effect {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-effect::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%) skewX(-12deg);
+    animation: shimmer-slide 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Premium Input Glow Effect */
+  .input-premium-glow:focus-within {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 
+                0 0 20px rgba(59, 130, 246, 0.2),
+                0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .input-premium-glow:focus-within {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 
+                0 0 25px rgba(59, 130, 246, 0.3),
+                0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
   /* Reduced Motion Support */
   @media (prefers-reduced-motion: reduce) {
     *,
