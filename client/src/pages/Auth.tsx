@@ -9,26 +9,48 @@ import { Stethoscope, Shield, Users, Activity, User, Lock, Sparkles, Heart } fro
 import { motion } from "framer-motion";
 import clinicLogo from "@assets/Logo-Clinic_1760859723870.jpeg";
 
+// Floating particles configuration
+const PARTICLE_CONFIG = {
+  COUNT: 10,
+  SIZE_MIN: 10,
+  SIZE_MAX: 30,
+  DURATION_MIN: 30,
+  DURATION_MAX: 60,
+  DELAY_MAX: 10,
+  OPACITY_MIN: 0.2,
+  OPACITY_MAX: 0.5,
+} as const;
+
+// Central glow gradient configuration
+const CENTRAL_GLOW_GRADIENT = 'radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 40%, transparent 70%)';
+
 export default function Auth() {
   const [, navigate] = useLocation();
   const { user, loginMutation } = useAuth();
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   // Check if user prefers reduced motion
-  const prefersReducedMotion = typeof window !== 'undefined' 
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
-    : false;
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   // Generate floating particles with random properties
   const particles = useMemo(() => {
-    return Array.from({ length: 10 }, (_, i) => ({
+    return Array.from({ length: PARTICLE_CONFIG.COUNT }, (_, i) => ({
       id: i,
-      size: Math.random() * 20 + 10, // 10-30px
-      left: Math.random() * 100, // 0-100%
-      top: Math.random() * 100, // 0-100%
-      duration: Math.random() * 30 + 30, // 30-60s
-      delay: Math.random() * 10, // 0-10s
-      opacity: Math.random() * 0.3 + 0.2, // 0.2-0.5
+      size: Math.random() * (PARTICLE_CONFIG.SIZE_MAX - PARTICLE_CONFIG.SIZE_MIN) + PARTICLE_CONFIG.SIZE_MIN,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      duration: Math.random() * (PARTICLE_CONFIG.DURATION_MAX - PARTICLE_CONFIG.DURATION_MIN) + PARTICLE_CONFIG.DURATION_MIN,
+      delay: Math.random() * PARTICLE_CONFIG.DELAY_MAX,
+      opacity: Math.random() * (PARTICLE_CONFIG.OPACITY_MAX - PARTICLE_CONFIG.OPACITY_MIN) + PARTICLE_CONFIG.OPACITY_MIN,
     }));
   }, []);
 
@@ -108,7 +130,7 @@ export default function Auth() {
         <div 
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-3xl"
           style={{
-            background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 40%, transparent 70%)',
+            background: CENTRAL_GLOW_GRADIENT,
           }}
         />
       </div>
