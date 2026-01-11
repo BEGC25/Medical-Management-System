@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,24 @@ export default function Auth() {
   const [, navigate] = useLocation();
   const { user, loginMutation } = useAuth();
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+
+  // Check if user prefers reduced motion
+  const prefersReducedMotion = typeof window !== 'undefined' 
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
+    : false;
+
+  // Generate floating particles with random properties
+  const particles = useMemo(() => {
+    return Array.from({ length: 10 }, (_, i) => ({
+      id: i,
+      size: Math.random() * 20 + 10, // 10-30px
+      left: Math.random() * 100, // 0-100%
+      top: Math.random() * 100, // 0-100%
+      duration: Math.random() * 30 + 30, // 30-60s
+      delay: Math.random() * 10, // 0-10s
+      opacity: Math.random() * 0.3 + 0.2, // 0.2-0.5
+    }));
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -84,6 +102,37 @@ export default function Auth() {
     <div className="min-h-screen flex relative overflow-hidden">
       {/* Animated Background Gradient Layer */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 animate-gradient-shift" />
+      
+      {/* Central Radial Glow - Unifying Element */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 40%, transparent 70%)',
+          }}
+        />
+      </div>
+
+      {/* Floating Particles - Gentle Dreamy Effect */}
+      {!prefersReducedMotion && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="absolute rounded-full bg-blue-400/20 blur-xl animate-float-particle"
+              style={{
+                width: `${particle.size}px`,
+                height: `${particle.size}px`,
+                left: `${particle.left}%`,
+                top: `${particle.top}%`,
+                opacity: particle.opacity,
+                animationDuration: `${particle.duration}s`,
+                animationDelay: `${particle.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
       
       {/* Decorative Elements */}
       <div className="absolute top-10 right-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float-gentle" />
