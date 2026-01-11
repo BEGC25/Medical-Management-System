@@ -240,8 +240,8 @@ export default function ReportsDailyCash() {
         {/* Page header - mobile optimized */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Daily Cash Report</h1>
-            <p className="text-sm text-gray-500">Cash receipts summarized per department</p>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Daily Cash Report</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Cash receipts summarized per department</p>
           </div>
           
           {/* Action buttons - wrap on mobile */}
@@ -343,42 +343,42 @@ export default function ReportsDailyCash() {
         {/* Expected vs Counted vs Variance - mobile optimized cards */}
         {showVarianceBlock && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-            <div className="rounded-xl border bg-gradient-to-br from-blue-50 to-white p-4 sm:p-5 shadow-md">
-              <div className="text-xs sm:text-sm font-semibold text-gray-600 mb-1">Expected Cash</div>
-              <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950 dark:to-gray-900 p-4 sm:p-5 shadow-md">
+              <div className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Expected Cash</div>
+              <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
                 {formatSSP(closingStatus.closing?.expected_amount || totals.total_amount)}
               </div>
             </div>
             
-            <div className="rounded-xl border bg-gradient-to-br from-green-50 to-white p-4 sm:p-5 shadow-md">
-              <div className="text-xs sm:text-sm font-semibold text-gray-600 mb-1">Counted Cash</div>
-              <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-900 p-4 sm:p-5 shadow-md">
+              <div className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Counted Cash</div>
+              <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
                 {closingStatus.closing 
                   ? formatSSP(closingStatus.closing.counted_amount)
                   : "—"}
               </div>
             </div>
             
-            <div className={`rounded-xl border p-4 sm:p-5 shadow-md ${
+            <div className={`rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-5 shadow-md ${
               variance === 0 
-                ? "bg-gradient-to-br from-green-50 to-white" 
-                : "bg-gradient-to-br from-red-50 to-white"
+                ? "bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-900" 
+                : "bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-gray-900"
             }`}>
               <div className="flex items-center gap-2 mb-1">
-                <div className="text-xs sm:text-sm font-semibold text-gray-600">Variance</div>
+                <div className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300">Variance</div>
                 {variance === 0 ? (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-red-600" />
+                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                 )}
               </div>
               <div className={`text-lg sm:text-xl font-bold tabular-nums ${
-                variance === 0 ? "text-green-700" : variance > 0 ? "text-red-700" : "text-orange-700"
+                variance === 0 ? "text-green-700 dark:text-green-400" : variance > 0 ? "text-red-700 dark:text-red-400" : "text-orange-700 dark:text-orange-400"
               }`}>
                 {closingStatus.closing ? getVarianceText(variance) : "—"}
               </div>
               {closingStatus.closing && variance !== 0 && (
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {formatSSP(variance)}
                 </div>
               )}
@@ -401,54 +401,54 @@ export default function ReportsDailyCash() {
 
         {/* KPI cards - mobile optimized */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-          <div className="rounded-xl border bg-gradient-to-br from-green-50 to-white p-4 sm:p-6 shadow-lg hover:shadow-2xl transition-all">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-900 p-4 sm:p-6 shadow-lg hover:shadow-2xl transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">Total Cash</span>
-              <div className="rounded-lg bg-green-100 p-2 sm:p-2.5 shadow-md">
-                <CircleDollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Total Cash</span>
+              <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2 sm:p-2.5 shadow-md">
+                <CircleDollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            <div className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold tabular-nums text-gray-900">
+            <div className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
               {formatSSP(totals.total_amount)}
             </div>
           </div>
-          <div className="rounded-xl border bg-gradient-to-br from-blue-50 to-white p-4 sm:p-6 shadow-lg hover:shadow-2xl transition-all">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950 dark:to-gray-900 p-4 sm:p-6 shadow-lg hover:shadow-2xl transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">Receipts</span>
-              <div className="rounded-lg bg-blue-100 p-2 sm:p-2.5 shadow-md">
-                <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Receipts</span>
+              <div className="rounded-lg bg-blue-100 dark:bg-blue-900 p-2 sm:p-2.5 shadow-md">
+                <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <div className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold tabular-nums text-gray-900">
+            <div className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
               {Number(totals.receipt_count).toLocaleString()}
             </div>
           </div>
         </div>
 
         {/* Table - mobile optimized */}
-        <div className="overflow-hidden rounded-xl border bg-white shadow-lg hover:shadow-xl transition-shadow">
+        <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg hover:shadow-xl transition-shadow">
           <div className="overflow-x-auto">
             <table className="min-w-full w-full text-sm">
-              <thead className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-200">
+              <thead className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b-2 border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-3 sm:px-4 py-3 text-left font-bold text-gray-700">Department</th>
-                  <th className="px-3 sm:px-4 py-3 text-right font-bold text-gray-700">Receipts</th>
-                  <th className="px-3 sm:px-4 py-3 text-right font-bold text-gray-700">Total Cash ({CURRENCY})</th>
+                  <th className="px-3 sm:px-4 py-3 text-left font-bold text-gray-700 dark:text-gray-300">Department</th>
+                  <th className="px-3 sm:px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-300">Receipts</th>
+                  <th className="px-3 sm:px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-300">Total Cash ({CURRENCY})</th>
                   <th className="px-3 sm:px-4 py-3 print:hidden"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {loading ? (
                   [...Array(4)].map((_, i) => (
                     <tr key={i} className="animate-pulse">
                       <td className="px-3 sm:px-4 py-3">
-                        <div className="h-3 w-20 sm:w-28 rounded bg-gray-200" />
+                        <div className="h-3 w-20 sm:w-28 rounded bg-gray-200 dark:bg-gray-700" />
                       </td>
                       <td className="px-3 sm:px-4 py-3 text-right">
-                        <div className="ml-auto h-3 w-8 sm:w-10 rounded bg-gray-200" />
+                        <div className="ml-auto h-3 w-8 sm:w-10 rounded bg-gray-200 dark:bg-gray-700" />
                       </td>
                       <td className="px-3 sm:px-4 py-3 text-right">
-                        <div className="ml-auto h-3 w-12 sm:w-16 rounded bg-gray-200" />
+                        <div className="ml-auto h-3 w-12 sm:w-16 rounded bg-gray-200 dark:bg-gray-700" />
                       </td>
                       <td className="px-3 sm:px-4 py-3 print:hidden"></td>
                     </tr>
@@ -457,31 +457,31 @@ export default function ReportsDailyCash() {
                   rows.map((r) => (
                     <tr 
                       key={r.department} 
-                      className="hover:bg-blue-50/50 transition-colors cursor-pointer print:cursor-auto"
+                      className="hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer print:cursor-auto"
                       onClick={() => loadReceiptDetails(r.department)}
                     >
-                      <td className="px-3 sm:px-4 py-3 capitalize font-medium">{r.department}</td>
-                      <td className="px-3 sm:px-4 py-3 text-right tabular-nums">
+                      <td className="px-3 sm:px-4 py-3 capitalize font-medium text-gray-900 dark:text-gray-100">{r.department}</td>
+                      <td className="px-3 sm:px-4 py-3 text-right tabular-nums text-gray-900 dark:text-gray-100">
                         {Number(r.receipt_count).toLocaleString()}
                       </td>
-                      <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-semibold">
+                      <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-semibold text-gray-900 dark:text-gray-100">
                         {Number(r.total_amount).toLocaleString()}
                       </td>
                       <td className="px-3 sm:px-4 py-3 text-right print:hidden">
-                        <ChevronRight className="h-4 w-4 text-gray-400 inline" />
+                        <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500 inline" />
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
               {!loading && (
-                <tfoot className="bg-gradient-to-r from-gray-50 to-white border-t-2 border-gray-200">
+                <tfoot className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-t-2 border-gray-200 dark:border-gray-700">
                   <tr>
-                    <td className="px-3 sm:px-4 py-3 font-bold text-gray-900">Total</td>
-                    <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-bold text-gray-900">
+                    <td className="px-3 sm:px-4 py-3 font-bold text-gray-900 dark:text-gray-100">Total</td>
+                    <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-bold text-gray-900 dark:text-gray-100">
                       {Number(totals.receipt_count).toLocaleString()}
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-bold text-gray-900">
+                    <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-bold text-gray-900 dark:text-gray-100">
                       {Number(totals.total_amount).toLocaleString()}
                     </td>
                     <td className="px-3 sm:px-4 py-3 print:hidden"></td>
@@ -496,21 +496,21 @@ export default function ReportsDailyCash() {
       {/* Close Day Dialog */}
       {showCloseDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 print:hidden">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <h2 className="text-xl font-bold text-gray-900">Close Day - {date}</h2>
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Close Day - {date}</h2>
             
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Expected Amount
                 </label>
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {formatSSP(totals.total_amount)}
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Counted Cash <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -519,45 +519,45 @@ export default function ReportsDailyCash() {
                   min="0"
                   value={countedCash}
                   onChange={(e) => setCountedCash(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="0"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Handed Over By (Receptionist) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={handedOverBy}
                   onChange={(e) => setHandedOverBy(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Name"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Received By (Manager/Admin) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={receivedBy}
                   onChange={(e) => setReceivedBy(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Name"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Notes (Optional)
                 </label>
                 <textarea
                   value={closingNotes}
                   onChange={(e) => setClosingNotes(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   rows={3}
                   placeholder="Any additional notes..."
                 />
@@ -567,7 +567,7 @@ export default function ReportsDailyCash() {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setShowCloseDialog(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 disabled={closingLoading}
               >
                 Cancel
@@ -587,18 +587,18 @@ export default function ReportsDailyCash() {
       {/* Receipt Details Drawer */}
       {selectedDepartment && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center sm:justify-center z-50 print:hidden">
-          <div className="bg-white rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-3xl sm:max-h-[80vh] flex flex-col max-h-[90vh]">
+          <div className="bg-white dark:bg-gray-900 rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-3xl sm:max-h-[80vh] flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="px-4 sm:px-6 py-4 border-b flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 capitalize">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
                   {selectedDepartment} - Receipt Details
                 </h2>
-                <p className="text-sm text-gray-500">{date}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{date}</p>
               </div>
               <button
                 onClick={() => setSelectedDepartment(null)}
-                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none"
               >
                 ×
               </button>
@@ -607,36 +607,36 @@ export default function ReportsDailyCash() {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               {receiptsLoading ? (
-                <div className="text-center py-8 text-gray-500">Loading...</div>
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading...</div>
               ) : receipts.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">No receipts found</div>
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">No receipts found</div>
               ) : (
                 <div className="space-y-3">
                   {receipts.map((receipt, idx) => (
                     <div 
                       key={idx} 
-                      className="border rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors"
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
                         <div>
-                          <div className="text-xs text-gray-500">Receipt ID</div>
-                          <div className="font-medium">{receipt.receipt_id}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Receipt ID</div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">{receipt.receipt_id}</div>
                         </div>
                         <div>
-                          <div className="text-xs text-gray-500">Time</div>
-                          <div className="font-medium">{receipt.time}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Time</div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">{receipt.time}</div>
                         </div>
                         <div>
-                          <div className="text-xs text-gray-500">Amount</div>
-                          <div className="font-bold text-green-700">{formatSSP(receipt.amount)}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Amount</div>
+                          <div className="font-bold text-green-700 dark:text-green-400">{formatSSP(receipt.amount)}</div>
                         </div>
                         <div className="col-span-2 sm:col-span-1">
-                          <div className="text-xs text-gray-500">Patient</div>
-                          <div className="font-medium">{receipt.patient_name || receipt.patient_id}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Patient</div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">{receipt.patient_name || receipt.patient_id}</div>
                         </div>
                         <div>
-                          <div className="text-xs text-gray-500">Cashier</div>
-                          <div className="font-medium">{receipt.cashier}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Cashier</div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">{receipt.cashier}</div>
                         </div>
                       </div>
                     </div>
