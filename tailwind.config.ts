@@ -175,6 +175,7 @@ export default {
         "slide-in-up": "slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
         "number-flip": "number-flip 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
         "float-particle": "float-particle 60s ease-in-out infinite",
+        "heartbeat-flow": "heartbeat-flow 5s linear infinite",
       },
     },
   },

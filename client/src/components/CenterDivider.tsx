@@ -95,6 +95,22 @@ export default function CenterDivider() {
 }
 
 /**
+ * EKG Waveform Path Data
+ * 
+ * Represents a realistic ECG waveform with the following components:
+ * - Baseline (flat): M 40 10 L 40 50
+ * - P wave (small bump): L 38 55 L 40 60 L 42 62 L 40 65
+ * - PR segment (flat): L 40 70
+ * - QRS complex (sharp spike): L 35 75 L 40 40 L 50 95 L 40 70
+ * - ST segment (slight elevation): L 40 75
+ * - T wave (gentle bump): L 43 85 L 40 90
+ * - Baseline continuation: L 40 150
+ * 
+ * The path is designed to be vertically oriented and animated
+ */
+const EKG_PATH_DATA = "M 40 10 L 40 50 L 38 55 L 40 60 L 42 62 L 40 65 L 40 70 L 35 75 L 40 40 L 50 95 L 40 70 L 40 75 L 43 85 L 40 90 L 40 150";
+
+/**
  * HeartbeatPath Component
  * 
  * Renders an animated EKG/heartbeat pattern that travels vertically
@@ -115,9 +131,8 @@ function HeartbeatPath({ delay }: { delay: number }) {
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Realistic EKG heartbeat pattern path */}
-      {/* Flat baseline -> P wave -> QRS complex (sharp spike) -> T wave -> baseline */}
       <path
-        d="M 40 10 L 40 50 L 38 55 L 40 60 L 42 62 L 40 65 L 40 70 L 35 75 L 40 40 L 50 95 L 40 70 L 40 75 L 43 85 L 40 90 L 40 150"
+        d={EKG_PATH_DATA}
         stroke="url(#heartbeatGradient)"
         strokeWidth="2.5"
         fill="none"
