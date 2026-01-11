@@ -115,7 +115,7 @@ function EKGTick({ delay }: { delay: number }) {
             - Q wave small downward (10,16)
             - R wave tall upward spike (12,4)
             - S wave deep downward (14,20)
-            - Returns to baseline (16,12 to 22,12)
+            - Returns to baseline (16,12) through (18,12) to (22,12)
           */}
           <path
             d="M 2 12 L 6 12 L 8 8 L 10 16 L 12 4 L 14 20 L 16 12 L 18 12 L 22 12"
