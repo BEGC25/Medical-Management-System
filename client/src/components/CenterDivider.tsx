@@ -67,21 +67,28 @@ export default function CenterDivider() {
 function HeartbeatPulse({ delay }: { delay: number }) {
   return (
     <div 
-      className="absolute left-1/2 w-1 h-8 top-0"
+      className="absolute left-1/2 -translate-x-1/2"
       style={{
-        animation: 'heartbeat-pulse 5s ease-in-out infinite',
-        animationDelay: `${delay}s`,
-        willChange: 'transform, opacity',
-        transform: 'translateY(-10vh) translateX(-50%)'
+        top: 0,
+        width: '4px',  // w-1
+        height: '32px'  // h-8
       }}
     >
       <div 
-        className="w-full h-full bg-gradient-to-b from-cyan-400/40 via-blue-400/60 to-cyan-400/40 rounded-full"
+        className="w-full h-full animate-heartbeat-pulse"
         style={{
-          filter: 'blur(2px)',
-          boxShadow: '0 0 10px rgba(34, 211, 238, 0.3), 0 0 20px rgba(59, 130, 246, 0.2)'
+          animationDelay: `${delay}s`,
+          willChange: 'transform, opacity'
         }}
-      />
+      >
+        <div 
+          className="w-full h-full bg-gradient-to-b from-cyan-400/40 via-blue-400/60 to-cyan-400/40 rounded-full"
+          style={{
+            filter: 'blur(2px)',
+            boxShadow: '0 0 10px rgba(34, 211, 238, 0.3), 0 0 20px rgba(59, 130, 246, 0.2)'
+          }}
+        />
+      </div>
     </div>
   );
 }
