@@ -3127,24 +3127,32 @@ export class MemStorage implements IStorage {
         conditions.push(lte(treatments.visitDate, toDate));
       }
       
-      // Execute the query with GROUP BY and COUNT
+      // Execute the query to get all diagnoses
       const results = await db
         .select({
           diagnosis: treatments.diagnosis,
-          count: sql<number>`count(*)`.mapWith(Number),
         })
         .from(treatments)
-        .where(and(...conditions))
-        .groupBy(treatments.diagnosis)
-        .orderBy(desc(sql`count(*)`));
+        .where(and(...conditions));
       
-      // Return the results with proper typing
-      // diagnosis is guaranteed to be non-null and non-empty due to WHERE clause
-      // Using type assertion is safe here because of the filters above
-      return results.map(r => ({
-        diagnosis: r.diagnosis as string,
-        count: r.count,
-      }));
+      // Process results to split comma-separated diagnoses and aggregate counts
+      const diagnosisCounts = new Map<string, number>();
+      
+      results.forEach(r => {
+        const diagnosisString = r.diagnosis as string;
+        // Split by comma or semicolon and process each diagnosis
+        const diagnoses = diagnosisString.split(/[,;]/).map(d => d.trim()).filter(d => d.length > 0);
+        
+        diagnoses.forEach(diagnosis => {
+          const current = diagnosisCounts.get(diagnosis) || 0;
+          diagnosisCounts.set(diagnosis, current + 1);
+        });
+      });
+      
+      // Convert map to array and sort by count descending
+      return Array.from(diagnosisCounts.entries())
+        .map(([diagnosis, count]) => ({ diagnosis, count }))
+        .sort((a, b) => b.count - a.count);
     } catch (error) {
       console.error("Error fetching diagnosis stats:", error);
       throw error;

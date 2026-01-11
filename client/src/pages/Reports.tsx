@@ -71,6 +71,7 @@ export default function Reports() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
   const [comparisonMode, setComparisonMode] = useState(false);
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>("today");
   const [filters, setFilters] = useState<ReportFilters>({
     reportType: "daily",
     fromDate: getClinicDayKey(),
@@ -154,6 +155,10 @@ export default function Reports() {
 
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    // Clear active quick filter when manually changing dates
+    if (key === 'fromDate' || key === 'toDate') {
+      setActiveQuickFilter(null);
+    }
   };
 
   const setQuickFilter = (preset: string) => {
@@ -181,6 +186,7 @@ export default function Reports() {
     }
 
     setFilters(prev => ({ ...prev, fromDate, toDate }));
+    setActiveQuickFilter(preset);
   };
 
   const generateReport = async () => {
@@ -401,7 +407,7 @@ export default function Reports() {
                   variant="outline"
                   size="sm"
                   onClick={() => setQuickFilter("today")}
-                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  className={activeQuickFilter === "today" ? "bg-blue-600 text-white hover:bg-blue-700" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
                 >
                   <Calendar className="w-4 h-4 mr-1" />
                   Today
@@ -410,7 +416,7 @@ export default function Reports() {
                   variant="outline"
                   size="sm"
                   onClick={() => setQuickFilter("this-week")}
-                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  className={activeQuickFilter === "this-week" ? "bg-blue-600 text-white hover:bg-blue-700" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
                 >
                   This Week
                 </Button>
@@ -418,7 +424,7 @@ export default function Reports() {
                   variant="outline"
                   size="sm"
                   onClick={() => setQuickFilter("this-month")}
-                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  className={activeQuickFilter === "this-month" ? "bg-blue-600 text-white hover:bg-blue-700" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
                 >
                   This Month
                 </Button>
@@ -426,7 +432,7 @@ export default function Reports() {
                   variant="outline"
                   size="sm"
                   onClick={() => setQuickFilter("last-30-days")}
-                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  className={activeQuickFilter === "last-30-days" ? "bg-blue-600 text-white hover:bg-blue-700" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
                 >
                   Last 30 Days
                 </Button>
