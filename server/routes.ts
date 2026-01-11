@@ -2988,71 +2988,77 @@ router.get("/api/reports/diagnoses", async (req, res) => {
 
 router.get("/api/reports/age-distribution", async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    // Get all non-deleted patients
+    const allPatients = await db.select({
+      age: patients.age
+    }).from(patients).where(eq(patients.isDeleted, 0));
     
-    console.log("Age distribution route called", { fromDate, toDate });
-    
-    // Constants for age validation
-    const MAX_VALID_AGE = 150;
-    
-    // Get ALL patients (not filtered by registration date)
-    // Age distribution should show demographics of all patients in the system
-    const filteredPatients = await db.select().from(patients).where(
-      eq(patients.isDeleted, 0)
-    );
-    
-    console.log(`Found ${filteredPatients.length} patients in system`);
+    console.log(`Processing ${allPatients.length} patients for age distribution`);
+    console.log("Sample ages:", allPatients.slice(0, 5).map(p => p.age));
 
     const ageRanges: Record<string, number> = {
-      "0-5 years": 0,
-      "6-17 years": 0,
-      "18-64 years": 0,
-      "65+ years": 0,
-      Unknown: 0,
+      "0-5": 0,
+      "6-17": 0,
+      "18-35": 0,
+      "36-50": 0,
+      "51-64": 0,
+      "65+": 0,
     };
+    
+    let unknownCount = 0;
 
-    filteredPatients.forEach((patient) => {
-      // Use age string field (dateOfBirth field doesn't exist in schema)
+    allPatients.forEach((patient) => {
       if (!patient.age || patient.age.trim() === "") {
-        ageRanges["Unknown"]++;
+        unknownCount++;
         return;
       }
 
-      // Parse age from various formats: "25", "25 years", "25years", etc.
-      const ageString = patient.age.toString().trim();
-      // Extract first number from the string
-      const ageMatch = ageString.match(/\d+/);
-      
+      // Parse age - handle formats like "25", "25 years", "25y", etc.
+      const ageMatch = patient.age.match(/\d+/);
       if (!ageMatch) {
-        console.log(`Unable to parse age for patient ${patient.patientId}: "${patient.age}"`);
-        ageRanges["Unknown"]++;
+        unknownCount++;
         return;
       }
       
-      const age = parseInt(ageMatch[0]);
-      if (isNaN(age) || age < 0 || age > MAX_VALID_AGE) {
-        console.log(`Invalid age value for patient ${patient.patientId}: ${age}`);
-        ageRanges["Unknown"]++;
+      const age = parseInt(ageMatch[0], 10);
+      
+      if (isNaN(age) || age < 0 || age > 150) {
+        unknownCount++;
       } else if (age <= 5) {
-        ageRanges["0-5 years"]++;
+        ageRanges["0-5"]++;
       } else if (age <= 17) {
-        ageRanges["6-17 years"]++;
+        ageRanges["6-17"]++;
+      } else if (age <= 35) {
+        ageRanges["18-35"]++;
+      } else if (age <= 50) {
+        ageRanges["36-50"]++;
       } else if (age <= 64) {
-        ageRanges["18-64 years"]++;
+        ageRanges["51-64"]++;
       } else {
-        ageRanges["65+ years"]++;
+        ageRanges["65+"]++;
       }
     });
 
-    const total = filteredPatients.length || 1;
+    const total = allPatients.length;
+    
+    // Build distribution array - only include ranges with data
     const distribution = Object.entries(ageRanges)
-      .filter(([_, count]) => count > 0)
       .map(([ageRange, count]) => ({
         ageRange,
         count,
-        percentage: Math.round((count / total) * 100),
+        percentage: total > 0 ? Math.round((count / total) * 100) : 0,
       }));
+    
+    // Add unknown if there are any
+    if (unknownCount > 0) {
+      distribution.push({
+        ageRange: "Unknown",
+        count: unknownCount,
+        percentage: total > 0 ? Math.round((unknownCount / total) * 100) : 0,
+      });
+    }
 
+    console.log("Age distribution result:", distribution);
     res.json(distribution);
   } catch (error) {
     console.error("Error fetching age distribution:", error);
@@ -3064,9 +3070,7 @@ router.get("/api/reports/trends", async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
     
-    console.log("Reports trends route called", { fromDate, toDate });
-    
-    // If fromDate and toDate are provided, use them; otherwise default to last 30 days
+    // Use visitDate which is always populated (NOT NULL)
     let startDate: string;
     let endDate: string;
     
@@ -3074,61 +3078,51 @@ router.get("/api/reports/trends", async (req, res) => {
       startDate = fromDate;
       endDate = toDate;
     } else {
-      // Default to last 30 days from today
-      const { getClinicDayKey, getClinicDayKeyOffset } = await import('./utils/clinicDay');
-      startDate = getClinicDayKeyOffset(-29); // 29 days ago + today = 30 days
-      endDate = getClinicDayKey();
+      // Default to last 30 days
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 29);
+      startDate = thirtyDaysAgo.toISOString().split('T')[0];
+      endDate = today.toISOString().split('T')[0];
     }
     
-    console.log("Trends date range:", { startDate, endDate });
+    console.log("Trends query using visitDate:", { startDate, endDate });
     
-    // Get all encounters (visits) in the date range
-    // Use COALESCE to handle NULL clinicDay values by falling back to:
-    // 1. visitDate (always populated)
-    // 2. DATE(createdAt) as last resort
-    const visitRecords = await db.select({
-      encounterId: encounters.encounterId,
-      effectiveDate: sql<string>`COALESCE(
-        ${encounters.clinicDay}, 
-        ${encounters.visitDate},
-        DATE(${encounters.createdAt})
-      )`.as('effectiveDate')
-    }).from(encounters).where(
+    // Query using visitDate (which is NOT NULL and always populated)
+    const allTreatments = await db.select({
+      visitDate: treatments.visitDate
+    }).from(treatments).where(
       and(
-        gte(sql`COALESCE(
-          ${encounters.clinicDay}, 
-          ${encounters.visitDate},
-          DATE(${encounters.createdAt})
-        )`, startDate),
-        lte(sql`COALESCE(
-          ${encounters.clinicDay}, 
-          ${encounters.visitDate},
-          DATE(${encounters.createdAt})
-        )`, endDate)
+        gte(treatments.visitDate, startDate),
+        lte(treatments.visitDate, endDate)
       )
     );
     
-    console.log(`Found ${visitRecords.length} encounters in date range`);
+    console.log(`Found ${allTreatments.length} treatments in date range`);
     
-    // Generate day buckets across the range
+    // Count visits per day
+    const visitCounts: Record<string, number> = {};
+    
+    allTreatments.forEach(t => {
+      // visitDate format is YYYY-MM-DD
+      const dayKey = t.visitDate.split('T')[0]; // Handle both "2026-01-10" and "2026-01-10T..." formats
+      visitCounts[dayKey] = (visitCounts[dayKey] || 0) + 1;
+    });
+    
+    // Generate array for all days in range (including zero-visit days)
     const trends: Array<{ date: string; visits: number }> = [];
     const start = new Date(startDate + 'T00:00:00');
     const end = new Date(endDate + 'T00:00:00');
     
-    // Iterate through each day in the range
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dayKey = d.toISOString().split('T')[0];
-      
-      // Count visits for this day
-      const dayVisits = visitRecords.filter(v => v.effectiveDate === dayKey).length;
-      
       trends.push({
-        date: dayKey, // Return ISO date (YYYY-MM-DD) for frontend to format
-        visits: dayVisits,
+        date: dayKey,
+        visits: visitCounts[dayKey] || 0
       });
     }
     
-    console.log(`Generated ${trends.length} trend data points`);
+    console.log("Returning trends:", trends);
     res.json(trends);
   } catch (error) {
     console.error("Error fetching trends:", error);

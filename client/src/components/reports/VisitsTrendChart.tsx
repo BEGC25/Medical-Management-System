@@ -1,15 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Activity } from "lucide-react";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Area,
-  AreaChart,
 } from "recharts";
 
 interface VisitsTrendChartProps {
@@ -18,14 +16,13 @@ interface VisitsTrendChartProps {
 }
 
 export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps) {
-  // Use actual data without fallback to sample data
-  const rawData = data;
+  // Check if there's any actual visit data (not just zero-visit days)
+  const hasVisitData = data.some(d => d.visits > 0);
   
-  // Format ISO dates (YYYY-MM-DD) to display format (MMM DD)
-  const chartData = rawData.map(item => ({
+  // Format dates for display
+  const chartData = data.map(item => ({
     ...item,
-    displayDate: formatISODate(item.date),
-    date: item.date, // Keep original for tooltip
+    displayDate: formatDate(item.date),
   }));
 
   return (
@@ -36,7 +33,7 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
             <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             <span>Visits Trend</span>
           </div>
-          <TrendingUp className="h-4 w-4 text-green-600 animate-pulse" />
+          <TrendingUp className="h-4 w-4 text-green-600" />
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -44,20 +41,15 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
           <div className="h-[300px] flex items-center justify-center">
             <div className="animate-pulse text-gray-400">Loading chart data...</div>
           </div>
-        ) : chartData.length === 0 ? (
-          <div className="h-[300px] flex items-center justify-center">
-            <div className="text-center">
-              <Activity className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400 font-medium">No visit data available</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">for the selected period</p>
-            </div>
+        ) : !hasVisitData ? (
+          <div className="h-[300px] flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+            <Activity className="h-12 w-12 mb-3 opacity-50" />
+            <p className="font-medium">No visit data available</p>
+            <p className="text-sm">for the selected period</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart
-              data={chartData}
-              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-            >
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="visitGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
@@ -75,14 +67,19 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
                 stroke="#6b7280"
                 tick={{ fontSize: 12 }}
                 tickLine={{ stroke: "#e5e7eb" }}
+                allowDecimals={false}
               />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload?.length) {
                     return (
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
-                        <p className="font-semibold text-gray-900 dark:text-gray-100">{payload[0].payload.date}</p>
-                        <p className="text-blue-600 dark:text-blue-400 font-bold">{payload[0].value} visits</p>
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">
+                          {payload[0].payload.displayDate}
+                        </p>
+                        <p className="text-blue-600 dark:text-blue-400 font-bold">
+                          {payload[0].value} visit{payload[0].value !== 1 ? 's' : ''}
+                        </p>
                       </div>
                     );
                   }
@@ -96,7 +93,6 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
                 strokeWidth={3}
                 fill="url(#visitGradient)"
                 animationDuration={1500}
-                animationBegin={0}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -106,12 +102,14 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
   );
 }
 
-// Helper function to format ISO date (YYYY-MM-DD) to display format (MMM DD)
-function formatISODate(isoDate: string): string {
+function formatDate(dateStr: string): string {
   try {
-    const date = new Date(isoDate + 'T00:00:00');
+    const date = new Date(dateStr + 'T00:00:00');
+    if (isNaN(date.getTime())) {
+      return dateStr;
+    }
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   } catch {
-    return isoDate; // Fallback to original if parsing fails
+    return dateStr;
   }
 }
