@@ -18,8 +18,8 @@ interface VisitsTrendChartProps {
 }
 
 export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps) {
-  // Generate sample data if none provided
-  const rawData = data.length > 0 ? data : generateSampleData();
+  // Use actual data without fallback to sample data
+  const rawData = data;
   
   // Format ISO dates (YYYY-MM-DD) to display format (MMM DD)
   const chartData = rawData.map(item => ({
@@ -43,6 +43,14 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
         {isLoading ? (
           <div className="h-[300px] flex items-center justify-center">
             <div className="animate-pulse text-gray-400">Loading chart data...</div>
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-center">
+              <Activity className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400 font-medium">No visit data available</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">for the selected period</p>
+            </div>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
@@ -106,19 +114,4 @@ function formatISODate(isoDate: string): string {
   } catch {
     return isoDate; // Fallback to original if parsing fails
   }
-}
-
-function generateSampleData() {
-  const data = [];
-  const today = new Date();
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    // Generate dates in ISO format (YYYY-MM-DD) for consistency
-    data.push({
-      date: date.toISOString().split('T')[0],
-      visits: Math.floor(Math.random() * 30) + 10,
-    });
-  }
-  return data;
 }
