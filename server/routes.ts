@@ -2952,7 +2952,7 @@ router.get("/api/reports/summary", async (req, res) => {
     console.log("Reports summary result:", stats);
     
     res.json({
-      totalPatients: (stats as any).totalPatients ?? stats.newPatients, // Patients registered in range
+      totalPatients: stats.newPatients, // Patients registered in range
       newPatients: stats.newPatients,
       totalVisits: stats.totalVisits,
       labTests: stats.labTests,
