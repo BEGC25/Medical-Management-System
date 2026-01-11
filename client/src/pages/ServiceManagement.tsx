@@ -1898,7 +1898,7 @@ export default function ServiceManagement() {
       {/* Services Table */}
       <Card className="shadow-xl hover:shadow-2xl transition-shadow">
         <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
             <span>Services ({sortedServices.length})</span>
             {sortedServices.length > 0 && (
               <span className="text-sm font-normal text-gray-500">

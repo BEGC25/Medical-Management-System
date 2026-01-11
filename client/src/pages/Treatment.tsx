@@ -2384,12 +2384,6 @@ export default function Treatment() {
                       />
                     </div>
                   )}
-                  
-                  {dateFilter === "custom" && !customStartDate && !customEndDate && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                      📅 Select start and end dates above to view patients in custom range
-                    </p>
-                  )}
                 </div>
 
                 <div className="flex justify-end mb-2">

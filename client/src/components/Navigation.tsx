@@ -143,7 +143,7 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
       <div className="mt-8 pt-4 border-t border-slate-700 dark:border-slate-600">
         <div className="text-center px-3">
           <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-            © 2025 BGC Medical System
+            © {new Date().getFullYear()} BGC Medical System
           </p>
         </div>
       </div>
