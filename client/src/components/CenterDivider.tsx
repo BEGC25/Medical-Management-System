@@ -1,0 +1,128 @@
+import { useEffect, useState } from "react";
+
+/**
+ * CenterDivider Component
+ * 
+ * A sophisticated vertical divider positioned at the center of the auth page
+ * featuring an animated EKG/heartbeat pattern with gradient glow effects.
+ * 
+ * Features:
+ * - Vertical gradient line with fade at top and bottom
+ * - Soft blue/cyan glow effect
+ * - Animated medical EKG heartbeat patterns traveling vertically
+ * - Respects prefers-reduced-motion accessibility preference
+ * - Hidden on mobile, visible only on large screens (lg breakpoint)
+ */
+export default function CenterDivider() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Check if user prefers reduced motion
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  return (
+    <div 
+      className="absolute left-1/2 top-0 -translate-x-1/2 h-full w-1 pointer-events-none hidden lg:block z-[5]"
+      aria-hidden="true"
+    >
+      {/* Base gradient line - fades at top and bottom */}
+      <svg 
+        className="absolute inset-0 w-full h-full overflow-visible"
+        preserveAspectRatio="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          {/* Vertical gradient for the base line */}
+          <linearGradient id="dividerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(59, 130, 246, 0)" />
+            <stop offset="5%" stopColor="rgba(59, 130, 246, 0.3)" />
+            <stop offset="50%" stopColor="rgba(59, 130, 246, 0.6)" />
+            <stop offset="95%" stopColor="rgba(59, 130, 246, 0.3)" />
+            <stop offset="100%" stopColor="rgba(59, 130, 246, 0)" />
+          </linearGradient>
+          
+          {/* Gradient for heartbeat pattern - brighter cyan */}
+          <linearGradient id="heartbeatGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(34, 211, 238, 0)" />
+            <stop offset="30%" stopColor="rgba(34, 211, 238, 0.8)" />
+            <stop offset="50%" stopColor="rgba(34, 211, 238, 1)" />
+            <stop offset="70%" stopColor="rgba(34, 211, 238, 0.8)" />
+            <stop offset="100%" stopColor="rgba(34, 211, 238, 0)" />
+          </linearGradient>
+        </defs>
+        
+        {/* Main vertical line */}
+        <line 
+          x1="50%" 
+          y1="0" 
+          x2="50%" 
+          y2="100%" 
+          stroke="url(#dividerGradient)" 
+          strokeWidth="2"
+        />
+      </svg>
+
+      {/* Glow effect layer - pulsing softly */}
+      <div 
+        className="absolute inset-0 animate-glow-pulse"
+        style={{
+          boxShadow: `
+            0 0 20px rgba(59, 130, 246, 0.5),
+            0 0 40px rgba(59, 130, 246, 0.3),
+            0 0 60px rgba(59, 130, 246, 0.1)
+          `,
+        }}
+      />
+
+      {/* Animated heartbeat patterns */}
+      {!prefersReducedMotion && (
+        <>
+          <HeartbeatPath delay={0} />
+          <HeartbeatPath delay={2.5} />
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * HeartbeatPath Component
+ * 
+ * Renders an animated EKG/heartbeat pattern that travels vertically
+ * 
+ * @param delay - Animation delay in seconds for staggered effect
+ */
+function HeartbeatPath({ delay }: { delay: number }) {
+  return (
+    <svg 
+      className="absolute left-1/2 -translate-x-1/2 w-16 h-32 overflow-visible"
+      style={{
+        animation: 'heartbeat-flow 5s linear infinite',
+        animationDelay: `${delay}s`,
+      }}
+      viewBox="0 0 60 120"
+      preserveAspectRatio="xMidYMid meet"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* EKG heartbeat pattern path */}
+      <path
+        d="M 30 0 L 30 40 L 25 50 L 28 55 L 30 45 L 35 75 L 30 55 L 32 58 L 30 60 L 30 120"
+        stroke="url(#heartbeatGradient)"
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))',
+        }}
+      />
+    </svg>
+  );
+}
