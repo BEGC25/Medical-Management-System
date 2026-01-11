@@ -104,7 +104,7 @@ export default function Auth() {
               className="flex items-center justify-center mb-6"
               variants={logoVariants}
             >
-              <div className="relative">
+              <div className="relative shadow-lg">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full blur-2xl opacity-20 animate-glow-pulse" />
                 <img 
                   src={clinicLogo} 
@@ -113,17 +113,17 @@ export default function Auth() {
                 />
               </div>
             </motion.div>
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-white via-blue-100 to-teal-100 bg-clip-text text-transparent mb-3 tracking-tight">
+            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-white via-blue-100 to-teal-100 bg-clip-text text-transparent mb-3 tracking-tight leading-tight">
               Bahr El Ghazal Clinic
             </h1>
-            <p className="text-blue-200/80 text-lg font-medium">
-              Comprehensive Healthcare Management System
+            <p className="text-blue-200/80 text-lg font-normal leading-relaxed">
+              <span className="font-semibold">Comprehensive Healthcare</span> Management System
             </p>
           </motion.div>
 
           {/* Glassmorphic Login Card */}
           <motion.div variants={itemVariants}>
-            <Card className="border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl shimmer-effect relative overflow-hidden">
+            <Card className="border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl shadow-blue-900/20 shimmer-effect relative overflow-hidden">
               <CardHeader className="relative z-10 space-y-1 pb-6">
                 <CardTitle className="text-2xl font-bold text-white flex items-center gap-2">
                   <Sparkles className="h-6 w-6 text-yellow-300 animate-pulse" />
@@ -140,9 +140,9 @@ export default function Auth() {
                   <motion.div 
                     className="space-y-2"
                     whileHover={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                   >
-                    <Label htmlFor="login-username" className="text-white/90 font-medium flex items-center gap-2">
+                    <Label htmlFor="login-username" className="text-white/90 font-medium flex items-center gap-2 text-sm">
                       <User className="h-4 w-4 text-blue-300" />
                       Username
                     </Label>
@@ -155,7 +155,7 @@ export default function Auth() {
                         onChange={(e) =>
                           setLoginForm({ ...loginForm, username: e.target.value })
                         }
-                        className="bg-white/10 border-white/30 text-white placeholder:text-white/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/50 h-12 px-4 text-base backdrop-blur-sm transition-all duration-300"
+                        className="bg-white/10 border-white/30 text-white placeholder:text-white/40 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/30 focus:scale-[1.01] h-12 px-4 text-base backdrop-blur-sm transition-all duration-300 ease-out hover:border-white/40"
                         placeholder="Enter your username"
                         required
                       />
@@ -166,9 +166,9 @@ export default function Auth() {
                   <motion.div 
                     className="space-y-2"
                     whileHover={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                   >
-                    <Label htmlFor="login-password" className="text-white/90 font-medium flex items-center gap-2">
+                    <Label htmlFor="login-password" className="text-white/90 font-medium flex items-center gap-2 text-sm">
                       <Lock className="h-4 w-4 text-blue-300" />
                       Password
                     </Label>
@@ -181,7 +181,7 @@ export default function Auth() {
                         onChange={(e) =>
                           setLoginForm({ ...loginForm, password: e.target.value })
                         }
-                        className="bg-white/10 border-white/30 text-white placeholder:text-white/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/50 h-12 px-4 text-base backdrop-blur-sm transition-all duration-300"
+                        className="bg-white/10 border-white/30 text-white placeholder:text-white/40 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/30 focus:scale-[1.01] h-12 px-4 text-base backdrop-blur-sm transition-all duration-300 ease-out hover:border-white/40"
                         placeholder="Enter your password"
                         required
                       />
@@ -190,13 +190,13 @@ export default function Auth() {
 
                   {/* Premium Button */}
                   <motion.div
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                   >
                     <Button
                       type="submit"
-                      className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 via-blue-500 to-teal-500 hover:from-blue-500 hover:via-blue-400 hover:to-teal-400 text-white shadow-lg shadow-blue-500/50 hover:shadow-xl hover:shadow-blue-500/60 transition-all duration-300 relative overflow-hidden group"
+                      className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 via-blue-500 to-teal-500 hover:from-blue-500 hover:via-blue-400 hover:to-teal-400 text-white shadow-lg shadow-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/70 transition-all duration-300 ease-out relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
                       data-testid="button-login"
                       disabled={loginMutation.isPending}
                     >
@@ -237,8 +237,8 @@ export default function Auth() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white via-blue-100 to-teal-100 bg-clip-text text-transparent leading-tight">
-              Comprehensive Healthcare Management
+            <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white via-blue-100 to-teal-100 bg-clip-text text-transparent leading-tight tracking-tight">
+              <span className="font-bold">Comprehensive Healthcare</span> <span className="font-normal">Management</span>
             </h2>
             <p className="text-blue-100/80 mb-10 text-lg leading-relaxed">
               Empowering rural healthcare delivery in South Sudan with modern digital tools
@@ -252,19 +252,19 @@ export default function Auth() {
               variants={featureVariants}
               initial="hidden"
               animate="visible"
-              whileHover={{ scale: 1.03, x: 10 }}
-              transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.05, x: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="group"
             >
-              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 group-hover:from-blue-500/30 group-hover:to-blue-600/30 transition-all duration-300">
-                  <Shield className="h-7 w-7 text-blue-300 group-hover:scale-110 transition-transform duration-300" />
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-blue-400/40 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 ease-out cursor-pointer">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 group-hover:from-blue-500/30 group-hover:to-blue-600/30 shadow-lg shadow-blue-500/10 group-hover:shadow-blue-500/20 transition-all duration-300">
+                  <Shield className="h-7 w-7 text-blue-300 group-hover:scale-110 motion-safe:group-hover:rotate-3 transition-all duration-300" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-blue-100 transition-colors">
+                  <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-blue-100 transition-colors duration-300">
                     Secure & Private
                   </h3>
-                  <p className="text-sm text-blue-100/70 leading-relaxed">
+                  <p className="text-sm text-blue-100/70 leading-relaxed group-hover:text-blue-100/80 transition-colors duration-300">
                     Patient data protected with enterprise-grade security and encryption
                   </p>
                 </div>
@@ -277,19 +277,19 @@ export default function Auth() {
               variants={featureVariants}
               initial="hidden"
               animate="visible"
-              whileHover={{ scale: 1.03, x: 10 }}
-              transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.05, x: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="group"
             >
-              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-600/20 group-hover:from-teal-500/30 group-hover:to-teal-600/30 transition-all duration-300">
-                  <Users className="h-7 w-7 text-teal-300 group-hover:scale-110 transition-transform duration-300" />
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-teal-400/40 hover:shadow-lg hover:shadow-teal-500/20 transition-all duration-300 ease-out cursor-pointer">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-600/20 group-hover:from-teal-500/30 group-hover:to-teal-600/30 shadow-lg shadow-teal-500/10 group-hover:shadow-teal-500/20 transition-all duration-300">
+                  <Users className="h-7 w-7 text-teal-300 group-hover:scale-110 motion-safe:group-hover:rotate-3 transition-all duration-300" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-teal-100 transition-colors">
+                  <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-teal-100 transition-colors duration-300">
                     Multi-Department Support
                   </h3>
-                  <p className="text-sm text-blue-100/70 leading-relaxed">
+                  <p className="text-sm text-blue-100/70 leading-relaxed group-hover:text-blue-100/80 transition-colors duration-300">
                     Coordinated care across reception, laboratory, radiology, and pharmacy
                   </p>
                 </div>
@@ -302,19 +302,19 @@ export default function Auth() {
               variants={featureVariants}
               initial="hidden"
               animate="visible"
-              whileHover={{ scale: 1.03, x: 10 }}
-              transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.05, x: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="group"
             >
-              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 group-hover:from-purple-500/30 group-hover:to-purple-600/30 transition-all duration-300">
-                  <Activity className="h-7 w-7 text-purple-300 group-hover:scale-110 transition-transform duration-300" />
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-purple-400/40 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 ease-out cursor-pointer">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 group-hover:from-purple-500/30 group-hover:to-purple-600/30 shadow-lg shadow-purple-500/10 group-hover:shadow-purple-500/20 transition-all duration-300">
+                  <Activity className="h-7 w-7 text-purple-300 group-hover:scale-110 motion-safe:group-hover:rotate-3 transition-all duration-300" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-purple-100 transition-colors">
+                  <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-purple-100 transition-colors duration-300">
                     Comprehensive Tracking
                   </h3>
-                  <p className="text-sm text-blue-100/70 leading-relaxed">
+                  <p className="text-sm text-blue-100/70 leading-relaxed group-hover:text-blue-100/80 transition-colors duration-300">
                     Complete patient journey from registration to treatment completion
                   </p>
                 </div>
@@ -327,19 +327,19 @@ export default function Auth() {
               variants={featureVariants}
               initial="hidden"
               animate="visible"
-              whileHover={{ scale: 1.03, x: 10 }}
-              transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.05, x: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="group"
             >
-              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500/20 to-pink-600/20 group-hover:from-pink-500/30 group-hover:to-pink-600/30 transition-all duration-300">
-                  <Stethoscope className="h-7 w-7 text-pink-300 group-hover:scale-110 transition-transform duration-300" />
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-pink-400/40 hover:shadow-lg hover:shadow-pink-500/20 transition-all duration-300 ease-out cursor-pointer">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500/20 to-pink-600/20 group-hover:from-pink-500/30 group-hover:to-pink-600/30 shadow-lg shadow-pink-500/10 group-hover:shadow-pink-500/20 transition-all duration-300">
+                  <Stethoscope className="h-7 w-7 text-pink-300 group-hover:scale-110 motion-safe:group-hover:rotate-3 transition-all duration-300" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-pink-100 transition-colors">
+                  <h3 className="font-semibold text-white text-lg mb-1.5 group-hover:text-pink-100 transition-colors duration-300">
                     Medical Excellence
                   </h3>
-                  <p className="text-sm text-blue-100/70 leading-relaxed">
+                  <p className="text-sm text-blue-100/70 leading-relaxed group-hover:text-blue-100/80 transition-colors duration-300">
                     World-class healthcare tools designed for African healthcare delivery
                   </p>
                 </div>
