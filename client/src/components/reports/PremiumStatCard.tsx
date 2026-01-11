@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import CountUp from "react-countup";
 
 interface PremiumStatCardProps {
   title: string;
@@ -29,38 +29,13 @@ export function PremiumStatCard({
   onClick,
   className,
 }: PremiumStatCardProps) {
-  const [displayValue, setDisplayValue] = useState(0);
   const numericValue = typeof value === "number" ? value : 0;
-
-  // Count-up animation effect
-  useEffect(() => {
-    if (typeof value !== "number") {
-      return;
-    }
-
-    let start = 0;
-    const end = numericValue;
-    const duration = 1000; // 1 second
-    const increment = end / (duration / 16); // 60fps
-
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setDisplayValue(end);
-        clearInterval(timer);
-      } else {
-        setDisplayValue(Math.floor(start));
-      }
-    }, 16);
-
-    return () => clearInterval(timer);
-  }, [numericValue]);
 
   return (
     <Card
       className={cn(
         "group relative overflow-hidden transition-all duration-300",
-        "hover:-translate-y-1 hover:shadow-2xl",
+        "hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.02]",
         "bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl",
         "border border-white/20 dark:border-gray-700/20",
         onClick && "cursor-pointer",
@@ -83,21 +58,31 @@ export function PremiumStatCard({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium opacity-90">{title}</p>
-            <p className="text-4xl font-bold tabular-nums tracking-tight">
-              {typeof value === "number" ? displayValue.toLocaleString() : value}
-            </p>
+            <div className="text-4xl font-bold tabular-nums tracking-tight">
+              {typeof value === "number" ? (
+                <CountUp
+                  end={numericValue}
+                  duration={2}
+                  separator=","
+                />
+              ) : (
+                value
+              )}
+            </div>
             {subtitle && (
               <p className="text-sm opacity-80 mt-1">{subtitle}</p>
             )}
             {trend && (
               <div className="flex items-center gap-1 mt-2">
-                {trend.isPositive ? (
+                {trend.value > 0 ? (
                   <TrendingUp className="h-4 w-4" />
-                ) : (
+                ) : trend.value < 0 ? (
                   <TrendingDown className="h-4 w-4" />
+                ) : (
+                  <Minus className="h-4 w-4" />
                 )}
                 <span className="text-sm font-medium">
-                  {trend.isPositive ? "+" : ""}{trend.value}%
+                  {trend.value > 0 ? "+" : ""}{trend.value}%
                 </span>
                 {trend.label && (
                   <span className="text-xs opacity-75 ml-1">{trend.label}</span>
@@ -106,10 +91,8 @@ export function PremiumStatCard({
             )}
           </div>
           <div className="relative">
-            <Icon className="h-12 w-12 opacity-80 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
-            {/* Glow effect */}
-            <div className="absolute inset-0 blur-xl opacity-50">
-              <Icon className="h-12 w-12" />
+            <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:bg-white/20 group-hover:scale-110">
+              <Icon className="h-8 w-8 text-white" />
             </div>
           </div>
         </div>

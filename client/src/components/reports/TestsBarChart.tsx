@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TestTube } from "lucide-react";
+import { TestTube, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   BarChart,
   Bar,
@@ -31,6 +32,8 @@ export function TestsBarChart({ labTests = 0, xrays = 0, ultrasounds = 0, isLoad
     { name: "Ultrasounds", value: ultrasounds, color: COLORS.ultrasound },
   ];
 
+  const hasNoTests = labTests === 0 && xrays === 0 && ultrasounds === 0;
+
   return (
     <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/20 shadow-2xl hover:shadow-premium transition-all duration-300">
       <CardHeader>
@@ -43,6 +46,24 @@ export function TestsBarChart({ labTests = 0, xrays = 0, ultrasounds = 0, isLoad
         {isLoading ? (
           <div className="h-[300px] flex items-center justify-center">
             <div className="animate-pulse text-gray-400">Loading chart data...</div>
+          </div>
+        ) : hasNoTests ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <TestTube className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              No tests ordered yet
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center max-w-xs">
+              Start ordering lab tests, X-rays, or ultrasounds to see analytics here
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/treatment'}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Order First Test
+            </Button>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
@@ -63,14 +84,19 @@ export function TestsBarChart({ labTests = 0, xrays = 0, ultrasounds = 0, isLoad
                 tickLine={{ stroke: "#e5e7eb" }}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                content={({ active, payload }) => {
+                  if (active && payload?.length) {
+                    return (
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">{payload[0].payload.name}</p>
+                        <p className="text-sm">
+                          <span className="font-bold text-blue-600 dark:text-blue-400">{payload[0].value}</span> tests
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
                 }}
-                labelStyle={{ fontWeight: 600, color: "#1f2937" }}
-                cursor={{ fill: "rgba(59, 130, 246, 0.1)" }}
               />
               <Bar
                 dataKey="value"
