@@ -164,6 +164,26 @@ export default {
             opacity: "0"
           }
         },
+        "heartbeat-pulse": {
+          "0%": {
+            top: "-10%",
+            opacity: "0"
+          },
+          "10%": {
+            opacity: "0.6"
+          },
+          "50%": {
+            top: "50%",
+            opacity: "0.8"
+          },
+          "90%": {
+            opacity: "0.6"
+          },
+          "100%": {
+            top: "110%",
+            opacity: "0"
+          }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -176,6 +196,7 @@ export default {
         "number-flip": "number-flip 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
         "float-particle": "float-particle 60s ease-in-out infinite",
         "heartbeat-flow": "heartbeat-flow 5s linear infinite",
+        "heartbeat-pulse": "heartbeat-pulse 5s ease-in-out infinite",
       },
     },
   },
