@@ -126,17 +126,6 @@ export default function Auth() {
       {/* Animated Background Gradient Layer */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 animate-gradient-shift" />
       
-      {/* Subtle Background Texture Overlay - Premium hex pattern */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='%23ffffff' stroke-width='0.5' opacity='0.03'/%3E%3C/svg%3E")`,
-          backgroundSize: '60px 60px',
-          opacity: prefersReducedMotion ? 1 : undefined,
-          animation: prefersReducedMotion ? 'none' : 'texture-drift 120s linear infinite',
-        }}
-      />
-      
       {/* Central Radial Glow - Unifying Element */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div 
@@ -290,27 +279,10 @@ export default function Auth() {
                       <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         {loginMutation.isPending ? (
-                          prefersReducedMotion ? (
-                            <>
-                              <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'none' }} />
-                              Signing in...
-                            </>
-                          ) : (
-                            <>
-                              {/* Premium ECG loading animation */}
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="animate-ekg-button-tick">
-                                <path
-                                  d="M 2 12 L 6 12 L 8 8 L 10 16 L 12 4 L 14 20 L 16 12 L 18 12 L 22 12"
-                                  stroke="white"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  fill="none"
-                                />
-                              </svg>
-                              Signing in...
-                            </>
-                          )
+                          <>
+                            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Signing in...
+                          </>
                         ) : (
                           <>
                             <Heart className="h-5 w-5" />
@@ -340,12 +312,10 @@ export default function Auth() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            <h2 className="text-5xl-premium font-bold mb-4">
-              <span className="font-bold">Comprehensive </span>
-              <span className="font-bold bg-gradient-to-r from-blue-200 via-teal-200 to-blue-300 bg-clip-text text-transparent">Healthcare</span>
-              <span className="font-normal bg-gradient-to-r from-white via-blue-100 to-teal-100 bg-clip-text text-transparent"> Management</span>
+            <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white via-blue-100 to-teal-100 bg-clip-text text-transparent leading-tight tracking-tight">
+              <span className="font-bold">Comprehensive Healthcare</span> <span className="font-normal">Management</span>
             </h2>
-            <p className="text-blue-100/80 mb-10 text-lg-refined">
+            <p className="text-blue-100/80 mb-10 text-lg leading-relaxed">
               Empowering rural healthcare delivery in South Sudan with modern digital tools
             </p>
           </motion.div>
