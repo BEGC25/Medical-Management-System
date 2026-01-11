@@ -142,6 +142,12 @@ export default {
           "50%": { transform: "rotateX(90deg)" },
           "100%": { transform: "rotateX(0deg)" },
         },
+        "float-particle": {
+          "0%, 100%": { transform: "translateY(0) translateX(0)" },
+          "25%": { transform: "translateY(-20px) translateX(10px)" },
+          "50%": { transform: "translateY(-40px) translateX(-10px)" },
+          "75%": { transform: "translateY(-20px) translateX(5px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -152,6 +158,7 @@ export default {
         "float": "float 3s ease-in-out infinite",
         "slide-in-up": "slide-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
         "number-flip": "number-flip 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+        "float-particle": "float-particle 60s ease-in-out infinite",
       },
     },
   },
