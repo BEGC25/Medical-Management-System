@@ -67,11 +67,12 @@ export default function CenterDivider() {
 function HeartbeatPulse({ delay }: { delay: number }) {
   return (
     <div 
-      className="absolute left-1/2 -translate-x-1/2 w-1 h-8"
+      className="absolute left-1/2 w-1 h-8 top-0"
       style={{
         animation: 'heartbeat-pulse 5s ease-in-out infinite',
         animationDelay: `${delay}s`,
-        willChange: 'transform, opacity'
+        willChange: 'transform, opacity',
+        transform: 'translateY(-10vh) translateX(-50%)'
       }}
     >
       <div 
