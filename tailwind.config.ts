@@ -166,21 +166,21 @@ export default {
         },
         "heartbeat-pulse": {
           "0%": {
-            top: "-10%",
+            transform: "translateY(-10vh)",
             opacity: "0"
           },
           "10%": {
             opacity: "0.6"
           },
           "50%": {
-            top: "50%",
+            transform: "translateY(50vh)",
             opacity: "0.8"
           },
           "90%": {
             opacity: "0.6"
           },
           "100%": {
-            top: "110%",
+            transform: "translateY(110vh)",
             opacity: "0"
           }
         },
