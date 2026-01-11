@@ -17,6 +17,8 @@ export default {
         '2xl': ['1.5rem', { lineHeight: '1.4167', letterSpacing: '-0.019em' }],
         '3xl': ['1.875rem', { lineHeight: '1.3333', letterSpacing: '-0.021em' }],
         '4xl': ['2.25rem', { lineHeight: '1.2778', letterSpacing: '-0.023em' }],
+        '5xl-premium': ['3rem', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
+        'lg-refined': ['1.125rem', { lineHeight: '1.5556', letterSpacing: '-0.01em' }],
       },
       borderRadius: {
         lg: "0.75rem",
@@ -184,6 +186,16 @@ export default {
             opacity: "0"
           }
         },
+        "ekg-button-tick": {
+          "0%, 100%": {
+            opacity: "0.4",
+            transform: "translateX(-4px)"
+          },
+          "50%": {
+            opacity: "1",
+            transform: "translateX(4px)"
+          }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -197,6 +209,7 @@ export default {
         "float-particle": "float-particle 60s ease-in-out infinite",
         "heartbeat-flow": "heartbeat-flow 5s linear infinite",
         "ekg-tick-flow": "ekg-tick-flow 6s ease-in-out infinite",
+        "ekg-button-tick": "ekg-button-tick 1.5s ease-in-out infinite",
       },
     },
   },
