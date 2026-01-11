@@ -1,11 +1,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, TrendingUp, Clock, Activity, CheckCircle, AlertTriangle, Lightbulb } from "lucide-react";
+import { 
+  Sparkles, 
+  TrendingUp, 
+  TrendingDown,
+  Clock, 
+  Activity, 
+  CheckCircle, 
+  AlertTriangle, 
+  Lightbulb,
+  TestTube,
+  Users,
+  Stethoscope
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+// Threshold for identifying high lab test ratios
+const HIGH_LAB_TEST_RATIO = 1.5;
 
 interface Insight {
   icon: React.ComponentType<{ className?: string }>;
   text: string;
   color: string;
+  type: 'positive' | 'negative' | 'warning' | 'info';
 }
 
 interface InsightsCardProps {
@@ -19,66 +35,138 @@ interface InsightsCardProps {
 const generateInsights = (stats?: any, diagnosisData?: Array<{ diagnosis: string; count: number }>, lastPeriodStats?: any): Insight[] => {
   const insights: Insight[] = [];
 
+  if (!stats) return insights;
+
   // Visit trend analysis
-  if (stats?.totalVisits && lastPeriodStats?.totalVisits) {
-    const increase = ((stats.totalVisits - lastPeriodStats.totalVisits) / lastPeriodStats.totalVisits * 100).toFixed(1);
-    if (parseFloat(increase) > 0) {
+  if (lastPeriodStats?.totalVisits && stats.totalVisits) {
+    const increase = stats.totalVisits - lastPeriodStats.totalVisits;
+    const percentChange = ((increase / lastPeriodStats.totalVisits) * 100).toFixed(1);
+    
+    if (increase > 0) {
       insights.push({
         icon: TrendingUp,
-        text: `Visits increased ${increase}% compared to previous period`,
-        color: "text-green-600 dark:text-green-400"
+        text: `Visit volume increased by ${increase} visits (${percentChange}%) this period`,
+        color: "text-green-600 dark:text-green-400",
+        type: 'positive'
       });
-    } else if (parseFloat(increase) < 0) {
+    } else if (increase < 0) {
       insights.push({
-        icon: TrendingUp,
-        text: `Visits decreased ${Math.abs(parseFloat(increase))}% compared to previous period`,
-        color: "text-orange-600 dark:text-orange-400"
+        icon: TrendingDown,
+        text: `Visit volume decreased by ${Math.abs(increase)} visits (${Math.abs(parseFloat(percentChange))}%) this period`,
+        color: "text-orange-600 dark:text-orange-400",
+        type: 'warning'
       });
     }
   }
 
-  // Peak time identification (mock - could be enhanced with real data)
-  insights.push({
-    icon: Clock,
-    text: "Peak visit time: 9-11 AM with highest patient flow",
-    color: "text-blue-600 dark:text-blue-400"
-  });
+  // Lab test ratio analysis
+  if (stats.labTests > 0 && stats.totalVisits > 0) {
+    const ratio = (stats.labTests / stats.totalVisits).toFixed(1);
+    if (parseFloat(ratio) > HIGH_LAB_TEST_RATIO) {
+      insights.push({
+        icon: TestTube,
+        text: `High lab test ratio: ${ratio} tests per visit indicates thorough diagnostics`,
+        color: "text-blue-600 dark:text-blue-400",
+        type: 'info'
+      });
+    }
+  }
 
-  // Top diagnosis
+  // Pending alerts - prioritize by urgency
+  const totalPending = (stats.pending?.labResults || 0) + (stats.pending?.xrayReports || 0) + (stats.pending?.ultrasoundReports || 0);
+  
+  if (stats.pending?.xrayReports > 2) {
+    insights.push({
+      icon: AlertTriangle,
+      text: `${stats.pending.xrayReports} X-Ray reports pending review - requires attention`,
+      color: "text-orange-600 dark:text-orange-400",
+      type: 'warning'
+    });
+  } else if (totalPending > 5) {
+    insights.push({
+      icon: AlertTriangle,
+      text: `${totalPending} diagnostic test results pending review`,
+      color: "text-orange-600 dark:text-orange-400",
+      type: 'warning'
+    });
+  }
+
+  // Top diagnosis insight
   if (diagnosisData && diagnosisData.length > 0) {
+    const topDiagnosis = diagnosisData[0];
+    const totalDiagnoses = diagnosisData.reduce((sum, d) => sum + d.count, 0);
+    const percent = totalDiagnoses > 0 ? Math.round((topDiagnosis.count / totalDiagnoses) * 100) : 0;
+    
+    insights.push({
+      icon: Stethoscope,
+      text: `${topDiagnosis.diagnosis} is most common diagnosis (${percent}% of cases)`,
+      color: "text-purple-600 dark:text-purple-400",
+      type: 'info'
+    });
+  }
+
+  // Service utilization analysis
+  const totalTests = (stats.labTests || 0) + (stats.xrays || 0) + (stats.ultrasounds || 0);
+  if (totalTests > 0 && stats.totalVisits > 0) {
+    const utilizationRate = ((totalTests / stats.totalVisits) * 100).toFixed(0);
     insights.push({
       icon: Activity,
-      text: `Most common diagnosis: ${diagnosisData[0].diagnosis} (${diagnosisData[0].count} cases)`,
-      color: "text-purple-600 dark:text-purple-400"
+      text: `${totalTests} diagnostic tests performed with ${utilizationRate}% service utilization rate`,
+      color: "text-cyan-600 dark:text-cyan-400",
+      type: 'info'
+    });
+  }
+
+  // Patient volume insight
+  if (stats.totalVisits > 0) {
+    const avgTestsPerVisit = totalTests > 0 ? (totalTests / stats.totalVisits).toFixed(1) : '0';
+    insights.push({
+      icon: Users,
+      text: `${stats.totalVisits} total visits with average ${avgTestsPerVisit} tests per patient`,
+      color: "text-blue-600 dark:text-blue-400",
+      type: 'info'
     });
   }
 
   // Test completion rate
-  if (stats?.labTests && stats?.labTests > 0) {
-    const completionRate = (((stats.labTests - (stats.pending?.labResults || 0)) / stats.labTests) * 100).toFixed(1);
-    insights.push({
-      icon: CheckCircle,
-      text: `Lab test completion rate: ${completionRate}%`,
-      color: parseFloat(completionRate) > 80 ? "text-green-600 dark:text-green-400" : "text-orange-600 dark:text-orange-400"
-    });
+  if (stats.labTests && stats.labTests > 0) {
+    const completed = stats.labTests - (stats.pending?.labResults || 0);
+    const completionRate = ((completed / stats.labTests) * 100).toFixed(0);
+    
+    if (parseFloat(completionRate) >= 90) {
+      insights.push({
+        icon: CheckCircle,
+        text: `Excellent lab completion rate at ${completionRate}% - tests processed efficiently`,
+        color: "text-green-600 dark:text-green-400",
+        type: 'positive'
+      });
+    } else if (parseFloat(completionRate) < 70) {
+      insights.push({
+        icon: AlertTriangle,
+        text: `Lab completion rate at ${completionRate}% - consider improving workflow`,
+        color: "text-orange-600 dark:text-orange-400",
+        type: 'warning'
+      });
+    }
   }
 
-  // Pending items alert
-  const totalPending = (stats?.pending?.labResults || 0) + (stats?.pending?.xrayReports || 0) + (stats?.pending?.ultrasoundReports || 0);
-  if (totalPending > 0) {
-    insights.push({
-      icon: AlertTriangle,
-      text: `${totalPending} pending test results require attention`,
-      color: "text-orange-600 dark:text-orange-400"
-    });
+  // If we have too many insights, prioritize by type
+  if (insights.length > 5) {
+    const prioritized = [
+      ...insights.filter(i => i.type === 'warning'),
+      ...insights.filter(i => i.type === 'positive'),
+      ...insights.filter(i => i.type === 'info'),
+    ].slice(0, 5);
+    return prioritized;
   }
 
-  // If no insights, add a default one
+  // If no insights, add a helpful message
   if (insights.length === 0) {
     insights.push({
       icon: Lightbulb,
-      text: "System is analyzing patterns. Check back soon for insights!",
-      color: "text-gray-600 dark:text-gray-400"
+      text: "No significant insights for this period. Keep collecting data for trend analysis!",
+      color: "text-gray-600 dark:text-gray-400",
+      type: 'info'
     });
   }
 
@@ -116,8 +204,8 @@ export function InsightsCard({ insights: providedInsights, isLoading, stats, dia
                   key={idx}
                   className="flex items-start gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-200 hover:bg-white/20"
                 >
-                  <IconComponent className={`w-5 h-5 ${insight.color} mt-0.5 flex-shrink-0`} />
-                  <p className="text-sm text-white">{insight.text}</p>
+                  <IconComponent className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-white leading-relaxed">{insight.text}</p>
                 </div>
               );
             })}
