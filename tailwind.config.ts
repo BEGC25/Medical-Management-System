@@ -164,22 +164,22 @@ export default {
             opacity: "0"
           }
         },
-        "heartbeat-pulse": {
-          "0%": {
+        "ekg-tick-flow": {
+          "0%": { 
             transform: "translateY(-10vh)",
             opacity: "0"
           },
           "10%": {
-            opacity: "0.6"
+            opacity: "0.7"
           },
           "50%": {
             transform: "translateY(50vh)",
-            opacity: "0.8"
+            opacity: "0.9"
           },
           "90%": {
-            opacity: "0.6"
+            opacity: "0.7"
           },
-          "100%": {
+          "100%": { 
             transform: "translateY(110vh)",
             opacity: "0"
           }
@@ -196,7 +196,7 @@ export default {
         "number-flip": "number-flip 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
         "float-particle": "float-particle 60s ease-in-out infinite",
         "heartbeat-flow": "heartbeat-flow 5s linear infinite",
-        "heartbeat-pulse": "heartbeat-pulse 5s ease-in-out infinite",
+        "ekg-tick-flow": "ekg-tick-flow 6s ease-in-out infinite",
       },
     },
   },

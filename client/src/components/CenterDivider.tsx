@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 
 /**
  * CenterDivider Component
  * 
  * A subtle, sophisticated vertical divider positioned at the center of the auth page
- * featuring a gentle heartbeat pulse animation with whisper-soft glow effects.
+ * featuring a micro-ECG waveform animation traveling along the line.
  * 
  * Features:
  * - Ultra-thin vertical line (1px) with soft gradient fade
  * - Barely visible at first glance - whisper, not shout
- * - Smooth traveling pulse animation (gentle medical heartbeat)
- * - Multiple staggered pulses for organic, living feel
+ * - Smooth traveling ECG tick animation (subtle medical heartbeat cue)
+ * - Multiple staggered ECG ticks for organic, living feel
  * - Respects prefers-reduced-motion accessibility preference
  * - Hidden on mobile, visible only on large screens (lg breakpoint)
  * 
@@ -44,12 +44,12 @@ export default function CenterDivider() {
         }} 
       />
       
-      {/* Animated pulses - smooth heartbeat effect */}
+      {/* Animated ECG ticks - subtle medical heartbeat cue */}
       {!prefersReducedMotion && (
         <>
-          <HeartbeatPulse delay={0} />
-          <HeartbeatPulse delay={2} />
-          <HeartbeatPulse delay={4} />
+          <EKGTick delay={0} />
+          <EKGTick delay={2} />
+          <EKGTick delay={4} />
         </>
       )}
     </div>
@@ -57,37 +57,77 @@ export default function CenterDivider() {
 }
 
 /**
- * HeartbeatPulse Component
+ * EKGTick Component
  * 
- * A small, gentle pulse of light that travels smoothly along the divider line.
- * Creates a subtle medical heartbeat effect without being distracting.
+ * A small ECG waveform segment (micro QRS complex) that travels vertically along the divider.
+ * Creates a subtle medical heartbeat cue that's clearly recognizable as an ECG reading.
  * 
  * @param delay - Animation delay in seconds for staggered effect
  */
-function HeartbeatPulse({ delay }: { delay: number }) {
+function EKGTick({ delay }: { delay: number }) {
+  // Generate unique IDs for SVG gradient and filter to prevent DOM conflicts
+  const gradientId = useId();
+  const filterId = useId();
+
   return (
     <div 
       className="absolute left-1/2 -translate-x-1/2"
       style={{
         top: 0,
-        width: '4px',  // w-1
-        height: '32px'  // h-8
+        width: '24px',
+        height: '24px'
       }}
     >
       <div 
-        className="w-full h-full animate-heartbeat-pulse"
+        className="w-full h-full animate-ekg-tick-flow"
         style={{
           animationDelay: `${delay}s`,
           willChange: 'transform, opacity'
         }}
       >
-        <div 
-          className="w-full h-full bg-gradient-to-b from-cyan-400/40 via-blue-400/60 to-cyan-400/40 rounded-full"
-          style={{
-            filter: 'blur(2px)',
-            boxShadow: '0 0 10px rgba(34, 211, 238, 0.3), 0 0 20px rgba(59, 130, 246, 0.2)'
-          }}
-        />
+        {/* Micro-ECG waveform SVG - simplified QRS complex */}
+        <svg 
+          width="24" 
+          height="24" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          className="absolute top-0 left-0"
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="rgba(34, 211, 238, 0.6)" />
+              <stop offset="50%" stopColor="rgba(59, 130, 246, 0.8)" />
+              <stop offset="100%" stopColor="rgba(34, 211, 238, 0.6)" />
+            </linearGradient>
+            <filter id={filterId}>
+              <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          {/* 
+            Simplified ECG waveform path - stylized QRS complex:
+            - Baseline lead-in (2,12 to 6,12)
+            - Small upward tick (8,8)
+            - Q wave downward deflection (10,16)
+            - R wave tall upward spike (12,4) - main feature
+            - S wave deep downward (14,20)
+            - Return to baseline (16,12 through 18,12 to 22,12)
+            Note: This is a stylized micro-waveform for visual effect, not a medically accurate ECG
+          */}
+          <path
+            d="M 2 12 L 6 12 L 8 8 L 10 16 L 12 4 L 14 20 L 16 12 L 18 12 L 22 12"
+            stroke={`url(#${gradientId})`}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+            filter={`url(#${filterId})`}
+          />
+        </svg>
       </div>
     </div>
   );
