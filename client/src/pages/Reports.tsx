@@ -722,7 +722,7 @@ export default function Reports() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 hover:shadow-lg transition-all duration-200">
                       <div className="flex justify-center mb-2">
                         <TestTube className="w-6 h-6 text-orange-600 dark:text-orange-400" />
@@ -746,6 +746,18 @@ export default function Reports() {
                         />
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending X-Rays</p>
+                    </div>
+                    <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 hover:shadow-lg transition-all duration-200">
+                      <div className="flex justify-center mb-2">
+                        <Activity className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+                      </div>
+                      <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">
+                        <CountUp 
+                          end={stats?.pending?.ultrasoundReports ?? 0}
+                          duration={2}
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending Ultrasounds</p>
                     </div>
                   </div>
                 </div>

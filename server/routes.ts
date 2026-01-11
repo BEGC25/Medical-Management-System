@@ -21,6 +21,7 @@ import {
   insertInventoryLedgerSchema,
   patients,
   treatments,
+  encounters,
 } from "@shared/schema";
 import {
   ObjectStorageService,
@@ -2950,9 +2951,9 @@ router.get("/api/reports/summary", async (req, res) => {
     
     console.log("Reports summary result:", stats);
     
-    // Return the stats with totalPatients instead of newPatients for clarity
     res.json({
       totalPatients: stats.newPatients, // Patients registered in range
+      newPatients: stats.newPatients,
       totalVisits: stats.totalVisits,
       labTests: stats.labTests,
       xrays: stats.xrays,
@@ -3081,33 +3082,33 @@ router.get("/api/reports/trends", async (req, res) => {
     
     console.log("Trends date range:", { startDate, endDate });
     
-    // Get all treatments in the date range
+    // Get all encounters (visits) in the date range
     // Use COALESCE to handle NULL clinicDay values by falling back to:
     // 1. visitDate (always populated)
     // 2. DATE(createdAt) as last resort
-    const allTreatments = await db.select({
-      treatmentId: treatments.treatmentId,
+    const visitRecords = await db.select({
+      encounterId: encounters.encounterId,
       effectiveDate: sql<string>`COALESCE(
-        ${treatments.clinicDay}, 
-        ${treatments.visitDate},
-        DATE(${treatments.createdAt})
+        ${encounters.clinicDay}, 
+        ${encounters.visitDate},
+        DATE(${encounters.createdAt})
       )`.as('effectiveDate')
-    }).from(treatments).where(
+    }).from(encounters).where(
       and(
         gte(sql`COALESCE(
-          ${treatments.clinicDay}, 
-          ${treatments.visitDate},
-          DATE(${treatments.createdAt})
+          ${encounters.clinicDay}, 
+          ${encounters.visitDate},
+          DATE(${encounters.createdAt})
         )`, startDate),
         lte(sql`COALESCE(
-          ${treatments.clinicDay}, 
-          ${treatments.visitDate},
-          DATE(${treatments.createdAt})
+          ${encounters.clinicDay}, 
+          ${encounters.visitDate},
+          DATE(${encounters.createdAt})
         )`, endDate)
       )
     );
     
-    console.log(`Found ${allTreatments.length} treatments in date range`);
+    console.log(`Found ${visitRecords.length} encounters in date range`);
     
     // Generate day buckets across the range
     const trends: Array<{ date: string; visits: number }> = [];
@@ -3118,8 +3119,8 @@ router.get("/api/reports/trends", async (req, res) => {
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dayKey = d.toISOString().split('T')[0];
       
-      // Count treatments (visits) for this day
-      const dayVisits = allTreatments.filter(t => t.effectiveDate === dayKey).length;
+      // Count visits for this day
+      const dayVisits = visitRecords.filter(v => v.effectiveDate === dayKey).length;
       
       trends.push({
         date: dayKey, // Return ISO date (YYYY-MM-DD) for frontend to format
