@@ -42,7 +42,8 @@ interface ReportFilters {
 }
 
 interface DashboardStats {
-  newPatients: number;
+  totalPatients?: number; // Patients registered in range (from /api/reports/summary)
+  newPatients: number;    // Legacy field (kept for compatibility)
   totalVisits: number;
   labTests: number;
   xrays: number;
@@ -77,13 +78,13 @@ export default function Reports() {
   });
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats", filters],
+    queryKey: ["/api/reports/summary", filters.fromDate, filters.toDate],
     queryFn: async () => {
       const params = new URLSearchParams({
         fromDate: filters.fromDate,
         toDate: filters.toDate
       });
-      const response = await fetch(`/api/dashboard/stats?${params}`);
+      const response = await fetch(`/api/reports/summary?${params}`);
       if (!response.ok) throw new Error('Failed to fetch stats');
       return response.json();
     },
@@ -95,7 +96,7 @@ export default function Reports() {
 
   // Fetch real diagnosis data from treatments
   const { data: diagnosisData = [], isLoading: diagnosisLoading } = useQuery<{ diagnosis: string; count: number }[]>({
-    queryKey: ["/api/reports/diagnoses", filters],
+    queryKey: ["/api/reports/diagnoses", filters.fromDate, filters.toDate],
     queryFn: async () => {
       const params = new URLSearchParams({
         fromDate: filters.fromDate,
@@ -109,28 +110,25 @@ export default function Reports() {
 
   // Fetch real patient age distribution
   const { data: ageDistributionData = [], isLoading: ageLoading } = useQuery<{ ageRange: string; count: number; percentage: number }[]>({
-    queryKey: ["/api/reports/age-distribution"],
+    queryKey: ["/api/reports/age-distribution", filters.fromDate, filters.toDate],
     queryFn: async () => {
-      const response = await fetch('/api/reports/age-distribution');
+      const params = new URLSearchParams({
+        fromDate: filters.fromDate,
+        toDate: filters.toDate
+      });
+      const response = await fetch(`/api/reports/age-distribution?${params}`);
       if (!response.ok) return [];
       return response.json();
     },
   });
 
-  // Fetch total patient count
-  const { data: totalPatients = 0 } = useQuery<number>({
-    queryKey: ["/api/patients/count"],
-    queryFn: async () => {
-      const response = await fetch('/api/patients/count');
-      if (!response.ok) return 0;
-      const data = await response.json();
-      return data.count || 0;
-    },
-  });
+  // Total patients now comes from the summary endpoint (patients registered in range)
+  // We'll derive it from the stats.totalPatients field
+  const totalPatients = stats?.totalPatients || 0;
 
   // Fetch trends data
   const { data: trendsData = [], isLoading: trendsLoading } = useQuery<Array<{ date: string; visits: number }>>({
-    queryKey: ["/api/reports/trends", filters],
+    queryKey: ["/api/reports/trends", filters.fromDate, filters.toDate],
     queryFn: async () => {
       const params = new URLSearchParams({
         fromDate: filters.fromDate,
@@ -191,9 +189,11 @@ export default function Reports() {
     
     try {
       // Refresh queries to get latest data
-      await queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/dashboard/stats"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/dashboard/recent-patients"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/reports/summary"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/reports/trends"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/reports/diagnoses"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/reports/age-distribution"] });
       
       setLastGenerated(new Date().toLocaleString());
       toast({
@@ -227,7 +227,7 @@ export default function Reports() {
       [''],
       ['Summary Statistics'],
       ['Metric', 'Count'],
-      ['New Patients', stats.newPatients || 0],
+      ['Total Patients', stats.totalPatients || stats.newPatients || 0],
       ['Total Visits', stats.totalVisits || 0],
       ['Lab Tests', stats.labTests || 0],
       ['X-rays', stats.xrays || 0],
@@ -325,8 +325,8 @@ export default function Reports() {
             <div class="report-title">Summary Statistics</div>
             <div class="stats-grid">
               <div class="stat-item">
-                <div class="stat-label">New Patients</div>
-                <div class="stat-value">${stats.newPatients || 0}</div>
+                <div class="stat-label">Total Patients</div>
+                <div class="stat-value">${stats.totalPatients || stats.newPatients || 0}</div>
               </div>
               <div class="stat-item">
                 <div class="stat-label">Total Visits</div>
