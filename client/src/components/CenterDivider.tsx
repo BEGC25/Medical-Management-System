@@ -100,6 +100,9 @@ function EKGTick({ delay, brightness }: { delay: number; brightness: number }) {
   const gradientId = useId();
   const filterId = useId();
   const trailGradientId = useId();
+  
+  // Trail opacity constant for easy adjustment
+  const TRAIL_OPACITY = 0.3;
 
   return (
     <div 
@@ -116,7 +119,7 @@ function EKGTick({ delay, brightness }: { delay: number; brightness: number }) {
         style={{
           animationDelay: `${delay}s`,
           willChange: 'transform, opacity',
-          opacity: brightness * 0.3,
+          opacity: brightness * TRAIL_OPACITY,
         }}
       >
         <svg 

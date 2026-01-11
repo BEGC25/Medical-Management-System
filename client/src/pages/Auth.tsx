@@ -340,12 +340,12 @@ export default function Auth() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            <h2 className="text-5xl font-bold mb-4 leading-tight" style={{ letterSpacing: '-0.02em', lineHeight: '1.15' }}>
+            <h2 className="text-5xl-premium font-bold mb-4">
               <span className="font-bold">Comprehensive </span>
               <span className="font-bold bg-gradient-to-r from-blue-200 via-teal-200 to-blue-300 bg-clip-text text-transparent">Healthcare</span>
               <span className="font-normal bg-gradient-to-r from-white via-blue-100 to-teal-100 bg-clip-text text-transparent"> Management</span>
             </h2>
-            <p className="text-blue-100/80 mb-10 text-lg leading-relaxed" style={{ letterSpacing: '-0.01em' }}>
+            <p className="text-blue-100/80 mb-10 text-lg-refined">
               Empowering rural healthcare delivery in South Sudan with modern digital tools
             </p>
           </motion.div>
