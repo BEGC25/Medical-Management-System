@@ -416,35 +416,35 @@ export default function Reports() {
               {/* Quick Filter Buttons */}
               <div className="flex flex-wrap gap-2 mb-4">
                 <Button
-                  variant="outline"
+                  variant={activeQuickFilter === "today" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setQuickFilter("today")}
-                  className={activeQuickFilter === "today" ? "bg-blue-600 text-white hover:bg-blue-700" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
+                  className={activeQuickFilter === "today" ? "bg-blue-600 text-white hover:bg-blue-700 border-blue-600" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
                 >
                   <Calendar className="w-4 h-4 mr-1" />
                   Today
                 </Button>
                 <Button
-                  variant="outline"
+                  variant={activeQuickFilter === "this-week" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setQuickFilter("this-week")}
-                  className={activeQuickFilter === "this-week" ? "bg-blue-600 text-white hover:bg-blue-700" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
+                  className={activeQuickFilter === "this-week" ? "bg-blue-600 text-white hover:bg-blue-700 border-blue-600" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
                 >
                   This Week
                 </Button>
                 <Button
-                  variant="outline"
+                  variant={activeQuickFilter === "this-month" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setQuickFilter("this-month")}
-                  className={activeQuickFilter === "this-month" ? "bg-blue-600 text-white hover:bg-blue-700" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
+                  className={activeQuickFilter === "this-month" ? "bg-blue-600 text-white hover:bg-blue-700 border-blue-600" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
                 >
                   This Month
                 </Button>
                 <Button
-                  variant="outline"
+                  variant={activeQuickFilter === "last-30-days" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setQuickFilter("last-30-days")}
-                  className={activeQuickFilter === "last-30-days" ? "bg-blue-600 text-white hover:bg-blue-700" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
+                  className={activeQuickFilter === "last-30-days" ? "bg-blue-600 text-white hover:bg-blue-700 border-blue-600" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
                 >
                   Last 30 Days
                 </Button>

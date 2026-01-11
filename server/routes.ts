@@ -3010,8 +3010,20 @@ router.get("/api/reports/age-distribution", async (req, res) => {
         return;
       }
 
-      const age = parseInt(patient.age);
-      if (isNaN(age)) {
+      // Parse age from various formats: "25", "25 years", "25years", etc.
+      const ageString = patient.age.toString().trim();
+      // Extract first number from the string
+      const ageMatch = ageString.match(/\d+/);
+      
+      if (!ageMatch) {
+        console.log(`Unable to parse age for patient ${patient.patientId}: "${patient.age}"`);
+        ageRanges["Unknown"]++;
+        return;
+      }
+      
+      const age = parseInt(ageMatch[0]);
+      if (isNaN(age) || age < 0 || age > 150) {
+        console.log(`Invalid age value for patient ${patient.patientId}: ${age}`);
         ageRanges["Unknown"]++;
       } else if (age <= 5) {
         ageRanges["0-5 years"]++;
@@ -3062,13 +3074,33 @@ router.get("/api/reports/trends", async (req, res) => {
     
     console.log("Trends date range:", { startDate, endDate });
     
-    // Get all treatments in the date range using clinic_day
-    const allTreatments = await db.select().from(treatments).where(
+    // Get all treatments in the date range
+    // Use COALESCE to handle NULL clinicDay values by falling back to:
+    // 1. visitDate (always populated)
+    // 2. DATE(createdAt) as last resort
+    const allTreatments = await db.select({
+      treatmentId: treatments.treatmentId,
+      effectiveDate: sql<string>`COALESCE(
+        ${treatments.clinicDay}, 
+        ${treatments.visitDate},
+        DATE(${treatments.createdAt})
+      )`.as('effectiveDate')
+    }).from(treatments).where(
       and(
-        gte(treatments.clinicDay, startDate),
-        lte(treatments.clinicDay, endDate)
+        gte(sql`COALESCE(
+          ${treatments.clinicDay}, 
+          ${treatments.visitDate},
+          DATE(${treatments.createdAt})
+        )`, startDate),
+        lte(sql`COALESCE(
+          ${treatments.clinicDay}, 
+          ${treatments.visitDate},
+          DATE(${treatments.createdAt})
+        )`, endDate)
       )
     );
+    
+    console.log(`Found ${allTreatments.length} treatments in date range`);
     
     // Generate day buckets across the range
     const trends: Array<{ date: string; visits: number }> = [];
@@ -3080,7 +3112,7 @@ router.get("/api/reports/trends", async (req, res) => {
       const dayKey = d.toISOString().split('T')[0];
       
       // Count treatments (visits) for this day
-      const dayVisits = allTreatments.filter(t => t.clinicDay === dayKey).length;
+      const dayVisits = allTreatments.filter(t => t.effectiveDate === dayKey).length;
       
       trends.push({
         date: dayKey, // Return ISO date (YYYY-MM-DD) for frontend to format
