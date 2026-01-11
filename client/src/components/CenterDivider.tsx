@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 
 /**
  * CenterDivider Component
@@ -65,6 +65,10 @@ export default function CenterDivider() {
  * @param delay - Animation delay in seconds for staggered effect
  */
 function EKGTick({ delay }: { delay: number }) {
+  // Generate unique IDs for SVG gradient and filter to prevent DOM conflicts
+  const gradientId = useId();
+  const filterId = useId();
+
   return (
     <div 
       className="absolute left-1/2 -translate-x-1/2"
@@ -91,12 +95,12 @@ function EKGTick({ delay }: { delay: number }) {
           className="absolute top-0 left-0"
         >
           <defs>
-            <linearGradient id="ekg-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="rgba(34, 211, 238, 0.6)" />
               <stop offset="50%" stopColor="rgba(59, 130, 246, 0.8)" />
               <stop offset="100%" stopColor="rgba(34, 211, 238, 0.6)" />
             </linearGradient>
-            <filter id="ekg-glow">
+            <filter id={filterId}>
               <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
               <feMerge>
                 <feMergeNode in="coloredBlur"/>
@@ -104,15 +108,23 @@ function EKGTick({ delay }: { delay: number }) {
               </feMerge>
             </filter>
           </defs>
-          {/* Simplified ECG waveform path - QRS complex */}
+          {/* 
+            Simplified ECG waveform path representing a QRS complex:
+            - Starts with baseline (2,12 to 6,12)
+            - P wave small upward deflection (8,8)
+            - Q wave small downward (10,16)
+            - R wave tall upward spike (12,4)
+            - S wave deep downward (14,20)
+            - Returns to baseline (16,12 to 22,12)
+          */}
           <path
             d="M 2 12 L 6 12 L 8 8 L 10 16 L 12 4 L 14 20 L 16 12 L 18 12 L 22 12"
-            stroke="url(#ekg-gradient)"
+            stroke={`url(#${gradientId})`}
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
             fill="none"
-            filter="url(#ekg-glow)"
+            filter={`url(#${filterId})`}
           />
         </svg>
       </div>
