@@ -3139,6 +3139,9 @@ export class MemStorage implements IStorage {
       const diagnosisCounts = new Map<string, number>();
       
       results.forEach(r => {
+        // Skip null/undefined diagnoses (shouldn't happen due to WHERE clause, but be safe)
+        if (!r.diagnosis) return;
+        
         const diagnosisString = r.diagnosis as string;
         // Split by comma or semicolon and process each diagnosis
         const diagnoses = diagnosisString.split(/[,;]/).map(d => d.trim()).filter(d => d.length > 0);
