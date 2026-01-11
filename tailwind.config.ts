@@ -184,6 +184,16 @@ export default {
             opacity: "0"
           }
         },
+        "ekg-button-tick": {
+          "0%, 100%": {
+            opacity: "0.4",
+            transform: "translateX(-4px)"
+          },
+          "50%": {
+            opacity: "1",
+            transform: "translateX(4px)"
+          }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -197,6 +207,7 @@ export default {
         "float-particle": "float-particle 60s ease-in-out infinite",
         "heartbeat-flow": "heartbeat-flow 5s linear infinite",
         "ekg-tick-flow": "ekg-tick-flow 6s ease-in-out infinite",
+        "ekg-button-tick": "ekg-button-tick 1.5s ease-in-out infinite",
       },
     },
   },
