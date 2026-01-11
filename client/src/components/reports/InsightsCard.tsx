@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+// Threshold for identifying high lab test ratios
+const HIGH_LAB_TEST_RATIO = 1.5;
+
 interface Insight {
   icon: React.ComponentType<{ className?: string }>;
   text: string;
@@ -59,7 +62,7 @@ const generateInsights = (stats?: any, diagnosisData?: Array<{ diagnosis: string
   // Lab test ratio analysis
   if (stats.labTests > 0 && stats.totalVisits > 0) {
     const ratio = (stats.labTests / stats.totalVisits).toFixed(1);
-    if (parseFloat(ratio) > 1.5) {
+    if (parseFloat(ratio) > HIGH_LAB_TEST_RATIO) {
       insights.push({
         icon: TestTube,
         text: `High lab test ratio: ${ratio} tests per visit indicates thorough diagnostics`,

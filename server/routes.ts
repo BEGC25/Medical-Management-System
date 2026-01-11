@@ -3112,6 +3112,7 @@ router.get("/api/reports/gender-distribution", async (req, res) => {
     if (fromDate && toDate && typeof fromDate === 'string' && typeof toDate === 'string') {
       // Filter by patients who had encounters in the date range
       genderQuery = await db.select({
+        patientId: patients.id,
         gender: patients.gender
       })
       .from(patients)
@@ -3126,23 +3127,24 @@ router.get("/api/reports/gender-distribution", async (req, res) => {
     } else {
       // No date filter - get all active patients
       genderQuery = await db.select({
+        patientId: patients.id,
         gender: patients.gender
       })
       .from(patients)
       .where(eq(patients.isDeleted, 0));
     }
     
-    console.log(`Processing ${genderQuery.length} patients for gender distribution`);
+    console.log(`Processing ${genderQuery.length} patient records for gender distribution`);
     
     let maleCount = 0;
     let femaleCount = 0;
     
     // Use a Set to avoid counting duplicate patients (in case of multiple encounters)
-    const uniquePatients = new Map<string, string>();
+    const uniquePatients = new Map<number, string>();
     
-    genderQuery.forEach((row: any) => {
+    genderQuery.forEach((row: { patientId: number; gender: string | null }) => {
       if (row.gender) {
-        uniquePatients.set(JSON.stringify(row), row.gender);
+        uniquePatients.set(row.patientId, row.gender);
       }
     });
     

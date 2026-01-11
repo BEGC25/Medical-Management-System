@@ -190,7 +190,13 @@ export default function Reports() {
 
   // Calculate trend percentages for comparison mode
   const calculateTrend = (current: number, previous: number | undefined): { value: number; isPositive: boolean; } | undefined => {
-    if (!comparisonMode || !previous || previous === 0) return undefined;
+    if (!comparisonMode || previous === undefined) return undefined;
+    
+    // Handle zero previous value - show as 100% increase if current > 0
+    if (previous === 0) {
+      return current > 0 ? { value: 100, isPositive: true } : undefined;
+    }
+    
     const percentChange = Math.round(((current - previous) / previous) * 100);
     return {
       value: percentChange,

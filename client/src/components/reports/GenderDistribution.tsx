@@ -18,12 +18,19 @@ export function GenderDistribution({ data, isLoading }: GenderDistributionProps)
   const malePercent = total > 0 ? Math.round((maleCount / total) * 100) : 0;
   const femalePercent = total > 0 ? Math.round((femaleCount / total) * 100) : 0;
   
-  // Calculate gender ratio (e.g., "1.2:1 M:F")
-  const genderRatio = femaleCount > 0 
-    ? `${(maleCount / femaleCount).toFixed(1)}:1 M:F`
-    : maleCount > 0 
-      ? "All Male" 
-      : "No data";
+  // Calculate gender ratio - always show as larger:smaller for clarity
+  let genderRatio: string;
+  if (maleCount === 0 && femaleCount === 0) {
+    genderRatio = "No data";
+  } else if (maleCount === 0) {
+    genderRatio = "All Female";
+  } else if (femaleCount === 0) {
+    genderRatio = "All Male";
+  } else if (maleCount >= femaleCount) {
+    genderRatio = `${(maleCount / femaleCount).toFixed(1)}:1 M:F`;
+  } else {
+    genderRatio = `1:${(femaleCount / maleCount).toFixed(1)} M:F`;
+  }
 
   const hasData = total > 0;
 
