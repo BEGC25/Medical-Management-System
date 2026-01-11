@@ -2923,6 +2923,47 @@ router.post("/api/pharmacy/dispense", async (req, res) => {
 
 /* ---------------------------------- Reports ---------------------------------- */
 
+// Reports Summary - range-based metrics for Reports page
+router.get("/api/reports/summary", async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+    
+    console.log("Reports summary route called", { fromDate, toDate });
+    
+    // Validate date parameters
+    if (!fromDate || !toDate) {
+      return res.status(400).json({ 
+        error: "Missing required parameters: fromDate and toDate" 
+      });
+    }
+    
+    // Use getDashboardStats which already filters by date range using clinic_day
+    // This ensures consistency with the Dashboard but respects the provided date range
+    const stats = await storage.getDashboardStats(
+      fromDate as string,
+      toDate as string
+    );
+    
+    console.log("Reports summary result:", stats);
+    
+    // Return the stats with totalPatients instead of newPatients for clarity
+    res.json({
+      totalPatients: stats.newPatients, // Patients registered in range
+      totalVisits: stats.totalVisits,
+      labTests: stats.labTests,
+      xrays: stats.xrays,
+      ultrasounds: stats.ultrasounds,
+      pending: stats.pending,
+    });
+  } catch (error) {
+    console.error("Reports summary route error:", error);
+    res.status(500).json({
+      error: "Failed to fetch reports summary",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
 router.get("/api/reports/diagnoses", async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
@@ -2940,9 +2981,30 @@ router.get("/api/reports/diagnoses", async (req, res) => {
   }
 });
 
-router.get("/api/reports/age-distribution", async (_req, res) => {
+router.get("/api/reports/age-distribution", async (req, res) => {
   try {
-    const patients = await storage.getPatients();
+    const { fromDate, toDate } = req.query;
+    
+    console.log("Age distribution route called", { fromDate, toDate });
+    
+    // Get patients filtered by registration date (clinic_day) if range is provided
+    let filteredPatients;
+    if (fromDate && toDate && typeof fromDate === 'string' && typeof toDate === 'string') {
+      filteredPatients = await db.select().from(patients).where(
+        and(
+          eq(patients.isDeleted, 0),
+          gte(patients.clinicDay, fromDate),
+          lte(patients.clinicDay, toDate)
+        )
+      );
+    } else {
+      // No range provided - use all patients
+      filteredPatients = await db.select().from(patients).where(
+        eq(patients.isDeleted, 0)
+      );
+    }
+    
+    console.log(`Found ${filteredPatients.length} patients in range`);
 
     const ageRanges: Record<string, number> = {
       "0-5 years": 0,
@@ -2952,7 +3014,8 @@ router.get("/api/reports/age-distribution", async (_req, res) => {
       Unknown: 0,
     };
 
-    patients.forEach((patient) => {
+    filteredPatients.forEach((patient) => {
+      // Use age string field (dateOfBirth field doesn't exist in schema)
       if (!patient.age || patient.age.trim() === "") {
         ageRanges["Unknown"]++;
         return;
@@ -2972,7 +3035,7 @@ router.get("/api/reports/age-distribution", async (_req, res) => {
       }
     });
 
-    const total = patients.length || 1;
+    const total = filteredPatients.length || 1;
     const distribution = Object.entries(ageRanges)
       .filter(([_, count]) => count > 0)
       .map(([ageRange, count]) => ({
@@ -2991,29 +3054,52 @@ router.get("/api/reports/age-distribution", async (_req, res) => {
 router.get("/api/reports/trends", async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
-    const visits = await storage.getVisits();
     
-    // Generate trend data for the last 30 days
-    const trends = [];
-    const today = new Date();
+    console.log("Reports trends route called", { fromDate, toDate });
     
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+    // If fromDate and toDate are provided, use them; otherwise default to last 30 days
+    let startDate: string;
+    let endDate: string;
+    
+    if (fromDate && toDate && typeof fromDate === 'string' && typeof toDate === 'string') {
+      startDate = fromDate;
+      endDate = toDate;
+    } else {
+      // Default to last 30 days from today
+      const { getClinicDayKey, getClinicDayKeyOffset } = await import('./utils/clinicDay');
+      startDate = getClinicDayKeyOffset(-29); // 29 days ago + today = 30 days
+      endDate = getClinicDayKey();
+    }
+    
+    console.log("Trends date range:", { startDate, endDate });
+    
+    // Get all treatments in the date range using clinic_day
+    const allTreatments = await db.select().from(treatments).where(
+      and(
+        gte(treatments.clinicDay, startDate),
+        lte(treatments.clinicDay, endDate)
+      )
+    );
+    
+    // Generate day buckets across the range
+    const trends: Array<{ date: string; visits: number }> = [];
+    const start = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
+    
+    // Iterate through each day in the range
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dayKey = d.toISOString().split('T')[0];
       
-      // Count visits for this date
-      const dayVisits = visits.filter(visit => {
-        const visitDate = new Date(visit.visitDate).toISOString().split('T')[0];
-        return visitDate === dateStr;
-      }).length;
+      // Count treatments (visits) for this day
+      const dayVisits = allTreatments.filter(t => t.clinicDay === dayKey).length;
       
       trends.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: dayKey, // Return ISO date (YYYY-MM-DD) for frontend to format
         visits: dayVisits,
       });
     }
     
+    console.log(`Generated ${trends.length} trend data points`);
     res.json(trends);
   } catch (error) {
     console.error("Error fetching trends:", error);

@@ -19,7 +19,14 @@ interface VisitsTrendChartProps {
 
 export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps) {
   // Generate sample data if none provided
-  const chartData = data.length > 0 ? data : generateSampleData();
+  const rawData = data.length > 0 ? data : generateSampleData();
+  
+  // Format ISO dates (YYYY-MM-DD) to display format (MMM DD)
+  const chartData = rawData.map(item => ({
+    ...item,
+    displayDate: formatISODate(item.date),
+    date: item.date, // Keep original for tooltip
+  }));
 
   return (
     <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/20 shadow-2xl hover:shadow-premium transition-all duration-300">
@@ -27,7 +34,7 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            <span>Visits Trend (Last 30 Days)</span>
+            <span>Visits Trend</span>
           </div>
           <TrendingUp className="h-4 w-4 text-green-600 animate-pulse" />
         </CardTitle>
@@ -51,7 +58,7 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
               <XAxis
-                dataKey="date"
+                dataKey="displayDate"
                 stroke="#6b7280"
                 tick={{ fontSize: 12 }}
                 tickLine={{ stroke: "#e5e7eb" }}
@@ -89,6 +96,16 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
       </CardContent>
     </Card>
   );
+}
+
+// Helper function to format ISO date (YYYY-MM-DD) to display format (MMM DD)
+function formatISODate(isoDate: string): string {
+  try {
+    const date = new Date(isoDate + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return isoDate; // Fallback to original if parsing fails
+  }
 }
 
 function generateSampleData() {
