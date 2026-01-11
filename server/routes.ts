@@ -2982,7 +2982,7 @@ router.get("/api/reports/summary", async (req, res) => {
       ultrasounds: stats.ultrasounds,
       pending: stats.pending,
       previousPeriod: previousPeriodStats ? {
-        totalPatients: previousPeriodStats.newPatients,
+        totalPatients: previousPeriodStats.newPatients, // Same as newPatients in this system
         newPatients: previousPeriodStats.newPatients,
         totalVisits: previousPeriodStats.totalVisits,
         labTests: previousPeriodStats.labTests,
@@ -3142,6 +3142,7 @@ router.get("/api/reports/gender-distribution", async (req, res) => {
     // Use a Set to avoid counting duplicate patients (in case of multiple encounters)
     const uniquePatients = new Map<number, string>();
     
+    // Only include patients with a valid gender value (excludes null/empty)
     genderQuery.forEach((row: { patientId: number; gender: string | null }) => {
       if (row.gender) {
         uniquePatients.set(row.patientId, row.gender);

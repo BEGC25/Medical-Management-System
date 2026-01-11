@@ -193,6 +193,7 @@ export default function Reports() {
     if (!comparisonMode || previous === undefined) return undefined;
     
     // Handle zero previous value - show as 100% increase if current > 0
+    // This represents "new activity" rather than infinity
     if (previous === 0) {
       return current > 0 ? { value: 100, isPositive: true } : undefined;
     }
