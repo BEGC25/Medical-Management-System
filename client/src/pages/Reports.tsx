@@ -125,7 +125,10 @@ export default function Reports() {
     queryKey: ["/api/patients/count"],
     queryFn: async () => {
       const response = await fetch('/api/patients/count');
-      if (!response.ok) return { count: 0 };
+      if (!response.ok) {
+        console.error('Failed to fetch total patient count:', response.status);
+        return { count: 0 };
+      }
       return response.json();
     },
   });
