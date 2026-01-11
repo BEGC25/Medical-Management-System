@@ -102,6 +102,7 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
   );
 }
 
+// Format ISO date string (YYYY-MM-DD) to display format (e.g., "Jan 10")
 function formatDate(dateStr: string): string {
   try {
     const date = new Date(dateStr + 'T00:00:00');

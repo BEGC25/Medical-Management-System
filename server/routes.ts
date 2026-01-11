@@ -2988,13 +2988,16 @@ router.get("/api/reports/diagnoses", async (req, res) => {
 
 router.get("/api/reports/age-distribution", async (req, res) => {
   try {
+    // Constants for age validation
+    const MAX_VALID_AGE = 150;
+    
     // Get all non-deleted patients
     const allPatients = await db.select({
       age: patients.age
     }).from(patients).where(eq(patients.isDeleted, 0));
     
     console.log(`Processing ${allPatients.length} patients for age distribution`);
-    console.log("Sample ages:", allPatients.slice(0, 5).map(p => p.age));
+    console.log("Sample ages:", allPatients.slice(0, 5).map((p: any) => p.age));
 
     const ageRanges: Record<string, number> = {
       "0-5": 0,
@@ -3007,7 +3010,7 @@ router.get("/api/reports/age-distribution", async (req, res) => {
     
     let unknownCount = 0;
 
-    allPatients.forEach((patient) => {
+    allPatients.forEach((patient: any) => {
       if (!patient.age || patient.age.trim() === "") {
         unknownCount++;
         return;
@@ -3022,7 +3025,7 @@ router.get("/api/reports/age-distribution", async (req, res) => {
       
       const age = parseInt(ageMatch[0], 10);
       
-      if (isNaN(age) || age < 0 || age > 150) {
+      if (isNaN(age) || age < 0 || age > MAX_VALID_AGE) {
         unknownCount++;
       } else if (age <= 5) {
         ageRanges["0-5"]++;
@@ -3103,9 +3106,10 @@ router.get("/api/reports/trends", async (req, res) => {
     // Count visits per day
     const visitCounts: Record<string, number> = {};
     
-    allTreatments.forEach(t => {
-      // visitDate format is YYYY-MM-DD
-      const dayKey = t.visitDate.split('T')[0]; // Handle both "2026-01-10" and "2026-01-10T..." formats
+    allTreatments.forEach((t: any) => {
+      // visitDate is stored as text in YYYY-MM-DD format, but may contain time component
+      // Extract just the date part to ensure consistent grouping
+      const dayKey = t.visitDate.split('T')[0];
       visitCounts[dayKey] = (visitCounts[dayKey] || 0) + 1;
     });
     
