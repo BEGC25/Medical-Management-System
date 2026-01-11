@@ -109,13 +109,14 @@ function EKGTick({ delay }: { delay: number }) {
             </filter>
           </defs>
           {/* 
-            Simplified ECG waveform path representing a QRS complex:
-            - Starts with baseline (2,12 to 6,12)
-            - P wave small upward deflection (8,8)
-            - Q wave small downward (10,16)
-            - R wave tall upward spike (12,4)
+            Simplified ECG waveform path - stylized QRS complex:
+            - Baseline lead-in (2,12 to 6,12)
+            - Small upward tick (8,8)
+            - Q wave downward deflection (10,16)
+            - R wave tall upward spike (12,4) - main feature
             - S wave deep downward (14,20)
-            - Returns to baseline (16,12) through (18,12) to (22,12)
+            - Return to baseline (16,12 through 18,12 to 22,12)
+            Note: This is a stylized micro-waveform for visual effect, not a medically accurate ECG
           */}
           <path
             d="M 2 12 L 6 12 L 8 8 L 10 16 L 12 4 L 14 20 L 16 12 L 18 12 L 22 12"
