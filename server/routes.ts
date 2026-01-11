@@ -2987,24 +2987,13 @@ router.get("/api/reports/age-distribution", async (req, res) => {
     
     console.log("Age distribution route called", { fromDate, toDate });
     
-    // Get patients filtered by registration date (clinic_day) if range is provided
-    let filteredPatients;
-    if (fromDate && toDate && typeof fromDate === 'string' && typeof toDate === 'string') {
-      filteredPatients = await db.select().from(patients).where(
-        and(
-          eq(patients.isDeleted, 0),
-          gte(patients.clinicDay, fromDate),
-          lte(patients.clinicDay, toDate)
-        )
-      );
-    } else {
-      // No range provided - use all patients
-      filteredPatients = await db.select().from(patients).where(
-        eq(patients.isDeleted, 0)
-      );
-    }
+    // Get ALL patients (not filtered by registration date)
+    // Age distribution should show demographics of all patients in the system
+    const filteredPatients = await db.select().from(patients).where(
+      eq(patients.isDeleted, 0)
+    );
     
-    console.log(`Found ${filteredPatients.length} patients in range`);
+    console.log(`Found ${filteredPatients.length} patients in system`);
 
     const ageRanges: Record<string, number> = {
       "0-5 years": 0,

@@ -65,7 +65,7 @@ export function AgeDonutChart({ data = [], totalPatients = 0, isLoading }: AgeDo
           <div className="h-[350px] flex items-center justify-center">
             <div className="animate-pulse text-gray-400">Loading chart data...</div>
           </div>
-        ) : chartData.length === 0 || totalPatients === 0 ? (
+        ) : chartData.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
             <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">

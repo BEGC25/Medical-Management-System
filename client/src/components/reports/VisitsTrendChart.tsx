@@ -114,8 +114,9 @@ function generateSampleData() {
   for (let i = 29; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
+    // Generate dates in ISO format (YYYY-MM-DD) for consistency
     data.push({
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: date.toISOString().split('T')[0],
       visits: Math.floor(Math.random() * 30) + 10,
     });
   }
