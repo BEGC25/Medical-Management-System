@@ -42,9 +42,9 @@ export default function CenterDivider() {
           {/* Vertical gradient for the base line */}
           <linearGradient id="dividerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="rgba(59, 130, 246, 0)" />
-            <stop offset="5%" stopColor="rgba(59, 130, 246, 0.3)" />
-            <stop offset="50%" stopColor="rgba(59, 130, 246, 0.6)" />
-            <stop offset="95%" stopColor="rgba(59, 130, 246, 0.3)" />
+            <stop offset="3%" stopColor="rgba(59, 130, 246, 0.4)" />
+            <stop offset="50%" stopColor="rgba(59, 130, 246, 0.7)" />
+            <stop offset="97%" stopColor="rgba(59, 130, 246, 0.4)" />
             <stop offset="100%" stopColor="rgba(59, 130, 246, 0)" />
           </linearGradient>
           
@@ -74,9 +74,10 @@ export default function CenterDivider() {
         className="absolute inset-0 animate-glow-pulse"
         style={{
           boxShadow: `
-            0 0 20px rgba(59, 130, 246, 0.5),
-            0 0 40px rgba(59, 130, 246, 0.3),
-            0 0 60px rgba(59, 130, 246, 0.1)
+            0 0 25px rgba(59, 130, 246, 0.6),
+            0 0 50px rgba(59, 130, 246, 0.4),
+            0 0 75px rgba(59, 130, 246, 0.2),
+            0 0 100px rgba(59, 130, 246, 0.1)
           `,
         }}
       />
@@ -85,7 +86,8 @@ export default function CenterDivider() {
       {!prefersReducedMotion && (
         <>
           <HeartbeatPath delay={0} />
-          <HeartbeatPath delay={2.5} />
+          <HeartbeatPath delay={1.67} />
+          <HeartbeatPath delay={3.33} />
         </>
       )}
     </div>
@@ -96,31 +98,33 @@ export default function CenterDivider() {
  * HeartbeatPath Component
  * 
  * Renders an animated EKG/heartbeat pattern that travels vertically
+ * Features a realistic ECG waveform with P wave, QRS complex, and T wave
  * 
  * @param delay - Animation delay in seconds for staggered effect
  */
 function HeartbeatPath({ delay }: { delay: number }) {
   return (
     <svg 
-      className="absolute left-1/2 -translate-x-1/2 w-16 h-32 overflow-visible"
+      className="absolute left-1/2 -translate-x-1/2 w-20 h-40 overflow-visible"
       style={{
         animation: 'heartbeat-flow 5s linear infinite',
         animationDelay: `${delay}s`,
       }}
-      viewBox="0 0 60 120"
+      viewBox="0 0 80 160"
       preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* EKG heartbeat pattern path */}
+      {/* Realistic EKG heartbeat pattern path */}
+      {/* Flat baseline -> P wave -> QRS complex (sharp spike) -> T wave -> baseline */}
       <path
-        d="M 30 0 L 30 40 L 25 50 L 28 55 L 30 45 L 35 75 L 30 55 L 32 58 L 30 60 L 30 120"
+        d="M 40 10 L 40 50 L 38 55 L 40 60 L 42 62 L 40 65 L 40 70 L 35 75 L 40 40 L 50 95 L 40 70 L 40 75 L 43 85 L 40 90 L 40 150"
         stroke="url(#heartbeatGradient)"
         strokeWidth="2.5"
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
         style={{
-          filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))',
+          filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.7)) drop-shadow(0 0 20px rgba(34, 211, 238, 0.4))',
         }}
       />
     </svg>
