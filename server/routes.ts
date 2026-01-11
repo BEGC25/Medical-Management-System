@@ -3069,6 +3069,78 @@ router.get("/api/reports/age-distribution", async (req, res) => {
   }
 });
 
+router.get("/api/reports/gender-distribution", async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+    
+    console.log("Gender distribution route called", { fromDate, toDate });
+    
+    // Get patients who had visits in the selected period
+    // Join patients with encounters to get only patients with visits in the date range
+    let genderQuery;
+    
+    if (fromDate && toDate && typeof fromDate === 'string' && typeof toDate === 'string') {
+      // Filter by patients who had encounters in the date range
+      genderQuery = await db.select({
+        gender: patients.gender
+      })
+      .from(patients)
+      .innerJoin(encounters, eq(patients.id, encounters.patientId))
+      .where(
+        and(
+          eq(patients.isDeleted, 0),
+          gte(encounters.visitDate, fromDate),
+          lte(encounters.visitDate, toDate)
+        )
+      );
+    } else {
+      // No date filter - get all active patients
+      genderQuery = await db.select({
+        gender: patients.gender
+      })
+      .from(patients)
+      .where(eq(patients.isDeleted, 0));
+    }
+    
+    console.log(`Processing ${genderQuery.length} patients for gender distribution`);
+    
+    let maleCount = 0;
+    let femaleCount = 0;
+    
+    // Use a Set to avoid counting duplicate patients (in case of multiple encounters)
+    const uniquePatients = new Map<string, string>();
+    
+    genderQuery.forEach((row: any) => {
+      if (row.gender) {
+        uniquePatients.set(JSON.stringify(row), row.gender);
+      }
+    });
+    
+    // Count unique genders
+    uniquePatients.forEach((gender) => {
+      if (gender && gender.toLowerCase() === 'male') {
+        maleCount++;
+      } else if (gender && gender.toLowerCase() === 'female') {
+        femaleCount++;
+      }
+    });
+    
+    const total = maleCount + femaleCount;
+    
+    const result = {
+      male: maleCount,
+      female: femaleCount,
+      total: total
+    };
+    
+    console.log("Gender distribution result:", result);
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching gender distribution:", error);
+    res.status(500).json({ error: "Failed to fetch gender distribution" });
+  }
+});
+
 router.get("/api/reports/trends", async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
