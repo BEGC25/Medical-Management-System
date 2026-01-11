@@ -55,6 +55,14 @@ interface DashboardStats {
     xrayReports: number;
     ultrasoundReports: number;
   };
+  previousPeriod?: {
+    totalPatients: number;
+    newPatients: number;
+    totalVisits: number;
+    labTests: number;
+    xrays: number;
+    ultrasounds: number;
+  } | null;
 }
 
 interface PatientData {
@@ -106,11 +114,12 @@ export default function Reports() {
   });
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/reports/summary", filters.fromDate, filters.toDate],
+    queryKey: ["/api/reports/summary", filters.fromDate, filters.toDate, comparisonMode],
     queryFn: async () => {
       const params = new URLSearchParams({
         fromDate: filters.fromDate,
-        toDate: filters.toDate
+        toDate: filters.toDate,
+        compareWithPrevious: comparisonMode ? 'true' : 'false'
       });
       const response = await fetch(`/api/reports/summary?${params}`);
       if (!response.ok) throw new Error('Failed to fetch stats');
@@ -178,6 +187,16 @@ export default function Reports() {
   });
 
   const isLoading = statsLoading || diagnosisLoading || genderLoading || trendsLoading;
+
+  // Calculate trend percentages for comparison mode
+  const calculateTrend = (current: number, previous: number | undefined): { value: number; isPositive: boolean; } | undefined => {
+    if (!comparisonMode || !previous || previous === 0) return undefined;
+    const percentChange = Math.round(((current - previous) / previous) * 100);
+    return {
+      value: percentChange,
+      isPositive: percentChange >= 0,
+    };
+  };
 
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -589,6 +608,7 @@ export default function Reports() {
                 subtitle="Registered in system"
                 icon={Users}
                 gradient="from-blue-600 via-blue-500 to-cyan-400"
+                trend={calculateTrend(totalPatients, stats?.previousPeriod?.totalPatients)}
               />
             </motion.div>
             <motion.div
@@ -602,6 +622,7 @@ export default function Reports() {
                 subtitle="In selected period"
                 icon={Stethoscope}
                 gradient="from-green-600 via-green-500 to-emerald-400"
+                trend={calculateTrend(stats?.totalVisits || 0, stats?.previousPeriod?.totalVisits)}
               />
             </motion.div>
             <motion.div
@@ -615,6 +636,7 @@ export default function Reports() {
                 subtitle="Tests ordered"
                 icon={TestTube}
                 gradient="from-orange-600 via-orange-500 to-amber-400"
+                trend={calculateTrend(stats?.labTests || 0, stats?.previousPeriod?.labTests)}
               />
             </motion.div>
             <motion.div
@@ -628,6 +650,7 @@ export default function Reports() {
                 subtitle="Exams performed"
                 icon={Scan}
                 gradient="from-purple-600 via-purple-500 to-pink-400"
+                trend={calculateTrend(stats?.xrays || 0, stats?.previousPeriod?.xrays)}
               />
             </motion.div>
             <motion.div
@@ -641,6 +664,7 @@ export default function Reports() {
                 subtitle="Scans performed"
                 icon={Activity}
                 gradient="from-teal-600 via-teal-500 to-cyan-400"
+                trend={calculateTrend(stats?.ultrasounds || 0, stats?.previousPeriod?.ultrasounds)}
               />
             </motion.div>
           </motion.div>
@@ -670,6 +694,7 @@ export default function Reports() {
             isLoading={insightsLoading}
             stats={stats}
             diagnosisData={diagnosisData}
+            lastPeriodStats={stats?.previousPeriod}
           />
 
           {/* Detailed Reports - Keep existing structure with enhanced styling */}

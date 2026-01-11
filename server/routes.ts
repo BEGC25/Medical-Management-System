@@ -2931,9 +2931,9 @@ router.post("/api/pharmacy/dispense", async (req, res) => {
 // Reports Summary - range-based metrics for Reports page
 router.get("/api/reports/summary", async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    const { fromDate, toDate, compareWithPrevious } = req.query;
     
-    console.log("Reports summary route called", { fromDate, toDate });
+    console.log("Reports summary route called", { fromDate, toDate, compareWithPrevious });
     
     // Validate date parameters
     if (!fromDate || !toDate) {
@@ -2949,6 +2949,28 @@ router.get("/api/reports/summary", async (req, res) => {
       toDate as string
     );
     
+    let previousPeriodStats = null;
+    
+    // If comparison is requested, calculate previous period
+    if (compareWithPrevious === 'true') {
+      const startDate = new Date(fromDate as string);
+      const endDate = new Date(toDate as string);
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Calculate previous period dates
+      const prevEndDate = new Date(startDate);
+      prevEndDate.setDate(prevEndDate.getDate() - 1);
+      const prevStartDate = new Date(prevEndDate);
+      prevStartDate.setDate(prevStartDate.getDate() - daysDiff);
+      
+      const prevFromDate = prevStartDate.toISOString().split('T')[0];
+      const prevToDate = prevEndDate.toISOString().split('T')[0];
+      
+      console.log("Previous period:", { prevFromDate, prevToDate });
+      
+      previousPeriodStats = await storage.getDashboardStats(prevFromDate, prevToDate);
+    }
+    
     console.log("Reports summary result:", stats);
     
     res.json({
@@ -2959,6 +2981,14 @@ router.get("/api/reports/summary", async (req, res) => {
       xrays: stats.xrays,
       ultrasounds: stats.ultrasounds,
       pending: stats.pending,
+      previousPeriod: previousPeriodStats ? {
+        totalPatients: previousPeriodStats.newPatients,
+        newPatients: previousPeriodStats.newPatients,
+        totalVisits: previousPeriodStats.totalVisits,
+        labTests: previousPeriodStats.labTests,
+        xrays: previousPeriodStats.xrays,
+        ultrasounds: previousPeriodStats.ultrasounds,
+      } : null,
     });
   } catch (error) {
     console.error("Reports summary route error:", error);
