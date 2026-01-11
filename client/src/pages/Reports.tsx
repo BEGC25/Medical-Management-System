@@ -109,22 +109,34 @@ export default function Reports() {
     },
   });
 
-  // Fetch real patient age distribution
+  // Fetch real patient age distribution (not filtered by date - shows all patients)
   const { data: ageDistributionData = [], isLoading: ageLoading } = useQuery<{ ageRange: string; count: number; percentage: number }[]>({
-    queryKey: ["/api/reports/age-distribution", filters.fromDate, filters.toDate],
+    queryKey: ["/api/reports/age-distribution"],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        fromDate: filters.fromDate,
-        toDate: filters.toDate
-      });
-      const response = await fetch(`/api/reports/age-distribution?${params}`);
+      // Don't pass date filters - age distribution should show all patients
+      const response = await fetch(`/api/reports/age-distribution`);
       if (!response.ok) return [];
       return response.json();
     },
   });
 
-  // Total patients now comes from the summary endpoint (patients registered in range)
-  // We'll derive it from the stats.totalPatients field
+  // Fetch total patient count for age distribution (all patients, not filtered)
+  const { data: totalPatientsData } = useQuery<{ count: number }>({
+    queryKey: ["/api/patients/count"],
+    queryFn: async () => {
+      const response = await fetch('/api/patients/count');
+      if (!response.ok) {
+        console.error('Failed to fetch total patient count:', response.status);
+        return { count: 0 };
+      }
+      return response.json();
+    },
+  });
+
+  // Total patients for age distribution (all patients in system)
+  const totalPatientsForAge = totalPatientsData?.count || 0;
+
+  // Total patients for the period summary (filtered by date range)
   const totalPatients = stats?.totalPatients || 0;
 
   // Fetch trends data
@@ -593,7 +605,7 @@ export default function Reports() {
             />
             <AgeDonutChart 
               data={ageDistributionData}
-              totalPatients={totalPatients}
+              totalPatients={totalPatientsForAge}
               isLoading={ageLoading}
             />
             <DiagnosisBarChart 

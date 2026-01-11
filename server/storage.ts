@@ -1138,14 +1138,30 @@ export class MemStorage implements IStorage {
       
       console.log("Dashboard stats using clinic_day filter", { actualFromDate, actualToDate });
       
-      // Count patients created today (or in date range) using clinic_day
-      const patientDateFilter = and(
-        eq(patients.isDeleted, 0),
-        gte(patients.clinicDay, actualFromDate),
-        lte(patients.clinicDay, actualToDate)
+      // Count patients created today (or in date range)
+      // Handle NULL clinicDay by falling back to DATE(createdAt)
+      // Use SQL to handle COALESCE for SQLite compatibility
+      const totalPatients = await db.select({ count: count() }).from(patients).where(
+        and(
+          eq(patients.isDeleted, 0),
+          or(
+            // Use clinicDay if available
+            and(
+              isNotNull(patients.clinicDay),
+              gte(patients.clinicDay, actualFromDate),
+              lte(patients.clinicDay, actualToDate)
+            ),
+            // Fall back to createdAt date if clinicDay is NULL
+            and(
+              isNull(patients.clinicDay),
+              sql`DATE(${patients.createdAt}) >= ${actualFromDate}`,
+              sql`DATE(${patients.createdAt}) <= ${actualToDate}`
+            )
+          )
+        )
       );
       
-      const totalPatients = await db.select({ count: count() }).from(patients).where(patientDateFilter);
+      console.log(`Found ${totalPatients[0]?.count || 0} patients in date range ${actualFromDate} to ${actualToDate}`);
       
       // Count treatments by clinic_day (when created, not visit_date)
       const totalTreatments = await db.select({ count: count() }).from(treatments).where(
