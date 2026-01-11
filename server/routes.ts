@@ -4,6 +4,8 @@ import express from "express";
 import session from "express-session";
 import { z } from "zod";
 import { storage } from "./storage";
+import { db } from "./db";
+import { eq, gte, lte, and, sql } from "drizzle-orm";
 import {
   insertPatientSchema,
   insertTreatmentSchema,
@@ -17,6 +19,8 @@ import {
   insertDrugSchema,
   insertDrugBatchSchema,
   insertInventoryLedgerSchema,
+  patients,
+  treatments,
 } from "@shared/schema";
 import {
   ObjectStorageService,
@@ -2987,6 +2991,9 @@ router.get("/api/reports/age-distribution", async (req, res) => {
     
     console.log("Age distribution route called", { fromDate, toDate });
     
+    // Constants for age validation
+    const MAX_VALID_AGE = 150;
+    
     // Get ALL patients (not filtered by registration date)
     // Age distribution should show demographics of all patients in the system
     const filteredPatients = await db.select().from(patients).where(
@@ -3022,7 +3029,7 @@ router.get("/api/reports/age-distribution", async (req, res) => {
       }
       
       const age = parseInt(ageMatch[0]);
-      if (isNaN(age) || age < 0 || age > 150) {
+      if (isNaN(age) || age < 0 || age > MAX_VALID_AGE) {
         console.log(`Invalid age value for patient ${patient.patientId}: ${age}`);
         ageRanges["Unknown"]++;
       } else if (age <= 5) {
