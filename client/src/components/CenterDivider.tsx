@@ -48,8 +48,8 @@ export default function CenterDivider() {
       {!prefersReducedMotion && (
         <>
           <EKGTick delay={0} />
-          <EKGTick delay={2.5} />
-          <EKGTick delay={5} />
+          <EKGTick delay={2} />
+          <EKGTick delay={4} />
         </>
       )}
     </div>
