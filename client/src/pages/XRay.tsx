@@ -194,19 +194,6 @@ function usePatientSearch(term: string) {
   });
 }
 
-function useRadiologyServices() {
-  return useQuery<Array<{ id: number; name: string; price: number }>>({
-    queryKey: ['/api/services', { category: 'radiology' }],
-    queryFn: async () => {
-      const url = new URL('/api/services', window.location.origin);
-      url.searchParams.set('category', 'radiology');
-      const res = await fetch(url.toString());
-      if (!res.ok) return [];
-      return res.json();
-    },
-  });
-}
-
 /* ------------------------------------------------------------------ */
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
