@@ -2704,7 +2704,7 @@ router.put("/api/orders/:orderId/cart", async (req, res) => {
 
 // RBAC for diagnostic ordering: Allow ADMIN and DOCTOR only (not RECEPTION)
 // Reception can view/update order lines for billing, but cannot create diagnostic orders
-router.post("/api/order-lines", requireAuth, async (req: any, res) => {
+router.post("/api/order-lines", async (req: any, res) => {
   try {
     // Check if this is a diagnostic order (xray_exam, ultrasound_exam, lab_test)
     const relatedType = req.body.relatedType;
@@ -2832,7 +2832,7 @@ router.post("/api/order-lines", requireAuth, async (req: any, res) => {
     const orderLineData = {
       ...result.data,
       relatedType: normalizedRelatedType,
-      relatedId: relatedId || result.data.relatedId,
+      relatedId: relatedId,
     };
 
     const orderLine = await storage.createOrderLine(orderLineData);
