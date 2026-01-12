@@ -22,7 +22,7 @@ import {
   Clock,
   RefreshCw
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -746,6 +746,7 @@ export default function Reports() {
                   <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
                   Period Summary
                 </CardTitle>
+                <CardDescription>Activity in the selected date range</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
