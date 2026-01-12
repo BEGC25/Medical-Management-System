@@ -10,22 +10,39 @@ import {
   Lightbulb,
   TestTube,
   Users,
-  Stethoscope
+  Stethoscope,
+  Info
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+// Map icon names from API to components
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  TestTube,
+  AlertTriangle,
+  CheckCircle,
+  Stethoscope,
+  Users,
+  Info,
+  Clock,
+  Lightbulb,
+  Sparkles
+};
 
 // Threshold for identifying high lab test ratios
 const HIGH_LAB_TEST_RATIO = 1.5;
 
 interface Insight {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: string | React.ComponentType<{ className?: string }>;
   text: string;
-  color: string;
+  color?: string;
   type: 'positive' | 'negative' | 'warning' | 'info';
 }
 
 interface InsightsCardProps {
-  insights?: any[];
+  insights?: Insight[];
   isLoading?: boolean;
   stats?: any;
   diagnosisData?: Array<{ diagnosis: string; count: number }>;
@@ -174,8 +191,12 @@ const generateInsights = (stats?: any, diagnosisData?: Array<{ diagnosis: string
 };
 
 export function InsightsCard({ insights: providedInsights, isLoading, stats, diagnosisData, lastPeriodStats }: InsightsCardProps) {
-  const generatedInsights = generateInsights(stats, diagnosisData, lastPeriodStats);
-  const insights = providedInsights || generatedInsights;
+  // Use provided insights from API if available, otherwise generate locally
+  const generatedInsights = providedInsights && providedInsights.length > 0 
+    ? providedInsights 
+    : generateInsights(stats, diagnosisData, lastPeriodStats);
+  
+  const insights = generatedInsights;
 
   return (
     <Card className="bg-gradient-to-br from-purple-600 via-pink-500 to-rose-400 text-white shadow-2xl hover:shadow-premium transition-all duration-300 hover:-translate-y-1">
@@ -198,7 +219,11 @@ export function InsightsCard({ insights: providedInsights, isLoading, stats, dia
         ) : (
           <div className="space-y-3">
             {insights.map((insight: any, idx: number) => {
-              const IconComponent = insight.icon || Sparkles;
+              // Get icon component - handle both string names and direct components
+              const IconComponent = typeof insight.icon === 'string' 
+                ? (iconMap[insight.icon] || Sparkles)
+                : (insight.icon || Sparkles);
+              
               return (
                 <div
                   key={idx}
