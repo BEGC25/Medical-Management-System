@@ -851,6 +851,16 @@ export default function Treatment() {
     return result;
   }, [laboratoryServices]);
   
+  // Filter radiology services - only show active radiology services
+  const radiologyServices = useMemo(() => {
+    return services.filter(s => s.category === 'radiology' && s.isActive);
+  }, [services]);
+  
+  // Filter ultrasound services - only show active ultrasound services
+  const ultrasoundServices = useMemo(() => {
+    return services.filter(s => s.category === 'ultrasound' && s.isActive);
+  }, [services]);
+  
   // Filter drugs based on search query and group by category
   const filteredDrugs = useMemo(() => {
     return drugs.filter(drug => 
@@ -1213,6 +1223,7 @@ export default function Treatment() {
         priority: labPriority,
         clinicalInfo: labClinicalInfo,
         requestedDate: new Date().toISOString(),
+        serviceId: firstService.id, // Include serviceId for server-side validation
       };
       
       const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);
@@ -1273,6 +1284,7 @@ export default function Treatment() {
         bodyPart: bodyPart || service.name,
         clinicalIndication: xrayClinicalInfo,
         requestedDate: new Date().toISOString(),
+        serviceId: service.id, // Include serviceId for server-side validation
       };
 
       const xrayRes = await apiRequest("POST", "/api/xray-exams", xrayData);
@@ -1341,6 +1353,7 @@ export default function Treatment() {
         specificExam: ultrasoundSpecificExam || undefined, // Specific exam (e.g., 'RUQ - Liver & Gallbladder')
         clinicalIndication: ultrasoundClinicalInfo,
         requestedDate: new Date().toISOString(),
+        serviceId: service.id, // Include serviceId for server-side validation
       };
 
       const ultrasoundRes = await apiRequest("POST", "/api/ultrasound-exams", ultrasoundData);
@@ -3202,7 +3215,26 @@ export default function Treatment() {
                                   (() => {
                                     // Enhanced X-Ray ordering with visual selector and safety checklist
                                     if (qoTab === 'xray') {
-                                      const xrayService = services.find((s: any) => matchesCategory(s, 'xray'));
+                                      // STRICT CATALOG ENFORCEMENT: Find active radiology service
+                                      const xrayService = radiologyServices.find((s: any) => matchesCategory(s, 'xray'));
+                                      
+                                      // Show warning if no active radiology service exists
+                                      if (!xrayService) {
+                                        return (
+                                          <div className="p-6 text-center space-y-4">
+                                            <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+                                            <div>
+                                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
+                                                No Active X-Ray Service
+                                              </h3>
+                                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                X-Ray examinations cannot be ordered because there is no active radiology service in the system.
+                                                Please contact administration to add or activate an X-Ray service in Service Management.
+                                              </p>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
                                       
                                       return (
                                         <div className="space-y-6">
@@ -3527,7 +3559,26 @@ export default function Treatment() {
 
                                     // Enhanced Ultrasound ordering with visual exam type cards
                                     if (qoTab === 'ultrasound') {
-                                      const ultrasoundService = services.find((s: any) => matchesCategory(s, 'ultrasound'));
+                                      // STRICT CATALOG ENFORCEMENT: Find active ultrasound service
+                                      const ultrasoundService = ultrasoundServices.find((s: any) => matchesCategory(s, 'ultrasound'));
+                                      
+                                      // Show warning if no active ultrasound service exists
+                                      if (!ultrasoundService) {
+                                        return (
+                                          <div className="p-6 text-center space-y-4">
+                                            <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+                                            <div>
+                                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
+                                                No Active Ultrasound Service
+                                              </h3>
+                                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                Ultrasound examinations cannot be ordered because there is no active ultrasound service in the system.
+                                                Please contact administration to add or activate an Ultrasound service in Service Management.
+                                              </p>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
                                       
                                       // Use shared Ultrasound catalog for consistency with department pages
                                       const ultrasoundExamTypes = ULTRASOUND_EXAM_TYPES;
