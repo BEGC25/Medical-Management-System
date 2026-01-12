@@ -31,11 +31,11 @@ import { getClinicDayKey } from "@/lib/date-utils";
 import { PremiumStatCard } from "@/components/reports/PremiumStatCard";
 import { VisitsTrendChart } from "@/components/reports/VisitsTrendChart";
 import { TestsBarChart } from "@/components/reports/TestsBarChart";
-import { GenderDistribution } from "@/components/reports/GenderDistribution";
 import { DiagnosisBarChart } from "@/components/reports/DiagnosisBarChart";
 import { InsightsCard } from "@/components/reports/InsightsCard";
 import { ComparisonToggle } from "@/components/reports/ComparisonToggle";
 import { LoadingSkeleton } from "@/components/reports/LoadingSkeleton";
+import { PendingBacklog } from "@/components/reports/PendingBacklog";
 
 interface ReportFilters {
   reportType: string;
@@ -49,26 +49,48 @@ interface ApiInsight {
   type: 'positive' | 'warning' | 'info';
 }
 
-interface DashboardStats {
-  totalPatients?: number; // Patients registered in range (from /api/reports/summary)
-  newPatients: number;    // Legacy field (kept for compatibility)
-  totalVisits: number;
-  labTests: number;
-  xrays: number;
-  ultrasounds: number;
-  pending: {
-    labResults: number;
-    xrayReports: number;
-    ultrasoundReports: number;
-  };
-  previousPeriod?: {
+interface UnifiedDashboardData {
+  summary: {
     totalPatients: number;
     newPatients: number;
     totalVisits: number;
     labTests: number;
     xrays: number;
     ultrasounds: number;
-  } | null;
+    pending: {
+      labResults: number;
+      xrayReports: number;
+      ultrasoundReports: number;
+    };
+    previousPeriod?: {
+      totalPatients: number;
+      newPatients: number;
+      totalVisits: number;
+      labTests: number;
+      xrays: number;
+      ultrasounds: number;
+    } | null;
+  };
+  trends: Array<{ date: string; visits: number }>;
+  testsByType: {
+    labTests: number;
+    xrays: number;
+    ultrasounds: number;
+  };
+  diagnoses: Array<{ diagnosis: string; count: number }>;
+  pendingBacklog: {
+    total: number;
+    labResults: number;
+    xrayReports: number;
+    ultrasoundReports: number;
+  };
+  insights: ApiInsight[];
+  metadata: {
+    fromDate: string;
+    toDate: string;
+    generatedAt: string;
+    hasData: boolean;
+  };
 }
 
 interface PatientData {
@@ -119,16 +141,17 @@ export default function Reports() {
     toDate: getClinicDayKey(),
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/reports/summary", filters.fromDate, filters.toDate, comparisonMode],
+  // Unified dashboard data query - single source of truth
+  const { data: dashboardData, isLoading } = useQuery<UnifiedDashboardData>({
+    queryKey: ["/api/reports/dashboard", filters.fromDate, filters.toDate, comparisonMode],
     queryFn: async () => {
       const params = new URLSearchParams({
         fromDate: filters.fromDate,
         toDate: filters.toDate,
         compareWithPrevious: comparisonMode ? 'true' : 'false'
       });
-      const response = await fetch(`/api/reports/summary?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch stats');
+      const response = await fetch(`/api/reports/dashboard?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch dashboard data');
       return response.json();
     },
   });
@@ -137,70 +160,13 @@ export default function Reports() {
     queryKey: ["/api/dashboard/recent-patients", 10],
   });
 
-  // Fetch real diagnosis data from treatments
-  const { data: diagnosisData = [], isLoading: diagnosisLoading } = useQuery<{ diagnosis: string; count: number }[]>({
-    queryKey: ["/api/reports/diagnoses", filters.fromDate, filters.toDate],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        fromDate: filters.fromDate,
-        toDate: filters.toDate
-      });
-      const response = await fetch(`/api/reports/diagnoses?${params}`);
-      if (!response.ok) return [];
-      return response.json();
-    },
-  });
-
-  // Fetch gender distribution (filtered by date range - patients who visited in period)
-  const { data: genderData, isLoading: genderLoading } = useQuery<{ 
-    distribution: Array<{ gender: string; count: number; percentage: number }>; 
-    total: number; 
-    ratio: string;
-  }>({
-    queryKey: ["/api/reports/gender-distribution", filters.fromDate, filters.toDate],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        fromDate: filters.fromDate,
-        toDate: filters.toDate
-      });
-      const response = await fetch(`/api/reports/gender-distribution?${params}`);
-      if (!response.ok) return { distribution: [], total: 0, ratio: 'No data' };
-      return response.json();
-    },
-  });
-
-  // Total patients for the period summary (filtered by date range)
+  // Extract data from unified response
+  const stats = dashboardData?.summary;
+  const trendsData = dashboardData?.trends || [];
+  const diagnosisData = dashboardData?.diagnoses || [];
+  const pendingBacklog = dashboardData?.pendingBacklog;
+  const insights = dashboardData?.insights || [];
   const totalPatients = stats?.totalPatients || 0;
-
-  // Fetch trends data
-  const { data: trendsData = [], isLoading: trendsLoading } = useQuery<Array<{ date: string; visits: number }>>({
-    queryKey: ["/api/reports/trends", filters.fromDate, filters.toDate],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        fromDate: filters.fromDate,
-        toDate: filters.toDate
-      });
-      const response = await fetch(`/api/reports/trends?${params}`);
-      if (!response.ok) return [];
-      return response.json();
-    },
-  });
-
-  // Fetch AI insights
-  const { data: insights = [], isLoading: insightsLoading } = useQuery<ApiInsight[]>({
-    queryKey: ["/api/reports/insights", filters.fromDate, filters.toDate],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        fromDate: filters.fromDate,
-        toDate: filters.toDate
-      });
-      const response = await fetch(`/api/reports/insights?${params}`);
-      if (!response.ok) return [];
-      return response.json();
-    },
-  });
-
-  const isLoading = statsLoading || diagnosisLoading || genderLoading || trendsLoading;
 
   // Calculate trend percentages for comparison mode
   const calculateTrend = (current: number, previous: number | undefined): { value: number; isPositive: boolean; } | undefined => {
@@ -260,12 +226,9 @@ export default function Reports() {
     setIsGenerating(true);
     
     try {
-      // Refresh queries to get latest data
-      await queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/reports/summary"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/reports/trends"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/reports/diagnoses"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/reports/gender-distribution"] });
+      // Refresh unified dashboard query to get latest data
+      await queryClient.invalidateQueries({ queryKey: ["/api/reports/dashboard"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/reports/dashboard"] });
       
       setLastGenerated(new Date().toLocaleString());
       setLastUpdated(new Date());
@@ -287,7 +250,7 @@ export default function Reports() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/reports/dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       setLastUpdated(new Date());
       toast({
@@ -692,30 +655,27 @@ export default function Reports() {
 
           {/* Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <VisitsTrendChart data={trendsData} isLoading={trendsLoading} />
+            <VisitsTrendChart data={trendsData} isLoading={isLoading} />
             <TestsBarChart 
               labTests={stats?.labTests}
               xrays={stats?.xrays}
               ultrasounds={stats?.ultrasounds}
-              isLoading={statsLoading}
+              isLoading={isLoading}
             />
-            <GenderDistribution 
-              data={genderData}
-              isLoading={genderLoading}
+            <PendingBacklog 
+              data={pendingBacklog}
+              isLoading={isLoading}
             />
             <DiagnosisBarChart 
               data={diagnosisData}
-              isLoading={diagnosisLoading}
+              isLoading={isLoading}
             />
           </div>
 
           {/* AI Insights */}
           <InsightsCard 
             insights={insights} 
-            isLoading={insightsLoading}
-            stats={stats}
-            diagnosisData={diagnosisData}
-            lastPeriodStats={stats?.previousPeriod}
+            isLoading={isLoading}
           />
 
           {/* Detailed Reports - Keep existing structure with enhanced styling */}

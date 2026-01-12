@@ -191,12 +191,8 @@ const generateInsights = (stats?: any, diagnosisData?: Array<{ diagnosis: string
 };
 
 export function InsightsCard({ insights: providedInsights, isLoading, stats, diagnosisData, lastPeriodStats }: InsightsCardProps) {
-  // Use provided insights from API if available, otherwise generate locally
-  const generatedInsights = providedInsights && providedInsights.length > 0 
-    ? providedInsights 
-    : generateInsights(stats, diagnosisData, lastPeriodStats);
-  
-  const insights = generatedInsights;
+  // Use ONLY provided insights from API (server-side only, no client-side fallback)
+  const insights = providedInsights || [];
 
   return (
     <Card className="bg-gradient-to-br from-purple-600 via-pink-500 to-rose-400 text-white shadow-2xl hover:shadow-premium transition-all duration-300 hover:-translate-y-1">
@@ -218,22 +214,29 @@ export function InsightsCard({ insights: providedInsights, isLoading, stats, dia
           </div>
         ) : (
           <div className="space-y-3">
-            {insights.map((insight: Insight, idx: number) => {
-              // Get icon component - handle both string names and direct components
-              const IconComponent = typeof insight.icon === 'string' 
-                ? (iconMap[insight.icon] || Sparkles)
-                : (insight.icon || Sparkles);
-              
-              return (
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-200 hover:bg-white/20"
-                >
-                  <IconComponent className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-white leading-relaxed">{insight.text}</p>
-                </div>
-              );
-            })}
+            {insights.length === 0 ? (
+              <div className="py-6 text-center">
+                <Lightbulb className="w-12 h-12 mx-auto mb-3 text-white/40" />
+                <p className="text-white/80">No activity data for the selected period.</p>
+              </div>
+            ) : (
+              insights.map((insight: Insight, idx: number) => {
+                // Get icon component - handle both string names and direct components
+                const IconComponent = typeof insight.icon === 'string' 
+                  ? (iconMap[insight.icon] || Sparkles)
+                  : (insight.icon || Sparkles);
+                
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-200 hover:bg-white/20"
+                  >
+                    <IconComponent className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-white leading-relaxed">{insight.text}</p>
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
       </CardContent>
