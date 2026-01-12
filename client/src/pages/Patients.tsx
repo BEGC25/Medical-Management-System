@@ -512,8 +512,25 @@ export default function Patients() {
       if (department === "lab") {
         relatedType = "lab_test";
         departmentName = "laboratory";
+        // Infer category from service name or use 'other' as default
+        const serviceName = service.name.toLowerCase();
+        let category = "other";
+        if (serviceName.includes("blood") || serviceName.includes("cbc") || serviceName.includes("hemoglobin") || serviceName.includes("malaria")) {
+          category = "blood";
+        } else if (serviceName.includes("urine")) {
+          category = "urine";
+        } else if (serviceName.includes("stool")) {
+          category = "stool";
+        } else if (serviceName.includes("hormone") || serviceName.includes("pregnancy") || serviceName.includes("hcg")) {
+          category = "hormonal";
+        } else if (serviceName.includes("chemistry") || serviceName.includes("liver") || serviceName.includes("renal") || serviceName.includes("sugar")) {
+          category = "chemistry";
+        } else if (serviceName.includes("micro") || serviceName.includes("culture") || serviceName.includes("tuberculosis")) {
+          category = "microbiology";
+        }
+        
         diagnosticData = {
-          category: "blood",
+          category: category,
           tests: JSON.stringify([service.name]),
           clinicalInfo: notes,
           priority: "routine",

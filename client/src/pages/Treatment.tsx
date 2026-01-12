@@ -847,10 +847,12 @@ export default function Treatment() {
       const normalizedName = normalizeForMatching(service.name);
       normalizedServiceMap.set(normalizedName, service);
       
-      // Also try matching by service code if available
+      // Also try matching by service code if available (only if it doesn't conflict with existing name)
       if (service.code) {
         const normalizedCode = normalizeForMatching(service.code);
-        normalizedServiceMap.set(normalizedCode, service);
+        if (!normalizedServiceMap.has(normalizedCode)) {
+          normalizedServiceMap.set(normalizedCode, service);
+        }
       }
     });
     
