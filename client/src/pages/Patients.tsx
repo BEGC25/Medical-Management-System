@@ -281,7 +281,7 @@ export default function Patients() {
     const registrationData = {
       patientData: data,
       collectConsultationFee: collectConsultationFee,
-      consultationServiceId: selectedConsultationServiceId, // Send selected service ID
+      consultationServiceId: selectedConsultationServiceId || undefined, // Ensure we send undefined, not null
     };
 
     const response = await apiRequest("POST", "/api/patients", registrationData);

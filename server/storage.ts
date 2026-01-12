@@ -459,35 +459,32 @@ export class MemStorage implements IStorage {
         throw new Error(`The selected service "${consultationService.name}" is not a consultation service. Please select a valid consultation service.`);
       }
     } else {
-      // Fallback: Try to find "General Consultation" by code CONS-GEN
-      console.log("No consultation service ID provided, looking for default (CONS-GEN)");
-      consultationService = (await db.select().from(services)
+      // Fallback: Try to find "General Consultation" by code CONS-GEN or by name
+      console.log("No consultation service ID provided, looking for default consultation service");
+      
+      // Fetch active consultation services (limit search to reasonable number)
+      const CONSULTATION_SERVICE_SEARCH_LIMIT = 10;
+      const activeConsultationServices = await db.select().from(services)
         .where(and(
-          eq(services.code, "CONS-GEN"),
+          eq(services.category, "consultation"),
           eq(services.isActive, 1)
         ))
-        .limit(1))[0];
+        .limit(CONSULTATION_SERVICE_SEARCH_LIMIT);
 
-      // If CONS-GEN not found, try to find any active consultation service with "General Consultation" in name
+      // Priority 1: Find service with code CONS-GEN
+      consultationService = activeConsultationServices.find((s: any) => s.code === "CONS-GEN");
+      
+      // Priority 2: Find service with "General" in name
       if (!consultationService) {
-        console.log("CONS-GEN not found, searching for any General Consultation service");
-        consultationService = (await db.select().from(services)
-          .where(and(
-            eq(services.category, "consultation"),
-            eq(services.isActive, 1)
-          ))
-          .limit(10))[0]; // Get first active consultation service
-
-        const generalConsultation = (await db.select().from(services)
-          .where(and(
-            eq(services.category, "consultation"),
-            eq(services.isActive, 1)
-          ))
-          .limit(10)).find((s: any) => s.name.toLowerCase().includes("general"));
-        
-        if (generalConsultation) {
-          consultationService = generalConsultation;
-        }
+        console.log("CONS-GEN not found, searching for General Consultation service");
+        consultationService = activeConsultationServices.find((s: any) => 
+          s.name.toLowerCase().includes("general")
+        );
+      }
+      
+      // Priority 3: Use first active consultation service
+      if (!consultationService) {
+        consultationService = activeConsultationServices[0];
       }
 
       // If still no consultation service found, throw a clear error
