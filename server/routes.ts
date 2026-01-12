@@ -2931,9 +2931,9 @@ router.post("/api/pharmacy/dispense", async (req, res) => {
 // Reports Summary - range-based metrics for Reports page
 router.get("/api/reports/summary", async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    const { fromDate, toDate, compareWithPrevious } = req.query;
     
-    console.log("Reports summary route called", { fromDate, toDate });
+    console.log("Reports summary route called", { fromDate, toDate, compareWithPrevious });
     
     // Validate date parameters
     if (!fromDate || !toDate) {
@@ -2949,6 +2949,28 @@ router.get("/api/reports/summary", async (req, res) => {
       toDate as string
     );
     
+    let previousPeriodStats = null;
+    
+    // If comparison is requested, calculate previous period
+    if (compareWithPrevious === 'true') {
+      const startDate = new Date(fromDate as string);
+      const endDate = new Date(toDate as string);
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Calculate previous period dates
+      const prevEndDate = new Date(startDate);
+      prevEndDate.setDate(prevEndDate.getDate() - 1);
+      const prevStartDate = new Date(prevEndDate);
+      prevStartDate.setDate(prevStartDate.getDate() - daysDiff);
+      
+      const prevFromDate = prevStartDate.toISOString().split('T')[0];
+      const prevToDate = prevEndDate.toISOString().split('T')[0];
+      
+      console.log("Previous period:", { prevFromDate, prevToDate });
+      
+      previousPeriodStats = await storage.getDashboardStats(prevFromDate, prevToDate);
+    }
+    
     console.log("Reports summary result:", stats);
     
     res.json({
@@ -2959,6 +2981,14 @@ router.get("/api/reports/summary", async (req, res) => {
       xrays: stats.xrays,
       ultrasounds: stats.ultrasounds,
       pending: stats.pending,
+      previousPeriod: previousPeriodStats ? {
+        totalPatients: previousPeriodStats.newPatients, // Same as newPatients in this system
+        newPatients: previousPeriodStats.newPatients,
+        totalVisits: previousPeriodStats.totalVisits,
+        labTests: previousPeriodStats.labTests,
+        xrays: previousPeriodStats.xrays,
+        ultrasounds: previousPeriodStats.ultrasounds,
+      } : null,
     });
   } catch (error) {
     console.error("Reports summary route error:", error);
@@ -3066,6 +3096,81 @@ router.get("/api/reports/age-distribution", async (req, res) => {
   } catch (error) {
     console.error("Error fetching age distribution:", error);
     res.status(500).json({ error: "Failed to fetch age distribution" });
+  }
+});
+
+router.get("/api/reports/gender-distribution", async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+    
+    console.log("Gender distribution route called", { fromDate, toDate });
+    
+    // Get patients who had visits in the selected period
+    // Join patients with encounters to get only patients with visits in the date range
+    let genderQuery;
+    
+    if (fromDate && toDate && typeof fromDate === 'string' && typeof toDate === 'string') {
+      // Filter by patients who had encounters in the date range
+      genderQuery = await db.select({
+        patientId: patients.id,
+        gender: patients.gender
+      })
+      .from(patients)
+      .innerJoin(encounters, eq(patients.id, encounters.patientId))
+      .where(
+        and(
+          eq(patients.isDeleted, 0),
+          gte(encounters.visitDate, fromDate),
+          lte(encounters.visitDate, toDate)
+        )
+      );
+    } else {
+      // No date filter - get all active patients
+      genderQuery = await db.select({
+        patientId: patients.id,
+        gender: patients.gender
+      })
+      .from(patients)
+      .where(eq(patients.isDeleted, 0));
+    }
+    
+    console.log(`Processing ${genderQuery.length} patient records for gender distribution`);
+    
+    let maleCount = 0;
+    let femaleCount = 0;
+    
+    // Use a Set to avoid counting duplicate patients (in case of multiple encounters)
+    const uniquePatients = new Map<number, string>();
+    
+    // Only include patients with a valid gender value (excludes null/empty)
+    genderQuery.forEach((row: { patientId: number; gender: string | null }) => {
+      if (row.gender) {
+        uniquePatients.set(row.patientId, row.gender);
+      }
+    });
+    
+    // Count unique genders
+    uniquePatients.forEach((gender) => {
+      if (gender && gender.toLowerCase() === 'male') {
+        maleCount++;
+      } else if (gender && gender.toLowerCase() === 'female') {
+        femaleCount++;
+      }
+    });
+    
+    const total = maleCount + femaleCount;
+    
+    const result = {
+      male: maleCount,
+      female: femaleCount,
+      total: total
+    };
+    
+    console.log("Gender distribution result:", result);
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching gender distribution:", error);
+    res.status(500).json({ error: "Failed to fetch gender distribution" });
   }
 });
 

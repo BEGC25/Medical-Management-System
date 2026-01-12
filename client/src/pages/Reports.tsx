@@ -18,7 +18,9 @@ import {
   Activity,
   Filter,
   X,
-  Mail
+  Mail,
+  Clock,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,7 @@ import { getClinicDayKey } from "@/lib/date-utils";
 import { PremiumStatCard } from "@/components/reports/PremiumStatCard";
 import { VisitsTrendChart } from "@/components/reports/VisitsTrendChart";
 import { TestsBarChart } from "@/components/reports/TestsBarChart";
-import { AgeDonutChart } from "@/components/reports/AgeDonutChart";
+import { GenderDistribution } from "@/components/reports/GenderDistribution";
 import { DiagnosisBarChart } from "@/components/reports/DiagnosisBarChart";
 import { InsightsCard } from "@/components/reports/InsightsCard";
 import { ComparisonToggle } from "@/components/reports/ComparisonToggle";
@@ -53,6 +55,14 @@ interface DashboardStats {
     xrayReports: number;
     ultrasoundReports: number;
   };
+  previousPeriod?: {
+    totalPatients: number;
+    newPatients: number;
+    totalVisits: number;
+    labTests: number;
+    xrays: number;
+    ultrasounds: number;
+  } | null;
 }
 
 interface PatientData {
@@ -63,6 +73,29 @@ interface PatientData {
   dateOfBirth: string;
   gender: string | null;
   status?: string;
+  createdAt?: string;
+}
+
+// Helper function to format time ago
+function formatTimeAgo(dateString?: string): string {
+  if (!dateString) return 'Unknown';
+  
+  try {
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    return past.toLocaleDateString();
+  } catch {
+    return 'Unknown';
+  }
 }
 
 export default function Reports() {
@@ -72,6 +105,8 @@ export default function Reports() {
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
   const [comparisonMode, setComparisonMode] = useState(false);
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>("today");
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [filters, setFilters] = useState<ReportFilters>({
     reportType: "daily",
     fromDate: getClinicDayKey(),
@@ -79,11 +114,12 @@ export default function Reports() {
   });
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/reports/summary", filters.fromDate, filters.toDate],
+    queryKey: ["/api/reports/summary", filters.fromDate, filters.toDate, comparisonMode],
     queryFn: async () => {
       const params = new URLSearchParams({
         fromDate: filters.fromDate,
-        toDate: filters.toDate
+        toDate: filters.toDate,
+        compareWithPrevious: comparisonMode ? 'true' : 'false'
       });
       const response = await fetch(`/api/reports/summary?${params}`);
       if (!response.ok) throw new Error('Failed to fetch stats');
@@ -109,32 +145,19 @@ export default function Reports() {
     },
   });
 
-  // Fetch real patient age distribution (not filtered by date - shows all patients)
-  const { data: ageDistributionData = [], isLoading: ageLoading } = useQuery<{ ageRange: string; count: number; percentage: number }[]>({
-    queryKey: ["/api/reports/age-distribution"],
+  // Fetch gender distribution (filtered by date range - patients who visited in period)
+  const { data: genderData, isLoading: genderLoading } = useQuery<{ male: number; female: number; total: number }>({
+    queryKey: ["/api/reports/gender-distribution", filters.fromDate, filters.toDate],
     queryFn: async () => {
-      // Don't pass date filters - age distribution should show all patients
-      const response = await fetch(`/api/reports/age-distribution`);
-      if (!response.ok) return [];
+      const params = new URLSearchParams({
+        fromDate: filters.fromDate,
+        toDate: filters.toDate
+      });
+      const response = await fetch(`/api/reports/gender-distribution?${params}`);
+      if (!response.ok) return { male: 0, female: 0, total: 0 };
       return response.json();
     },
   });
-
-  // Fetch total patient count for age distribution (all patients, not filtered)
-  const { data: totalPatientsData } = useQuery<{ count: number }>({
-    queryKey: ["/api/patients/count"],
-    queryFn: async () => {
-      const response = await fetch('/api/patients/count');
-      if (!response.ok) {
-        console.error('Failed to fetch total patient count:', response.status);
-        return { count: 0 };
-      }
-      return response.json();
-    },
-  });
-
-  // Total patients for age distribution (all patients in system)
-  const totalPatientsForAge = totalPatientsData?.count || 0;
 
   // Total patients for the period summary (filtered by date range)
   const totalPatients = stats?.totalPatients || 0;
@@ -163,7 +186,24 @@ export default function Reports() {
     },
   });
 
-  const isLoading = statsLoading || diagnosisLoading || ageLoading || trendsLoading;
+  const isLoading = statsLoading || diagnosisLoading || genderLoading || trendsLoading;
+
+  // Calculate trend percentages for comparison mode
+  const calculateTrend = (current: number, previous: number | undefined): { value: number; isPositive: boolean; } | undefined => {
+    if (!comparisonMode || previous === undefined) return undefined;
+    
+    // Handle zero previous value - show as 100% increase if current > 0
+    // This represents "new activity" rather than infinity
+    if (previous === 0) {
+      return current > 0 ? { value: 100, isPositive: true } : undefined;
+    }
+    
+    const percentChange = Math.round(((current - previous) / previous) * 100);
+    return {
+      value: percentChange,
+      isPositive: percentChange >= 0,
+    };
+  };
 
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -211,9 +251,10 @@ export default function Reports() {
       await queryClient.refetchQueries({ queryKey: ["/api/reports/summary"] });
       await queryClient.refetchQueries({ queryKey: ["/api/reports/trends"] });
       await queryClient.refetchQueries({ queryKey: ["/api/reports/diagnoses"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/reports/age-distribution"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/reports/gender-distribution"] });
       
       setLastGenerated(new Date().toLocaleString());
+      setLastUpdated(new Date());
       toast({
         title: "Report Generated",
         description: `${filters.reportType.charAt(0).toUpperCase() + filters.reportType.slice(1)} report updated successfully for ${filters.fromDate} to ${filters.toDate}`,
@@ -226,6 +267,27 @@ export default function Reports() {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      setLastUpdated(new Date());
+      toast({
+        title: "Refreshed",
+        description: "Dashboard data has been refreshed",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -403,13 +465,28 @@ export default function Reports() {
           <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/20 dark:border-gray-700/20 shadow-xl">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  <span className="text-2xl">Reports & Analytics</span>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <span className="text-2xl">Reports & Analytics</span>
+                  </div>
+                  <Badge className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                    Premium Dashboard
+                  </Badge>
                 </div>
-                <Badge className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
-                  Premium Dashboard
-                </Badge>
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Clock className="w-4 h-4" />
+                  <span>Last updated: {formatTimeAgo(lastUpdated.toISOString())}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="h-8 w-8 p-0"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -538,6 +615,7 @@ export default function Reports() {
                 subtitle="Registered in system"
                 icon={Users}
                 gradient="from-blue-600 via-blue-500 to-cyan-400"
+                trend={calculateTrend(totalPatients, stats?.previousPeriod?.totalPatients)}
               />
             </motion.div>
             <motion.div
@@ -551,6 +629,7 @@ export default function Reports() {
                 subtitle="In selected period"
                 icon={Stethoscope}
                 gradient="from-green-600 via-green-500 to-emerald-400"
+                trend={calculateTrend(stats?.totalVisits || 0, stats?.previousPeriod?.totalVisits)}
               />
             </motion.div>
             <motion.div
@@ -564,6 +643,7 @@ export default function Reports() {
                 subtitle="Tests ordered"
                 icon={TestTube}
                 gradient="from-orange-600 via-orange-500 to-amber-400"
+                trend={calculateTrend(stats?.labTests || 0, stats?.previousPeriod?.labTests)}
               />
             </motion.div>
             <motion.div
@@ -577,6 +657,7 @@ export default function Reports() {
                 subtitle="Exams performed"
                 icon={Scan}
                 gradient="from-purple-600 via-purple-500 to-pink-400"
+                trend={calculateTrend(stats?.xrays || 0, stats?.previousPeriod?.xrays)}
               />
             </motion.div>
             <motion.div
@@ -590,6 +671,7 @@ export default function Reports() {
                 subtitle="Scans performed"
                 icon={Activity}
                 gradient="from-teal-600 via-teal-500 to-cyan-400"
+                trend={calculateTrend(stats?.ultrasounds || 0, stats?.previousPeriod?.ultrasounds)}
               />
             </motion.div>
           </motion.div>
@@ -603,10 +685,9 @@ export default function Reports() {
               ultrasounds={stats?.ultrasounds}
               isLoading={statsLoading}
             />
-            <AgeDonutChart 
-              data={ageDistributionData}
-              totalPatients={totalPatientsForAge}
-              isLoading={ageLoading}
+            <GenderDistribution 
+              data={genderData}
+              isLoading={genderLoading}
             />
             <DiagnosisBarChart 
               data={diagnosisData}
@@ -620,6 +701,7 @@ export default function Reports() {
             isLoading={insightsLoading}
             stats={stats}
             diagnosisData={diagnosisData}
+            lastPeriodStats={stats?.previousPeriod}
           />
 
           {/* Detailed Reports - Keep existing structure with enhanced styling */}
@@ -664,6 +746,9 @@ export default function Reports() {
                         <Badge variant={patient.status === "Treated" ? "default" : "secondary"}>
                           {patient.status || "New"}
                         </Badge>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {formatTimeAgo(patient.createdAt)}
+                        </p>
                       </div>
                     </div>
                   ))}
