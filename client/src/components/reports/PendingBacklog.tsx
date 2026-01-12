@@ -26,9 +26,9 @@ export function PendingBacklog({ data, isLoading }: PendingBacklogProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className={`w-5 h-5 ${isHighPriority ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`} />
-          Pending Backlog (Current)
+          Pending Backlog
         </CardTitle>
-        <CardDescription>All pending items right now</CardDescription>
+        <CardDescription>Test results awaiting review</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
