@@ -1275,21 +1275,6 @@ export default function Treatment() {
       if (!selectedPatient) throw new Error("No patient selected");
       if (!currentEncounter) throw new Error("No active encounter");
 
-      // 1. Create X-ray exam record with clinical notes
-      // Use component state xrayExamType (e.g., 'chest', 'extremities') instead of service.category
-      // to ensure correct exam type is saved (not generic 'radiology')
-      const xrayData = {
-        patientId: selectedPatient.patientId,
-        examType: xrayExamType,
-        bodyPart: bodyPart || service.name,
-        clinicalIndication: xrayClinicalInfo,
-        requestedDate: new Date().toISOString(),
-        serviceId: service.id, // Include serviceId for server-side validation
-      };
-
-      const xrayRes = await apiRequest("POST", "/api/xray-exams", xrayData);
-      const createdXray = await xrayRes.json();
-
       // Build descriptive X-Ray label
       const examTypeLabel: Record<string, string> = {
         'chest': 'Chest X-Ray',
@@ -1311,23 +1296,28 @@ export default function Treatment() {
         ? `${examTypeLabel[examType] || 'X-Ray Examination'} - ${bodyPart}`
         : examTypeLabel[examType] || examTypeLabel[bodyPart?.toLowerCase() || ''] || 'X-Ray Examination';
 
-      // 2. Create corresponding order_line
+      // Create order line with diagnostic data - server will auto-create X-ray exam
       const orderLineData = {
         encounterId: currentEncounter.encounterId,
         serviceId: service.id,
         relatedType: "xray",
-        relatedId: createdXray.examId,
+        // No relatedId - server will auto-create the xray exam record
         description: `X-Ray: ${fullDescription}`,
         quantity: 1,
         unitPriceSnapshot: service.price || 0,
         totalPrice: service.price || 0,
         department: "radiology",
         orderedBy: "Dr. System",
+        // Diagnostic data for server-side auto-creation
+        diagnosticData: {
+          examType: xrayExamType,
+          bodyPart: bodyPart || service.name,
+          clinicalIndication: xrayClinicalInfo,
+        }
       };
 
-      await apiRequest("POST", "/api/order-lines", orderLineData);
-
-      return createdXray;
+      const response = await apiRequest("POST", "/api/order-lines", orderLineData);
+      return await response.json();
     },
     onSuccess: () => {
       toast({ title: "Success", description: "X-Ray exam ordered successfully" });
@@ -1340,24 +1330,11 @@ export default function Treatment() {
     },
   });
 
-  // Order Ultrasound mutation (creates exam record + order line)
+  // Order Ultrasound mutation (creates order line with diagnostic data - server auto-creates exam)
   const orderUltrasoundMutation = useMutation({
     mutationFn: async ({ service }: { service: Service }) => {
       if (!selectedPatient) throw new Error("No patient selected");
       if (!currentEncounter) throw new Error("No active encounter");
-
-      // 1. Create ultrasound exam record with clinical notes
-      const ultrasoundData = {
-        patientId: selectedPatient.patientId,
-        examType: ultrasoundExamType, // General exam type (e.g., 'abdominal', 'obstetric')
-        specificExam: ultrasoundSpecificExam || undefined, // Specific exam (e.g., 'RUQ - Liver & Gallbladder')
-        clinicalIndication: ultrasoundClinicalInfo,
-        requestedDate: new Date().toISOString(),
-        serviceId: service.id, // Include serviceId for server-side validation
-      };
-
-      const ultrasoundRes = await apiRequest("POST", "/api/ultrasound-exams", ultrasoundData);
-      const createdUltrasound = await ultrasoundRes.json();
 
       // Build descriptive Ultrasound label
       const examTypeLabel: Record<string, string> = {
@@ -1380,23 +1357,28 @@ export default function Treatment() {
         ? `${examTypeLabel[ultrasoundExamType] || 'Ultrasound'} - ${ultrasoundSpecificExam}`
         : examTypeLabel[ultrasoundExamType] || 'Ultrasound Examination';
 
-      // 2. Create corresponding order_line
+      // Create order line with diagnostic data - server will auto-create ultrasound exam
       const orderLineData = {
         encounterId: currentEncounter.encounterId,
         serviceId: service.id,
         relatedType: "ultrasound",
-        relatedId: createdUltrasound.examId,
+        // No relatedId - server will auto-create the ultrasound exam record
         description: `Ultrasound: ${fullDescription}`,
         quantity: 1,
         unitPriceSnapshot: service.price || 0,
         totalPrice: service.price || 0,
         department: "ultrasound",
         orderedBy: "Dr. System",
+        // Diagnostic data for server-side auto-creation
+        diagnosticData: {
+          examType: ultrasoundExamType,
+          specificExam: ultrasoundSpecificExam || service.name,
+          clinicalIndication: ultrasoundClinicalInfo,
+        }
       };
 
-      await apiRequest("POST", "/api/order-lines", orderLineData);
-
-      return createdUltrasound;
+      const response = await apiRequest("POST", "/api/order-lines", orderLineData);
+      return await response.json();
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Ultrasound exam ordered successfully" });
