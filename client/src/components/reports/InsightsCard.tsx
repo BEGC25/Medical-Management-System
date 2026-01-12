@@ -218,7 +218,7 @@ export function InsightsCard({ insights: providedInsights, isLoading, stats, dia
           </div>
         ) : (
           <div className="space-y-3">
-            {insights.map((insight: any, idx: number) => {
+            {insights.map((insight: Insight, idx: number) => {
               // Get icon component - handle both string names and direct components
               const IconComponent = typeof insight.icon === 'string' 
                 ? (iconMap[insight.icon] || Sparkles)

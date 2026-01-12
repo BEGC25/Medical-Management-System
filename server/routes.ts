@@ -3131,16 +3131,16 @@ router.get("/api/reports/gender-distribution", async (req, res) => {
       .groupBy(patients.id, patients.gender);
 
     // Count by gender
-    const genderCounts = patientsWithVisits.reduce((acc: any, patient) => {
+    const genderCounts: Record<string, number> = patientsWithVisits.reduce((acc: Record<string, number>, patient) => {
       const gender = patient.gender || 'Unknown';
       acc[gender] = (acc[gender] || 0) + 1;
       return acc;
     }, {});
 
     // Calculate total and percentages
-    const total = Object.values(genderCounts).reduce((sum: number, count: any) => sum + count, 0);
+    const total = Object.values(genderCounts).reduce((sum: number, count: number) => sum + count, 0);
     
-    const distribution = Object.entries(genderCounts).map(([gender, count]: [string, any]) => ({
+    const distribution = Object.entries(genderCounts).map(([gender, count]: [string, number]) => ({
       gender,
       count,
       percentage: total > 0 ? parseFloat(((count / total) * 100).toFixed(1)) : 0
@@ -3319,14 +3319,14 @@ async function getDashboardStats(fromDate: string, toDate: string) {
       )
     );
 
-  const diagnosisCounts = treatmentsInRange.reduce((acc: any, t) => {
+  const diagnosisCounts: Record<string, number> = treatmentsInRange.reduce((acc: Record<string, number>, t) => {
     const diag = t.diagnosis || 'Unknown';
     acc[diag] = (acc[diag] || 0) + 1;
     return acc;
   }, {});
 
   const topDiagnosis = Object.entries(diagnosisCounts)
-    .sort(([, a]: any, [, b]: any) => (b as number) - (a as number))[0];
+    .sort(([, a], [, b]) => (b as number) - (a as number))[0];
 
   return {
     totalVisits,
