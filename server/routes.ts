@@ -1204,55 +1204,15 @@ router.get("/api/patients/:patientId/xray-exams", async (req, res) => {
   }
 });
 
+// BLOCKED: Direct X-Ray exam creation is disabled. Use order-lines endpoint instead.
+// This endpoint now only blocks direct creation to enforce catalog-driven ordering.
 router.post("/api/xray-exams", async (req, res) => {
-  try {
-    const data = insertXrayExamSchema.parse(req.body);
-    
-    // STRICT CATALOG ENFORCEMENT: X-Ray exams MUST be linked to an active service
-    // serviceId is REQUIRED for all X-Ray exam creation requests
-    const serviceId = req.body.serviceId as number | undefined;
-    if (!serviceId) {
-      return res.status(400).json({ 
-        error: "Service ID required",
-        details: "All X-Ray exams must be linked to an active service. Please provide a serviceId.",
-        recommendation: "Select a radiology service from Service Management before ordering exams."
-      });
-    }
-    
-    const service = await storage.getServiceById(serviceId);
-    if (!service) {
-      return res.status(400).json({ 
-        error: "Service not found",
-        details: `Service ID ${serviceId} does not exist in the catalog.`,
-        recommendation: "Please select a valid radiology service from Service Management."
-      });
-    }
-    
-    if (!service.isActive) {
-      return res.status(400).json({ 
-        error: "Service is inactive",
-        details: `Service '${service.name}' is not currently active.`,
-        recommendation: "Please contact administration or select a different active service."
-      });
-    }
-    
-    if (service.category !== "radiology") {
-      return res.status(400).json({ 
-        error: "Service category mismatch",
-        details: `Service '${service.name}' is a ${service.category} service, not a radiology service.`
-      });
-    }
-    
-    const xrayExam = await storage.createXrayExam(data);
-    res.status(201).json(xrayExam);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({ error: "Invalid X-ray exam data", details: error.errors });
-    }
-    res.status(500).json({ error: "Failed to create X-ray exam" });
-  }
+  return res.status(400).json({ 
+    error: "Direct X-Ray exam creation not allowed",
+    details: "X-Ray exams must be ordered through the order-lines endpoint to ensure proper catalog integration.",
+    recommendation: "Please use the diagnostic ordering flow through encounters and order-lines API, or use the referral ordering UI for walk-in patients.",
+    endpoint: "POST /api/order-lines"
+  });
 });
 
 router.put("/api/xray-exams/:examId", async (req, res) => {
@@ -1366,55 +1326,15 @@ router.get("/api/patients/:patientId/ultrasound-exams", async (req, res) => {
   }
 });
 
+// BLOCKED: Direct Ultrasound exam creation is disabled. Use order-lines endpoint instead.
+// This endpoint now only blocks direct creation to enforce catalog-driven ordering.
 router.post("/api/ultrasound-exams", async (req, res) => {
-  try {
-    const data = insertUltrasoundExamSchema.parse(req.body);
-    
-    // STRICT CATALOG ENFORCEMENT: Ultrasound exams MUST be linked to an active service
-    // serviceId is REQUIRED for all Ultrasound exam creation requests
-    const serviceId = req.body.serviceId as number | undefined;
-    if (!serviceId) {
-      return res.status(400).json({ 
-        error: "Service ID required",
-        details: "All Ultrasound exams must be linked to an active service. Please provide a serviceId.",
-        recommendation: "Select an ultrasound service from Service Management before ordering exams."
-      });
-    }
-    
-    const service = await storage.getServiceById(serviceId);
-    if (!service) {
-      return res.status(400).json({ 
-        error: "Service not found",
-        details: `Service ID ${serviceId} does not exist in the catalog.`,
-        recommendation: "Please select a valid ultrasound service from Service Management."
-      });
-    }
-    
-    if (!service.isActive) {
-      return res.status(400).json({ 
-        error: "Service is inactive",
-        details: `Service '${service.name}' is not currently active.`,
-        recommendation: "Please contact administration or select a different active service."
-      });
-    }
-    
-    if (service.category !== "ultrasound") {
-      return res.status(400).json({ 
-        error: "Service category mismatch",
-        details: `Service '${service.name}' is a ${service.category} service, not an ultrasound service.`
-      });
-    }
-    
-    const ultrasoundExam = await storage.createUltrasoundExam(data);
-    res.status(201).json(ultrasoundExam);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({ error: "Invalid ultrasound exam data", details: error.errors });
-    }
-    res.status(500).json({ error: "Failed to create ultrasound exam" });
-  }
+  return res.status(400).json({ 
+    error: "Direct Ultrasound exam creation not allowed",
+    details: "Ultrasound exams must be ordered through the order-lines endpoint to ensure proper catalog integration.",
+    recommendation: "Please use the diagnostic ordering flow through encounters and order-lines API, or use the referral ordering UI for walk-in patients.",
+    endpoint: "POST /api/order-lines"
+  });
 });
 
 router.put("/api/ultrasound-exams/:examId", async (req, res) => {
@@ -2835,25 +2755,73 @@ router.post("/api/order-lines", async (req: any, res) => {
       });
     }
 
-    // Create order line with normalized relatedType
+    // AUTO-CREATE DIAGNOSTIC RECORDS: If relatedId is missing for diagnostic orders,
+    // automatically create the diagnostic record (lab_test, xray_exam, ultrasound_exam)
+    let relatedId = result.data.relatedId;
+    
+    if (!relatedId && ["lab_test", "xray_exam", "ultrasound_exam"].includes(normalizedRelatedType)) {
+      console.log(`[ORDER-LINES] Auto-creating ${normalizedRelatedType} record for service ${service.name}`);
+      
+      // Extract diagnostic-specific data from request body
+      const diagnosticData = req.body.diagnosticData || {};
+      
+      // Get encounter to extract patientId
+      const encounter = await storage.getEncounterById(result.data.encounterId);
+      if (!encounter) {
+        return res.status(400).json({ 
+          error: "Encounter not found",
+          details: `Cannot create diagnostic order without valid encounter` 
+        });
+      }
+
+      // Create diagnostic record based on type
+      if (normalizedRelatedType === "xray_exam") {
+        const xrayData = {
+          patientId: encounter.patientId,
+          examType: diagnosticData.examType || "chest",
+          bodyPart: diagnosticData.bodyPart || service.name,
+          clinicalIndication: diagnosticData.clinicalIndication || "",
+          specialInstructions: diagnosticData.specialInstructions || "",
+          requestedDate: new Date().toISOString(),
+        };
+        const xrayExam = await storage.createXrayExam(xrayData);
+        relatedId = xrayExam.examId;
+        console.log(`[ORDER-LINES] Created X-Ray exam ${relatedId}`);
+      } else if (normalizedRelatedType === "ultrasound_exam") {
+        const ultrasoundData = {
+          patientId: encounter.patientId,
+          examType: diagnosticData.examType || "abdominal",
+          specificExam: diagnosticData.specificExam || service.name,
+          clinicalIndication: diagnosticData.clinicalIndication || "",
+          specialInstructions: diagnosticData.specialInstructions || "",
+          requestedDate: new Date().toISOString(),
+        };
+        const ultrasoundExam = await storage.createUltrasoundExam(ultrasoundData);
+        relatedId = ultrasoundExam.examId;
+        console.log(`[ORDER-LINES] Created Ultrasound exam ${relatedId}`);
+      } else if (normalizedRelatedType === "lab_test") {
+        const labData = {
+          patientId: encounter.patientId,
+          category: diagnosticData.category || "blood",
+          tests: diagnosticData.tests || JSON.stringify([service.name]),
+          clinicalInfo: diagnosticData.clinicalInfo || "",
+          priority: diagnosticData.priority || "routine",
+          requestedDate: new Date().toISOString(),
+        };
+        const labTest = await storage.createLabTest(labData);
+        relatedId = labTest.testId;
+        console.log(`[ORDER-LINES] Created Lab test ${relatedId}`);
+      }
+    }
+
+    // Create order line with normalized relatedType and relatedId
     const orderLineData = {
       ...result.data,
       relatedType: normalizedRelatedType,
+      relatedId: relatedId || result.data.relatedId,
     };
 
     const orderLine = await storage.createOrderLine(orderLineData);
-
-    // For diagnostic orders (lab_test, xray_exam, ultrasound_exam), relatedId must be provided
-    // Modern ordering flow creates the diagnostic record first (with proper values from UI)
-    // then creates the order line with relatedId already set
-    if (!result.data.relatedId) {
-      if (["lab_test", "xray_exam", "ultrasound_exam"].includes(normalizedRelatedType)) {
-        console.warn(
-          `[ORDER-LINES] Order line created without relatedId for ${normalizedRelatedType}. ` +
-          `This is acceptable for non-diagnostic services but diagnostic orders should include relatedId.`
-        );
-      }
-    }
 
     res.status(201).json(orderLine);
   } catch (error) {
