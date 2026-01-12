@@ -5,7 +5,7 @@ import session from "express-session";
 import { z } from "zod";
 import { storage } from "./storage";
 import { db } from "./db";
-import { eq, gte, lte, and, sql } from "drizzle-orm";
+import { eq, gte, lte, and, sql, isNotNull, ne } from "drizzle-orm";
 import {
   insertPatientSchema,
   insertTreatmentSchema,
@@ -22,6 +22,9 @@ import {
   patients,
   treatments,
   encounters,
+  labTests,
+  xrayExams,
+  ultrasoundExams,
 } from "@shared/schema";
 import {
   ObjectStorageService,
@@ -3103,71 +3106,66 @@ router.get("/api/reports/gender-distribution", async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
     
-    console.log("Gender distribution route called", { fromDate, toDate });
-    
-    // Get patients who had visits in the selected period
-    // Join patients with encounters to get only patients with visits in the date range
-    let genderQuery;
-    
-    if (fromDate && toDate && typeof fromDate === 'string' && typeof toDate === 'string') {
-      // Filter by patients who had encounters in the date range
-      genderQuery = await db.select({
-        patientId: patients.id,
-        gender: patients.gender
-      })
-      .from(patients)
-      .innerJoin(encounters, eq(patients.id, encounters.patientId))
-      .where(
-        and(
-          eq(patients.isDeleted, 0),
-          gte(encounters.visitDate, fromDate),
-          lte(encounters.visitDate, toDate)
-        )
-      );
-    } else {
-      // No date filter - get all active patients
-      genderQuery = await db.select({
-        patientId: patients.id,
-        gender: patients.gender
-      })
-      .from(patients)
-      .where(eq(patients.isDeleted, 0));
+    // Validate dates
+    if (!fromDate || !toDate) {
+      return res.status(400).json({ error: "fromDate and toDate are required" });
     }
     
-    console.log(`Processing ${genderQuery.length} patient records for gender distribution`);
+    console.log("Gender distribution route called", { fromDate, toDate });
     
-    let maleCount = 0;
-    let femaleCount = 0;
+    // Query patients who had encounters in the date range
+    const patientsWithVisits = await db
+      .select({
+        gender: patients.gender,
+        patientId: patients.id,
+      })
+      .from(patients)
+      .innerJoin(encounters, eq(encounters.patientId, patients.id))
+      .where(
+        and(
+          gte(encounters.visitDate, fromDate as string),
+          lte(encounters.visitDate, toDate as string),
+          eq(patients.isDeleted, 0)
+        )
+      )
+      .groupBy(patients.id, patients.gender);
+
+    // Count by gender
+    const genderCounts: Record<string, number> = patientsWithVisits.reduce((acc: Record<string, number>, patient) => {
+      const gender = patient.gender || 'Unknown';
+      acc[gender] = (acc[gender] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Calculate total and percentages
+    const total = Object.values(genderCounts).reduce((sum: number, count: number) => sum + count, 0);
     
-    // Use a Set to avoid counting duplicate patients (in case of multiple encounters)
-    const uniquePatients = new Map<number, string>();
-    
-    // Only include patients with a valid gender value (excludes null/empty)
-    genderQuery.forEach((row: { patientId: number; gender: string | null }) => {
-      if (row.gender) {
-        uniquePatients.set(row.patientId, row.gender);
-      }
+    const distribution = Object.entries(genderCounts).map(([gender, count]: [string, number]) => ({
+      gender,
+      count,
+      percentage: total > 0 ? parseFloat(((count / total) * 100).toFixed(1)) : 0
+    }));
+
+    // Calculate gender ratio (Male:Female)
+    const male = genderCounts['Male'] || 0;
+    const female = genderCounts['Female'] || 0;
+    let ratio: string;
+    if (male === 0 && female === 0) {
+      ratio = 'No data';
+    } else if (male === 0) {
+      ratio = `0:${female}`;
+    } else if (female === 0) {
+      ratio = `${male}:0`;
+    } else {
+      ratio = `${(male / female).toFixed(2)}:1`;
+    }
+
+    res.json({
+      distribution,
+      total,
+      ratio
     });
-    
-    // Count unique genders
-    uniquePatients.forEach((gender) => {
-      if (gender && gender.toLowerCase() === 'male') {
-        maleCount++;
-      } else if (gender && gender.toLowerCase() === 'female') {
-        femaleCount++;
-      }
-    });
-    
-    const total = maleCount + femaleCount;
-    
-    const result = {
-      male: maleCount,
-      female: femaleCount,
-      total: total
-    };
-    
-    console.log("Gender distribution result:", result);
-    res.json(result);
+
   } catch (error) {
     console.error("Error fetching gender distribution:", error);
     res.status(500).json({ error: "Failed to fetch gender distribution" });
@@ -3239,67 +3237,242 @@ router.get("/api/reports/trends", async (req, res) => {
   }
 });
 
+// Helper function to get dashboard stats for a date range
+async function getDashboardStats(fromDate: string, toDate: string) {
+  // Query encounters in date range
+  const encountersInRange = await db
+    .select()
+    .from(encounters)
+    .where(
+      and(
+        gte(encounters.visitDate, fromDate),
+        lte(encounters.visitDate, toDate)
+      )
+    );
+
+  // Count visits
+  const totalVisits = encountersInRange.length;
+
+  // Count new patients registered in range
+  const newPatientsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(patients)
+    .where(
+      and(
+        gte(patients.createdAt, fromDate),
+        lte(patients.createdAt, toDate),
+        eq(patients.isDeleted, 0)
+      )
+    );
+
+  // Count lab tests ordered in range
+  const labTestsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(labTests)
+    .where(
+      and(
+        gte(labTests.requestedDate, fromDate),
+        lte(labTests.requestedDate, toDate)
+      )
+    );
+
+  // Count X-rays in range
+  const xraysResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(xrayExams)
+    .where(
+      and(
+        gte(xrayExams.requestedDate, fromDate),
+        lte(xrayExams.requestedDate, toDate)
+      )
+    );
+
+  // Count ultrasounds in range
+  const ultrasoundsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(ultrasoundExams)
+    .where(
+      and(
+        gte(ultrasoundExams.requestedDate, fromDate),
+        lte(ultrasoundExams.requestedDate, toDate)
+      )
+    );
+
+  // Count pending items
+  const pendingLabsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(labTests)
+    .where(eq(labTests.status, 'pending'));
+
+  const pendingXraysResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(xrayExams)
+    .where(eq(xrayExams.status, 'pending'));
+
+  const pendingUltrasoundsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(ultrasoundExams)
+    .where(eq(ultrasoundExams.status, 'pending'));
+
+  // Get top diagnosis from treatments in range
+  const treatmentsInRange = await db
+    .select({ diagnosis: treatments.diagnosis })
+    .from(treatments)
+    .innerJoin(encounters, eq(treatments.encounterId, encounters.encounterId))
+    .where(
+      and(
+        gte(encounters.visitDate, fromDate),
+        lte(encounters.visitDate, toDate),
+        isNotNull(treatments.diagnosis),
+        ne(treatments.diagnosis, '')
+      )
+    );
+
+  const diagnosisCounts: Record<string, number> = treatmentsInRange.reduce((acc: Record<string, number>, t) => {
+    const diag = t.diagnosis || 'Unknown';
+    acc[diag] = (acc[diag] || 0) + 1;
+    return acc;
+  }, {});
+
+  const diagnosisEntries = Object.entries(diagnosisCounts).sort(([, a], [, b]) => (b as number) - (a as number));
+  const topDiagnosis = diagnosisEntries.length > 0 ? diagnosisEntries[0] : null;
+
+  return {
+    totalVisits,
+    newPatients: Number(newPatientsResult[0]?.count) || 0,
+    labTests: Number(labTestsResult[0]?.count) || 0,
+    xrays: Number(xraysResult[0]?.count) || 0,
+    ultrasounds: Number(ultrasoundsResult[0]?.count) || 0,
+    pending: {
+      labResults: Number(pendingLabsResult[0]?.count) || 0,
+      xrayReports: Number(pendingXraysResult[0]?.count) || 0,
+      ultrasoundReports: Number(pendingUltrasoundsResult[0]?.count) || 0
+    },
+    topDiagnosis: topDiagnosis ? {
+      name: topDiagnosis[0],
+      count: topDiagnosis[1] as number
+    } : null
+  };
+}
+
 router.get("/api/reports/insights", async (req, res) => {
   try {
-    const visits = await storage.getVisits();
-    const treatments = await storage.getTreatments();
+    const { fromDate, toDate } = req.query;
+    
+    if (!fromDate || !toDate) {
+      return res.status(400).json({ error: "fromDate and toDate are required" });
+    }
+
+    // Fetch current period stats
+    const stats = await getDashboardStats(fromDate as string, toDate as string);
+    
+    // Calculate previous period for comparison
+    const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+    const fromDateTime = new Date(fromDate as string);
+    const toDateTime = new Date(toDate as string);
+    const dateRange = toDateTime.getTime() - fromDateTime.getTime();
+    
+    // Previous period ends 1 day before current period starts
+    const prevToDate = new Date(fromDateTime.getTime() - MILLISECONDS_PER_DAY);
+    const prevFromDate = new Date(prevToDate.getTime() - dateRange);
+    
+    const prevStats = await getDashboardStats(
+      prevFromDate.toISOString().split('T')[0],
+      prevToDate.toISOString().split('T')[0]
+    );
+
+    // Generate insights
     const insights = [];
-    
-    // Calculate visit trends
-    const today = new Date();
-    const lastWeek = new Date(today);
-    lastWeek.setDate(lastWeek.getDate() - 7);
-    const twoWeeksAgo = new Date(today);
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    
-    const thisWeekVisits = visits.filter(v => new Date(v.visitDate) >= lastWeek).length;
-    const lastWeekVisits = visits.filter(v => {
-      const vDate = new Date(v.visitDate);
-      return vDate >= twoWeeksAgo && vDate < lastWeek;
-    }).length;
-    
-    if (lastWeekVisits > 0) {
-      const change = ((thisWeekVisits - lastWeekVisits) / lastWeekVisits * 100).toFixed(0);
-      if (Math.abs(parseFloat(change)) >= 10) {
+
+    // 1. Visit trend analysis
+    if (stats.totalVisits > 0) {
+      const visitChange = stats.totalVisits - prevStats.totalVisits;
+      if (visitChange > 0) {
         insights.push({
-          type: "trend",
-          title: `Visits ${parseFloat(change) > 0 ? "trending upward" : "trending downward"}`,
-          description: `Patient visits ${parseFloat(change) > 0 ? "increased" : "decreased"} by ${Math.abs(parseFloat(change))}% compared to last week`,
-          severity: parseFloat(change) > 0 ? "success" : "warning",
+          icon: 'TrendingUp',
+          text: `Visit volume increased by ${visitChange} visits compared to previous period`,
+          type: 'positive'
+        });
+      } else if (visitChange < 0) {
+        insights.push({
+          icon: 'TrendingDown',
+          text: `Visit volume decreased by ${Math.abs(visitChange)} visits compared to previous period`,
+          type: 'warning'
+        });
+      } else {
+        insights.push({
+          icon: 'Activity',
+          text: `${stats.totalVisits} patient visits recorded this period`,
+          type: 'info'
         });
       }
     }
-    
-    // Peak hours analysis
-    const hourCounts: Record<number, number> = {};
-    visits.forEach(visit => {
-      const hour = new Date(visit.visitDate).getHours();
-      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-    });
-    
-    const peakHour = Object.entries(hourCounts)
-      .sort(([, a], [, b]) => b - a)[0];
-    
-    if (peakHour) {
-      const [hour, count] = peakHour;
-      const avgCount = (count / 30).toFixed(0); // Rough average
+
+    // 2. Diagnostic test utilization
+    const totalTests = stats.labTests + stats.xrays + stats.ultrasounds;
+    if (totalTests > 0 && stats.totalVisits > 0) {
+      const testsPerVisit = (totalTests / stats.totalVisits).toFixed(1);
+      if (parseFloat(testsPerVisit) > 1.5) {
+        insights.push({
+          icon: 'TestTube',
+          text: `High diagnostic activity: ${testsPerVisit} tests per visit on average`,
+          type: 'positive'
+        });
+      } else {
+        insights.push({
+          icon: 'TestTube',
+          text: `${totalTests} diagnostic tests performed across all services`,
+          type: 'info'
+        });
+      }
+    }
+
+    // 3. Pending results alert
+    const totalPending = stats.pending.labResults + stats.pending.xrayReports + stats.pending.ultrasoundReports;
+    if (totalPending > 3) {
       insights.push({
-        type: "peak",
-        title: "Peak hours identified",
-        description: `Busiest time is ${hour}:00-${parseInt(hour) + 1}:00 with average of ${avgCount} patients`,
-        severity: "info",
+        icon: 'AlertTriangle',
+        text: `${totalPending} test results pending review - attention needed`,
+        type: 'warning'
+      });
+    } else if (totalPending > 0) {
+      insights.push({
+        icon: 'CheckCircle',
+        text: `${totalPending} results pending - within normal range`,
+        type: 'info'
       });
     }
-    
-    // Recommendation based on data
-    insights.push({
-      type: "recommendation",
-      title: "Data-driven suggestion",
-      description: "Consider reviewing inventory based on current treatment trends",
-      severity: "info",
-    });
-    
-    res.json(insights);
+
+    // 4. Top diagnosis (if available)
+    if (stats.topDiagnosis && stats.topDiagnosis.count > 0) {
+      insights.push({
+        icon: 'Stethoscope',
+        text: `Leading diagnosis: ${stats.topDiagnosis.name} (${stats.topDiagnosis.count} cases)`,
+        type: 'info'
+      });
+    }
+
+    // 5. New patient registration
+    if (stats.newPatients > 0) {
+      insights.push({
+        icon: 'Users',
+        text: `${stats.newPatients} new patients registered this period`,
+        type: 'positive'
+      });
+    }
+
+    // If no insights generated, add default message
+    if (insights.length === 0) {
+      insights.push({
+        icon: 'Info',
+        text: 'No significant insights for this period. Keep collecting data!',
+        type: 'info'
+      });
+    }
+
+    // Limit to 5 insights
+    res.json(insights.slice(0, 5));
+
   } catch (error) {
     console.error("Error generating insights:", error);
     res.status(500).json({ error: "Failed to generate insights" });

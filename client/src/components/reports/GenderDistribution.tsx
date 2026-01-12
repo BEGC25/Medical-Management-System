@@ -3,36 +3,19 @@ import { Users } from "lucide-react";
 
 interface GenderDistributionProps {
   data?: {
-    male: number;
-    female: number;
+    distribution: Array<{ gender: string; count: number; percentage: number }>;
     total: number;
+    ratio: string;
   };
   isLoading?: boolean;
 }
 
 export function GenderDistribution({ data, isLoading }: GenderDistributionProps) {
-  const maleCount = data?.male || 0;
-  const femaleCount = data?.female || 0;
+  const distribution = data?.distribution || [];
   const total = data?.total || 0;
+  const ratio = data?.ratio || 'No data';
   
-  const malePercent = total > 0 ? Math.round((maleCount / total) * 100) : 0;
-  const femalePercent = total > 0 ? Math.round((femaleCount / total) * 100) : 0;
-  
-  // Calculate gender ratio - always show as larger:smaller for clarity
-  let genderRatio: string;
-  if (maleCount === 0 && femaleCount === 0) {
-    genderRatio = "No data";
-  } else if (maleCount === 0) {
-    genderRatio = "All Female";
-  } else if (femaleCount === 0) {
-    genderRatio = "All Male";
-  } else if (maleCount >= femaleCount) {
-    genderRatio = `${(maleCount / femaleCount).toFixed(1)}:1 M:F`;
-  } else {
-    genderRatio = `1:${(femaleCount / maleCount).toFixed(1)} M:F`;
-  }
-
-  const hasData = total > 0;
+  const hasData = distribution.length > 0 && total > 0;
 
   return (
     <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/20 shadow-2xl hover:shadow-premium transition-all duration-300">
@@ -65,48 +48,38 @@ export function GenderDistribution({ data, isLoading }: GenderDistributionProps)
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Male */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Male</span>
+            {distribution.map((item) => (
+              <div key={item.gender}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${
+                      item.gender === 'Male' ? 'bg-blue-500' : 
+                      item.gender === 'Female' ? 'bg-pink-500' : 'bg-gray-500'
+                    }`} />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {item.gender}
+                    </span>
+                  </div>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    {item.count} ({item.percentage}%)
+                  </span>
                 </div>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {maleCount} ({malePercent}%)
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
-                  style={{ width: `${malePercent}%` }} 
-                />
-              </div>
-            </div>
-            
-            {/* Female */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-pink-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Female</span>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      item.gender === 'Male' ? 'bg-blue-500' : 
+                      item.gender === 'Female' ? 'bg-pink-500' : 'bg-gray-500'
+                    }`}
+                    style={{ width: `${item.percentage}%` }} 
+                  />
                 </div>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {femaleCount} ({femalePercent}%)
-                </span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-pink-500 h-2 rounded-full transition-all duration-500" 
-                  style={{ width: `${femalePercent}%` }} 
-                />
-              </div>
-            </div>
+            ))}
 
             {/* Gender Ratio */}
             <div className="pt-4 border-t dark:border-gray-700">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Gender ratio: <span className="font-semibold text-gray-900 dark:text-gray-100">{genderRatio}</span>
+                Gender ratio: <span className="font-semibold text-gray-900 dark:text-gray-100">{ratio}</span>
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                 Total: {total} patient{total !== 1 ? 's' : ''}

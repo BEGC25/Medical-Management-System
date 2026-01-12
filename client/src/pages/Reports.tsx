@@ -43,6 +43,12 @@ interface ReportFilters {
   toDate: string;
 }
 
+interface ApiInsight {
+  icon: string;
+  text: string;
+  type: 'positive' | 'warning' | 'info';
+}
+
 interface DashboardStats {
   totalPatients?: number; // Patients registered in range (from /api/reports/summary)
   newPatients: number;    // Legacy field (kept for compatibility)
@@ -146,7 +152,11 @@ export default function Reports() {
   });
 
   // Fetch gender distribution (filtered by date range - patients who visited in period)
-  const { data: genderData, isLoading: genderLoading } = useQuery<{ male: number; female: number; total: number }>({
+  const { data: genderData, isLoading: genderLoading } = useQuery<{ 
+    distribution: Array<{ gender: string; count: number; percentage: number }>; 
+    total: number; 
+    ratio: string;
+  }>({
     queryKey: ["/api/reports/gender-distribution", filters.fromDate, filters.toDate],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -154,7 +164,7 @@ export default function Reports() {
         toDate: filters.toDate
       });
       const response = await fetch(`/api/reports/gender-distribution?${params}`);
-      if (!response.ok) return { male: 0, female: 0, total: 0 };
+      if (!response.ok) return { distribution: [], total: 0, ratio: 'No data' };
       return response.json();
     },
   });
@@ -177,10 +187,14 @@ export default function Reports() {
   });
 
   // Fetch AI insights
-  const { data: insights = [], isLoading: insightsLoading } = useQuery<any[]>({
-    queryKey: ["/api/reports/insights"],
+  const { data: insights = [], isLoading: insightsLoading } = useQuery<ApiInsight[]>({
+    queryKey: ["/api/reports/insights", filters.fromDate, filters.toDate],
     queryFn: async () => {
-      const response = await fetch('/api/reports/insights');
+      const params = new URLSearchParams({
+        fromDate: filters.fromDate,
+        toDate: filters.toDate
+      });
+      const response = await fetch(`/api/reports/insights?${params}`);
       if (!response.ok) return [];
       return response.json();
     },
