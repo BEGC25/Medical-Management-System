@@ -68,6 +68,7 @@ import {
   type InsertXrayExam,
   type Patient,
   type XrayExam,
+  type Service,
 } from '@shared/schema';
 
 import { apiRequest } from '@/lib/queryClient';
@@ -210,6 +211,24 @@ function useRadiologyServices() {
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
 
+
+// Fetch active radiology services for catalog validation
+function useRadiologyServices() {
+  return useQuery<Service[]>({
+    queryKey: ['/api/services', { category: 'radiology' }],
+    queryFn: async () => {
+      const url = new URL('/api/services', window.location.origin);
+      url.searchParams.set('category', 'radiology');
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error('Failed to fetch radiology services');
+      }
+      const allServices = await response.json();
+      // Filter to only active services
+      return allServices.filter((s: Service) => s.isActive);
+    },
+  });
+}
 export default function XRay() {
   const { toast } = useToast();
   const queryClient = useQueryClient();

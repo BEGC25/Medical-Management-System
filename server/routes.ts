@@ -944,39 +944,39 @@ router.post("/api/lab-tests", async (req, res) => {
     const data = insertLabTestSchema.parse(req.body);
     console.log("Parsed data:", data);
     
-    // STRICT CATALOG ENFORCEMENT: Lab tests must be ordered through service catalog
-    // Direct creation is deprecated. Please use POST /api/order-lines with a valid serviceId.
-    // This endpoint is kept for backward compatibility with internal/admin workflows only.
-    
-    // Check if request includes serviceId for validation (optional but recommended)
+    // STRICT CATALOG ENFORCEMENT: Lab tests MUST be linked to an active service
+    // serviceId is REQUIRED for all lab test creation requests
     const serviceId = req.body.serviceId as number | undefined;
-    if (serviceId) {
-      const service = await storage.getServiceById(serviceId);
-      if (!service) {
-        return res.status(400).json({ 
-          error: "Service not found",
-          details: `Service ID ${serviceId} does not exist in the catalog.`,
-          recommendation: "Please order through POST /api/order-lines with a valid laboratory service."
-        });
-      }
-      
-      if (!service.isActive) {
-        return res.status(400).json({ 
-          error: "Service is inactive",
-          details: `Service '${service.name}' is not currently active.`,
-          recommendation: "Please contact administration or select a different service."
-        });
-      }
-      
-      if (service.category !== "laboratory") {
-        return res.status(400).json({ 
-          error: "Service category mismatch",
-          details: `Service '${service.name}' is a ${service.category} service, not a laboratory service.`
-        });
-      }
-    } else {
-      // No serviceId provided - log warning for future deprecation
-      console.warn("[DEPRECATION WARNING] Lab test created without serviceId validation. Consider using POST /api/order-lines instead.");
+    if (!serviceId) {
+      return res.status(400).json({ 
+        error: "Service ID required",
+        details: "All lab tests must be linked to an active service. Please provide a serviceId.",
+        recommendation: "Select a laboratory service from Service Management before ordering tests."
+      });
+    }
+    
+    const service = await storage.getServiceById(serviceId);
+    if (!service) {
+      return res.status(400).json({ 
+        error: "Service not found",
+        details: `Service ID ${serviceId} does not exist in the catalog.`,
+        recommendation: "Please select a valid laboratory service from Service Management."
+      });
+    }
+    
+    if (!service.isActive) {
+      return res.status(400).json({ 
+        error: "Service is inactive",
+        details: `Service '${service.name}' is not currently active.`,
+        recommendation: "Please contact administration or select a different active service."
+      });
+    }
+    
+    if (service.category !== "laboratory") {
+      return res.status(400).json({ 
+        error: "Service category mismatch",
+        details: `Service '${service.name}' is a ${service.category} service, not a laboratory service.`
+      });
     }
     
     const labTest = await storage.createLabTest(data);
@@ -1177,39 +1177,39 @@ router.post("/api/xray-exams", async (req, res) => {
   try {
     const data = insertXrayExamSchema.parse(req.body);
     
-    // STRICT CATALOG ENFORCEMENT: X-Ray exams must be ordered through service catalog
-    // Direct creation is deprecated. Please use POST /api/order-lines with a valid serviceId.
-    // This endpoint is kept for backward compatibility with internal/admin workflows only.
-    
-    // Check if request includes serviceId for validation (optional but recommended)
+    // STRICT CATALOG ENFORCEMENT: X-Ray exams MUST be linked to an active service
+    // serviceId is REQUIRED for all X-Ray exam creation requests
     const serviceId = req.body.serviceId as number | undefined;
-    if (serviceId) {
-      const service = await storage.getServiceById(serviceId);
-      if (!service) {
-        return res.status(400).json({ 
-          error: "Service not found",
-          details: `Service ID ${serviceId} does not exist in the catalog.`,
-          recommendation: "Please order through POST /api/order-lines with a valid radiology service."
-        });
-      }
-      
-      if (!service.isActive) {
-        return res.status(400).json({ 
-          error: "Service is inactive",
-          details: `Service '${service.name}' is not currently active.`,
-          recommendation: "Please contact administration or select a different service."
-        });
-      }
-      
-      if (service.category !== "radiology") {
-        return res.status(400).json({ 
-          error: "Service category mismatch",
-          details: `Service '${service.name}' is a ${service.category} service, not a radiology service.`
-        });
-      }
-    } else {
-      // No serviceId provided - log warning for future deprecation
-      console.warn("[DEPRECATION WARNING] X-Ray exam created without serviceId validation. Consider using POST /api/order-lines instead.");
+    if (!serviceId) {
+      return res.status(400).json({ 
+        error: "Service ID required",
+        details: "All X-Ray exams must be linked to an active service. Please provide a serviceId.",
+        recommendation: "Select a radiology service from Service Management before ordering exams."
+      });
+    }
+    
+    const service = await storage.getServiceById(serviceId);
+    if (!service) {
+      return res.status(400).json({ 
+        error: "Service not found",
+        details: `Service ID ${serviceId} does not exist in the catalog.`,
+        recommendation: "Please select a valid radiology service from Service Management."
+      });
+    }
+    
+    if (!service.isActive) {
+      return res.status(400).json({ 
+        error: "Service is inactive",
+        details: `Service '${service.name}' is not currently active.`,
+        recommendation: "Please contact administration or select a different active service."
+      });
+    }
+    
+    if (service.category !== "radiology") {
+      return res.status(400).json({ 
+        error: "Service category mismatch",
+        details: `Service '${service.name}' is a ${service.category} service, not a radiology service.`
+      });
     }
     
     const xrayExam = await storage.createXrayExam(data);
@@ -1339,39 +1339,39 @@ router.post("/api/ultrasound-exams", async (req, res) => {
   try {
     const data = insertUltrasoundExamSchema.parse(req.body);
     
-    // STRICT CATALOG ENFORCEMENT: Ultrasound exams must be ordered through service catalog
-    // Direct creation is deprecated. Please use POST /api/order-lines with a valid serviceId.
-    // This endpoint is kept for backward compatibility with internal/admin workflows only.
-    
-    // Check if request includes serviceId for validation (optional but recommended)
+    // STRICT CATALOG ENFORCEMENT: Ultrasound exams MUST be linked to an active service
+    // serviceId is REQUIRED for all Ultrasound exam creation requests
     const serviceId = req.body.serviceId as number | undefined;
-    if (serviceId) {
-      const service = await storage.getServiceById(serviceId);
-      if (!service) {
-        return res.status(400).json({ 
-          error: "Service not found",
-          details: `Service ID ${serviceId} does not exist in the catalog.`,
-          recommendation: "Please order through POST /api/order-lines with a valid ultrasound service."
-        });
-      }
-      
-      if (!service.isActive) {
-        return res.status(400).json({ 
-          error: "Service is inactive",
-          details: `Service '${service.name}' is not currently active.`,
-          recommendation: "Please contact administration or select a different service."
-        });
-      }
-      
-      if (service.category !== "ultrasound") {
-        return res.status(400).json({ 
-          error: "Service category mismatch",
-          details: `Service '${service.name}' is a ${service.category} service, not an ultrasound service.`
-        });
-      }
-    } else {
-      // No serviceId provided - log warning for future deprecation
-      console.warn("[DEPRECATION WARNING] Ultrasound exam created without serviceId validation. Consider using POST /api/order-lines instead.");
+    if (!serviceId) {
+      return res.status(400).json({ 
+        error: "Service ID required",
+        details: "All Ultrasound exams must be linked to an active service. Please provide a serviceId.",
+        recommendation: "Select an ultrasound service from Service Management before ordering exams."
+      });
+    }
+    
+    const service = await storage.getServiceById(serviceId);
+    if (!service) {
+      return res.status(400).json({ 
+        error: "Service not found",
+        details: `Service ID ${serviceId} does not exist in the catalog.`,
+        recommendation: "Please select a valid ultrasound service from Service Management."
+      });
+    }
+    
+    if (!service.isActive) {
+      return res.status(400).json({ 
+        error: "Service is inactive",
+        details: `Service '${service.name}' is not currently active.`,
+        recommendation: "Please contact administration or select a different active service."
+      });
+    }
+    
+    if (service.category !== "ultrasound") {
+      return res.status(400).json({ 
+        error: "Service category mismatch",
+        details: `Service '${service.name}' is a ${service.category} service, not an ultrasound service.`
+      });
     }
     
     const ultrasoundExam = await storage.createUltrasoundExam(data);
