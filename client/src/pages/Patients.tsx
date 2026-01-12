@@ -114,7 +114,7 @@ export default function Patients() {
   // Referral ordering state (Admin-only feature)
   const [showReferralOrderDialog, setShowReferralOrderDialog] = useState(false);
   const [referralPatient, setReferralPatient] = useState<Patient | null>(null);
-  const [referralDepartment, setReferralDepartment] = useState<"xray" | "ultrasound" | null>(null);
+  const [referralDepartment, setReferralDepartment] = useState<"lab" | "xray" | "ultrasound" | null>(null);
   const [referralService, setReferralService] = useState<Service | null>(null);
   const [referralNotes, setReferralNotes] = useState("");
 
@@ -454,6 +454,15 @@ export default function Patients() {
   });
 
   // Query services for referral ordering (Admin only)
+  const { data: laboratoryServices = [] } = useQuery<Service[]>({
+    queryKey: ["/api/services", { category: "laboratory" }],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/services?category=laboratory&isActive=true");
+      return await response.json();
+    },
+    enabled: user?.role === ROLES.ADMIN,
+  });
+
   const { data: radiologyServices = [] } = useQuery<Service[]>({
     queryKey: ["/api/services", { category: "radiology" }],
     queryFn: async () => {
@@ -481,7 +490,7 @@ export default function Patients() {
       notes,
     }: {
       patient: Patient;
-      department: "xray" | "ultrasound";
+      department: "lab" | "xray" | "ultrasound";
       service: Service;
       notes: string;
     }) => {
@@ -489,29 +498,55 @@ export default function Patients() {
       const encounterData = {
         patientId: patient.patientId,
         encounterType: "diagnostics_only" as const,
-        chiefComplaint: `Referral for ${department === "xray" ? "X-Ray" : "Ultrasound"}`,
+        chiefComplaint: `Referral for ${department === "lab" ? "Laboratory" : department === "xray" ? "X-Ray" : "Ultrasound"}`,
         status: "active" as const,
       };
       const encounterResponse = await apiRequest("POST", "/api/encounters", encounterData);
       const encounter: Encounter = await encounterResponse.json();
 
       // 2. Create order line via order-lines endpoint (server auto-creates diagnostic record)
+      let relatedType: string;
+      let departmentName: string;
+      let diagnosticData: any;
+      
+      if (department === "lab") {
+        relatedType = "lab_test";
+        departmentName = "laboratory";
+        diagnosticData = {
+          category: "blood",
+          tests: JSON.stringify([service.name]),
+          clinicalInfo: notes,
+          priority: "routine",
+        };
+      } else if (department === "xray") {
+        relatedType = "xray";
+        departmentName = "radiology";
+        diagnosticData = {
+          examType: "chest",
+          clinicalIndication: notes,
+          bodyPart: service.name,
+        };
+      } else {
+        relatedType = "ultrasound";
+        departmentName = "ultrasound";
+        diagnosticData = {
+          examType: "abdominal",
+          clinicalIndication: notes,
+          specificExam: service.name,
+        };
+      }
+      
       const orderLineData = {
         encounterId: encounter.encounterId,
         serviceId: service.id,
-        relatedType: department === "xray" ? "xray" : "ultrasound",
-        description: `${department === "xray" ? "X-Ray" : "Ultrasound"}: ${service.name}`,
+        relatedType: relatedType,
+        description: `${department === "lab" ? "Lab Test" : department === "xray" ? "X-Ray" : "Ultrasound"}: ${service.name}`,
         quantity: 1,
         unitPriceSnapshot: service.price || 0,
         totalPrice: service.price || 0,
-        department: department === "xray" ? "radiology" : "ultrasound",
+        department: departmentName,
         orderedBy: user?.username || "Admin",
-        diagnosticData: {
-          examType: department === "xray" ? "chest" : "abdominal",
-          clinicalIndication: notes,
-          bodyPart: service.name, // for xray
-          specificExam: service.name, // for ultrasound
-        },
+        diagnosticData: diagnosticData,
       };
       const orderResponse = await apiRequest("POST", "/api/order-lines", orderLineData);
       return await orderResponse.json();
@@ -526,6 +561,7 @@ export default function Patients() {
       setReferralDepartment(null);
       setReferralService(null);
       setReferralNotes("");
+      queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
@@ -2283,7 +2319,7 @@ export default function Patients() {
               <Select
                 value={referralDepartment || ""}
                 onValueChange={(value) => {
-                  setReferralDepartment(value as "xray" | "ultrasound");
+                  setReferralDepartment(value as "lab" | "xray" | "ultrasound");
                   setReferralService(null); // Reset service when department changes
                 }}
               >
@@ -2291,6 +2327,7 @@ export default function Patients() {
                   <SelectValue placeholder="Choose department..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="lab">Laboratory</SelectItem>
                   <SelectItem value="xray">X-Ray (Radiology)</SelectItem>
                   <SelectItem value="ultrasound">Ultrasound</SelectItem>
                 </SelectContent>
@@ -2301,18 +2338,24 @@ export default function Patients() {
             {referralDepartment && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">3. Select Service</label>
+                {referralDepartment === "lab" && laboratoryServices.length === 0 && (
+                  <p className="text-sm text-red-600">No active laboratory services available. Please add services in Service Management.</p>
+                )}
                 {referralDepartment === "xray" && radiologyServices.length === 0 && (
                   <p className="text-sm text-red-600">No active radiology services available. Please add services in Service Management.</p>
                 )}
                 {referralDepartment === "ultrasound" && ultrasoundServices.length === 0 && (
                   <p className="text-sm text-red-600">No active ultrasound services available. Please add services in Service Management.</p>
                 )}
-                {((referralDepartment === "xray" && radiologyServices.length > 0) ||
+                {((referralDepartment === "lab" && laboratoryServices.length > 0) ||
+                  (referralDepartment === "xray" && radiologyServices.length > 0) ||
                   (referralDepartment === "ultrasound" && ultrasoundServices.length > 0)) && (
                   <Select
                     value={referralService?.id?.toString() || ""}
                     onValueChange={(value) => {
-                      const services = referralDepartment === "xray" ? radiologyServices : ultrasoundServices;
+                      const services = referralDepartment === "lab" ? laboratoryServices : 
+                                       referralDepartment === "xray" ? radiologyServices : 
+                                       ultrasoundServices;
                       const service = services.find((s) => s.id === parseInt(value));
                       setReferralService(service || null);
                     }}
@@ -2321,7 +2364,9 @@ export default function Patients() {
                       <SelectValue placeholder="Choose service..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {(referralDepartment === "xray" ? radiologyServices : ultrasoundServices).map((service) => (
+                      {(referralDepartment === "lab" ? laboratoryServices : 
+                        referralDepartment === "xray" ? radiologyServices : 
+                        ultrasoundServices).map((service) => (
                         <SelectItem key={service.id} value={service.id.toString()}>
                           {service.name} - {money(service.price)}
                         </SelectItem>
