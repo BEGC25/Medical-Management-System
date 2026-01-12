@@ -428,53 +428,101 @@ export class MemStorage implements IStorage {
 
     return patient;
   }
-  // New atomic workflow for patient registration
+  /**
+   * Atomic workflow for patient registration with consultation fee handling.
+   * This function creates a patient record, encounter, and optionally processes consultation fee payment.
+   * 
+   * @param data - Patient information (name, age, gender, contact details, medical history)
+   * @param collectConsultationFee - Whether to collect consultation fee at registration
+   * @param registeredBy - Username/email of the staff member registering the patient
+   * @param consultationServiceId - Optional ID of specific consultation service to use.
+   *                                If not provided, falls back to CONS-GEN or first active consultation service.
+   * 
+   * @returns Object containing the created patient and encounter records
+   * 
+   * @throws Error if:
+   *   - consultationServiceId is provided but service doesn't exist
+   *   - consultationServiceId is provided but service is inactive
+   *   - consultationServiceId is provided but service is not a consultation category
+   *   - No consultationServiceId provided and no active consultation services exist
+   * 
+   * Error messages are user-friendly and guide reception staff to resolve the issue.
+   */
   async registerNewPatientWorkflow(
     data: schema.InsertPatient,
     collectConsultationFee: boolean,
-    registeredBy: string
+    registeredBy: string,
+    consultationServiceId?: number
   ): Promise<{
     patient: schema.Patient;
     encounter: schema.Encounter;
   }> {
-    // --- Fix for Red Flag #3: Use stable service code "CONS-GEN" ---
-    console.log("Looking up consultation service with code: CONS-GEN");
-    let consultationService = (await db.select().from(services)
-      .where(and(
-        eq(services.code, "CONS-GEN"), // Use stable code from seed script
-        eq(services.isActive, 1)
-      ))
-      .limit(1))[0];
+    let consultationService: schema.Service | undefined;
 
-    if (!consultationService) {
-      // Log detailed error information
-      console.error("CRITICAL: Consultation service 'CONS-GEN' not found!");
+    // If a specific consultation service ID is provided, use it
+    if (consultationServiceId) {
+      console.log(`Looking up consultation service with ID: ${consultationServiceId}`);
+      consultationService = (await db.select().from(services)
+        .where(eq(services.id, consultationServiceId))
+        .limit(1))[0];
+
+      // Validate the selected service exists
+      if (!consultationService) {
+        throw new Error(`Consultation service with ID ${consultationServiceId} not found. Please select a valid consultation service.`);
+      }
+
+      // Validate the selected service is active
+      if (!consultationService.isActive) {
+        throw new Error(`The selected consultation service "${consultationService.name}" is inactive. Please select an active consultation service or contact an administrator to activate it.`);
+      }
+
+      // Validate the selected service is actually a consultation service
+      if (consultationService.category !== 'consultation') {
+        throw new Error(`The selected service "${consultationService.name}" is not a consultation service. Please select a valid consultation service.`);
+      }
+    } else {
+      /**
+       * Fallback logic for backward compatibility and smart defaults.
+       * When no specific service is selected, we try to find an appropriate consultation service:
+       * 1. First, look for the standard CONS-GEN service
+       * 2. If not found, look for any service with "General" in the name
+       * 3. If still not found, use the first active consultation service
+       * This ensures existing API clients continue to work while providing sensible defaults.
+       */
+      console.log("No consultation service ID provided, looking for default consultation service");
       
-      // Check if ANY services exist
-      const allServices = await db.select().from(services).limit(5);
-      console.error("Available services:", allServices.map((s: any) => ({ id: s.id, code: s.code, name: s.name, isActive: s.isActive })));
+      // Fetch active consultation services (limit search to reasonable number)
+      const CONSULTATION_SERVICE_SEARCH_LIMIT = 10;
+      const activeConsultationServices = await db.select().from(services)
+        .where(and(
+          eq(services.category, "consultation"),
+          eq(services.isActive, 1)
+        ))
+        .limit(CONSULTATION_SERVICE_SEARCH_LIMIT);
+
+      // Priority 1: Find service with code CONS-GEN
+      consultationService = activeConsultationServices.find((s: any) => s.code === "CONS-GEN");
       
-      // Try to create the consultation service as a fallback
-      console.error("Attempting to create default consultation service...");
-      try {
-        const newService = await this.createService({
-          code: "CONS-GEN",
-          name: "General Consultation",
-          category: "consultation",
-          description: "Basic medical consultation and examination",
-          price: 2000.00,
-          isActive: 1,
-        });
-        
-        console.log("Successfully created consultation service:", newService);
-        consultationService = newService;
-      } catch (createError) {
-        console.error("Failed to create consultation service:", createError);
-        throw new Error("Critical Error: Default 'CONS-GEN' consultation service not found and could not be created. Database may need manual initialization. Please contact system administrator.");
+      // Priority 2: Find service with "General" in name
+      if (!consultationService) {
+        console.log("CONS-GEN not found, searching for General Consultation service");
+        consultationService = activeConsultationServices.find((s: any) => 
+          s.name.toLowerCase().includes("general")
+        );
+      }
+      
+      // Priority 3: Use first active consultation service
+      if (!consultationService) {
+        consultationService = activeConsultationServices[0];
+      }
+
+      // If still no consultation service found, provide clear guidance
+      if (!consultationService) {
+        throw new Error("No active consultation service found. Please create and activate a consultation service in Service Management before registering patients with consultation fees.");
       }
     }
 
-    console.log("Found consultation service:", { id: consultationService.id, name: consultationService.name, price: consultationService.price });
+    console.log("Using consultation service:", { id: consultationService.id, name: consultationService.name, price: consultationService.price });
     return this._registerPatientWithService(consultationService, data, collectConsultationFee, registeredBy);
   }
 

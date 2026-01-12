@@ -92,6 +92,7 @@ export default function Patients() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [collectConsultationFee, setCollectConsultationFee] = useState(true); // Default to checked (simpler than unchecked)
+  const [selectedConsultationServiceId, setSelectedConsultationServiceId] = useState<number | null>(null);
 
   // NEW: quick-view panel state (we keep full row object to access serviceStatus)
   const [activePatient, setActivePatient] = useState<any | null>(null);
@@ -184,17 +185,54 @@ export default function Patients() {
     };
   };
 
-  // Get consultation service from services list for accurate pricing
+  // Fetch all services from the API
   const { data: servicesList } = useQuery({
     queryKey: ["/api/services"],
   });
   
-  const consultationService = (servicesList as any[] || []).find(
-  (s: any) => s.code === "CONS-GEN" // Use stable code 'CONS-GEN' (matches backend and database)
-);
+  /**
+   * Filter active consultation services only.
+   * Only services with category='consultation' and isActive=true are shown in the dropdown.
+   * This ensures reception can only select from valid, available consultation types.
+   */
+  const activeConsultationServices = (servicesList as any[] || []).filter(
+    (s: any) => s.category === "consultation" && s.isActive
+  );
+  
+  /**
+   * Find default consultation service with priority order:
+   * 1. Service with code "CONS-GEN" (General Consultation standard code)
+   * 2. Service with "general" in name (case-insensitive)
+   * 3. First active consultation service in the list
+   * This provides smart defaults while allowing flexibility for different clinic setups.
+   */
+  const defaultConsultationService = activeConsultationServices.find(
+    (s: any) => s.code === "CONS-GEN"
+  ) || activeConsultationServices.find(
+    (s: any) => s.name.toLowerCase().includes("general")
+  ) || activeConsultationServices[0];
+  
+  /**
+   * Get currently selected consultation service.
+   * Falls back to default if selected service not found (e.g., if it was deactivated).
+   */
+  const selectedConsultationService = activeConsultationServices.find(
+    (s: any) => s.id === selectedConsultationServiceId
+  ) || defaultConsultationService;
+  
+  /**
+   * Auto-select default consultation service when services are first loaded.
+   * Only runs once when defaultConsultationService becomes available.
+   */
+  useEffect(() => {
+    if (defaultConsultationService && selectedConsultationServiceId === null) {
+      setSelectedConsultationServiceId(defaultConsultationService.id);
+    }
+  }, [defaultConsultationService, selectedConsultationServiceId]);
   
   // Debug log to see what we're getting
-  console.log("Consultation service found:", consultationService);
+  console.log("Active consultation services:", activeConsultationServices);
+  console.log("Selected consultation service:", selectedConsultationService);
 
   // Invalidate patients query when preset changes to prevent cache reuse
   useEffect(() => {
@@ -255,10 +293,11 @@ export default function Patients() {
 
   const createPatientMutation = useMutation({
   mutationFn: async (data: InsertPatient) => {
-    // --- FIX: Send all data to the new atomic endpoint ---
+    // Send all data to the atomic endpoint including selected consultation service
     const registrationData = {
       patientData: data,
-      collectConsultationFee: collectConsultationFee, // Get state of the checkbox
+      collectConsultationFee: collectConsultationFee,
+      consultationServiceId: selectedConsultationServiceId || undefined, // Ensure we send undefined, not null
     };
 
     const response = await apiRequest("POST", "/api/patients", registrationData);
@@ -284,6 +323,7 @@ export default function Patients() {
     form.reset();
     setShowRegistrationForm(false);
     setCollectConsultationFee(true); // Reset to default (checked)
+    setSelectedConsultationServiceId(defaultConsultationService?.id || null); // Reset to default
     queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
     queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
     queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
@@ -402,7 +442,16 @@ export default function Patients() {
   });
 
   const onSubmit = (data: InsertPatient) => {
-    // No longer enforce consultation fee - manager can override
+    // Validate that if collect fee is enabled, we have an active consultation service
+    if (!editingPatient && collectConsultationFee && activeConsultationServices.length === 0) {
+      toast({
+        title: "Cannot Register Patient",
+        description: "No active consultation services found. Please create and activate a consultation service in Service Management first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (editingPatient) {
       updatePatientMutation.mutate({
         patientId: editingPatient.patientId,
@@ -425,6 +474,7 @@ export default function Patients() {
     });
     setEditingPatient(null);
     setCollectConsultationFee(true); // Default to checked
+    setSelectedConsultationServiceId(defaultConsultationService?.id || null); // Reset to default
     setShowRegistrationForm(true);
   };
 
@@ -1588,24 +1638,78 @@ export default function Patients() {
                   )}
                 />
 
-                {!editingPatient && consultationService && (
-                  <div className="flex items-center space-x-2 p-4 border border-teal-200 rounded-lg bg-teal-50 dark:bg-teal-900/20 dark:border-teal-800">
-                    <Switch
-                      id="collect-fee"
-                      checked={collectConsultationFee}
-                      onCheckedChange={setCollectConsultationFee}
-                      data-testid="switch-collect-fee"
-                      className="data-[state=checked]:bg-teal-500 dark:data-[state=checked]:bg-teal-500
-                                 transition-all duration-300 ease-in-out
-                                 shadow-sm data-[state=checked]:shadow-md"
-                    />
-                    <label
-                      htmlFor="collect-fee"
-                      className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                    >
-                      <DollarSign className="w-4 h-4" />
-                      {`Collect consultation fee (${money(consultationService.price)})`}
-                    </label>
+                {!editingPatient && (
+                  <div className="space-y-3 p-4 border border-teal-200 rounded-lg bg-teal-50 dark:bg-teal-900/20 dark:border-teal-800">
+                    {/* Consultation Fee Toggle */}
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="collect-fee"
+                        checked={collectConsultationFee}
+                        onCheckedChange={setCollectConsultationFee}
+                        data-testid="switch-collect-fee"
+                        className="data-[state=checked]:bg-teal-500 dark:data-[state=checked]:bg-teal-500
+                                   transition-all duration-300 ease-in-out
+                                   shadow-sm data-[state=checked]:shadow-md"
+                      />
+                      <label
+                        htmlFor="collect-fee"
+                        className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                      >
+                        <DollarSign className="w-4 h-4" />
+                        {selectedConsultationService 
+                          ? `Collect consultation fee (${money(selectedConsultationService.price)})`
+                          : "Collect consultation fee"}
+                      </label>
+                    </div>
+
+                    {/* Consultation Service Dropdown - shown when toggle is on */}
+                    {collectConsultationFee && (
+                      <div className="space-y-2">
+                        {activeConsultationServices.length > 0 ? (
+                          <>
+                            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                              Consultation Type
+                            </label>
+                            <Select
+                              value={selectedConsultationServiceId?.toString() || ""}
+                              onValueChange={(value) => setSelectedConsultationServiceId(parseInt(value))}
+                            >
+                              <SelectTrigger 
+                                className="w-full bg-white dark:bg-gray-800"
+                                data-testid="select-consultation-service"
+                              >
+                                <SelectValue placeholder="Select consultation type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {activeConsultationServices.map((service: any) => (
+                                  <SelectItem 
+                                    key={service.id} 
+                                    value={service.id.toString()}
+                                    data-testid={`option-service-${service.id}`}
+                                  >
+                                    {service.name} - {money(service.price)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {selectedConsultationService && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                {selectedConsultationService.description || "Standard consultation service"}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                            <div className="text-xs text-red-700 dark:text-red-300">
+                              <strong>No active consultation services found.</strong>
+                              <br />
+                              Please create and activate a consultation service in Service Management before registering patients with consultation fees.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
