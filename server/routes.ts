@@ -25,6 +25,8 @@ import {
   labTests,
   xrayExams,
   ultrasoundExams,
+  normalizeRelatedType,
+  relatedTypeToDepartment,
 } from "@shared/schema";
 import {
   ObjectStorageService,
@@ -2650,9 +2652,6 @@ router.post("/api/order-lines", async (req: any, res) => {
         .json({ error: "Invalid order line data", details: result.error.errors });
     }
 
-    // Import normalization helpers
-    const { normalizeRelatedType, relatedTypeToDepartment } = await import("@shared/schema");
-
     // Validate and normalize relatedType
     const normalizedRelatedType = normalizeRelatedType(result.data.relatedType);
     if (!normalizedRelatedType) {
@@ -2714,31 +2713,35 @@ router.post("/api/order-lines", async (req: any, res) => {
     // Only auto-create test records if relatedId is not already provided
     let relatedId = result.data.relatedId || null;
 
+    // NOTE: This is a fallback pathway for backward compatibility
+    // Modern ordering flow creates the diagnostic record first (with proper values)
+    // then creates the order line with relatedId already set
+    // These defaults are only used for edge cases or legacy integrations
     if (!relatedId) {
       if (normalizedRelatedType === "lab_test") {
-        // Create pending lab test
+        // Create pending lab test with fallback category
         const labTest = await storage.createLabTest({
           patientId: encounter.patientId,
-          category: "other",
+          category: "other", // Fallback category; should be updated by user
           tests: JSON.stringify([result.data.description]),
           priority: "routine",
           requestedDate: new Date().toISOString(),
         });
         relatedId = labTest.testId;
       } else if (normalizedRelatedType === "xray_exam") {
-        // Create pending X-ray exam
+        // Create pending X-ray exam with fallback examType
         const xrayExam = await storage.createXrayExam({
           patientId: encounter.patientId,
-          examType: "chest", // Default to chest, will be updated by user
+          examType: "chest", // Fallback type; should be updated by user
           bodyPart: result.data.description,
           requestedDate: new Date().toISOString(),
         });
         relatedId = xrayExam.examId;
       } else if (normalizedRelatedType === "ultrasound_exam") {
-        // Create pending ultrasound exam
+        // Create pending ultrasound exam with fallback examType
         const ultrasoundExam = await storage.createUltrasoundExam({
           patientId: encounter.patientId,
-          examType: "abdominal", // Default to abdominal, will be updated by user
+          examType: "abdominal", // Fallback type; should be updated by user
           specificExam: result.data.description,
           requestedDate: new Date().toISOString(),
         });
