@@ -1296,12 +1296,12 @@ export default function Treatment() {
         ? `${examTypeLabel[examType] || 'X-Ray Examination'} - ${bodyPart}`
         : examTypeLabel[examType] || examTypeLabel[bodyPart?.toLowerCase() || ''] || 'X-Ray Examination';
 
-      // Create order line with diagnostic data - server will auto-create X-ray exam
+      // Create order line with diagnostic data - server will auto-create X-ray exam record
+      // relatedId is omitted; server creates the xray_exam and links it automatically
       const orderLineData = {
         encounterId: currentEncounter.encounterId,
         serviceId: service.id,
         relatedType: "xray",
-        // No relatedId - server will auto-create the xray exam record
         description: `X-Ray: ${fullDescription}`,
         quantity: 1,
         unitPriceSnapshot: service.price || 0,
@@ -1357,12 +1357,12 @@ export default function Treatment() {
         ? `${examTypeLabel[ultrasoundExamType] || 'Ultrasound'} - ${ultrasoundSpecificExam}`
         : examTypeLabel[ultrasoundExamType] || 'Ultrasound Examination';
 
-      // Create order line with diagnostic data - server will auto-create ultrasound exam
+      // Create order line with diagnostic data - server will auto-create ultrasound exam record
+      // relatedId is omitted; server creates the ultrasound_exam and links it automatically
       const orderLineData = {
         encounterId: currentEncounter.encounterId,
         serviceId: service.id,
         relatedType: "ultrasound",
-        // No relatedId - server will auto-create the ultrasound exam record
         description: `Ultrasound: ${fullDescription}`,
         quantity: 1,
         unitPriceSnapshot: service.price || 0,

@@ -2706,18 +2706,6 @@ router.put("/api/orders/:orderId/cart", async (req, res) => {
 // Reception can view/update order lines for billing, but cannot create diagnostic orders
 router.post("/api/order-lines", async (req: any, res) => {
   try {
-    // Check if this is a diagnostic order (xray_exam, ultrasound_exam, lab_test)
-    const relatedType = req.body.relatedType;
-    const isDiagnosticOrder = ["xray", "xray_exam", "ultrasound", "ultrasound_exam", "lab", "lab_test"].includes(relatedType);
-    
-    // Block Reception from creating diagnostic orders
-    if (isDiagnosticOrder && req.user?.role === ROLES.RECEPTION) {
-      return res.status(403).json({
-        error: "Insufficient permissions",
-        details: "Reception staff cannot order diagnostics. Only Doctors can order from Treatment, and Admins can order referrals.",
-      });
-    }
-    
     const result = insertOrderLineSchema.safeParse(req.body);
     if (!result.success) {
       return res
@@ -2734,6 +2722,16 @@ router.post("/api/order-lines", async (req: any, res) => {
       });
     }
 
+    // RBAC: Block Reception from creating diagnostic orders
+    // Diagnostic orders use normalized types: lab_test, xray_exam, ultrasound_exam
+    const isDiagnosticOrder = ["lab_test", "xray_exam", "ultrasound_exam"].includes(normalizedRelatedType);
+    if (isDiagnosticOrder && req.user?.role === ROLES.RECEPTION) {
+      return res.status(403).json({
+        error: "Insufficient permissions",
+        details: "Reception staff cannot order diagnostics. Only Doctors can order from Treatment, and Admins can order referrals.",
+      });
+    }
+    
     // STRICT CATALOG VALIDATION: Ensure service exists and is active
     const service = await storage.getServiceById(result.data.serviceId);
     if (!service) {
