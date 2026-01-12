@@ -861,7 +861,7 @@ return (
             {/* Ordering Notice */}
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm text-blue-900 dark:text-blue-100">
-                <strong>Note:</strong> New lab orders can only be created from the <strong>Treatment page</strong> (by doctors during patient visits) or from the <strong>Patients page</strong> (by admins for referral-only patients). Lab staff can update results and status for existing orders.
+                <strong>Note:</strong> New lab orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Lab staff can update results and status for existing orders.
               </p>
             </div>
 
