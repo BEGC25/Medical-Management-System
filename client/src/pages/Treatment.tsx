@@ -3219,40 +3219,51 @@ export default function Treatment() {
                                   (() => {
                                     // Enhanced X-Ray ordering with visual selector and safety checklist
                                     if (qoTab === 'xray') {
-                                      // STRICT CATALOG ENFORCEMENT: Find service that matches the selected exam type
-                                      const xrayService = radiologyServices.find((s: any) => {
-                                        const serviceName = (s.name || '').toLowerCase();
-                                        const examType = xrayExamType.toLowerCase();
+                                      // Only check for matching service if an exam type is selected
+                                      if (xrayExamType) {
+                                        // STRICT CATALOG ENFORCEMENT: Find service that matches the selected exam type
+                                        const xrayService = radiologyServices.find((s: any) => {
+                                          const serviceName = (s.name || '').toLowerCase();
+                                          const examType = xrayExamType.toLowerCase();
+                                          
+                                          // Map exam types to expected service name patterns
+                                          const examTypePatterns: Record<string, string[]> = {
+                                            'chest': ['chest'],
+                                            'abdomen': ['abdomen', 'abdominal'],
+                                            'extremities': ['extremity', 'extremities', 'limb'],
+                                            'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
+                                            'skull': ['skull', 'head', 'cranial'],
+                                            'pelvis': ['pelvis', 'pelvic', 'hip'],
+                                          };
+                                          
+                                          const patterns = examTypePatterns[examType] || [examType];
+                                          return patterns.some(pattern => serviceName.includes(pattern));
+                                        });
                                         
-                                        // Map exam types to expected service name patterns
-                                        const examTypePatterns: Record<string, string[]> = {
-                                          'chest': ['chest'],
-                                          'abdomen': ['abdomen', 'abdominal'],
-                                          'extremities': ['extremity', 'extremities', 'limb'],
-                                          'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
-                                          'skull': ['skull', 'head', 'cranial'],
-                                          'pelvis': ['pelvis', 'pelvic', 'hip'],
-                                        };
-                                        
-                                        const patterns = examTypePatterns[examType] || [examType];
-                                        return patterns.some(pattern => serviceName.includes(pattern));
-                                      });
-                                      
-                                      // Show warning if no matching service exists
-                                      if (!xrayService) {
-                                        return (
-                                          <div className="p-6 text-center space-y-4">
-                                            <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
-                                            <div>
-                                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
-                                                No {xrayExamType} X-Ray Service
-                                              </h3>
-                                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                Please contact administration to add a "{xrayExamType} X-Ray" service in Service Management.
-                                              </p>
+                                        // Show warning if no matching service exists
+                                        if (!xrayService) {
+                                          return (
+                                            <div className="p-6 text-center space-y-4">
+                                              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+                                              <div>
+                                                <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
+                                                  No {xrayExamType} X-Ray Service
+                                                </h3>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                                  Please contact administration to add a "{xrayExamType} X-Ray" service in Service Management.
+                                                </p>
+                                                <Button
+                                                  onClick={() => setXrayExamType('')}
+                                                  variant="outline"
+                                                  className="mt-4"
+                                                >
+                                                  <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+                                                  Choose Different Exam Type
+                                                </Button>
+                                              </div>
                                             </div>
-                                          </div>
-                                        );
+                                          );
+                                        }
                                       }
                                       
                                       return (
@@ -3578,47 +3589,58 @@ export default function Treatment() {
 
                                     // Enhanced Ultrasound ordering with visual exam type cards
                                     if (qoTab === 'ultrasound') {
-                                      // STRICT CATALOG ENFORCEMENT: Find service that matches the selected exam type
-                                      const ultrasoundService = ultrasoundServices.find((s: any) => {
-                                        const serviceName = (s.name || '').toLowerCase();
-                                        const examType = ultrasoundExamType.toLowerCase();
+                                      // Only check for matching service if an exam type is selected
+                                      if (ultrasoundExamType) {
+                                        // STRICT CATALOG ENFORCEMENT: Find service that matches the selected exam type
+                                        const ultrasoundService = ultrasoundServices.find((s: any) => {
+                                          const serviceName = (s.name || '').toLowerCase();
+                                          const examType = ultrasoundExamType.toLowerCase();
+                                          
+                                          // Map exam types to expected service name patterns
+                                          const examTypePatterns: Record<string, string[]> = {
+                                            'obstetric': ['obstetric', 'pregnancy', 'ob'],
+                                            'abdominal': ['abdomen', 'abdominal'],
+                                            'pelvic': ['pelvis', 'pelvic'],
+                                            'thyroid': ['thyroid'],
+                                            'breast': ['breast'],
+                                            'cardiac': ['cardiac', 'echo', 'heart'],
+                                            'renal': ['renal', 'kidney'],
+                                            'vascular': ['vascular', 'doppler'],
+                                            'soft_tissue': ['soft tissue', 'superficial'],
+                                            'scrotal': ['scrotal', 'testicular'],
+                                            'neck': ['neck'],
+                                            'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
+                                            'thoracic': ['thoracic', 'chest'],
+                                          };
+                                          
+                                          const patterns = examTypePatterns[examType] || [examType];
+                                          return patterns.some(pattern => serviceName.includes(pattern));
+                                        });
                                         
-                                        // Map exam types to expected service name patterns
-                                        const examTypePatterns: Record<string, string[]> = {
-                                          'obstetric': ['obstetric', 'pregnancy', 'ob'],
-                                          'abdominal': ['abdomen', 'abdominal'],
-                                          'pelvic': ['pelvis', 'pelvic'],
-                                          'thyroid': ['thyroid'],
-                                          'breast': ['breast'],
-                                          'cardiac': ['cardiac', 'echo', 'heart'],
-                                          'renal': ['renal', 'kidney'],
-                                          'vascular': ['vascular', 'doppler'],
-                                          'soft_tissue': ['soft tissue', 'superficial'],
-                                          'scrotal': ['scrotal', 'testicular'],
-                                          'neck': ['neck'],
-                                          'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
-                                          'thoracic': ['thoracic', 'chest'],
-                                        };
-                                        
-                                        const patterns = examTypePatterns[examType] || [examType];
-                                        return patterns.some(pattern => serviceName.includes(pattern));
-                                      });
-                                      
-                                      // Show warning if no matching service exists
-                                      if (!ultrasoundService) {
-                                        return (
-                                          <div className="p-6 text-center space-y-4">
-                                            <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
-                                            <div>
-                                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
-                                                No {ultrasoundExamType} Ultrasound Service
-                                              </h3>
-                                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                Please contact administration to add a "{ultrasoundExamType} Ultrasound" service in Service Management.
-                                              </p>
+                                        // Show warning if no matching service exists
+                                        if (!ultrasoundService) {
+                                          return (
+                                            <div className="p-6 text-center space-y-4">
+                                              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+                                              <div>
+                                                <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
+                                                  No {ultrasoundExamType} Ultrasound Service
+                                                </h3>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                                  Please contact administration to add a "{ultrasoundExamType} Ultrasound" service in Service Management.
+                                                </p>
+                                                <Button
+                                                  onClick={() => setUltrasoundExamType('')}
+                                                  variant="outline"
+                                                  className="mt-4"
+                                                >
+                                                  <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+                                                  Choose Different Exam Type
+                                                </Button>
+                                              </div>
                                             </div>
-                                          </div>
-                                        );
+                                          );
+                                        }
                                       }
                                       
                                       // Use shared Ultrasound catalog for consistency with department pages
