@@ -66,6 +66,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useServicesByCategory } from '@/hooks/useServicesByCategory';
 
@@ -917,12 +918,19 @@ export default function Ultrasound() {
                   Refresh
                 </Button>
                 <Button 
-                  onClick={() => setRequestOpen(true)}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg shadow-indigo-500/30"
+                  onClick={() => {
+                    toast({
+                      title: "Feature Disabled",
+                      description: "Ultrasound ordering is now done through Treatment page (Doctors) or Patients page (Admin referrals).",
+                      variant: "default"
+                    });
+                  }}
+                  disabled={true}
+                  className="bg-gray-400 cursor-not-allowed opacity-60"
                   data-testid="button-new-request"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  New Request
+                  New Request (Disabled)
                 </Button>
               </div>
             </div>
@@ -944,6 +952,16 @@ export default function Ultrasound() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Alert about new ordering flow */}
+        <Alert className="border-indigo-200 bg-indigo-50 dark:bg-indigo-950 dark:border-indigo-800">
+          <AlertTriangle className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <AlertTitle className="text-indigo-900 dark:text-indigo-100">Diagnostic Ordering Changed</AlertTitle>
+          <AlertDescription className="text-indigo-800 dark:text-indigo-200">
+            Ultrasound exams can no longer be ordered directly from this page. Doctors should order from the Treatment page. 
+            For referral/walk-in patients, Admins can use the referral ordering feature on the Patients page.
+          </AlertDescription>
+        </Alert>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}

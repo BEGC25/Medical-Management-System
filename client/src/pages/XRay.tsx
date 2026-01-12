@@ -61,6 +61,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useServicesByCategory } from '@/hooks/useServicesByCategory';
 
@@ -825,12 +826,19 @@ export default function XRay() {
                   Refresh
                 </Button>
                 <Button
-                  onClick={() => setRequestOpen(true)}
-                  className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg shadow-blue-500/30"
+                  onClick={() => {
+                    toast({
+                      title: "Feature Disabled",
+                      description: "X-Ray ordering is now done through Treatment page (Doctors) or Patients page (Admin referrals).",
+                      variant: "default"
+                    });
+                  }}
+                  disabled={true}
+                  className="bg-gray-400 cursor-not-allowed opacity-60"
                   data-testid="button-new-request"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  New Request
+                  New Request (Disabled)
                 </Button>
               </div>
             </div>
@@ -852,6 +860,16 @@ export default function XRay() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Alert about new ordering flow */}
+        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+          <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertTitle className="text-blue-900 dark:text-blue-100">Diagnostic Ordering Changed</AlertTitle>
+          <AlertDescription className="text-blue-800 dark:text-blue-200">
+            X-Ray exams can no longer be ordered directly from this page. Doctors should order from the Treatment page. 
+            For referral/walk-in patients, Admins can use the referral ordering feature on the Patients page.
+          </AlertDescription>
+        </Alert>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}

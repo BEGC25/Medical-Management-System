@@ -23,6 +23,8 @@ import {
   MoreVertical,
   FileText,
   Download,
+  Activity,
+  Stethoscope,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,7 +80,10 @@ import {
   insertPatientSchema,
   type InsertPatient,
   type Patient,
+  type Service,
+  type Encounter,
 } from "@shared/schema";
+import { ROLES } from "@shared/auth-roles";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, formatClinicDay, getClinicDayKey } from "@/lib/date-utils";
@@ -105,6 +110,13 @@ export default function Patients() {
 
   // Track newly registered patient for highlighting
   const [newlyRegisteredPatientId, setNewlyRegisteredPatientId] = useState<string | null>(null);
+
+  // Referral ordering state (Admin-only feature)
+  const [showReferralOrderDialog, setShowReferralOrderDialog] = useState(false);
+  const [referralPatient, setReferralPatient] = useState<Patient | null>(null);
+  const [referralDepartment, setReferralDepartment] = useState<"xray" | "ultrasound" | null>(null);
+  const [referralService, setReferralService] = useState<Service | null>(null);
+  const [referralNotes, setReferralNotes] = useState("");
 
   // Date range filtering and search
   const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
@@ -441,6 +453,92 @@ export default function Patients() {
     },
   });
 
+  // Query services for referral ordering (Admin only)
+  const { data: radiologyServices = [] } = useQuery<Service[]>({
+    queryKey: ["/api/services", { category: "radiology" }],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/services?category=radiology&isActive=true");
+      return await response.json();
+    },
+    enabled: user?.role === ROLES.ADMIN,
+  });
+
+  const { data: ultrasoundServices = [] } = useQuery<Service[]>({
+    queryKey: ["/api/services", { category: "ultrasound" }],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/services?category=ultrasound&isActive=true");
+      return await response.json();
+    },
+    enabled: user?.role === ROLES.ADMIN,
+  });
+
+  // Referral ordering mutation
+  const orderReferralDiagnosticMutation = useMutation({
+    mutationFn: async ({
+      patient,
+      department,
+      service,
+      notes,
+    }: {
+      patient: Patient;
+      department: "xray" | "ultrasound";
+      service: Service;
+      notes: string;
+    }) => {
+      // 1. Create diagnostics_only encounter
+      const encounterData = {
+        patientId: patient.patientId,
+        encounterType: "diagnostics_only" as const,
+        chiefComplaint: `Referral for ${department === "xray" ? "X-Ray" : "Ultrasound"}`,
+        status: "active" as const,
+      };
+      const encounterResponse = await apiRequest("POST", "/api/encounters", encounterData);
+      const encounter: Encounter = await encounterResponse.json();
+
+      // 2. Create order line via order-lines endpoint (server auto-creates diagnostic record)
+      const orderLineData = {
+        encounterId: encounter.encounterId,
+        serviceId: service.id,
+        relatedType: department === "xray" ? "xray" : "ultrasound",
+        description: `${department === "xray" ? "X-Ray" : "Ultrasound"}: ${service.name}`,
+        quantity: 1,
+        unitPriceSnapshot: service.price || 0,
+        totalPrice: service.price || 0,
+        department: department === "xray" ? "radiology" : "ultrasound",
+        orderedBy: user?.username || "Admin",
+        diagnosticData: {
+          examType: department === "xray" ? "chest" : "abdominal",
+          clinicalIndication: notes,
+          bodyPart: service.name, // for xray
+          specificExam: service.name, // for ultrasound
+        },
+      };
+      const orderResponse = await apiRequest("POST", "/api/order-lines", orderLineData);
+      return await orderResponse.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Referral Order Created",
+        description: "Diagnostic referral order created successfully.",
+      });
+      setShowReferralOrderDialog(false);
+      setReferralPatient(null);
+      setReferralDepartment(null);
+      setReferralService(null);
+      setReferralNotes("");
+      queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create referral order",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertPatient) => {
     // Validate that if collect fee is enabled, we have an active consultation service
     if (!editingPatient && collectConsultationFee && activeConsultationServices.length === 0) {
@@ -681,6 +779,25 @@ export default function Patients() {
               <Download className="w-4 h-4" />
               Export CSV
             </Button>
+            
+            {/* Order Referral Diagnostic Button - Admin Only */}
+            {user?.role === ROLES.ADMIN && (
+              <Button
+                onClick={() => setShowReferralOrderDialog(true)}
+                variant="outline"
+                size="lg"
+                className="hidden md:flex items-center gap-2
+                           border-blue-300 dark:border-blue-600
+                           text-blue-700 dark:text-blue-400
+                           hover:bg-blue-50 dark:hover:bg-blue-900
+                           hover:border-blue-400 dark:hover:border-blue-500
+                           transition-all duration-200"
+                data-testid="button-order-referral"
+              >
+                <Stethoscope className="w-4 h-4" />
+                Order Referral Diagnostic
+              </Button>
+            )}
             
             {/* Register Button */}
             <Button
@@ -2139,6 +2256,134 @@ export default function Patients() {
         </AlertDialogContent>
       </AlertDialog>
       {/* ================== /DELETE DIALOG ================== */}
+
+      {/* ================== REFERRAL ORDERING DIALOG (Admin Only) ================== */}
+      <Dialog open={showReferralOrderDialog} onOpenChange={setShowReferralOrderDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Order Referral Diagnostic</DialogTitle>
+            <DialogDescription>
+              Create a diagnostic order for a referral/walk-in patient (no consultation required).
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Step 1: Select Patient */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">1. Select Patient</label>
+              <PatientSearch
+                selectedPatient={referralPatient}
+                onSelect={(patient) => setReferralPatient(patient)}
+              />
+            </div>
+
+            {/* Step 2: Select Department */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">2. Select Department</label>
+              <Select
+                value={referralDepartment || ""}
+                onValueChange={(value) => {
+                  setReferralDepartment(value as "xray" | "ultrasound");
+                  setReferralService(null); // Reset service when department changes
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose department..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="xray">X-Ray (Radiology)</SelectItem>
+                  <SelectItem value="ultrasound">Ultrasound</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Step 3: Select Service */}
+            {referralDepartment && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">3. Select Service</label>
+                {referralDepartment === "xray" && radiologyServices.length === 0 && (
+                  <p className="text-sm text-red-600">No active radiology services available. Please add services in Service Management.</p>
+                )}
+                {referralDepartment === "ultrasound" && ultrasoundServices.length === 0 && (
+                  <p className="text-sm text-red-600">No active ultrasound services available. Please add services in Service Management.</p>
+                )}
+                {((referralDepartment === "xray" && radiologyServices.length > 0) ||
+                  (referralDepartment === "ultrasound" && ultrasoundServices.length > 0)) && (
+                  <Select
+                    value={referralService?.id?.toString() || ""}
+                    onValueChange={(value) => {
+                      const services = referralDepartment === "xray" ? radiologyServices : ultrasoundServices;
+                      const service = services.find((s) => s.id === parseInt(value));
+                      setReferralService(service || null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose service..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(referralDepartment === "xray" ? radiologyServices : ultrasoundServices).map((service) => (
+                        <SelectItem key={service.id} value={service.id.toString()}>
+                          {service.name} - {money(service.price)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Clinical Notes */}
+            {referralService && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">4. Clinical Notes (Optional)</label>
+                <Textarea
+                  placeholder="Enter any clinical indication or notes..."
+                  value={referralNotes}
+                  onChange={(e) => setReferralNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReferralOrderDialog(false);
+                setReferralPatient(null);
+                setReferralDepartment(null);
+                setReferralService(null);
+                setReferralNotes("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!referralPatient || !referralDepartment || !referralService) {
+                  toast({
+                    title: "Missing Information",
+                    description: "Please complete all required fields.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                orderReferralDiagnosticMutation.mutate({
+                  patient: referralPatient,
+                  department: referralDepartment,
+                  service: referralService,
+                  notes: referralNotes,
+                });
+              }}
+              disabled={!referralPatient || !referralDepartment || !referralService || orderReferralDiagnosticMutation.isPending}
+            >
+              {orderReferralDiagnosticMutation.isPending ? "Creating..." : "Create Referral Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* ================== /REFERRAL ORDERING DIALOG ================== */}
 
       {/* ================== FORCE DELETE CONFIRMATION DIALOG ================== */}
       <AlertDialog open={showForceDeleteDialog} onOpenChange={setShowForceDeleteDialog}>
