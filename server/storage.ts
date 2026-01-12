@@ -3223,10 +3223,98 @@ async function seedDefaultServices() {
       });
 
       await storage.createService({
+        name: "Blood Film for Malaria (BFFM)",
+        category: "laboratory",
+        description: "Microscopic examination for malaria parasites",
+        price: 10.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Hemoglobin (HB)",
+        category: "laboratory",
+        description: "Hemoglobin level measurement",
+        price: 8.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Blood Group & Rh",
+        category: "laboratory",
+        description: "Blood type and Rh factor determination",
+        price: 12.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Random Blood Sugar (RBS)",
+        category: "laboratory",
+        description: "Blood glucose level test",
+        price: 10.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Pregnancy Test (HCG)",
+        category: "laboratory",
+        description: "Human chorionic gonadotropin test",
+        price: 15.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Widal Test (Typhoid)",
+        category: "laboratory",
+        description: "Typhoid fever antibody test",
+        price: 18.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Hepatitis B Test (HBsAg)",
+        category: "laboratory",
+        description: "Hepatitis B surface antigen test",
+        price: 30.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "VDRL Test (Syphilis)",
+        category: "laboratory",
+        description: "Syphilis screening test",
+        price: 20.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Renal Function Test (RFT)",
+        category: "laboratory",
+        description: "Kidney function assessment",
+        price: 35.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Liver Function Test (LFT)",
+        category: "laboratory",
+        description: "Liver enzyme and function tests",
+        price: 40.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
         name: "Urine Analysis",
         category: "laboratory",
         description: "Complete urine examination",
         price: 15.00,
+        isActive: 1,
+      });
+
+      await storage.createService({
+        name: "Urine Microscopy",
+        category: "laboratory",
+        description: "Microscopic urine examination",
+        price: 18.00,
         isActive: 1,
       });
 
@@ -3245,6 +3333,11 @@ async function seedDefaultServices() {
         price: 15.00,
         isActive: 1,
       });
+
+      // NOTE: Hepatitis C Test (HCV) is intentionally NOT included in seed data
+      // This is to demonstrate the strict catalog control requirement:
+      // If a test is not in Service Management, it cannot be ordered
+      // Admins must add it via Service Management page if needed
 
       // Radiology services
       await storage.createService({
