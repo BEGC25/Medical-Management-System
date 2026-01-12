@@ -200,6 +200,7 @@ export default function Ultrasound() {
   // Results state
   const [selectedUltrasoundExam, setSelectedUltrasoundExam] = useState<UltrasoundExam | null>(null);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"view" | "edit">("edit"); // View mode for completed results
   const [reportPatient, setReportPatient] = useState<Patient | null>(null);
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; name: string }>>([]);
