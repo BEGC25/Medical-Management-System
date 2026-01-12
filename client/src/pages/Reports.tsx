@@ -22,7 +22,7 @@ import {
   Clock,
   RefreshCw
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -282,19 +282,16 @@ export default function Reports() {
       [`Report Type: ${filters.reportType}`],
       [`Date Range: ${filters.fromDate} to ${filters.toDate}`],
       [''],
-      ['Summary Statistics (Period-Scoped)'],
+      ['Summary Statistics'],
       ['Metric', 'Count'],
       ['Total Patients', stats.totalPatients || stats.newPatients || 0],
       ['Total Visits', stats.totalVisits || 0],
       ['Lab Tests', stats.labTests || 0],
       ['X-rays', stats.xrays || 0],
       ['Ultrasounds', stats.ultrasounds || 0],
-      [''],
-      ['Current Pending Backlog (All Pending Right Now)'],
-      ['Metric', 'Count'],
-      ['Pending Lab Results', pendingBacklog?.labResults || 0],
-      ['Pending X-ray Reports', pendingBacklog?.xrayReports || 0],
-      ['Pending Ultrasound Reports', pendingBacklog?.ultrasoundReports || 0],
+      ['Pending Lab Results', stats.pending?.labResults || 0],
+      ['Pending X-ray Reports', stats.pending?.xrayReports || 0],
+      ['Pending Ultrasound Reports', stats.pending?.ultrasoundReports || 0],
       [''],
       ['Recent Patients'],
       ['Patient ID', 'Name', 'Date of Birth', 'Gender', 'Status']
@@ -382,7 +379,7 @@ export default function Reports() {
               <div><strong>Generated:</strong> ${currentDate}</div>
             </div>
 
-            <div class="report-title">Summary Statistics (Period: ${filters.fromDate} to ${filters.toDate})</div>
+            <div class="report-title">Summary Statistics</div>
             <div class="stats-grid">
               <div class="stat-item">
                 <div class="stat-label">Total Patients</div>
@@ -405,8 +402,8 @@ export default function Reports() {
                 <div class="stat-value">${stats.ultrasounds || 0}</div>
               </div>
               <div class="stat-item">
-                <div class="stat-label">Current Pending Backlog</div>
-                <div class="stat-value">${(pendingBacklog?.labResults || 0) + (pendingBacklog?.xrayReports || 0) + (pendingBacklog?.ultrasoundReports || 0)}</div>
+                <div class="stat-label">Pending Results</div>
+                <div class="stat-value">${(stats.pending?.labResults || 0) + (stats.pending?.xrayReports || 0) + (stats.pending?.ultrasoundReports || 0)}</div>
               </div>
             </div>
 
@@ -688,7 +685,7 @@ export default function Reports() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  Recent Activity (Overall)
+                  Recent Activity
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -746,7 +743,6 @@ export default function Reports() {
                   <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
                   Period Summary
                 </CardTitle>
-                <CardDescription>Activity in the selected date range</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -792,11 +788,11 @@ export default function Reports() {
                       </div>
                       <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 tabular-nums">
                         <CountUp 
-                          end={stats?.labTests || 0}
+                          end={stats?.pending?.labResults || 0}
                           duration={2}
                         />
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Lab Tests</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending Labs</p>
                     </div>
                     <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20 hover:shadow-lg transition-all duration-200">
                       <div className="flex justify-center mb-2">
@@ -804,11 +800,11 @@ export default function Reports() {
                       </div>
                       <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 tabular-nums">
                         <CountUp 
-                          end={stats?.xrays || 0}
+                          end={stats?.pending?.xrayReports || 0}
                           duration={2}
                         />
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">X-Rays</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending X-Rays</p>
                     </div>
                     <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 hover:shadow-lg transition-all duration-200">
                       <div className="flex justify-center mb-2">
@@ -816,11 +812,11 @@ export default function Reports() {
                       </div>
                       <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">
                         <CountUp 
-                          end={stats?.ultrasounds ?? 0}
+                          end={stats?.pending?.ultrasoundReports ?? 0}
                           duration={2}
                         />
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Ultrasounds</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending Ultrasounds</p>
                     </div>
                   </div>
                 </div>
