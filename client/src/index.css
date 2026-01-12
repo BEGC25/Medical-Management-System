@@ -716,6 +716,11 @@
     50% { background-position: 100% 50%; }
   }
 
+  @keyframes texture-drift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(60px, 60px); }
+  }
+
   @keyframes glow-pulse {
     0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
     50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); }
