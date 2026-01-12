@@ -62,6 +62,7 @@ import {
   type InsertLabTest,
   type Patient,
   type LabTest,
+  type Service,
 } from "@shared/schema";
 
 import { apiRequest } from "@/lib/queryClient";
@@ -337,6 +338,24 @@ function usePatientSearch(term: string) {
       return res.json();
     },
   });
+
+// 4) Fetch active laboratory services for catalog validation
+function useLaboratoryServices() {
+  return useQuery<Service[]>({
+    queryKey: ["/api/services", { category: "laboratory" }],
+    queryFn: async () => {
+      const url = new URL("/api/services", window.location.origin);
+      url.searchParams.set("category", "laboratory");
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error("Failed to fetch laboratory services");
+      }
+      const allServices = await response.json();
+      // Filter to only active services on client side for extra safety
+      return allServices.filter((s: Service) => s.isActive);
+    },
+  });
+}
 }
 
 /* ------------------------------------------------------------------ */
@@ -425,6 +444,33 @@ export default function Laboratory() {
   // Use the date filter preset directly for API calls (Phase 2)
   const { data: allLabTests = [], refetch: refetchLabTests } = useLabTests(dateFilter, customStartDate, customEndDate);
   
+  // Refresh state
+  
+  // Fetch active laboratory services for catalog enforcement
+  const { data: laboratoryServices = [] } = useLaboratoryServices();
+  
+  // Filter catalog tests to only those with active services
+  // STRICT CATALOG ENFORCEMENT: Only show tests that exist as active services
+  const availableTests = useMemo(() => {
+    const serviceNames = new Set(laboratoryServices.map(s => s.name));
+    const result: Record<LabTestCategory, string[]> = {
+      blood: [],
+      hormonal: [],
+      microbiology: [],
+      urine: [],
+      chemistry: [],
+      stool: [],
+      other: [],
+    };
+    
+    // Filter tests from catalog that have corresponding active services
+    Object.entries(commonTests).forEach(([category, tests]) => {
+      result[category as LabTestCategory] = tests.filter(testName => serviceNames.has(testName));
+    });
+    
+    return result;
+  }, [laboratoryServices]);
+  
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   // Server already filters by date using timezone-aware utilities, no need for client-side filtering
@@ -623,11 +669,38 @@ export default function Laboratory() {
       toast({ title: "Error", description: "Please select at least one test", variant: "destructive" });
       return;
     }
-    createLabTestMutation.mutate({
-      ...data,
-      patientId: selectedPatient.patientId,
-      tests: JSON.stringify(selectedTests),
-    });
+    
+    // STRICT CATALOG VALIDATION: Verify each selected test has a corresponding active service
+    const missingServices: string[] = [];
+    const testServiceMap = new Map<string, Service>();
+    
+    selectedTests.forEach(testName => {
+      const service = laboratoryServices.find(s => s.name === testName);
+      if (!service) {
+        missingServices.push(testName);
+      } else {
+        testServiceMap.set(testName, service);
+      }
+    });
+    
+    if (missingServices.length > 0) {
+      toast({
+        title: "Cannot Order Tests",
+        description: `The following test(s) are not available in the active service catalog: ${missingServices.join(", ")}. Please contact administration to add these tests to Service Management.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Use the first test's service for validation
+    const firstService = testServiceMap.get(selectedTests[0])!;
+    
+    createLabTestMutation.mutate({
+      ...data,
+      patientId: selectedPatient.patientId,
+      tests: JSON.stringify(selectedTests),
+      serviceId: firstService.id, // Include serviceId for server-side validation
+    });
   };
 
   const onSubmitResults = (data: any) => {
@@ -1456,7 +1529,7 @@ return (
                   </label>
                   
                   <div className="space-y-2 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-teal-300 scrollbar-track-teal-50">
-                    {commonTests[currentCategory]?.map((test) => {
+                    {availableTests[currentCategory]?.map((test) => {
                       const isSelected = selectedTests.includes(test);
                       return (
                         <label

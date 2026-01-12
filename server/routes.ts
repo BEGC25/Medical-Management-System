@@ -943,6 +943,42 @@ router.post("/api/lab-tests", async (req, res) => {
     console.log("Creating lab test with data:", req.body);
     const data = insertLabTestSchema.parse(req.body);
     console.log("Parsed data:", data);
+    
+    // STRICT CATALOG ENFORCEMENT: Lab tests MUST be linked to an active service
+    // serviceId is REQUIRED for all lab test creation requests
+    const serviceId = req.body.serviceId as number | undefined;
+    if (!serviceId) {
+      return res.status(400).json({ 
+        error: "Service ID required",
+        details: "All lab tests must be linked to an active service. Please provide a serviceId.",
+        recommendation: "Select a laboratory service from Service Management before ordering tests."
+      });
+    }
+    
+    const service = await storage.getServiceById(serviceId);
+    if (!service) {
+      return res.status(400).json({ 
+        error: "Service not found",
+        details: `Service ID ${serviceId} does not exist in the catalog.`,
+        recommendation: "Please select a valid laboratory service from Service Management."
+      });
+    }
+    
+    if (!service.isActive) {
+      return res.status(400).json({ 
+        error: "Service is inactive",
+        details: `Service '${service.name}' is not currently active.`,
+        recommendation: "Please contact administration or select a different active service."
+      });
+    }
+    
+    if (service.category !== "laboratory") {
+      return res.status(400).json({ 
+        error: "Service category mismatch",
+        details: `Service '${service.name}' is a ${service.category} service, not a laboratory service.`
+      });
+    }
+    
     const labTest = await storage.createLabTest(data);
     console.log("Created lab test:", labTest);
     res.status(201).json(labTest);
@@ -1140,6 +1176,42 @@ router.get("/api/patients/:patientId/xray-exams", async (req, res) => {
 router.post("/api/xray-exams", async (req, res) => {
   try {
     const data = insertXrayExamSchema.parse(req.body);
+    
+    // STRICT CATALOG ENFORCEMENT: X-Ray exams MUST be linked to an active service
+    // serviceId is REQUIRED for all X-Ray exam creation requests
+    const serviceId = req.body.serviceId as number | undefined;
+    if (!serviceId) {
+      return res.status(400).json({ 
+        error: "Service ID required",
+        details: "All X-Ray exams must be linked to an active service. Please provide a serviceId.",
+        recommendation: "Select a radiology service from Service Management before ordering exams."
+      });
+    }
+    
+    const service = await storage.getServiceById(serviceId);
+    if (!service) {
+      return res.status(400).json({ 
+        error: "Service not found",
+        details: `Service ID ${serviceId} does not exist in the catalog.`,
+        recommendation: "Please select a valid radiology service from Service Management."
+      });
+    }
+    
+    if (!service.isActive) {
+      return res.status(400).json({ 
+        error: "Service is inactive",
+        details: `Service '${service.name}' is not currently active.`,
+        recommendation: "Please contact administration or select a different active service."
+      });
+    }
+    
+    if (service.category !== "radiology") {
+      return res.status(400).json({ 
+        error: "Service category mismatch",
+        details: `Service '${service.name}' is a ${service.category} service, not a radiology service.`
+      });
+    }
+    
     const xrayExam = await storage.createXrayExam(data);
     res.status(201).json(xrayExam);
   } catch (error) {
@@ -1266,6 +1338,42 @@ router.get("/api/patients/:patientId/ultrasound-exams", async (req, res) => {
 router.post("/api/ultrasound-exams", async (req, res) => {
   try {
     const data = insertUltrasoundExamSchema.parse(req.body);
+    
+    // STRICT CATALOG ENFORCEMENT: Ultrasound exams MUST be linked to an active service
+    // serviceId is REQUIRED for all Ultrasound exam creation requests
+    const serviceId = req.body.serviceId as number | undefined;
+    if (!serviceId) {
+      return res.status(400).json({ 
+        error: "Service ID required",
+        details: "All Ultrasound exams must be linked to an active service. Please provide a serviceId.",
+        recommendation: "Select an ultrasound service from Service Management before ordering exams."
+      });
+    }
+    
+    const service = await storage.getServiceById(serviceId);
+    if (!service) {
+      return res.status(400).json({ 
+        error: "Service not found",
+        details: `Service ID ${serviceId} does not exist in the catalog.`,
+        recommendation: "Please select a valid ultrasound service from Service Management."
+      });
+    }
+    
+    if (!service.isActive) {
+      return res.status(400).json({ 
+        error: "Service is inactive",
+        details: `Service '${service.name}' is not currently active.`,
+        recommendation: "Please contact administration or select a different active service."
+      });
+    }
+    
+    if (service.category !== "ultrasound") {
+      return res.status(400).json({ 
+        error: "Service category mismatch",
+        details: `Service '${service.name}' is a ${service.category} service, not an ultrasound service.`
+      });
+    }
+    
     const ultrasoundExam = await storage.createUltrasoundExam(data);
     res.status(201).json(ultrasoundExam);
   } catch (error) {
@@ -2704,53 +2812,15 @@ router.post("/api/order-lines", async (req: any, res) => {
 
     const orderLine = await storage.createOrderLine(orderLineData);
 
-    // WORKFLOW FIX: Auto-create pending lab/xray/ultrasound records so they appear in Laboratory and Payment pages
-    const encounter = await storage.getEncounterById(result.data.encounterId);
-    if (!encounter) {
-      return res.status(404).json({ error: "Encounter not found" });
-    }
-
-    // Only auto-create test records if relatedId is not already provided
-    let relatedId = result.data.relatedId || null;
-
-    // NOTE: This is a fallback pathway for backward compatibility
-    // Modern ordering flow creates the diagnostic record first (with proper values)
+    // For diagnostic orders (lab_test, xray_exam, ultrasound_exam), relatedId must be provided
+    // Modern ordering flow creates the diagnostic record first (with proper values from UI)
     // then creates the order line with relatedId already set
-    // These defaults are only used for edge cases or legacy integrations
-    if (!relatedId) {
-      if (normalizedRelatedType === "lab_test") {
-        // Create pending lab test with fallback category
-        const labTest = await storage.createLabTest({
-          patientId: encounter.patientId,
-          category: "other", // Fallback category; should be updated by user
-          tests: JSON.stringify([result.data.description]),
-          priority: "routine",
-          requestedDate: new Date().toISOString(),
-        });
-        relatedId = labTest.testId;
-      } else if (normalizedRelatedType === "xray_exam") {
-        // Create pending X-ray exam with fallback examType
-        const xrayExam = await storage.createXrayExam({
-          patientId: encounter.patientId,
-          examType: "chest", // Fallback type; should be updated by user
-          bodyPart: result.data.description,
-          requestedDate: new Date().toISOString(),
-        });
-        relatedId = xrayExam.examId;
-      } else if (normalizedRelatedType === "ultrasound_exam") {
-        // Create pending ultrasound exam with fallback examType
-        const ultrasoundExam = await storage.createUltrasoundExam({
-          patientId: encounter.patientId,
-          examType: "abdominal", // Fallback type; should be updated by user
-          specificExam: result.data.description,
-          requestedDate: new Date().toISOString(),
-        });
-        relatedId = ultrasoundExam.examId;
-      }
-
-      // Update order line with relatedId
-      if (relatedId) {
-        await storage.updateOrderLine(orderLine.id, { relatedId });
+    if (!result.data.relatedId) {
+      if (["lab_test", "xray_exam", "ultrasound_exam"].includes(normalizedRelatedType)) {
+        console.warn(
+          `[ORDER-LINES] Order line created without relatedId for ${normalizedRelatedType}. ` +
+          `This is acceptable for non-diagnostic services but diagnostic orders should include relatedId.`
+        );
       }
     }
 
