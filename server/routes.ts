@@ -680,6 +680,30 @@ router.get("/api/patients/:patientId", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/patients - Register a new patient
+ * 
+ * This endpoint creates a new patient record along with an initial encounter.
+ * Optionally collects consultation fee and creates payment record.
+ * 
+ * Request body:
+ * {
+ *   patientData: InsertPatient,        // Patient demographic and medical info
+ *   collectConsultationFee: boolean,   // Whether to collect consultation fee at registration
+ *   consultationServiceId?: number     // Optional: Specific consultation service to use
+ * }
+ * 
+ * If consultationServiceId is not provided, the system will automatically select:
+ * 1. Service with code "CONS-GEN" (General Consultation)
+ * 2. Service with "General" in the name
+ * 3. First active consultation service
+ * 
+ * Returns: Created patient object (201)
+ * 
+ * Error codes:
+ * - 400: Invalid patient data, service validation errors (service not found/inactive/wrong category)
+ * - 500: Server error during patient creation
+ */
 router.post("/api/patients", async (req, res) => {
   try {
     // The frontend will send { patientData: {...}, collectConsultationFee: true, consultationServiceId?: number }
@@ -710,6 +734,7 @@ router.post("/api/patients", async (req, res) => {
     }
     if (error instanceof Error) {
       // Return 400 for service-related validation errors (not 500)
+      // This provides clear feedback to reception staff about configuration issues
       if (error.message.includes("consultation service") || 
           error.message.includes("not found") || 
           error.message.includes("inactive") ||

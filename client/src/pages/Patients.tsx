@@ -185,29 +185,45 @@ export default function Patients() {
     };
   };
 
-  // Get consultation service from services list for accurate pricing
+  // Fetch all services from the API
   const { data: servicesList } = useQuery({
     queryKey: ["/api/services"],
   });
   
-  // Filter active consultation services
+  /**
+   * Filter active consultation services only.
+   * Only services with category='consultation' and isActive=true are shown in the dropdown.
+   * This ensures reception can only select from valid, available consultation types.
+   */
   const activeConsultationServices = (servicesList as any[] || []).filter(
     (s: any) => s.category === "consultation" && s.isActive
   );
   
-  // Find default consultation service (prefer CONS-GEN code or name match "General Consultation")
+  /**
+   * Find default consultation service with priority order:
+   * 1. Service with code "CONS-GEN" (General Consultation standard code)
+   * 2. Service with "general" in name (case-insensitive)
+   * 3. First active consultation service in the list
+   * This provides smart defaults while allowing flexibility for different clinic setups.
+   */
   const defaultConsultationService = activeConsultationServices.find(
     (s: any) => s.code === "CONS-GEN"
   ) || activeConsultationServices.find(
     (s: any) => s.name.toLowerCase().includes("general")
   ) || activeConsultationServices[0];
   
-  // Get currently selected consultation service
+  /**
+   * Get currently selected consultation service.
+   * Falls back to default if selected service not found (e.g., if it was deactivated).
+   */
   const selectedConsultationService = activeConsultationServices.find(
     (s: any) => s.id === selectedConsultationServiceId
   ) || defaultConsultationService;
   
-  // Set default consultation service ID when services are loaded
+  /**
+   * Auto-select default consultation service when services are first loaded.
+   * Only runs once when defaultConsultationService becomes available.
+   */
   useEffect(() => {
     if (defaultConsultationService && selectedConsultationServiceId === null) {
       setSelectedConsultationServiceId(defaultConsultationService.id);
