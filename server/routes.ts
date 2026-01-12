@@ -3681,6 +3681,258 @@ router.get("/api/reports/insights", async (req, res) => {
   }
 });
 
+// Unified dashboard endpoint - single source of truth for Reports page
+router.get("/api/reports/dashboard", async (req, res) => {
+  try {
+    const { fromDate, toDate, compareWithPrevious } = req.query;
+    
+    console.log("Unified dashboard endpoint called", { fromDate, toDate, compareWithPrevious });
+    
+    // Validate date parameters
+    if (!fromDate || !toDate) {
+      return res.status(400).json({ 
+        error: "Missing required parameters: fromDate and toDate" 
+      });
+    }
+    
+    const fromDateStr = fromDate as string;
+    const toDateStr = toDate as string;
+    
+    // Fetch current period stats
+    const stats = await getDashboardStats(fromDateStr, toDateStr);
+    
+    // Fetch diagnosis data
+    const diagnosisData = await storage.getDiagnosisStats(fromDateStr, toDateStr);
+    
+    // Fetch trends data
+    const startDate = fromDateStr;
+    const endDate = toDateStr;
+    
+    const allTreatments = await db.select({
+      visitDate: treatments.visitDate
+    }).from(treatments).where(
+      and(
+        gte(treatments.visitDate, startDate),
+        lte(treatments.visitDate, endDate)
+      )
+    );
+    
+    // Count visits per day
+    const visitCounts: Record<string, number> = {};
+    allTreatments.forEach((t: any) => {
+      const dayKey = t.visitDate.split('T')[0];
+      visitCounts[dayKey] = (visitCounts[dayKey] || 0) + 1;
+    });
+    
+    // Generate array for all days in range (including zero-visit days)
+    const trends: Array<{ date: string; visits: number }> = [];
+    const start = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
+    
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dayKey = d.toISOString().split('T')[0];
+      trends.push({
+        date: dayKey,
+        visits: visitCounts[dayKey] || 0
+      });
+    }
+    
+    // Calculate previous period for comparison
+    let previousPeriodStats = null;
+    if (compareWithPrevious === 'true') {
+      const startDateTime = new Date(fromDateStr);
+      const endDateTime = new Date(toDateStr);
+      const daysDiff = Math.ceil((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const prevEndDate = new Date(startDateTime);
+      prevEndDate.setDate(prevEndDate.getDate() - 1);
+      const prevStartDate = new Date(prevEndDate);
+      prevStartDate.setDate(prevStartDate.getDate() - daysDiff);
+      
+      const prevFromDate = prevStartDate.toISOString().split('T')[0];
+      const prevToDate = prevEndDate.toISOString().split('T')[0];
+      
+      const prevStats = await getDashboardStats(prevFromDate, prevToDate);
+      previousPeriodStats = {
+        totalPatients: prevStats.newPatients,
+        newPatients: prevStats.newPatients,
+        totalVisits: prevStats.totalVisits,
+        labTests: prevStats.labTests,
+        xrays: prevStats.xrays,
+        ultrasounds: prevStats.ultrasounds,
+      };
+    }
+    
+    // Generate AI insights (server-side only)
+    const insights = [];
+    
+    // Calculate previous period for insights
+    const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+    const fromDateTime = new Date(fromDateStr);
+    const toDateTime = new Date(toDateStr);
+    const dateRange = toDateTime.getTime() - fromDateTime.getTime();
+    
+    const prevToDate = new Date(fromDateTime.getTime() - MILLISECONDS_PER_DAY);
+    const prevFromDate = new Date(prevToDate.getTime() - dateRange);
+    
+    const prevStats = await getDashboardStats(
+      prevFromDate.toISOString().split('T')[0],
+      prevToDate.toISOString().split('T')[0]
+    );
+    
+    // Only generate insights if there's actual data
+    const hasData = stats.totalVisits > 0 || stats.newPatients > 0 || 
+                    stats.labTests > 0 || stats.xrays > 0 || stats.ultrasounds > 0;
+    
+    if (hasData) {
+      // Visit trend analysis
+      if (stats.totalVisits > 0) {
+        const visitChange = stats.totalVisits - prevStats.totalVisits;
+        if (visitChange > 0) {
+          insights.push({
+            icon: 'TrendingUp',
+            text: `Visit volume increased by ${visitChange} visits compared to previous period`,
+            type: 'positive'
+          });
+        } else if (visitChange < 0) {
+          insights.push({
+            icon: 'TrendingDown',
+            text: `Visit volume decreased by ${Math.abs(visitChange)} visits compared to previous period`,
+            type: 'warning'
+          });
+        } else {
+          insights.push({
+            icon: 'Activity',
+            text: `${stats.totalVisits} patient visits recorded this period`,
+            type: 'info'
+          });
+        }
+      }
+
+      // Diagnostic test utilization
+      const totalTests = stats.labTests + stats.xrays + stats.ultrasounds;
+      if (totalTests > 0 && stats.totalVisits > 0) {
+        const testsPerVisit = (totalTests / stats.totalVisits).toFixed(1);
+        if (parseFloat(testsPerVisit) > 1.5) {
+          insights.push({
+            icon: 'TestTube',
+            text: `High diagnostic activity: ${testsPerVisit} tests per visit on average`,
+            type: 'positive'
+          });
+        } else {
+          insights.push({
+            icon: 'TestTube',
+            text: `${totalTests} diagnostic tests performed across all services`,
+            type: 'info'
+          });
+        }
+      }
+
+      // Pending results alert
+      const totalPending = stats.pending.labResults + stats.pending.xrayReports + stats.pending.ultrasoundReports;
+      if (totalPending > 3) {
+        insights.push({
+          icon: 'AlertTriangle',
+          text: `${totalPending} test results pending review - attention needed`,
+          type: 'warning'
+        });
+      } else if (totalPending > 0) {
+        insights.push({
+          icon: 'CheckCircle',
+          text: `${totalPending} results pending - within normal range`,
+          type: 'info'
+        });
+      }
+
+      // Top diagnosis
+      if (stats.topDiagnosis && stats.topDiagnosis.count > 0) {
+        insights.push({
+          icon: 'Stethoscope',
+          text: `Leading diagnosis: ${stats.topDiagnosis.name} (${stats.topDiagnosis.count} cases)`,
+          type: 'info'
+        });
+      }
+
+      // New patient registration
+      if (stats.newPatients > 0) {
+        insights.push({
+          icon: 'Users',
+          text: `${stats.newPatients} new patients registered this period`,
+          type: 'positive'
+        });
+      }
+    }
+    
+    // If no insights generated, add appropriate message
+    if (insights.length === 0) {
+      insights.push({
+        icon: 'Info',
+        text: hasData 
+          ? 'No significant insights for this period. Keep collecting data!'
+          : 'No activity recorded in the selected period.',
+        type: 'info'
+      });
+    }
+    
+    // Build unified response
+    const response = {
+      // Summary KPIs
+      summary: {
+        totalPatients: stats.newPatients,
+        newPatients: stats.newPatients,
+        totalVisits: stats.totalVisits,
+        labTests: stats.labTests,
+        xrays: stats.xrays,
+        ultrasounds: stats.ultrasounds,
+        pending: stats.pending,
+        previousPeriod: previousPeriodStats,
+      },
+      
+      // Trends data
+      trends,
+      
+      // Tests by type (for bar chart)
+      testsByType: {
+        labTests: stats.labTests,
+        xrays: stats.xrays,
+        ultrasounds: stats.ultrasounds,
+      },
+      
+      // Top diagnoses
+      diagnoses: diagnosisData,
+      
+      // Pending backlog
+      pendingBacklog: {
+        total: stats.pending.labResults + stats.pending.xrayReports + stats.pending.ultrasoundReports,
+        labResults: stats.pending.labResults,
+        xrayReports: stats.pending.xrayReports,
+        ultrasoundReports: stats.pending.ultrasoundReports,
+      },
+      
+      // AI insights (server-generated only)
+      insights: insights.slice(0, 5),
+      
+      // Metadata
+      metadata: {
+        fromDate: fromDateStr,
+        toDate: toDateStr,
+        generatedAt: new Date().toISOString(),
+        hasData,
+      },
+    };
+    
+    console.log("Unified dashboard response metadata:", response.metadata);
+    res.json(response);
+    
+  } catch (error) {
+    console.error("Unified dashboard endpoint error:", error);
+    res.status(500).json({
+      error: "Failed to fetch dashboard data",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
 export default router;
 
 import { createServer } from "http";
