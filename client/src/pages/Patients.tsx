@@ -2325,8 +2325,11 @@ export default function Patients() {
             <div className="space-y-2">
               <label className="text-sm font-medium">1. Select Patient</label>
               <PatientSearch
-                selectedPatient={referralPatient}
-                onSelect={(patient) => setReferralPatient(patient)}
+                onViewPatient={(patient) => setReferralPatient(patient)}
+                viewMode="search"
+                selectedDate=""
+                searchTerm=""
+                showActions={false}
               />
             </div>
 
