@@ -829,10 +829,33 @@ export default function Treatment() {
     return services.filter(s => s.category === 'laboratory' && s.isActive);
   }, [services]);
 
+  // Helper function to normalize strings for robust matching
+  const normalizeForMatching = (str: string): string => {
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' '); // Collapse multiple spaces to single space
+  };
+
   // Map lab test names from the catalog to their corresponding services
   // This ensures only tests with active services can be ordered
+  // Uses robust matching: case-insensitive, whitespace-normalized
   const availableLabTests = useMemo(() => {
-    const serviceNames = new Set(laboratoryServices.map(s => s.name));
+    // Build normalized service name map for robust matching
+    const normalizedServiceMap = new Map<string, Service>();
+    laboratoryServices.forEach(service => {
+      const normalizedName = normalizeForMatching(service.name);
+      normalizedServiceMap.set(normalizedName, service);
+      
+      // Also try matching by service code if available (only if it doesn't conflict with existing name)
+      if (service.code) {
+        const normalizedCode = normalizeForMatching(service.code);
+        if (!normalizedServiceMap.has(normalizedCode)) {
+          normalizedServiceMap.set(normalizedCode, service);
+        }
+      }
+    });
+    
     const result: Record<LabTestCategory, string[]> = {
       blood: [],
       hormonal: [],
@@ -845,7 +868,10 @@ export default function Treatment() {
     
     // Filter tests from catalog that have corresponding active services
     Object.entries(commonTests).forEach(([category, tests]) => {
-      result[category as LabTestCategory] = tests.filter(testName => serviceNames.has(testName));
+      result[category as LabTestCategory] = tests.filter(testName => {
+        const normalizedTestName = normalizeForMatching(testName);
+        return normalizedServiceMap.has(normalizedTestName);
+      });
     });
     
     return result;
@@ -1189,11 +1215,16 @@ export default function Treatment() {
       if (selectedLabTests.length === 0) throw new Error("Please select at least one test");
       
       // STRICT CATALOG VALIDATION: Verify each selected test has a corresponding active service
+      // Use robust matching: case-insensitive, whitespace-normalized
       const missingServices: string[] = [];
       const testServiceMap = new Map<string, Service>();
       
       selectedLabTests.forEach(testName => {
-        const service = laboratoryServices.find(s => s.name === testName);
+        const normalizedTestName = normalizeForMatching(testName);
+        const service = laboratoryServices.find(s => 
+          normalizeForMatching(s.name) === normalizedTestName ||
+          (s.code && normalizeForMatching(s.code) === normalizedTestName)
+        );
         if (!service) {
           missingServices.push(testName);
         } else {
@@ -1212,41 +1243,29 @@ export default function Treatment() {
       // In a more complex system, you might create separate order lines for each test
       const firstService = testServiceMap.get(selectedLabTests[0])!;
       
-      // 2. Create the lab test record
-      // Use clinic timezone (Africa/Juba) for requestedDate to ensure consistent day classification
-      // across all pages (Treatment, Laboratory, Payments). Using UTC would cause records around
-      // midnight to be classified into wrong clinic day.
-      const labTestData = {
-        patientId: selectedPatient.patientId,
-        category: currentLabCategory,
-        tests: JSON.stringify(selectedLabTests),
-        priority: labPriority,
-        clinicalInfo: labClinicalInfo,
-        requestedDate: new Date().toISOString(),
-        serviceId: firstService.id, // Include serviceId for server-side validation
-      };
-      
-      const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);
-      const createdLabTest = await labTestRes.json();
-      
-      // 3. Create corresponding order_lines entry with proper serviceId and normalized relatedType
+      // Create order line with diagnostic data - server will auto-create lab test record
+      // relatedId is omitted; server creates the lab_test and links it automatically
       const orderLineData = {
         encounterId: currentEncounter.encounterId,
         serviceId: firstService.id,
-        relatedType: "lab_test", // Use canonical relatedType
-        relatedId: createdLabTest.testId,
+        relatedType: "lab_test",
         description: `Lab Tests: ${currentLabCategory} - ${selectedLabTests.join(", ")}`,
         quantity: 1,
         unitPriceSnapshot: firstService.price || 0,
         totalPrice: firstService.price || 0,
         department: "laboratory",
         orderedBy: user?.username || "Dr. System",
+        // Diagnostic data for server-side auto-creation
+        diagnosticData: {
+          category: currentLabCategory,
+          tests: JSON.stringify(selectedLabTests),
+          clinicalInfo: labClinicalInfo,
+          priority: labPriority,
+        }
       };
       
-      const orderLineRes = await apiRequest("POST", "/api/order-lines", orderLineData);
-      await orderLineRes.json();
-      
-      return createdLabTest;
+      const response = await apiRequest("POST", "/api/order-lines", orderLineData);
+      return await response.json();
     },
     onSuccess: () => {
       toast({ title: "Success", description: `${selectedLabTests.length} lab test(s) ordered successfully` });
