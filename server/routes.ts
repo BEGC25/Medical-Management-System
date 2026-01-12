@@ -971,10 +971,9 @@ router.get("/api/patients/:patientId/lab-tests", async (req, res) => {
 
 router.post("/api/lab-tests", async (req, res) => {
   return res.status(400).json({ 
-    error: "Direct Lab test creation not allowed",
-    details: "Lab tests must be ordered through the order-lines endpoint to ensure proper catalog integration.",
-    recommendation: "Please use the diagnostic ordering flow through encounters and order-lines API, or use the referral ordering UI for walk-in patients.",
-    endpoint: "POST /api/order-lines"
+    error: "Direct lab test creation is blocked",
+    message: "All diagnostic orders must go through POST /api/order-lines with a valid serviceId from Service Management",
+    code: "DIRECT_CREATION_BLOCKED"
   });
 });
 
@@ -1162,10 +1161,9 @@ router.get("/api/patients/:patientId/xray-exams", async (req, res) => {
 // This endpoint now only blocks direct creation to enforce catalog-driven ordering.
 router.post("/api/xray-exams", async (req, res) => {
   return res.status(400).json({ 
-    error: "Direct X-Ray exam creation not allowed",
-    details: "X-Ray exams must be ordered through the order-lines endpoint to ensure proper catalog integration.",
-    recommendation: "Please use the diagnostic ordering flow through encounters and order-lines API, or use the referral ordering UI for walk-in patients.",
-    endpoint: "POST /api/order-lines"
+    error: "Direct X-ray exam creation is blocked",
+    message: "All diagnostic orders must go through POST /api/order-lines with a valid serviceId from Service Management",
+    code: "DIRECT_CREATION_BLOCKED"
   });
 });
 
@@ -1284,10 +1282,9 @@ router.get("/api/patients/:patientId/ultrasound-exams", async (req, res) => {
 // This endpoint now only blocks direct creation to enforce catalog-driven ordering.
 router.post("/api/ultrasound-exams", async (req, res) => {
   return res.status(400).json({ 
-    error: "Direct Ultrasound exam creation not allowed",
-    details: "Ultrasound exams must be ordered through the order-lines endpoint to ensure proper catalog integration.",
-    recommendation: "Please use the diagnostic ordering flow through encounters and order-lines API, or use the referral ordering UI for walk-in patients.",
-    endpoint: "POST /api/order-lines"
+    error: "Direct ultrasound exam creation is blocked",
+    message: "All diagnostic orders must go through POST /api/order-lines with a valid serviceId from Service Management",
+    code: "DIRECT_CREATION_BLOCKED"
   });
 });
 
