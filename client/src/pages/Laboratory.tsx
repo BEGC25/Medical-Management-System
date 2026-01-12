@@ -56,6 +56,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useServicesByCategory } from "@/hooks/useServicesByCategory";
 
 import {
   insertLabTestSchema,
@@ -339,23 +340,6 @@ function usePatientSearch(term: string) {
     },
   });
 
-// 4) Fetch active laboratory services for catalog validation
-function useLaboratoryServices() {
-  return useQuery<Service[]>({
-    queryKey: ["/api/services", { category: "laboratory" }],
-    queryFn: async () => {
-      const url = new URL("/api/services", window.location.origin);
-      url.searchParams.set("category", "laboratory");
-      const response = await fetch(url.toString());
-      if (!response.ok) {
-        throw new Error("Failed to fetch laboratory services");
-      }
-      const allServices = await response.json();
-      // Filter to only active services on client side for extra safety
-      return allServices.filter((s: Service) => s.isActive);
-    },
-  });
-}
 }
 
 /* ------------------------------------------------------------------ */
@@ -447,7 +431,7 @@ export default function Laboratory() {
   // Refresh state
   
   // Fetch active laboratory services for catalog enforcement
-  const { data: laboratoryServices = [] } = useLaboratoryServices();
+  const { data: laboratoryServices = [] } = useServicesByCategory('laboratory');
   
   // Filter catalog tests to only those with active services
   // STRICT CATALOG ENFORCEMENT: Only show tests that exist as active services
