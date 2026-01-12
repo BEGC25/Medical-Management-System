@@ -527,3 +527,82 @@ export type PatientWithStatus = Patient & {
   lastVisit?: string; // Deprecated: Use dateOfService instead - kept for backward compatibility
   visitStatus?: "open" | "ready_to_bill" | "closed"; // Status of most recent encounter
 };
+
+/* ===================================================================
+ * RELATED TYPE NORMALIZATION HELPERS
+ * Provides backward compatibility for legacy relatedType values
+ * =================================================================== */
+
+/**
+ * Canonical relatedType values used in schema
+ */
+export type CanonicalRelatedType = "consultation" | "lab_test" | "xray_exam" | "ultrasound_exam" | "pharmacy_order" | "procedure";
+
+/**
+ * Legacy relatedType values that may appear in client code or database
+ */
+export type LegacyRelatedType = "lab" | "xray" | "ultrasound" | "lab_test_item";
+
+/**
+ * Normalizes legacy relatedType values to canonical schema values
+ * Ensures consistency across order_lines, payment_items, and related tables
+ * 
+ * @param relatedType - The relatedType value (legacy or canonical)
+ * @returns Canonical relatedType value or undefined if invalid
+ * 
+ * @example
+ * normalizeRelatedType("lab") // returns "lab_test"
+ * normalizeRelatedType("xray") // returns "xray_exam"
+ * normalizeRelatedType("lab_test") // returns "lab_test" (already canonical)
+ */
+export function normalizeRelatedType(relatedType: string | undefined | null): CanonicalRelatedType | undefined {
+  if (!relatedType) return undefined;
+  
+  // Legacy to canonical mapping
+  const legacyMap: Record<string, CanonicalRelatedType> = {
+    "lab": "lab_test",
+    "xray": "xray_exam",
+    "ultrasound": "ultrasound_exam",
+    "lab_test_item": "lab_test", // Normalize lab_test_item to lab_test
+  };
+  
+  // Check if it's a legacy value that needs mapping
+  if (relatedType in legacyMap) {
+    return legacyMap[relatedType];
+  }
+  
+  // Already canonical or valid
+  const canonicalValues: CanonicalRelatedType[] = [
+    "consultation", "lab_test", "xray_exam", "ultrasound_exam", "pharmacy_order", "procedure"
+  ];
+  
+  if (canonicalValues.includes(relatedType as CanonicalRelatedType)) {
+    return relatedType as CanonicalRelatedType;
+  }
+  
+  // Invalid value
+  console.warn(`[normalizeRelatedType] Unknown relatedType: ${relatedType}`);
+  return undefined;
+}
+
+/**
+ * Maps relatedType to corresponding department
+ * 
+ * @param relatedType - Canonical or legacy relatedType
+ * @returns Department name or undefined
+ */
+export function relatedTypeToDepartment(relatedType: string | undefined | null): "consultation" | "laboratory" | "radiology" | "ultrasound" | "pharmacy" | undefined {
+  const normalized = normalizeRelatedType(relatedType);
+  if (!normalized) return undefined;
+  
+  const departmentMap: Record<CanonicalRelatedType, "consultation" | "laboratory" | "radiology" | "ultrasound" | "pharmacy" | undefined> = {
+    "consultation": "consultation",
+    "lab_test": "laboratory",
+    "xray_exam": "radiology",
+    "ultrasound_exam": "ultrasound",
+    "pharmacy_order": "pharmacy",
+    "procedure": "consultation", // Procedures are typically done during consultation
+  };
+  
+  return departmentMap[normalized];
+}
