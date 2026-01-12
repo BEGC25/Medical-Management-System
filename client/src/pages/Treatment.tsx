@@ -433,7 +433,7 @@ function getMedicationStatusLabel(status: string): string {
 // ... (keep CATEGORY_ALIASES and matchesCategory as they are) ...
 const CATEGORY_ALIASES: Record<"lab" | "xray" | "ultrasound", string[]> = {
   lab: ["lab", "labs", "laboratory", "hematology", "chemistry", "microbiology"],
-  xray: ["xray", "x-ray", "radiology-xray", "radiology_xray", "radiology"],
+  xray: ["xray", "x-ray", "radiology-xray", "radiology_xray"], // Removed overly broad "radiology"
   ultrasound: ["ultrasound", "u/s", "sonography", "radiology-ultrasound"],
 };
 function matchesCategory(svc: any, active: keyof typeof CATEGORY_ALIASES) {
@@ -837,25 +837,19 @@ export default function Treatment() {
       .replace(/\s+/g, ' '); // Collapse multiple spaces to single space
   };
 
+  // Helper function for fuzzy matching that strips abbreviation suffixes
+  const normalizeForFuzzyMatch = (str: string): string => {
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/\s*\([^)]*\)\s*$/, '') // Remove trailing parenthetical like (CBC), (BT), (HCT)
+      .replace(/\s+/g, ' ');
+  };
+
   // Map lab test names from the catalog to their corresponding services
   // This ensures only tests with active services can be ordered
-  // Uses robust matching: case-insensitive, whitespace-normalized
+  // Uses fuzzy matching: strips abbreviations like (CBC), (BT), (HCT) for flexible matching
   const availableLabTests = useMemo(() => {
-    // Build normalized service name map for robust matching
-    const normalizedServiceMap = new Map<string, Service>();
-    laboratoryServices.forEach(service => {
-      const normalizedName = normalizeForMatching(service.name);
-      normalizedServiceMap.set(normalizedName, service);
-      
-      // Also try matching by service code if available (only if it doesn't conflict with existing name)
-      if (service.code) {
-        const normalizedCode = normalizeForMatching(service.code);
-        if (!normalizedServiceMap.has(normalizedCode)) {
-          normalizedServiceMap.set(normalizedCode, service);
-        }
-      }
-    });
-    
     const result: Record<LabTestCategory, string[]> = {
       blood: [],
       hormonal: [],
@@ -869,8 +863,17 @@ export default function Treatment() {
     // Filter tests from catalog that have corresponding active services
     Object.entries(commonTests).forEach(([category, tests]) => {
       result[category as LabTestCategory] = tests.filter(testName => {
-        const normalizedTestName = normalizeForMatching(testName);
-        return normalizedServiceMap.has(normalizedTestName);
+        const normalizedTestName = normalizeForFuzzyMatch(testName);
+        // Check if any service matches (with or without abbreviation)
+        return laboratoryServices.some(service => {
+          const normalizedServiceName = normalizeForFuzzyMatch(service.name);
+          // Exact match or service name starts with test name (for cases like "Blood Group" matching "Blood Group & Rh")
+          // Only allow startsWith if the service name has the test name as a complete prefix
+          // (service name must be test name + something, not just starting with same letters)
+          return normalizedServiceName === normalizedTestName || 
+                 (normalizedServiceName.startsWith(normalizedTestName + ' ') ||
+                  normalizedServiceName.startsWith(normalizedTestName + '('));
+        });
       });
     });
     
@@ -3216,21 +3219,36 @@ export default function Treatment() {
                                   (() => {
                                     // Enhanced X-Ray ordering with visual selector and safety checklist
                                     if (qoTab === 'xray') {
-                                      // STRICT CATALOG ENFORCEMENT: Find active radiology service
-                                      const xrayService = radiologyServices.find((s: any) => matchesCategory(s, 'xray'));
+                                      // STRICT CATALOG ENFORCEMENT: Find service that matches the selected exam type
+                                      const xrayService = radiologyServices.find((s: any) => {
+                                        const serviceName = (s.name || '').toLowerCase();
+                                        const examType = xrayExamType.toLowerCase();
+                                        
+                                        // Map exam types to expected service name patterns
+                                        const examTypePatterns: Record<string, string[]> = {
+                                          'chest': ['chest'],
+                                          'abdomen': ['abdomen', 'abdominal'],
+                                          'extremities': ['extremity', 'extremities', 'limb'],
+                                          'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
+                                          'skull': ['skull', 'head', 'cranial'],
+                                          'pelvis': ['pelvis', 'pelvic', 'hip'],
+                                        };
+                                        
+                                        const patterns = examTypePatterns[examType] || [examType];
+                                        return patterns.some(pattern => serviceName.includes(pattern));
+                                      });
                                       
-                                      // Show warning if no active radiology service exists
+                                      // Show warning if no matching service exists
                                       if (!xrayService) {
                                         return (
                                           <div className="p-6 text-center space-y-4">
                                             <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
                                             <div>
                                               <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
-                                                No Active X-Ray Service
+                                                No {xrayExamType} X-Ray Service
                                               </h3>
                                               <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                X-Ray examinations cannot be ordered because there is no active radiology service in the system.
-                                                Please contact administration to add or activate an X-Ray service in Service Management.
+                                                Please contact administration to add a "{xrayExamType} X-Ray" service in Service Management.
                                               </p>
                                             </div>
                                           </div>
@@ -3560,21 +3578,43 @@ export default function Treatment() {
 
                                     // Enhanced Ultrasound ordering with visual exam type cards
                                     if (qoTab === 'ultrasound') {
-                                      // STRICT CATALOG ENFORCEMENT: Find active ultrasound service
-                                      const ultrasoundService = ultrasoundServices.find((s: any) => matchesCategory(s, 'ultrasound'));
+                                      // STRICT CATALOG ENFORCEMENT: Find service that matches the selected exam type
+                                      const ultrasoundService = ultrasoundServices.find((s: any) => {
+                                        const serviceName = (s.name || '').toLowerCase();
+                                        const examType = ultrasoundExamType.toLowerCase();
+                                        
+                                        // Map exam types to expected service name patterns
+                                        const examTypePatterns: Record<string, string[]> = {
+                                          'obstetric': ['obstetric', 'pregnancy', 'ob'],
+                                          'abdominal': ['abdomen', 'abdominal'],
+                                          'pelvic': ['pelvis', 'pelvic'],
+                                          'thyroid': ['thyroid'],
+                                          'breast': ['breast'],
+                                          'cardiac': ['cardiac', 'echo', 'heart'],
+                                          'renal': ['renal', 'kidney'],
+                                          'vascular': ['vascular', 'doppler'],
+                                          'soft_tissue': ['soft tissue', 'superficial'],
+                                          'scrotal': ['scrotal', 'testicular'],
+                                          'neck': ['neck'],
+                                          'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
+                                          'thoracic': ['thoracic', 'chest'],
+                                        };
+                                        
+                                        const patterns = examTypePatterns[examType] || [examType];
+                                        return patterns.some(pattern => serviceName.includes(pattern));
+                                      });
                                       
-                                      // Show warning if no active ultrasound service exists
+                                      // Show warning if no matching service exists
                                       if (!ultrasoundService) {
                                         return (
                                           <div className="p-6 text-center space-y-4">
                                             <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
                                             <div>
                                               <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
-                                                No Active Ultrasound Service
+                                                No {ultrasoundExamType} Ultrasound Service
                                               </h3>
                                               <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                Ultrasound examinations cannot be ordered because there is no active ultrasound service in the system.
-                                                Please contact administration to add or activate an Ultrasound service in Service Management.
+                                                Please contact administration to add a "{ultrasoundExamType} Ultrasound" service in Service Management.
                                               </p>
                                             </div>
                                           </div>
