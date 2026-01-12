@@ -685,7 +685,7 @@ export default function Reports() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  Recent Activity
+                  Recent Activity (Overall)
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -788,11 +788,11 @@ export default function Reports() {
                       </div>
                       <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 tabular-nums">
                         <CountUp 
-                          end={stats?.pending?.labResults || 0}
+                          end={stats?.labTests || 0}
                           duration={2}
                         />
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending Labs</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Lab Tests</p>
                     </div>
                     <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20 hover:shadow-lg transition-all duration-200">
                       <div className="flex justify-center mb-2">
@@ -800,11 +800,11 @@ export default function Reports() {
                       </div>
                       <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 tabular-nums">
                         <CountUp 
-                          end={stats?.pending?.xrayReports || 0}
+                          end={stats?.xrays || 0}
                           duration={2}
                         />
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending X-Rays</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">X-Rays</p>
                     </div>
                     <div className="text-center p-4 border rounded-xl dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 hover:shadow-lg transition-all duration-200">
                       <div className="flex justify-center mb-2">
@@ -812,11 +812,11 @@ export default function Reports() {
                       </div>
                       <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">
                         <CountUp 
-                          end={stats?.pending?.ultrasoundReports ?? 0}
+                          end={stats?.ultrasounds ?? 0}
                           duration={2}
                         />
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pending Ultrasounds</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Ultrasounds</p>
                     </div>
                   </div>
                 </div>
