@@ -867,8 +867,12 @@ export default function Treatment() {
         // Check if any service matches (with or without abbreviation)
         return laboratoryServices.some(service => {
           const normalizedServiceName = normalizeForFuzzyMatch(service.name);
+          // Exact match or service name starts with test name (for cases like "Blood Group" matching "Blood Group & Rh")
+          // Only allow startsWith if the service name has the test name as a complete prefix
+          // (service name must be test name + something, not just starting with same letters)
           return normalizedServiceName === normalizedTestName || 
-                 normalizedServiceName.startsWith(normalizedTestName);
+                 (normalizedServiceName.startsWith(normalizedTestName + ' ') ||
+                  normalizedServiceName.startsWith(normalizedTestName + '('));
         });
       });
     });
