@@ -3149,7 +3149,16 @@ router.get("/api/reports/gender-distribution", async (req, res) => {
     // Calculate gender ratio (Male:Female)
     const male = genderCounts['Male'] || 0;
     const female = genderCounts['Female'] || 0;
-    const ratio = female > 0 ? `${(male / female).toFixed(2)}:1` : `${male}:0`;
+    let ratio: string;
+    if (male === 0 && female === 0) {
+      ratio = 'No data';
+    } else if (male === 0) {
+      ratio = `0:${female}`;
+    } else if (female === 0) {
+      ratio = `${male}:0`;
+    } else {
+      ratio = `${(male / female).toFixed(2)}:1`;
+    }
 
     res.json({
       distribution,
@@ -3358,12 +3367,13 @@ router.get("/api/reports/insights", async (req, res) => {
     const stats = await getDashboardStats(fromDate as string, toDate as string);
     
     // Calculate previous period for comparison
+    const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
     const fromDateTime = new Date(fromDate as string);
     const toDateTime = new Date(toDate as string);
     const dateRange = toDateTime.getTime() - fromDateTime.getTime();
     
     // Previous period ends 1 day before current period starts
-    const prevToDate = new Date(fromDateTime.getTime() - 24 * 60 * 60 * 1000);
+    const prevToDate = new Date(fromDateTime.getTime() - MILLISECONDS_PER_DAY);
     const prevFromDate = new Date(prevToDate.getTime() - dateRange);
     
     const prevStats = await getDashboardStats(

@@ -164,7 +164,7 @@ export default function Reports() {
         toDate: filters.toDate
       });
       const response = await fetch(`/api/reports/gender-distribution?${params}`);
-      if (!response.ok) return { distribution: [], total: 0, ratio: '0:0' };
+      if (!response.ok) return { distribution: [], total: 0, ratio: 'No data' };
       return response.json();
     },
   });
