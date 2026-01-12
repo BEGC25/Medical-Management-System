@@ -3768,29 +3768,30 @@ router.get("/api/reports/dashboard", async (req, res) => {
     const fromDateStr = fromDate as string;
     const toDateStr = toDate as string;
     
-    // Fetch current period stats
+    // Fetch current period stats (uses encounters for visits, which is correct)
     const stats = await getDashboardStats(fromDateStr, toDateStr);
     
     // Fetch diagnosis data
     const diagnosisData = await storage.getDiagnosisStats(fromDateStr, toDateStr);
     
-    // Fetch trends data
+    // Fetch trends data - use ENCOUNTERS not treatments to match getDashboardStats
+    // Visits are defined as ENCOUNTERS, not treatments (treatments can be 0, 1, or many per encounter)
     const startDate = fromDateStr;
     const endDate = toDateStr;
     
-    const allTreatments = await db.select({
-      visitDate: treatments.visitDate
-    }).from(treatments).where(
+    const allEncounters = await db.select({
+      visitDate: encounters.visitDate
+    }).from(encounters).where(
       and(
-        gte(treatments.visitDate, startDate),
-        lte(treatments.visitDate, endDate)
+        gte(encounters.visitDate, startDate),
+        lte(encounters.visitDate, endDate)
       )
     );
     
     // Count visits per day
     const visitCounts: Record<string, number> = {};
-    allTreatments.forEach((t: any) => {
-      const dayKey = t.visitDate.split('T')[0];
+    allEncounters.forEach((e: any) => {
+      const dayKey = e.visitDate.split('T')[0];
       visitCounts[dayKey] = (visitCounts[dayKey] || 0) + 1;
     });
     
@@ -3998,6 +3999,51 @@ router.get("/api/reports/dashboard", async (req, res) => {
     console.error("Unified dashboard endpoint error:", error);
     res.status(500).json({
       error: "Failed to fetch dashboard data",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Current Backlog Endpoint - Returns GLOBAL pending counts (all pending right now)
+router.get("/api/reports/backlog", async (req, res) => {
+  try {
+    console.log("Current backlog endpoint called");
+    
+    // Count ALL pending items regardless of date (current backlog)
+    const pendingLabsResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(labTests)
+      .where(eq(labTests.status, 'pending'));
+
+    const pendingXraysResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(xrayExams)
+      .where(eq(xrayExams.status, 'pending'));
+
+    const pendingUltrasoundsResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(ultrasoundExams)
+      .where(eq(ultrasoundExams.status, 'pending'));
+
+    const labResults = Number(pendingLabsResult[0]?.count) || 0;
+    const xrayReports = Number(pendingXraysResult[0]?.count) || 0;
+    const ultrasoundReports = Number(pendingUltrasoundsResult[0]?.count) || 0;
+
+    res.json({
+      total: labResults + xrayReports + ultrasoundReports,
+      labResults,
+      xrayReports,
+      ultrasoundReports,
+      metadata: {
+        scope: 'current',
+        description: 'All pending items system-wide right now',
+        generatedAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error("Current backlog endpoint error:", error);
+    res.status(500).json({
+      error: "Failed to fetch current backlog",
       details: error instanceof Error ? error.message : "Unknown error",
     });
   }
