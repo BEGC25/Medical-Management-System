@@ -970,58 +970,12 @@ router.get("/api/patients/:patientId/lab-tests", async (req, res) => {
 });
 
 router.post("/api/lab-tests", async (req, res) => {
-  try {
-    console.log("Creating lab test with data:", req.body);
-    const data = insertLabTestSchema.parse(req.body);
-    console.log("Parsed data:", data);
-    
-    // STRICT CATALOG ENFORCEMENT: Lab tests MUST be linked to an active service
-    // serviceId is REQUIRED for all lab test creation requests
-    const serviceId = req.body.serviceId as number | undefined;
-    if (!serviceId) {
-      return res.status(400).json({ 
-        error: "Service ID required",
-        details: "All lab tests must be linked to an active service. Please provide a serviceId.",
-        recommendation: "Select a laboratory service from Service Management before ordering tests."
-      });
-    }
-    
-    const service = await storage.getServiceById(serviceId);
-    if (!service) {
-      return res.status(400).json({ 
-        error: "Service not found",
-        details: `Service ID ${serviceId} does not exist in the catalog.`,
-        recommendation: "Please select a valid laboratory service from Service Management."
-      });
-    }
-    
-    if (!service.isActive) {
-      return res.status(400).json({ 
-        error: "Service is inactive",
-        details: `Service '${service.name}' is not currently active.`,
-        recommendation: "Please contact administration or select a different active service."
-      });
-    }
-    
-    if (service.category !== "laboratory") {
-      return res.status(400).json({ 
-        error: "Service category mismatch",
-        details: `Service '${service.name}' is a ${service.category} service, not a laboratory service.`
-      });
-    }
-    
-    const labTest = await storage.createLabTest(data);
-    console.log("Created lab test:", labTest);
-    res.status(201).json(labTest);
-  } catch (error) {
-    console.error("Error creating lab test:", error);
-    if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({ error: "Invalid lab test data", details: error.errors });
-    }
-    res.status(500).json({ error: "Failed to create lab test" });
-  }
+  return res.status(400).json({ 
+    error: "Direct Lab test creation not allowed",
+    details: "Lab tests must be ordered through the order-lines endpoint to ensure proper catalog integration.",
+    recommendation: "Please use the diagnostic ordering flow through encounters and order-lines API, or use the referral ordering UI for walk-in patients.",
+    endpoint: "POST /api/order-lines"
+  });
 });
 
 router.put("/api/lab-tests/:testId", async (req, res) => {
