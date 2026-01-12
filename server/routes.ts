@@ -2702,8 +2702,22 @@ router.put("/api/orders/:orderId/cart", async (req, res) => {
 
 /* --------------------------------- Order lines -------------------------------- */
 
-router.post("/api/order-lines", async (req: any, res) => {
+// RBAC for diagnostic ordering: Allow ADMIN and DOCTOR only (not RECEPTION)
+// Reception can view/update order lines for billing, but cannot create diagnostic orders
+router.post("/api/order-lines", requireAuth, async (req: any, res) => {
   try {
+    // Check if this is a diagnostic order (xray_exam, ultrasound_exam, lab_test)
+    const relatedType = req.body.relatedType;
+    const isDiagnosticOrder = ["xray", "xray_exam", "ultrasound", "ultrasound_exam", "lab", "lab_test"].includes(relatedType);
+    
+    // Block Reception from creating diagnostic orders
+    if (isDiagnosticOrder && req.user?.role === ROLES.RECEPTION) {
+      return res.status(403).json({
+        error: "Insufficient permissions",
+        details: "Reception staff cannot order diagnostics. Only Doctors can order from Treatment, and Admins can order referrals.",
+      });
+    }
+    
     const result = insertOrderLineSchema.safeParse(req.body);
     if (!result.success) {
       return res
