@@ -824,6 +824,33 @@ export default function Treatment() {
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
   const { data: drugs = [] } = useQuery<Drug[]>({ queryKey: ["/api/pharmacy/drugs"] });
   
+  // Filter laboratory services - only show active lab services
+  const laboratoryServices = useMemo(() => {
+    return services.filter(s => s.category === 'laboratory' && s.isActive);
+  }, [services]);
+
+  // Map lab test names from the catalog to their corresponding services
+  // This ensures only tests with active services can be ordered
+  const availableLabTests = useMemo(() => {
+    const serviceNames = new Set(laboratoryServices.map(s => s.name));
+    const result: Record<LabTestCategory, string[]> = {
+      blood: [],
+      hormonal: [],
+      microbiology: [],
+      urine: [],
+      chemistry: [],
+      stool: [],
+      other: [],
+    };
+    
+    // Filter tests from catalog that have corresponding active services
+    Object.entries(commonTests).forEach(([category, tests]) => {
+      result[category as LabTestCategory] = tests.filter(testName => serviceNames.has(testName));
+    });
+    
+    return result;
+  }, [laboratoryServices]);
+  
   // Filter drugs based on search query and group by category
   const filteredDrugs = useMemo(() => {
     return drugs.filter(drug => 
@@ -1151,12 +1178,29 @@ export default function Treatment() {
       if (!currentEncounter) throw new Error("No active encounter");
       if (selectedLabTests.length === 0) throw new Error("Please select at least one test");
       
-      // 1. Find lab service from catalog (similar to how consultation is found)
-      const labService = services.find((s) => s.category === "laboratory");
-      if (!labService) throw new Error("Laboratory service not found in catalog");
-      if (!labService.price) {
-        console.warn("Laboratory service has no price set in catalog");
+      // STRICT CATALOG VALIDATION: Verify each selected test has a corresponding active service
+      const missingServices: string[] = [];
+      const testServiceMap = new Map<string, Service>();
+      
+      selectedLabTests.forEach(testName => {
+        const service = laboratoryServices.find(s => s.name === testName);
+        if (!service) {
+          missingServices.push(testName);
+        } else {
+          testServiceMap.set(testName, service);
+        }
+      });
+      
+      if (missingServices.length > 0) {
+        throw new Error(
+          `Cannot order the following test(s) - not found in active service catalog: ${missingServices.join(", ")}. ` +
+          `Please contact administration to add these tests to Service Management.`
+        );
       }
+      
+      // For simplicity, use the first test's service for the order
+      // In a more complex system, you might create separate order lines for each test
+      const firstService = testServiceMap.get(selectedLabTests[0])!;
       
       // 2. Create the lab test record
       // Use clinic timezone (Africa/Juba) for requestedDate to ensure consistent day classification
@@ -1174,18 +1218,18 @@ export default function Treatment() {
       const labTestRes = await apiRequest("POST", "/api/lab-tests", labTestData);
       const createdLabTest = await labTestRes.json();
       
-      // 3. Create corresponding order_lines entry (like X-ray/Ultrasound do)
+      // 3. Create corresponding order_lines entry with proper serviceId and normalized relatedType
       const orderLineData = {
         encounterId: currentEncounter.encounterId,
-        serviceId: labService.id,
-        relatedType: "lab",
+        serviceId: firstService.id,
+        relatedType: "lab_test", // Use canonical relatedType
         relatedId: createdLabTest.testId,
         description: `Lab Tests: ${currentLabCategory} - ${selectedLabTests.join(", ")}`,
         quantity: 1,
-        unitPriceSnapshot: labService.price || 0,
-        totalPrice: labService.price || 0,
+        unitPriceSnapshot: firstService.price || 0,
+        totalPrice: firstService.price || 0,
         department: "laboratory",
-        orderedBy: "Dr. System",
+        orderedBy: user?.username || "Dr. System",
       };
       
       const orderLineRes = await apiRequest("POST", "/api/order-lines", orderLineData);
@@ -3051,17 +3095,24 @@ export default function Treatment() {
                                     <div>
                                       <label className="text-sm font-medium mb-2 block">Specific Tests in Category</label>
                                       <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
-                                        {commonTests[currentLabCategory].map((test) => (
-                                          <label key={test} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
-                                            <Checkbox
-                                              checked={selectedLabTests.includes(test)}
-                                              onCheckedChange={() => handleLabTestToggle(test)}
-                                              data-testid={`checkbox-lab-test-${test}`}
-                                              className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                                            />
-                                            <span className="text-sm">{test}</span>
-                                          </label>
-                                        ))}
+                                        {availableLabTests[currentLabCategory].length === 0 ? (
+                                          <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+                                            <p className="mb-2">⚠️ No active tests available in this category</p>
+                                            <p className="text-xs">Please add tests to Service Management or select a different category</p>
+                                          </div>
+                                        ) : (
+                                          availableLabTests[currentLabCategory].map((test) => (
+                                            <label key={test} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
+                                              <Checkbox
+                                                checked={selectedLabTests.includes(test)}
+                                                onCheckedChange={() => handleLabTestToggle(test)}
+                                                data-testid={`checkbox-lab-test-${test}`}
+                                                className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                              />
+                                              <span className="text-sm">{test}</span>
+                                            </label>
+                                          ))
+                                        )}
                                       </div>
                                       {selectedLabTests.length > 0 && (
                                         <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
@@ -5563,21 +5614,27 @@ export default function Treatment() {
                 Select Tests ({editLabTests.length} selected)
               </label>
               <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
-                {commonTests[editLabCategory].map((test) => (
-                  <div key={test} className="flex items-center gap-2">
-                    <Checkbox
-                      checked={editLabTests.includes(test)}
-                      onCheckedChange={() => handleEditLabTestToggle(test)}
-                      id={`edit-test-${test}`}
-                    />
-                    <label
-                      htmlFor={`edit-test-${test}`}
-                      className="text-sm cursor-pointer flex-1"
-                    >
-                      {test}
-                    </label>
-                  </div>
-                ))}
+                {availableLabTests[editLabCategory].length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                    No active tests available in this category
+                  </p>
+                ) : (
+                  availableLabTests[editLabCategory].map((test) => (
+                    <div key={test} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={editLabTests.includes(test)}
+                        onCheckedChange={() => handleEditLabTestToggle(test)}
+                        id={`edit-test-${test}`}
+                      />
+                      <label
+                        htmlFor={`edit-test-${test}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {test}
+                      </label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

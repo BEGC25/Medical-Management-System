@@ -124,6 +124,79 @@ const requireDoctor = requireRole(ROLES.DOCTOR);
 const requireLab = requireRole(ROLES.LAB);
 const requireRadiology = requireRole(ROLES.RADIOLOGY);
 
+/* ----------------------------- Prepayment Enforcement Helpers ----------------------------- */
+
+/**
+ * Checks if a diagnostic update requires prepayment enforcement
+ * 
+ * Prepayment is required when:
+ * - Status is changing to 'completed'
+ * - Results/findings are being entered for the first time
+ * - The exam is being marked as performed
+ * 
+ * @param currentData - Current diagnostic record from database
+ * @param updateData - Proposed update data
+ * @param diagnosticType - Type of diagnostic (lab_test, xray_exam, ultrasound_exam)
+ * @returns true if update requires payment, false otherwise
+ */
+function requiresPrepayment(
+  currentData: any,
+  updateData: any,
+  diagnosticType: "lab_test" | "xray_exam" | "ultrasound_exam"
+): boolean {
+  // If status is being changed to 'completed', payment is required
+  if (updateData.status === 'completed' && currentData.status !== 'completed') {
+    return true;
+  }
+
+  // If results/findings are being entered for the first time, payment is required
+  if (diagnosticType === 'lab_test') {
+    // Lab test: check if results are being added
+    if (updateData.results && !currentData.results) {
+      return true;
+    }
+  } else if (diagnosticType === 'xray_exam') {
+    // X-ray: check if findings are being added
+    if (updateData.findings && !currentData.findings) {
+      return true;
+    }
+  } else if (diagnosticType === 'ultrasound_exam') {
+    // Ultrasound: check if findings are being added
+    if (updateData.findings && !currentData.findings) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Validates that a diagnostic exam has been paid before allowing result entry
+ * 
+ * @param paymentStatus - Current payment status
+ * @param diagnosticType - Type of diagnostic
+ * @param diagnosticId - ID of the diagnostic
+ * @returns Error response object if not paid, null if paid
+ */
+function validatePrepayment(
+  paymentStatus: string,
+  diagnosticType: string,
+  diagnosticId: string
+): { status: number; json: any } | null {
+  if (paymentStatus !== 'paid') {
+    return {
+      status: 402, // Payment Required
+      json: {
+        error: "Payment required",
+        message: `Cannot perform ${diagnosticType.replace('_', ' ')} until payment has been received. Please collect payment before entering results.`,
+        diagnosticId,
+        paymentStatus,
+      }
+    };
+  }
+  return null;
+}
+
 /* ----------------------------- Public Authentication Routes ----------------------------- */
 // ⚠️ IMPORTANT: These routes MUST be defined BEFORE the global requireAuth middleware
 // so they remain accessible without authentication
@@ -885,9 +958,33 @@ router.post("/api/lab-tests", async (req, res) => {
 router.put("/api/lab-tests/:testId", async (req, res) => {
   try {
     const data = req.body;
+    
+    // Get current lab test to check payment status and current state
+    const allTests = await storage.getLabTests();
+    const currentLabTest = allTests.find(t => t.testId === req.params.testId);
+    
+    if (!currentLabTest) {
+      return res.status(404).json({ error: "Lab test not found" });
+    }
+
+    // PREPAYMENT ENFORCEMENT: Check if this update requires payment
+    if (requiresPrepayment(currentLabTest, data, 'lab_test')) {
+      const paymentError = validatePrepayment(
+        currentLabTest.paymentStatus,
+        'lab_test',
+        req.params.testId
+      );
+      
+      if (paymentError) {
+        console.log(`[Lab Test Update] Payment required for ${req.params.testId}. Current status: ${currentLabTest.paymentStatus}`);
+        return res.status(paymentError.status).json(paymentError.json);
+      }
+    }
+
     const labTest = await storage.updateLabTest(req.params.testId, data);
     res.json(labTest);
   } catch (error) {
+    console.error("Error updating lab test:", error);
     res.status(500).json({ error: "Failed to update lab test" });
   }
 });
@@ -1056,9 +1153,33 @@ router.post("/api/xray-exams", async (req, res) => {
 router.put("/api/xray-exams/:examId", async (req, res) => {
   try {
     const data = req.body;
+    
+    // Get current X-ray exam to check payment status and current state
+    const allExams = await storage.getXrayExams();
+    const currentExam = allExams.find(e => e.examId === req.params.examId);
+    
+    if (!currentExam) {
+      return res.status(404).json({ error: "X-ray exam not found" });
+    }
+
+    // PREPAYMENT ENFORCEMENT: Check if this update requires payment
+    if (requiresPrepayment(currentExam, data, 'xray_exam')) {
+      const paymentError = validatePrepayment(
+        currentExam.paymentStatus,
+        'xray_exam',
+        req.params.examId
+      );
+      
+      if (paymentError) {
+        console.log(`[X-Ray Update] Payment required for ${req.params.examId}. Current status: ${currentExam.paymentStatus}`);
+        return res.status(paymentError.status).json(paymentError.json);
+      }
+    }
+
     const xrayExam = await storage.updateXrayExam(req.params.examId, data);
     res.json(xrayExam);
   } catch (error) {
+    console.error("Error updating X-ray exam:", error);
     res.status(500).json({ error: "Failed to update X-ray exam" });
   }
 });
@@ -1158,12 +1279,36 @@ router.post("/api/ultrasound-exams", async (req, res) => {
 router.put("/api/ultrasound-exams/:examId", async (req, res) => {
   try {
     const data = req.body;
+    
+    // Get current ultrasound exam to check payment status and current state
+    const allExams = await storage.getUltrasoundExams();
+    const currentExam = allExams.find(e => e.examId === req.params.examId);
+    
+    if (!currentExam) {
+      return res.status(404).json({ error: "Ultrasound exam not found" });
+    }
+
+    // PREPAYMENT ENFORCEMENT: Check if this update requires payment
+    if (requiresPrepayment(currentExam, data, 'ultrasound_exam')) {
+      const paymentError = validatePrepayment(
+        currentExam.paymentStatus,
+        'ultrasound_exam',
+        req.params.examId
+      );
+      
+      if (paymentError) {
+        console.log(`[Ultrasound Update] Payment required for ${req.params.examId}. Current status: ${currentExam.paymentStatus}`);
+        return res.status(paymentError.status).json(paymentError.json);
+      }
+    }
+
     const ultrasoundExam = await storage.updateUltrasoundExam(
       req.params.examId,
       data
     );
     res.json(ultrasoundExam);
   } catch (error) {
+    console.error("Error updating ultrasound exam:", error);
     res.status(500).json({ error: "Failed to update ultrasound exam" });
   }
 });
@@ -2505,7 +2650,60 @@ router.post("/api/order-lines", async (req: any, res) => {
         .json({ error: "Invalid order line data", details: result.error.errors });
     }
 
-    const orderLine = await storage.createOrderLine(result.data);
+    // Import normalization helpers
+    const { normalizeRelatedType, relatedTypeToDepartment } = await import("@shared/schema");
+
+    // Validate and normalize relatedType
+    const normalizedRelatedType = normalizeRelatedType(result.data.relatedType);
+    if (!normalizedRelatedType) {
+      return res.status(400).json({ 
+        error: "Invalid relatedType",
+        details: `relatedType '${result.data.relatedType}' is not valid` 
+      });
+    }
+
+    // STRICT CATALOG VALIDATION: Ensure service exists and is active
+    const service = await storage.getServiceById(result.data.serviceId);
+    if (!service) {
+      return res.status(400).json({ 
+        error: "Service not found",
+        details: `Service ID ${result.data.serviceId} does not exist in the catalog` 
+      });
+    }
+
+    if (!service.isActive) {
+      return res.status(400).json({ 
+        error: "Service is inactive",
+        details: `Service '${service.name}' is not currently active. Please contact administration.` 
+      });
+    }
+
+    // Validate that service category matches the relatedType
+    // Map service categories to expected relatedTypes
+    const categoryToRelatedType: Record<string, string[]> = {
+      "laboratory": ["lab_test"],
+      "radiology": ["xray_exam"],
+      "ultrasound": ["ultrasound_exam"],
+      "consultation": ["consultation", "procedure"],
+      "pharmacy": ["pharmacy_order"],
+      "procedure": ["procedure", "consultation"],
+    };
+
+    const expectedRelatedTypes = categoryToRelatedType[service.category] || [];
+    if (!expectedRelatedTypes.includes(normalizedRelatedType)) {
+      return res.status(400).json({ 
+        error: "Service category mismatch",
+        details: `Service '${service.name}' is a ${service.category} service but you are trying to order it as ${normalizedRelatedType}` 
+      });
+    }
+
+    // Create order line with normalized relatedType
+    const orderLineData = {
+      ...result.data,
+      relatedType: normalizedRelatedType,
+    };
+
+    const orderLine = await storage.createOrderLine(orderLineData);
 
     // WORKFLOW FIX: Auto-create pending lab/xray/ultrasound records so they appear in Laboratory and Payment pages
     const encounter = await storage.getEncounterById(result.data.encounterId);
@@ -2517,30 +2715,31 @@ router.post("/api/order-lines", async (req: any, res) => {
     let relatedId = result.data.relatedId || null;
 
     if (!relatedId) {
-      if (result.data.relatedType === "lab") {
+      if (normalizedRelatedType === "lab_test") {
         // Create pending lab test
         const labTest = await storage.createLabTest({
           patientId: encounter.patientId,
-          category: "general",
+          category: "other",
           tests: JSON.stringify([result.data.description]),
           priority: "routine",
           requestedDate: new Date().toISOString(),
         });
         relatedId = labTest.testId;
-      } else if (result.data.relatedType === "xray") {
+      } else if (normalizedRelatedType === "xray_exam") {
         // Create pending X-ray exam
         const xrayExam = await storage.createXrayExam({
           patientId: encounter.patientId,
-          examType: result.data.description,
+          examType: "chest", // Default to chest, will be updated by user
           bodyPart: result.data.description,
           requestedDate: new Date().toISOString(),
         });
         relatedId = xrayExam.examId;
-      } else if (result.data.relatedType === "ultrasound") {
+      } else if (normalizedRelatedType === "ultrasound_exam") {
         // Create pending ultrasound exam
         const ultrasoundExam = await storage.createUltrasoundExam({
           patientId: encounter.patientId,
-          examType: result.data.description,
+          examType: "abdominal", // Default to abdominal, will be updated by user
+          specificExam: result.data.description,
           requestedDate: new Date().toISOString(),
         });
         relatedId = ultrasoundExam.examId;
