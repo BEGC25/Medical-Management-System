@@ -43,6 +43,12 @@ interface ReportFilters {
   toDate: string;
 }
 
+interface ApiInsight {
+  icon: string;
+  text: string;
+  type: 'positive' | 'warning' | 'info';
+}
+
 interface DashboardStats {
   totalPatients?: number; // Patients registered in range (from /api/reports/summary)
   newPatients: number;    // Legacy field (kept for compatibility)
@@ -181,7 +187,7 @@ export default function Reports() {
   });
 
   // Fetch AI insights
-  const { data: insights = [], isLoading: insightsLoading } = useQuery<any[]>({
+  const { data: insights = [], isLoading: insightsLoading } = useQuery<ApiInsight[]>({
     queryKey: ["/api/reports/insights", filters.fromDate, filters.toDate],
     queryFn: async () => {
       const params = new URLSearchParams({

@@ -3325,8 +3325,8 @@ async function getDashboardStats(fromDate: string, toDate: string) {
     return acc;
   }, {});
 
-  const topDiagnosis = Object.entries(diagnosisCounts)
-    .sort(([, a], [, b]) => (b as number) - (a as number))[0];
+  const diagnosisEntries = Object.entries(diagnosisCounts).sort(([, a], [, b]) => (b as number) - (a as number));
+  const topDiagnosis = diagnosisEntries.length > 0 ? diagnosisEntries[0] : null;
 
   return {
     totalVisits,
@@ -3341,7 +3341,7 @@ async function getDashboardStats(fromDate: string, toDate: string) {
     },
     topDiagnosis: topDiagnosis ? {
       name: topDiagnosis[0],
-      count: topDiagnosis[1]
+      count: topDiagnosis[1] as number
     } : null
   };
 }
@@ -3358,8 +3358,12 @@ router.get("/api/reports/insights", async (req, res) => {
     const stats = await getDashboardStats(fromDate as string, toDate as string);
     
     // Calculate previous period for comparison
-    const dateRange = new Date(toDate as string).getTime() - new Date(fromDate as string).getTime();
-    const prevToDate = new Date(new Date(fromDate as string).getTime() - 1);
+    const fromDateTime = new Date(fromDate as string);
+    const toDateTime = new Date(toDate as string);
+    const dateRange = toDateTime.getTime() - fromDateTime.getTime();
+    
+    // Previous period ends 1 day before current period starts
+    const prevToDate = new Date(fromDateTime.getTime() - 24 * 60 * 60 * 1000);
     const prevFromDate = new Date(prevToDate.getTime() - dateRange);
     
     const prevStats = await getDashboardStats(
