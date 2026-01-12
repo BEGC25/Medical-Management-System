@@ -3704,7 +3704,8 @@ router.get("/api/reports/dashboard", async (req, res) => {
     // Fetch diagnosis data
     const diagnosisData = await storage.getDiagnosisStats(fromDateStr, toDateStr);
     
-    // Fetch trends data - use ENCOUNTERS not treatments
+    // Fetch trends data - use ENCOUNTERS not treatments to match getDashboardStats
+    // Visits are defined as ENCOUNTERS, not treatments (treatments can be 0, 1, or many per encounter)
     const startDate = fromDateStr;
     const endDate = toDateStr;
     

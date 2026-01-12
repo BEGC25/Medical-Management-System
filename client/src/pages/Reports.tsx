@@ -282,16 +282,19 @@ export default function Reports() {
       [`Report Type: ${filters.reportType}`],
       [`Date Range: ${filters.fromDate} to ${filters.toDate}`],
       [''],
-      ['Summary Statistics'],
+      ['Summary Statistics (Period-Scoped)'],
       ['Metric', 'Count'],
       ['Total Patients', stats.totalPatients || stats.newPatients || 0],
       ['Total Visits', stats.totalVisits || 0],
       ['Lab Tests', stats.labTests || 0],
       ['X-rays', stats.xrays || 0],
       ['Ultrasounds', stats.ultrasounds || 0],
-      ['Pending Lab Results', stats.pending?.labResults || 0],
-      ['Pending X-ray Reports', stats.pending?.xrayReports || 0],
-      ['Pending Ultrasound Reports', stats.pending?.ultrasoundReports || 0],
+      [''],
+      ['Current Pending Backlog (All Pending Right Now)'],
+      ['Metric', 'Count'],
+      ['Pending Lab Results', pendingBacklog?.labResults || 0],
+      ['Pending X-ray Reports', pendingBacklog?.xrayReports || 0],
+      ['Pending Ultrasound Reports', pendingBacklog?.ultrasoundReports || 0],
       [''],
       ['Recent Patients'],
       ['Patient ID', 'Name', 'Date of Birth', 'Gender', 'Status']
@@ -379,7 +382,7 @@ export default function Reports() {
               <div><strong>Generated:</strong> ${currentDate}</div>
             </div>
 
-            <div class="report-title">Summary Statistics</div>
+            <div class="report-title">Summary Statistics (Period: ${filters.fromDate} to ${filters.toDate})</div>
             <div class="stats-grid">
               <div class="stat-item">
                 <div class="stat-label">Total Patients</div>
@@ -402,8 +405,8 @@ export default function Reports() {
                 <div class="stat-value">${stats.ultrasounds || 0}</div>
               </div>
               <div class="stat-item">
-                <div class="stat-label">Pending Results</div>
-                <div class="stat-value">${(stats.pending?.labResults || 0) + (stats.pending?.xrayReports || 0) + (stats.pending?.ultrasoundReports || 0)}</div>
+                <div class="stat-label">Current Pending Backlog</div>
+                <div class="stat-value">${(pendingBacklog?.labResults || 0) + (pendingBacklog?.xrayReports || 0) + (pendingBacklog?.ultrasoundReports || 0)}</div>
               </div>
             </div>
 
