@@ -858,12 +858,13 @@ return (
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => setRequestOpen(true)}
-                  className="bg-gradient-to-r from-teal-600 to-emerald-500 hover:shadow-lg hover:shadow-teal-500/40 transition-all duration-300"
+                  disabled
+                  className="bg-gray-300 dark:bg-gray-700 cursor-not-allowed opacity-50"
                   data-testid="button-new-lab-request"
+                  title="Lab tests must be ordered by doctors from Treatment page or by admins from Patients page"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  New Request
+                  New Request (Disabled)
                 </Button>
               </div>
             </div>
