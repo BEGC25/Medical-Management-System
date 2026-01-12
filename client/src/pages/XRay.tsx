@@ -62,6 +62,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
+import { useServicesByCategory } from '@/hooks/useServicesByCategory';
 
 import {
   insertXrayExamSchema,
@@ -199,23 +200,6 @@ function usePatientSearch(term: string) {
 /* ------------------------------------------------------------------ */
 
 
-// Fetch active radiology services for catalog validation
-function useRadiologyServices() {
-  return useQuery<Service[]>({
-    queryKey: ['/api/services', { category: 'radiology' }],
-    queryFn: async () => {
-      const url = new URL('/api/services', window.location.origin);
-      url.searchParams.set('category', 'radiology');
-      const response = await fetch(url.toString());
-      if (!response.ok) {
-        throw new Error('Failed to fetch radiology services');
-      }
-      const allServices = await response.json();
-      // Filter to only active services
-      return allServices.filter((s: Service) => s.isActive);
-    },
-  });
-}
 export default function XRay() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -318,7 +302,7 @@ export default function XRay() {
   /* ----------------------------- Data ----------------------------- */
 
   const { data: allXrayExams = [], refetch: refetchXrayExams } = useXrayExams(dateFilter, customStartDate, customEndDate);
-  const { data: radiologyServices = [] } = useRadiologyServices();
+  const { data: radiologyServices = [] } = useServicesByCategory('radiology');
   
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);

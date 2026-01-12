@@ -67,6 +67,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
+import { useServicesByCategory } from '@/hooks/useServicesByCategory';
 
 import {
   insertUltrasoundExamSchema,
@@ -182,19 +183,6 @@ function usePatientSearch(term: string) {
   });
 }
 
-function useUltrasoundServices() {
-  return useQuery<Array<{ id: number; name: string; price: number }>>({
-    queryKey: ['/api/services', { category: 'ultrasound' }],
-    queryFn: async () => {
-      const url = new URL('/api/services', window.location.origin);
-      url.searchParams.set('category', 'ultrasound');
-      const res = await fetch(url.toString());
-      if (!res.ok) return [];
-      return res.json();
-    },
-  });
-}
-
 /* ------------------------------------------------------------------ */
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
@@ -297,7 +285,7 @@ export default function Ultrasound() {
   /* ----------------------------- Data ----------------------------- */
 
   const { data: allUltrasoundExams = [], refetch: refetchUltrasoundExams } = useUltrasoundExams(dateFilter, customStartDate, customEndDate);
-  const { data: ultrasoundServices = [] } = useUltrasoundServices();
+  const { data: ultrasoundServices = [] } = useServicesByCategory('ultrasound');
   
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
