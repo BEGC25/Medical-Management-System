@@ -1063,7 +1063,7 @@ export default function Treatment() {
   // unified orders for this visit
   const activeEncounterId = visitId ? loadedVisit?.encounter?.encounterId : currentEncounter?.encounterId;
   // Type as any[] since orders contain mixed types with additional backend properties
-  const { data: orders = [] } = useQuery<any[]>({
+  const { data: orders = [], isLoading: ordersLoading } = useQuery<any[]>({
     queryKey: ["/api/visits", activeEncounterId, "orders"],
     queryFn: async () => {
       if (!activeEncounterId) return [];
@@ -1841,24 +1841,32 @@ export default function Treatment() {
   // ---------- behavior wiring ----------
   // auto-add consultation (once per visit)
   useEffect(() => {
+    // Don't run until encounter and services are available
     if (!currentEncounter || !services.length) return;
+    
+    // CRITICAL: Wait for orders to finish loading before deciding
+    // This prevents adding consultation when orders array is still empty/loading
+    if (ordersLoading) return;
     
     const encounterId = currentEncounter.encounterId;
     
-    // Check if we've already added consultation for this encounter
-    if (consultationAddedRef.current.has(encounterId)) return;
-    
-    // Check if consultation already exists in orders
+    // Check if consultation already exists in database (via orders)
     const hasConsult = orders.some((o: any) => o.type === "consultation");
     
-    // If no consultation exists and we're not already adding one, add it
-    if (!hasConsult && !addConsultationMutation.isPending) {
-      // Mark as added immediately to prevent race conditions
-      consultationAddedRef.current.add(encounterId);
-      addConsultationMutation.mutate();
-    }
+    // If consultation exists, don't add another
+    if (hasConsult) return;
+    
+    // Check if we've already triggered mutation for this encounter in this session
+    if (consultationAddedRef.current.has(encounterId)) return;
+    
+    // Check if mutation is already in progress
+    if (addConsultationMutation.isPending) return;
+    
+    // Mark as added and trigger mutation
+    consultationAddedRef.current.add(encounterId);
+    addConsultationMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEncounter?.encounterId, services.length]);
+  }, [currentEncounter?.encounterId, services.length, orders, ordersLoading]);
 
   // ---------- handlers ----------
   // ... (keep handlers: handleCloseVisit, handleSubmit, handlePatientSelect, etc.) ...
