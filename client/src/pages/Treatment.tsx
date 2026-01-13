@@ -799,11 +799,19 @@ export default function Treatment() {
     },
   });
 
-  // Filter out soft-deleted patients AND referral/diagnostic-only patients
-  // Referral patients should not appear in the doctor's treatment queue
-  const activePatients = allPatients.filter((p: any) => 
-    !p.is_deleted && p.patientType !== "referral_diagnostic"
-  );
+  // Helper function to determine if a patient should appear in the treatment queue
+  const isTreatmentQueuePatient = (patient: any): boolean => {
+    // Exclude soft-deleted patients
+    if (patient.is_deleted) return false;
+    
+    // Exclude referral/diagnostic-only patients (they don't see the doctor)
+    if (patient.patientType === "referral_diagnostic") return false;
+    
+    return true;
+  };
+
+  // Filter patients for the treatment queue
+  const activePatients = allPatients.filter(isTreatmentQueuePatient);
   const activePatientIds = new Set(activePatients.map((p) => p.patientId));
 
   const getPatientName = (patientId: string): string => {

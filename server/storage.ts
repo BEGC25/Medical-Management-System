@@ -552,8 +552,9 @@ export class MemStorage implements IStorage {
         : "Patient registered at reception.",
     });
 
-    // 3. Create Consultation Order Line (skip for referral patients)
-    // Referral patients do NOT get a consultation fee
+    // Create Consultation Order Line (skip for referral/diagnostic-only patients)
+    // Regular patients get a consultation order with optional payment collection
+    // Referral patients do NOT get a consultation fee at all
     if (patient.patientType !== "referral_diagnostic") {
       const orderLine = await this.createOrderLine({
         encounterId: encounter.encounterId,
