@@ -204,13 +204,13 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         {/* Signature Section - Professional with adequate space */}
         <div className="grid grid-cols-2 gap-12 mt-6 mb-3 invoice-section">
           <div>
-            <div className="border-t-2 border-gray-800 pt-2 mt-20">
+            <div className="border-t-2 border-gray-800 pt-2 mt-12">
               <p className="text-sm font-bold text-gray-900">Authorized By:</p>
               <p className="text-xs text-gray-600">Billing Department</p>
             </div>
           </div>
           <div>
-            <div className="border-t-2 border-gray-800 pt-2 mt-20">
+            <div className="border-t-2 border-gray-800 pt-2 mt-12">
               <p className="text-sm font-bold text-gray-900">Date:</p>
               <p className="text-xs text-gray-600">{new Date().toLocaleDateString('en-US', { 
                 month: 'short', 
