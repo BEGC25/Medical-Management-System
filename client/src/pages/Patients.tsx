@@ -747,9 +747,11 @@ export default function Patients() {
       escapeCSV(p.phoneNumber || ""),
       escapeCSV(formatClinicDay((p as any).clinicDay || p.createdAt)),
       escapeCSV(
-        (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0 
-          ? `Unpaid (${money(p.serviceStatus.balanceToday ?? p.serviceStatus.balance)})` 
-          : "Paid"
+        p.patientType === "referral_diagnostic"
+          ? "N/A"
+          : (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0 
+            ? `Unpaid (${money(p.serviceStatus.balanceToday ?? p.serviceStatus.balance)})` 
+            : "Paid"
       )
     ]);
     
@@ -777,12 +779,13 @@ export default function Patients() {
   };
 
   // Color generation for avatars - Premium palette with softer, varied colors
+  // Note: Orange (bg-orange-500) is reserved for referral patients
   function getAvatarColor(name: string): string {
     const colors = [
       "bg-indigo-500",  // Soft purple-blue
       "bg-teal-500",    // Sophisticated teal
       "bg-pink-500",    // Soft pink
-      "bg-orange-500",  // Warm orange
+      "bg-purple-500",  // Purple (replaced orange - reserved for referral patients)
       "bg-blue-500",    // Classic blue
     ];
     const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
