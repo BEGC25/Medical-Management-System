@@ -2720,6 +2720,7 @@ router.post("/api/order-lines", async (req: any, res) => {
 
     // DUPLICATE CONSULTATION CHECK: Prevent duplicate consultation orders for same encounter
     // This is a server-side safeguard to prevent billing integrity issues
+    // Only runs when creating a consultation order (not for every order line)
     if (normalizedRelatedType === "consultation") {
       const existingOrderLines = await storage.getOrderLinesByEncounter(result.data.encounterId);
       const hasExistingConsultation = existingOrderLines.some(

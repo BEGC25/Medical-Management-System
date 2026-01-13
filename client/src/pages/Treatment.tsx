@@ -1084,6 +1084,9 @@ export default function Treatment() {
   // Count only diagnostic tests (lab + xray + ultrasound) for badge, excluding cancelled ones
   const diagnosticTestCount = useMemo(() => labTests.length + xrays.length + ultrasounds.length, [labTests, xrays, ultrasounds]);
 
+  // Memoized check for consultation existence - avoids re-running useEffect on every order change
+  const hasConsultationOrder = useMemo(() => orders.some((o) => o.type === "consultation"), [orders]);
+
   // Memoized handler for X-ray safety checklist changes to prevent re-renders and event issues
   const handleXraySafetyCheckChange = useCallback((itemId: string, checked: boolean) => {
     setXraySafetyChecklist(prev => ({ ...prev, [itemId]: checked }));
@@ -1850,11 +1853,8 @@ export default function Treatment() {
     
     const encounterId = currentEncounter.encounterId;
     
-    // Check if consultation already exists in database (via orders)
-    const hasConsult = orders.some((o: any) => o.type === "consultation");
-    
-    // If consultation exists, don't add another
-    if (hasConsult) return;
+    // Check if consultation already exists in database (via memoized check)
+    if (hasConsultationOrder) return;
     
     // Check if we've already triggered mutation for this encounter in this session
     if (consultationAddedRef.current.has(encounterId)) return;
@@ -1866,7 +1866,7 @@ export default function Treatment() {
     consultationAddedRef.current.add(encounterId);
     addConsultationMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEncounter?.encounterId, services.length, orders, ordersLoading]);
+  }, [currentEncounter?.encounterId, services.length, hasConsultationOrder, ordersLoading]);
 
   // ---------- handlers ----------
   // ... (keep handlers: handleCloseVisit, handleSubmit, handlePatientSelect, etc.) ...
