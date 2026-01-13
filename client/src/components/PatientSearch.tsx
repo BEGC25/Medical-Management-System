@@ -152,7 +152,7 @@ export default function PatientSearch({
   const filteredPatients = useMemo(() => {
     if (!patients) return patients;
     if (excludePatientTypes.length === 0) return patients;
-    return patients.filter((p: any) => !excludePatientTypes.includes(p.patientType));
+    return patients.filter((p: Patient) => !excludePatientTypes.includes(p.patientType));
   }, [patients, excludePatientTypes]);
 
   return (
