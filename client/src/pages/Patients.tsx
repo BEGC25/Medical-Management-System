@@ -1881,10 +1881,7 @@ export default function Patients() {
                         }}
                         className="space-y-2"
                       >
-                        <div className="flex items-center space-x-2 p-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                             onClick={() => {
-                               setPatientType("regular");
-                             }}>
+                        <div className="flex items-center space-x-2 p-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                           <RadioGroupItem value="regular" id="type-regular" />
                           <label htmlFor="type-regular" className="cursor-pointer flex-1">
                             <div className="font-medium">Regular Patient</div>
@@ -1893,11 +1890,7 @@ export default function Patients() {
                             </div>
                           </label>
                         </div>
-                        <div className="flex items-center space-x-2 p-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                             onClick={() => {
-                               setPatientType("referral_diagnostic");
-                               setCollectConsultationFee(false);
-                             }}>
+                        <div className="flex items-center space-x-2 p-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                           <RadioGroupItem value="referral_diagnostic" id="type-referral" />
                           <label htmlFor="type-referral" className="cursor-pointer flex-1">
                             <div className="font-medium">External Referral (Diagnostics Only)</div>
