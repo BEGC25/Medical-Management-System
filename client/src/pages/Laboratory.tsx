@@ -1025,7 +1025,7 @@ return (
                             <div className="text-sm font-semibold truncate">{fullName(p)}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
                             {p.patientType === "referral_diagnostic" && (
-                              <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-300 dark:border-purple-700 text-xs">
+                              <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border border-orange-300 dark:border-orange-700 text-xs">
                                 External Referral
                               </Badge>
                             )}
@@ -1211,7 +1211,7 @@ return (
                             <div className="text-sm font-semibold truncate">{fullName(p) || test.patientId}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
                             {p.patientType === "referral_diagnostic" && (
-                              <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-300 dark:border-purple-700 text-xs">
+                              <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border border-orange-300 dark:border-orange-700 text-xs">
                                 External Referral
                               </Badge>
                             )}

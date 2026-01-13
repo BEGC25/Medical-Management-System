@@ -1985,19 +1985,23 @@ export default function Treatment() {
 
   // Statistics calculations
   // A) Count patients with encounters in selected date range (matches table source)
-  // Use patientsWithStatus which filters by encounters using the selected preset
-  const todayPatients = patientsWithStatus.length || 0;
+  // Filter out referral/diagnostic-only patients from all stat cards
+  // Referral patients don't see the doctor and should not appear in Treatment metrics
+  const treatmentPatients = patientsWithStatus.filter(p => p.patientType !== "referral_diagnostic");
   
-  // B) Rename "Today's Queue" to "Open Visits" and use patientsWithStatus as source of truth
+  // Use treatmentPatients (excluding referral) which filters by encounters using the selected preset
+  const todayPatients = treatmentPatients.length || 0;
+  
+  // B) Rename "Today's Queue" to "Open Visits" and use treatmentPatients as source of truth
   // Filter to ONLY patients with truly open visits (exclude treated/closed and ready_to_bill)
   // ready_to_bill patients have completed treatment and should not appear in the doctor's queue
-  const openVisitsPatients = patientsWithStatus.filter(p => p.visitStatus === "open");
+  const openVisitsPatients = treatmentPatients.filter(p => p.visitStatus === "open");
   const activeEncountersCount = openVisitsPatients.length;
   
   // Count PATIENTS with diagnostic orders waiting (Lab/X-ray/Ultrasound only, exclude pharmacy)
   // Include both open AND ready_to_bill visits since results may still be pending even if visit is ready for billing
-  const ordersWaitingCount = patientsWithStatus
-    ? patientsWithStatus.filter(p => {
+  const ordersWaitingCount = treatmentPatients
+    ? treatmentPatients.filter(p => {
         // Must have diagnostic orders waiting
         if (!hasDiagnosticOrdersWaiting(p)) return false;
         // Include open and ready_to_bill, exclude closed
@@ -2007,7 +2011,7 @@ export default function Treatment() {
     : 0;
   
   // C) Results Ready - patients with completed diagnostic results today
-  // Group completed results by patient
+  // Group completed results by patient (exclude referral patients from Treatment page stats)
   const resultsReadyByPatient = useMemo(() => {
     const patientMap = new Map<string, { patient: PatientWithStatus; departments: string[] }>();
     
@@ -2015,7 +2019,7 @@ export default function Treatment() {
     completedLabTests.forEach((test: LabTest) => {
       const patientId = test.patientId;
       if (!patientMap.has(patientId)) {
-        const patient = patientsWithStatus.find(p => p.patientId === patientId);
+        const patient = treatmentPatients.find(p => p.patientId === patientId);
         if (patient) {
           patientMap.set(patientId, { patient, departments: [] });
         }
@@ -2030,7 +2034,7 @@ export default function Treatment() {
     completedXrays.forEach((exam: XrayExam) => {
       const patientId = exam.patientId;
       if (!patientMap.has(patientId)) {
-        const patient = patientsWithStatus.find(p => p.patientId === patientId);
+        const patient = treatmentPatients.find(p => p.patientId === patientId);
         if (patient) {
           patientMap.set(patientId, { patient, departments: [] });
         }
@@ -2045,7 +2049,7 @@ export default function Treatment() {
     completedUltrasounds.forEach((exam: UltrasoundExam) => {
       const patientId = exam.patientId;
       if (!patientMap.has(patientId)) {
-        const patient = patientsWithStatus.find(p => p.patientId === patientId);
+        const patient = treatmentPatients.find(p => p.patientId === patientId);
         if (patient) {
           patientMap.set(patientId, { patient, departments: [] });
         }
@@ -2057,7 +2061,7 @@ export default function Treatment() {
     });
     
     return Array.from(patientMap.values());
-  }, [completedLabTests, completedXrays, completedUltrasounds, patientsWithStatus]);
+  }, [completedLabTests, completedXrays, completedUltrasounds, treatmentPatients]);
   
   const resultsReadyCount = resultsReadyByPatient.length;
   
@@ -2081,9 +2085,9 @@ export default function Treatment() {
     return map;
   }, [completedLabTests, completedXrays, completedUltrasounds]);
   
-  // Filter patients with orders waiting for the modal
-  const patientsWithOrdersWaiting = patientsWithStatus
-    ? patientsWithStatus.filter(p => {
+  // Filter patients with orders waiting for the modal (exclude referral patients)
+  const patientsWithOrdersWaiting = treatmentPatients
+    ? treatmentPatients.filter(p => {
         // Must have diagnostic orders waiting
         if (!hasDiagnosticOrdersWaiting(p)) return false;
         // Must have open visit
