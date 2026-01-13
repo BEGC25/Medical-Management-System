@@ -499,6 +499,7 @@ export default function Patients() {
       // 1. Create diagnostics_only encounter
       const encounterData = {
         patientId: patient.patientId,
+        visitDate: getClinicDayKey(), // Current clinic day in YYYY-MM-DD format (Africa/Juba timezone)
         encounterType: "diagnostics_only" as const,
         chiefComplaint: `Referral for ${department === "lab" ? "Laboratory" : department === "xray" ? "X-Ray" : "Ultrasound"}`,
         status: "active" as const,
