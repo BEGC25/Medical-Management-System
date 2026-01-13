@@ -2838,11 +2838,12 @@ router.post("/api/order-lines", async (req: any, res) => {
         console.error(`[ORDER-LINES] Error details:`, diagnosticError instanceof Error ? diagnosticError.message : 'Unknown error');
         console.error(`[ORDER-LINES] Error stack:`, diagnosticError instanceof Error ? diagnosticError.stack : 'No stack trace');
         
+        // Sanitize error message for client - don't expose internal database details
+        const clientErrorMessage = `Unable to create ${normalizedRelatedType.replace('_', ' ')} record. Please try again or contact support if the problem persists.`;
+        
         return res.status(500).json({ 
           error: `Failed to create ${normalizedRelatedType.replace('_', ' ')} record`,
-          details: diagnosticError instanceof Error 
-            ? diagnosticError.message 
-            : `Database error while creating ${normalizedRelatedType.replace('_', ' ')}. Please check server logs for details.`,
+          details: clientErrorMessage,
           stage: "diagnostic_creation",
           diagnosticType: normalizedRelatedType,
         });
@@ -2863,14 +2864,20 @@ router.post("/api/order-lines", async (req: any, res) => {
       console.log(`[ORDER-LINES] SUCCESS: Created order line ID ${orderLine.id} for encounter ${result.data.encounterId}`);
     } catch (orderLineError) {
       console.error(`[ORDER-LINES] CRITICAL ERROR: Failed to create order line:`, orderLineError);
-      console.error(`[ORDER-LINES] Order line data:`, JSON.stringify(orderLineData));
+      // Log order line data but redact sensitive patient information
+      const safeOrderLineData = {
+        encounterId: orderLineData.encounterId,
+        serviceId: orderLineData.serviceId,
+        relatedType: orderLineData.relatedType,
+        relatedId: orderLineData.relatedId,
+        department: orderLineData.department,
+      };
+      console.error(`[ORDER-LINES] Order line metadata:`, JSON.stringify(safeOrderLineData));
       console.error(`[ORDER-LINES] Error details:`, orderLineError instanceof Error ? orderLineError.message : 'Unknown error');
       
       return res.status(500).json({ 
         error: "Failed to create order line",
-        details: orderLineError instanceof Error 
-          ? orderLineError.message 
-          : "Database error while creating order line. The diagnostic record was created but the order could not be linked.",
+        details: "The diagnostic record was created but could not be linked to the encounter. Please contact support.",
         stage: "order_line_creation",
         diagnosticId: relatedId,
       });
@@ -2884,9 +2891,10 @@ router.post("/api/order-lines", async (req: any, res) => {
     console.error("[ORDER-LINES] Error message:", error instanceof Error ? error.message : String(error));
     console.error("[ORDER-LINES] Error stack:", error instanceof Error ? error.stack : 'No stack trace');
     
+    // Don't expose internal error details to client
     res.status(500).json({ 
       error: "Failed to create order line",
-      details: error instanceof Error ? error.message : "An unexpected error occurred. Please check server logs.",
+      details: "An unexpected error occurred. Please try again or contact support if the problem persists.",
       stage: "unknown"
     });
   }
