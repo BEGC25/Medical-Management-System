@@ -3577,6 +3577,7 @@ export default function Treatment() {
                                                 <span className="font-medium">Please confirm pregnancy status before proceeding</span>
                                               </div>
                                             )}
+                                          </div>
                                           )}
 
                                           {/* Submit Button - Only show when exam type selected */}
