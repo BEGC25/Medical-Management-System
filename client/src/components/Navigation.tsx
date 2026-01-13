@@ -16,7 +16,8 @@ import {
   Receipt,
   UserCog,
   Tag,
-  X
+  X,
+  ClipboardList
 } from "lucide-react";
 
 const navItems = [
@@ -42,6 +43,7 @@ const navItems = [
   { path: "/all-results", label: "All Results Report", icon: FileSearch, category: "Financial" },
   
   // ADMIN (Admin-only section)
+  { path: "/order-referral", label: "Order Referral Diagnostic", icon: ClipboardList, category: "Admin" },
   { path: "/users", label: "User Management", icon: UserCog, category: "Admin" },
   { path: "/service-management", label: "Service Management", icon: Tag, category: "Admin" },
   
