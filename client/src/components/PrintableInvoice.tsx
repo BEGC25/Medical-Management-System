@@ -22,23 +22,9 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
     <div id="printable-invoice">
       <style>{`
         @media print {
-          @page {
-            /* A4 margins: 12mm top/bottom for single-page fit, 15mm left/right for printer safety */
-            margin: 12mm 15mm;
-            size: A4;
-          }
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
-          }
-          /* Constrain invoice to single page: A4 height (297mm) minus top+bottom margins (12mm × 2 = 24mm) */
-          #printable-invoice {
-            max-height: 273mm;
-            overflow: hidden !important;
-          }
-          .invoice-section {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
           }
         }
       `}</style>
@@ -47,7 +33,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
       <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
         <div className="p-3 max-w-4xl mx-auto bg-white font-sans">
         {/* Professional Header with Gradient Border */}
-        <div className="border-b-2 border-blue-900 pb-2 mb-2" style={{ borderImage: 'linear-gradient(to right, #1e3a8a, #1e40af) 1' }}>
+        <div className="border-b-2 border-blue-900 pb-2 mb-3" style={{ borderImage: 'linear-gradient(to right, #1e3a8a, #1e40af) 1' }}>
           <div className="flex items-start justify-between mb-1">
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-blue-900 mb-0.5 leading-tight" style={{ letterSpacing: '-0.02em' }}>
@@ -79,10 +65,10 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
         
         {/* Blue Accent Bar */}
-        <div className="h-1 bg-gradient-to-r from-blue-900 to-blue-800 mb-2"></div>
+        <div className="h-1 bg-gradient-to-r from-blue-900 to-blue-800 mb-3"></div>
 
         {/* Invoice Details and Patient Information - Side by Side Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-3 invoice-section">
+        <div className="grid grid-cols-2 gap-3 mb-4 invoice-section">
           {/* Invoice Details Box */}
           <div className="border border-gray-300 shadow-sm rounded p-2 bg-gray-50">
             <h2 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
@@ -151,7 +137,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Services Table with Professional Styling */}
-        <div className="mb-3 invoice-section">
+        <div className="mb-4 invoice-section">
           <h3 className="font-bold text-sm mb-1 text-gray-800 border-b-2 border-gray-400 pb-1">
             SERVICES RENDERED
           </h3>
@@ -189,7 +175,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Total Section - Simplified */}
-        <div className="flex justify-end mb-3 invoice-section">
+        <div className="flex justify-end mb-4 invoice-section">
           <div className="w-64 border-2 border-gray-400 rounded overflow-hidden shadow-sm">
             {/* Grand Total */}
             <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-2">
@@ -202,7 +188,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Signature Section - Professional with adequate space */}
-        <div className="grid grid-cols-2 gap-12 mt-6 mb-3 invoice-section">
+        <div className="grid grid-cols-2 gap-12 mt-4 mb-3 invoice-section">
           <div>
             <div className="border-t-2 border-gray-800 pt-2 mt-12">
               <p className="text-sm font-bold text-gray-900">Authorized By:</p>
@@ -222,7 +208,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Professional Footer Branding */}
-        <div className="text-center text-xs text-gray-600 border-t-2 border-gray-300 pt-2 mt-3">
+        <div className="text-center text-xs text-gray-600 border-t-2 border-gray-300 pt-2 mt-4 print:mb-0 print:pb-0">
           <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
             This is a computer-generated invoice
           </p>
