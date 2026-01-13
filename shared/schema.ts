@@ -24,6 +24,7 @@ export const patients = sqliteTable("patients", {
   emergencyContact: text("emergency_contact"),
   allergies: text("allergies"),
   medicalHistory: text("medical_history"),
+  patientType: text("patient_type").$type<"regular" | "referral_diagnostic">().notNull().default("regular"),
   isDeleted: integer("is_deleted").notNull().default(0),
   deletedAt: text("deleted_at"),
   deletedBy: text("deleted_by"),

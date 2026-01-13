@@ -799,8 +799,19 @@ export default function Treatment() {
     },
   });
 
-  // filter out soft-deleted patients
-  const activePatients = allPatients.filter((p: any) => !p.is_deleted);
+  // Helper function to determine if a patient should appear in the treatment queue
+  const isTreatmentQueuePatient = (patient: any): boolean => {
+    // Exclude soft-deleted patients
+    if (patient.is_deleted) return false;
+    
+    // Exclude referral/diagnostic-only patients (they don't see the doctor)
+    if (patient.patientType === "referral_diagnostic") return false;
+    
+    return true;
+  };
+
+  // Filter patients for the treatment queue
+  const activePatients = allPatients.filter(isTreatmentQueuePatient);
   const activePatientIds = new Set(activePatients.map((p) => p.patientId));
 
   const getPatientName = (patientId: string): string => {
@@ -1851,6 +1862,9 @@ export default function Treatment() {
     // This prevents adding consultation when orders array is still empty/loading
     if (ordersLoading) return;
     
+    // Skip auto-consultation for referral/diagnostic-only patients
+    if (selectedPatient?.patientType === "referral_diagnostic") return;
+    
     const encounterId = currentEncounter.encounterId;
     
     // Check if consultation already exists in database (via memoized check)
@@ -1866,7 +1880,7 @@ export default function Treatment() {
     consultationAddedRef.current.add(encounterId);
     addConsultationMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEncounter?.encounterId, services.length, hasConsultationOrder, ordersLoading]);
+  }, [currentEncounter?.encounterId, services.length, hasConsultationOrder, ordersLoading, selectedPatient?.patientType]);
 
   // ---------- handlers ----------
   // ... (keep handlers: handleCloseVisit, handleSubmit, handlePatientSelect, etc.) ...

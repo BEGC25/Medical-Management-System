@@ -804,6 +804,11 @@ export default function Ultrasound() {
                 <Badge className="h-5 px-2 bg-indigo-100 text-indigo-700 border-0">
                   {exam.patientId}
                 </Badge>
+                {patient?.patientType === "referral_diagnostic" && (
+                  <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-300 dark:border-purple-700 text-xs">
+                    External Referral
+                  </Badge>
+                )}
               </div>
               <div className="shrink-0 flex items-center gap-1.5">
                 {isCompleted && (

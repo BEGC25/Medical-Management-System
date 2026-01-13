@@ -1024,6 +1024,11 @@ return (
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="text-sm font-semibold truncate">{fullName(p)}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
+                            {p.patientType === "referral_diagnostic" && (
+                              <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-300 dark:border-purple-700 text-xs">
+                                External Referral
+                              </Badge>
+                            )}
                             <Chip tone="blue">{tests.length} test{tests.length !== 1 ? 's' : ''}</Chip>
                             <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.createdAt)}</span>
                           </div>
@@ -1205,6 +1210,11 @@ return (
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="text-sm font-semibold truncate">{fullName(p) || test.patientId}</div>
                             <Chip tone="slate">{test.patientId}</Chip>
+                            {p.patientType === "referral_diagnostic" && (
+                              <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-300 dark:border-purple-700 text-xs">
+                                External Referral
+                              </Badge>
+                            )}
                             <Chip tone="blue">{tests.length} test{tests.length !== 1 ? 's' : ''}</Chip>
                             <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.createdAt)} • Completed {timeAgo((test as any).completedDate)}</span>
                           </div>

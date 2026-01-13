@@ -547,51 +547,57 @@ export class MemStorage implements IStorage {
       visitDate: today('date'),
       policy: "cash",
       attendingClinician: "", // Reception doesn't assign this
-      notes: "Patient registered at reception.",
+      notes: patient.patientType === "referral_diagnostic" 
+        ? "External referral patient - diagnostics only." 
+        : "Patient registered at reception.",
     });
 
-    // 3. Create Consultation Order Line
-    const orderLine = await this.createOrderLine({
-      encounterId: encounter.encounterId,
-      serviceId: consultationService.id,
-      relatedType: "consultation",
-      description: consultationService.name, // Use the service's actual name
-      quantity: 1,
-      unitPriceSnapshot: consultationService.price,
-      totalPrice: consultationService.price,
-      department: "consultation",
-      status: "performed",
-      orderedBy: registeredBy,
-      addToCart: 1, // Always add consultation fee to cart
-    });
-
-    // 4. (Optional) Create Payment and Link to Order Line
-    if (collectConsultationFee) {
-      const payment = await this.createPayment({
-        patientId: patient.patientId,
-        totalAmount: consultationService.price,
-        paymentMethod: "cash", // Default to cash at registration
-        paymentDate: new Date().toISOString().split("T")[0],
-        receivedBy: registeredBy,
-        notes: "Consultation fee - paid at registration",
-      });
-
-      // Create payment item linking payment to order line
-      await this.createPaymentItem({
-        paymentId: payment.paymentId,
-        orderLineId: orderLine.id,
+    // Create Consultation Order Line (skip for referral/diagnostic-only patients)
+    // Regular patients get a consultation order with optional payment collection
+    // Referral patients do NOT get a consultation fee at all
+    if (patient.patientType !== "referral_diagnostic") {
+      const orderLine = await this.createOrderLine({
+        encounterId: encounter.encounterId,
         serviceId: consultationService.id,
         relatedType: "consultation",
+        description: consultationService.name, // Use the service's actual name
         quantity: 1,
-        unitPrice: consultationService.price,
+        unitPriceSnapshot: consultationService.price,
         totalPrice: consultationService.price,
-        amount: consultationService.price,
+        department: "consultation",
+        status: "performed",
+        orderedBy: registeredBy,
+        addToCart: 1, // Always add consultation fee to cart
       });
 
-      // Mark order line as paid by removing from cart
-      await db.update(orderLines)
-        .set({ addToCart: 0 })
-        .where(eq(orderLines.id, orderLine.id));
+      // 4. (Optional) Create Payment and Link to Order Line
+      if (collectConsultationFee) {
+        const payment = await this.createPayment({
+          patientId: patient.patientId,
+          totalAmount: consultationService.price,
+          paymentMethod: "cash", // Default to cash at registration
+          paymentDate: new Date().toISOString().split("T")[0],
+          receivedBy: registeredBy,
+          notes: "Consultation fee - paid at registration",
+        });
+
+        // Create payment item linking payment to order line
+        await this.createPaymentItem({
+          paymentId: payment.paymentId,
+          orderLineId: orderLine.id,
+          serviceId: consultationService.id,
+          relatedType: "consultation",
+          quantity: 1,
+          unitPrice: consultationService.price,
+          totalPrice: consultationService.price,
+          amount: consultationService.price,
+        });
+
+        // Mark order line as paid by removing from cart
+        await db.update(orderLines)
+          .set({ addToCart: 0 })
+          .where(eq(orderLines.id, orderLine.id));
+      }
     }
 
     return { patient, encounter };
