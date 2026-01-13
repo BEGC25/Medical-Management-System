@@ -2789,7 +2789,7 @@ router.post("/api/order-lines", async (req: any, res) => {
           });
         }
 
-        console.log(`[ORDER-LINES] Found encounter ${encounter.encounterId} for patient ${encounter.patientId}`);
+        console.log(`[ORDER-LINES] Found encounter ${encounter.encounterId} for patient [REDACTED]`);
 
         // Create diagnostic record based on type
         if (normalizedRelatedType === "xray_exam") {
@@ -2801,7 +2801,8 @@ router.post("/api/order-lines", async (req: any, res) => {
             specialInstructions: diagnosticData.specialInstructions || "",
             requestedDate: new Date().toISOString(),
           };
-          console.log(`[ORDER-LINES] Creating X-Ray exam with data:`, JSON.stringify(xrayData));
+          // Log only non-sensitive metadata
+          console.log(`[ORDER-LINES] Creating X-Ray exam - type: ${xrayData.examType}, bodyPart: ${xrayData.bodyPart}`);
           const xrayExam = await storage.createXrayExam(xrayData);
           relatedId = xrayExam.examId;
           console.log(`[ORDER-LINES] SUCCESS: Created X-Ray exam ${relatedId}`);
@@ -2814,7 +2815,8 @@ router.post("/api/order-lines", async (req: any, res) => {
             specialInstructions: diagnosticData.specialInstructions || "",
             requestedDate: new Date().toISOString(),
           };
-          console.log(`[ORDER-LINES] Creating Ultrasound exam with data:`, JSON.stringify(ultrasoundData));
+          // Log only non-sensitive metadata
+          console.log(`[ORDER-LINES] Creating Ultrasound exam - type: ${ultrasoundData.examType}, specificExam: ${ultrasoundData.specificExam}`);
           const ultrasoundExam = await storage.createUltrasoundExam(ultrasoundData);
           relatedId = ultrasoundExam.examId;
           console.log(`[ORDER-LINES] SUCCESS: Created Ultrasound exam ${relatedId}`);
@@ -2827,7 +2829,8 @@ router.post("/api/order-lines", async (req: any, res) => {
             priority: diagnosticData.priority || "routine",
             requestedDate: new Date().toISOString(),
           };
-          console.log(`[ORDER-LINES] Creating Lab test with data:`, JSON.stringify(labData));
+          // Log only non-sensitive metadata
+          console.log(`[ORDER-LINES] Creating Lab test - category: ${labData.category}, priority: ${labData.priority}`);
           const labTest = await storage.createLabTest(labData);
           relatedId = labTest.testId;
           console.log(`[ORDER-LINES] SUCCESS: Created Lab test ${relatedId}`);
