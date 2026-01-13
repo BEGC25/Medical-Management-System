@@ -618,7 +618,7 @@ export default function Treatment() {
   const [editXrayClinicalInfo, setEditXrayClinicalInfo] = useState("");
   
   // Enhanced X-Ray state
-  const [xrayExamType, setXrayExamType] = useState('chest');
+  const [xrayExamType, setXrayExamType] = useState('');
   const [xrayBodyPart, setXrayBodyPart] = useState('');
   const [xraySafetyChecklist, setXraySafetyChecklist] = useState({
     pregnancy: false,
@@ -633,7 +633,7 @@ export default function Treatment() {
   const [editUltrasoundClinicalInfo, setEditUltrasoundClinicalInfo] = useState("");
   
   // Enhanced Ultrasound state
-  const [ultrasoundExamType, setUltrasoundExamType] = useState('abdominal');
+  const [ultrasoundExamType, setUltrasoundExamType] = useState('');
   const [ultrasoundSpecificExam, setUltrasoundSpecificExam] = useState('');
   
   // Enhanced Lab state
@@ -3219,51 +3219,58 @@ export default function Treatment() {
                                   (() => {
                                     // Enhanced X-Ray ordering with visual selector and safety checklist
                                     if (qoTab === 'xray') {
-                                      // Only check for matching service if an exam type is selected
-                                      if (xrayExamType) {
-                                        // STRICT CATALOG ENFORCEMENT: Find service that matches the selected exam type
-                                        const xrayService = radiologyServices.find((s: any) => {
+                                      // Define exam type patterns for matching services
+                                      const examTypePatterns: Record<string, string[]> = {
+                                        'chest': ['chest'],
+                                        'abdomen': ['abdomen', 'abdominal'],
+                                        'extremities': ['extremity', 'extremities', 'limb'],
+                                        'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
+                                        'skull': ['skull', 'head', 'cranial'],
+                                        'pelvis': ['pelvis', 'pelvic', 'hip'],
+                                      };
+
+                                      // ALWAYS compute the matching service based on selected exam type (even if null)
+                                      const xrayService = xrayExamType 
+                                        ? radiologyServices.find((s: any) => {
+                                            const serviceName = (s.name || '').toLowerCase();
+                                            const examType = xrayExamType.toLowerCase();
+                                            const patterns = examTypePatterns[examType] || [examType];
+                                            return patterns.some(pattern => serviceName.includes(pattern));
+                                          })
+                                        : null;
+
+                                      // Compute which exam types have available services
+                                      const availableExamTypes = XRAY_EXAM_TYPES.filter(type => {
+                                        const patterns = examTypePatterns[type.value] || [type.value];
+                                        return radiologyServices.some((s: any) => {
                                           const serviceName = (s.name || '').toLowerCase();
-                                          const examType = xrayExamType.toLowerCase();
-                                          
-                                          // Map exam types to expected service name patterns
-                                          const examTypePatterns: Record<string, string[]> = {
-                                            'chest': ['chest'],
-                                            'abdomen': ['abdomen', 'abdominal'],
-                                            'extremities': ['extremity', 'extremities', 'limb'],
-                                            'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
-                                            'skull': ['skull', 'head', 'cranial'],
-                                            'pelvis': ['pelvis', 'pelvic', 'hip'],
-                                          };
-                                          
-                                          const patterns = examTypePatterns[examType] || [examType];
                                           return patterns.some(pattern => serviceName.includes(pattern));
                                         });
-                                        
-                                        // Show warning if no matching service exists
-                                        if (!xrayService) {
-                                          return (
-                                            <div className="p-6 text-center space-y-4">
-                                              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
-                                              <div>
-                                                <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
-                                                  No {xrayExamType} X-Ray Service
-                                                </h3>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                                  Please contact administration to add a "{xrayExamType} X-Ray" service in Service Management.
-                                                </p>
-                                                <Button
-                                                  onClick={() => setXrayExamType('')}
-                                                  variant="outline"
-                                                  className="mt-4"
-                                                >
-                                                  <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
-                                                  Choose Different Exam Type
-                                                </Button>
-                                              </div>
+                                      });
+
+                                      // Show warning if exam type selected but no matching service exists
+                                      if (xrayExamType && !xrayService) {
+                                        return (
+                                          <div className="p-6 text-center space-y-4">
+                                            <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+                                            <div>
+                                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
+                                                No {xrayExamType} X-Ray Service
+                                              </h3>
+                                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                                Please contact administration to add a "{xrayExamType} X-Ray" service in Service Management.
+                                              </p>
+                                              <Button
+                                                onClick={() => setXrayExamType('')}
+                                                variant="outline"
+                                                className="mt-4"
+                                              >
+                                                <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+                                                Choose Different Exam Type
+                                              </Button>
                                             </div>
-                                          );
-                                        }
+                                          </div>
+                                        );
                                       }
                                       
                                       return (
@@ -3272,63 +3279,79 @@ export default function Treatment() {
                                           <div className="space-y-3">
                                             <h3 className="font-semibold text-base text-gray-900 dark:text-white">Select Exam Type</h3>
                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                              {XRAY_EXAM_TYPES.map((type) => (
-                                                <button
-                                                  key={type.value}
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setXrayExamType(type.value);
-                                                    setXrayBodyPart('');
-                                                  }}
-                                                  className={`relative p-4 rounded-lg border-2 transition-all duration-200 text-left ${
-                                                    xrayExamType === type.value
-                                                      ? 'bg-gradient-to-br from-blue-600 to-cyan-500 border-blue-500 text-white shadow-lg scale-[1.02]'
-                                                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md'
-                                                  }`}
-                                                >
-                                                  {xrayExamType === type.value && (
-                                                    <div className="absolute top-2 right-2 bg-white rounded-full p-1">
-                                                      <Check className="h-4 w-4 text-blue-600" />
+                                              {XRAY_EXAM_TYPES.map((type) => {
+                                                const isAvailable = availableExamTypes.some(t => t.value === type.value);
+                                                const isSelected = xrayExamType === type.value;
+                                                return (
+                                                  <button
+                                                    key={type.value}
+                                                    type="button"
+                                                    disabled={!isAvailable}
+                                                    onClick={() => {
+                                                      if (isAvailable) {
+                                                        setXrayExamType(type.value);
+                                                        setXrayBodyPart('');
+                                                      }
+                                                    }}
+                                                    className={`relative p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                                                      isSelected
+                                                        ? 'bg-gradient-to-br from-blue-600 to-cyan-500 border-blue-500 text-white shadow-lg scale-[1.02]'
+                                                        : isAvailable
+                                                        ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md'
+                                                        : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'
+                                                    }`}
+                                                  >
+                                                    {isSelected && (
+                                                      <div className="absolute top-2 right-2 bg-white rounded-full p-1">
+                                                        <Check className="h-4 w-4 text-blue-600" />
+                                                      </div>
+                                                    )}
+                                                    {!isSelected && isAvailable && (
+                                                      <div className="absolute top-2 right-2">
+                                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                                      </div>
+                                                    )}
+                                                    <div className="text-3xl mb-2">{type.icon}</div>
+                                                    <div className={`font-semibold text-sm mb-1 ${isSelected ? 'text-white' : isAvailable ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600'}`}>
+                                                      {type.label}
                                                     </div>
-                                                  )}
-                                                  <div className="text-3xl mb-2">{type.icon}</div>
-                                                  <div className={`font-semibold text-sm mb-1 ${xrayExamType === type.value ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                                                    {type.label}
-                                                  </div>
-                                                  <div className={`text-xs ${xrayExamType === type.value ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                    {type.description}
-                                                  </div>
-                                                </button>
-                                              ))}
+                                                    <div className={`text-xs ${isSelected ? 'text-blue-100' : isAvailable ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'}`}>
+                                                      {isAvailable ? type.description : 'Not configured'}
+                                                    </div>
+                                                  </button>
+                                                );
+                                              })}
                                             </div>
                                           </div>
 
-                                          {/* Quick Exam Presets */}
-                                          <div className="space-y-3">
-                                            <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Presets</h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                              {XRAY_PRESETS.map((preset) => (
-                                                <button
-                                                  key={preset.name}
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setXrayExamType(preset.examType);
-                                                    setXrayBodyPart(preset.bodyPart);
-                                                    setXrayClinicalInfo(preset.indication);
-                                                    toast({ title: "Preset Applied", description: preset.name });
-                                                  }}
-                                                  className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
-                                                >
-                                                  <span className="text-2xl">{preset.icon}</span>
-                                                  <div className="flex-1">
-                                                    <div className="font-semibold text-sm text-gray-900 dark:text-white">{preset.name}</div>
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400">{preset.indication}</div>
-                                                  </div>
-                                                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                                                </button>
-                                              ))}
+                                          {/* Quick Exam Presets - Only show when no exam type selected */}
+                                          {!xrayExamType && (
+                                            <div className="space-y-3">
+                                              <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Presets</h3>
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                {XRAY_PRESETS.map((preset) => (
+                                                  <button
+                                                    key={preset.name}
+                                                    type="button"
+                                                    onClick={() => {
+                                                      setXrayExamType(preset.examType);
+                                                      setXrayBodyPart(preset.bodyPart);
+                                                      setXrayClinicalInfo(preset.indication);
+                                                      toast({ title: "Preset Applied", description: preset.name });
+                                                    }}
+                                                    className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
+                                                  >
+                                                    <span className="text-2xl">{preset.icon}</span>
+                                                    <div className="flex-1">
+                                                      <div className="font-semibold text-sm text-gray-900 dark:text-white">{preset.name}</div>
+                                                      <div className="text-xs text-gray-500 dark:text-gray-400">{preset.indication}</div>
+                                                    </div>
+                                                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                                                  </button>
+                                                ))}
+                                              </div>
                                             </div>
-                                          </div>
+                                          )}
 
                                           {/* Conditional Body Part Selectors */}
                                           {xrayExamType === 'extremities' && XRAY_BODY_PARTS.extremities && (
@@ -3463,33 +3486,36 @@ export default function Treatment() {
                                             </div>
                                           )}
 
-                                          {/* Clinical Information */}
-                                          <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                              <label className="text-sm font-medium">Clinical Indication</label>
-                                              <Button
-                                                type="button"
-                                                size="sm" 
-                                                variant="outline"
-                                                onClick={() => startVoiceInput('xrayClinicalInfo')}
-                                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                                              >
-                                                <Mic className={`w-3 h-3 mr-1 ${isRecording.xrayClinicalInfo ? 'animate-pulse text-red-500' : ''}`} />
-                                                {isRecording.xrayClinicalInfo ? 'Stop' : 'Dictate'}
-                                              </Button>
+                                          {/* Clinical Information - Only show when exam type selected */}
+                                          {xrayExamType && (
+                                            <div className="space-y-2">
+                                              <div className="flex items-center justify-between">
+                                                <label className="text-sm font-medium">Clinical Indication</label>
+                                                <Button
+                                                  type="button"
+                                                  size="sm" 
+                                                  variant="outline"
+                                                  onClick={() => startVoiceInput('xrayClinicalInfo')}
+                                                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                                >
+                                                  <Mic className={`w-3 h-3 mr-1 ${isRecording.xrayClinicalInfo ? 'animate-pulse text-red-500' : ''}`} />
+                                                  {isRecording.xrayClinicalInfo ? 'Stop' : 'Dictate'}
+                                                </Button>
+                                              </div>
+                                              <Textarea
+                                                ref={xrayClinicalInfoRef}
+                                                placeholder="Clinical indication, suspected diagnosis, relevant history..."
+                                                rows={3}
+                                                value={xrayClinicalInfo}
+                                                onChange={(e) => setXrayClinicalInfo(e.target.value)}
+                                                data-testid="textarea-xray-clinical-info"
+                                              />
                                             </div>
-                                            <Textarea
-                                              ref={xrayClinicalInfoRef}
-                                              placeholder="Clinical indication, suspected diagnosis, relevant history..."
-                                              rows={3}
-                                              value={xrayClinicalInfo}
-                                              onChange={(e) => setXrayClinicalInfo(e.target.value)}
-                                              data-testid="textarea-xray-clinical-info"
-                                            />
-                                          </div>
+                                          )}
 
-                                          {/* Safety Checklist */}
-                                          <div className="space-y-3 p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-lg">
+                                          {/* Safety Checklist - Only show when exam type selected */}
+                                          {xrayExamType && (
+                                            <div className="space-y-3 p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-lg">
                                             <h3 className="font-semibold text-base text-amber-900 dark:text-amber-300 flex items-center gap-2">
                                               <AlertCircle className="h-5 w-5" />
                                               Safety Checklist
@@ -3551,96 +3577,105 @@ export default function Treatment() {
                                                 <span className="font-medium">Please confirm pregnancy status before proceeding</span>
                                               </div>
                                             )}
-                                          </div>
+                                          )}
 
-                                          {/* Submit Button */}
-                                          <Button
-                                            size="lg"
-                                            onClick={() => {
-                                              const requiresBodyPart = ['extremities', 'chest', 'spine', 'skull', 'abdomen', 'pelvis'].includes(xrayExamType);
-                                              if (!xrayBodyPart && requiresBodyPart) {
-                                                toast({ 
-                                                  title: "Selection Required", 
-                                                  description: "Please select a body part or view", 
-                                                  variant: "destructive" 
-                                                });
-                                                return;
-                                              }
-                                              if (xrayService) {
-                                                orderXrayMutation.mutate({ 
-                                                  service: xrayService, 
-                                                  bodyPart: xrayBodyPart || xrayExamType 
-                                                });
-                                              }
-                                            }}
-                                            disabled={!xraySafetyChecklist.pregnancy || orderXrayMutation.isPending}
-                                            className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold"
-                                          >
-                                            {orderXrayMutation.isPending ? (
-                                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                            ) : (
-                                              <Zap className="h-4 w-4 mr-2" />
-                                            )}
-                                            {orderXrayMutation.isPending ? 'Ordering...' : 'Order X-Ray Exam'}
-                                          </Button>
+                                          {/* Submit Button - Only show when exam type selected */}
+                                          {xrayExamType && (
+                                            <Button
+                                              size="lg"
+                                              onClick={() => {
+                                                const requiresBodyPart = ['extremities', 'chest', 'spine', 'skull', 'abdomen', 'pelvis'].includes(xrayExamType);
+                                                if (!xrayBodyPart && requiresBodyPart) {
+                                                  toast({ 
+                                                    title: "Selection Required", 
+                                                    description: "Please select a body part or view", 
+                                                    variant: "destructive" 
+                                                  });
+                                                  return;
+                                                }
+                                                if (xrayService) {
+                                                  orderXrayMutation.mutate({ 
+                                                    service: xrayService, 
+                                                    bodyPart: xrayBodyPart || xrayExamType 
+                                                  });
+                                                }
+                                              }}
+                                              disabled={!xraySafetyChecklist.pregnancy || orderXrayMutation.isPending}
+                                              className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold"
+                                            >
+                                              {orderXrayMutation.isPending ? (
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                              ) : (
+                                                <Zap className="h-4 w-4 mr-2" />
+                                              )}
+                                              {orderXrayMutation.isPending ? 'Ordering...' : 'Order X-Ray Exam'}
+                                            </Button>
+                                          )}
                                         </div>
                                       );
                                     }
 
                                     // Enhanced Ultrasound ordering with visual exam type cards
                                     if (qoTab === 'ultrasound') {
-                                      // Only check for matching service if an exam type is selected
-                                      if (ultrasoundExamType) {
-                                        // STRICT CATALOG ENFORCEMENT: Find service that matches the selected exam type
-                                        const ultrasoundService = ultrasoundServices.find((s: any) => {
+                                      // Define exam type patterns for matching services
+                                      const examTypePatterns: Record<string, string[]> = {
+                                        'obstetric': ['obstetric', 'pregnancy', 'ob'],
+                                        'abdominal': ['abdomen', 'abdominal'],
+                                        'pelvic': ['pelvis', 'pelvic'],
+                                        'thyroid': ['thyroid'],
+                                        'breast': ['breast'],
+                                        'cardiac': ['cardiac', 'echo', 'heart'],
+                                        'renal': ['renal', 'kidney'],
+                                        'vascular': ['vascular', 'doppler'],
+                                        'soft_tissue': ['soft tissue', 'superficial'],
+                                        'scrotal': ['scrotal', 'testicular'],
+                                        'neck': ['neck'],
+                                        'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
+                                        'thoracic': ['thoracic', 'chest'],
+                                      };
+
+                                      // ALWAYS compute the matching service based on selected exam type (even if null)
+                                      const ultrasoundService = ultrasoundExamType 
+                                        ? ultrasoundServices.find((s: any) => {
+                                            const serviceName = (s.name || '').toLowerCase();
+                                            const examType = ultrasoundExamType.toLowerCase();
+                                            const patterns = examTypePatterns[examType] || [examType];
+                                            return patterns.some(pattern => serviceName.includes(pattern));
+                                          })
+                                        : null;
+
+                                      // Compute which exam types have available services
+                                      const availableExamTypes = ULTRASOUND_EXAM_TYPES.filter(type => {
+                                        const patterns = examTypePatterns[type.value] || [type.value];
+                                        return ultrasoundServices.some((s: any) => {
                                           const serviceName = (s.name || '').toLowerCase();
-                                          const examType = ultrasoundExamType.toLowerCase();
-                                          
-                                          // Map exam types to expected service name patterns
-                                          const examTypePatterns: Record<string, string[]> = {
-                                            'obstetric': ['obstetric', 'pregnancy', 'ob'],
-                                            'abdominal': ['abdomen', 'abdominal'],
-                                            'pelvic': ['pelvis', 'pelvic'],
-                                            'thyroid': ['thyroid'],
-                                            'breast': ['breast'],
-                                            'cardiac': ['cardiac', 'echo', 'heart'],
-                                            'renal': ['renal', 'kidney'],
-                                            'vascular': ['vascular', 'doppler'],
-                                            'soft_tissue': ['soft tissue', 'superficial'],
-                                            'scrotal': ['scrotal', 'testicular'],
-                                            'neck': ['neck'],
-                                            'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
-                                            'thoracic': ['thoracic', 'chest'],
-                                          };
-                                          
-                                          const patterns = examTypePatterns[examType] || [examType];
                                           return patterns.some(pattern => serviceName.includes(pattern));
                                         });
-                                        
-                                        // Show warning if no matching service exists
-                                        if (!ultrasoundService) {
-                                          return (
-                                            <div className="p-6 text-center space-y-4">
-                                              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
-                                              <div>
-                                                <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
-                                                  No {ultrasoundExamType} Ultrasound Service
-                                                </h3>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                                  Please contact administration to add a "{ultrasoundExamType} Ultrasound" service in Service Management.
-                                                </p>
-                                                <Button
-                                                  onClick={() => setUltrasoundExamType('')}
-                                                  variant="outline"
-                                                  className="mt-4"
-                                                >
-                                                  <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
-                                                  Choose Different Exam Type
-                                                </Button>
-                                              </div>
+                                      });
+
+                                      // Show warning if exam type selected but no matching service exists
+                                      if (ultrasoundExamType && !ultrasoundService) {
+                                        return (
+                                          <div className="p-6 text-center space-y-4">
+                                            <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+                                            <div>
+                                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
+                                                No {ultrasoundExamType} Ultrasound Service
+                                              </h3>
+                                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                                Please contact administration to add a "{ultrasoundExamType} Ultrasound" service in Service Management.
+                                              </p>
+                                              <Button
+                                                onClick={() => setUltrasoundExamType('')}
+                                                variant="outline"
+                                                className="mt-4"
+                                              >
+                                                <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+                                                Choose Different Exam Type
+                                              </Button>
                                             </div>
-                                          );
-                                        }
+                                          </div>
+                                        );
                                       }
                                       
                                       // Use shared Ultrasound catalog for consistency with department pages
@@ -3656,19 +3691,25 @@ export default function Treatment() {
                                             <h3 className="font-semibold text-base text-gray-900 dark:text-white">Examination Type</h3>
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                               {ultrasoundExamTypes.map((type) => {
+                                                const isAvailable = availableExamTypes.some(t => t.value === type.value);
                                                 const isSelected = ultrasoundExamType === type.value;
                                                 return (
                                                   <button
                                                     key={type.value}
                                                     type="button"
+                                                    disabled={!isAvailable}
                                                     onClick={() => {
-                                                      setUltrasoundExamType(type.value);
-                                                      setUltrasoundSpecificExam('');
+                                                      if (isAvailable) {
+                                                        setUltrasoundExamType(type.value);
+                                                        setUltrasoundSpecificExam('');
+                                                      }
                                                     }}
                                                     className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left ${
                                                       isSelected
                                                         ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 shadow-lg scale-105'
-                                                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-purple-300 hover:shadow-md'
+                                                        : isAvailable
+                                                        ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-purple-300 hover:shadow-md'
+                                                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 opacity-50 cursor-not-allowed'
                                                     }`}
                                                   >
                                                     {isSelected && (
@@ -3678,12 +3719,17 @@ export default function Treatment() {
                                                         </div>
                                                       </div>
                                                     )}
+                                                    {!isSelected && isAvailable && (
+                                                      <div className="absolute top-2 right-2">
+                                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                                      </div>
+                                                    )}
                                                     <div className="text-3xl mb-2">{type.icon}</div>
-                                                    <div className={`font-semibold text-sm mb-1 ${isSelected ? 'text-purple-900 dark:text-purple-100' : 'text-gray-900 dark:text-white'}`}>
+                                                    <div className={`font-semibold text-sm mb-1 ${isSelected ? 'text-purple-900 dark:text-purple-100' : isAvailable ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600'}`}>
                                                       {type.label}
                                                     </div>
-                                                    <div className={`text-xs ${isSelected ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                      {type.description}
+                                                    <div className={`text-xs ${isSelected ? 'text-purple-700 dark:text-purple-300' : isAvailable ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'}`}>
+                                                      {isAvailable ? type.description : 'Not configured'}
                                                     </div>
                                                   </button>
                                                 );
@@ -3692,7 +3738,7 @@ export default function Treatment() {
                                           </div>
 
                                           {/* Specific Exam (Quick Select) Section */}
-                                          {ultrasoundSpecificExams[ultrasoundExamType] && ultrasoundSpecificExams[ultrasoundExamType].length > 0 && (
+                                          {ultrasoundExamType && ultrasoundSpecificExams[ultrasoundExamType] && ultrasoundSpecificExams[ultrasoundExamType].length > 0 && (
                                             <div className="space-y-3">
                                               <h3 className="font-semibold text-base text-gray-900 dark:text-white">Specific Exam (Quick Select)</h3>
                                               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -3714,64 +3760,68 @@ export default function Treatment() {
                                             </div>
                                           )}
 
-                                          {/* Prominent Clinical Info Field */}
-                                          <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg space-y-2">
-                                            <div className="flex items-center justify-between mb-2">
-                                              <div className="flex items-center gap-2">
-                                                <label className="text-sm font-semibold text-purple-900 dark:text-purple-300">Clinical Information</label>
-                                                <Badge className="bg-purple-600 text-white text-xs">Recommended</Badge>
+                                          {/* Prominent Clinical Info Field - Only show when exam type selected */}
+                                          {ultrasoundExamType && (
+                                            <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg space-y-2">
+                                              <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                  <label className="text-sm font-semibold text-purple-900 dark:text-purple-300">Clinical Information</label>
+                                                  <Badge className="bg-purple-600 text-white text-xs">Recommended</Badge>
+                                                </div>
+                                                <Button
+                                                  type="button"
+                                                  size="sm" 
+                                                  variant="outline"
+                                                  onClick={() => startVoiceInput('ultrasoundClinicalInfo')}
+                                                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                                >
+                                                  <Mic className={`w-3 h-3 mr-1 ${isRecording.ultrasoundClinicalInfo ? 'animate-pulse text-red-500' : ''}`} />
+                                                  {isRecording.ultrasoundClinicalInfo ? 'Stop' : 'Dictate'}
+                                                </Button>
                                               </div>
-                                              <Button
-                                                type="button"
-                                                size="sm" 
-                                                variant="outline"
-                                                onClick={() => startVoiceInput('ultrasoundClinicalInfo')}
-                                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                                              >
-                                                <Mic className={`w-3 h-3 mr-1 ${isRecording.ultrasoundClinicalInfo ? 'animate-pulse text-red-500' : ''}`} />
-                                                {isRecording.ultrasoundClinicalInfo ? 'Stop' : 'Dictate'}
-                                              </Button>
+                                              <Textarea
+                                                ref={ultrasoundClinicalInfoRef}
+                                                placeholder="Clinical indication, suspected diagnosis, relevant history..."
+                                                rows={3}
+                                                value={ultrasoundClinicalInfo}
+                                                onChange={(e) => setUltrasoundClinicalInfo(e.target.value)}
+                                                data-testid="textarea-ultrasound-clinical-info"
+                                                className="border-purple-300 dark:border-purple-700 focus:ring-purple-500"
+                                              />
+                                              <p className="text-xs text-purple-700 dark:text-purple-400">
+                                                💡 Tip: Include relevant symptoms, suspected conditions, and specific areas of concern for better diagnostic accuracy
+                                              </p>
                                             </div>
-                                            <Textarea
-                                              ref={ultrasoundClinicalInfoRef}
-                                              placeholder="Clinical indication, suspected diagnosis, relevant history..."
-                                              rows={3}
-                                              value={ultrasoundClinicalInfo}
-                                              onChange={(e) => setUltrasoundClinicalInfo(e.target.value)}
-                                              data-testid="textarea-ultrasound-clinical-info"
-                                              className="border-purple-300 dark:border-purple-700 focus:ring-purple-500"
-                                            />
-                                            <p className="text-xs text-purple-700 dark:text-purple-400">
-                                              💡 Tip: Include relevant symptoms, suspected conditions, and specific areas of concern for better diagnostic accuracy
-                                            </p>
-                                          </div>
+                                          )}
 
-                                          {/* Submit Button with Purple/Indigo Gradient */}
-                                          <Button
-                                            size="lg"
-                                            onClick={() => {
-                                              if (!ultrasoundService) {
-                                                toast({ 
-                                                  title: "Configuration Error", 
-                                                  description: "Ultrasound service not found in system", 
-                                                  variant: "destructive" 
+                                          {/* Submit Button with Purple/Indigo Gradient - Only show when exam type selected */}
+                                          {ultrasoundExamType && (
+                                            <Button
+                                              size="lg"
+                                              onClick={() => {
+                                                if (!ultrasoundService) {
+                                                  toast({ 
+                                                    title: "Configuration Error", 
+                                                    description: "Ultrasound service not found in system", 
+                                                    variant: "destructive" 
+                                                  });
+                                                  return;
+                                                }
+                                                orderUltrasoundMutation.mutate({ 
+                                                  service: ultrasoundService
                                                 });
-                                                return;
-                                              }
-                                              orderUltrasoundMutation.mutate({ 
-                                                service: ultrasoundService
-                                              });
-                                            }}
-                                            disabled={orderUltrasoundMutation.isPending || !ultrasoundService}
-                                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white font-semibold disabled:opacity-50"
-                                          >
-                                            {orderUltrasoundMutation.isPending ? (
-                                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                            ) : (
-                                              <Radio className="h-4 w-4 mr-2" />
-                                            )}
-                                            {orderUltrasoundMutation.isPending ? 'Ordering...' : 'Order Ultrasound Exam'}
-                                          </Button>
+                                              }}
+                                              disabled={orderUltrasoundMutation.isPending || !ultrasoundService}
+                                              className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white font-semibold disabled:opacity-50"
+                                            >
+                                              {orderUltrasoundMutation.isPending ? (
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                              ) : (
+                                                <Radio className="h-4 w-4 mr-2" />
+                                              )}
+                                              {orderUltrasoundMutation.isPending ? 'Ordering...' : 'Order Ultrasound Exam'}
+                                            </Button>
+                                          )}
                                         </div>
                                       );
                                     }
