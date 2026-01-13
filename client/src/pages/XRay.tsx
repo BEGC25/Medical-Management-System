@@ -14,7 +14,6 @@ import {
   Save,
   ChevronRight,
   XSquare,
-  AlertTriangle,
   Activity,
   Zap,
   User,
@@ -61,7 +60,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useServicesByCategory } from '@/hooks/useServicesByCategory';
 
@@ -845,14 +843,12 @@ export default function XRay() {
           </CardContent>
         </Card>
 
-        {/* Alert about new ordering flow */}
-        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
-          <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertTitle className="text-blue-900 dark:text-blue-100">Diagnostic Ordering Changed</AlertTitle>
-          <AlertDescription className="text-blue-800 dark:text-blue-200">
-            New orders can only be created from the Treatment page by doctors during patient visits. Staff can update results and status for existing orders.
-          </AlertDescription>
-        </Alert>
+        {/* Simple ordering notice */}
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-900 dark:text-blue-100">
+            <strong>Note:</strong> New orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Staff can update results and status for existing orders.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
