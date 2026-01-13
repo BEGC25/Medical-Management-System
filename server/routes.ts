@@ -2718,6 +2718,24 @@ router.post("/api/order-lines", async (req: any, res) => {
       });
     }
 
+    // DUPLICATE CONSULTATION CHECK: Prevent duplicate consultation orders for same encounter
+    // This is a server-side safeguard to prevent billing integrity issues
+    // Only runs when creating a consultation order (not for every order line)
+    if (normalizedRelatedType === "consultation") {
+      const existingOrderLines = await storage.getOrderLinesByEncounter(result.data.encounterId);
+      const hasExistingConsultation = existingOrderLines.some(
+        (ol) => ol.relatedType === "consultation"
+      );
+      
+      if (hasExistingConsultation) {
+        console.log(`[ORDER-LINES] Blocked duplicate consultation for encounter ${result.data.encounterId}`);
+        return res.status(400).json({ 
+          error: "Duplicate consultation order",
+          details: "A consultation order already exists for this encounter. Cannot add another consultation." 
+        });
+      }
+    }
+
     // AUTO-CREATE DIAGNOSTIC RECORDS: If relatedId is missing for diagnostic orders,
     // automatically create the diagnostic record (lab_test, xray_exam, ultrasound_exam)
     let relatedId = result.data.relatedId;
