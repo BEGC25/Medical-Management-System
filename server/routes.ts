@@ -2289,8 +2289,40 @@ router.post("/api/encounters", async (req, res) => {
     const encounter = await storage.createEncounter(result.data);
     res.status(201).json(encounter);
   } catch (error) {
-    console.error("Error creating encounter:", error);
-    res.status(500).json({ error: "Failed to create encounter" });
+    // COMPREHENSIVE ERROR LOGGING for debugging production issues
+    console.error("=== ENCOUNTER CREATION ERROR ===");
+    // Redact sensitive patient data - only log non-sensitive request fields
+    console.error("Request (redacted):", JSON.stringify({
+      patientId: req.body.patientId,
+      visitDate: req.body.visitDate,
+      policy: req.body.policy,
+      hasNotes: !!req.body.notes,
+    }, null, 2));
+    console.error("Error message:", error instanceof Error ? error.message : String(error));
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    console.error("================================");
+    
+    // Return a more specific error message based on the error type
+    let errorMessage = "Failed to create encounter";
+    if (error instanceof Error) {
+      // Provide more context without exposing sensitive details
+      if (error.message.includes("UNIQUE constraint")) {
+        errorMessage = "Failed to create encounter: Duplicate encounter ID detected. Please try again.";
+      } else if (error.message.includes("NOT NULL constraint")) {
+        errorMessage = "Failed to create encounter: Missing required field. Please check your data.";
+      } else if (error.message.includes("SQLITE_ERROR") || error.message.includes("database")) {
+        errorMessage = "Failed to create encounter: Database error. Please try again.";
+      } else if (error.message.includes("generate encounter ID")) {
+        errorMessage = "Failed to create encounter: ID generation error. Please try again.";
+      } else if (error.message.includes("Insert") || error.message.includes("insert")) {
+        errorMessage = "Failed to create encounter: Database insert error. Please try again.";
+      } else {
+        // For other errors, only expose safe parts of the message
+        errorMessage = "Failed to create encounter. Please try again or contact support.";
+      }
+    }
+    
+    res.status(500).json({ error: errorMessage });
   }
 });
 
