@@ -103,6 +103,32 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   }
 }
 
+// Exam type patterns for service matching (shared between X-ray and Ultrasound sections)
+const XRAY_EXAM_TYPE_PATTERNS: Record<string, string[]> = {
+  'chest': ['chest'],
+  'abdomen': ['abdomen', 'abdominal'],
+  'extremities': ['extremity', 'extremities', 'limb'],
+  'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
+  'skull': ['skull', 'head', 'cranial'],
+  'pelvis': ['pelvis', 'pelvic', 'hip'],
+};
+
+const ULTRASOUND_EXAM_TYPE_PATTERNS: Record<string, string[]> = {
+  'obstetric': ['obstetric', 'pregnancy', 'ob'],
+  'abdominal': ['abdomen', 'abdominal'],
+  'pelvic': ['pelvis', 'pelvic'],
+  'thyroid': ['thyroid'],
+  'breast': ['breast'],
+  'cardiac': ['cardiac', 'echo', 'heart'],
+  'renal': ['renal', 'kidney'],
+  'vascular': ['vascular', 'doppler'],
+  'soft_tissue': ['soft tissue', 'superficial'],
+  'scrotal': ['scrotal', 'testicular'],
+  'neck': ['neck'],
+  'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
+  'thoracic': ['thoracic', 'chest'],
+};
+
 // Format currency with SSP and thousand separators
 function formatCurrency(amount: number | null | undefined): string {
   if (amount === null || amount === undefined) return "—";
@@ -676,32 +702,6 @@ export default function Treatment() {
   
   // Recognition instance (shared across all fields)
   const recognitionInstanceRef = useRef<any>(null);
-
-  // Exam type patterns for service matching (shared between X-ray and Ultrasound sections)
-  const XRAY_EXAM_TYPE_PATTERNS: Record<string, string[]> = {
-    'chest': ['chest'],
-    'abdomen': ['abdomen', 'abdominal'],
-    'extremities': ['extremity', 'extremities', 'limb'],
-    'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
-    'skull': ['skull', 'head', 'cranial'],
-    'pelvis': ['pelvis', 'pelvic', 'hip'],
-  };
-
-  const ULTRASOUND_EXAM_TYPE_PATTERNS: Record<string, string[]> = {
-    'obstetric': ['obstetric', 'pregnancy', 'ob'],
-    'abdominal': ['abdomen', 'abdominal'],
-    'pelvic': ['pelvis', 'pelvic'],
-    'thyroid': ['thyroid'],
-    'breast': ['breast'],
-    'cardiac': ['cardiac', 'echo', 'heart'],
-    'renal': ['renal', 'kidney'],
-    'vascular': ['vascular', 'doppler'],
-    'soft_tissue': ['soft tissue', 'superficial'],
-    'scrotal': ['scrotal', 'testicular'],
-    'neck': ['neck'],
-    'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
-    'thoracic': ['thoracic', 'chest'],
-  };
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -3324,7 +3324,7 @@ export default function Treatment() {
                                                     )}
                                                     {!isSelected && isAvailable && (
                                                       <div className="absolute top-2 right-2">
-                                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                                        <CheckCircle className="w-5 h-5 text-green-500" aria-label="Available service" />
                                                       </div>
                                                     )}
                                                     <div className="text-3xl mb-2">{type.icon}</div>
@@ -3723,7 +3723,7 @@ export default function Treatment() {
                                                     )}
                                                     {!isSelected && isAvailable && (
                                                       <div className="absolute top-2 right-2">
-                                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                                        <CheckCircle className="w-5 h-5 text-green-500" aria-label="Available service" />
                                                       </div>
                                                     )}
                                                     <div className="text-3xl mb-2">{type.icon}</div>
