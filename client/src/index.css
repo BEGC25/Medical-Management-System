@@ -351,9 +351,15 @@
 
 /* Print rules */
 @media print {
+  /* Step 1: Remove ALL default margins */
   @page { 
     size: A4; 
-    margin: 12mm 15mm;
+    margin: 0;
+  }
+  
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   /* Hide everything initially */
@@ -365,20 +371,17 @@
   #lab-report-print:not(:empty), #lab-report-print:not(:empty) * { visibility: visible; }
   #lab-clinical-print:not(:empty), #lab-clinical-print:not(:empty) * { visibility: visible; }
   
-  /* Special handling for printable invoice - needs display override */
+  /* Step 2: Special handling for printable invoice - needs display override */
   #printable-invoice {
     display: block !important;
     visibility: visible !important;
-    /* Constrain to single page: A4 height (297mm) - top+bottom margins (24mm) */
-    max-height: 273mm;
-    overflow: hidden !important;
   }
   
   #printable-invoice * {
     visibility: visible !important;
   }
   
-  /* Position only the active container to avoid conflicts */
+  /* Step 3: Position and prevent page break */
   #prescription-print:not(:empty),
   #lab-request-print:not(:empty),
   #lab-report-print:not(:empty),
@@ -388,9 +391,17 @@
     left: 0;
     top: 0;
     width: 100%;
+    margin: 10mm 15mm !important; /* Our controlled margins */
+    padding: 0 !important;
+    
+    /* THE FIX - Force single page */
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: avoid !important;
+    break-inside: avoid !important;
   }
 
-  /* Ensure proper page breaking */
+  /* Ensure proper page breaking for prescriptions */
   .prescription {
     page-break-after: auto;
     page-break-before: auto;
@@ -400,6 +411,12 @@
   .invoice-section {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+  
+  /* Step 4: Remove all bottom spacing from children */
+  #printable-invoice > div:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
   }
 
   /* Remove shadows/borders that can cause overflow */
