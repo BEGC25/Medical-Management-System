@@ -30,6 +30,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
+          /* Constrain invoice to single page: A4 height (297mm) minus top+bottom margins (12mm × 2 = 24mm) */
           #printable-invoice {
             max-height: calc(297mm - 24mm);
             overflow: hidden;
