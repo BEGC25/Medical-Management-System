@@ -19,10 +19,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   const [logoError, setLogoError] = React.useState(false);
   
   return (
-    <div 
-      id="printable-invoice"
-      style={{ pageBreakAfter: 'avoid', pageBreakInside: 'avoid' }}
-    >
+    <div id="printable-invoice">
       <style>{`
         @media print {
           body {
