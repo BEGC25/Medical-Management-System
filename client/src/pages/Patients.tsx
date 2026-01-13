@@ -38,6 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,6 +99,7 @@ export default function Patients() {
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [collectConsultationFee, setCollectConsultationFee] = useState(true); // Default to checked (simpler than unchecked)
   const [selectedConsultationServiceId, setSelectedConsultationServiceId] = useState<number | null>(null);
+  const [patientType, setPatientType] = useState<"regular" | "referral_diagnostic">("regular"); // Patient type selection
 
   // NEW: quick-view panel state (we keep full row object to access serviceStatus)
   const [activePatient, setActivePatient] = useState<any | null>(null);
@@ -300,6 +302,7 @@ export default function Patients() {
       phoneNumber: "",
       allergies: "",
       medicalHistory: "",
+      patientType: "regular",
     },
   });
 
@@ -307,7 +310,7 @@ export default function Patients() {
   mutationFn: async (data: InsertPatient) => {
     // Send all data to the atomic endpoint including selected consultation service
     const registrationData = {
-      patientData: data,
+      patientData: { ...data, patientType }, // Include patientType from state
       collectConsultationFee: collectConsultationFee,
       consultationServiceId: selectedConsultationServiceId || undefined, // Ensure we send undefined, not null
     };
@@ -335,6 +338,7 @@ export default function Patients() {
     form.reset();
     setShowRegistrationForm(false);
     setCollectConsultationFee(true); // Reset to default (checked)
+    setPatientType("regular"); // Reset to default patient type
     setSelectedConsultationServiceId(defaultConsultationService?.id || null); // Reset to default
     queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
     queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
@@ -1809,78 +1813,137 @@ export default function Patients() {
                 />
 
                 {!editingPatient && (
-                  <div className="space-y-3 p-4 border border-teal-200 rounded-lg bg-teal-50 dark:bg-teal-900/20 dark:border-teal-800">
-                    {/* Consultation Fee Toggle */}
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="collect-fee"
-                        checked={collectConsultationFee}
-                        onCheckedChange={setCollectConsultationFee}
-                        data-testid="switch-collect-fee"
-                        className="data-[state=checked]:bg-teal-500 dark:data-[state=checked]:bg-teal-500
-                                   transition-all duration-300 ease-in-out
-                                   shadow-sm data-[state=checked]:shadow-md"
-                      />
-                      <label
-                        htmlFor="collect-fee"
-                        className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                      >
-                        <DollarSign className="w-4 h-4" />
-                        {selectedConsultationService 
-                          ? `Collect consultation fee (${money(selectedConsultationService.price)})`
-                          : "Collect consultation fee"}
+                  <>
+                    {/* Patient Type Selection */}
+                    <div className="space-y-3 p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Stethoscope className="w-4 h-4" />
+                        Patient Type
                       </label>
+                      <RadioGroup
+                        value={patientType}
+                        onValueChange={(value: "regular" | "referral_diagnostic") => {
+                          setPatientType(value);
+                          // Auto-disable consultation fee for referral patients
+                          if (value === "referral_diagnostic") {
+                            setCollectConsultationFee(false);
+                          }
+                        }}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center space-x-2 p-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                             onClick={() => {
+                               setPatientType("regular");
+                             }}>
+                          <RadioGroupItem value="regular" id="type-regular" />
+                          <label htmlFor="type-regular" className="cursor-pointer flex-1">
+                            <div className="font-medium">Regular Patient</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              Full clinic workflow with consultation
+                            </div>
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2 p-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                             onClick={() => {
+                               setPatientType("referral_diagnostic");
+                               setCollectConsultationFee(false);
+                             }}>
+                          <RadioGroupItem value="referral_diagnostic" id="type-referral" />
+                          <label htmlFor="type-referral" className="cursor-pointer flex-1">
+                            <div className="font-medium">External Referral (Diagnostics Only)</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              For patients from other clinics - diagnostics only, no doctor consultation
+                            </div>
+                          </label>
+                        </div>
+                      </RadioGroup>
+                      {patientType === "referral_diagnostic" && (
+                        <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                          <Info className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                          <div className="text-xs text-yellow-700 dark:text-yellow-300">
+                            <strong>Note:</strong> This patient will NOT appear in the Doctor's Treatment queue and will NOT be charged a consultation fee.
+                            Use "Order Referral Diagnostic" to order tests for this patient.
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Consultation Service Dropdown - shown when toggle is on */}
-                    {collectConsultationFee && (
-                      <div className="space-y-2">
-                        {activeConsultationServices.length > 0 ? (
-                          <>
-                            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                              Consultation Type
-                            </label>
-                            <Select
-                              value={selectedConsultationServiceId?.toString() || ""}
-                              onValueChange={(value) => setSelectedConsultationServiceId(parseInt(value))}
-                            >
-                              <SelectTrigger 
-                                className="w-full bg-white dark:bg-gray-800"
-                                data-testid="select-consultation-service"
-                              >
-                                <SelectValue placeholder="Select consultation type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {activeConsultationServices.map((service: any) => (
-                                  <SelectItem 
-                                    key={service.id} 
-                                    value={service.id.toString()}
-                                    data-testid={`option-service-${service.id}`}
+                    {/* Consultation Fee Toggle - Only for regular patients */}
+                    {patientType === "regular" && (
+                      <div className="space-y-3 p-4 border border-teal-200 rounded-lg bg-teal-50 dark:bg-teal-900/20 dark:border-teal-800">
+                        {/* Consultation Fee Toggle */}
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="collect-fee"
+                            checked={collectConsultationFee}
+                            onCheckedChange={setCollectConsultationFee}
+                            data-testid="switch-collect-fee"
+                            className="data-[state=checked]:bg-teal-500 dark:data-[state=checked]:bg-teal-500
+                                       transition-all duration-300 ease-in-out
+                                       shadow-sm data-[state=checked]:shadow-md"
+                          />
+                          <label
+                            htmlFor="collect-fee"
+                            className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                          >
+                            <DollarSign className="w-4 h-4" />
+                            {selectedConsultationService 
+                              ? `Collect consultation fee (${money(selectedConsultationService.price)})`
+                              : "Collect consultation fee"}
+                          </label>
+                        </div>
+
+                        {/* Consultation Service Dropdown - shown when toggle is on */}
+                        {collectConsultationFee && (
+                          <div className="space-y-2">
+                            {activeConsultationServices.length > 0 ? (
+                              <>
+                                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                  Consultation Type
+                                </label>
+                                <Select
+                                  value={selectedConsultationServiceId?.toString() || ""}
+                                  onValueChange={(value) => setSelectedConsultationServiceId(parseInt(value))}
+                                >
+                                  <SelectTrigger 
+                                    className="w-full bg-white dark:bg-gray-800"
+                                    data-testid="select-consultation-service"
                                   >
-                                    {service.name} - {money(service.price)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {selectedConsultationService && (
-                              <p className="text-xs text-gray-600 dark:text-gray-400">
-                                {selectedConsultationService.description || "Standard consultation service"}
-                              </p>
+                                    <SelectValue placeholder="Select consultation type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {activeConsultationServices.map((service: any) => (
+                                      <SelectItem 
+                                        key={service.id} 
+                                        value={service.id.toString()}
+                                        data-testid={`option-service-${service.id}`}
+                                      >
+                                        {service.name} - {money(service.price)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                {selectedConsultationService && (
+                                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                                    {selectedConsultationService.description || "Standard consultation service"}
+                                  </p>
+                                )}
+                              </>
+                            ) : (
+                              <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                                <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                                <div className="text-xs text-red-700 dark:text-red-300">
+                                  <strong>No active consultation services found.</strong>
+                                  <br />
+                                  Please create and activate a consultation service in Service Management before registering patients with consultation fees.
+                                </div>
+                              </div>
                             )}
-                          </>
-                        ) : (
-                          <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                            <div className="text-xs text-red-700 dark:text-red-300">
-                              <strong>No active consultation services found.</strong>
-                              <br />
-                              Please create and activate a consultation service in Service Management before registering patients with consultation fees.
-                            </div>
                           </div>
                         )}
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-2 pt-4">
