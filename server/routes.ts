@@ -2775,71 +2775,120 @@ router.post("/api/order-lines", async (req: any, res) => {
     if (!relatedId && ["lab_test", "xray_exam", "ultrasound_exam"].includes(normalizedRelatedType)) {
       console.log(`[ORDER-LINES] Auto-creating ${normalizedRelatedType} record for service ${service.name}`);
       
-      // Extract diagnostic-specific data from request body
-      const diagnosticData = req.body.diagnosticData || {};
-      
-      // Get encounter to extract patientId
-      const encounter = await storage.getEncounterById(result.data.encounterId);
-      if (!encounter) {
-        return res.status(400).json({ 
-          error: "Encounter not found",
-          details: `Cannot create diagnostic order without valid encounter` 
-        });
-      }
+      try {
+        // Extract diagnostic-specific data from request body
+        const diagnosticData = req.body.diagnosticData || {};
+        
+        // Get encounter to extract patientId
+        const encounter = await storage.getEncounterById(result.data.encounterId);
+        if (!encounter) {
+          console.error(`[ORDER-LINES] ERROR: Encounter ${result.data.encounterId} not found for diagnostic auto-creation`);
+          return res.status(400).json({ 
+            error: "Encounter not found",
+            details: `Cannot create diagnostic order - encounter ${result.data.encounterId} does not exist. Please ensure the encounter was created successfully.` 
+          });
+        }
 
-      // Create diagnostic record based on type
-      if (normalizedRelatedType === "xray_exam") {
-        const xrayData = {
-          patientId: encounter.patientId,
-          examType: diagnosticData.examType || "chest",
-          bodyPart: diagnosticData.bodyPart || service.name,
-          clinicalIndication: diagnosticData.clinicalIndication || "",
-          specialInstructions: diagnosticData.specialInstructions || "",
-          requestedDate: new Date().toISOString(),
-        };
-        const xrayExam = await storage.createXrayExam(xrayData);
-        relatedId = xrayExam.examId;
-        console.log(`[ORDER-LINES] Created X-Ray exam ${relatedId}`);
-      } else if (normalizedRelatedType === "ultrasound_exam") {
-        const ultrasoundData = {
-          patientId: encounter.patientId,
-          examType: diagnosticData.examType || "abdominal",
-          specificExam: diagnosticData.specificExam || service.name,
-          clinicalIndication: diagnosticData.clinicalIndication || "",
-          specialInstructions: diagnosticData.specialInstructions || "",
-          requestedDate: new Date().toISOString(),
-        };
-        const ultrasoundExam = await storage.createUltrasoundExam(ultrasoundData);
-        relatedId = ultrasoundExam.examId;
-        console.log(`[ORDER-LINES] Created Ultrasound exam ${relatedId}`);
-      } else if (normalizedRelatedType === "lab_test") {
-        const labData = {
-          patientId: encounter.patientId,
-          category: diagnosticData.category || "blood",
-          tests: diagnosticData.tests || JSON.stringify([service.name]),
-          clinicalInfo: diagnosticData.clinicalInfo || "",
-          priority: diagnosticData.priority || "routine",
-          requestedDate: new Date().toISOString(),
-        };
-        const labTest = await storage.createLabTest(labData);
-        relatedId = labTest.testId;
-        console.log(`[ORDER-LINES] Created Lab test ${relatedId}`);
+        console.log(`[ORDER-LINES] Found encounter ${encounter.encounterId} for patient ${encounter.patientId}`);
+
+        // Create diagnostic record based on type
+        if (normalizedRelatedType === "xray_exam") {
+          const xrayData = {
+            patientId: encounter.patientId,
+            examType: diagnosticData.examType || "chest",
+            bodyPart: diagnosticData.bodyPart || service.name,
+            clinicalIndication: diagnosticData.clinicalIndication || "",
+            specialInstructions: diagnosticData.specialInstructions || "",
+            requestedDate: new Date().toISOString(),
+          };
+          console.log(`[ORDER-LINES] Creating X-Ray exam with data:`, JSON.stringify(xrayData));
+          const xrayExam = await storage.createXrayExam(xrayData);
+          relatedId = xrayExam.examId;
+          console.log(`[ORDER-LINES] SUCCESS: Created X-Ray exam ${relatedId}`);
+        } else if (normalizedRelatedType === "ultrasound_exam") {
+          const ultrasoundData = {
+            patientId: encounter.patientId,
+            examType: diagnosticData.examType || "abdominal",
+            specificExam: diagnosticData.specificExam || service.name,
+            clinicalIndication: diagnosticData.clinicalIndication || "",
+            specialInstructions: diagnosticData.specialInstructions || "",
+            requestedDate: new Date().toISOString(),
+          };
+          console.log(`[ORDER-LINES] Creating Ultrasound exam with data:`, JSON.stringify(ultrasoundData));
+          const ultrasoundExam = await storage.createUltrasoundExam(ultrasoundData);
+          relatedId = ultrasoundExam.examId;
+          console.log(`[ORDER-LINES] SUCCESS: Created Ultrasound exam ${relatedId}`);
+        } else if (normalizedRelatedType === "lab_test") {
+          const labData = {
+            patientId: encounter.patientId,
+            category: diagnosticData.category || "blood",
+            tests: diagnosticData.tests || JSON.stringify([service.name]),
+            clinicalInfo: diagnosticData.clinicalInfo || "",
+            priority: diagnosticData.priority || "routine",
+            requestedDate: new Date().toISOString(),
+          };
+          console.log(`[ORDER-LINES] Creating Lab test with data:`, JSON.stringify(labData));
+          const labTest = await storage.createLabTest(labData);
+          relatedId = labTest.testId;
+          console.log(`[ORDER-LINES] SUCCESS: Created Lab test ${relatedId}`);
+        }
+      } catch (diagnosticError) {
+        // Specific error for diagnostic record creation failure
+        console.error(`[ORDER-LINES] CRITICAL ERROR: Failed to create ${normalizedRelatedType} record:`, diagnosticError);
+        console.error(`[ORDER-LINES] Error details:`, diagnosticError instanceof Error ? diagnosticError.message : 'Unknown error');
+        console.error(`[ORDER-LINES] Error stack:`, diagnosticError instanceof Error ? diagnosticError.stack : 'No stack trace');
+        
+        return res.status(500).json({ 
+          error: `Failed to create ${normalizedRelatedType.replace('_', ' ')} record`,
+          details: diagnosticError instanceof Error 
+            ? diagnosticError.message 
+            : `Database error while creating ${normalizedRelatedType.replace('_', ' ')}. Please check server logs for details.`,
+          stage: "diagnostic_creation",
+          diagnosticType: normalizedRelatedType,
+        });
       }
     }
 
     // Create order line with normalized relatedType and relatedId
+    console.log(`[ORDER-LINES] Creating order line for encounter ${result.data.encounterId}, service ${service.name}, relatedId: ${relatedId}`);
     const orderLineData = {
       ...result.data,
       relatedType: normalizedRelatedType,
       relatedId: relatedId,
     };
 
-    const orderLine = await storage.createOrderLine(orderLineData);
+    let orderLine;
+    try {
+      orderLine = await storage.createOrderLine(orderLineData);
+      console.log(`[ORDER-LINES] SUCCESS: Created order line ID ${orderLine.id} for encounter ${result.data.encounterId}`);
+    } catch (orderLineError) {
+      console.error(`[ORDER-LINES] CRITICAL ERROR: Failed to create order line:`, orderLineError);
+      console.error(`[ORDER-LINES] Order line data:`, JSON.stringify(orderLineData));
+      console.error(`[ORDER-LINES] Error details:`, orderLineError instanceof Error ? orderLineError.message : 'Unknown error');
+      
+      return res.status(500).json({ 
+        error: "Failed to create order line",
+        details: orderLineError instanceof Error 
+          ? orderLineError.message 
+          : "Database error while creating order line. The diagnostic record was created but the order could not be linked.",
+        stage: "order_line_creation",
+        diagnosticId: relatedId,
+      });
+    }
 
     res.status(201).json(orderLine);
   } catch (error) {
-    console.error("Error creating order line:", error);
-    res.status(500).json({ error: "Failed to create order line" });
+    // Generic catch-all for unexpected errors
+    console.error("[ORDER-LINES] UNEXPECTED ERROR:", error);
+    console.error("[ORDER-LINES] Error type:", error instanceof Error ? error.constructor.name : typeof error);
+    console.error("[ORDER-LINES] Error message:", error instanceof Error ? error.message : String(error));
+    console.error("[ORDER-LINES] Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+    
+    res.status(500).json({ 
+      error: "Failed to create order line",
+      details: error instanceof Error ? error.message : "An unexpected error occurred. Please check server logs.",
+      stage: "unknown"
+    });
   }
 });
 
