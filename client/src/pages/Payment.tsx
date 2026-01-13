@@ -32,6 +32,7 @@ interface Patient {
   lastName: string;
   age: string;
   gender: string;
+  patientType?: "regular" | "referral_diagnostic";
 }
 
 interface UnpaidOrder {
@@ -607,6 +608,11 @@ export default function Payment() {
                     </span>
                     <span className="text-gray-400 text-xs">•</span>
                     <Badge variant="outline" className="text-xs flex-shrink-0">{patient.patientId}</Badge>
+                    {patient.patientType === "referral_diagnostic" && (
+                      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border border-orange-300 dark:border-orange-700 text-xs">
+                        External Referral
+                      </Badge>
+                    )}
                     <span className="text-gray-400 text-xs">•</span>
                     <span className="text-gray-500 text-xs">{formatDateNice(order.date)}</span>
                   </>
