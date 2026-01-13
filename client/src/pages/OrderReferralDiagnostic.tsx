@@ -81,15 +81,30 @@ export default function OrderReferralDiagnostic() {
       service: Service;
       notes: string;
     }) => {
-      // 1. Create diagnostics_only encounter
-      const encounterData = {
-        patientId: patient.patientId,
-        visitDate: getClinicDayKey(), // Current clinic day in YYYY-MM-DD format (Africa/Juba timezone)
-        notes: `Referral for ${department === "lab" ? "Laboratory" : department === "xray" ? "X-Ray" : "Ultrasound"} (Diagnostics Only)`,
-        // status defaults to "open" if not specified
-      };
-      const encounterResponse = await apiRequest("POST", "/api/encounters", encounterData);
-      const encounter: Encounter = await encounterResponse.json();
+      // 1. Check for existing open encounter today, or create new one if none exists
+      const todayParams = new URLSearchParams({ 
+        patientId: patient.patientId.toString(), 
+        status: "open", 
+        preset: "today" 
+      });
+      const existingResponse = await apiRequest("GET", `/api/encounters?${todayParams.toString()}`);
+      const existingVisits = await existingResponse.json();
+
+      let encounter: Encounter;
+      if (existingVisits.length > 0) {
+        // Reuse existing open encounter
+        encounter = existingVisits[0];
+      } else {
+        // Create new diagnostics_only encounter
+        const encounterData = {
+          patientId: patient.patientId,
+          visitDate: getClinicDayKey(), // Current clinic day in YYYY-MM-DD format (Africa/Juba timezone)
+          notes: `Referral for ${department === "lab" ? "Laboratory" : department === "xray" ? "X-Ray" : "Ultrasound"} (Diagnostics Only)`,
+          // status defaults to "open" if not specified
+        };
+        const encounterResponse = await apiRequest("POST", "/api/encounters", encounterData);
+        encounter = await encounterResponse.json();
+      }
 
       // 2. Create order line via order-lines endpoint (server auto-creates diagnostic record)
       let relatedType: string;
