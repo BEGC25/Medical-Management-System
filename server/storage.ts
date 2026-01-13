@@ -90,21 +90,32 @@ async function generatePaymentId(): Promise<string> {
 }
 
 async function generateEncounterId(): Promise<string> {
-  if (encounterCounter === 0) {
-    // Extract the highest encounter number from existing IDs
-    const allEncounters = await db.select({ encounterId: encounters.encounterId }).from(encounters);
-    let maxNum = 0;
-    for (const enc of allEncounters) {
-      const match = enc.encounterId.match(/BGC-ENC(\d+)/);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (num > maxNum) maxNum = num;
+  try {
+    if (encounterCounter === 0) {
+      console.log('[generateEncounterId] Initializing encounter counter from database');
+      // Extract the highest encounter number from existing IDs
+      const allEncounters = await db.select({ encounterId: encounters.encounterId }).from(encounters);
+      console.log(`[generateEncounterId] Found ${allEncounters.length} existing encounters`);
+      let maxNum = 0;
+      for (const enc of allEncounters) {
+        const match = enc.encounterId.match(/BGC-ENC(\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
       }
+      encounterCounter = maxNum;
+      console.log(`[generateEncounterId] Counter initialized to ${encounterCounter}`);
     }
-    encounterCounter = maxNum;
+    encounterCounter++;
+    const newId = `BGC-ENC${encounterCounter}`;
+    console.log(`[generateEncounterId] Generated new encounter ID: ${newId}`);
+    return newId;
+  } catch (error) {
+    console.error('[generateEncounterId] FAILED to generate encounter ID:', error);
+    console.error('[generateEncounterId] Error details:', error instanceof Error ? error.stack : error);
+    throw new Error(`Failed to generate encounter ID: ${error instanceof Error ? error.message : String(error)}`);
   }
-  encounterCounter++;
-  return `BGC-ENC${encounterCounter}`;
 }
 
 async function generateInvoiceId(): Promise<string> {
@@ -2630,7 +2641,24 @@ export class MemStorage implements IStorage {
 
   // Encounter Methods
   async createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter> {
-    const encounterId = await generateEncounterId();
+    console.log('[createEncounter] Starting encounter creation');
+    console.log('[createEncounter] Input data:', JSON.stringify(data, null, 2));
+    
+    let encounterId: string;
+    try {
+      // Step 1: Generate encounter ID
+      encounterId = await generateEncounterId();
+      
+      // Validate the generated ID
+      if (!encounterId || encounterId.trim() === '') {
+        throw new Error('Generated encounter ID is empty or invalid');
+      }
+      console.log(`[createEncounter] Successfully generated encounter ID: ${encounterId}`);
+    } catch (error) {
+      console.error('[createEncounter] FAILED at ID generation step');
+      throw error; // Re-throw with the detailed error from generateEncounterId
+    }
+    
     const now = new Date().toISOString();
     const clinicDay = getClinicDayKey(new Date());
 
@@ -2642,8 +2670,59 @@ export class MemStorage implements IStorage {
       createdAt: now,
     };
 
-    const [encounter] = await db.insert(encounters).values(insertData).returning();
-    return encounter;
+    console.log('[createEncounter] Prepared insert data:', JSON.stringify(insertData, null, 2));
+
+    try {
+      // Step 2: Attempt insert with .returning()
+      console.log('[createEncounter] Attempting database insert with .returning()');
+      const [encounter] = await db.insert(encounters).values(insertData).returning();
+      
+      if (!encounter) {
+        console.error('[createEncounter] WARNING: .returning() returned no data, attempting fallback query');
+        // Fallback: Query for the just-inserted encounter
+        const [queriedEncounter] = await db.select().from(encounters).where(eq(encounters.encounterId, encounterId));
+        
+        if (!queriedEncounter) {
+          throw new Error('Failed to create encounter: Insert succeeded but record not found');
+        }
+        
+        console.log('[createEncounter] Fallback query successful, encounter created:', queriedEncounter.encounterId);
+        return queriedEncounter;
+      }
+      
+      console.log('[createEncounter] Successfully created encounter:', encounter.encounterId);
+      return encounter;
+    } catch (error) {
+      console.error('[createEncounter] FAILED at database insert step');
+      console.error('[createEncounter] Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('[createEncounter] Error message:', error instanceof Error ? error.message : String(error));
+      console.error('[createEncounter] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      // Check if this is a .returning() compatibility issue
+      if (error instanceof Error && error.message.toLowerCase().includes('returning')) {
+        console.log('[createEncounter] Detected .returning() issue, attempting insert without .returning()');
+        try {
+          // Attempt insert without .returning()
+          await db.insert(encounters).values(insertData);
+          
+          // Query for the created encounter
+          const [createdEncounter] = await db.select().from(encounters).where(eq(encounters.encounterId, encounterId));
+          
+          if (!createdEncounter) {
+            throw new Error('Insert without .returning() succeeded but record not found');
+          }
+          
+          console.log('[createEncounter] Fallback insert successful:', createdEncounter.encounterId);
+          return createdEncounter;
+        } catch (fallbackError) {
+          console.error('[createEncounter] Fallback insert also failed:', fallbackError);
+          throw new Error(`Database insert failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+        }
+      }
+      
+      // Re-throw the original error with more context
+      throw new Error(`Failed to insert encounter into database: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async getEncounters(status?: string, startDayKey?: string, endDayKey?: string, patientId?: string): Promise<schema.Encounter[]> {
