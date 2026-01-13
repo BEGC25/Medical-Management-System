@@ -252,3 +252,20 @@ All issues have been addressed:
 - ✅ Build successful with no errors
 
 The implementation is complete and ready for manual testing.
+
+---
+
+## Future Improvements (Out of Scope)
+
+While reviewing the code, we identified some existing design elements that could be improved for even better consistency:
+
+1. **Laboratory Page Color Scheme:**
+   - The Laboratory page uses orange for "Pending" status badges (existing design)
+   - This predates the referral patient feature
+   - Consider using yellow/amber for pending status in a future design update
+   - Current implementation is still clear because:
+     - Referral badges say "External Referral" explicitly
+     - They appear next to patient names (different context than status badges)
+     - Different positioning and text content provide clear distinction
+
+These improvements are not required for the current task but could enhance the design in future iterations.
