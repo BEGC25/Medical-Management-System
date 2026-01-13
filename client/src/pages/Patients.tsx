@@ -1427,13 +1427,28 @@ export default function Patients() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
                             <div
-                              className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold shadow-md transition-transform duration-300 hover:scale-110 motion-reduce:transform-none ${getAvatarColor(patient.firstName + patient.lastName)}`}
+                              className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold shadow-md transition-transform duration-300 hover:scale-110 motion-reduce:transform-none ${
+                                patient.patientType === "referral_diagnostic" 
+                                  ? "bg-orange-500" 
+                                  : getAvatarColor(patient.firstName + patient.lastName)
+                              }`}
                             >
                               {getInitials(patient.firstName, patient.lastName)}
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-900 dark:text-white">
-                                {patient.firstName} {patient.lastName}
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-gray-900 dark:text-white">
+                                  {patient.firstName} {patient.lastName}
+                                </span>
+                                {patient.patientType === "referral_diagnostic" && (
+                                  <Badge 
+                                    variant="outline"
+                                    className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-800 text-xs font-medium px-2 py-0.5"
+                                    title="External referral patient - diagnostics only, no doctor consultation"
+                                  >
+                                    🔬 External Referral
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1459,7 +1474,9 @@ export default function Patients() {
                           {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
                         </td>
                         <td className="px-5 py-4">
-                          {patient.serviceStatus ? (
+                          {patient.patientType === "referral_diagnostic" ? (
+                            <span className="text-gray-500 dark:text-gray-500 text-sm italic">N/A</span>
+                          ) : patient.serviceStatus ? (
                             ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
                               <Badge 
                                 variant="outline" 
@@ -1569,7 +1586,11 @@ export default function Patients() {
                       {/* Patient Header */}
                       <div className="flex items-start gap-3 mb-3">
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold shadow-md flex-shrink-0 ${getAvatarColor(patient.firstName + patient.lastName)}`}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold shadow-md flex-shrink-0 ${
+                            patient.patientType === "referral_diagnostic" 
+                              ? "bg-orange-500" 
+                              : getAvatarColor(patient.firstName + patient.lastName)
+                          }`}
                         >
                           {getInitials(patient.firstName, patient.lastName)}
                         </div>
@@ -1577,7 +1598,16 @@ export default function Patients() {
                           <div className="font-semibold text-base text-gray-900 dark:text-white truncate">
                             {patient.firstName} {patient.lastName}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                          {patient.patientType === "referral_diagnostic" && (
+                            <Badge 
+                              variant="outline"
+                              className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-800 text-xs font-medium px-2 py-0.5 mt-1"
+                              title="External referral patient - diagnostics only"
+                            >
+                              🔬 External Referral
+                            </Badge>
+                          )}
+                          <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1">
                             ID: {patient.patientId}
                           </div>
                         </div>
@@ -1607,7 +1637,11 @@ export default function Patients() {
                         </div>
                         
                         {/* Consultation Badge */}
-                        {patient.serviceStatus && (
+                        {patient.patientType === "referral_diagnostic" ? (
+                          <div className="text-gray-500 dark:text-gray-500 text-xs italic">
+                            Consultation: N/A
+                          </div>
+                        ) : patient.serviceStatus && (
                           <div>
                             {((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
                               <Badge 
