@@ -943,8 +943,7 @@ export default function Ultrasound() {
           <AlertTriangle className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           <AlertTitle className="text-indigo-900 dark:text-indigo-100">Diagnostic Ordering Changed</AlertTitle>
           <AlertDescription className="text-indigo-800 dark:text-indigo-200">
-            Ultrasound exams can no longer be ordered directly from this page. Doctors should order from the Treatment page. 
-            For referral/walk-in patients, Admins can use the referral ordering feature on the Patients page.
+            New orders can only be created from the Treatment page by doctors during patient visits. Staff can update results and status for existing orders.
           </AlertDescription>
         </Alert>
 
