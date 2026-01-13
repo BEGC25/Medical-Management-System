@@ -25,6 +25,7 @@ import {
   Lightbulb,
   Filter,
   RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
