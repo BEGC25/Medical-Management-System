@@ -23,6 +23,7 @@ interface PatientSearchProps {
   filterPendingOnly?: boolean; // Filter to show only patients with unpaid orders
   preset?: string; // Optional preset for cache key differentiation (e.g., "today", "yesterday", "last7", "last30")
   resultsReadyMap?: ResultsReadyMap; // Map of completed diagnostic results by patient ID
+  excludePatientTypes?: string[]; // Optional list of patient types to exclude (e.g., ["referral_diagnostic"])
 }
 
 // Format date as "19 Oct 2025" in clinic timezone (Africa/Juba)
@@ -62,6 +63,7 @@ export default function PatientSearch({
   filterPendingOnly = false,
   preset,
   resultsReadyMap,
+  excludePatientTypes = [],
 }: PatientSearchProps) {
   // Always-on search: if 3+ chars, force "search"
   const effectiveMode = searchTerm.trim().length >= 3 ? "search" : viewMode;
@@ -144,6 +146,11 @@ export default function PatientSearch({
     ? rawPatients.filter(hasPendingOrders)
     : rawPatients;
 
+  // Filter out excluded patient types (e.g., referral_diagnostic)
+  const filteredPatients = patients && excludePatientTypes.length > 0
+    ? patients.filter((p: any) => !excludePatientTypes.includes(p.patientType))
+    : patients;
+
   return (
     <div className="space-y-4">
       {isLoading && (
@@ -152,7 +159,7 @@ export default function PatientSearch({
         </div>
       )}
 
-      {patients && patients.length > 0 && (
+      {filteredPatients && filteredPatients.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="sticky top-0 z-10 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
@@ -187,7 +194,7 @@ export default function PatientSearch({
             </thead>
 
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {patients.map((p: any, i: number) => {
+              {filteredPatients.map((p: any, i: number) => {
                 const s = p.serviceStatus || {};
                 const due = (s.balanceToday ?? s.balance ?? 0) as number;
                 // ALWAYS use patient's actual dateOfService from API when available
@@ -331,7 +338,7 @@ export default function PatientSearch({
         </div>
       )}
 
-      {patients && patients.length === 0 && (
+      {filteredPatients && filteredPatients.length === 0 && (
         <div className="text-center py-12 text-gray-500 dark:text-gray-400">
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
