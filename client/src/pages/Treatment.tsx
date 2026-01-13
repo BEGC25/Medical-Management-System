@@ -703,6 +703,9 @@ export default function Treatment() {
   // Recognition instance (shared across all fields)
   const recognitionInstanceRef = useRef<any>(null);
 
+  // Track consultation addition to prevent duplicates
+  const consultationAddedRef = useRef<Set<string>>(new Set());
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -905,6 +908,18 @@ export default function Treatment() {
     
     return result;
   }, [laboratoryServices]);
+  
+  // Check which lab categories have available services
+  const availableLabCategories = useMemo(() => {
+    return {
+      blood: availableLabTests.blood.length > 0,
+      urine: availableLabTests.urine.length > 0,
+      stool: availableLabTests.stool.length > 0,
+      microbiology: availableLabTests.microbiology.length > 0,
+      chemistry: availableLabTests.chemistry.length > 0,
+      hormonal: availableLabTests.hormonal.length > 0,
+    };
+  }, [availableLabTests]);
   
   // Filter radiology services - only show active radiology services
   const radiologyServices = useMemo(() => {
@@ -1827,10 +1842,23 @@ export default function Treatment() {
   // auto-add consultation (once per visit)
   useEffect(() => {
     if (!currentEncounter || !services.length) return;
+    
+    const encounterId = currentEncounter.encounterId;
+    
+    // Check if we've already added consultation for this encounter
+    if (consultationAddedRef.current.has(encounterId)) return;
+    
+    // Check if consultation already exists in orders
     const hasConsult = orders.some((o: any) => o.type === "consultation");
-    if (!hasConsult) addConsultationMutation.mutate();
+    
+    // If no consultation exists and we're not already adding one, add it
+    if (!hasConsult && !addConsultationMutation.isPending) {
+      // Mark as added immediately to prevent race conditions
+      consultationAddedRef.current.add(encounterId);
+      addConsultationMutation.mutate();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEncounter?.encounterId, services.length, JSON.stringify(orders)]);
+  }, [currentEncounter?.encounterId, services.length]);
 
   // ---------- handlers ----------
   // ... (keep handlers: handleCloseVisit, handleSubmit, handlePatientSelect, etc.) ...
@@ -3048,19 +3076,25 @@ export default function Treatment() {
                                           { value: 'hormonal' as const, label: 'Hormones', description: 'Endocrine panels', icon: '💉' },
                                         ].map((cat) => {
                                           const isSelected = labCategory === cat.value;
+                                          const isAvailable = availableLabCategories[cat.value];
                                           return (
                                             <button
                                               key={cat.value}
                                               type="button"
+                                              disabled={!isAvailable}
                                               onClick={() => {
-                                                setLabCategory(cat.value);
-                                                setCurrentLabCategory(cat.value);
-                                                setLabSpecificTests([]);
+                                                if (isAvailable) {
+                                                  setLabCategory(cat.value);
+                                                  setCurrentLabCategory(cat.value);
+                                                  setLabSpecificTests([]);
+                                                }
                                               }}
                                               className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left ${
                                                 isSelected
                                                   ? 'border-green-500 bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 shadow-lg scale-105'
-                                                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-green-300 hover:shadow-md'
+                                                  : isAvailable
+                                                  ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-green-300 hover:shadow-md'
+                                                  : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'
                                               }`}
                                             >
                                               {isSelected && (
@@ -3070,12 +3104,17 @@ export default function Treatment() {
                                                   </div>
                                                 </div>
                                               )}
+                                              {!isSelected && isAvailable && (
+                                                <div className="absolute top-2 right-2">
+                                                  <CheckCircle className="w-5 h-5 text-green-500" aria-label="Available service" />
+                                                </div>
+                                              )}
                                               <div className="text-3xl mb-2">{cat.icon}</div>
-                                              <div className={`font-semibold text-sm mb-1 ${isSelected ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white'}`}>
+                                              <div className={`font-semibold text-sm mb-1 ${isSelected ? 'text-green-900 dark:text-green-100' : isAvailable ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600'}`}>
                                                 {cat.label}
                                               </div>
-                                              <div className={`text-xs ${isSelected ? 'text-green-700 dark:text-green-300' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                {cat.description}
+                                              <div className={`text-xs ${isSelected ? 'text-green-700 dark:text-green-300' : isAvailable ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'}`}>
+                                                {isAvailable ? cat.description : 'Not configured'}
                                               </div>
                                             </button>
                                           );
