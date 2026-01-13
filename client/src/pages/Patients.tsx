@@ -244,9 +244,7 @@ export default function Patients() {
     }
   }, [defaultConsultationService, selectedConsultationServiceId]);
   
-  // Debug log to see what we're getting
-  console.log("Active consultation services:", activeConsultationServices);
-  console.log("Selected consultation service:", selectedConsultationService);
+  // Consultation service logging removed to prevent re-render spam
 
   // Invalidate patients query when preset changes to prevent cache reuse
   useEffect(() => {
@@ -2416,7 +2414,7 @@ export default function Patients() {
           <DialogHeader>
             <DialogTitle>Order Referral Diagnostic</DialogTitle>
             <DialogDescription>
-              Create a diagnostic order for a referral/walk-in patient (no consultation required).
+              Create a diagnostic order for a referral/walk-in patient (no consultation required). Select a patient below, choose the department and service, then create the order.
             </DialogDescription>
           </DialogHeader>
           
@@ -2424,12 +2422,38 @@ export default function Patients() {
             {/* Step 1: Select Patient */}
             <div className="space-y-2">
               <label className="text-sm font-medium">1. Select Patient</label>
+              {referralPatient && (
+                <div className="mb-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400">
+                        Selected
+                      </Badge>
+                      <span className="font-medium text-sm">
+                        {referralPatient.firstName} {referralPatient.lastName}
+                      </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        (ID: {referralPatient.patientId})
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setReferralPatient(null)}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              )}
               <PatientSearch
                 onViewPatient={(patient) => setReferralPatient(patient)}
                 viewMode="search"
                 selectedDate=""
                 searchTerm=""
                 showActions={false}
+                selectedPatientId={referralPatient?.patientId}
               />
             </div>
 
