@@ -2642,7 +2642,15 @@ export class MemStorage implements IStorage {
   // Encounter Methods
   async createEncounter(data: schema.InsertEncounter): Promise<schema.Encounter> {
     console.log('[createEncounter] Starting encounter creation');
-    console.log('[createEncounter] Input data:', JSON.stringify(data, null, 2));
+    // Redact sensitive data for logging - only log non-sensitive fields
+    console.log('[createEncounter] Input data (redacted):', JSON.stringify({
+      patientId: data.patientId,
+      visitDate: data.visitDate,
+      policy: data.policy,
+      // Notes may contain sensitive info, so we just log if it exists
+      hasNotes: !!data.notes,
+      // Don't log attendingClinician, chiefComplaint, or other potentially sensitive fields
+    }, null, 2));
     
     let encounterId: string;
     try {
@@ -2670,7 +2678,7 @@ export class MemStorage implements IStorage {
       createdAt: now,
     };
 
-    console.log('[createEncounter] Prepared insert data:', JSON.stringify(insertData, null, 2));
+    console.log('[createEncounter] Prepared insert with encounter ID:', encounterId);
 
     try {
       // Step 2: Attempt insert with .returning()

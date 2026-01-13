@@ -2291,10 +2291,15 @@ router.post("/api/encounters", async (req, res) => {
   } catch (error) {
     // COMPREHENSIVE ERROR LOGGING for debugging production issues
     console.error("=== ENCOUNTER CREATION ERROR ===");
-    console.error("Request body:", JSON.stringify(req.body, null, 2));
+    // Redact sensitive patient data - only log non-sensitive request fields
+    console.error("Request (redacted):", JSON.stringify({
+      patientId: req.body.patientId,
+      visitDate: req.body.visitDate,
+      policy: req.body.policy,
+      hasNotes: !!req.body.notes,
+    }, null, 2));
     console.error("Error message:", error instanceof Error ? error.message : String(error));
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
-    console.error("Error details:", error);
     console.error("================================");
     
     // Return a more specific error message based on the error type
@@ -2307,9 +2312,13 @@ router.post("/api/encounters", async (req, res) => {
         errorMessage = "Failed to create encounter: Missing required field. Please check your data.";
       } else if (error.message.includes("SQLITE_ERROR") || error.message.includes("database")) {
         errorMessage = "Failed to create encounter: Database error. Please try again.";
+      } else if (error.message.includes("generate encounter ID")) {
+        errorMessage = "Failed to create encounter: ID generation error. Please try again.";
+      } else if (error.message.includes("Insert") || error.message.includes("insert")) {
+        errorMessage = "Failed to create encounter: Database insert error. Please try again.";
       } else {
-        // Generic error with a hint about what went wrong
-        errorMessage = `Failed to create encounter: ${error.message}`;
+        // For other errors, only expose safe parts of the message
+        errorMessage = "Failed to create encounter. Please try again or contact support.";
       }
     }
     
