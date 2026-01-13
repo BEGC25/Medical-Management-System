@@ -18,6 +18,7 @@ import PatientSearch from "@/components/PatientSearch";
 import { type Patient, type Service, type Encounter } from "@shared/schema";
 import { ROLES } from "@shared/auth-roles";
 import { apiRequest } from "@/lib/queryClient";
+import { getClinicDayKey } from "@/lib/date-utils";
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
@@ -83,9 +84,9 @@ export default function OrderReferralDiagnostic() {
       // 1. Create diagnostics_only encounter
       const encounterData = {
         patientId: patient.patientId,
-        encounterType: "diagnostics_only" as const,
-        chiefComplaint: `Referral for ${department === "lab" ? "Laboratory" : department === "xray" ? "X-Ray" : "Ultrasound"}`,
-        status: "active" as const,
+        visitDate: getClinicDayKey(), // Current clinic day in YYYY-MM-DD format (Africa/Juba timezone)
+        notes: `Referral for ${department === "lab" ? "Laboratory" : department === "xray" ? "X-Ray" : "Ultrasound"} (Diagnostics Only)`,
+        // status defaults to "open" if not specified
       };
       const encounterResponse = await apiRequest("POST", "/api/encounters", encounterData);
       const encounter: Encounter = await encounterResponse.json();

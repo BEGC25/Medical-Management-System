@@ -500,9 +500,8 @@ export default function Patients() {
       const encounterData = {
         patientId: patient.patientId,
         visitDate: getClinicDayKey(), // Current clinic day in YYYY-MM-DD format (Africa/Juba timezone)
-        encounterType: "diagnostics_only" as const,
-        chiefComplaint: `Referral for ${department === "lab" ? "Laboratory" : department === "xray" ? "X-Ray" : "Ultrasound"}`,
-        status: "active" as const,
+        notes: `Referral for ${department === "lab" ? "Laboratory" : department === "xray" ? "X-Ray" : "Ultrasound"} (Diagnostics Only)`,
+        // status defaults to "open" if not specified
       };
       const encounterResponse = await apiRequest("POST", "/api/encounters", encounterData);
       const encounter: Encounter = await encounterResponse.json();
