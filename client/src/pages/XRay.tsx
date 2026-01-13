@@ -850,8 +850,7 @@ export default function XRay() {
           <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertTitle className="text-blue-900 dark:text-blue-100">Diagnostic Ordering Changed</AlertTitle>
           <AlertDescription className="text-blue-800 dark:text-blue-200">
-            X-Ray exams can no longer be ordered directly from this page. Doctors should order from the Treatment page. 
-            For referral/walk-in patients, Admins can use the referral ordering feature on the Patients page.
+            New orders can only be created from the Treatment page by doctors during patient visits. Staff can update results and status for existing orders.
           </AlertDescription>
         </Alert>
 
