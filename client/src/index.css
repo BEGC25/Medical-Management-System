@@ -366,7 +366,8 @@
   #printable-invoice {
     display: block !important;
     visibility: visible !important;
-    /* Duplicate constraint for redundancy: A4 height (297mm) - margins (24mm) */
+    /* Duplicate of inline style constraint for fallback: A4 height (297mm) - top+bottom margins (24mm) */
+    /* Ensures single-page fit even if component styles fail to load */
     max-height: calc(297mm - 24mm);
     overflow: hidden;
   }

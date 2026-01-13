@@ -23,6 +23,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
       <style>{`
         @media print {
           @page {
+            /* A4 margins: 12mm top/bottom for single-page fit, 15mm left/right for printer safety */
             margin: 12mm 15mm;
             size: A4;
           }
