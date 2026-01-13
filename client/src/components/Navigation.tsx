@@ -16,7 +16,8 @@ import {
   Receipt,
   UserCog,
   Tag,
-  X
+  X,
+  ClipboardList
 } from "lucide-react";
 
 const navItems = [
@@ -41,9 +42,10 @@ const navItems = [
   { path: "/billing", label: "Billing & Invoices", icon: Receipt, category: "Financial" },
   { path: "/all-results", label: "All Results Report", icon: FileSearch, category: "Financial" },
   
-  // SETTINGS
-  { path: "/service-management", label: "Service Management", icon: Tag, category: "Settings" },
-  { path: "/users", label: "User Management", icon: UserCog, category: "Settings" },
+  // ADMIN (Admin-only section)
+  { path: "/patients", label: "Order Referral Diagnostic", icon: ClipboardList, category: "Admin" },
+  { path: "/users", label: "User Management", icon: UserCog, category: "Admin" },
+  { path: "/service-management", label: "Service Management", icon: Tag, category: "Admin" },
   
   // REPORTS
   { path: "/reports", label: "Reports", icon: BarChart3, category: "Reports" },
@@ -61,6 +63,12 @@ export default function Navigation({ isMobileMenuOpen = false, onCloseMobileMenu
   // Filter navigation items based on user role
   const visibleItems = navItems.filter((item) => {
     if (!user) return false; // No user logged in, show nothing
+    
+    // Only show Admin category items to admin users
+    if (item.category === "Admin" && user.role !== ROLES.ADMIN) {
+      return false;
+    }
+    
     return canSeeNavItem(user.role as any, item.path);
   });
 
