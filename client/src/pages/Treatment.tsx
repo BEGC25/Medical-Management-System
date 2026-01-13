@@ -2554,6 +2554,7 @@ export default function Treatment() {
                     filterPendingOnly={quickFilter === "pending"}
                     preset={presetParams.preset} // Pass preset for backend filtering and cache isolation
                     resultsReadyMap={resultsReadyMap} // Pass completed results map for table indicators
+                    excludePatientTypes={["referral_diagnostic"]} // Exclude external referral patients from treatment workflow
                   />
                 </div>
               </>
