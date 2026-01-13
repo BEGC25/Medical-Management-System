@@ -677,6 +677,32 @@ export default function Treatment() {
   // Recognition instance (shared across all fields)
   const recognitionInstanceRef = useRef<any>(null);
 
+  // Exam type patterns for service matching (shared between X-ray and Ultrasound sections)
+  const XRAY_EXAM_TYPE_PATTERNS: Record<string, string[]> = {
+    'chest': ['chest'],
+    'abdomen': ['abdomen', 'abdominal'],
+    'extremities': ['extremity', 'extremities', 'limb'],
+    'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
+    'skull': ['skull', 'head', 'cranial'],
+    'pelvis': ['pelvis', 'pelvic', 'hip'],
+  };
+
+  const ULTRASOUND_EXAM_TYPE_PATTERNS: Record<string, string[]> = {
+    'obstetric': ['obstetric', 'pregnancy', 'ob'],
+    'abdominal': ['abdomen', 'abdominal'],
+    'pelvic': ['pelvis', 'pelvic'],
+    'thyroid': ['thyroid'],
+    'breast': ['breast'],
+    'cardiac': ['cardiac', 'echo', 'heart'],
+    'renal': ['renal', 'kidney'],
+    'vascular': ['vascular', 'doppler'],
+    'soft_tissue': ['soft tissue', 'superficial'],
+    'scrotal': ['scrotal', 'testicular'],
+    'neck': ['neck'],
+    'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
+    'thoracic': ['thoracic', 'chest'],
+  };
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -3219,29 +3245,19 @@ export default function Treatment() {
                                   (() => {
                                     // Enhanced X-Ray ordering with visual selector and safety checklist
                                     if (qoTab === 'xray') {
-                                      // Define exam type patterns for matching services
-                                      const examTypePatterns: Record<string, string[]> = {
-                                        'chest': ['chest'],
-                                        'abdomen': ['abdomen', 'abdominal'],
-                                        'extremities': ['extremity', 'extremities', 'limb'],
-                                        'spine': ['spine', 'spinal', 'lumbar', 'cervical', 'thoracic'],
-                                        'skull': ['skull', 'head', 'cranial'],
-                                        'pelvis': ['pelvis', 'pelvic', 'hip'],
-                                      };
-
                                       // ALWAYS compute the matching service based on selected exam type (even if null)
                                       const xrayService = xrayExamType 
                                         ? radiologyServices.find((s: any) => {
                                             const serviceName = (s.name || '').toLowerCase();
                                             const examType = xrayExamType.toLowerCase();
-                                            const patterns = examTypePatterns[examType] || [examType];
+                                            const patterns = XRAY_EXAM_TYPE_PATTERNS[examType] || [examType];
                                             return patterns.some(pattern => serviceName.includes(pattern));
                                           })
                                         : null;
 
                                       // Compute which exam types have available services
                                       const availableExamTypes = XRAY_EXAM_TYPES.filter(type => {
-                                        const patterns = examTypePatterns[type.value] || [type.value];
+                                        const patterns = XRAY_EXAM_TYPE_PATTERNS[type.value] || [type.value];
                                         return radiologyServices.some((s: any) => {
                                           const serviceName = (s.name || '').toLowerCase();
                                           return patterns.some(pattern => serviceName.includes(pattern));
@@ -3329,26 +3345,28 @@ export default function Treatment() {
                                             <div className="space-y-3">
                                               <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Presets</h3>
                                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                {XRAY_PRESETS.map((preset) => (
-                                                  <button
-                                                    key={preset.name}
-                                                    type="button"
-                                                    onClick={() => {
-                                                      setXrayExamType(preset.examType);
-                                                      setXrayBodyPart(preset.bodyPart);
-                                                      setXrayClinicalInfo(preset.indication);
-                                                      toast({ title: "Preset Applied", description: preset.name });
-                                                    }}
-                                                    className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
-                                                  >
-                                                    <span className="text-2xl">{preset.icon}</span>
-                                                    <div className="flex-1">
-                                                      <div className="font-semibold text-sm text-gray-900 dark:text-white">{preset.name}</div>
-                                                      <div className="text-xs text-gray-500 dark:text-gray-400">{preset.indication}</div>
-                                                    </div>
-                                                    <ChevronRight className="h-4 w-4 text-gray-400" />
-                                                  </button>
-                                                ))}
+                                                {XRAY_PRESETS
+                                                  .filter(preset => availableExamTypes.some(t => t.value === preset.examType))
+                                                  .map((preset) => (
+                                                    <button
+                                                      key={preset.name}
+                                                      type="button"
+                                                      onClick={() => {
+                                                        setXrayExamType(preset.examType);
+                                                        setXrayBodyPart(preset.bodyPart);
+                                                        setXrayClinicalInfo(preset.indication);
+                                                        toast({ title: "Preset Applied", description: preset.name });
+                                                      }}
+                                                      className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
+                                                    >
+                                                      <span className="text-2xl">{preset.icon}</span>
+                                                      <div className="flex-1">
+                                                        <div className="font-semibold text-sm text-gray-900 dark:text-white">{preset.name}</div>
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400">{preset.indication}</div>
+                                                      </div>
+                                                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                                                    </button>
+                                                  ))}
                                               </div>
                                             </div>
                                           )}
@@ -3618,36 +3636,19 @@ export default function Treatment() {
 
                                     // Enhanced Ultrasound ordering with visual exam type cards
                                     if (qoTab === 'ultrasound') {
-                                      // Define exam type patterns for matching services
-                                      const examTypePatterns: Record<string, string[]> = {
-                                        'obstetric': ['obstetric', 'pregnancy', 'ob'],
-                                        'abdominal': ['abdomen', 'abdominal'],
-                                        'pelvic': ['pelvis', 'pelvic'],
-                                        'thyroid': ['thyroid'],
-                                        'breast': ['breast'],
-                                        'cardiac': ['cardiac', 'echo', 'heart'],
-                                        'renal': ['renal', 'kidney'],
-                                        'vascular': ['vascular', 'doppler'],
-                                        'soft_tissue': ['soft tissue', 'superficial'],
-                                        'scrotal': ['scrotal', 'testicular'],
-                                        'neck': ['neck'],
-                                        'musculoskeletal': ['musculoskeletal', 'joint', 'tendon'],
-                                        'thoracic': ['thoracic', 'chest'],
-                                      };
-
                                       // ALWAYS compute the matching service based on selected exam type (even if null)
                                       const ultrasoundService = ultrasoundExamType 
                                         ? ultrasoundServices.find((s: any) => {
                                             const serviceName = (s.name || '').toLowerCase();
                                             const examType = ultrasoundExamType.toLowerCase();
-                                            const patterns = examTypePatterns[examType] || [examType];
+                                            const patterns = ULTRASOUND_EXAM_TYPE_PATTERNS[examType] || [examType];
                                             return patterns.some(pattern => serviceName.includes(pattern));
                                           })
                                         : null;
 
                                       // Compute which exam types have available services
                                       const availableExamTypes = ULTRASOUND_EXAM_TYPES.filter(type => {
-                                        const patterns = examTypePatterns[type.value] || [type.value];
+                                        const patterns = ULTRASOUND_EXAM_TYPE_PATTERNS[type.value] || [type.value];
                                         return ultrasoundServices.some((s: any) => {
                                           const serviceName = (s.name || '').toLowerCase();
                                           return patterns.some(pattern => serviceName.includes(pattern));
