@@ -25,6 +25,7 @@ interface PatientSearchProps {
   preset?: string; // Optional preset for cache key differentiation (e.g., "today", "yesterday", "last7", "last30")
   resultsReadyMap?: ResultsReadyMap; // Map of completed diagnostic results by patient ID
   excludePatientTypes?: string[]; // Optional list of patient types to exclude (e.g., ["referral_diagnostic"])
+  selectedPatientId?: string; // Optional patient ID to highlight as selected
 }
 
 // Format date as "19 Oct 2025" in clinic timezone (Africa/Juba)
@@ -65,6 +66,7 @@ export default function PatientSearch({
   preset,
   resultsReadyMap,
   excludePatientTypes = [],
+  selectedPatientId,
 }: PatientSearchProps) {
   // Always-on search: if 3+ chars, force "search"
   const effectiveMode = searchTerm.trim().length >= 3 ? "search" : viewMode;
@@ -206,15 +208,19 @@ export default function PatientSearch({
                   ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
                     ? selectedDate
                     : (p.updatedAt || p.createdAt));
+                
+                const isSelected = selectedPatientId === p.patientId;
 
                 return (
                   <tr
                     key={p.id || p.patientId}
                     className={`transition-colors ${
-                      i % 2
+                      isSelected
+                        ? "bg-blue-100 dark:bg-blue-900/40 border-l-4 border-l-blue-500"
+                        : i % 2
                         ? "bg-white dark:bg-gray-900"
                         : "bg-gray-50/50 dark:bg-gray-800/50"
-                    } hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer`}
+                    } hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer`}
                     onClick={() => onViewPatient?.(p)}
                   >
                     <td className="px-2 py-3 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">
