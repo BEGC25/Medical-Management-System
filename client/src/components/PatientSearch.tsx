@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { Search, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -147,9 +148,12 @@ export default function PatientSearch({
     : rawPatients;
 
   // Filter out excluded patient types (e.g., referral_diagnostic)
-  const filteredPatients = patients && excludePatientTypes.length > 0
-    ? patients.filter((p: any) => !excludePatientTypes.includes(p.patientType))
-    : patients;
+  // Use useMemo to optimize filtering performance
+  const filteredPatients = useMemo(() => {
+    if (!patients) return patients;
+    if (excludePatientTypes.length === 0) return patients;
+    return patients.filter((p: any) => !excludePatientTypes.includes(p.patientType));
+  }, [patients, excludePatientTypes]);
 
   return (
     <div className="space-y-4">
