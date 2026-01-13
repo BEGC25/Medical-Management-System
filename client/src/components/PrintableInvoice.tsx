@@ -23,12 +23,22 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
       <style>{`
         @media print {
           @page {
-            margin: 0.3in;
-            size: letter;
+            /* A4 margins: 12mm top/bottom for single-page fit, 15mm left/right for printer safety */
+            margin: 12mm 15mm;
+            size: A4;
           }
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+          }
+          /* Constrain invoice to single page: A4 height (297mm) minus top+bottom margins (12mm × 2 = 24mm) */
+          #printable-invoice {
+            max-height: calc(297mm - 24mm);
+            overflow: hidden;
+          }
+          .invoice-section {
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
         }
       `}</style>
@@ -36,7 +46,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
       {/* Premium Professional Invoice Layout */}
       <div className="p-4 max-w-4xl mx-auto bg-white font-sans">
         {/* Professional Header with Gradient Border */}
-        <div className="border-b-2 border-blue-700 pb-2 mb-3" style={{ borderImage: 'linear-gradient(to right, #1e40af, #3b82f6) 1' }}>
+        <div className="border-b-2 border-blue-700 pb-2 mb-2" style={{ borderImage: 'linear-gradient(to right, #1e40af, #3b82f6) 1' }}>
           <div className="flex items-start justify-between mb-1">
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-blue-700 mb-1 leading-tight" style={{ letterSpacing: '-0.02em' }}>
@@ -49,7 +59,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               </div>
             </div>
             {!logoError && (
-              <div className="w-16 h-16 flex-shrink-0 ml-4">
+              <div className="w-36 h-36 flex-shrink-0 ml-4">
                 <img 
                   src="/clinic-logo.jpg" 
                   alt="Clinic Logo" 
@@ -65,11 +75,14 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
             </p>
           </div>
         </div>
+        
+        {/* Blue Accent Bar */}
+        <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-700 mb-2"></div>
 
         {/* Invoice Details and Patient Information - Side by Side Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-2 gap-3 mb-2 invoice-section">
           {/* Invoice Details Box */}
-          <div className="border border-gray-300 rounded p-2 bg-gray-50">
+          <div className="border border-gray-200 shadow-sm rounded-lg p-2 bg-gray-50">
             <h2 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-600 pb-1">
               INVOICE DETAILS
             </h2>
@@ -102,7 +115,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           </div>
 
           {/* Patient Information Box */}
-          <div className="border border-gray-300 rounded p-2 bg-blue-50">
+          <div className="border border-gray-200 shadow-sm rounded-lg p-2 bg-blue-50">
             <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-600 pb-1">
               PATIENT INFORMATION
             </h3>
@@ -136,7 +149,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Services Table with Professional Styling */}
-        <div className="mb-3">
+        <div className="mb-2 invoice-section">
           <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-gray-400 pb-1">
             SERVICES RENDERED
           </h3>
@@ -174,10 +187,10 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Total Section - Simplified */}
-        <div className="flex justify-end mb-3">
-          <div className="w-64 border border-gray-400 rounded overflow-hidden">
+        <div className="flex justify-end mb-2 invoice-section">
+          <div className="w-64 border border-gray-400 rounded overflow-hidden shadow-sm">
             {/* Grand Total */}
-            <div className="bg-blue-700 text-white p-2">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-2">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-sm">GRAND TOTAL:</span>
                 <span className="font-bold text-lg">{formatCurrency(total)}</span>
@@ -187,9 +200,9 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Footer Section - Streamlined */}
-        <div className="border-t border-gray-400 pt-2 mt-2">
+        <div className="border-t border-gray-400 pt-2 mt-1">
           {/* Signature Line - Single Line */}
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-1">
             <div className="flex-1">
               <div className="border-b border-gray-800 w-48 mb-1"></div>
               <p className="text-xs font-bold text-gray-800">Authorized By:</p>
