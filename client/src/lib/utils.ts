@@ -7,14 +7,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format currency for SSP (South Sudanese Pound) without decimals
+ * Format currency for SSP (South Sudanese Pound) without decimals, with comma separation
  * @param amount - The amount to format (number or string)
  * @param currency - The currency symbol (defaults to 'SSP')
- * @returns Formatted currency string (e.g., "7000 SSP")
+ * @returns Formatted currency string (e.g., "10,000 SSP")
  */
 export function formatCurrency(amount: number | string, currency: string = 'SSP'): string {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return isNaN(numAmount) ? `0 ${currency}` : `${Math.round(numAmount)} ${currency}`;
+  if (isNaN(numAmount)) return `0 ${currency}`;
+  
+  // Format number with comma separation
+  const formattedNumber = Math.round(numAmount).toLocaleString('en-US');
+  return `${formattedNumber} ${currency}`;
 }
 
 /**

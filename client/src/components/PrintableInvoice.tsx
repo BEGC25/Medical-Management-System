@@ -33,25 +33,27 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           }
           /* Constrain invoice to single page: A4 height (297mm) minus top+bottom margins (12mm × 2 = 24mm) */
           #printable-invoice {
-            max-height: calc(297mm - 24mm);
-            overflow: hidden;
+            max-height: 273mm;
+            overflow: hidden !important;
           }
           .invoice-section {
-            page-break-inside: avoid;
-            break-inside: avoid;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         }
       `}</style>
       
-      {/* Premium Professional Invoice Layout */}
-      <div className="p-4 max-w-4xl mx-auto bg-white font-sans">
+      {/* Premium Professional Invoice Layout with Border */}
+      <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+        <div className="p-3 max-w-4xl mx-auto bg-white font-sans">
         {/* Professional Header with Gradient Border */}
-        <div className="border-b-2 border-blue-700 pb-2 mb-2" style={{ borderImage: 'linear-gradient(to right, #1e40af, #3b82f6) 1' }}>
+        <div className="border-b-2 border-blue-900 pb-2 mb-2" style={{ borderImage: 'linear-gradient(to right, #1e3a8a, #1e40af) 1' }}>
           <div className="flex items-start justify-between mb-1">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-blue-700 mb-1 leading-tight" style={{ letterSpacing: '-0.02em' }}>
+              <h1 className="text-2xl font-bold text-blue-900 mb-0.5 leading-tight" style={{ letterSpacing: '-0.02em' }}>
                 Bahr El Ghazal Clinic
               </h1>
+              <p className="text-xs text-gray-600 italic mb-1">Excellence in Healthcare</p>
               <div className="text-gray-700 leading-tight">
                 <p className="text-xs font-medium">Aweil, South Sudan</p>
                 <p className="text-xs">Tel: +211916759060/+211928754760</p>
@@ -59,7 +61,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               </div>
             </div>
             {!logoError && (
-              <div className="w-36 h-36 flex-shrink-0 ml-4">
+              <div className="w-32 h-32 flex-shrink-0 ml-4">
                 <img 
                   src="/clinic-logo.jpg" 
                   alt="Clinic Logo" 
@@ -77,20 +79,20 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
         
         {/* Blue Accent Bar */}
-        <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-700 mb-2"></div>
+        <div className="h-1 bg-gradient-to-r from-blue-900 to-blue-800 mb-2"></div>
 
         {/* Invoice Details and Patient Information - Side by Side Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-2 invoice-section">
+        <div className="grid grid-cols-2 gap-3 mb-3 invoice-section">
           {/* Invoice Details Box */}
-          <div className="border border-gray-200 shadow-sm rounded-lg p-2 bg-gray-50">
-            <h2 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-600 pb-1">
+          <div className="border border-gray-300 shadow-sm rounded p-2 bg-gray-50">
+            <h2 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
               INVOICE DETAILS
             </h2>
             <div className="space-y-1 leading-tight">
               {invoiceId && (
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-semibold text-gray-700">Invoice:</span>
-                  <span className="text-xs font-bold text-blue-700">{invoiceId}</span>
+                  <span className="text-xs font-bold text-blue-900">{invoiceId}</span>
                 </div>
               )}
               <div className="flex justify-between items-center">
@@ -115,8 +117,8 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           </div>
 
           {/* Patient Information Box */}
-          <div className="border border-gray-200 shadow-sm rounded-lg p-2 bg-blue-50">
-            <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-600 pb-1">
+          <div className="border border-gray-300 shadow-sm rounded p-2 bg-blue-50">
+            <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
               PATIENT INFORMATION
             </h3>
             <div className="space-y-1 leading-tight">
@@ -149,17 +151,17 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Services Table with Professional Styling */}
-        <div className="mb-2 invoice-section">
-          <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-gray-400 pb-1">
+        <div className="mb-3 invoice-section">
+          <h3 className="font-bold text-sm mb-1 text-gray-800 border-b-2 border-gray-400 pb-1">
             SERVICES RENDERED
           </h3>
-          <table className="w-full border-collapse border border-gray-400">
+          <table className="w-full border-collapse border-2 border-gray-400">
             <thead>
-              <tr className="bg-blue-700 text-white">
-                <th className="text-left p-1 text-xs font-bold border-r border-blue-600">Service Description</th>
-                <th className="text-center p-1 text-xs font-bold w-16 border-r border-blue-600">Qty</th>
-                <th className="text-right p-1 text-xs font-bold w-24 border-r border-blue-600">Unit Price</th>
-                <th className="text-right p-1 text-xs font-bold w-28">Total</th>
+              <tr className="bg-blue-900 text-white">
+                <th className="text-left p-1.5 text-xs font-bold border-r border-blue-800">Service Description</th>
+                <th className="text-center p-1.5 text-xs font-bold w-16 border-r border-blue-800">Qty</th>
+                <th className="text-right p-1.5 text-xs font-bold w-24 border-r border-blue-800">Unit Price</th>
+                <th className="text-right p-1.5 text-xs font-bold w-28">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -168,16 +170,16 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
                   key={idx} 
                   className={`border-b border-gray-300 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
                 >
-                  <td className="p-1 px-2 border-r border-gray-300">
+                  <td className="p-1.5 px-2 border-r border-gray-300">
                     <span className="font-medium text-xs text-gray-900">{line.description}</span>
                   </td>
-                  <td className="text-center p-1 border-r border-gray-300">
+                  <td className="text-center p-1.5 border-r border-gray-300">
                     <span className="font-semibold text-xs text-gray-800">{line.quantity}</span>
                   </td>
-                  <td className="text-right p-1 px-2 border-r border-gray-300">
+                  <td className="text-right p-1.5 px-2 border-r border-gray-300">
                     <span className="text-xs text-gray-800">{formatCurrency(line.unitPriceSnapshot)}</span>
                   </td>
-                  <td className="text-right p-1 px-2">
+                  <td className="text-right p-1.5 px-2">
                     <span className="font-bold text-xs text-gray-900">{formatCurrency(line.totalPrice)}</span>
                   </td>
                 </tr>
@@ -187,10 +189,10 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
         </div>
 
         {/* Total Section - Simplified */}
-        <div className="flex justify-end mb-2 invoice-section">
-          <div className="w-64 border border-gray-400 rounded overflow-hidden shadow-sm">
+        <div className="flex justify-end mb-3 invoice-section">
+          <div className="w-64 border-2 border-gray-400 rounded overflow-hidden shadow-sm">
             {/* Grand Total */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-2">
+            <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-2">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-sm">GRAND TOTAL:</span>
                 <span className="font-bold text-lg">{formatCurrency(total)}</span>
@@ -199,31 +201,37 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           </div>
         </div>
 
-        {/* Footer Section - Streamlined */}
-        <div className="border-t border-gray-400 pt-2 mt-1">
-          {/* Signature Line - Single Line */}
-          <div className="flex justify-between items-center mb-1">
-            <div className="flex-1">
-              <div className="border-b border-gray-800 w-48 mb-1"></div>
-              <p className="text-xs font-bold text-gray-800">Authorized By:</p>
-            </div>
-            <div className="flex-1 text-right">
-              <div className="border-b border-gray-800 w-48 mb-1 ml-auto"></div>
-              <p className="text-xs font-bold text-gray-800">Date:</p>
+        {/* Signature Section - Professional with adequate space */}
+        <div className="grid grid-cols-2 gap-12 mt-6 mb-3 invoice-section">
+          <div>
+            <div className="border-t-2 border-gray-800 pt-2 mt-20">
+              <p className="text-sm font-bold text-gray-900">Authorized By:</p>
+              <p className="text-xs text-gray-600">Billing Department</p>
             </div>
           </div>
-
-          {/* Official Statement */}
-          <div className="text-center mb-1">
-            <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              This is a computer-generated invoice
-            </p>
-            <p className="text-xs text-gray-700 mt-1">
-              Thank you for choosing Bahr El Ghazal Clinic
-            </p>
+          <div>
+            <div className="border-t-2 border-gray-800 pt-2 mt-20">
+              <p className="text-sm font-bold text-gray-900">Date:</p>
+              <p className="text-xs text-gray-600">{new Date().toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+              })}</p>
+            </div>
           </div>
         </div>
+
+        {/* Professional Footer Branding */}
+        <div className="text-center text-xs text-gray-600 border-t-2 border-gray-300 pt-2 mt-3">
+          <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+            This is a computer-generated invoice
+          </p>
+          <p className="font-semibold text-gray-800">Bahr El Ghazal Clinic</p>
+          <p className="text-gray-700">Accredited Medical Facility | Republic of South Sudan</p>
+          <p className="mt-1 italic text-gray-600">Your health is our priority</p>
+        </div>
       </div>
+    </div>
     </div>
   );
 };

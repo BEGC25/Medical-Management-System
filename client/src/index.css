@@ -351,7 +351,10 @@
 
 /* Print rules */
 @media print {
-  @page { size: A4; margin: var(--page-m); }
+  @page { 
+    size: A4; 
+    margin: 12mm 15mm;
+  }
 
   /* Hide everything initially */
   body * { visibility: hidden; }
@@ -366,10 +369,9 @@
   #printable-invoice {
     display: block !important;
     visibility: visible !important;
-    /* Duplicate of inline style constraint for fallback: A4 height (297mm) - top+bottom margins (24mm) */
-    /* Ensures single-page fit even if component styles fail to load */
-    max-height: calc(297mm - 24mm);
-    overflow: hidden;
+    /* Constrain to single page: A4 height (297mm) - top+bottom margins (24mm) */
+    max-height: 273mm;
+    overflow: hidden !important;
   }
   
   #printable-invoice * {
@@ -396,15 +398,13 @@
   
   /* Prevent page breaks inside invoice sections */
   .invoice-section {
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Remove shadows/borders that can cause overflow */
   .no-print { display: none !important; }
-  .shadow-md, .shadow-lg { box-shadow: none !important; }
-  .rounded-lg { border-radius: 0 !important; }
-  .bg-gray-50 { background-color: white !important; }
+  .shadow-md, .shadow-lg, .shadow-sm { box-shadow: none !important; }
   
   /* Only avoid breaks for small sections, not large containers */
   .avoid-break {
