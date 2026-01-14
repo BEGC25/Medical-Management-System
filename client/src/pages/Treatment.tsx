@@ -187,6 +187,26 @@ function ensureISOFormat(dateString: string | undefined | null): string | null {
   return null;
 }
 
+// Get age-appropriate complaints based on patient age
+function getAgeAppropriateComplaints(age: string | undefined | null): string[] {
+  const baseComplaints = ["Fever", "Cough", "Headache", "Abdominal Pain", "Diarrhea", "Vomiting"];
+  
+  if (!age) return baseComplaints;
+  
+  const ageNum = parseInt(age);
+  if (isNaN(ageNum)) return baseComplaints;
+  
+  if (ageNum < 13) {
+    // Pediatric
+    return [...baseComplaints, "Failure to Thrive", "Developmental Delay", "Ear Pain", "Rash"];
+  } else if (ageNum >= 65) {
+    // Geriatric  
+    return [...baseComplaints, "Falls", "Confusion", "Incontinence", "Chest Pain", "Shortness of Breath"];
+  }
+  
+  return baseComplaints;
+}
+
 // Common chief complaints in South Sudan
 const COMMON_COMPLAINTS = [
   "Fever",
@@ -549,6 +569,58 @@ function RecentResultsSummary({ patientId }: { patientId: string }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// User Frequent Items Component
+function UserFrequentItems({ 
+  userId, 
+  itemType, 
+  onSelect 
+}: { 
+  userId: number | undefined; 
+  itemType: 'complaint' | 'diagnosis';
+  onSelect: (item: string) => void;
+}) {
+  const { data: frequentItems = [] } = useQuery({
+    queryKey: ['/api/user-preferences/frequent', userId, itemType],
+    queryFn: async () => {
+      if (!userId) return [];
+      const response = await fetch(`/api/user-preferences/frequent/${userId}/${itemType}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch frequent items');
+      }
+      return response.json();
+    },
+    enabled: !!userId,
+  });
+
+  if (frequentItems.length === 0) return null;
+
+  return (
+    <div className="mb-3">
+      <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2 flex items-center gap-1">
+        <History className="h-3 w-3" />
+        Your Frequent {itemType === 'complaint' ? 'Complaints' : 'Diagnoses'}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {frequentItems.slice(0, 5).map((item: any) => (
+          <Button
+            key={item.id}
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-xs border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
+            onClick={() => onSelect(item.itemValue)}
+          >
+            {item.itemValue}
+            <Badge variant="secondary" className="ml-1 text-xs">
+              {item.useCount}
+            </Badge>
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1796,11 +1868,49 @@ export default function Treatment() {
       const r = await apiRequest("POST", "/api/treatments", data);
       return r.json();
     },
-    onSuccess: (treatment: Treatment) => {
+    onSuccess: async (treatment: Treatment) => {
       setSavedTreatment(treatment);
       toast({ title: "Success", description: `Treatment saved (ID: ${treatment.treatmentId})` });
       queryClient.invalidateQueries({ queryKey: ["/api/treatments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      
+      // Track frequently used items
+      if (user?.id) {
+        const chiefComplaint = form.getValues("chiefComplaint");
+        const diagnosis = form.getValues("diagnosis");
+        
+        // Track chief complaint (first item only)
+        if (chiefComplaint && chiefComplaint.trim()) {
+          const firstComplaint = chiefComplaint.split(",")[0].trim();
+          if (firstComplaint) {
+            fetch("/api/user-preferences/track", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: user.id,
+                itemType: "complaint",
+                itemValue: firstComplaint,
+              }),
+            }).catch(err => console.error("Failed to track complaint:", err));
+          }
+        }
+        
+        // Track diagnosis (first item only)
+        if (diagnosis && diagnosis.trim()) {
+          const firstDiagnosis = diagnosis.split(",")[0].trim();
+          if (firstDiagnosis) {
+            fetch("/api/user-preferences/track", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: user.id,
+                itemType: "diagnosis",
+                itemValue: firstDiagnosis,
+              }),
+            }).catch(err => console.error("Failed to track diagnosis:", err));
+          }
+        }
+      }
     },
     onError: () => {
       if (!navigator.onLine) {
@@ -2779,13 +2889,23 @@ export default function Treatment() {
                                   <span className="text-teal-700 dark:text-teal-400">Subjective (Chief Complaint)</span>
                                 </AccordionTrigger>
                                 <AccordionContent className="pt-2 pb-4">
+                                  {/* User Frequent Complaints */}
+                                  <UserFrequentItems 
+                                    userId={user?.id} 
+                                    itemType="complaint"
+                                    onSelect={(complaint) => {
+                                      const current = form.getValues("chiefComplaint") || "";
+                                      form.setValue("chiefComplaint", current ? `${current}, ${complaint}` : complaint);
+                                    }}
+                                  />
+                                  
                                   {/* Quick Complaint Chips */}
                                   <div className="mb-3">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                                       Common Complaints (click to add)
                                     </label>
                                     <div className="flex flex-wrap gap-2">
-                                      {COMMON_COMPLAINTS.map((complaint) => (
+                                      {getAgeAppropriateComplaints(selectedPatient?.age).map((complaint) => (
                                         <button
                                           key={complaint}
                                           type="button"
@@ -2943,6 +3063,16 @@ export default function Treatment() {
                                   <span className="text-teal-700 dark:text-teal-400">Assessment (Diagnosis)</span>
                                 </AccordionTrigger>
                                 <AccordionContent className="pt-2 pb-4">
+                                  {/* User Frequent Diagnoses */}
+                                  <UserFrequentItems 
+                                    userId={user?.id} 
+                                    itemType="diagnosis"
+                                    onSelect={(diagnosis) => {
+                                      const current = form.getValues("diagnosis") || "";
+                                      form.setValue("diagnosis", current ? `${current}, ${diagnosis}` : diagnosis);
+                                    }}
+                                  />
+                                  
                                   {/* Common Diagnosis Chips */}
                                   <div className="mb-3">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">

@@ -312,6 +312,17 @@ export const inventoryLedger = sqliteTable("inventory_ledger", {
   createdAt: text("created_at").notNull().default(sql`datetime('now')`),
 });
 
+// User Preferences - Track frequently used items per user
+export const userPreferences = sqliteTable("user_preferences", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  itemType: text("item_type").$type<"complaint" | "diagnosis">().notNull(),
+  itemValue: text("item_value").notNull(),
+  useCount: integer("use_count").notNull().default(1),
+  lastUsed: text("last_used").notNull().default(sql`datetime('now')`),
+  createdAt: text("created_at").notNull().default(sql`datetime('now')`),
+});
+
 // Deletion Audit Log - Track all patient deletions for compliance
 export const deletionAuditLog = sqliteTable("deletion_audit_log", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -464,6 +475,11 @@ export const insertInventoryLedgerSchema = createInsertSchema(inventoryLedger).o
   createdAt: true,
 });
 
+export const insertUserPreferenceSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type SafeUser = Omit<User, "password">;
@@ -484,6 +500,7 @@ export type PharmacyOrder = typeof pharmacyOrders.$inferSelect;
 export type Drug = typeof drugs.$inferSelect;
 export type DrugBatch = typeof drugBatches.$inferSelect;
 export type InventoryLedger = typeof inventoryLedger.$inferSelect;
+export type UserPreference = typeof userPreferences.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
@@ -503,6 +520,7 @@ export type InsertPharmacyOrder = z.infer<typeof insertPharmacyOrderSchema>;
 export type InsertDrug = z.infer<typeof insertDrugSchema>;
 export type InsertDrugBatch = z.infer<typeof insertDrugBatchSchema>;
 export type InsertInventoryLedger = z.infer<typeof insertInventoryLedgerSchema>;
+export type InsertUserPreference = z.infer<typeof insertUserPreferenceSchema>;
 
 // Service status interface for patient queries with status information
 export interface ServiceStatus {

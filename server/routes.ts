@@ -25,6 +25,7 @@ import {
   labTests,
   xrayExams,
   ultrasoundExams,
+  userPreferences,
   normalizeRelatedType,
   relatedTypeToDepartment,
 } from "@shared/schema";
@@ -1411,6 +1412,86 @@ router.get("/api/patients/:patientId/recent-results", async (req, res) => {
   } catch (error) {
     console.error("Error fetching recent results:", error);
     res.status(500).json({ error: "Failed to fetch recent results" });
+  }
+});
+
+/* -------------------------------- User Preferences -------------------------------- */
+
+// Get frequent items for a user
+router.get("/api/user-preferences/frequent/:userId/:itemType", async (req, res) => {
+  try {
+    const { userId, itemType } = req.params;
+    
+    if (itemType !== 'complaint' && itemType !== 'diagnosis') {
+      return res.status(400).json({ error: "Invalid item type. Must be 'complaint' or 'diagnosis'" });
+    }
+    
+    const items = await db.select()
+      .from(userPreferences)
+      .where(
+        and(
+          eq(userPreferences.userId, parseInt(userId)),
+          eq(userPreferences.itemType, itemType)
+        )
+      )
+      .orderBy(desc(userPreferences.useCount))
+      .limit(10);
+    
+    res.json(items);
+  } catch (error) {
+    console.error("Error fetching user preferences:", error);
+    res.status(500).json({ error: "Failed to fetch user preferences" });
+  }
+});
+
+// Track item usage (call when doctor saves visit notes)
+router.post("/api/user-preferences/track", async (req, res) => {
+  try {
+    const { userId, itemType, itemValue } = req.body;
+    
+    if (!userId || !itemType || !itemValue) {
+      return res.status(400).json({ error: "Missing required fields: userId, itemType, itemValue" });
+    }
+    
+    if (itemType !== 'complaint' && itemType !== 'diagnosis') {
+      return res.status(400).json({ error: "Invalid item type. Must be 'complaint' or 'diagnosis'" });
+    }
+    
+    // Check if this preference already exists
+    const existing = await db.select()
+      .from(userPreferences)
+      .where(
+        and(
+          eq(userPreferences.userId, userId),
+          eq(userPreferences.itemType, itemType),
+          eq(userPreferences.itemValue, itemValue)
+        )
+      )
+      .limit(1);
+    
+    if (existing.length > 0) {
+      // Update existing preference
+      await db.update(userPreferences)
+        .set({
+          useCount: existing[0].useCount + 1,
+          lastUsed: new Date().toISOString(),
+        })
+        .where(eq(userPreferences.id, existing[0].id));
+    } else {
+      // Create new preference
+      await db.insert(userPreferences).values({
+        userId,
+        itemType,
+        itemValue,
+        useCount: 1,
+        lastUsed: new Date().toISOString(),
+      });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error tracking user preference:", error);
+    res.status(500).json({ error: "Failed to track user preference" });
   }
 });
 
