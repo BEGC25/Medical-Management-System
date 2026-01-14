@@ -89,6 +89,7 @@ import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, getVisitStatusLabel, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
 import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators } from '@/lib/patient-utils';
+import { cn } from '@/lib/utils';
 import type { PatientWithStatus } from "@shared/schema";
 import { LAB_TEST_CATALOG, XRAY_EXAM_TYPES, XRAY_BODY_PARTS, XRAY_PRESETS, ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS, ULTRASOUND_PRESETS, type LabTestCategory, type XrayExamType, type UltrasoundExamType } from "@/lib/diagnostic-catalog";
 
@@ -184,6 +185,26 @@ function ensureISOFormat(dateString: string | undefined | null): string | null {
   // If format is unrecognized, return null to avoid invalid dates
   console.warn('Unrecognized date format:', dateString);
   return null;
+}
+
+// Get age-appropriate complaints based on patient age
+function getAgeAppropriateComplaints(age: string | undefined | null): string[] {
+  const baseComplaints = ["Fever", "Cough", "Headache", "Abdominal Pain", "Diarrhea", "Vomiting"];
+  
+  if (!age) return baseComplaints;
+  
+  const ageNum = parseInt(age);
+  if (isNaN(ageNum)) return baseComplaints;
+  
+  if (ageNum < 13) {
+    // Pediatric
+    return [...baseComplaints, "Failure to Thrive", "Developmental Delay", "Ear Pain", "Rash"];
+  } else if (ageNum >= 65) {
+    // Geriatric  
+    return [...baseComplaints, "Falls", "Confusion", "Incontinence", "Chest Pain", "Shortness of Breath"];
+  }
+  
+  return baseComplaints;
 }
 
 // Common chief complaints in South Sudan
@@ -512,6 +533,97 @@ const resultFields: Record< // Keep this config for metadata
 
 // Lab test categories - use shared diagnostic catalog
 const commonTests = LAB_TEST_CATALOG;
+
+// ---------- helper components ----------
+// Recent Results Summary Component
+function RecentResultsSummary({ patientId }: { patientId: string }) {
+  const { data: recentResults } = useQuery({
+    queryKey: ['/api/recent-results', patientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/${patientId}/recent-results`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent results');
+      }
+      return response.json();
+    },
+  });
+
+  if (!recentResults || recentResults.length === 0) {
+    return (
+      <p className="text-xs text-gray-400 italic">No recent results</p>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      {recentResults.slice(0, 3).map((result: any) => (
+        <div key={result.id} className="flex items-center justify-between text-xs">
+          <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{result.testName}</span>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {result.isAbnormal ? (
+              <AlertCircle className="h-3 w-3 text-red-500" />
+            ) : (
+              <CheckCircle className="h-3 w-3 text-green-500" />
+            )}
+            <span className="text-gray-500">{timeAgo(result.completedAt)}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// User Frequent Items Component
+function UserFrequentItems({ 
+  userId, 
+  itemType, 
+  onSelect 
+}: { 
+  userId: number | undefined; 
+  itemType: 'complaint' | 'diagnosis';
+  onSelect: (item: string) => void;
+}) {
+  const { data: frequentItems = [] } = useQuery({
+    queryKey: ['/api/user-preferences/frequent', userId, itemType],
+    queryFn: async () => {
+      if (!userId) return [];
+      const response = await fetch(`/api/user-preferences/frequent/${userId}/${itemType}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch frequent items');
+      }
+      return response.json();
+    },
+    enabled: !!userId,
+  });
+
+  if (frequentItems.length === 0) return null;
+
+  return (
+    <div className="mb-3">
+      <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2 flex items-center gap-1">
+        <History className="h-3 w-3" />
+        Your Frequent {itemType === 'complaint' ? 'Complaints' : 'Diagnoses'}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {frequentItems.slice(0, 5).map((item: any) => (
+          <Button
+            key={item.id}
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-xs border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
+            onClick={() => onSelect(item.itemValue)}
+          >
+            {item.itemValue}
+            <Badge variant="secondary" className="ml-1 text-xs">
+              {item.useCount}
+            </Badge>
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ---------- component ----------
 export default function Treatment() {
@@ -1756,11 +1868,55 @@ export default function Treatment() {
       const r = await apiRequest("POST", "/api/treatments", data);
       return r.json();
     },
-    onSuccess: (treatment: Treatment) => {
+    onSuccess: async (treatment: Treatment) => {
       setSavedTreatment(treatment);
       toast({ title: "Success", description: `Treatment saved (ID: ${treatment.treatmentId})` });
       queryClient.invalidateQueries({ queryKey: ["/api/treatments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      
+      // Track frequently used items
+      if (user?.id) {
+        const chiefComplaint = form.getValues("chiefComplaint");
+        const diagnosis = form.getValues("diagnosis");
+        
+        // Track chief complaint (first item only)
+        if (chiefComplaint && chiefComplaint.trim()) {
+          const firstComplaint = chiefComplaint.split(",")[0].trim();
+          if (firstComplaint) {
+            fetch("/api/user-preferences/track", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: user.id,
+                itemType: "complaint",
+                itemValue: firstComplaint,
+              }),
+            }).catch(err => {
+              // Silent fail for preference tracking - not critical to user workflow
+              console.warn("Failed to track complaint preference:", err);
+            });
+          }
+        }
+        
+        // Track diagnosis (first item only)
+        if (diagnosis && diagnosis.trim()) {
+          const firstDiagnosis = diagnosis.split(",")[0].trim();
+          if (firstDiagnosis) {
+            fetch("/api/user-preferences/track", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: user.id,
+                itemType: "diagnosis",
+                itemValue: firstDiagnosis,
+              }),
+            }).catch(err => {
+              // Silent fail for preference tracking - not critical to user workflow
+              console.warn("Failed to track diagnosis preference:", err);
+            });
+          }
+        }
+      }
     },
     onError: () => {
       if (!navigator.onLine) {
@@ -1929,6 +2085,14 @@ export default function Treatment() {
     setSelectedPatient(null);
     setSavedTreatment(null);
     setShowPrescription(false);
+  };
+
+  const handlePrintPrescription = () => {
+    if (!selectedPatient || !currentEncounter) return;
+    setShowPrescription(true);
+    // Small delay to ensure the prescription content is rendered before printing
+    const PRINT_RENDER_DELAY = 100; // ms
+    setTimeout(() => window.print(), PRINT_RENDER_DELAY);
   };
 
   const printPrescription = () => {
@@ -2392,11 +2556,13 @@ export default function Treatment() {
             type="button"
             onClick={handlePendingOrdersClick}
             data-testid="stat-card-orders-waiting"
-            className={`group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-2 border ${
+            className={cn(
+              "group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-2 border shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left",
               quickFilter === "pending" 
                 ? "border-amber-500 dark:border-amber-500 ring-2 ring-amber-300 dark:ring-amber-700" 
-                : "border-amber-200 dark:border-amber-800/50"
-            } shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left`}
+                : "border-amber-200 dark:border-amber-800/50",
+              ordersWaitingCount > 0 && "pulse-urgent"
+            )}
           >
             <div className="flex items-center justify-between mb-0.5">
               <div className="h-7 w-7 bg-gradient-to-br from-amber-500 to-orange-600 rounded-md flex items-center justify-center shadow-sm">
@@ -2731,13 +2897,23 @@ export default function Treatment() {
                                   <span className="text-teal-700 dark:text-teal-400">Subjective (Chief Complaint)</span>
                                 </AccordionTrigger>
                                 <AccordionContent className="pt-2 pb-4">
+                                  {/* User Frequent Complaints */}
+                                  <UserFrequentItems 
+                                    userId={user?.id} 
+                                    itemType="complaint"
+                                    onSelect={(complaint) => {
+                                      const current = form.getValues("chiefComplaint") || "";
+                                      form.setValue("chiefComplaint", current ? `${current}, ${complaint}` : complaint);
+                                    }}
+                                  />
+                                  
                                   {/* Quick Complaint Chips */}
                                   <div className="mb-3">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                                       Common Complaints (click to add)
                                     </label>
                                     <div className="flex flex-wrap gap-2">
-                                      {COMMON_COMPLAINTS.map((complaint) => (
+                                      {getAgeAppropriateComplaints(selectedPatient?.age).map((complaint) => (
                                         <button
                                           key={complaint}
                                           type="button"
@@ -2895,6 +3071,16 @@ export default function Treatment() {
                                   <span className="text-teal-700 dark:text-teal-400">Assessment (Diagnosis)</span>
                                 </AccordionTrigger>
                                 <AccordionContent className="pt-2 pb-4">
+                                  {/* User Frequent Diagnoses */}
+                                  <UserFrequentItems 
+                                    userId={user?.id} 
+                                    itemType="diagnosis"
+                                    onSelect={(diagnosis) => {
+                                      const current = form.getValues("diagnosis") || "";
+                                      form.setValue("diagnosis", current ? `${current}, ${diagnosis}` : diagnosis);
+                                    }}
+                                  />
+                                  
                                   {/* Common Diagnosis Chips */}
                                   <div className="mb-3">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -2993,6 +3179,20 @@ export default function Treatment() {
                             {/* Actions */}
                             <div className="flex gap-4 pt-6 mt-6 border-t">
                               <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-medical-blue hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
+                              
+                              {/* Print Prescription button - available when medications exist */}
+                              {currentEncounter && medications.length > 0 && (
+                                <Button 
+                                  type="button" 
+                                  variant="outline"
+                                  onClick={handlePrintPrescription}
+                                  className="border-purple-300 hover:bg-purple-50"
+                                >
+                                  <Printer className="w-4 h-4 mr-2" />
+                                  Print Prescription
+                                </Button>
+                              )}
+                              
                               {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="default" className="bg-orange-600 hover:bg-orange-700" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn">{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
                               <Button type="button" variant="outline" onClick={handleNewTreatment} className="ml-auto">New Treatment</Button>
                             </div>
@@ -5356,7 +5556,54 @@ export default function Treatment() {
               {/* === RIGHT "CONTEXT" RAIL === */}
               <div className="space-y-4">
                 {/* Vitals Card */}
-                <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-5 w-5" />Vitals (Today)</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-3 text-sm"><div><div className="text-muted-foreground">Temp</div><div className="font-medium">{watchedVitals[0] ? `${watchedVitals[0]} °C` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">BP</div><div className="font-medium">{watchedVitals[1] || <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">Heart Rate</div><div className="font-medium">{watchedVitals[2] ? `${watchedVitals[2]} bpm` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">Weight</div><div className="font-medium">{watchedVitals[3] ? `${watchedVitals[3]} kg` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div></div></CardContent></Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-red-500" />
+                      Vitals (Today)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Existing vitals display */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div className="text-muted-foreground">Temp</div>
+                        <div className="font-medium">
+                          {watchedVitals[0] ? `${watchedVitals[0]} °C` : <span className="text-gray-400 italic text-xs">Not recorded</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">BP</div>
+                        <div className="font-medium">
+                          {watchedVitals[1] || <span className="text-gray-400 italic text-xs">Not recorded</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Heart Rate</div>
+                        <div className="font-medium">
+                          {watchedVitals[2] ? `${watchedVitals[2]} bpm` : <span className="text-gray-400 italic text-xs">Not recorded</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Weight</div>
+                        <div className="font-medium">
+                          {watchedVitals[3] ? `${watchedVitals[3]} kg` : <span className="text-gray-400 italic text-xs">Not recorded</span>}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Recent Results Summary */}
+                    {selectedPatient && (
+                      <div className="border-t pt-3 mt-3">
+                        <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
+                          <FlaskConical className="h-3 w-3" />
+                          Recent Results
+                        </h4>
+                        <RecentResultsSummary patientId={selectedPatient.patientId} />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
                 {/* Alerts Card */}
                 <Card className="border-red-500/50">
                   <CardHeader>
