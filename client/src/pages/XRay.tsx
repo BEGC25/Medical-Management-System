@@ -701,6 +701,17 @@ export default function XRay() {
       ).length > 0
     : false;
 
+  // Print function for X-ray report
+  const printXrayReport = () => {
+    if (selectedXrayExam && reportPatient) {
+      setShowXrayReport(true);
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => setShowXrayReport(false), 500);
+      }, 100);
+    }
+  };
+
   /* --------------------------- Render ---------------------------- */
 
   const ExamCard = ({ exam, patient }: { exam: XrayExam; patient?: Patient | null }) => {
@@ -2139,71 +2150,164 @@ export default function XRay() {
         </DialogContent>
       </Dialog>
 
-      {/* Print Report (hidden) */}
+      {/* Print Report (hidden) - STANDARDIZED PREMIUM DESIGN */}
       {showXrayReport && selectedXrayExam && reportPatient && (
-        <div className="print-only">
+        <div id="xray-report-print" className="print-only">
           <style>{`
             @media print {
               body * { visibility: hidden; }
-              .print-only, .print-only * { visibility: visible; }
-              .print-only { position: absolute; left: 0; top: 0; width: 100%; }
-              @page { margin: 1cm; }
+              #xray-report-print, #xray-report-print * { visibility: visible; }
+              #xray-report-print { position: absolute; left: 0; top: 0; width: 100%; max-height: 273mm; overflow: hidden; }
+              @page { size: A4; margin: 12mm 15mm; }
             }
           `}</style>
-          <div className="bg-white p-6 max-w-4xl mx-auto">
-            <div className="mb-6 pb-4 border-b-2 border-blue-600">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <img src={clinicLogo} alt="Clinic Logo" className="h-20 w-20 object-contain" />
-                  <div>
-                    <h1 className="text-3xl font-bold text-blue-600 mb-1">Bahr El Ghazal Clinic</h1>
-                    <p className="text-sm text-gray-600">Comprehensive Healthcare Services</p>
+          {/* Premium Professional Report with Border - MATCHES INVOICE */}
+          <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+            <div className="p-6 max-w-4xl mx-auto bg-white">
+              
+              {/* HEADER - IDENTICAL TO INVOICE */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-blue-900">Bahr El Ghazal Clinic</h1>
+                  <p className="text-sm text-gray-600 italic">Excellence in Healthcare</p>
+                  <p className="text-xs text-gray-600 mt-1">Aweil, South Sudan</p>
+                  <p className="text-xs text-gray-600">Tel: +211916759060/+211928754760</p>
+                  <p className="text-xs text-gray-600">Email: bahr.ghazal.clinic@gmail.com</p>
+                </div>
+                <div className="w-24 h-24">
+                  <img src={clinicLogo} alt="Clinic Logo" className="w-full h-full object-contain" />
+                </div>
+              </div>
+
+              {/* TITLE WITH ACCENT BAR - MATCHES INVOICE */}
+              <div className="text-center mb-6">
+                <h2 className="text-lg font-bold text-gray-900">RADIOLOGY REPORT</h2>
+                <div className="h-1 bg-gradient-to-r from-blue-900 to-blue-800 mt-2" />
+              </div>
+
+              {/* Patient & Exam Information Cards - Side by Side like Invoice */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                {/* Patient Information Box */}
+                <div className="border border-gray-300 shadow-sm rounded p-2 bg-blue-50">
+                  <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
+                    PATIENT INFORMATION
+                  </h3>
+                  <div className="space-y-1 leading-tight">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Name:</span>
+                      <span className="text-xs font-bold text-gray-900">{fullName(reportPatient)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Patient ID:</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.patientId}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Age:</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.age}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Gender:</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.gender}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-semibold text-gray-800">X-Ray Examination Report</p>
-                  <p className="text-sm text-gray-500">{new Date().toLocaleString()}</p>
+
+                {/* Exam Information Box */}
+                <div className="border border-gray-300 shadow-sm rounded p-2 bg-gray-50">
+                  <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
+                    EXAMINATION DETAILS
+                  </h3>
+                  <div className="space-y-1 leading-tight">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Exam ID:</span>
+                      <span className="text-xs font-bold text-blue-900">{selectedXrayExam.examId}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Exam Type:</span>
+                      <span className="text-xs font-medium capitalize">{selectedXrayExam.examType} X-Ray</span>
+                    </div>
+                    {selectedXrayExam.bodyPart && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-semibold text-gray-700">Body Part:</span>
+                        <span className="text-xs font-medium capitalize">{selectedXrayExam.bodyPart}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Image Quality:</span>
+                      <span className="text-xs font-medium capitalize">{resultsForm.getValues('imageQuality')}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <p className="text-sm"><strong>Patient Name:</strong> {fullName(reportPatient)}</p>
-                <p className="text-sm"><strong>Patient ID:</strong> {reportPatient.patientId}</p>
-                <p className="text-sm"><strong>Age:</strong> {reportPatient.age}</p>
-                <p className="text-sm"><strong>Gender:</strong> {reportPatient.gender}</p>
+              {/* View Descriptions - If Present */}
+              {viewDescriptions && (
+                <div className="mb-3 border border-gray-300 rounded p-2 bg-gray-50">
+                  <h3 className="font-bold text-xs mb-1 text-gray-800">Views Obtained:</h3>
+                  <p className="text-xs text-gray-700 whitespace-pre-line">{viewDescriptions}</p>
+                </div>
+              )}
+
+              {/* Radiological Findings */}
+              <div className="mb-3 border border-gray-300 rounded p-2 bg-white">
+                <h3 className="font-bold text-sm mb-1 text-gray-800 border-b-2 border-gray-400 pb-1 uppercase">
+                  Radiological Findings
+                </h3>
+                <p className="text-xs text-gray-900 whitespace-pre-line leading-relaxed mt-1">
+                  {resultsForm.getValues('findings') || 'No findings documented.'}
+                </p>
               </div>
-              <div>
-                <p className="text-sm"><strong>Exam ID:</strong> {selectedXrayExam.examId}</p>
-                <p className="text-sm"><strong>Exam Type:</strong> {selectedXrayExam.examType} X-Ray</p>
-                {selectedXrayExam.bodyPart && (
-                  <p className="text-sm"><strong>Body Part:</strong> {selectedXrayExam.bodyPart}</p>
-                )}
-                <p className="text-sm"><strong>Report Date:</strong> {resultsForm.getValues('reportDate')}</p>
+
+              {/* Impression / Key Findings */}
+              <div className="mb-3 border-2 border-blue-900 rounded p-2 bg-blue-50">
+                <h3 className="font-bold text-sm mb-1 text-blue-900 uppercase">
+                  Impression
+                </h3>
+                <p className="text-xs text-gray-900 whitespace-pre-line leading-relaxed font-semibold">
+                  {resultsForm.getValues('impression') || 'Pending interpretation.'}
+                </p>
               </div>
-            </div>
 
-            <div className="mb-4">
-              <h3 className="font-bold mb-2">FINDINGS:</h3>
-              <p className="text-sm whitespace-pre-line">{resultsForm.getValues('findings')}</p>
-            </div>
+              {/* Recommendations - If Present */}
+              {resultsForm.getValues('recommendations') && (
+                <div className="mb-3 border border-gray-300 rounded p-2 bg-amber-50">
+                  <h3 className="font-bold text-xs mb-1 text-gray-800 uppercase">Recommendations:</h3>
+                  <p className="text-xs text-gray-700 whitespace-pre-line">{resultsForm.getValues('recommendations')}</p>
+                </div>
+              )}
 
-            <div className="mb-4">
-              <h3 className="font-bold mb-2">IMPRESSION:</h3>
-              <p className="text-sm whitespace-pre-line">{resultsForm.getValues('impression')}</p>
-            </div>
+              {/* Technical Factors - If Present */}
+              {selectedXrayExam.technicalFactors && (
+                <div className="mb-3 border border-gray-300 rounded p-2 bg-gray-50">
+                  <h3 className="font-bold text-xs mb-1 text-gray-800">Technical Factors:</h3>
+                  <p className="text-xs text-gray-700">{selectedXrayExam.technicalFactors}</p>
+                </div>
+              )}
 
-            {resultsForm.getValues('recommendations') && (
-              <div className="mb-4">
-                <h3 className="font-bold mb-2">RECOMMENDATIONS:</h3>
-                <p className="text-sm whitespace-pre-line">{resultsForm.getValues('recommendations')}</p>
+              {/* SIGNATURE SECTION - MATCHES INVOICE */}
+              <div className="grid grid-cols-2 gap-12 mt-6 mb-4">
+                <div>
+                  <div className="border-t-2 border-gray-800 pt-2 mt-20">
+                    <p className="text-sm font-bold">Radiologist:</p>
+                    <p className="text-xs text-gray-600">{resultsForm.getValues('radiologist') || 'Radiology Department'}</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-t-2 border-gray-800 pt-2 mt-20">
+                    <p className="text-sm font-bold">Date:</p>
+                    <p className="text-xs text-gray-600">{resultsForm.getValues('reportDate')}</p>
+                  </div>
+                </div>
               </div>
-            )}
 
-            <div className="mt-8 pt-4 border-t">
-              <p className="text-sm"><strong>Radiologist:</strong> {resultsForm.getValues('radiologist')}</p>
-              <p className="text-sm"><strong>Image Quality:</strong> {resultsForm.getValues('imageQuality')}</p>
+              {/* FOOTER - IDENTICAL TO INVOICE */}
+              <div className="text-center text-xs text-gray-600 border-t pt-3 mt-4">
+                <p className="font-semibold">THIS IS A COMPUTER-GENERATED RADIOLOGY REPORT</p>
+                <p className="font-semibold mt-1">Bahr El Ghazal Clinic</p>
+                <p>Accredited Medical Facility | Republic of South Sudan</p>
+                <p className="mt-1 italic">Your health is our priority</p>
+              </div>
+              
             </div>
           </div>
         </div>
