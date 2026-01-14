@@ -37,6 +37,9 @@ CREATE TABLE pharmacy_orders_new (
 );
 
 -- Step 2: Copy all data from old table to new table
+-- Note: This migration assumes the old table has all columns except that service_id is NOT NULL.
+-- If your table is missing some columns, the migration will fail. In that case, you may need
+-- to create a custom migration that only copies the columns that exist in your current table.
 INSERT INTO pharmacy_orders_new (
   id, order_id, patient_id, treatment_id, encounter_id, service_id,
   drug_id, drug_name, dosage, quantity, instructions, route, duration,
@@ -54,5 +57,5 @@ DROP TABLE pharmacy_orders;
 -- Step 4: Rename new table to pharmacy_orders
 ALTER TABLE pharmacy_orders_new RENAME TO pharmacy_orders;
 
--- Step 5: Recreate the unique index on order_id
-CREATE UNIQUE INDEX idx_pharmacy_orders_order_id ON pharmacy_orders(order_id);
+-- Note: The UNIQUE constraint on order_id is defined in the table schema (line 18),
+-- so SQLite will automatically create the necessary index. No additional index creation needed.

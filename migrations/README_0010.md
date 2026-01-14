@@ -48,8 +48,8 @@ PRAGMA table_info(pharmacy_orders);
 -- Look for service_id column - should NOT have "NOT NULL" in the type
 
 -- Test creating a record with null service_id
-INSERT INTO pharmacy_orders (order_id, patient_id, drug_id, drug_name, quantity, status, payment_status, created_at)
-VALUES ('TEST-001', 'BGC1', 1, 'Test Drug', 1, 'prescribed', 'unpaid', datetime('now'));
+INSERT INTO pharmacy_orders (order_id, patient_id, quantity, status, payment_status, created_at)
+VALUES ('TEST-001', 'BGC1', 1, 'prescribed', 'unpaid', datetime('now'));
 
 -- Verify the test record was created
 SELECT * FROM pharmacy_orders WHERE order_id = 'TEST-001';
