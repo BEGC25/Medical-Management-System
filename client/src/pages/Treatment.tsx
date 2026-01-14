@@ -89,6 +89,7 @@ import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, getVisitStatusLabel, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
 import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators } from '@/lib/patient-utils';
+import { cn } from '@/lib/utils';
 import type { PatientWithStatus } from "@shared/schema";
 import { LAB_TEST_CATALOG, XRAY_EXAM_TYPES, XRAY_BODY_PARTS, XRAY_PRESETS, ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS, ULTRASOUND_PRESETS, type LabTestCategory, type XrayExamType, type UltrasoundExamType } from "@/lib/diagnostic-catalog";
 
@@ -1931,6 +1932,12 @@ export default function Treatment() {
     setShowPrescription(false);
   };
 
+  const handlePrintPrescription = () => {
+    if (!selectedPatient || !currentEncounter) return;
+    setShowPrescription(true);
+    setTimeout(() => window.print(), 100);
+  };
+
   const printPrescription = () => {
     // ... (keep printPrescription content) ...
     const win = window.open("", "_blank");
@@ -2392,11 +2399,13 @@ export default function Treatment() {
             type="button"
             onClick={handlePendingOrdersClick}
             data-testid="stat-card-orders-waiting"
-            className={`group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-2 border ${
+            className={cn(
+              "group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-2 border shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left",
               quickFilter === "pending" 
                 ? "border-amber-500 dark:border-amber-500 ring-2 ring-amber-300 dark:ring-amber-700" 
-                : "border-amber-200 dark:border-amber-800/50"
-            } shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left`}
+                : "border-amber-200 dark:border-amber-800/50",
+              ordersWaitingCount > 0 && "pulse-urgent"
+            )}
           >
             <div className="flex items-center justify-between mb-0.5">
               <div className="h-7 w-7 bg-gradient-to-br from-amber-500 to-orange-600 rounded-md flex items-center justify-center shadow-sm">
@@ -2993,6 +3002,20 @@ export default function Treatment() {
                             {/* Actions */}
                             <div className="flex gap-4 pt-6 mt-6 border-t">
                               <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-medical-blue hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
+                              
+                              {/* Print Prescription button - available when medications exist */}
+                              {currentEncounter && medications.length > 0 && (
+                                <Button 
+                                  type="button" 
+                                  variant="outline"
+                                  onClick={handlePrintPrescription}
+                                  className="border-purple-300 hover:bg-purple-50"
+                                >
+                                  <Printer className="w-4 h-4 mr-2" />
+                                  Print Prescription
+                                </Button>
+                              )}
+                              
                               {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="default" className="bg-orange-600 hover:bg-orange-700" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn">{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
                               <Button type="button" variant="outline" onClick={handleNewTreatment} className="ml-auto">New Treatment</Button>
                             </div>
