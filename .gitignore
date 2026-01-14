@@ -8,6 +8,8 @@ vite.config.ts.*
 # Test files
 test-*.ts
 test-*.js
+test-*.mjs
+test_migration.db
 # Archive directory (legacy backup files)
 archive/
 test-payments-preset.js
@@ -16,3 +18,6 @@ test-lab-interpretation.js
 *.backup
 clinic.db.backup
 clinic.db.temp
+# Drizzle generated files in migrations
+migrations/schema.ts
+migrations/relations.ts
