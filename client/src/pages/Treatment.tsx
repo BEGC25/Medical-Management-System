@@ -514,6 +514,45 @@ const resultFields: Record< // Keep this config for metadata
 // Lab test categories - use shared diagnostic catalog
 const commonTests = LAB_TEST_CATALOG;
 
+// ---------- helper components ----------
+// Recent Results Summary Component
+function RecentResultsSummary({ patientId }: { patientId: string }) {
+  const { data: recentResults } = useQuery({
+    queryKey: ['/api/recent-results', patientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/${patientId}/recent-results`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent results');
+      }
+      return response.json();
+    },
+  });
+
+  if (!recentResults || recentResults.length === 0) {
+    return (
+      <p className="text-xs text-gray-400 italic">No recent results</p>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      {recentResults.slice(0, 3).map((result: any) => (
+        <div key={result.id} className="flex items-center justify-between text-xs">
+          <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{result.testName}</span>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {result.isAbnormal ? (
+              <AlertCircle className="h-3 w-3 text-red-500" />
+            ) : (
+              <CheckCircle className="h-3 w-3 text-green-500" />
+            )}
+            <span className="text-gray-500">{timeAgo(result.completedAt)}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ---------- component ----------
 export default function Treatment() {
   // ... (keep existing state variables: selectedPatient, showPrescription, etc.) ...
@@ -5379,7 +5418,54 @@ export default function Treatment() {
               {/* === RIGHT "CONTEXT" RAIL === */}
               <div className="space-y-4">
                 {/* Vitals Card */}
-                <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-5 w-5" />Vitals (Today)</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-3 text-sm"><div><div className="text-muted-foreground">Temp</div><div className="font-medium">{watchedVitals[0] ? `${watchedVitals[0]} °C` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">BP</div><div className="font-medium">{watchedVitals[1] || <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">Heart Rate</div><div className="font-medium">{watchedVitals[2] ? `${watchedVitals[2]} bpm` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">Weight</div><div className="font-medium">{watchedVitals[3] ? `${watchedVitals[3]} kg` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div></div></CardContent></Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-red-500" />
+                      Vitals (Today)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Existing vitals display */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div className="text-muted-foreground">Temp</div>
+                        <div className="font-medium">
+                          {watchedVitals[0] ? `${watchedVitals[0]} °C` : <span className="text-gray-400 italic text-xs">Not recorded</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">BP</div>
+                        <div className="font-medium">
+                          {watchedVitals[1] || <span className="text-gray-400 italic text-xs">Not recorded</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Heart Rate</div>
+                        <div className="font-medium">
+                          {watchedVitals[2] ? `${watchedVitals[2]} bpm` : <span className="text-gray-400 italic text-xs">Not recorded</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Weight</div>
+                        <div className="font-medium">
+                          {watchedVitals[3] ? `${watchedVitals[3]} kg` : <span className="text-gray-400 italic text-xs">Not recorded</span>}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Recent Results Summary */}
+                    {selectedPatient && (
+                      <div className="border-t pt-3 mt-3">
+                        <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
+                          <FlaskConical className="h-3 w-3" />
+                          Recent Results
+                        </h4>
+                        <RecentResultsSummary patientId={selectedPatient.patientId} />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
                 {/* Alerts Card */}
                 <Card className="border-red-500/50">
                   <CardHeader>

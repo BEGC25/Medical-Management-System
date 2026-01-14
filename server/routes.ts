@@ -5,7 +5,7 @@ import session from "express-session";
 import { z } from "zod";
 import { storage } from "./storage";
 import { db } from "./db";
-import { eq, gte, lte, and, sql, isNotNull, ne } from "drizzle-orm";
+import { eq, gte, lte, and, sql, isNotNull, ne, desc } from "drizzle-orm";
 import {
   insertPatientSchema,
   insertTreatmentSchema,
@@ -1335,6 +1335,82 @@ router.delete("/api/ultrasound-exams/:examId", async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: "Failed to delete ultrasound exam" });
+  }
+});
+
+/* -------------------------------- Recent Results -------------------------------- */
+
+// Get recent completed diagnostic results for a patient
+router.get("/api/patients/:patientId/recent-results", async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    
+    // Get recent lab tests
+    const recentLabTests = await db.select()
+      .from(labTests)
+      .where(and(
+        eq(labTests.patientId, patientId),
+        eq(labTests.status, 'completed')
+      ))
+      .orderBy(desc(labTests.completedDate))
+      .limit(5);
+    
+    // Get recent X-rays
+    const recentXrays = await db.select()
+      .from(xrayExams)
+      .where(and(
+        eq(xrayExams.patientId, patientId),
+        eq(xrayExams.status, 'completed')
+      ))
+      .orderBy(desc(xrayExams.reportDate))
+      .limit(5);
+    
+    // Get recent ultrasounds
+    const recentUltrasounds = await db.select()
+      .from(ultrasoundExams)
+      .where(and(
+        eq(ultrasoundExams.patientId, patientId),
+        eq(ultrasoundExams.status, 'completed')
+      ))
+      .orderBy(desc(ultrasoundExams.reportDate))
+      .limit(5);
+    
+    // Combine and sort by date
+    const allResults = [
+      ...recentLabTests.map(t => ({
+        id: `lab-${t.id}`,
+        type: 'lab',
+        testName: t.category ? `Lab: ${t.category}` : 'Lab Test',
+        completedAt: t.completedDate,
+        isAbnormal: t.resultStatus === 'abnormal' || t.resultStatus === 'critical',
+      })),
+      ...recentXrays.map(x => ({
+        id: `xray-${x.id}`,
+        type: 'xray',
+        testName: `X-Ray: ${x.examType || 'Unknown'}`,
+        completedAt: x.reportDate,
+        isAbnormal: x.findings?.toLowerCase().includes('abnormal') || false,
+      })),
+      ...recentUltrasounds.map(u => ({
+        id: `ultrasound-${u.id}`,
+        type: 'ultrasound',
+        testName: `Ultrasound: ${u.examType || 'Unknown'}`,
+        completedAt: u.reportDate,
+        isAbnormal: u.reportStatus === 'abnormal' || u.reportStatus === 'urgent',
+      })),
+    ]
+      .filter(r => r.completedAt)
+      .sort((a, b) => {
+        const dateA = new Date(a.completedAt!).getTime();
+        const dateB = new Date(b.completedAt!).getTime();
+        return dateB - dateA;
+      })
+      .slice(0, 5);
+    
+    res.json(allResults);
+  } catch (error) {
+    console.error("Error fetching recent results:", error);
+    res.status(500).json({ error: "Failed to fetch recent results" });
   }
 });
 
