@@ -30,9 +30,33 @@ const XRAY_RELATED_TYPES = ["xray", "xray_exam"] as const;
 const LAB_RELATED_TYPES = ["lab", "lab_test"] as const;
 const ULTRASOUND_RELATED_TYPES = ["ultrasound", "ultrasound_exam"] as const;
 
-function generatePatientId(): string {
-  patientCounter++;
-  return `BGC${patientCounter}`;
+async function generatePatientId(): Promise<string> {
+  try {
+    if (patientCounter === 0) {
+      console.log('[generatePatientId] Initializing patient counter from database');
+      // Extract the highest patient number from existing IDs (including deleted ones)
+      const allPatients = await db.select({ patientId: patients.patientId }).from(patients);
+      console.log(`[generatePatientId] Found ${allPatients.length} existing patients (including deleted)`);
+      let maxNum = 0;
+      for (const patient of allPatients) {
+        const match = patient.patientId.match(/BGC(\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+      patientCounter = maxNum;
+      console.log(`[generatePatientId] Counter initialized to ${patientCounter}`);
+    }
+    patientCounter++;
+    const newId = `BGC${patientCounter}`;
+    console.log(`[generatePatientId] Generated new patient ID: ${newId}`);
+    return newId;
+  } catch (error) {
+    console.error('[generatePatientId] FAILED to generate patient ID:', error);
+    console.error('[generatePatientId] Error details:', error instanceof Error ? error.stack : error);
+    throw new Error(`Failed to generate patient ID: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 async function generateTreatmentId(): Promise<string> {
@@ -413,14 +437,7 @@ export class MemStorage implements IStorage {
   }
 
   async createPatient(data: schema.InsertPatient): Promise<schema.Patient> {
-    // Initialize counter from existing patients if not set
-    if (patientCounter === 0) {
-      // --- FIXED: Count *all* patients (deleted or not) to prevent ID collision ---
-      const allPatientsCount = await db.select({ count: count() }).from(patients);
-      patientCounter = allPatientsCount[0]?.count || 0;
-    }
-
-    const patientId = generatePatientId();
+    const patientId = await generatePatientId();
     const now = new Date().toISOString();
     
     // Calculate clinic day in Africa/Juba timezone
