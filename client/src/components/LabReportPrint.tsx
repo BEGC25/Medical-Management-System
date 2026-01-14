@@ -86,12 +86,8 @@ export function LabReportPrint({
   
   // Format number with commas
   const formatNumber = (num: number | string): string => {
-    if (typeof num === 'string') {
-      const parsed = parseFloat(num);
-      if (isNaN(parsed)) return num;
-      return new Intl.NumberFormat('en-US').format(parsed);
-    }
-    return new Intl.NumberFormat('en-US').format(num);
+    const parsed = typeof num === 'string' ? parseFloat(num) : num;
+    return isNaN(parsed) ? String(num) : new Intl.NumberFormat('en-US').format(parsed);
   };
 
   return (

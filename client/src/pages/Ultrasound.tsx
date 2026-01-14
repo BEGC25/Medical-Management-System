@@ -730,6 +730,17 @@ export default function Ultrasound() {
     }
   };
 
+  // Print function for ultrasound report
+  const printUltrasoundReport = () => {
+    if (selectedUltrasoundExam && reportPatient) {
+      setShowUltrasoundReport(true);
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => setShowUltrasoundReport(false), 500);
+      }, 100);
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
