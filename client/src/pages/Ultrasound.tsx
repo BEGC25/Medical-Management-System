@@ -730,6 +730,17 @@ export default function Ultrasound() {
     }
   };
 
+  // Print function for ultrasound report
+  const printUltrasoundReport = () => {
+    if (selectedUltrasoundExam && reportPatient) {
+      setShowUltrasoundReport(true);
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => setShowUltrasoundReport(false), 500);
+      }, 100);
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -2308,136 +2319,154 @@ export default function Ultrasound() {
         </DialogContent>
       </Dialog>
 
-      {/* Print Report (hidden) - Professional Layout */}
+      {/* Print Report (hidden) - STANDARDIZED PREMIUM DESIGN */}
       {showUltrasoundReport && selectedUltrasoundExam && reportPatient && (
-        <div className="print-only">
+        <div id="ultrasound-report-print" className="print-only">
           <style>{`
             @media print {
-              body * { 
-                visibility: hidden; 
-              }
-              .print-only, .print-only * { 
-                visibility: visible; 
-              }
-              .print-only { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100%; 
-              }
-              .no-print {
-                display: none !important;
-              }
-              .report-container {
-                max-width: 100%;
-                padding: 20mm;
-                font-size: 11pt;
-                font-family: 'Times New Roman', serif;
-              }
-              .report-header {
-                border-bottom: 2px solid #333;
-                margin-bottom: 20px;
-                padding-bottom: 10px;
-              }
-              .report-section {
-                page-break-inside: avoid;
-                margin-bottom: 15px;
-              }
-              .signature-line {
-                margin-top: 40px;
-                border-top: 1px solid #333;
-                width: 200px;
-                padding-top: 5px;
-              }
-              @page { 
-                margin: 1cm; 
-                size: A4;
-              }
-              h1, h2, h3 {
-                page-break-after: avoid;
-              }
+              body * { visibility: hidden; }
+              #ultrasound-report-print, #ultrasound-report-print * { visibility: visible; }
+              #ultrasound-report-print { position: absolute; left: 0; top: 0; width: 100%; max-height: 273mm; overflow: hidden; }
+              @page { size: A4; margin: 12mm 15mm; }
             }
           `}</style>
-          <div className="report-container bg-white p-6 max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="report-header mb-6 pb-4 border-b-2 border-blue-600">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <img src={clinicLogo} alt="Clinic Logo" className="h-20 w-20 object-contain" />
-                  <div>
-                    <h1 className="text-3xl font-bold text-blue-600 mb-1">Bahr El Ghazal Clinic</h1>
-                    <p className="text-sm text-gray-600">Comprehensive Healthcare Services</p>
-                    <p className="text-xs text-gray-500">Wau, South Sudan</p>
+          {/* Premium Professional Report with Border - MATCHES INVOICE */}
+          <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+            <div className="p-6 max-w-4xl mx-auto bg-white">
+              
+              {/* HEADER - IDENTICAL TO INVOICE */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-blue-900">Bahr El Ghazal Clinic</h1>
+                  <p className="text-sm text-gray-600 italic">Excellence in Healthcare</p>
+                  <p className="text-xs text-gray-600 mt-1">Aweil, South Sudan</p>
+                  <p className="text-xs text-gray-600">Tel: +211916759060/+211928754760</p>
+                  <p className="text-xs text-gray-600">Email: bahr.ghazal.clinic@gmail.com</p>
+                </div>
+                <div className="w-24 h-24">
+                  <img src={clinicLogo} alt="Clinic Logo" className="w-full h-full object-contain" />
+                </div>
+              </div>
+
+              {/* TITLE WITH ACCENT BAR - MATCHES INVOICE */}
+              <div className="text-center mb-6">
+                <h2 className="text-lg font-bold text-gray-900">ULTRASOUND REPORT</h2>
+                <div className="h-1 bg-gradient-to-r from-blue-900 to-blue-800 mt-2" />
+              </div>
+
+              {/* Patient & Exam Information Cards - Side by Side like Invoice */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                {/* Patient Information Box */}
+                <div className="border border-gray-300 shadow-sm rounded p-2 bg-blue-50">
+                  <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
+                    PATIENT INFORMATION
+                  </h3>
+                  <div className="space-y-1 leading-tight">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Name:</span>
+                      <span className="text-xs font-bold text-gray-900">{fullName(reportPatient)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Patient ID:</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.patientId}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Age:</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.age} years</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Gender:</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.gender}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-semibold text-gray-800">Ultrasound Examination Report</p>
-                  <p className="text-sm text-gray-500">{new Date().toLocaleString()}</p>
+
+                {/* Exam Information Box */}
+                <div className="border border-gray-300 shadow-sm rounded p-2 bg-gray-50">
+                  <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
+                    EXAMINATION DETAILS
+                  </h3>
+                  <div className="space-y-1 leading-tight">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Exam ID:</span>
+                      <span className="text-xs font-bold text-blue-900">{selectedUltrasoundExam.examId}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Exam Type:</span>
+                      <span className="text-xs font-medium capitalize">{selectedUltrasoundExam.examType} Ultrasound</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Report Date:</span>
+                      <span className="text-xs font-medium">{resultsForm.getValues('reportDate')}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Image Quality:</span>
+                      <span className="text-xs font-medium capitalize">{resultsForm.getValues('imageQuality')}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Patient Demographics */}
-            <div className="report-section grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded">
-              <div>
-                <p className="text-sm mb-1"><strong>Patient Name:</strong> {fullName(reportPatient)}</p>
-                <p className="text-sm mb-1"><strong>Patient ID:</strong> {reportPatient.patientId}</p>
-                <p className="text-sm mb-1"><strong>Age:</strong> {reportPatient.age} years</p>
-                <p className="text-sm"><strong>Gender:</strong> {reportPatient.gender}</p>
+              {/* Clinical Indication - If Present */}
+              {selectedUltrasoundExam.clinicalIndication && (
+                <div className="mb-3 border border-gray-300 rounded p-2 bg-gray-50">
+                  <h3 className="font-bold text-xs mb-1 text-gray-800">Clinical Indication:</h3>
+                  <p className="text-xs text-gray-700 whitespace-pre-line">{selectedUltrasoundExam.clinicalIndication}</p>
+                </div>
+              )}
+
+              {/* Sonographic Findings */}
+              <div className="mb-3 border border-gray-300 rounded p-2 bg-white">
+                <h3 className="font-bold text-sm mb-1 text-gray-800 border-b-2 border-gray-400 pb-1 uppercase">
+                  Sonographic Findings
+                </h3>
+                <p className="text-xs text-gray-900 whitespace-pre-line leading-relaxed mt-1">
+                  {resultsForm.getValues('findings') || 'No specific findings documented.'}
+                </p>
               </div>
-              <div>
-                <p className="text-sm mb-1"><strong>Exam ID:</strong> {selectedUltrasoundExam.examId}</p>
-                <p className="text-sm mb-1"><strong>Exam Type:</strong> {selectedUltrasoundExam.examType} Ultrasound</p>
-                <p className="text-sm mb-1"><strong>Report Date:</strong> {resultsForm.getValues('reportDate')}</p>
-                <p className="text-sm"><strong>Image Quality:</strong> {resultsForm.getValues('imageQuality')}</p>
+
+              {/* Impression */}
+              <div className="mb-3 border-2 border-blue-900 rounded p-2 bg-blue-50">
+                <h3 className="font-bold text-sm mb-1 text-blue-900 uppercase">
+                  Impression
+                </h3>
+                <p className="text-xs text-gray-900 whitespace-pre-line leading-relaxed font-semibold">
+                  {resultsForm.getValues('impression') || 'Pending interpretation.'}
+                </p>
               </div>
-            </div>
 
-            {/* Clinical Indication */}
-            {selectedUltrasoundExam.clinicalIndication && (
-              <div className="report-section mb-4">
-                <h3 className="font-bold mb-2 text-gray-800 uppercase tracking-wide">Clinical Indication:</h3>
-                <p className="text-sm whitespace-pre-line pl-2 border-l-2 border-gray-300">{selectedUltrasoundExam.clinicalIndication}</p>
+              {/* Recommendations - If Present */}
+              {resultsForm.getValues('recommendations') && (
+                <div className="mb-3 border border-gray-300 rounded p-2 bg-amber-50">
+                  <h3 className="font-bold text-xs mb-1 text-gray-800 uppercase">Recommendations:</h3>
+                  <p className="text-xs text-gray-700 whitespace-pre-line">{resultsForm.getValues('recommendations')}</p>
+                </div>
+              )}
+
+              {/* SIGNATURE SECTION - MATCHES INVOICE */}
+              <div className="grid grid-cols-2 gap-12 mt-6 mb-4">
+                <div>
+                  <div className="border-t-2 border-gray-800 pt-2 mt-20">
+                    <p className="text-sm font-bold">Sonographer:</p>
+                    <p className="text-xs text-gray-600">{resultsForm.getValues('sonographer') || 'Ultrasound Department'}</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-t-2 border-gray-800 pt-2 mt-20">
+                    <p className="text-sm font-bold">Date:</p>
+                    <p className="text-xs text-gray-600">{resultsForm.getValues('reportDate')}</p>
+                  </div>
+                </div>
               </div>
-            )}
 
-            {/* Findings */}
-            <div className="report-section mb-4">
-              <h3 className="font-bold mb-2 text-gray-800 uppercase tracking-wide">Findings:</h3>
-              <p className="text-sm whitespace-pre-line pl-2 border-l-2 border-blue-300">
-                {resultsForm.getValues('findings') || 'No specific findings documented.'}
-              </p>
-            </div>
-
-            {/* Impression */}
-            <div className="report-section mb-4">
-              <h3 className="font-bold mb-2 text-gray-800 uppercase tracking-wide">Impression:</h3>
-              <p className="text-sm whitespace-pre-line pl-2 border-l-2 border-purple-300 font-medium">
-                {resultsForm.getValues('impression') || 'Pending interpretation.'}
-              </p>
-            </div>
-
-            {/* Recommendations */}
-            {resultsForm.getValues('recommendations') && (
-              <div className="report-section mb-4">
-                <h3 className="font-bold mb-2 text-gray-800 uppercase tracking-wide">Recommendations:</h3>
-                <p className="text-sm whitespace-pre-line pl-2 border-l-2 border-green-300">{resultsForm.getValues('recommendations')}</p>
+              {/* FOOTER - IDENTICAL TO INVOICE */}
+              <div className="text-center text-xs text-gray-600 border-t pt-3 mt-4">
+                <p className="font-semibold">THIS IS A COMPUTER-GENERATED ULTRASOUND REPORT</p>
+                <p className="font-semibold mt-1">Bahr El Ghazal Clinic</p>
+                <p>Accredited Medical Facility | Republic of South Sudan</p>
+                <p className="mt-1 italic">Your health is our priority</p>
               </div>
-            )}
-
-            {/* Signature Section */}
-            <div className="mt-12 pt-6">
-              <div className="signature-line">
-                <p className="text-sm font-semibold">{resultsForm.getValues('sonographer') || '__________________________'}</p>
-                <p className="text-xs text-gray-600">Radiologist / Sonographer</p>
-                <p className="text-xs text-gray-500 mt-1">Date: {resultsForm.getValues('reportDate')}</p>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 pt-4 border-t text-center text-xs text-gray-500">
-              <p>This report is electronically generated and valid without signature if marked as completed.</p>
-              <p>Bahr El Ghazal Clinic © {new Date().getFullYear()}</p>
+              
             </div>
           </div>
         </div>

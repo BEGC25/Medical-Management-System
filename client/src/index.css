@@ -364,6 +364,8 @@
   #lab-request-print:not(:empty), #lab-request-print:not(:empty) * { visibility: visible; }
   #lab-report-print:not(:empty), #lab-report-print:not(:empty) * { visibility: visible; }
   #lab-clinical-print:not(:empty), #lab-clinical-print:not(:empty) * { visibility: visible; }
+  #xray-report-print:not(:empty), #xray-report-print:not(:empty) * { visibility: visible; }
+  #ultrasound-report-print:not(:empty), #ultrasound-report-print:not(:empty) * { visibility: visible; }
   
   /* Special handling for printable invoice - needs display override */
   #printable-invoice {
@@ -383,11 +385,22 @@
   #lab-request-print:not(:empty),
   #lab-report-print:not(:empty),
   #lab-clinical-print:not(:empty),
+  #xray-report-print:not(:empty),
+  #ultrasound-report-print:not(:empty),
   #printable-invoice {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+  }
+  
+  /* Ensure single-page output for all reports */
+  #lab-report-print:not(:empty),
+  #lab-clinical-print:not(:empty),
+  #xray-report-print:not(:empty),
+  #ultrasound-report-print:not(:empty) {
+    max-height: 273mm !important;
+    overflow: hidden !important;
   }
 
   /* Ensure proper page breaking */
