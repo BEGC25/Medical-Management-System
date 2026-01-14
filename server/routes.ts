@@ -1346,6 +1346,11 @@ router.get("/api/patients/:patientId/recent-results", async (req, res) => {
   try {
     const { patientId } = req.params;
     
+    // Validate patientId parameter
+    if (!patientId || typeof patientId !== 'string' || patientId.trim() === '') {
+      return res.status(400).json({ error: "Invalid patient ID" });
+    }
+    
     // Get recent lab tests
     const recentLabTests = await db.select()
       .from(labTests)
@@ -1422,6 +1427,13 @@ router.get("/api/user-preferences/frequent/:userId/:itemType", async (req, res) 
   try {
     const { userId, itemType } = req.params;
     
+    // Validate userId
+    const userIdNum = parseInt(userId);
+    if (isNaN(userIdNum) || userIdNum <= 0) {
+      return res.status(400).json({ error: "Invalid user ID. Must be a positive integer." });
+    }
+    
+    // Validate itemType
     if (itemType !== 'complaint' && itemType !== 'diagnosis') {
       return res.status(400).json({ error: "Invalid item type. Must be 'complaint' or 'diagnosis'" });
     }
@@ -1430,7 +1442,7 @@ router.get("/api/user-preferences/frequent/:userId/:itemType", async (req, res) 
       .from(userPreferences)
       .where(
         and(
-          eq(userPreferences.userId, parseInt(userId)),
+          eq(userPreferences.userId, userIdNum),
           eq(userPreferences.itemType, itemType)
         )
       )
@@ -1449,13 +1461,23 @@ router.post("/api/user-preferences/track", async (req, res) => {
   try {
     const { userId, itemType, itemValue } = req.body;
     
+    // Validate required fields
     if (!userId || !itemType || !itemValue) {
       return res.status(400).json({ error: "Missing required fields: userId, itemType, itemValue" });
     }
     
+    // Validate userId is a number
+    if (typeof userId !== 'number' || userId <= 0) {
+      return res.status(400).json({ error: "Invalid user ID. Must be a positive integer." });
+    }
+    
+    // Validate itemType
     if (itemType !== 'complaint' && itemType !== 'diagnosis') {
       return res.status(400).json({ error: "Invalid item type. Must be 'complaint' or 'diagnosis'" });
     }
+    
+    // Use a single timestamp for consistency
+    const now = new Date().toISOString();
     
     // Check if this preference already exists
     const existing = await db.select()
@@ -1474,7 +1496,7 @@ router.post("/api/user-preferences/track", async (req, res) => {
       await db.update(userPreferences)
         .set({
           useCount: existing[0].useCount + 1,
-          lastUsed: new Date().toISOString(),
+          lastUsed: now,
         })
         .where(eq(userPreferences.id, existing[0].id));
     } else {
@@ -1484,7 +1506,7 @@ router.post("/api/user-preferences/track", async (req, res) => {
         itemType,
         itemValue,
         useCount: 1,
-        lastUsed: new Date().toISOString(),
+        lastUsed: now,
       });
     }
     

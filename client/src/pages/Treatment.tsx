@@ -1891,7 +1891,10 @@ export default function Treatment() {
                 itemType: "complaint",
                 itemValue: firstComplaint,
               }),
-            }).catch(err => console.error("Failed to track complaint:", err));
+            }).catch(err => {
+              // Silent fail for preference tracking - not critical to user workflow
+              console.warn("Failed to track complaint preference:", err);
+            });
           }
         }
         
@@ -1907,7 +1910,10 @@ export default function Treatment() {
                 itemType: "diagnosis",
                 itemValue: firstDiagnosis,
               }),
-            }).catch(err => console.error("Failed to track diagnosis:", err));
+            }).catch(err => {
+              // Silent fail for preference tracking - not critical to user workflow
+              console.warn("Failed to track diagnosis preference:", err);
+            });
           }
         }
       }
@@ -2084,7 +2090,9 @@ export default function Treatment() {
   const handlePrintPrescription = () => {
     if (!selectedPatient || !currentEncounter) return;
     setShowPrescription(true);
-    setTimeout(() => window.print(), 100);
+    // Small delay to ensure the prescription content is rendered before printing
+    const PRINT_RENDER_DELAY = 100; // ms
+    setTimeout(() => window.print(), PRINT_RENDER_DELAY);
   };
 
   const printPrescription = () => {
