@@ -356,7 +356,7 @@
     margin: 12mm 15mm;
   }
 
-  /* Hide everything initially */}
+  /* Hide everything initially */
   body * { visibility: hidden; }
   
   /* Only show the visible print containers and their content */
