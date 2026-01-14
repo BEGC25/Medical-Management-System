@@ -542,31 +542,15 @@
     0%, 100% { 
       transform: scale(1);
       opacity: 1;
-      box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.4);
     }
     50% { 
       transform: scale(1.05);
       opacity: 0.9;
-      box-shadow: 0 0 0 8px rgba(251, 146, 60, 0);
     }
   }
   
   .animate-pulse-urgent {
     animation: pulse-urgent 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  
-  /* Gentle Pulsing Animation for Orders Waiting Card */
-  @keyframes pulse-urgent-card {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.4);
-    }
-    50% {
-      box-shadow: 0 0 0 8px rgba(251, 146, 60, 0);
-    }
-  }
-
-  .pulse-urgent {
-    animation: pulse-urgent-card 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   /* Premium Transitions */
