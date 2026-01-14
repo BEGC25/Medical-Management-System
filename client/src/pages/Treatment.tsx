@@ -261,69 +261,8 @@ const DURATION_PRESETS = [
   "30 days",
 ];
 
-// Common medications for South Sudan context
-const COMMON_MEDICATIONS = [
-  {
-    id: "coartem",
-    name: "Artemether-Lumefantrine (Coartem)",
-    category: "Antimalarial",
-    emoji: "🦟",
-    defaultDosage: "4 tablets twice daily",
-    defaultDuration: "3 days",
-    defaultQuantity: 24,
-    stockLevel: 150,
-  },
-  {
-    id: "amoxicillin",
-    name: "Amoxicillin",
-    category: "Antibiotic",
-    emoji: "💊",
-    defaultDosage: "1 tablet three times daily",
-    defaultDuration: "7 days",
-    defaultQuantity: 21,
-    stockLevel: 85,
-  },
-  {
-    id: "paracetamol",
-    name: "Paracetamol",
-    category: "Pain/Fever",
-    emoji: "🌡️",
-    defaultDosage: "1-2 tablets every 6 hours",
-    defaultDuration: "As needed",
-    defaultQuantity: 20,
-    stockLevel: 15,
-  },
-  {
-    id: "metronidazole",
-    name: "Metronidazole",
-    category: "Antibiotic",
-    emoji: "💊",
-    defaultDosage: "1 tablet three times daily",
-    defaultDuration: "7 days",
-    defaultQuantity: 21,
-    stockLevel: 45,
-  },
-  {
-    id: "ors",
-    name: "ORS (Oral Rehydration Salts)",
-    category: "Rehydration",
-    emoji: "💧",
-    defaultDosage: "1 sachet after each loose stool",
-    defaultDuration: "As needed",
-    defaultQuantity: 10,
-    stockLevel: 200,
-  },
-  {
-    id: "zinc",
-    name: "Zinc Tablets",
-    category: "Supplement",
-    emoji: "⚡",
-    defaultDosage: "1 tablet once daily",
-    defaultDuration: "10 days",
-    defaultQuantity: 10,
-    stockLevel: 0,
-  },
-];
+// Maximum number of drugs to show in quick select
+const MAX_QUICK_SELECT_DRUGS = 12;
 
 // Type for orders returned from /api/visits/:visitId/orders
 // These have additional properties beyond the base LabTest/XRay/Ultrasound types
@@ -863,6 +802,17 @@ export default function Treatment() {
   // services & drugs
   const { data: services = [] } = useQuery<Service[]>({ queryKey: ["/api/services"] });
   const { data: drugs = [] } = useQuery<Drug[]>({ queryKey: ["/api/pharmacy/drugs"] });
+  
+  // Fetch drugs with stock levels for quick select
+  const { data: drugsWithStock = [] } = useQuery<(Drug & { stockOnHand: number })[]>({ 
+    queryKey: ["/api/pharmacy/stock/all"],
+    staleTime: 300000, // Cache for 5 minutes - stock doesn't change that frequently
+  });
+  
+  // Filter to only in-stock drugs for quick select
+  const inStockDrugs = useMemo(() => {
+    return drugsWithStock.filter(d => d.stockOnHand > 0);
+  }, [drugsWithStock]);
   
   // Filter laboratory services - only show active lab services
   const laboratoryServices = useMemo(() => {
@@ -1779,15 +1729,14 @@ export default function Treatment() {
   const submitMedicationsMutation = useMutation({
     mutationFn: async (meds: typeof medications) => {
       if (!selectedPatient || !currentEncounter) throw new Error("No patient or encounter");
-      const pharmacyService = services.find((s) => s.category === "pharmacy");
-      if (!pharmacyService) throw new Error("Pharmacy service not found");
-
+      
+      // No longer require pharmacy service - use drug inventory pricing instead
       const promises = meds.map((med) =>
         apiRequest("POST", "/api/pharmacy-orders", {
           patientId: selectedPatient.patientId,
           encounterId: currentEncounter.encounterId,
           treatmentId: savedTreatment?.treatmentId,
-          serviceId: pharmacyService.id,
+          serviceId: null, // No service required - pricing comes from drug inventory
           drugId: med.drugId,
           drugName: med.drugName,
           dosage: med.dosage,
@@ -4611,53 +4560,68 @@ export default function Treatment() {
                                     ) : (
                                       <ChevronRight className="w-4 h-4" />
                                     )}
-                                    <span className="font-medium">Common Medications (Click to use)</span>
-                                    <span className="text-gray-400 dark:text-gray-500">- Quick select</span>
+                                    <span className="font-medium">In-Stock Medications (Click to use)</span>
+                                    <span className="text-gray-400 dark:text-gray-500">- Quick select from inventory</span>
                                   </button>
                                   
                                   {showCommonMedications && (
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6 animate-in slide-in-from-top-2">
-                                {COMMON_MEDICATIONS.map((drug) => (
-                                  <div
-                                    key={drug.id}
-                                    className={`
-                                      p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
-                                      hover:shadow-lg hover:scale-105
-                                      ${selectedCommonDrug === drug.id 
-                                        ? 'bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-500 dark:border-purple-700 shadow-md' 
-                                        : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
-                                      }
-                                    `}
-                                    onClick={() => {
-                                      setSelectedCommonDrug(drug.id);
-                                      setNewMedDosage(drug.defaultDosage);
-                                      setNewMedDuration(drug.defaultDuration);
-                                      setNewMedQuantity(drug.defaultQuantity);
-                                      // Try to find matching drug in inventory
-                                      const matchingDrug = drugs.find(d => 
-                                        (d.genericName || d.name).toLowerCase().includes(drug.name.split(' ')[0].toLowerCase())
-                                      );
-                                      if (matchingDrug) {
-                                        setSelectedDrugId(matchingDrug.id.toString());
-                                        setSelectedDrugName(matchingDrug.genericName || matchingDrug.name);
-                                      }
-                                      toast({ title: "Quick Prescription", description: `${drug.name} template loaded. Adjust as needed.` });
-                                    }}
-                                  >
-                                    <div className="text-3xl mb-2">{drug.emoji}</div>
-                                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2">{drug.name.split(' ')[0]}</h4>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">{drug.category}</p>
-                                    {drug.stockLevel !== undefined && (
-                                      <div className="mt-2 flex items-center gap-1">
-                                        <Package className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                                        <span className={`text-xs ${drug.stockLevel < 20 ? 'text-amber-600 dark:text-amber-400 font-medium' : drug.stockLevel === 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
-                                          {drug.stockLevel === 0 ? 'Out of stock' : `${drug.stockLevel} in stock`}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
+                                    <div className="mb-6 animate-in slide-in-from-top-2">
+                                      {inStockDrugs.length === 0 ? (
+                                        <div className="text-center py-8 px-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                          <Package className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">No medications in stock</h4>
+                                          <p className="text-sm text-gray-600 dark:text-gray-400">Add drugs to the Pharmacy Inventory to see them here.</p>
+                                        </div>
+                                      ) : (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                          {inStockDrugs.slice(0, MAX_QUICK_SELECT_DRUGS).map((drug) => (
+                                            <div
+                                              key={drug.id}
+                                              className={`
+                                                p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                                                hover:shadow-lg hover:scale-105
+                                                ${selectedCommonDrug === drug.id.toString()
+                                                  ? 'bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-500 dark:border-purple-700 shadow-md' 
+                                                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
+                                                }
+                                              `}
+                                              onClick={() => {
+                                                setSelectedCommonDrug(drug.id.toString());
+                                                setSelectedDrugId(drug.id.toString());
+                                                setSelectedDrugName(drug.genericName || drug.name);
+                                                // Set default dosage based on form
+                                                const defaultDosage = drug.form === 'tablet' || drug.form === 'capsule' 
+                                                  ? '1 tablet' 
+                                                  : drug.form === 'syrup' 
+                                                  ? '5ml' 
+                                                  : '1 unit';
+                                                setNewMedDosage(defaultDosage);
+                                                setNewMedDuration("7 days");
+                                                setNewMedQuantity(14);
+                                                toast({ title: "Drug Selected", description: `${drug.genericName || drug.name} selected. Adjust dosage as needed.` });
+                                              }}
+                                            >
+                                              <div className="text-3xl mb-2">💊</div>
+                                              <h4 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1">
+                                                {drug.genericName || drug.name}
+                                              </h4>
+                                              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{drug.strength}</p>
+                                              <p className="text-xs text-gray-500 dark:text-gray-500 capitalize">{drug.form}</p>
+                                              <div className="mt-2 flex items-center gap-1">
+                                                <Package className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                                                <span className={`text-xs ${
+                                                  drug.stockOnHand < 20 
+                                                    ? 'text-amber-600 dark:text-amber-400 font-medium' 
+                                                    : 'text-emerald-600 dark:text-emerald-400'
+                                                }`}>
+                                                  {drug.stockOnHand} in stock
+                                                </span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                           

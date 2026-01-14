@@ -1861,7 +1861,7 @@ router.get("/api/payments/:paymentId", async (req, res) => {
 
 router.get("/api/unpaid-orders/all", async (_req, res) => {
   try {
-    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, patients, services] =
+    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, patients, services, drugs] =
       await Promise.all([
         storage.getLabTests(),
         storage.getXrayExams(),
@@ -1869,10 +1869,14 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
         storage.getPharmacyOrders(),
         storage.getPatients(),
         storage.getServices(),
+        storage.getDrugs(true), // Get active drugs only
       ]);
 
     const patientMap = new Map();
     patients.forEach((p) => patientMap.set(p.patientId, p));
+
+    const drugMap = new Map();
+    drugs.forEach((d) => drugMap.set(d.id, d));
 
     const getServiceByCategory = (category: string) => {
       return services.find((s) => s.category === category && s.isActive);
@@ -1902,6 +1906,23 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
         'skull': 'Skull',
       };
       return labels[examType.toLowerCase()] || toTitleCase(examType);
+    };
+
+    // Helper function to calculate pharmacy order price
+    const calculatePharmacyOrderPrice = (order: any) => {
+      // Try to get price from service first (backward compatibility)
+      const service = order.serviceId ? services.find((s: any) => s.id === order.serviceId) : null;
+      
+      // If no service, get price from drug inventory
+      let price = service?.price;
+      if (!price && order.drugId) {
+        const drug = drugMap.get(order.drugId);
+        if (drug) {
+          price = drug.defaultPrice || 0;
+        }
+      }
+      
+      return price || 0;
     };
 
     const result = {
@@ -2005,7 +2026,9 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
       pharmacy: pharmacyOrders
         .filter((order) => order.paymentStatus === "unpaid" && order.status === "prescribed")
         .map((order) => {
-          const service = services.find((s) => s.id === order.serviceId);
+          const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
+          const price = calculatePharmacyOrderPrice(order);
+          
           return {
             id: order.orderId,
             type: "pharmacy_order",
@@ -2015,9 +2038,10 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
             quantity: order.quantity,
             patient: patientMap.get(order.patientId) || null,
             patientId: order.patientId,
+            drugId: order.drugId,
             serviceId: service?.id,
             serviceName: service?.name,
-            price: service?.price,
+            price,
           };
         }),
     };
@@ -2033,13 +2057,17 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
   try {
     const patientId = req.params.patientId;
 
-    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, services] = await Promise.all([
+    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, drugs] = await Promise.all([
       storage.getLabTestsByPatient(patientId),
       storage.getXrayExamsByPatient(patientId),
       storage.getUltrasoundExamsByPatient(patientId),
       storage.getPharmacyOrdersByPatient(patientId),
       storage.getServices(),
+      storage.getDrugs(true), // Get active drugs only
     ]);
+
+    const drugMap = new Map();
+    drugs.forEach((d) => drugMap.set(d.id, d));
 
     const getServiceByName = (name: string) => {
       return services.find((s) => s.name.toLowerCase() === name.toLowerCase() && s.isActive);
@@ -2047,6 +2075,19 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
 
     const getServiceByCategory = (category: string) => {
       return services.find((s) => s.category === category && s.isActive);
+    };
+
+    // Helper function to calculate pharmacy order price
+    const calculatePharmacyOrderPrice = (order: any) => {
+      const service = order.serviceId ? services.find((s: any) => s.id === order.serviceId) : null;
+      let price = service?.price;
+      if (!price && order.drugId) {
+        const drug = drugMap.get(order.drugId);
+        if (drug) {
+          price = drug.defaultPrice || 0;
+        }
+      }
+      return price || 0;
     };
 
     const unpaidOrders: any[] = [];
@@ -2113,7 +2154,9 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
     pharmacyOrders
       .filter((order) => order.paymentStatus === "unpaid")
       .forEach((order) => {
-        const service = getServiceByCategory("pharmacy");
+        const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
+        const price = calculatePharmacyOrderPrice(order);
+        
         unpaidOrders.push({
           id: order.orderId,
           type: "pharmacy_order",
@@ -2121,9 +2164,10 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
           date: order.createdAt,
           dosage: order.dosage,
           quantity: order.quantity,
+          drugId: order.drugId,
           serviceId: service?.id,
           serviceName: service?.name,
-          price: service?.price || 0,
+          price,
         });
       });
 
