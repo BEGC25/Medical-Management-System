@@ -243,8 +243,8 @@ export const pharmacyOrders = sqliteTable("pharmacy_orders", {
   patientId: text("patient_id").notNull(),
   treatmentId: text("treatment_id"),
   encounterId: text("encounter_id"), // Link to encounter
-  serviceId: integer("service_id").notNull(),
-  drugId: integer("drug_id"), // Link to drug from inventory
+  serviceId: integer("service_id"), // Optional - for backward compatibility with service-based pricing
+  drugId: integer("drug_id"), // Link to drug from inventory - primary pricing source
   drugName: text("drug_name"), // Drug name for display
   dosage: text("dosage"),
   quantity: integer("quantity").notNull().default(1),
