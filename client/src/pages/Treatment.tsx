@@ -261,6 +261,9 @@ const DURATION_PRESETS = [
   "30 days",
 ];
 
+// Maximum number of drugs to show in quick select
+const MAX_QUICK_SELECT_DRUGS = 12;
+
 // Type for orders returned from /api/visits/:visitId/orders
 // These have additional properties beyond the base LabTest/XRay/Ultrasound types
 type VisitOrder = {
@@ -803,7 +806,7 @@ export default function Treatment() {
   // Fetch drugs with stock levels for quick select
   const { data: drugsWithStock = [] } = useQuery<(Drug & { stockOnHand: number })[]>({ 
     queryKey: ["/api/pharmacy/stock/all"],
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 300000, // Cache for 5 minutes - stock doesn't change that frequently
   });
   
   // Filter to only in-stock drugs for quick select
@@ -4571,7 +4574,7 @@ export default function Treatment() {
                                         </div>
                                       ) : (
                                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                          {inStockDrugs.slice(0, 12).map((drug) => (
+                                          {inStockDrugs.slice(0, MAX_QUICK_SELECT_DRUGS).map((drug) => (
                                             <div
                                               key={drug.id}
                                               className={`
