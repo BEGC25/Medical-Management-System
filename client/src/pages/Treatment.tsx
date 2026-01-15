@@ -2459,7 +2459,7 @@ export default function Treatment() {
                     className={cn(
                       "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 flex items-center gap-1.5",
                       dateFilter === "custom"
-                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
                         : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
                     )}
                   >
@@ -2931,7 +2931,7 @@ export default function Treatment() {
                             </Accordion>
 
                             {/* Actions */}
-                            <div className="flex gap-3 justify-between items-center pt-6 mt-6 border-t-2 border-gray-300 dark:border-gray-600 shadow-inner">
+                            <div className="flex gap-3 justify-between items-center pt-6 mt-6 border-t-2 border-gray-300 dark:border-gray-600">
                               <div className="flex gap-3">
                                 {selectedPatient && currentEncounter && (
                                   <DischargeSummary 
@@ -5336,7 +5336,7 @@ export default function Treatment() {
                       {watchedVitals[0] ? (
                         <span className="font-medium">{watchedVitals[0]} °C</span>
                       ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Not recorded</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
                       )}
                     </div>
                     <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
@@ -5347,7 +5347,7 @@ export default function Treatment() {
                       {watchedVitals[1] ? (
                         <span className="font-medium">{watchedVitals[1]}</span>
                       ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Not recorded</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
                       )}
                     </div>
                     <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
@@ -5358,7 +5358,7 @@ export default function Treatment() {
                       {watchedVitals[2] ? (
                         <span className="font-medium">{watchedVitals[2]} bpm</span>
                       ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Not recorded</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
                       )}
                     </div>
                     <div className="flex justify-between items-center text-sm py-1">
@@ -5369,7 +5369,7 @@ export default function Treatment() {
                       {watchedVitals[3] ? (
                         <span className="font-medium">{watchedVitals[3]} kg</span>
                       ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Not recorded</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
                       )}
                     </div>
                   </CardContent>
