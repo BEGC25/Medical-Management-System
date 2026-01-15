@@ -217,9 +217,9 @@ export default function PatientSearch({
                     className={`transition-all duration-200 cursor-pointer border-b border-gray-100 dark:border-gray-800 ${
                       isSelected
                         ? "bg-blue-100 dark:bg-blue-900/40 border-l-4 border-l-blue-500"
-                        : i % 2 === 0
-                        ? "bg-white dark:bg-gray-900"
-                        : "bg-gray-50/50 dark:bg-gray-800/50"
+                        : i % 2
+                        ? "bg-gray-50/50 dark:bg-gray-800/50"
+                        : "bg-white dark:bg-gray-900"
                     } hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md hover:scale-[1.01] hover:border-blue-200 dark:hover:border-blue-800`}
                     onClick={() => onViewPatient?.(p)}
                   >

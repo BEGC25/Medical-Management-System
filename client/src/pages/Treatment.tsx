@@ -5449,62 +5449,67 @@ export default function Treatment() {
                         <Pill className="h-4 w-4 text-purple-500" />
                         Recent Medications
                       </CardTitle>
-                      {prescriptions.filter(p => p.status !== 'cancelled').length > 0 && (
-                        <Badge variant="secondary" className="bg-purple-600 text-white text-xs">
-                          {prescriptions.filter(p => p.status !== 'cancelled').length}
-                        </Badge>
-                      )}
+                      {(() => {
+                        const activeMeds = prescriptions.filter(p => p.status !== 'cancelled');
+                        return activeMeds.length > 0 && (
+                          <Badge variant="secondary" className="bg-purple-600 text-white text-xs">
+                            {activeMeds.length}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {prescriptions.filter(p => p.status !== 'cancelled').length === 0 ? (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 italic">No active medications</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {prescriptions
-                          .filter(p => p.status !== 'cancelled')
-                          .slice(0, 3)
-                          .map((med, idx) => (
-                            <div key={idx} className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-sm text-purple-900 dark:text-purple-100 truncate">
-                                    {med.drugName}
-                                  </p>
-                                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-0.5">
-                                    {med.dosage}
-                                  </p>
-                                  {med.instructions && (
-                                    <p className="text-xs text-purple-600 dark:text-purple-400 italic mt-0.5 truncate">
-                                      {med.instructions}
+                    {(() => {
+                      const activeMeds = prescriptions.filter(p => p.status !== 'cancelled');
+                      return activeMeds.length === 0 ? (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 italic">No active medications</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {activeMeds
+                            .slice(0, 3)
+                            .map((med, idx) => (
+                              <div key={idx} className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm text-purple-900 dark:text-purple-100 truncate">
+                                      {med.drugName}
                                     </p>
-                                  )}
+                                    <p className="text-xs text-purple-700 dark:text-purple-300 mt-0.5">
+                                      {med.dosage}
+                                    </p>
+                                    {med.instructions && (
+                                      <p className="text-xs text-purple-600 dark:text-purple-400 italic mt-0.5 truncate">
+                                        {med.instructions}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`text-[10px] flex-shrink-0 ${
+                                      med.status === 'pending' 
+                                        ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700'
+                                        : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700'
+                                    }`}
+                                  >
+                                    {med.status || 'active'}
+                                  </Badge>
                                 </div>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-[10px] flex-shrink-0 ${
-                                    med.status === 'pending' 
-                                      ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700'
-                                      : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700'
-                                  }`}
-                                >
-                                  {med.status || 'active'}
-                                </Badge>
                               </div>
-                            </div>
-                          ))}
-                        {prescriptions.filter(p => p.status !== 'cancelled').length > 3 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setActiveTab('medications')}
-                            className="w-full text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                          >
-                            View all {prescriptions.filter(p => p.status !== 'cancelled').length} medications →
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                            ))}
+                          {activeMeds.length > 3 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setActiveTab('medications')}
+                              className="w-full text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                            >
+                              View all {activeMeds.length} medications →
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               </div>
