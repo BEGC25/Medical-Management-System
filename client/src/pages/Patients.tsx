@@ -74,6 +74,7 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import PatientSearch from "@/components/PatientSearch";
@@ -88,6 +89,7 @@ import { ROLES } from "@shared/auth-roles";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, formatClinicDay, getClinicDayKey } from "@/lib/date-utils";
+import { cn } from "@/lib/utils";
 
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
@@ -119,6 +121,11 @@ export default function Patients() {
   const [referralDepartment, setReferralDepartment] = useState<"lab" | "xray" | "ultrasound" | null>(null);
   const [referralService, setReferralService] = useState<Service | null>(null);
   const [referralNotes, setReferralNotes] = useState("");
+  
+  // Referral modal search and filter state
+  const [referralSearchQuery, setReferralSearchQuery] = useState('');
+  const [referralPatientFilter, setReferralPatientFilter] = useState<'all' | 'external' | 'regular'>('all');
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   // Date range filtering and search
   const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "last7days" | "last30days" | "custom">("today");
@@ -733,6 +740,43 @@ export default function Patients() {
   // Determine which patients to display
   const patientsToDisplay = showSearch ? searchResults : filteredPatientsList;
 
+  // Filter patients for referral modal based on search and filter
+  const filteredReferralPatients = useMemo(() => {
+    let filtered = patientsList;
+
+    // Apply search filter
+    if (referralSearchQuery) {
+      filtered = filtered.filter((p: any) => {
+        const searchLower = referralSearchQuery.toLowerCase();
+        const firstName = (p.firstName || '').toLowerCase();
+        const lastName = (p.lastName || '').toLowerCase();
+        const patientId = (p.patientId || '').toLowerCase();
+        return firstName.includes(searchLower) || 
+               lastName.includes(searchLower) || 
+               patientId.includes(searchLower);
+      });
+    }
+
+    // Apply type filter
+    if (referralPatientFilter === 'external') {
+      filtered = filtered.filter((p: any) => p.patientType === 'referral_diagnostic');
+    } else if (referralPatientFilter === 'regular') {
+      filtered = filtered.filter((p: any) => p.patientType !== 'referral_diagnostic');
+    }
+
+    // Sort: External referrals first, then by date
+    return filtered.sort((a: any, b: any) => {
+      const aIsExternal = a.patientType === 'referral_diagnostic';
+      const bIsExternal = b.patientType === 'referral_diagnostic';
+      if (aIsExternal && !bIsExternal) return -1;
+      if (!aIsExternal && bIsExternal) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [patientsList, referralSearchQuery, referralPatientFilter]);
+
+  const externalCount = patientsList.filter((p: any) => p.patientType === 'referral_diagnostic').length;
+  const regularCount = patientsList.filter((p: any) => p.patientType !== 'referral_diagnostic').length;
+
   const jump = (path: string) => {
     window.location.href = path;
   };
@@ -791,19 +835,18 @@ export default function Patients() {
     });
   };
 
-  // Color generation for avatars - Premium palette with softer, varied colors
-  // Note: Orange (bg-orange-500) is reserved for referral patients
-  function getAvatarColor(name: string): string {
-    const colors = [
-      "bg-indigo-500",  // Soft purple-blue
-      "bg-teal-500",    // Sophisticated teal
-      "bg-pink-500",    // Soft pink
-      "bg-purple-500",  // Purple (replaced orange - reserved for referral patients)
-      "bg-blue-500",    // Classic blue
-    ];
-    const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
-  }
+  // Color generation for avatars - Color-coded by first initial
+  const getAvatarColor = (firstName: string) => {
+    const colors: Record<string, string> = {
+      'M': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+      'L': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      'A': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+      'R': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+      'W': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+    };
+    const initial = firstName?.[0]?.toUpperCase() || '';
+    return colors[initial] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+  };
 
   function getInitials(firstName: string, lastName: string): string {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -1257,192 +1300,162 @@ export default function Patients() {
           </div>
         ) : (
             <>
-              {/* Desktop Table View - hidden on mobile */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-gray-50/90 to-gray-100/80 
-                                    dark:from-gray-800/70 dark:to-gray-900/60">
-                    <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Patient
-                      </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        ID
-                      </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Age/Gender
-                      </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Contact
-                      </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Registered
-                      </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Consultation
-                      </th>
-                      <th className="px-5 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {patientsToDisplay.map((patient: any, index: number) => {
-                      const isNewlyRegistered = patient.patientId === newlyRegisteredPatientId;
-                      return (
-                      <tr
-                        key={patient.id}
-                        className={`cursor-pointer transition-all duration-200 ${
-                          isNewlyRegistered 
-                            ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-l-green-500 animate-pulse' 
-                            : index % 2 === 0
-                              ? 'bg-white dark:bg-gray-900 hover:bg-teal-50/30 dark:hover:bg-teal-900/10 hover:shadow-sm'
-                              : 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-teal-50/30 dark:hover:bg-teal-900/10 hover:shadow-sm'
-                        }`}
-                        onClick={() => handleViewPatient(patient)}
-                        data-testid={`patient-row-${patient.patientId}`}
-                      >
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold shadow-md transition-transform duration-300 hover:scale-110 motion-reduce:transform-none ${
-                                patient.patientType === "referral_diagnostic" 
-                                  ? "bg-orange-500" 
-                                  : getAvatarColor(patient.firstName + patient.lastName)
-                              }`}
-                            >
-                              {getInitials(patient.firstName, patient.lastName)}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-gray-900 dark:text-white">
-                                  {patient.firstName} {patient.lastName}
-                                </span>
-                                {patient.patientType === "referral_diagnostic" && (
-                                  <Badge 
-                                    variant="outline"
-                                    className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-800 text-xs font-medium px-2 py-0.5"
-                                    title="External referral patient - diagnostics only, no doctor consultation"
-                                  >
-                                    🔬 External Referral
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4 text-sm text-gray-500 dark:text-gray-500 font-medium">
-                          {patient.patientId}
-                        </td>
-                        <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
-                          {patient.age ? `${patient.age}` : "—"}
-                          {patient.gender ? ` • ${patient.gender}` : ""}
-                        </td>
-                        <td className="px-5 py-4 text-sm">
-                          {patient.phoneNumber ? (
-                            <span className="text-gray-600 dark:text-gray-400">{patient.phoneNumber}</span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 text-xs font-medium">
-                              <AlertTriangle className="w-3 h-3" />
-                              No contact
+              {/* Desktop Card View - Card-based layout */}
+              <div className="hidden md:block space-y-2 p-4">
+                {patientsToDisplay.map((patient: any, index: number) => (
+                  <div
+                    key={patient.id}
+                    className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 
+                             dark:border-gray-700 p-3 hover:shadow-xl hover:border-blue-400 
+                             dark:hover:border-blue-500 transition-all duration-200
+                             hover:scale-[1.01] group"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left side: Patient information */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Avatar */}
+                        <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 
+                                         dark:ring-gray-700 group-hover:ring-blue-400 
+                                         dark:group-hover:ring-blue-500">
+                          <AvatarFallback className={getAvatarColor(patient.firstName || '')}>
+                            {(patient.firstName?.[0] || '?').toUpperCase()}{(patient.lastName?.[0] || '?').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        {/* Patient details */}
+                        <div className="flex-1 min-w-0">
+                          {/* Top row: Name, ID, Age/Gender, Contact */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-gray-900 dark:text-white text-base">
+                              {patient.firstName} {patient.lastName}
                             </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
-                          {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
-                        </td>
-                        <td className="px-5 py-4">
-                          {patient.patientType === "referral_diagnostic" ? (
-                            <span className="text-gray-500 dark:text-gray-500 text-sm italic">N/A</span>
-                          ) : patient.serviceStatus ? (
-                            ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
-                              <Badge 
-                                variant="outline" 
-                                className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800 font-semibold shadow-sm flex items-center gap-1 w-fit"
-                                data-testid={`badge-consultation-due-${patient.patientId}`}
-                              >
-                                <DollarSign className="w-3 h-3" />
-                                {money(patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance)} Due
-                              </Badge>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              ID: {patient.patientId}
+                            </span>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {patient.age} • {patient.gender === 'Male' ? 'M' : 'F'}
+                            </span>
+                            {patient.phoneNumber ? (
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  {patient.phoneNumber}
+                                </span>
+                              </>
                             ) : (
-                              <Badge 
-                                variant="outline" 
-                                className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800 font-semibold shadow-sm flex items-center gap-1 w-fit"
-                                data-testid={`badge-consultation-paid-${patient.patientId}`}
-                              >
-                                <CheckCircle className="w-3 h-3" />
-                                Paid
-                              </Badge>
-                            )
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => e.stopPropagation()}
-                                className="font-semibold 
-                                           border-teal-200 dark:border-teal-800
-                                           hover:bg-teal-600 hover:text-white hover:border-teal-600 
-                                           dark:hover:bg-teal-500 dark:hover:border-teal-500
-                                           hover:shadow-[0_4px_12px_rgba(20,184,166,0.25),0_2px_6px_rgba(6,182,212,0.15)]
-                                           transition-all duration-200"
-                                data-testid={`button-actions-${patient.patientId}`}
-                              >
-                                Actions
-                                <MoreVertical className="w-4 h-4 ml-1" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewPatient(patient);
-                                }}
-                              >
-                                <Eye className="w-4 h-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditPatient(patient);
-                                }}
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit Patient
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.location.href = `/billing?patientId=${patient.patientId}`;
-                                }}
-                              >
-                                <DollarSign className="w-4 h-4 mr-2" />
-                                Billing & Payments
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.location.href = `/treatment?patientId=${patient.patientId}`;
-                                }}
-                              >
-                                <FileText className="w-4 h-4 mr-2" />
-                                Start Visit
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    );
-                    })}
-                  </tbody>
-                </table>
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <Badge variant="outline" className="text-xs border-orange-300 bg-orange-50 
+                                                                   text-orange-700 dark:border-orange-700 
+                                                                   dark:bg-orange-900/20 dark:text-orange-400">
+                                  ⚠️ No contact
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Bottom row: Registration date, status, external referral badge */}
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              Registered: {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
+                            </span>
+                            
+                            {/* Consultation status */}
+                            {patient.patientType === "referral_diagnostic" ? (
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <Badge className="text-xs bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400">
+                                  N/A
+                                </Badge>
+                              </>
+                            ) : patient.serviceStatus && (
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <Badge className={cn(
+                                  "text-xs",
+                                  ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0
+                                    ? "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                    : "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400"
+                                )}>
+                                  {((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
+                                    `Unpaid`
+                                  ) : (
+                                    <>✓ Paid</>
+                                  )}
+                                </Badge>
+                              </>
+                            )}
+
+                            {/* External Referral Badge */}
+                            {patient.patientType === "referral_diagnostic" && (
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <Badge variant="outline" className="text-xs border-orange-400 bg-orange-100 
+                                                                   text-orange-700 dark:border-orange-600 
+                                                                   dark:bg-orange-900/30 dark:text-orange-400 
+                                                                   font-medium">
+                                  🔥 External Referral
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right side: Actions dropdown */}
+                      <div className="flex-shrink-0">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8">
+                              Actions
+                              <MoreVertical className="w-4 h-4 ml-1" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewPatient(patient);
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditPatient(patient);
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Patient
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.location.href = `/billing?patientId=${patient.patientId}`;
+                              }}
+                            >
+                              <DollarSign className="w-4 h-4 mr-2" />
+                              Billing & Payments
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.location.href = `/treatment?patientId=${patient.patientId}`;
+                              }}
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              Start Visit
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Mobile Card View - shown only on mobile */}
@@ -2296,56 +2309,167 @@ export default function Patients() {
 
       {/* ================== REFERRAL ORDERING DIALOG (Admin Only) ================== */}
       <Dialog open={showReferralOrderDialog} onOpenChange={setShowReferralOrderDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Order Referral Diagnostic</DialogTitle>
             <DialogDescription>
-              Create a diagnostic order for a referral/walk-in patient (no consultation required). Select a patient below, choose the department and service, then create the order.
+              Create a diagnostic order for a referral/walk-in patient (no consultation required). 
+              Select a patient below, choose the department and service, then create the order.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {/* Step 1: Select Patient */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">1. Select Patient</label>
-              {referralPatient && (
-                <div className="mb-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400">
-                        Selected
-                      </Badge>
-                      <span className="font-medium text-sm">
-                        {referralPatient.firstName} {referralPatient.lastName}
-                      </span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        (ID: {referralPatient.patientId})
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setReferralPatient(null)}
-                      className="h-6 px-2 text-xs"
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <PatientSearch
-                onViewPatient={(patient) => setReferralPatient(patient)}
-                viewMode="search"
-                selectedDate=""
-                searchTerm=""
-                showActions={false}
-                selectedPatientId={referralPatient?.patientId}
-              />
+
+          <div className="flex-1 overflow-y-auto">
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search patients by name or ID..."
+                  value={referralSearchQuery}
+                  onChange={(e) => setReferralSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
 
-            {/* Step 2: Select Department */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">2. Select Department</label>
+            {/* Filter Buttons */}
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant={referralPatientFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setReferralPatientFilter('all')}
+                className="text-xs"
+              >
+                All Patients ({filteredReferralPatients.length})
+              </Button>
+              <Button
+                variant={referralPatientFilter === 'external' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setReferralPatientFilter('external')}
+                className="text-xs"
+              >
+                🔥 External Only ({externalCount})
+              </Button>
+              <Button
+                variant={referralPatientFilter === 'regular' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setReferralPatientFilter('regular')}
+                className="text-xs"
+              >
+                Regular Patients ({regularCount})
+              </Button>
+            </div>
+
+            {/* Patient Selection Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                1. Select Patient
+                {filteredReferralPatients.length > 0 && (
+                  <span className="text-xs font-normal text-gray-500 ml-2">
+                    (Showing {filteredReferralPatients.length} patient{filteredReferralPatients.length !== 1 ? 's' : ''})
+                  </span>
+                )}
+              </h3>
+
+              <div className="space-y-2">
+                {filteredReferralPatients.length > 0 ? (
+                  filteredReferralPatients.map((patient: any, index: number) => (
+                    <div
+                      key={patient.id}
+                      onClick={() => {
+                        setReferralPatient(patient);
+                        setSelectedPatientId(patient.id);
+                      }}
+                      className={cn(
+                        "border-2 rounded-lg p-3 cursor-pointer transition-all",
+                        selectedPatientId === patient.id
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
+                          : "border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:shadow-md",
+                        // Orange tint for external referrals
+                        patient.patientType === 'referral_diagnostic' && selectedPatientId !== patient.id
+                          ? "bg-orange-50/50 dark:bg-orange-950/10 border-orange-200 dark:border-orange-900"
+                          : selectedPatientId !== patient.id && "bg-white dark:bg-gray-800"
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Number badge */}
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 
+                                      flex items-center justify-center text-xs font-medium text-gray-600 
+                                      dark:text-gray-400">
+                          {index + 1}
+                        </div>
+
+                        {/* Avatar */}
+                        <Avatar className="h-10 w-10 flex-shrink-0">
+                          <AvatarFallback className={getAvatarColor(patient.firstName || '')}>
+                            {(patient.firstName?.[0] || '?').toUpperCase()}{(patient.lastName?.[0] || '?').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        {/* Patient info */}
+                        <div className="flex-1 min-w-0">
+                          {/* Name and badges */}
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              {patient.firstName} {patient.lastName}
+                            </span>
+                            {patient.patientType === 'referral_diagnostic' && (
+                              <Badge variant="outline" className="text-xs border-orange-400 bg-orange-100 
+                                                                 text-orange-700 dark:border-orange-600 
+                                                                 dark:bg-orange-900/30 dark:text-orange-400 
+                                                                 font-medium">
+                                🔥 External Referral
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Details */}
+                          <div className="flex items-center gap-2 flex-wrap text-xs text-gray-600 dark:text-gray-400">
+                            <span>ID: {patient.patientId}</span>
+                            <span className="text-gray-400">•</span>
+                            <span>{patient.age} • {patient.gender === 'Male' ? 'M' : 'F'}</span>
+                            {patient.phoneNumber && (
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <span>{patient.phoneNumber}</span>
+                              </>
+                            )}
+                            {!patient.phoneNumber && (
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <span className="text-orange-600 dark:text-orange-400">⚠️ No contact</span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Diagnostics status - placeholder for now */}
+                          <div className="flex items-center gap-2 flex-wrap mt-2">
+                            <span className="text-xs text-gray-400 italic">No diagnostics pending</span>
+                          </div>
+                        </div>
+
+                        {/* Date */}
+                        <div className="flex-shrink-0 text-xs text-gray-500">
+                          {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  // Empty state
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="mb-2">No patients found</p>
+                    <p className="text-sm">Try adjusting your search or filter</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Department Selection */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                2. Select Department
+              </h3>
               <Select
                 value={referralDepartment || ""}
                 onValueChange={(value) => {
@@ -2366,8 +2490,10 @@ export default function Patients() {
 
             {/* Step 3: Select Service */}
             {referralDepartment && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">3. Select Service</label>
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  3. Select Service
+                </h3>
                 {referralDepartment === "lab" && laboratoryServices.length === 0 && (
                   <p className="text-sm text-red-600">No active laboratory services available. Please add services in Service Management.</p>
                 )}
@@ -2409,8 +2535,10 @@ export default function Patients() {
 
             {/* Step 4: Clinical Notes */}
             {referralService && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">4. Clinical Notes (Optional)</label>
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  4. Clinical Notes (Optional)
+                </h3>
                 <Textarea
                   placeholder="Enter any clinical indication or notes..."
                   value={referralNotes}
@@ -2421,6 +2549,7 @@ export default function Patients() {
             )}
           </div>
 
+          {/* Footer with actions */}
           <DialogFooter>
             <Button
               variant="outline"
@@ -2430,6 +2559,9 @@ export default function Patients() {
                 setReferralDepartment(null);
                 setReferralService(null);
                 setReferralNotes("");
+                setReferralSearchQuery('');
+                setReferralPatientFilter('all');
+                setSelectedPatientId(null);
               }}
             >
               Cancel
