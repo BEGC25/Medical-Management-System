@@ -565,9 +565,8 @@ export default function Payment() {
   };
 
   // Utility function to clean service descriptions and remove redundancy
-  function cleanServiceDescription(description: string, serviceType: string): string {
-    // For X-Ray services, remove redundant "X-Ray" repetition
-    // "Chest X-Ray - Chest X-Ray" → "Chest X-Ray"
+  function cleanServiceDescription(description: string): string {
+    // Remove redundant repetition patterns like "Chest X-Ray - Chest X-Ray" → "Chest X-Ray"
     const parts = description.split(' - ');
     if (parts.length === 2 && parts[0].trim() === parts[1].trim()) {
       return parts[0].trim();
@@ -647,7 +646,7 @@ export default function Payment() {
                   {departmentType === 'pharmacy' && <PharmacyIcon className="w-3 h-3" />}
                   <span className="font-semibold">{getServiceTypeLabel(departmentType)}</span>
                 </Badge>
-                <span className="font-medium">{cleanServiceDescription(order.description, departmentType)}</span>
+                <span className="font-medium">{cleanServiceDescription(order.description)}</span>
               </p>
               
               {/* Additional Info - inline if present */}
