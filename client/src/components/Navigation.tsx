@@ -34,7 +34,7 @@ const navItems = [
   { path: "/ultrasound", label: "Ultrasound", icon: MonitorSpeaker, category: "Diagnostics" },
   
   // CLINICAL
-  { path: "/treatment", label: "Treatment", icon: Stethoscope, category: "Clinical" },
+  { path: "/treatment", label: "Consultations", icon: Stethoscope, category: "Clinical" },
   { path: "/pharmacy", label: "Pharmacy", icon: Pill, category: "Clinical" },
   
   // FINANCIAL
