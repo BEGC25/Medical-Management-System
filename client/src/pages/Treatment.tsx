@@ -2358,7 +2358,7 @@ export default function Treatment() {
                 <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">Open Visits</p>
                 <div className="flex items-baseline gap-2">
                   <div className="text-2xl font-semibold text-blue-700 dark:text-blue-400 opacity-90">{activeEncountersCount}</div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">Click to view</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">Click to view queue</p>
                 </div>
               </div>
             </div>
@@ -2383,7 +2383,7 @@ export default function Treatment() {
                 <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Orders Waiting</p>
                 <div className="flex items-baseline gap-2">
                   <div className="text-2xl font-semibold text-amber-700 dark:text-amber-400 opacity-90">{ordersWaitingCount}</div>
-                  <p className="text-xs text-amber-600 dark:text-amber-400">Lab/X-ray/US</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">Lab/X-ray/Ultrasound</p>
                 </div>
               </div>
             </div>
