@@ -38,8 +38,7 @@ function formatDate(dateStr: string | null | undefined): string {
 
 // Generate consistent avatar colors based on initials
 function getAvatarColor(firstName?: string, lastName?: string): string {
-  // Generate consistent color based on initials
-  const initial = (firstName?.[0] || '' + lastName?.[0] || '').toUpperCase();
+  // Generate consistent color based on first letter of first name
   const colors: Record<string, string> = {
     'A': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     'B': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
@@ -60,7 +59,7 @@ function getAvatarColor(firstName?: string, lastName?: string): string {
     'Q': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
   };
   
-  // Default to first letter of first name
+  // Use first letter of first name for color selection
   const key = (firstName?.[0] || '').toUpperCase();
   return colors[key] || 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
 }
@@ -319,8 +318,10 @@ export default function PatientSearch({
       )}
 
       {filteredPatients && filteredPatients.length === 0 && (
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border-2 border-dashed 
-                      border-gray-300 dark:border-gray-700 p-12 text-center">
+        <div className={cn(
+          "bg-gray-50 dark:bg-gray-800/50 rounded-lg border-2 border-dashed",
+          "border-gray-300 dark:border-gray-700 p-12 text-center"
+        )}>
           <div className="flex flex-col items-center gap-3">
             <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full">
               <Users className="w-8 h-8 text-gray-400" />
