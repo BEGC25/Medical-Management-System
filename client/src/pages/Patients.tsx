@@ -746,11 +746,15 @@ export default function Patients() {
 
     // Apply search filter
     if (referralSearchQuery) {
-      filtered = filtered.filter((p: any) => 
-        p.firstName.toLowerCase().includes(referralSearchQuery.toLowerCase()) ||
-        p.lastName.toLowerCase().includes(referralSearchQuery.toLowerCase()) ||
-        p.patientId.toLowerCase().includes(referralSearchQuery.toLowerCase())
-      );
+      filtered = filtered.filter((p: any) => {
+        const searchLower = referralSearchQuery.toLowerCase();
+        const firstName = (p.firstName || '').toLowerCase();
+        const lastName = (p.lastName || '').toLowerCase();
+        const patientId = (p.patientId || '').toLowerCase();
+        return firstName.includes(searchLower) || 
+               lastName.includes(searchLower) || 
+               patientId.includes(searchLower);
+      });
     }
 
     // Apply type filter
