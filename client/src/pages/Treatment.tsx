@@ -2558,13 +2558,13 @@ export default function Treatment() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {selectedPatient.firstName || ''} {selectedPatient.lastName || ''}
+                      {[selectedPatient.firstName, selectedPatient.lastName].filter(Boolean).join(' ') || 'Unknown'}
                     </span>
                     {savedTreatment && <Badge className="bg-green-600 text-white shadow-sm text-xs px-2 py-0.5">Saved: {savedTreatment.treatmentId}</Badge>}
                     <span className="text-gray-400">•</span>
                     <span className="text-gray-600 dark:text-gray-400">{selectedPatient.patientId}</span>
                     <span className="text-gray-400">•</span>
-                    <span className="text-gray-600 dark:text-gray-400">{getAge(selectedPatient.age || "")}/{getGenderAbbreviation(selectedPatient.gender)}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{getAge(selectedPatient.age || "")}{getGenderAbbreviation(selectedPatient.gender) ? `/${getGenderAbbreviation(selectedPatient.gender)}` : ''}</span>
                     <span className="text-gray-400">•</span>
                     <span className="text-gray-600 dark:text-gray-400">{selectedPatient.phoneNumber || "N/A"}</span>
                   </div>
