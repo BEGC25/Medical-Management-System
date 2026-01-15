@@ -557,22 +557,16 @@ export default function Payment() {
     );
   };
 
-  // Clean description - server now sends properly formatted descriptions
-  const cleanDescription = (desc: string, type: string, order?: UnpaidOrder) => {
-    // The description is already properly formatted from the server
-    // Just return it as-is
-    return desc;
-  };
-
-  // Utility function to clean service descriptions and remove redundancy
-  function cleanServiceDescription(description: string): string {
+  // Clean description - remove redundant patterns and format
+  const cleanDescription = (desc: string, type: string, order?: UnpaidOrder): string => {
     // Remove redundant repetition patterns like "Chest X-Ray - Chest X-Ray" → "Chest X-Ray"
-    const parts = description.split(' - ');
+    const parts = desc.split(' - ');
     if (parts.length === 2 && parts[0].trim() === parts[1].trim()) {
       return parts[0].trim();
     }
-    return description;
-  }
+    // The description is already properly formatted from the server
+    return desc;
+  };
 
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
@@ -646,7 +640,7 @@ export default function Payment() {
                   {departmentType === 'pharmacy' && <PharmacyIcon className="w-3 h-3" />}
                   <span className="font-semibold">{getServiceTypeLabel(departmentType)}</span>
                 </Badge>
-                <span className="font-medium">{cleanServiceDescription(order.description)}</span>
+                <span className="font-medium">{cleanDescription(order.description, departmentType, order)}</span>
               </p>
               
               {/* Additional Info - inline if present */}
