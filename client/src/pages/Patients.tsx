@@ -907,17 +907,19 @@ export default function Patients() {
         {/* Total Patients for Selected Period */}
         <button
           onClick={() => setPaymentFilter("all")}
-          className="bg-gradient-to-br from-white to-teal-50/30 dark:from-gray-800 dark:to-teal-900/10
+          className={`bg-gradient-to-br from-white to-teal-50/30 dark:from-gray-800 dark:to-teal-900/10
                      border border-gray-200/60 dark:border-gray-700/50
                      rounded-xl
                      shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
-                     hover:shadow-[0_4px_12px_rgba(15,23,42,0.08),0_2px_6px_rgba(15,23,42,0.06)]
+                     hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)]
+                     hover:-translate-y-0.5
                      hover:border-teal-300 dark:hover:border-teal-700
                      transition-all duration-200
                      p-4
                      text-left
                      cursor-pointer
-                     group"
+                     group
+                     ${paymentFilter === "all" ? "ring-2 ring-teal-500 dark:ring-teal-400 shadow-[0_0_20px_rgba(20,184,166,0.3)] scale-[1.02]" : ""}`}
         >
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/30 transition-colors shadow-sm">
@@ -940,17 +942,19 @@ export default function Patients() {
         {/* Unpaid */}
         <button
           onClick={() => setPaymentFilter("unpaid")}
-          className="bg-gradient-to-br from-white to-red-50/30 dark:from-gray-800 dark:to-red-900/10
+          className={`bg-gradient-to-br from-white to-red-50/30 dark:from-gray-800 dark:to-red-900/10
                      border border-gray-200/60 dark:border-gray-700/50
                      rounded-xl
                      shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
-                     hover:shadow-[0_4px_12px_rgba(15,23,42,0.08),0_2px_6px_rgba(15,23,42,0.06)]
+                     hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)]
+                     hover:-translate-y-0.5
                      hover:border-red-300 dark:hover:border-red-700
                      transition-all duration-200
                      p-4
                      text-left
                      cursor-pointer
-                     group"
+                     group
+                     ${paymentFilter === "unpaid" ? "ring-2 ring-red-500 dark:ring-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)] scale-[1.02]" : ""}`}
         >
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors shadow-sm">
@@ -970,17 +974,19 @@ export default function Patients() {
         {/* Paid */}
         <button
           onClick={() => setPaymentFilter("paid")}
-          className="bg-gradient-to-br from-white to-green-50/30 dark:from-gray-800 dark:to-green-900/10
+          className={`bg-gradient-to-br from-white to-green-50/30 dark:from-gray-800 dark:to-green-900/10
                      border border-gray-200/60 dark:border-gray-700/50
                      rounded-xl
                      shadow-[0_2px_8px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]
-                     hover:shadow-[0_4px_12px_rgba(15,23,42,0.08),0_2px_6px_rgba(15,23,42,0.06)]
+                     hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)]
+                     hover:-translate-y-0.5
                      hover:border-green-300 dark:hover:border-green-700
                      transition-all duration-200
                      p-4
                      text-left
                      cursor-pointer
-                     group"
+                     group
+                     ${paymentFilter === "paid" ? "ring-2 ring-green-500 dark:ring-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-[1.02]" : ""}`}
         >
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors shadow-sm">
@@ -1086,67 +1092,6 @@ export default function Patients() {
             )}
           </div>
 
-        </div>
-
-        {/* Quick Filter Chips */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-            Payment Status:
-          </span>
-          <button
-            onClick={() => setPaymentFilter("all")}
-            className={`px-4 py-2 rounded-full text-sm font-medium
-                       transition-all duration-200
-                       ${paymentFilter === "all"
-                         ? "bg-teal-500 text-white shadow-md hover:bg-teal-600"
-                         : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                       }`}
-            data-testid="filter-all"
-          >
-            All
-            <Badge 
-              variant="secondary" 
-              className="ml-2 bg-white/20 text-white dark:bg-black/20"
-            >
-              {filteredPatientsList.length}
-            </Badge>
-          </button>
-          <button
-            onClick={() => setPaymentFilter("unpaid")}
-            className={`px-4 py-2 rounded-full text-sm font-medium
-                       transition-all duration-200
-                       ${paymentFilter === "unpaid"
-                         ? "bg-red-600 text-white shadow-md"
-                         : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                       }`}
-            data-testid="filter-unpaid"
-          >
-            Unpaid Only
-            <Badge 
-              variant="secondary" 
-              className="ml-2 bg-white/20 text-white dark:bg-black/20"
-            >
-              {patientsList.filter((p: any) => (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0).length}
-            </Badge>
-          </button>
-          <button
-            onClick={() => setPaymentFilter("paid")}
-            className={`px-4 py-2 rounded-full text-sm font-medium
-                       transition-all duration-200
-                       ${paymentFilter === "paid"
-                         ? "bg-green-600 text-white shadow-md"
-                         : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                       }`}
-            data-testid="filter-paid"
-          >
-            Paid
-            <Badge 
-              variant="secondary" 
-              className="ml-2 bg-white/20 text-white dark:bg-black/20"
-            >
-              {patientsList.filter((p: any) => (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) === 0).length}
-            </Badge>
-          </button>
         </div>
 
         {/* Date Range Tabs */}
