@@ -691,12 +691,17 @@ export default function Laboratory() {
     
     // Convert completedDate to full ISO timestamp if it's a date-only string
     let completedDate = data.completedDate;
-    if (completedDate && !completedDate.includes('T')) {
-      // Date-only string from date input - append current time
-      const date = new Date(completedDate);
-      const now = new Date();
-      date.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-      completedDate = date.toISOString();
+    if (completedDate) {
+      // Check if it's a date-only string (YYYY-MM-DD format)
+      const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+      if (dateOnlyPattern.test(completedDate)) {
+        // Date-only string from HTML date input - append current time
+        // Using current date/time ensures the completion time is accurate
+        const now = new Date();
+        const [year, month, day] = completedDate.split('-').map(Number);
+        const date = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        completedDate = date.toISOString();
+      }
     }
     
     updateLabTestMutation.mutate({
