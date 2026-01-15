@@ -148,7 +148,16 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             font-size: 11pt;
           }
           h1 { font-size: 16pt; margin: 0 0 8px 0; border-bottom: 2px solid #0066CC; padding-bottom: 4px; }
-          h2 { font-size: 12pt; color: #0066CC; margin: 10px 0 4px 0; font-weight: 600; }
+          h2 { 
+            font-size: 12pt; 
+            color: #0066CC; 
+            margin: 12px 0 6px 0; 
+            font-weight: 700; 
+            padding: 6px 8px;
+            background: #e3f2fd;
+            border-left: 4px solid #0066CC;
+            border-radius: 3px;
+          }
           h3 { font-size: 11pt; font-weight: 600; margin: 6px 0 3px 0; }
           .header { text-align: center; margin-bottom: 12px; }
           .header h1 { border: none; }
@@ -158,8 +167,16 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
           .section { margin-bottom: 10px; page-break-inside: avoid; }
           .medication-item { padding: 6px; background: #f8f9fa; border-left: 2px solid #0066CC; margin-bottom: 4px; font-size: 10pt; }
           .medication-item strong { font-weight: 600; }
-          .warning-box { background: #fff3cd; border: 1px solid #ffc107; padding: 8px; margin: 8px 0; border-radius: 3px; }
-          .warning-box strong { font-weight: 600; margin-bottom: 4px; display: block; }
+          .warning-box { 
+            background: #fff9e6; 
+            border: 2px solid #ffc107; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+          }
+          .warning-box strong { font-weight: 700; margin-bottom: 6px; display: block; color: #ff6b00; }
+          .warning-box ul { margin: 6px 0; padding-left: 22px; }
           .test-result { padding: 4px; margin-bottom: 3px; border-left: 2px solid #28a745; background: #f8f9fa; font-size: 10pt; }
           .signature-line { margin-top: 15px; border-top: 1px solid #000; width: 250px; padding-top: 4px; font-size: 10pt; }
           ul { margin: 4px 0; padding-left: 20px; }

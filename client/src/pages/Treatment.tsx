@@ -2578,17 +2578,16 @@ export default function Treatment() {
               {/* === LEFT "ACTION" COLUMN === */}
               <div className="space-y-4">
                 <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-lg">
+                  <TabsList className="bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg shadow-inner grid grid-cols-2 md:grid-cols-4 gap-1">
                     {/* Visit Notes Tab - Emerald with distinct background */}
                     <TabsTrigger 
                       value="notes" 
-                      className={`px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
-                        activeTab === "notes"
-                          ? "bg-emerald-100 border-b-3 border-emerald-500 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
-                          : "text-gray-600 dark:text-gray-400 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-400"
-                      }`}
+                      className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
+                               data-[state=active]:shadow-md data-[state=active]:text-emerald-600 
+                               dark:data-[state=active]:text-emerald-400
+                               rounded-md transition-all duration-200 text-sm"
                     >
-                      <FileText className={`h-4 w-4 mr-2 ${activeTab === "notes" ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`} />
+                      <FileText className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Visit Notes</span>
                       <span className="sm:hidden">Notes</span>
                     </TabsTrigger>
@@ -2596,13 +2595,12 @@ export default function Treatment() {
                     {/* Orders & Results Tab - Blue with distinct background */}
                     <TabsTrigger 
                       value="orders" 
-                      className={`px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
-                        activeTab === "orders"
-                          ? "bg-blue-100 border-b-3 border-blue-500 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
-                          : "text-gray-600 dark:text-gray-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
-                      }`}
+                      className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
+                               data-[state=active]:shadow-md data-[state=active]:text-blue-600 
+                               dark:data-[state=active]:text-blue-400
+                               rounded-md transition-all duration-200 text-sm"
                     >
-                      <ClipboardList className={`h-4 w-4 mr-2 ${activeTab === "orders" ? "text-blue-600 dark:text-blue-400" : "text-gray-400"}`} />
+                      <ClipboardList className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Orders & Results</span>
                       <span className="sm:hidden">Orders</span>
                       {diagnosticTestCount > 0 && (
@@ -2615,13 +2613,12 @@ export default function Treatment() {
                     {/* Medications Tab - Purple with distinct background */}
                     <TabsTrigger 
                       value="medications" 
-                      className={`px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
-                        activeTab === "medications"
-                          ? "bg-purple-100 border-b-3 border-purple-500 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200"
-                          : "text-gray-600 dark:text-gray-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
-                      }`}
+                      className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
+                               data-[state=active]:shadow-md data-[state=active]:text-purple-600 
+                               dark:data-[state=active]:text-purple-400
+                               rounded-md transition-all duration-200 text-sm"
                     >
-                      <Pill className={`h-4 w-4 mr-2 ${activeTab === "medications" ? "text-purple-600 dark:text-purple-400" : "text-gray-400"}`} />
+                      <Pill className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Medications</span>
                       <span className="sm:hidden">Meds</span>
                       {prescriptions.length > 0 && (
@@ -2634,13 +2631,12 @@ export default function Treatment() {
                     {/* Patient History Tab - Amber with distinct background */}
                     <TabsTrigger 
                       value="history" 
-                      className={`px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
-                        activeTab === "history"
-                          ? "bg-amber-100 border-b-3 border-amber-500 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
-                          : "text-gray-600 dark:text-gray-400 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
-                      }`}
+                      className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
+                               data-[state=active]:shadow-md data-[state=active]:text-amber-600 
+                               dark:data-[state=active]:text-amber-400
+                               rounded-md transition-all duration-200 text-sm"
                     >
-                      <History className={`h-4 w-4 mr-2 ${activeTab === "history" ? "text-amber-600 dark:text-amber-400" : "text-gray-400"}`} />
+                      <History className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Patient History</span>
                       <span className="sm:hidden">History</span>
                     </TabsTrigger>
@@ -5443,6 +5439,78 @@ export default function Treatment() {
                       </CardContent>
                     </>
                   )}
+                </Card>
+
+                {/* Recent Medications Card */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Pill className="h-4 w-4 text-purple-500" />
+                        Recent Medications
+                      </CardTitle>
+                      {(() => {
+                        const activeMeds = prescriptions.filter(p => p.status !== 'cancelled');
+                        return activeMeds.length > 0 && (
+                          <Badge variant="secondary" className="bg-purple-600 text-white text-xs">
+                            {activeMeds.length}
+                          </Badge>
+                        );
+                      })()}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      const activeMeds = prescriptions.filter(p => p.status !== 'cancelled');
+                      return activeMeds.length === 0 ? (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 italic">No active medications</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {activeMeds
+                            .slice(0, 3)
+                            .map((med, idx) => (
+                              <div key={idx} className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm text-purple-900 dark:text-purple-100 truncate">
+                                      {med.drugName}
+                                    </p>
+                                    <p className="text-xs text-purple-700 dark:text-purple-300 mt-0.5">
+                                      {med.dosage}
+                                    </p>
+                                    {med.instructions && (
+                                      <p className="text-xs text-purple-600 dark:text-purple-400 italic mt-0.5 truncate">
+                                        {med.instructions}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`text-[10px] flex-shrink-0 ${
+                                      med.status === 'pending' 
+                                        ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700'
+                                        : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700'
+                                    }`}
+                                  >
+                                    {med.status || 'active'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          {activeMeds.length > 3 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setActiveTab('medications')}
+                              className="w-full text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                            >
+                              View all {activeMeds.length} medications →
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </CardContent>
                 </Card>
               </div>
             </div>

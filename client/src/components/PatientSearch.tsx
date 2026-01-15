@@ -166,33 +166,33 @@ export default function PatientSearch({
       )}
 
       {filteredPatients && filteredPatients.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
           <table className="w-full">
-            <thead className="sticky top-0 z-10 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-2 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300 w-12">
+            <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800/80 border-b-2 border-gray-200 dark:border-gray-700">
+              <tr className="hover:bg-transparent">
+                <th className="px-2 py-2 text-center text-sm font-semibold text-gray-700 dark:text-gray-300 w-12">
                   #
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Patient
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Age / Sex
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Contact
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Visit Status
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Diagnostics
                 </th>
-                <th className="px-4 py-2 text-right text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
+                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 hidden lg:table-cell">
                   Date of Service
                 </th>
                 {showActions && (
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Actions
                   </th>
                 )}
@@ -214,13 +214,13 @@ export default function PatientSearch({
                 return (
                   <tr
                     key={p.id || p.patientId}
-                    className={`transition-colors ${
+                    className={`transition-all duration-200 cursor-pointer border-b border-gray-100 dark:border-gray-800 ${
                       isSelected
                         ? "bg-blue-100 dark:bg-blue-900/40 border-l-4 border-l-blue-500"
                         : i % 2
-                        ? "bg-white dark:bg-gray-900"
-                        : "bg-gray-50/50 dark:bg-gray-800/50"
-                    } hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer`}
+                        ? "bg-gray-50/50 dark:bg-gray-800/50"
+                        : "bg-white dark:bg-gray-900"
+                    } hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md hover:scale-[1.01] hover:border-blue-200 dark:hover:border-blue-800`}
                     onClick={() => onViewPatient?.(p)}
                   >
                     <td className="px-2 py-2 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">
@@ -334,17 +334,6 @@ export default function PatientSearch({
               })}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {!isLoading && effectiveMode === "dateRange" && (!startDate || !endDate) && (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
-              <Search className="w-6 h-6 text-gray-400" />
-            </div>
-            <p className="text-sm">📅 Select start and end dates above to view patients</p>
-          </div>
         </div>
       )}
 
