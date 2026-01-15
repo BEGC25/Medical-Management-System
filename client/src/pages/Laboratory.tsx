@@ -417,7 +417,7 @@ export default function Laboratory() {
       results: "",
       normalValues: "",
       resultStatus: "normal" as "normal" | "abnormal" | "critical",
-      completedDate: new Date().toISOString().split("T")[0],
+      completedDate: new Date().toISOString(),
       technicianNotes: "",
     },
   });
@@ -686,16 +686,33 @@ export default function Laboratory() {
     });
   };
 
-  const onSubmitResults = (data: any) => {
-    if (!selectedLabTest) return;
-    updateLabTestMutation.mutate({
-      testId: selectedLabTest.testId,
-      data: { ...data, results: JSON.stringify(detailedResults), status: "completed" },
-    });
-    setSelectedLabTest(null);
-    setResultsModalOpen(false);
-    toast({ title: "Test Completed", description: "All results saved and test marked as completed" });
-  };
+  const onSubmitResults = (data: any) => {
+    if (!selectedLabTest) return;
+    
+    // Convert completedDate to full ISO timestamp if it's a date-only string
+    let completedDate = data.completedDate;
+    if (completedDate) {
+      // Check if it's a date-only string (YYYY-MM-DD format)
+      const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+      if (dateOnlyPattern.test(completedDate)) {
+        // Date-only string from HTML date input - append current time
+        // Using current date/time ensures the completion time is accurate
+        const now = new Date();
+        const [year, month, day] = completedDate.split('-').map(Number);
+        const date = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        completedDate = date.toISOString();
+      }
+    }
+    
+    updateLabTestMutation.mutate({
+      testId: selectedLabTest.testId,
+      data: { ...data, completedDate, results: JSON.stringify(detailedResults), status: "completed" },
+    });
+    setSelectedLabTest(null);
+    setResultsModalOpen(false);
+    toast({ title: "Test Completed", description: "All results saved and test marked as completed" });
+  };
+
 
   const handleTestToggle = (test: string) => {
     setSelectedTests((prev) => (prev.includes(test) ? prev.filter((t) => t !== test) : [...prev, test]));
@@ -733,7 +750,7 @@ export default function Laboratory() {
       results: readableSummary,
       normalValues: (labTest as any).normalValues || "",
       resultStatus: (labTest as any).resultStatus || "normal",
-      completedDate: (labTest as any).completedDate || new Date().toISOString().split("T")[0],
+      completedDate: (labTest as any).completedDate || new Date().toISOString(),
       technicianNotes: (labTest as any).technicianNotes || "",
     });
 
