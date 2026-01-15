@@ -809,6 +809,15 @@ export default function Patients() {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   }
 
+  // Helper to get date filter button className
+  function getDateFilterBtnClass(isActive: boolean): string {
+    return `px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 ${
+      isActive
+        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
+        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
+    }`;
+  }
+
   return (
     <div className="space-y-2 sm:space-y-3">
       {/* Compact Page Header */}
@@ -962,7 +971,6 @@ export default function Patients() {
                 <div className="text-2xl font-semibold text-red-700 dark:text-red-400 opacity-90">
                   {patientsLoading ? "..." : patientsList.filter((p: any) => (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) > 0).length}
                 </div>
-                <p className="text-xs text-red-600 dark:text-red-400">outstanding</p>
               </div>
             </div>
           </div>
@@ -992,7 +1000,6 @@ export default function Patients() {
                 <div className="text-2xl font-semibold text-green-700 dark:text-green-400 opacity-90">
                   {patientsLoading ? "..." : patientsList.filter((p: any) => (p.serviceStatus?.balanceToday ?? p.serviceStatus?.balance ?? 0) === 0).length}
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-400">completed</p>
               </div>
             </div>
           </div>
@@ -1089,11 +1096,7 @@ export default function Patients() {
           {/* Today */}
           <button
             onClick={() => setDateFilter("today")}
-            className={`px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 ${
-              dateFilter === "today"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
-            }`}
+            className={getDateFilterBtnClass(dateFilter === "today")}
           >
             Today
           </button>
@@ -1101,11 +1104,7 @@ export default function Patients() {
           {/* Yesterday */}
           <button
             onClick={() => setDateFilter("yesterday")}
-            className={`px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 ${
-              dateFilter === "yesterday"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
-            }`}
+            className={getDateFilterBtnClass(dateFilter === "yesterday")}
           >
             Yesterday
           </button>
@@ -1113,11 +1112,7 @@ export default function Patients() {
           {/* Last 7 Days */}
           <button
             onClick={() => setDateFilter("last7days")}
-            className={`px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 ${
-              dateFilter === "last7days"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
-            }`}
+            className={getDateFilterBtnClass(dateFilter === "last7days")}
           >
             Last 7 Days
           </button>
@@ -1125,11 +1120,7 @@ export default function Patients() {
           {/* Last 30 Days */}
           <button
             onClick={() => setDateFilter("last30days")}
-            className={`px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 ${
-              dateFilter === "last30days"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
-            }`}
+            className={getDateFilterBtnClass(dateFilter === "last30days")}
           >
             Last 30 Days
           </button>
@@ -1137,11 +1128,7 @@ export default function Patients() {
           {/* Custom Range with Calendar icon */}
           <button
             onClick={() => setDateFilter("custom")}
-            className={`px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 flex items-center gap-1.5 ${
-              dateFilter === "custom"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
-            }`}
+            className={`${getDateFilterBtnClass(dateFilter === "custom")} flex items-center gap-1.5`}
           >
             <Calendar className="w-3.5 h-3.5" />
             Custom Range
