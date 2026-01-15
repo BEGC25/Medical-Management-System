@@ -68,8 +68,6 @@ import PatientSearch from "@/components/PatientSearch";
 
 import ResultDrawer from "@/components/ResultDrawer";
 import { DischargeSummary } from "@/components/DischargeSummary";
-import { DosageCalculator } from "@/components/DosageCalculator";
-import { InteractionAlert } from "@/components/InteractionAlert";
 
 import {
   insertTreatmentSchema,
@@ -93,8 +91,6 @@ import { extractLabKeyFinding } from '@/lib/medical-criteria';
 import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators } from '@/lib/patient-utils';
 import type { PatientWithStatus } from "@shared/schema";
 import { LAB_TEST_CATALOG, XRAY_EXAM_TYPES, XRAY_BODY_PARTS, XRAY_PRESETS, ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS, ULTRASOUND_PRESETS, type LabTestCategory, type XrayExamType, type UltrasoundExamType } from "@/lib/diagnostic-catalog";
-import { checkDrugInteractions, type DrugInteraction } from "@/lib/drug-interactions";
-import { calculateDose, type DoseCalculation } from "@/lib/medication-dosing";
 
 // ---------- helpers ----------
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -509,10 +505,6 @@ export default function Treatment() {
   // State for Bug #2: Edit button functionality on Current Medications
   const [editingCurrentMedication, setEditingCurrentMedication] = useState<PharmacyOrder | null>(null);
   
-  // Dosage calculator and drug interaction checker state
-  const [drugInteractions, setDrugInteractions] = useState<DrugInteraction[]>([]);
-  const [currentDoseCalculation, setCurrentDoseCalculation] = useState<DoseCalculation | null>(null);
-  
   // State for Bug #3: Make Common Medications collapsible
   const [showCommonMedications, setShowCommonMedications] = useState(false);
 
@@ -704,37 +696,6 @@ export default function Treatment() {
       }
     }
   }, [newMedDosage, newMedDuration]);
-
-  // Check for drug interactions when a medication is selected
-  useEffect(() => {
-    if (selectedDrugName) {
-      // Get list of currently prescribed medications (both in cart and already prescribed)
-      const existingDrugs = [
-        ...medications.map(m => m.drugName),
-        ...(currentMedications || []).map(m => m.drugName),
-      ];
-      
-      // Check for interactions
-      const interactions = checkDrugInteractions(selectedDrugName, existingDrugs);
-      setDrugInteractions(interactions);
-    } else {
-      setDrugInteractions([]);
-    }
-  }, [selectedDrugName, medications, currentMedications]);
-  
-  // Calculate dosage when medication and patient weight are available
-  useEffect(() => {
-    if (selectedDrugName && form.watch('weight')) {
-      const weight = form.watch('weight');
-      const age = selectedPatient?.age ? parseFloat(selectedPatient.age) * 12 : undefined; // Convert years to months
-      const isAdult = selectedPatient?.age ? parseFloat(selectedPatient.age) >= 18 : true;
-      
-      const calculation = calculateDose(selectedDrugName, weight, age, isAdult);
-      setCurrentDoseCalculation(calculation);
-    } else {
-      setCurrentDoseCalculation(null);
-    }
-  }, [selectedDrugName, form.watch('weight'), selectedPatient]);
 
   // open queue if ?filter=today
   useEffect(() => {
@@ -4856,42 +4817,6 @@ export default function Treatment() {
                                 }
                                 return null;
                               })()}
-                              
-                              {/* === DRUG INTERACTION ALERTS === */}
-                              {drugInteractions.length > 0 && drugInteractions.map((interaction, idx) => (
-                                <div key={idx} className="mt-3">
-                                  <InteractionAlert
-                                    interaction={interaction}
-                                    onRemove={() => {
-                                      setSelectedDrugId("");
-                                      setSelectedDrugName("");
-                                      toast({
-                                        title: "Medication Removed",
-                                        description: "Please select an alternative medication"
-                                      });
-                                    }}
-                                    allowOverride={interaction.severity !== 'critical'}
-                                  />
-                                </div>
-                              ))}
-                              
-                              {/* === SMART DOSAGE CALCULATOR === */}
-                              {selectedDrugName && form.watch('weight') && (
-                                <DosageCalculator
-                                  medicationName={selectedDrugName}
-                                  patientWeight={form.watch('weight')}
-                                  patientAge={selectedPatient?.age ? parseFloat(selectedPatient.age) * 12 : undefined}
-                                  patientAllergies={selectedPatient?.allergies || undefined}
-                                  isAdult={selectedPatient?.age ? parseFloat(selectedPatient.age) >= 18 : true}
-                                  onDoseCalculated={(calc) => {
-                                    // Auto-fill dosage if calculated
-                                    if (calc.administrationAmount) {
-                                      const dosageText = `${calc.administrationAmount} ${calc.frequencyInstructions}`;
-                                      setNewMedDosage(dosageText);
-                                    }
-                                  }}
-                                />
-                              )}
                             </div>
                             
                             {/* === 5. ROUTE OF ADMINISTRATION DROPDOWN === */}
