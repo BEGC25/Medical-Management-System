@@ -2044,8 +2044,9 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
           .map(async (order) => {
             const unitPrice = await calculatePharmacyOrderPriceHelper(order, services, drugMap, storage);
             
-            // Multiply unit price by quantity for total price
-            const price = unitPrice * (order.quantity || 1);
+            // Validate and multiply unit price by quantity for total price
+            const quantity = (order.quantity && order.quantity > 0) ? order.quantity : 1;
+            const price = unitPrice * quantity;
             
             const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
             
@@ -2164,8 +2165,9 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
       .map(async (order) => {
         const unitPrice = await calculatePharmacyOrderPriceHelper(order, services, drugMap, storage);
         
-        // Multiply unit price by quantity for total price
-        const price = unitPrice * (order.quantity || 1);
+        // Validate and multiply unit price by quantity for total price
+        const quantity = (order.quantity && order.quantity > 0) ? order.quantity : 1;
+        const price = unitPrice * quantity;
         
         const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
         
