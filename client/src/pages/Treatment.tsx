@@ -2398,18 +2398,7 @@ export default function Treatment() {
 
       <Card className="print:hidden">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Patient Selection</CardTitle>
-            <button
-              onClick={() => setQueueOpen(true)}
-              className="flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 
-                         hover:underline hover:text-blue-700 dark:hover:text-blue-300 
-                         transition-colors"
-            >
-              <Clock className="w-4 h-4" />
-              <span>Open Visits ({openVisitsPatients.length})</span>
-            </button>
-          </div>
+          {/* Patient Selection heading removed - patient card is self-explanatory */}
         </CardHeader>
         <CardContent>
           {/* Patient selection / Header */}
@@ -2582,16 +2571,6 @@ export default function Treatment() {
             </div>
           )}
 
-          {/* Discharge Summary Button for Current Visit */}
-          {selectedPatient && currentEncounter && (
-            <div className="flex justify-end mb-4">
-              <DischargeSummary 
-                encounterId={currentEncounter.encounterId} 
-                patientId={selectedPatient.patientId} 
-              />
-            </div>
-          )}
-
           {/* ---------- TWO-COLUMN COCKPIT LAYOUT ---------- */}
           {selectedPatient && currentEncounter && (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
@@ -2700,7 +2679,7 @@ export default function Treatment() {
                                   {/* Quick Complaint Chips */}
                                   <div className="mb-3">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                                      Common Complaints (click to add)
+                                      Common Complaints
                                     </label>
                                     <div className="flex flex-wrap gap-2">
                                       {COMMON_COMPLAINTS.map((complaint) => (
@@ -2864,7 +2843,7 @@ export default function Treatment() {
                                   {/* Common Diagnosis Chips */}
                                   <div className="mb-3">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                                      Common Diagnoses (click to add)
+                                      Common Diagnoses
                                     </label>
                                     <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg bg-gray-50 dark:bg-gray-900">
                                       {COMMON_DIAGNOSES.map((diagnosis) => (
@@ -2957,12 +2936,19 @@ export default function Treatment() {
                             </Accordion>
 
                             {/* Actions */}
-                            <div className="flex gap-3 justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <div className="flex gap-3 justify-between items-center pt-4 mt-4 border-t-2 border-gray-200 dark:border-gray-700">
+                              <div className="flex gap-3">
+                                {selectedPatient && currentEncounter && (
+                                  <DischargeSummary 
+                                    encounterId={currentEncounter.encounterId} 
+                                    patientId={selectedPatient.patientId} 
+                                  />
+                                )}
+                              </div>
                               <div className="flex gap-3">
                                 <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-blue-600 hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
                                 {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/20" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn"><LogOut className="w-4 h-4 mr-2" />{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
                               </div>
-                              <Button type="button" variant="outline" onClick={handleNewTreatment}>New Treatment</Button>
                             </div>
                           </form>
                         </Form>
@@ -5343,7 +5329,7 @@ export default function Treatment() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Heart className="h-4 w-4 text-red-500" />
-                      Vitals (Today)
+                      Vitals
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1.5">
@@ -5386,70 +5372,77 @@ export default function Treatment() {
                   "transition-all",
                   (allergies?.length ?? 0) > 0 
                     ? "border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/20 animate-pulse-border" 
-                    : "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20"
+                    : "border-green-200 dark:border-green-800"
                 )}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className={cn(
-                        "text-sm flex items-center gap-2",
-                        (allergies?.length ?? 0) > 0 
-                          ? "text-red-900 dark:text-red-100" 
-                          : "text-green-900 dark:text-green-100"
-                      )}>
-                        {(allergies?.length ?? 0) > 0 ? (
-                          <AlertTriangle className="h-4 w-4" />
-                        ) : (
-                          <CheckCircle className="h-4 w-4" />
-                        )}
-                        Allergies
-                      </CardTitle>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setShowAllergyModal(true)}
-                        className="h-6 px-2"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        <span className="text-xs">Add</span>
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    {(allergies?.length ?? 0) === 0 ? (
-                      <p className={cn(
-                        "text-sm",
-                        "text-green-700 dark:text-green-300"
-                      )}>No known drug allergies</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {allergies.map((allergy) => (
-                          <div key={allergy.id} className="p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-sm text-red-900 dark:text-red-100">{allergy.name}</p>
-                                  <Badge variant={allergy.severity === "Severe" ? "destructive" : allergy.severity === "Moderate" ? "default" : "secondary"} className="text-xs">
-                                    {allergy.severity}
-                                  </Badge>
-                                </div>
-                                {allergy.reaction && (
-                                  <p className="text-xs text-red-700 dark:text-red-300 mt-1">{allergy.reaction}</p>
-                                )}
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setAllergies(allergies.filter(a => a.id !== allergy.id))}
-                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/40"
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                  {(allergies?.length ?? 0) === 0 ? (
+                    // Compact single-line view when no allergies
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span className="text-sm font-medium text-green-700 dark:text-green-300">No known allergies</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowAllergyModal(true)}
+                          className="h-6 px-2"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
                       </div>
-                    )}
-                  </CardContent>
+                    </CardHeader>
+                  ) : (
+                    // Full card when allergies present
+                    <>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm flex items-center gap-2 text-red-900 dark:text-red-100">
+                            <AlertTriangle className="h-4 w-4" />
+                            Allergies
+                          </CardTitle>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowAllergyModal(true)}
+                            className="h-6 px-2"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            <span className="text-xs">Add</span>
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pb-3">
+                        <div className="space-y-2">
+                          {allergies.map((allergy) => (
+                            <div key={allergy.id} className="p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-semibold text-sm text-red-900 dark:text-red-100">{allergy.name}</p>
+                                    <Badge variant={allergy.severity === "Severe" ? "destructive" : allergy.severity === "Moderate" ? "default" : "secondary"} className="text-xs">
+                                      {allergy.severity}
+                                    </Badge>
+                                  </div>
+                                  {allergy.reaction && (
+                                    <p className="text-xs text-red-700 dark:text-red-300 mt-1">{allergy.reaction}</p>
+                                  )}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setAllergies(allergies.filter(a => a.id !== allergy.id))}
+                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/40"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </>
+                  )}
                 </Card>
               </div>
             </div>
