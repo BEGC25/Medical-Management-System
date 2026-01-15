@@ -36,6 +36,14 @@ function formatDate(dateStr: string | null | undefined): string {
   return formatClinicDay(dateStr, 'd MMM yyyy');
 }
 
+// Format gender for display (M/F or original value)
+function formatGender(gender?: string): string {
+  if (!gender) return '—';
+  if (gender === 'male') return 'M';
+  if (gender === 'female') return 'F';
+  return gender;
+}
+
 // Generate consistent avatar colors based on initials
 function getAvatarColor(firstName?: string, lastName?: string): string {
   // Generate consistent color based on first letter of first name
@@ -186,7 +194,7 @@ export default function PatientSearch({
 
       {filteredPatients && filteredPatients.length > 0 && (
         <div className="space-y-2">
-          {filteredPatients.map((p, index: number) => {
+          {filteredPatients.map((p, index) => {
             const s = p.serviceStatus || {};
             const due = (s.balanceToday ?? s.balance ?? 0) as number;
             // ALWAYS use patient's actual dateOfService from API when available
@@ -247,7 +255,7 @@ export default function PatientSearch({
                         </span>
                         <span className="text-gray-400">•</span>
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {p.age ?? "—"} • {p.gender === 'male' ? 'M' : p.gender === 'female' ? 'F' : p.gender || '—'}
+                          {p.age ?? "—"} • {formatGender(p.gender)}
                         </span>
                         {p.phoneNumber && (
                           <>
