@@ -686,16 +686,28 @@ export default function Laboratory() {
     });
   };
 
-  const onSubmitResults = (data: any) => {
-    if (!selectedLabTest) return;
-    updateLabTestMutation.mutate({
-      testId: selectedLabTest.testId,
-      data: { ...data, results: JSON.stringify(detailedResults), status: "completed" },
-    });
-    setSelectedLabTest(null);
-    setResultsModalOpen(false);
-    toast({ title: "Test Completed", description: "All results saved and test marked as completed" });
-  };
+  const onSubmitResults = (data: any) => {
+    if (!selectedLabTest) return;
+    
+    // Convert completedDate to full ISO timestamp if it's a date-only string
+    let completedDate = data.completedDate;
+    if (completedDate && !completedDate.includes('T')) {
+      // Date-only string from date input - append current time
+      const date = new Date(completedDate);
+      const now = new Date();
+      date.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+      completedDate = date.toISOString();
+    }
+    
+    updateLabTestMutation.mutate({
+      testId: selectedLabTest.testId,
+      data: { ...data, completedDate, results: JSON.stringify(detailedResults), status: "completed" },
+    });
+    setSelectedLabTest(null);
+    setResultsModalOpen(false);
+    toast({ title: "Test Completed", description: "All results saved and test marked as completed" });
+  };
+
 
   const handleTestToggle = (test: string) => {
     setSelectedTests((prev) => (prev.includes(test) ? prev.filter((t) => t !== test) : [...prev, test]));
