@@ -1,0 +1,1 @@
+This commit reverts commit 3c5916c2be4742a0fb071fc4c7ef02def407a01e which re-applied the broken Critical Alerts suite that's crashing the Treatment page.
