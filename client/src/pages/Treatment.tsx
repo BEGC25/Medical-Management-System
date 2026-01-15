@@ -5402,16 +5402,16 @@ export default function Treatment() {
                           <CheckCircle className="h-4 w-4" />
                         )}
                         Allergies
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setShowAllergyModal(true)}
-                          className="ml-auto h-6 px-2"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          <span className="text-xs">Add</span>
-                        </Button>
                       </CardTitle>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowAllergyModal(true)}
+                        className="h-6 px-2"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        <span className="text-xs">Add</span>
+                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="pb-3">
