@@ -222,15 +222,13 @@ export default function PatientSearch({
                     </div>
 
                     {/* Avatar */}
-                    <Avatar 
-                      className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-400"
-                      aria-label={`${p.firstName} ${p.lastName}`}
-                    >
+                    <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-400">
                       <AvatarFallback 
                         className={cn(
                           "text-sm font-semibold",
                           getAvatarColor(p.firstName, p.lastName)
                         )}
+                        aria-label={`${p.firstName} ${p.lastName}`}
                       >
                         {(p.firstName?.[0] || "").toUpperCase()}
                         {(p.lastName?.[0] || "").toUpperCase()}
