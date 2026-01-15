@@ -5505,15 +5505,13 @@ export default function Treatment() {
                   return activeMeds.length > 0 && (
                     <Card>
                       <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <Pill className="h-4 w-4 text-purple-500" />
-                            Recent Medications
-                          </CardTitle>
-                          <Badge variant="secondary" className="bg-purple-600 text-white text-xs">
-                            {activeMeds.length}
-                          </Badge>
-                        </div>
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Pill className="h-4 w-4 text-purple-500" />
+                          <span>Recent Medications</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 font-normal ml-1">
+                            ({activeMeds.length})
+                          </span>
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
