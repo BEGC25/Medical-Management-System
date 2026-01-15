@@ -1118,6 +1118,14 @@ export default function Treatment() {
     enabled: !!selectedPatient?.patientId,
   });
 
+  // Safe access to current medications for drug interaction checking
+  // Filters active prescriptions (excluding cancelled) for this patient
+  const currentMedications = useMemo(() => {
+    if (!selectedPatient || !allPrescriptions) return [];
+    // Return active prescriptions (exclude cancelled orders)
+    return allPrescriptions.filter(rx => rx.status !== 'cancelled');
+  }, [selectedPatient, allPrescriptions]);
+
   // recent visits (for history tab stub)
   const { data: recentTreatments = [] } = useQuery<Treatment[]>({
     queryKey: ["/api/treatments", "patient", selectedPatient?.patientId],
