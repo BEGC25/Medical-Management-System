@@ -55,6 +55,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 // NEW: Import Accordion components
 import {
   Accordion,
@@ -2272,7 +2273,7 @@ export default function Treatment() {
 
   // ---------- UI ----------
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4">
       {/* World-Class Department Header - Mobile Responsive */}
       <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-3 md:p-4 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
@@ -2284,7 +2285,8 @@ export default function Treatment() {
               </div>
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Treatment Records</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Doctor's Workspace</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Active patient consultations and visit management</p>
             </div>
           </div>
           <Button
@@ -2386,7 +2388,18 @@ export default function Treatment() {
 
       <Card className="print:hidden">
         <CardHeader>
-          <CardTitle>Patient Selection</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Patient Selection</CardTitle>
+            <button
+              onClick={() => setQueueOpen(true)}
+              className="flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 
+                         hover:underline hover:text-blue-700 dark:hover:text-blue-300 
+                         transition-colors"
+            >
+              <Clock className="w-4 h-4" />
+              <span>Open Visits ({openVisitsPatients.length})</span>
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
           {/* Patient selection / Header */}
@@ -2394,64 +2407,78 @@ export default function Treatment() {
           {/* Patient selection */}
           {/* THIS CARD IS HIDDEN ONCE A PATIENT IS SELECTED */}
           {!selectedPatient && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 mb-6 shadow-sm border border-blue-100 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Activity className="h-5 w-5 text-white" />
+            <>
+              {/* Date Filter and Search Controls */}
+              <div className="mb-4 space-y-3 border-b pb-4">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => { setDateFilter("today"); setShowDateFilter(false); }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      dateFilter === "today"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                    )}
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() => { setDateFilter("yesterday"); setShowDateFilter(false); }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      dateFilter === "yesterday"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                    )}
+                  >
+                    Yesterday
+                  </button>
+                  <button
+                    onClick={() => { setDateFilter("last7"); setShowDateFilter(false); }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      dateFilter === "last7"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                    )}
+                  >
+                    Last 7 Days
+                  </button>
+                  <button
+                    onClick={() => { setDateFilter("last30"); setShowDateFilter(false); }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      dateFilter === "last30"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                    )}
+                  >
+                    Last 30 Days
+                  </button>
+                  <button
+                    onClick={() => { setDateFilter("custom"); setShowDateFilter(false); }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      dateFilter === "custom"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                    )}
+                  >
+                    Custom Range
+                  </button>
+                  <button
+                    onClick={() => setShowDateFilter(!showDateFilter)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all flex items-center gap-1.5",
+                      showDateFilter
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                    )}
+                  >
+                    <Search className="w-4 h-4" />
+                    Search
+                  </button>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Select Patient for Treatment</h3>
-                </div>
-              </div>
-
-              <>
-                {/* Date Filter and Search Controls */}
-                <div className="mb-4 space-y-3 border-b pb-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Button 
-                      variant={dateFilter === "today" ? "default" : "outline"} 
-                      size="sm" 
-                      onClick={() => { setDateFilter("today"); setShowDateFilter(false); }}
-                    >
-                      Today
-                    </Button>
-                    <Button 
-                      variant={dateFilter === "yesterday" ? "default" : "outline"} 
-                      size="sm" 
-                      onClick={() => { setDateFilter("yesterday"); setShowDateFilter(false); }}
-                    >
-                      Yesterday
-                    </Button>
-                    <Button 
-                      variant={dateFilter === "last7" ? "default" : "outline"} 
-                      size="sm" 
-                      onClick={() => { setDateFilter("last7"); setShowDateFilter(false); }}
-                    >
-                      Last 7 Days
-                    </Button>
-                    <Button 
-                      variant={dateFilter === "last30" ? "default" : "outline"} 
-                      size="sm" 
-                      onClick={() => { setDateFilter("last30"); setShowDateFilter(false); }}
-                    >
-                      Last 30 Days
-                    </Button>
-                    <Button 
-                      variant={dateFilter === "custom" ? "default" : "outline"} 
-                      size="sm" 
-                      onClick={() => { setDateFilter("custom"); setShowDateFilter(false); }}
-                    >
-                      Custom Range
-                    </Button>
-                    <Button 
-                      variant={showDateFilter ? "default" : "outline"} 
-                      size="sm" 
-                      onClick={() => setShowDateFilter(!showDateFilter)}
-                    >
-                      <Search className="w-3 h-3 mr-1" />
-                      Search
-                    </Button>
-                  </div>
                   
                   {dateFilter === "custom" && (
                     <div className="flex gap-2 items-center">
@@ -2484,13 +2511,6 @@ export default function Treatment() {
                   )}
                 </div>
 
-                <div className="flex justify-end mb-2">
-                  <Button variant="outline" size="sm" onClick={() => setQueueOpen(true)}>
-                    <Clock className="h-4 w-4 mr-2" />
-                    Open Visits
-                  </Button>
-                </div>
-
                 <div className="bg-white dark:bg-gray-900 rounded-lg p-1 shadow-sm">
                   <PatientSearch
                     onSelectPatient={handlePatientSelect}
@@ -2515,7 +2535,6 @@ export default function Treatment() {
                   />
                 </div>
               </>
-            </div>
           )}
 
           {/* THIS REPLACES THE CARD ABOVE ONCE PATIENT IS SELECTED */}

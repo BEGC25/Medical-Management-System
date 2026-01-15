@@ -170,29 +170,29 @@ export default function PatientSearch({
           <table className="w-full">
             <thead className="sticky top-0 z-10 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-2 py-3 text-center text-sm font-medium text-gray-700 dark:text-gray-300 w-12">
+                <th className="px-2 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300 w-12">
                   #
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Patient
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Age / Sex
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Contact
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Visit Status
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Diagnostics
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
+                <th className="px-4 py-2 text-right text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:table-cell">
                   Date of Service
                 </th>
                 {showActions && (
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Actions
                   </th>
                 )}
@@ -223,10 +223,10 @@ export default function PatientSearch({
                     } hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer`}
                     onClick={() => onViewPatient?.(p)}
                   >
-                    <td className="px-2 py-3 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">
+                    <td className="px-2 py-2 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">
                       {i + 1}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-2 text-sm">
                       <div className="flex items-center gap-3">
                         <div className={`h-8 w-8 rounded-full grid place-items-center text-xs font-semibold ${getAvatarColor(p.firstName, p.lastName)}`}>
                           {(p.firstName?.[0] || "").toUpperCase()}
@@ -243,21 +243,21 @@ export default function PatientSearch({
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-2 text-sm">
                       {p.age ?? "—"} • {p.gender || "—"}
                     </td>
 
                     {p.phoneNumber ? (
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
                         {p.phoneNumber}
                       </td>
                     ) : (
-                      <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-600">
+                      <td className="px-4 py-2 text-sm text-gray-400 dark:text-gray-600">
                         —
                       </td>
                     )}
 
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-2 text-sm">
                       {p.visitStatus ? (
                         <Badge 
                           variant={p.visitStatus === "open" ? "default" : p.visitStatus === "closed" ? "secondary" : "outline"}
@@ -274,7 +274,7 @@ export default function PatientSearch({
                       )}
                     </td>
 
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-2 text-sm">
                       {(() => {
                         const indicators = getPatientIndicators(p, resultsReadyMap);
                         
@@ -311,12 +311,12 @@ export default function PatientSearch({
                       })()}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-right hidden lg:table-cell">
+                    <td className="px-4 py-2 text-sm text-right hidden lg:table-cell">
                       {formatDate(displayDate)}
                     </td>
 
                     {showActions && (
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-2 text-sm">
                         <Button
                           size="sm"
                           variant="outline"
