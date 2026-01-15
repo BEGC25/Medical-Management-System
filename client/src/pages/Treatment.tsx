@@ -2413,10 +2413,10 @@ export default function Treatment() {
                   <button
                     onClick={() => { setDateFilter("today"); setShowDateFilter(false); }}
                     className={cn(
-                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200",
                       dateFilter === "today"
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
                     )}
                   >
                     Today
@@ -2424,10 +2424,10 @@ export default function Treatment() {
                   <button
                     onClick={() => { setDateFilter("yesterday"); setShowDateFilter(false); }}
                     className={cn(
-                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200",
                       dateFilter === "yesterday"
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
                     )}
                   >
                     Yesterday
@@ -2435,10 +2435,10 @@ export default function Treatment() {
                   <button
                     onClick={() => { setDateFilter("last7"); setShowDateFilter(false); }}
                     className={cn(
-                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200",
                       dateFilter === "last7"
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
                     )}
                   >
                     Last 7 Days
@@ -2446,10 +2446,10 @@ export default function Treatment() {
                   <button
                     onClick={() => { setDateFilter("last30"); setShowDateFilter(false); }}
                     className={cn(
-                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200",
                       dateFilter === "last30"
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
                     )}
                   >
                     Last 30 Days
@@ -2457,12 +2457,13 @@ export default function Treatment() {
                   <button
                     onClick={() => { setDateFilter("custom"); setShowDateFilter(false); }}
                     className={cn(
-                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all",
+                      "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 flex items-center gap-1.5",
                       dateFilter === "custom"
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30"
                         : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
                     )}
                   >
+                    <Calendar className="w-3.5 h-3.5" />
                     Custom Range
                   </button>
                   <button
@@ -2538,18 +2539,18 @@ export default function Treatment() {
 
           {/* THIS REPLACES THE CARD ABOVE ONCE PATIENT IS SELECTED */}
           {selectedPatient && (
-            <div className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-3 mb-4">
+            <div className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-2 mb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-lg">
                     {selectedPatient.firstName?.[0]}
                     {selectedPatient.lastName?.[0]}
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-xs">
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {[selectedPatient.firstName, selectedPatient.lastName].filter(Boolean).join(' ') || 'Unknown'}
                     </span>
-                    {savedTreatment && <Badge className="bg-green-600 text-white shadow-sm text-xs px-2 py-0.5">Saved: {savedTreatment.treatmentId}</Badge>}
+                    {savedTreatment && <Badge className="bg-green-600 text-white shadow-sm text-xs px-1.5 py-0.5">Saved: {savedTreatment.treatmentId}</Badge>}
                     <span className="text-gray-400">•</span>
                     <span className="text-gray-600 dark:text-gray-400">{selectedPatient.patientId}</span>
                     <span className="text-gray-400">•</span>
@@ -2559,12 +2560,12 @@ export default function Treatment() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">
+                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-1.5 py-0.5">
                     ✓ Selected
                   </Badge>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedPatient(null)} className="h-8 px-2">
-                    <X className="w-3.5 h-3.5 mr-1" />
-                    <span className="text-xs">Change</span>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedPatient(null)} className="h-7 px-2 text-xs">
+                    <X className="w-3 h-3 mr-0.5" />
+                    Change
                   </Button>
                 </div>
               </div>
@@ -2646,16 +2647,14 @@ export default function Treatment() {
                   <TabsContent value="notes">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Clinical Documentation</CardTitle>
+                        {/* Clinical Documentation heading removed - card title is self-explanatory */}
                       </CardHeader>
                       <CardContent>
                         <Form {...form}>
                           <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Visit Info */}
                             <div>
-                              <h3 className="font-medium text-gray-800 mb-4 border-b pb-2 dark:text-gray-200">
-                                Visit Information
-                              </h3>
+                              {/* Visit Information heading removed - form fields are self-explanatory */}
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="visitDate" render={({ field }) => ( <FormItem><FormLabel>Visit Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="visitType" render={({ field }) => ( <FormItem><FormLabel>Visit Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="consultation">Consultation</SelectItem><SelectItem value="follow-up">Follow-up</SelectItem><SelectItem value="emergency">Emergency</SelectItem><SelectItem value="preventive">Preventive Care</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
@@ -2932,7 +2931,7 @@ export default function Treatment() {
                             </Accordion>
 
                             {/* Actions */}
-                            <div className="flex gap-3 justify-between items-center pt-4 mt-4 border-t-2 border-gray-200 dark:border-gray-700">
+                            <div className="flex gap-3 justify-between items-center pt-6 mt-6 border-t-2 border-gray-300 dark:border-gray-600 shadow-inner">
                               <div className="flex gap-3">
                                 {selectedPatient && currentEncounter && (
                                   <DischargeSummary 
@@ -5330,35 +5329,47 @@ export default function Treatment() {
                   </CardHeader>
                   <CardContent className="space-y-1.5">
                     <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Temp</span>
+                      <span className="text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1.5">
+                        <span className="text-base">🌡️</span>
+                        Temp
+                      </span>
                       {watchedVitals[0] ? (
                         <span className="font-medium">{watchedVitals[0]} °C</span>
                       ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Not recorded</span>
                       )}
                     </div>
                     <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">BP</span>
+                      <span className="text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1.5">
+                        <span className="text-base">💓</span>
+                        BP
+                      </span>
                       {watchedVitals[1] ? (
                         <span className="font-medium">{watchedVitals[1]}</span>
                       ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Not recorded</span>
                       )}
                     </div>
                     <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Heart Rate</span>
+                      <span className="text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1.5">
+                        <span className="text-base">⚡</span>
+                        Heart Rate
+                      </span>
                       {watchedVitals[2] ? (
                         <span className="font-medium">{watchedVitals[2]} bpm</span>
                       ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Not recorded</span>
                       )}
                     </div>
                     <div className="flex justify-between items-center text-sm py-1">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Weight</span>
+                      <span className="text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1.5">
+                        <span className="text-base">⚖️</span>
+                        Weight
+                      </span>
                       {watchedVitals[3] ? (
                         <span className="font-medium">{watchedVitals[3]} kg</span>
                       ) : (
-                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-600 italic">Not recorded</span>
                       )}
                     </div>
                   </CardContent>
@@ -5441,30 +5452,23 @@ export default function Treatment() {
                   )}
                 </Card>
 
-                {/* Recent Medications Card */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Pill className="h-4 w-4 text-purple-500" />
-                        Recent Medications
-                      </CardTitle>
-                      {(() => {
-                        const activeMeds = prescriptions.filter(p => p.status !== 'cancelled');
-                        return activeMeds.length > 0 && (
+                {/* Recent Medications Card - Only show when medications exist */}
+                {(() => {
+                  const activeMeds = prescriptions.filter(p => p.status !== 'cancelled');
+                  return activeMeds.length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Pill className="h-4 w-4 text-purple-500" />
+                            Recent Medications
+                          </CardTitle>
                           <Badge variant="secondary" className="bg-purple-600 text-white text-xs">
                             {activeMeds.length}
                           </Badge>
-                        );
-                      })()}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {(() => {
-                      const activeMeds = prescriptions.filter(p => p.status !== 'cancelled');
-                      return activeMeds.length === 0 ? (
-                        <p className="text-xs text-gray-400 dark:text-gray-500 italic">No active medications</p>
-                      ) : (
+                        </div>
+                      </CardHeader>
+                      <CardContent>
                         <div className="space-y-2">
                           {activeMeds
                             .slice(0, 3)
@@ -5508,10 +5512,10 @@ export default function Treatment() {
                             </Button>
                           )}
                         </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
               </div>
             </div>
           )}
