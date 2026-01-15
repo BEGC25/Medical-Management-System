@@ -40,7 +40,9 @@ export function DosageCalculator({
     if (result && onDoseCalculated) {
       onDoseCalculated(result);
     }
-  }, [medicationName, patientWeight, patientAge, isAdult, onDoseCalculated]);
+    // onDoseCalculated is intentionally excluded from deps to avoid re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [medicationName, patientWeight, patientAge, isAdult]);
 
   if (!calculation) {
     return null;

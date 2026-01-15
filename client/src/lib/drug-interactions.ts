@@ -194,6 +194,11 @@ function normalizeDrugName(name: string): string {
 }
 
 /**
+ * Minimum word length for partial matching in drug names
+ */
+const MIN_WORD_LENGTH_FOR_MATCH = 3;
+
+/**
  * Check if two drug names match (accounting for variations)
  */
 function drugsMatch(drug1: string, drug2: string): boolean {
@@ -210,7 +215,7 @@ function drugsMatch(drug1: string, drug2: string): boolean {
   const words1 = normalized1.split(/\s+/);
   const words2 = normalized2.split(/\s+/);
   
-  return words1.some(w1 => words2.some(w2 => w1 === w2 && w1.length > 3));
+  return words1.some(w1 => words2.some(w2 => w1 === w2 && w1.length > MIN_WORD_LENGTH_FOR_MATCH));
 }
 
 /**

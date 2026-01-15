@@ -295,11 +295,16 @@ function selectBestFormulation(
 }
 
 /**
+ * Regex pattern for parsing medication strength (e.g., "500mg", "120mg/5ml")
+ */
+const STRENGTH_PATTERN = /(\d+)mg(?:\/(\d+)ml)?/;
+
+/**
  * Calculate the amount to administer based on formulation strength
  */
 function calculateAdministrationAmount(dose: number, formulation: MedicationFormulation): string {
   // Parse strength (e.g., "500mg", "120mg/5ml")
-  const strengthMatch = formulation.strength.match(/(\d+)mg(?:\/(\d+)ml)?/);
+  const strengthMatch = formulation.strength.match(STRENGTH_PATTERN);
   
   if (!strengthMatch) {
     return `${dose}mg`;

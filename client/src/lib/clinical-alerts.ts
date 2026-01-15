@@ -182,7 +182,8 @@ export interface LabAlert {
 export function checkCriticalValue(parameter: string, value: number | string): LabAlert | null {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
   
-  if (isNaN(numValue)) {
+  // Validate numeric value
+  if (isNaN(numValue) || !isFinite(numValue)) {
     return null;
   }
 
