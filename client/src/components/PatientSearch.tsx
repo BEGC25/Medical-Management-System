@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Search, AlertCircle, CheckCircle } from "lucide-react";
+import { Search, AlertCircle, CheckCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Patient } from "@shared/schema";
 import { formatClinicDay } from "@/lib/date-utils";
 import { hasPendingOrders, getPatientIndicators, type ResultsReadyMap } from "@/lib/patient-utils";
 import { getVisitStatusLabel } from "@/lib/display-utils";
+import { cn } from "@/lib/utils";
 
 interface PatientSearchProps {
   onSelectPatient?: (patient: Patient) => void;
@@ -36,22 +38,31 @@ function formatDate(dateStr: string | null | undefined): string {
 
 // Generate consistent avatar colors based on initials
 function getAvatarColor(firstName?: string, lastName?: string): string {
-  const name = `${firstName || ""}${lastName || ""}`;
-  const colors = [
-    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-    "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-    "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
-    "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
-    "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
-    "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
-    "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
+  // Generate consistent color based on initials
+  const initial = (firstName?.[0] || '' + lastName?.[0] || '').toUpperCase();
+  const colors: Record<string, string> = {
+    'A': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    'B': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    'C': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    'D': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+    'E': 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400',
+    'F': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    'G': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+    'H': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+    'I': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+    'J': 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
+    'K': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    'L': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+    'M': 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+    'N': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+    'O': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
+    'P': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
+    'Q': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  };
+  
+  // Default to first letter of first name
+  const key = (firstName?.[0] || '').toUpperCase();
+  return colors[key] || 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
 }
 
 export default function PatientSearch({
@@ -166,191 +177,160 @@ export default function PatientSearch({
       )}
 
       {filteredPatients && filteredPatients.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800/80 border-b-2 border-gray-200 dark:border-gray-700">
-              <tr className="hover:bg-transparent">
-                <th className="px-2 py-2 text-center text-sm font-semibold text-gray-700 dark:text-gray-300 w-12">
-                  #
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Patient
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Age / Sex
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Contact
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Visit Status
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Diagnostics
-                </th>
-                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 hidden lg:table-cell">
-                  Date of Service
-                </th>
-                {showActions && (
-                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Actions
-                  </th>
+        <div className="space-y-2">
+          {filteredPatients.map((p: any, index: number) => {
+            const s = p.serviceStatus || {};
+            const due = (s.balanceToday ?? s.balance ?? 0) as number;
+            // ALWAYS use patient's actual dateOfService from API when available
+            const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
+              ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
+                ? selectedDate
+                : (p.updatedAt || p.createdAt));
+            
+            const isSelected = selectedPatientId === p.patientId;
+            const indicators = getPatientIndicators(p, resultsReadyMap);
+
+            return (
+              <div
+                key={p.id || p.patientId}
+                onClick={() => onViewPatient?.(p)}
+                className={cn(
+                  "bg-white dark:bg-gray-800 rounded-lg border-2 p-3",
+                  "hover:shadow-xl hover:border-blue-400 dark:hover:border-blue-500",
+                  "transition-all duration-200 cursor-pointer hover:scale-[1.01] group",
+                  isSelected
+                    ? "border-blue-500 dark:border-blue-400 shadow-lg"
+                    : "border-gray-200 dark:border-gray-700"
                 )}
-              </tr>
-            </thead>
+              >
+                <div className="flex items-center justify-between">
+                  {/* Left side: Patient information */}
+                  <div className="flex items-center gap-3 flex-1">
+                    {/* Row number */}
+                    <div className="flex-shrink-0 w-6 text-center">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        {index + 1}
+                      </span>
+                    </div>
 
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredPatients.map((p: any, i: number) => {
-                const s = p.serviceStatus || {};
-                const due = (s.balanceToday ?? s.balance ?? 0) as number;
-                // ALWAYS use patient's actual dateOfService from API when available
-                const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
-                  ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
-                    ? selectedDate
-                    : (p.updatedAt || p.createdAt));
-                
-                const isSelected = selectedPatientId === p.patientId;
+                    {/* Avatar */}
+                    <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-400">
+                      <AvatarFallback 
+                        className={cn(
+                          "text-sm font-semibold",
+                          getAvatarColor(p.firstName, p.lastName)
+                        )}
+                      >
+                        {(p.firstName?.[0] || "").toUpperCase()}
+                        {(p.lastName?.[0] || "").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
 
-                return (
-                  <tr
-                    key={p.id || p.patientId}
-                    className={`transition-all duration-200 cursor-pointer border-b border-gray-100 dark:border-gray-800 ${
-                      isSelected
-                        ? "bg-blue-100 dark:bg-blue-900/40 border-l-4 border-l-blue-500"
-                        : i % 2
-                        ? "bg-gray-50/50 dark:bg-gray-800/50"
-                        : "bg-white dark:bg-gray-900"
-                    } hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md hover:scale-[1.01] hover:border-blue-200 dark:hover:border-blue-800`}
-                    onClick={() => onViewPatient?.(p)}
-                  >
-                    <td className="px-2 py-2 text-center text-sm font-semibold text-gray-500 dark:text-gray-400">
-                      {i + 1}
-                    </td>
-                    <td className="px-4 py-2 text-sm">
-                      <div className="flex items-center gap-3">
-                        <div className={`h-8 w-8 rounded-full grid place-items-center text-xs font-semibold ${getAvatarColor(p.firstName, p.lastName)}`}>
-                          {(p.firstName?.[0] || "").toUpperCase()}
-                          {(p.lastName?.[0] || "").toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-medium">
-                            {p.firstName} {p.lastName}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            ID: {p.patientId}
-                          </div>
-                        </div>
+                    {/* Patient details */}
+                    <div className="flex-1 min-w-0">
+                      {/* Top row: Name and basic info */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-900 dark:text-white text-base">
+                          {p.firstName} {p.lastName}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          ID: {p.patientId}
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {p.age ?? "—"} • {p.gender === 'male' ? 'M' : p.gender === 'female' ? 'F' : p.gender || '—'}
+                        </span>
+                        {p.phoneNumber && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {p.phoneNumber}
+                            </span>
+                          </>
+                        )}
                       </div>
-                    </td>
 
-                    <td className="px-4 py-2 text-sm">
-                      {p.age ?? "—"} • {p.gender || "—"}
-                    </td>
+                      {/* Bottom row: Status and diagnostics */}
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        {/* Visit Status */}
+                        {p.visitStatus ? (
+                          <Badge className={cn(
+                            "text-xs",
+                            p.visitStatus === 'open' 
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
+                              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                          )}>
+                            {getVisitStatusLabel(p.visitStatus)}
+                          </Badge>
+                        ) : null}
 
-                    {p.phoneNumber ? (
-                      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                        {p.phoneNumber}
-                      </td>
-                    ) : (
-                      <td className="px-4 py-2 text-sm text-gray-400 dark:text-gray-600">
-                        —
-                      </td>
-                    )}
-
-                    <td className="px-4 py-2 text-sm">
-                      {p.visitStatus ? (
-                        <Badge 
-                          variant={p.visitStatus === "open" ? "default" : p.visitStatus === "closed" ? "secondary" : "outline"}
-                          className={`text-xs capitalize ${
-                            p.visitStatus === "open" ? "bg-green-600 text-white" :
-                            p.visitStatus === "closed" ? "bg-gray-600 text-white" :
-                            "bg-yellow-600 text-white"
-                          }`}
-                        >
-                          {getVisitStatusLabel(p.visitStatus)}
-                        </Badge>
-                      ) : (
-                        <span className="text-gray-400 text-xs">—</span>
-                      )}
-                    </td>
-
-                    <td className="px-4 py-2 text-sm">
-                      {(() => {
-                        const indicators = getPatientIndicators(p, resultsReadyMap);
+                        {/* Diagnostics badges */}
+                        {indicators.waiting.length > 0 && (
+                          <Badge 
+                            variant="outline"
+                            className="text-xs border-yellow-300 bg-yellow-50 text-yellow-700 dark:border-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400"
+                          >
+                            ⏳ Waiting: {indicators.waiting.join(', ')}
+                          </Badge>
+                        )}
                         
-                        // Show empty state only if both are empty
-                        if (indicators.waiting.length === 0 && indicators.ready.length === 0) {
-                          return <span className="text-gray-400 text-xs">—</span>;
-                        }
+                        {indicators.ready.length > 0 && (
+                          <Badge 
+                            variant="outline"
+                            className="text-xs border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-900/20 dark:text-green-400"
+                          >
+                            ✓ Ready: {indicators.ready.join(', ')}
+                          </Badge>
+                        )}
                         
-                        return (
-                          <div className="flex flex-wrap gap-1">
-                            {/* Waiting badge - show if there are pending orders */}
-                            {indicators.waiting.length > 0 && (
-                              <Badge 
-                                variant="outline" 
-                                className="text-[10px] bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 flex items-center gap-1"
-                              >
-                                <AlertCircle className="w-2.5 h-2.5" />
-                                Waiting: {indicators.waiting.join(', ')}
-                              </Badge>
-                            )}
-                            
-                            {/* Ready badge - show if there are completed results */}
-                            {indicators.ready.length > 0 && (
-                              <Badge 
-                                variant="outline" 
-                                className="text-[10px] bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 flex items-center gap-1"
-                              >
-                                <CheckCircle className="w-2.5 h-2.5" />
-                                Ready: {indicators.ready.join(', ')}
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </td>
+                        {indicators.waiting.length === 0 && indicators.ready.length === 0 && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                            No diagnostics pending
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                    <td className="px-4 py-2 text-sm text-right hidden lg:table-cell">
+                  {/* Right side: Date of service */}
+                  <div className="flex-shrink-0 ml-4 text-right">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
                       {formatDate(displayDate)}
-                    </td>
-
+                    </div>
                     {showActions && (
-                      <td className="px-4 py-2 text-sm">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewPatient?.(p);
-                          }}
-                        >
-                          View
-                        </Button>
-                      </td>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewPatient?.(p);
+                        }}
+                      >
+                        View
+                      </Button>
                     )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {filteredPatients && filteredPatients.length === 0 && (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full grid place-items-center">
-              <Search className="w-6 h-6 text-gray-400" />
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border-2 border-dashed 
+                      border-gray-300 dark:border-gray-700 p-12 text-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full">
+              <Users className="w-8 h-8 text-gray-400" />
             </div>
-            <div>
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                No patients found
-              </h3>
-              <p className="text-sm text-gray-500">
-                Try a different name or patient ID.
-              </p>
-            </div>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">
+              No patients found for this date range
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              Try adjusting your filters or selecting a different date range
+            </p>
           </div>
         </div>
       )}
