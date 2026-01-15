@@ -39,8 +39,8 @@ function formatDate(dateStr: string | null | undefined): string {
 // Format gender for display (M/F or original value)
 function formatGender(gender?: string): string {
   if (!gender) return '—';
-  if (gender === 'male') return 'M';
-  if (gender === 'female') return 'F';
+  if (gender.toLowerCase() === 'male') return 'M';
+  if (gender.toLowerCase() === 'female') return 'F';
   return gender;
 }
 
@@ -195,8 +195,6 @@ export default function PatientSearch({
       {filteredPatients && filteredPatients.length > 0 && (
         <div className="space-y-2">
           {filteredPatients.map((p, index) => {
-            const s = p.serviceStatus || {};
-            const due = (s.balanceToday ?? s.balance ?? 0) as number;
             // ALWAYS use patient's actual dateOfService from API when available
             const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
               ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
@@ -230,7 +228,7 @@ export default function PatientSearch({
                     </div>
 
                     {/* Avatar */}
-                    <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-400">
+                    <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-400 dark:group-hover:ring-blue-500">
                       <AvatarFallback 
                         className={cn(
                           "text-sm font-semibold",
@@ -285,18 +283,20 @@ export default function PatientSearch({
                         {indicators.waiting.length > 0 && (
                           <Badge 
                             variant="outline"
-                            className="text-xs border-yellow-300 bg-yellow-50 text-yellow-700 dark:border-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400"
+                            className="text-xs border-yellow-300 bg-yellow-50 text-yellow-700 dark:border-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400 flex items-center gap-1"
                           >
-                            ⏳ Waiting: {indicators.waiting.join(', ')}
+                            <AlertCircle className="w-3 h-3" aria-hidden="true" />
+                            <span>Waiting: {indicators.waiting.join(', ')}</span>
                           </Badge>
                         )}
                         
                         {indicators.ready.length > 0 && (
                           <Badge 
                             variant="outline"
-                            className="text-xs border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-900/20 dark:text-green-400"
+                            className="text-xs border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-900/20 dark:text-green-400 flex items-center gap-1"
                           >
-                            ✓ Ready: {indicators.ready.join(', ')}
+                            <CheckCircle className="w-3 h-3" aria-hidden="true" />
+                            <span>Ready: {indicators.ready.join(', ')}</span>
                           </Badge>
                         )}
                         
