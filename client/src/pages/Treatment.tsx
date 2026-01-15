@@ -2622,9 +2622,9 @@ export default function Treatment() {
                       <Pill className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Medications</span>
                       <span className="sm:hidden">Meds</span>
-                      {prescriptions.length > 0 && (
+                      {prescriptions.filter(p => p.status !== 'cancelled').length > 0 && (
                         <Badge className="ml-2 transition-all duration-200 animate-in fade-in bg-purple-600 text-white">
-                          {prescriptions.length}
+                          {prescriptions.filter(p => p.status !== 'cancelled').length}
                         </Badge>
                       )}
                     </TabsTrigger>
@@ -4941,6 +4941,27 @@ export default function Treatment() {
                                     variant: "destructive",
                                   });
                                   return;
+                                }
+                                
+                                // Check stock availability
+                                const drugWithStock = drugsWithStock.find(d => d.id.toString() === selectedDrugId);
+                                if (drugWithStock) {
+                                  if (drugWithStock.stockOnHand === 0) {
+                                    toast({
+                                      title: "Out of Stock",
+                                      description: `${selectedDrugName} is currently out of stock and cannot be prescribed.`,
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  if (drugWithStock.stockOnHand < newMedQuantity) {
+                                    toast({
+                                      title: "Insufficient Stock",
+                                      description: `Only ${drugWithStock.stockOnHand} units of ${selectedDrugName} available. Please reduce quantity or check inventory.`,
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
                                 }
                                 
                                 // If we're editing a Current Medication, update it via the edit prescription mutation

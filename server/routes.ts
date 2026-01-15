@@ -1784,7 +1784,8 @@ router.get("/api/payments", async (req, res) => {
         // Group items by category for summary
         const breakdown = items.reduce((acc: any, item) => {
           const service = servicesMap.get(item.serviceId);
-          const category = service?.category || 'other';
+          const category = service?.category || 
+            (item.relatedType === 'pharmacy_order' ? 'pharmacy' : 'other');
           const categoryName = 
             category === 'laboratory' ? 'Lab Tests' :
             category === 'radiology' ? 'X-Ray' :
