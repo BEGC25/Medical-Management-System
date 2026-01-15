@@ -241,6 +241,15 @@ const BODY_SYSTEMS = [
   { id: "skin", label: "Skin" },
 ];
 
+// Helper function to get gender abbreviation
+const getGenderAbbreviation = (gender: string | undefined): string => {
+  if (!gender) return '';
+  const g = gender.toLowerCase();
+  if (g === 'male') return 'M';
+  if (g === 'female') return 'F';
+  return gender; // Return as-is if not male/female
+};
+
 // Quick dosage presets for common medications
 const DOSAGE_PRESETS = [
   "1 tablet once daily",
@@ -2555,7 +2564,7 @@ export default function Treatment() {
                     <span className="text-gray-400">•</span>
                     <span className="text-gray-600 dark:text-gray-400">{selectedPatient.patientId}</span>
                     <span className="text-gray-400">•</span>
-                    <span className="text-gray-600 dark:text-gray-400">{getAge(selectedPatient.age || "")}/{selectedPatient.gender === 'male' ? 'M' : selectedPatient.gender === 'female' ? 'F' : selectedPatient.gender}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{getAge(selectedPatient.age || "")}/{getGenderAbbreviation(selectedPatient.gender)}</span>
                     <span className="text-gray-400">•</span>
                     <span className="text-gray-600 dark:text-gray-400">{selectedPatient.phoneNumber || "N/A"}</span>
                   </div>
@@ -2948,10 +2957,12 @@ export default function Treatment() {
                             </Accordion>
 
                             {/* Actions */}
-                            <div className="flex gap-3 justify-end items-center pt-2 border-t border-gray-200 dark:border-gray-700">
-                              <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-blue-600 hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
-                              {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/20" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn"><LogOut className="w-4 h-4 mr-2" />{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
-                              <Button type="button" variant="outline" onClick={handleNewTreatment} className="ml-auto">New Treatment</Button>
+                            <div className="flex gap-3 justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                              <div className="flex gap-3">
+                                <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-blue-600 hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
+                                {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/20" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn"><LogOut className="w-4 h-4 mr-2" />{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
+                              </div>
+                              <Button type="button" variant="outline" onClick={handleNewTreatment}>New Treatment</Button>
                             </div>
                           </form>
                         </Form>
