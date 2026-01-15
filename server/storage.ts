@@ -3033,8 +3033,11 @@ export class MemStorage implements IStorage {
 
     const [batch] = await db.insert(drugBatches).values(insertData).returning();
 
-    // Auto-update drug's defaultPrice with the batch's unitCost
-    await this.updateDrugDefaultPrice(batch.drugId, batch.unitCost);
+    // Auto-update drug's defaultPrice with the batch's unitCost only if not already set
+    const drug = await this.getDrugById(batch.drugId);
+    if (drug && !drug.defaultPrice) {
+      await this.updateDrugDefaultPrice(batch.drugId, batch.unitCost);
+    }
 
     // Create ledger entry for receipt
     await this.createInventoryLedger({

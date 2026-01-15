@@ -2036,7 +2036,10 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
           .filter((order) => order.paymentStatus === "unpaid" && order.status === "prescribed")
           .map(async (order) => {
             const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
-            const price = await calculatePharmacyOrderPrice(order);
+            const unitPrice = await calculatePharmacyOrderPrice(order);
+            
+            // Multiply unit price by quantity for total price
+            const price = unitPrice * (order.quantity || 1);
             
             return {
               id: order.orderId,
