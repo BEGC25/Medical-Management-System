@@ -840,7 +840,7 @@ export default function Patients() {
       'R': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
       'W': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
     };
-    const initial = firstName[0]?.toUpperCase();
+    const initial = firstName?.[0]?.toUpperCase() || '';
     return colors[initial] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
   };
 
@@ -1313,8 +1313,8 @@ export default function Patients() {
                         <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 
                                          dark:ring-gray-700 group-hover:ring-blue-400 
                                          dark:group-hover:ring-blue-500">
-                          <AvatarFallback className={getAvatarColor(patient.firstName)}>
-                            {patient.firstName[0]}{patient.lastName[0]}
+                          <AvatarFallback className={getAvatarColor(patient.firstName || '')}>
+                            {(patient.firstName?.[0] || '?').toUpperCase()}{(patient.lastName?.[0] || '?').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
 
@@ -2397,8 +2397,8 @@ export default function Patients() {
 
                         {/* Avatar */}
                         <Avatar className="h-10 w-10 flex-shrink-0">
-                          <AvatarFallback className={getAvatarColor(patient.firstName)}>
-                            {patient.firstName[0]}{patient.lastName[0]}
+                          <AvatarFallback className={getAvatarColor(patient.firstName || '')}>
+                            {(patient.firstName?.[0] || '?').toUpperCase()}{(patient.lastName?.[0] || '?').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
 
