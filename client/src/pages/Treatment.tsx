@@ -41,6 +41,7 @@ import {
   XCircle, // For stop/out of stock
   Package, // For stock indicators
   Calculator, // For auto-calculate quantity
+  LogOut, // For Close Visit button
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -239,6 +240,15 @@ const BODY_SYSTEMS = [
   { id: "neurological", label: "Neurological" },
   { id: "skin", label: "Skin" },
 ];
+
+// Helper function to get gender abbreviation
+const getGenderAbbreviation = (gender: string | undefined): string => {
+  if (!gender) return '';
+  const g = gender.toLowerCase();
+  if (g === 'male') return 'M';
+  if (g === 'female') return 'F';
+  return gender; // Return as-is if not male/female
+};
 
 // Quick dosage presets for common medications
 const DOSAGE_PRESETS = [
@@ -2539,53 +2549,33 @@ export default function Treatment() {
 
           {/* THIS REPLACES THE CARD ABOVE ONCE PATIENT IS SELECTED */}
           {selectedPatient && (
-            <div className="p-5 bg-white dark:bg-gray-900 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-md mb-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            <div className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-3 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
                     {selectedPatient.firstName?.[0]}
                     {selectedPatient.lastName?.[0]}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold text-gray-900 dark:text-white text-lg">
-                        {selectedPatient.firstName} {selectedPatient.lastName}
-                      </h4>
-                      {savedTreatment && <Badge className="bg-green-600 text-white shadow-sm">Saved: {savedTreatment.treatmentId}</Badge>}
-                    </div>
-                    <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">ID:</span>
-                        <span className="font-mono">{selectedPatient.patientId}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">Age:</span>
-                        {getAge(selectedPatient.age || "")}
-                      </span>
-                      {selectedPatient.gender && (
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Gender:</span>
-                          {selectedPatient.gender}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span>
-                        {selectedPatient.phoneNumber || "N/A"}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {[selectedPatient.firstName, selectedPatient.lastName].filter(Boolean).join(' ') || 'Unknown'}
+                    </span>
+                    {savedTreatment && <Badge className="bg-green-600 text-white shadow-sm text-xs px-2 py-0.5">Saved: {savedTreatment.treatmentId}</Badge>}
+                    <span className="text-gray-400">•</span>
+                    <span className="text-gray-600 dark:text-gray-400">{selectedPatient.patientId}</span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-gray-600 dark:text-gray-400">{getAge(selectedPatient.age || "")}{getGenderAbbreviation(selectedPatient.gender) ? `/${getGenderAbbreviation(selectedPatient.gender)}` : ''}</span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-gray-600 dark:text-gray-400">{selectedPatient.phoneNumber || "N/A"}</span>
                   </div>
                 </div>
-
-                <div className="flex flex-col gap-2">
-                  <Badge className="bg-green-600 text-white shadow-sm whitespace-nowrap">✓ Selected</Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-900/20"
-                    onClick={() => setSelectedPatient(null)}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Change
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">
+                    ✓ Selected
+                  </Badge>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedPatient(null)} className="h-8 px-2">
+                    <X className="w-3.5 h-3.5 mr-1" />
+                    <span className="text-xs">Change</span>
                   </Button>
                 </div>
               </div>
@@ -2724,7 +2714,7 @@ export default function Treatment() {
                                               : complaint;
                                             form.setValue("chiefComplaint", newValue);
                                           }}
-                                          className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-teal-100 dark:bg-gray-800 dark:hover:bg-teal-900 text-gray-700 dark:text-gray-300 rounded-full border border-gray-300 dark:border-gray-600 hover:border-teal-500 dark:hover:border-teal-500 transition-all shadow-sm hover:shadow"
+                                          className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-teal-100 dark:bg-gray-800 dark:hover:bg-teal-900 text-gray-700 dark:text-gray-300 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-teal-500 dark:hover:border-teal-500 transition-all shadow-sm hover:shadow font-medium"
                                         >
                                           {complaint}
                                         </button>
@@ -2888,7 +2878,7 @@ export default function Treatment() {
                                               : diagnosis;
                                             form.setValue("diagnosis", newValue);
                                           }}
-                                          className="px-3 py-1.5 text-sm bg-white hover:bg-teal-100 dark:bg-gray-800 dark:hover:bg-teal-900 text-gray-700 dark:text-gray-300 rounded-full border border-gray-300 dark:border-gray-600 hover:border-teal-500 dark:hover:border-teal-500 transition-all shadow-sm hover:shadow"
+                                          className="px-2.5 py-1 text-xs bg-white hover:bg-teal-100 dark:bg-gray-800 dark:hover:bg-teal-900 text-gray-700 dark:text-gray-300 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-teal-500 dark:hover:border-teal-500 transition-all shadow-sm hover:shadow font-medium"
                                         >
                                           {diagnosis}
                                         </button>
@@ -2967,10 +2957,12 @@ export default function Treatment() {
                             </Accordion>
 
                             {/* Actions */}
-                            <div className="flex gap-4 pt-6 mt-6 border-t">
-                              <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-medical-blue hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
-                              {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="default" className="bg-orange-600 hover:bg-orange-700" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn">{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
-                              <Button type="button" variant="outline" onClick={handleNewTreatment} className="ml-auto">New Treatment</Button>
+                            <div className="flex gap-3 justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                              <div className="flex gap-3">
+                                <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-blue-600 hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
+                                {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/20" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn"><LogOut className="w-4 h-4 mr-2" />{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
+                              </div>
+                              <Button type="button" variant="outline" onClick={handleNewTreatment}>New Treatment</Button>
                             </div>
                           </form>
                         </Form>
@@ -5347,29 +5339,87 @@ export default function Treatment() {
               {/* === RIGHT "CONTEXT" RAIL === */}
               <div className="space-y-4">
                 {/* Vitals Card */}
-                <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-5 w-5" />Vitals (Today)</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-3 text-sm"><div><div className="text-muted-foreground">Temp</div><div className="font-medium">{watchedVitals[0] ? `${watchedVitals[0]} °C` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">BP</div><div className="font-medium">{watchedVitals[1] || <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">Heart Rate</div><div className="font-medium">{watchedVitals[2] ? `${watchedVitals[2]} bpm` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div><div><div className="text-muted-foreground">Weight</div><div className="font-medium">{watchedVitals[3] ? `${watchedVitals[3]} kg` : <span className="text-gray-400 italic text-xs">Not recorded</span>}</div></div></div></CardContent></Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-red-500" />
+                      Vitals (Today)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1.5">
+                    <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">Temp</span>
+                      {watchedVitals[0] ? (
+                        <span className="font-medium">{watchedVitals[0]} °C</span>
+                      ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">BP</span>
+                      {watchedVitals[1] ? (
+                        <span className="font-medium">{watchedVitals[1]}</span>
+                      ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-800">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">Heart Rate</span>
+                      {watchedVitals[2] ? (
+                        <span className="font-medium">{watchedVitals[2]} bpm</span>
+                      ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center text-sm py-1">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">Weight</span>
+                      {watchedVitals[3] ? (
+                        <span className="font-medium">{watchedVitals[3]} kg</span>
+                      ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not recorded</span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
                 {/* Alerts Card */}
-                <Card className="border-red-500/50">
-                  <CardHeader>
+                <Card className={cn(
+                  "transition-all",
+                  (allergies?.length ?? 0) > 0 
+                    ? "border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/20 animate-pulse-border" 
+                    : "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20"
+                )}>
+                  <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-base text-red-600">
-                        <AlertTriangle className="h-5 w-5" />
-                        Alerts & Allergies
+                      <CardTitle className={cn(
+                        "text-sm flex items-center gap-2",
+                        (allergies?.length ?? 0) > 0 
+                          ? "text-red-900 dark:text-red-100" 
+                          : "text-green-900 dark:text-green-100"
+                      )}>
+                        {(allergies?.length ?? 0) > 0 ? (
+                          <AlertTriangle className="h-4 w-4" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4" />
+                        )}
+                        Allergies
                       </CardTitle>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => setShowAllergyModal(true)}
-                        className="h-7 text-xs"
+                        className="h-6 px-2"
                       >
                         <Plus className="h-3 w-3 mr-1" />
-                        Add
+                        <span className="text-xs">Add</span>
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    {allergies.length === 0 ? (
-                      <p className="font-medium text-red-700">No known drug allergies</p>
+                  <CardContent className="pb-3">
+                    {(allergies?.length ?? 0) === 0 ? (
+                      <p className={cn(
+                        "text-sm",
+                        "text-green-700 dark:text-green-300"
+                      )}>No known drug allergies</p>
                     ) : (
                       <div className="space-y-2">
                         {allergies.map((allergy) => (

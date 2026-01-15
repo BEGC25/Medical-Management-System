@@ -717,6 +717,22 @@
     animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
   
+  /* Pulsing border animation for allergy alerts */
+  @keyframes pulse-border {
+    0%, 100% {
+      border-color: theme('colors.red.300');
+      box-shadow: 0 0 0 0 theme('colors.red.500' / 0.4);
+    }
+    50% {
+      border-color: theme('colors.red.500');
+      box-shadow: 0 0 0 4px theme('colors.red.500' / 0);
+    }
+  }
+
+  .animate-pulse-border {
+    animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
   /* Staggered fade-in for cards */
   @keyframes fade-in-up {
     from {
