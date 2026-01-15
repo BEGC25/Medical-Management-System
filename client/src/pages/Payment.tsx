@@ -444,7 +444,8 @@ export default function Payment() {
       
       // Use the service information already in the order
       // The backend already provides serviceId, serviceName, and price
-      if (order.serviceId && order.price > 0) {
+      // Allow pharmacy orders without serviceId
+      if (order.price > 0) {
         newItems.push({
           serviceId: order.serviceId,
           serviceName: order.serviceName,

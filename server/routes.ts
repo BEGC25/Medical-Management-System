@@ -1859,6 +1859,38 @@ router.get("/api/payments/:paymentId", async (req, res) => {
 
 /* ----------------------------- Unpaid orders views ----------------------------- */
 
+// Shared helper to calculate pharmacy order price with proper fallback logic
+async function calculatePharmacyOrderPriceHelper(
+  order: any, 
+  services: any[], 
+  drugMap: Map<number, any>,
+  storage: any
+): Promise<number> {
+  // Try to get price from service first (backward compatibility)
+  const service = order.serviceId ? services.find((s: any) => s.id === order.serviceId) : null;
+  
+  // If no service, get price from drug inventory
+  let price = service?.price;
+  if (price === null || price === undefined) {
+    if (order.drugId) {
+      const drug = drugMap.get(order.drugId);
+      if (drug) {
+        price = drug.defaultPrice;
+        
+        // If drug has no defaultPrice, fallback to latest batch's unitCost
+        if (price === null || price === undefined) {
+          const latestBatch = await storage.getLatestBatchForDrug(order.drugId);
+          if (latestBatch) {
+            price = latestBatch.unitCost;
+          }
+        }
+      }
+    }
+  }
+  
+  return price ?? 0;
+}
+
 router.get("/api/unpaid-orders/all", async (_req, res) => {
   try {
     const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, patients, services, drugs] =
@@ -1906,23 +1938,6 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
         'skull': 'Skull',
       };
       return labels[examType.toLowerCase()] || toTitleCase(examType);
-    };
-
-    // Helper function to calculate pharmacy order price
-    const calculatePharmacyOrderPrice = (order: any) => {
-      // Try to get price from service first (backward compatibility)
-      const service = order.serviceId ? services.find((s: any) => s.id === order.serviceId) : null;
-      
-      // If no service, get price from drug inventory
-      let price = service?.price;
-      if (!price && order.drugId) {
-        const drug = drugMap.get(order.drugId);
-        if (drug) {
-          price = drug.defaultPrice || 0;
-        }
-      }
-      
-      return price || 0;
     };
 
     const result = {
@@ -2023,27 +2038,34 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
             price: service?.price,
           };
         }),
-      pharmacy: pharmacyOrders
-        .filter((order) => order.paymentStatus === "unpaid" && order.status === "prescribed")
-        .map((order) => {
-          const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
-          const price = calculatePharmacyOrderPrice(order);
-          
-          return {
-            id: order.orderId,
-            type: "pharmacy_order",
-            description: `Pharmacy: ${order.drugName || "Medication"}`,
-            date: order.createdAt,
-            dosage: order.dosage,
-            quantity: order.quantity,
-            patient: patientMap.get(order.patientId) || null,
-            patientId: order.patientId,
-            drugId: order.drugId,
-            serviceId: service?.id,
-            serviceName: service?.name,
-            price,
-          };
-        }),
+      pharmacy: await Promise.all(
+        pharmacyOrders
+          .filter((order) => order.paymentStatus === "unpaid" && order.status === "prescribed")
+          .map(async (order) => {
+            const unitPrice = await calculatePharmacyOrderPriceHelper(order, services, drugMap, storage);
+            
+            // Validate and multiply unit price by quantity for total price
+            const quantity = (order.quantity && order.quantity > 0) ? order.quantity : 1;
+            const price = unitPrice * quantity;
+            
+            const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
+            
+            return {
+              id: order.orderId,
+              type: "pharmacy_order",
+              description: `Pharmacy: ${order.drugName || "Medication"}`,
+              date: order.createdAt,
+              dosage: order.dosage,
+              quantity: order.quantity,
+              patient: patientMap.get(order.patientId) || null,
+              patientId: order.patientId,
+              drugId: order.drugId,
+              serviceId: service?.id,
+              serviceName: service?.name,
+              price,
+            };
+          })
+      ),
     };
 
     res.json(result);
@@ -2075,19 +2097,6 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
 
     const getServiceByCategory = (category: string) => {
       return services.find((s) => s.category === category && s.isActive);
-    };
-
-    // Helper function to calculate pharmacy order price
-    const calculatePharmacyOrderPrice = (order: any) => {
-      const service = order.serviceId ? services.find((s: any) => s.id === order.serviceId) : null;
-      let price = service?.price;
-      if (!price && order.drugId) {
-        const drug = drugMap.get(order.drugId);
-        if (drug) {
-          price = drug.defaultPrice || 0;
-        }
-      }
-      return price || 0;
     };
 
     const unpaidOrders: any[] = [];
@@ -2150,14 +2159,19 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
         });
       });
 
-    // Pharmacy orders remain as single items
-    pharmacyOrders
+    // Pharmacy orders remain as single items - process with async price calculation
+    const pharmacyOrdersPromises = pharmacyOrders
       .filter((order) => order.paymentStatus === "unpaid")
-      .forEach((order) => {
-        const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
-        const price = calculatePharmacyOrderPrice(order);
+      .map(async (order) => {
+        const unitPrice = await calculatePharmacyOrderPriceHelper(order, services, drugMap, storage);
         
-        unpaidOrders.push({
+        // Validate and multiply unit price by quantity for total price
+        const quantity = (order.quantity && order.quantity > 0) ? order.quantity : 1;
+        const price = unitPrice * quantity;
+        
+        const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
+        
+        return {
           id: order.orderId,
           type: "pharmacy_order",
           description: `Pharmacy: ${order.drugName || "Medication"}`,
@@ -2168,8 +2182,11 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
           serviceId: service?.id,
           serviceName: service?.name,
           price,
-        });
+        };
       });
+
+    const pharmacyOrdersUnpaid = await Promise.all(pharmacyOrdersPromises);
+    unpaidOrders.push(...pharmacyOrdersUnpaid);
 
     res.json(unpaidOrders);
   } catch (error) {

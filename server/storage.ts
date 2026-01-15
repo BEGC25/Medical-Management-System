@@ -357,6 +357,8 @@ export interface IStorage {
   getDrugBatchById(batchId: string): Promise<schema.DrugBatch | null>;
   updateDrugBatch(batchId: string, data: Partial<schema.DrugBatch>): Promise<schema.DrugBatch>;
   getBatchesFEFO(drugId: number): Promise<schema.DrugBatch[]>; // First Expiry First Out
+  getLatestBatchForDrug(drugId: number): Promise<schema.DrugBatch | null>; // Get most recent batch for pricing
+  updateDrugDefaultPrice(drugId: number, defaultPrice: number): Promise<schema.Drug>; // Update drug's default price
 
   // Pharmacy Inventory - Ledger
   createInventoryLedger(data: schema.InsertInventoryLedger): Promise<schema.InventoryLedger>;
@@ -3023,6 +3025,10 @@ export class MemStorage implements IStorage {
     const batchId = await generateBatchId();
     const now = new Date().toISOString();
 
+    // Check if drug needs defaultPrice update before creating batch
+    const drug = await this.getDrugById(data.drugId);
+    const shouldUpdateDefaultPrice = drug && (drug.defaultPrice === null || drug.defaultPrice === undefined);
+
     const insertData = {
       ...data,
       batchId,
@@ -3030,6 +3036,11 @@ export class MemStorage implements IStorage {
     };
 
     const [batch] = await db.insert(drugBatches).values(insertData).returning();
+
+    // Auto-update drug's defaultPrice with the batch's unitCost only if not already set
+    if (shouldUpdateDefaultPrice) {
+      await this.updateDrugDefaultPrice(batch.drugId, batch.unitCost);
+    }
 
     // Create ledger entry for receipt
     await this.createInventoryLedger({
@@ -3080,6 +3091,24 @@ export class MemStorage implements IStorage {
         sql`${drugBatches.quantityOnHand} > 0` // Use sql helper for comparison
       ))
       .orderBy(drugBatches.expiryDate);
+  }
+
+  async getLatestBatchForDrug(drugId: number): Promise<schema.DrugBatch | null> {
+    // Get the most recently received batch for a drug (for pricing fallback)
+    const [batch] = await db.select().from(drugBatches)
+      .where(eq(drugBatches.drugId, drugId))
+      .orderBy(desc(drugBatches.receivedAt))
+      .limit(1);
+    return batch || null;
+  }
+
+  async updateDrugDefaultPrice(drugId: number, defaultPrice: number): Promise<schema.Drug> {
+    const now = new Date().toISOString();
+    const [updated] = await db.update(drugs)
+      .set({ defaultPrice, updatedAt: now })
+      .where(eq(drugs.id, drugId))
+      .returning();
+    return updated;
   }
 
   // Pharmacy Inventory - Ledger Methods
