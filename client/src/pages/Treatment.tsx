@@ -2558,7 +2558,7 @@ export default function Treatment() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {selectedPatient.firstName} {selectedPatient.lastName}
+                      {selectedPatient.firstName || ''} {selectedPatient.lastName || ''}
                     </span>
                     {savedTreatment && <Badge className="bg-green-600 text-white shadow-sm text-xs px-2 py-0.5">Saved: {savedTreatment.treatmentId}</Badge>}
                     <span className="text-gray-400">•</span>
@@ -5384,7 +5384,7 @@ export default function Treatment() {
                 {/* Alerts Card */}
                 <Card className={cn(
                   "transition-all",
-                  allergies.length > 0 
+                  (allergies?.length ?? 0) > 0 
                     ? "border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/20 animate-pulse-border" 
                     : "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20"
                 )}>
@@ -5392,11 +5392,11 @@ export default function Treatment() {
                     <div className="flex items-center justify-between">
                       <CardTitle className={cn(
                         "text-sm flex items-center gap-2",
-                        allergies.length > 0 
+                        (allergies?.length ?? 0) > 0 
                           ? "text-red-900 dark:text-red-100" 
                           : "text-green-900 dark:text-green-100"
                       )}>
-                        {allergies.length > 0 ? (
+                        {(allergies?.length ?? 0) > 0 ? (
                           <AlertTriangle className="h-4 w-4" />
                         ) : (
                           <CheckCircle className="h-4 w-4" />
@@ -5415,7 +5415,7 @@ export default function Treatment() {
                     </div>
                   </CardHeader>
                   <CardContent className="pb-3">
-                    {allergies.length === 0 ? (
+                    {(allergies?.length ?? 0) === 0 ? (
                       <p className={cn(
                         "text-sm",
                         "text-green-700 dark:text-green-300"
