@@ -57,6 +57,15 @@ function getAvatarColor(firstName?: string, lastName?: string): string {
     'O': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
     'P': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
     'Q': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+    'R': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    'S': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    'T': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    'U': 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400',
+    'V': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+    'W': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+    'X': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+    'Y': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+    'Z': 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
   };
   
   // Use first letter of first name for color selection
@@ -177,7 +186,7 @@ export default function PatientSearch({
 
       {filteredPatients && filteredPatients.length > 0 && (
         <div className="space-y-2">
-          {filteredPatients.map((p: any, index: number) => {
+          {filteredPatients.map((p: Patient, index: number) => {
             const s = p.serviceStatus || {};
             const due = (s.balanceToday ?? s.balance ?? 0) as number;
             // ALWAYS use patient's actual dateOfService from API when available
