@@ -5508,11 +5508,9 @@ export default function Treatment() {
                         <CardTitle className="text-sm flex items-center gap-2">
                           <Pill className="h-4 w-4 text-purple-500" />
                           <span>Recent Medications</span>
-                          {activeMeds.length > 0 && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400 font-normal ml-1">
-                              ({activeMeds.length})
-                            </span>
-                          )}
+                          <span className="text-xs text-gray-500 dark:text-gray-400 font-normal ml-1">
+                            ({activeMeds.length})
+                          </span>
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
