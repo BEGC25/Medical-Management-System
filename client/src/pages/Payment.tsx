@@ -564,6 +564,17 @@ export default function Payment() {
     return desc;
   };
 
+  // Utility function to clean service descriptions and remove redundancy
+  function cleanServiceDescription(description: string, serviceType: string): string {
+    // For X-Ray services, remove redundant "X-Ray" repetition
+    // "Chest X-Ray - Chest X-Ray" → "Chest X-Ray"
+    const parts = description.split(' - ');
+    if (parts.length === 2 && parts[0].trim() === parts[1].trim()) {
+      return parts[0].trim();
+    }
+    return description;
+  }
+
   const renderOrderCard = (order: UnpaidOrder, departmentType: string) => {
     const patient = order.patient;
     const displayPrice = order.price || 0;
@@ -625,17 +636,19 @@ export default function Payment() {
                 )}
               </div>
               
-              {/* Row 2: Service Type Badge and Description */}
-              <div className="flex items-center gap-2 mb-1">
-                {/* Premium Service Type Badge with Gradient */}
-                <div className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border-2 shadow-md ${colors.bg} ${colors.text} ${colors.border} ${colors.dark.bg} ${colors.dark.text} ${colors.dark.border} transition-all duration-200`}>
-                  {serviceIcon}
-                  <span className="text-sm font-bold tracking-wide">{getServiceTypeLabel(departmentType)}</span>
-                </div>
-              </div>
-              
-              {/* Service Description */}
-              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 ml-0.5">{cleanDescription(order.description, departmentType, order)}</h4>
+              {/* Row 2: Service Description with Inline Badge */}
+              <p className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                {/* Compact Service Type Badge - Inline */}
+                <Badge className={`${colors.bg} ${colors.text} ${colors.border} ${colors.dark.bg} ${colors.dark.text} ${colors.dark.border} text-xs px-2 py-0.5 flex items-center gap-1 flex-shrink-0`}>
+                  {/* Smaller icon for compact badge */}
+                  {departmentType === 'laboratory' && <FlaskConical className="w-3 h-3" />}
+                  {departmentType === 'xray' && <XRayIcon className="w-3 h-3" />}
+                  {departmentType === 'ultrasound' && <UltrasoundIcon className="w-3 h-3" />}
+                  {departmentType === 'pharmacy' && <PharmacyIcon className="w-3 h-3" />}
+                  <span className="font-semibold">{getServiceTypeLabel(departmentType)}</span>
+                </Badge>
+                <span className="font-medium">{cleanServiceDescription(order.description, departmentType)}</span>
+              </p>
               
               {/* Additional Info - inline if present */}
               {/* Only show bodyPart if it's NOT already in the description (to avoid redundancy) */}
@@ -778,10 +791,10 @@ export default function Payment() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
           onClick={() => setActiveMainTab("pending")}
-          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
             activeMainTab === "pending"
               ? "border-teal-500 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950 dark:to-teal-900/50 shadow-lg ring-2 ring-teal-500/20"
-              : "border-gray-200 bg-white dark:bg-gray-950 dark:border-gray-700 hover:border-gray-300 hover:shadow-md"
+              : "border-gray-200 bg-white dark:bg-gray-950 dark:border-gray-700 hover:border-teal-300 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
           }`}
         >
           <div className="flex items-center justify-between mb-1.5">
@@ -815,10 +828,10 @@ export default function Payment() {
         
         <button
           onClick={() => setActiveMainTab("history")}
-          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
             activeMainTab === "history"
               ? "border-teal-500 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950 dark:to-teal-900/50 shadow-lg ring-2 ring-teal-500/20"
-              : "border-gray-200 bg-white dark:bg-gray-950 dark:border-gray-700 hover:border-gray-300 hover:shadow-md"
+              : "border-gray-200 bg-white dark:bg-gray-950 dark:border-gray-700 hover:border-teal-300 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
           }`}
         >
           <div className="flex items-center justify-between mb-1.5">
