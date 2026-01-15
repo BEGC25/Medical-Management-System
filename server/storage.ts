@@ -3025,6 +3025,10 @@ export class MemStorage implements IStorage {
     const batchId = await generateBatchId();
     const now = new Date().toISOString();
 
+    // Check if drug needs defaultPrice update before creating batch
+    const drug = await this.getDrugById(data.drugId);
+    const shouldUpdateDefaultPrice = drug && (drug.defaultPrice === null || drug.defaultPrice === undefined);
+
     const insertData = {
       ...data,
       batchId,
@@ -3034,8 +3038,7 @@ export class MemStorage implements IStorage {
     const [batch] = await db.insert(drugBatches).values(insertData).returning();
 
     // Auto-update drug's defaultPrice with the batch's unitCost only if not already set
-    const drug = await this.getDrugById(batch.drugId);
-    if (drug && !drug.defaultPrice) {
+    if (shouldUpdateDefaultPrice) {
       await this.updateDrugDefaultPrice(batch.drugId, batch.unitCost);
     }
 
