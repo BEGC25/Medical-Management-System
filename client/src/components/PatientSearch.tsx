@@ -57,15 +57,15 @@ function getAvatarColor(firstName?: string, lastName?: string): string {
     'O': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
     'P': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
     'Q': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-    'R': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    'S': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    'T': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    'U': 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400',
-    'V': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-    'W': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-    'X': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-    'Y': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-    'Z': 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+    'R': 'bg-red-200 text-red-800 dark:bg-red-800/30 dark:text-red-300',
+    'S': 'bg-orange-200 text-orange-800 dark:bg-orange-800/30 dark:text-orange-300',
+    'T': 'bg-amber-200 text-amber-800 dark:bg-amber-800/30 dark:text-amber-300',
+    'U': 'bg-lime-200 text-lime-800 dark:bg-lime-800/30 dark:text-lime-300',
+    'V': 'bg-emerald-200 text-emerald-800 dark:bg-emerald-800/30 dark:text-emerald-300',
+    'W': 'bg-teal-200 text-teal-800 dark:bg-teal-800/30 dark:text-teal-300',
+    'X': 'bg-cyan-200 text-cyan-800 dark:bg-cyan-800/30 dark:text-cyan-300',
+    'Y': 'bg-indigo-200 text-indigo-800 dark:bg-indigo-800/30 dark:text-indigo-300',
+    'Z': 'bg-violet-200 text-violet-800 dark:bg-violet-800/30 dark:text-violet-300',
   };
   
   // Use first letter of first name for color selection
@@ -186,7 +186,7 @@ export default function PatientSearch({
 
       {filteredPatients && filteredPatients.length > 0 && (
         <div className="space-y-2">
-          {filteredPatients.map((p: Patient, index: number) => {
+          {filteredPatients.map((p, index: number) => {
             const s = p.serviceStatus || {};
             const due = (s.balanceToday ?? s.balance ?? 0) as number;
             // ALWAYS use patient's actual dateOfService from API when available
@@ -222,7 +222,10 @@ export default function PatientSearch({
                     </div>
 
                     {/* Avatar */}
-                    <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-400">
+                    <Avatar 
+                      className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-400"
+                      aria-label={`${p.firstName} ${p.lastName}`}
+                    >
                       <AvatarFallback 
                         className={cn(
                           "text-sm font-semibold",
