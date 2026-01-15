@@ -1909,7 +1909,7 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
     };
 
     // Helper function to calculate pharmacy order price
-    const calculatePharmacyOrderPrice = (order: any) => {
+    const calculatePharmacyOrderPrice = async (order: any) => {
       // Try to get price from service first (backward compatibility)
       const service = order.serviceId ? services.find((s: any) => s.id === order.serviceId) : null;
       
@@ -1918,7 +1918,15 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
       if (!price && order.drugId) {
         const drug = drugMap.get(order.drugId);
         if (drug) {
-          price = drug.defaultPrice || 0;
+          price = drug.defaultPrice;
+          
+          // If drug has no defaultPrice, fallback to latest batch's unitCost
+          if (!price) {
+            const latestBatch = await storage.getLatestBatchForDrug(order.drugId);
+            if (latestBatch) {
+              price = latestBatch.unitCost;
+            }
+          }
         }
       }
       
@@ -2150,14 +2158,17 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
         });
       });
 
-    // Pharmacy orders remain as single items
-    pharmacyOrders
+    // Pharmacy orders remain as single items - process with async price calculation
+    const pharmacyOrdersPromises = pharmacyOrders
       .filter((order) => order.paymentStatus === "unpaid")
-      .forEach((order) => {
+      .map(async (order) => {
         const service = order.serviceId ? services.find((s) => s.id === order.serviceId) : null;
-        const price = calculatePharmacyOrderPrice(order);
+        const unitPrice = await calculatePharmacyOrderPrice(order);
         
-        unpaidOrders.push({
+        // Multiply unit price by quantity for total price
+        const price = unitPrice * (order.quantity || 1);
+        
+        return {
           id: order.orderId,
           type: "pharmacy_order",
           description: `Pharmacy: ${order.drugName || "Medication"}`,
@@ -2168,8 +2179,11 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
           serviceId: service?.id,
           serviceName: service?.name,
           price,
-        });
+        };
       });
+
+    const pharmacyOrdersUnpaid = await Promise.all(pharmacyOrdersPromises);
+    unpaidOrders.push(...pharmacyOrdersUnpaid);
 
     res.json(unpaidOrders);
   } catch (error) {
