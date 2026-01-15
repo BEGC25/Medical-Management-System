@@ -417,7 +417,7 @@ export default function Laboratory() {
       results: "",
       normalValues: "",
       resultStatus: "normal" as "normal" | "abnormal" | "critical",
-      completedDate: new Date().toISOString().split("T")[0],
+      completedDate: new Date().toISOString(),
       technicianNotes: "",
     },
   });
@@ -733,7 +733,7 @@ export default function Laboratory() {
       results: readableSummary,
       normalValues: (labTest as any).normalValues || "",
       resultStatus: (labTest as any).resultStatus || "normal",
-      completedDate: (labTest as any).completedDate || new Date().toISOString().split("T")[0],
+      completedDate: (labTest as any).completedDate || new Date().toISOString(),
       technicianNotes: (labTest as any).technicianNotes || "",
     });
 
