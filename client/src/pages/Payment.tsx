@@ -578,7 +578,7 @@ export default function Payment() {
     return (
       <div 
         key={order.id} 
-        className={`p-4 rounded-lg bg-white border border-gray-200 ${colors.hover} hover:shadow-md transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 ${colors.dark.borderActive.replace('dark:border-', 'dark:hover:border-')} group`}
+        className={`p-3 rounded-lg bg-white border border-gray-200 ${colors.hover} hover:shadow-md transition-all duration-300 ease-out cursor-pointer dark:bg-gray-900 dark:border-gray-700 ${colors.dark.borderActive.replace('dark:border-', 'dark:hover:border-')} group`}
         data-testid={`unpaid-order-${order.id}`}
         onClick={() => {
           if (patient) {
@@ -587,8 +587,8 @@ export default function Payment() {
         }}
       >
         {/* Compact 2-row layout */}
-        <div className="flex justify-between items-start gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {/* Patient Avatar */}
             {patient && (
               <div
@@ -600,7 +600,7 @@ export default function Payment() {
             
             {/* Row 1: Patient Name, ID, and Date on same line */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
                 {patient ? (
                   <>
                     <span className="font-semibold text-sm text-gray-900 dark:text-white">
@@ -628,7 +628,7 @@ export default function Payment() {
               {/* Row 2: Service Type Badge and Description */}
               <div className="flex items-center gap-2 mb-1">
                 {/* Premium Service Type Badge with Gradient */}
-                <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 shadow-md ${colors.bg} ${colors.text} ${colors.border} ${colors.dark.bg} ${colors.dark.text} ${colors.dark.border} transition-all duration-200`}>
+                <div className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border-2 shadow-md ${colors.bg} ${colors.text} ${colors.border} ${colors.dark.bg} ${colors.dark.text} ${colors.dark.border} transition-all duration-200`}>
                   {serviceIcon}
                   <span className="text-sm font-bold tracking-wide">{getServiceTypeLabel(departmentType)}</span>
                 </div>
@@ -778,14 +778,14 @@ export default function Payment() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
           onClick={() => setActiveMainTab("pending")}
-          className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
             activeMainTab === "pending"
               ? "border-teal-500 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950 dark:to-teal-900/50 shadow-lg ring-2 ring-teal-500/20"
               : "border-gray-200 bg-white dark:bg-gray-950 dark:border-gray-700 hover:border-gray-300 hover:shadow-md"
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
-            <h3 className={`text-lg font-bold ${
+          <div className="flex items-center justify-between mb-1.5">
+            <h3 className={`text-base font-bold ${
               activeMainTab === "pending"
                 ? "text-teal-700 dark:text-teal-400"
                 : "text-gray-700 dark:text-gray-300"
@@ -815,14 +815,14 @@ export default function Payment() {
         
         <button
           onClick={() => setActiveMainTab("history")}
-          className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
             activeMainTab === "history"
               ? "border-teal-500 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950 dark:to-teal-900/50 shadow-lg ring-2 ring-teal-500/20"
               : "border-gray-200 bg-white dark:bg-gray-950 dark:border-gray-700 hover:border-gray-300 hover:shadow-md"
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
-            <h3 className={`text-lg font-bold ${
+          <div className="flex items-center justify-between mb-1.5">
+            <h3 className={`text-base font-bold ${
               activeMainTab === "history"
                 ? "text-teal-700 dark:text-teal-400"
                 : "text-gray-700 dark:text-gray-300"
@@ -882,7 +882,7 @@ export default function Payment() {
                 <div className="flex flex-wrap gap-2 mb-4">
                   <button
                     onClick={() => setActiveCategory("laboratory")}
-                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
                       activeCategory === "laboratory"
                         ? "bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-800 border-emerald-400 shadow-lg shadow-emerald-200/50 dark:from-emerald-900 dark:to-emerald-950 dark:text-emerald-200 dark:border-emerald-600"
                         : "bg-gray-50 text-gray-600 border-gray-200 hover:border-emerald-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
@@ -903,7 +903,7 @@ export default function Payment() {
                   
                   <button
                     onClick={() => setActiveCategory("xray")}
-                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
                       activeCategory === "xray"
                         ? "bg-gradient-to-br from-blue-100 to-cyan-50 text-blue-800 border-blue-400 shadow-lg shadow-blue-200/50 dark:from-blue-900 dark:to-cyan-950 dark:text-blue-200 dark:border-blue-600"
                         : "bg-gray-50 text-gray-600 border-gray-200 hover:border-blue-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
@@ -924,7 +924,7 @@ export default function Payment() {
                   
                   <button
                     onClick={() => setActiveCategory("ultrasound")}
-                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
                       activeCategory === "ultrasound"
                         ? "bg-gradient-to-br from-violet-100 to-purple-50 text-violet-800 border-violet-400 shadow-lg shadow-violet-200/50 dark:from-violet-900 dark:to-purple-950 dark:text-violet-200 dark:border-violet-600"
                         : "bg-gray-50 text-gray-600 border-gray-200 hover:border-violet-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
@@ -945,7 +945,7 @@ export default function Payment() {
                   
                   <button
                     onClick={() => setActiveCategory("pharmacy")}
-                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-sm ${
                       activeCategory === "pharmacy"
                         ? "bg-gradient-to-br from-orange-100 to-orange-50 text-orange-800 border-orange-400 shadow-lg shadow-orange-200/50 dark:from-orange-900 dark:to-orange-950 dark:text-orange-200 dark:border-orange-600"
                         : "bg-gray-50 text-gray-600 border-gray-200 hover:border-orange-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
@@ -1138,10 +1138,10 @@ export default function Payment() {
             {paymentHistory.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 {/* Total Collected */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-4 rounded-lg border border-green-200 dark:border-green-800 shadow-sm hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-200 dark:bg-green-800 rounded-lg">
-                      <Wallet className="w-5 h-5 text-green-700 dark:text-green-300" />
+                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-3 rounded-lg border border-green-200 dark:border-green-800 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-green-200 dark:bg-green-800 rounded-lg">
+                      <Wallet className="w-4 h-4 text-green-700 dark:text-green-300" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-green-700 dark:text-green-300 tabular-nums">
@@ -1155,10 +1155,10 @@ export default function Payment() {
                 </div>
 
                 {/* Transaction Count */}
-                <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 p-4 rounded-lg border border-teal-200 dark:border-teal-800 shadow-sm hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-teal-200 dark:bg-teal-800 rounded-lg">
-                      <TrendingUp className="w-5 h-5 text-teal-700 dark:text-teal-300" />
+                <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 p-3 rounded-lg border border-teal-200 dark:border-teal-800 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-teal-200 dark:bg-teal-800 rounded-lg">
+                      <TrendingUp className="w-4 h-4 text-teal-700 dark:text-teal-300" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-teal-700 dark:text-teal-300 tabular-nums">
@@ -1172,10 +1172,10 @@ export default function Payment() {
                 </div>
 
                 {/* Payment Methods Breakdown */}
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg">
-                      <CreditCard className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg">
+                      <CreditCard className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -1235,8 +1235,8 @@ export default function Payment() {
                   return (
                     <div key={payment.id} className="p-3 border border-gray-200/70 rounded-lg hover:border-teal-300 hover:bg-gradient-to-r hover:from-teal-50/50 hover:to-transparent dark:hover:from-teal-950/30 dark:hover:to-transparent hover:shadow-[0_2px_8px_rgba(20,184,166,0.15)] hover:-translate-y-0.5 transition-all duration-300 ease-out group">
                       {/* Compact 2-row layout for payment history */}
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
                           {/* Patient Avatar */}
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md flex-shrink-0 ${getAvatarColor(patientFirstName + patientLastName)}`}
@@ -1246,7 +1246,7 @@ export default function Payment() {
                           
                           <div className="flex-1 min-w-0">
                             {/* Row 1: Patient info and time */}
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-0.5">
                               <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                                 {patientName}
                               </h4>
