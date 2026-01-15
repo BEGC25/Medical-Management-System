@@ -1233,7 +1233,7 @@ return (
                               </Badge>
                             )}
                             <Chip tone="blue">{tests.length} test{tests.length !== 1 ? 's' : ''}</Chip>
-                            <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo(test.createdAt)} • Completed {timeAgo((test as any).completedDate)}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{timeAgo((test as any).completedDate)}</span>
                           </div>
                           <TestsRow tests={tests} />
                         </div>
