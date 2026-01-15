@@ -26,6 +26,7 @@ import {
 
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { LabReportPrint } from "@/components/LabReportPrint";
+import { CriticalValueAlert, FieldAlertIndicator } from "@/components/CriticalValueAlert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +74,7 @@ import { timeAgo } from "@/lib/time-utils";
 import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
+import { checkCriticalValue, type LabAlert } from "@/lib/clinical-alerts";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -365,6 +367,10 @@ export default function Laboratory() {
     Record<string, Record<string, string>>
   >({});
 
+  
+  // Critical value alerts state
+  const [activeAlerts, setActiveAlerts] = useState<LabAlert[]>([]);
+  const [acknowledgedAlerts, setAcknowledgedAlerts] = useState<Set<string>>(new Set());
   // Print modals
   const [showLabRequest, setShowLabRequest] = useState(false);
   const [showLabReport, setShowLabReport] = useState(false);
@@ -746,12 +752,30 @@ export default function Laboratory() {
     }, 50);
   };
 
-  const updateDetailedResult = (testName: string, fieldName: string, value: string) => {
-    setDetailedResults((prev) => ({
-      ...prev,
-      [testName]: { ...(prev[testName] || {}), [fieldName]: value },
-    }));
-  };
+  const updateDetailedResult = (testName: string, fieldName: string, value: string) => {
+    setDetailedResults((prev) => ({
+      ...prev,
+      [testName]: { ...(prev[testName] || {}), [fieldName]: value },
+    }));
+    
+    // Check for critical values when a numeric value is entered
+    if (value && !isNaN(parseFloat(value))) {
+      const alert = checkCriticalValue(fieldName, value);
+      if (alert) {
+        const alertKey = `${fieldName}-${value}`;
+        if (!acknowledgedAlerts.has(alertKey)) {
+          setActiveAlerts((prev) => {
+            // Remove any existing alert for this field
+            const filtered = prev.filter(a => a.parameter !== fieldName);
+            return [...filtered, alert];
+          });
+        }
+      } else {
+        // Clear any existing alert for this field if value is now normal
+        setActiveAlerts((prev) => prev.filter(a => a.parameter !== fieldName));
+      }
+    }
+  };
 
   const saveTestCategoryResults = (testName: string) => {
     if (!selectedLabTest) return;
@@ -1500,6 +1524,24 @@ return (
               </div>
 
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
+                
+                {/* Critical Value Alerts */}
+                {activeAlerts.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    {activeAlerts.map((alert, idx) => (
+                      <CriticalValueAlert
+                        key={`${alert.parameter}-${idx}`}
+                        alert={alert}
+                        onAcknowledge={() => {
+                          const alertKey = `${alert.parameter}-${alert.value}`;
+                          setAcknowledgedAlerts((prev) => new Set(prev).add(alertKey));
+                          setActiveAlerts((prev) => prev.filter((a, i) => i !== idx));
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                
                 {/* Dynamic fields per ordered test */}
                 <div className="space-y-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1602,35 +1644,43 @@ return (
                               );
                             }
 
-                            return (
-                              <div key={fieldName} className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
-                                  {fieldName}
-                                  {config.normal && (
-                                    <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">
-                                      Normal: {config.normal}
-                                    </span>
-                                  )}
-                                </label>
-                                <div className="relative">
-                                  <Input
-                                    value={v}
-                                    onChange={(e) => updateDetailedResult(orderedTest, fieldName, e.target.value)}
-                                    type={config.type}
-                                    placeholder={config.type === "number" ? "Enter value..." : "Enter result..."}
-                                    className="text-sm pr-12"
-                                  />
-                                  {config.unit && (
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                                      {config.unit}
-                                    </span>
-                                  )}
-                                </div>
-                                {config.range && (
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">Range: {config.range}</p>
-                                )}
-                              </div>
-                            );
+
+                            return (
+                              <div key={fieldName} className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                                  <span className="flex items-center">
+                                    {fieldName}
+                                    {activeAlerts.some(a => a.parameter === fieldName) && (
+                                      <FieldAlertIndicator 
+                                        severity={activeAlerts.find(a => a.parameter === fieldName)?.severity || 'warning'} 
+                                      />
+                                    )}
+                                  </span>
+                                  {config.normal && (
+                                    <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">
+                                      Normal: {config.normal}
+                                    </span>
+                                  )}
+                                </label>
+                                <div className="relative">
+                                  <Input
+                                    value={v}
+                                    onChange={(e) => updateDetailedResult(orderedTest, fieldName, e.target.value)}
+                                    type={config.type}
+                                    placeholder={config.type === "number" ? "Enter value..." : "Enter result..."}
+                                    className="text-sm pr-12"
+                                  />
+                                  {config.unit && (
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                                      {config.unit}
+                                    </span>
+                                  )}
+                                </div>
+                                {config.range && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Range: {config.range}</p>
+                                )}
+                              </div>
+                            );
                           })}
                         </div>
 
