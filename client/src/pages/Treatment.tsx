@@ -2319,20 +2319,24 @@ export default function Treatment() {
             type="button"
             onClick={handleTodayClick}
             data-testid="stat-card-today"
-            className={`group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-lg p-2 border ${
+            className={`group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-lg p-3 border ${
               quickFilter === "today" 
                 ? "border-emerald-500 dark:border-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700" 
                 : "border-emerald-200 dark:border-emerald-800/50"
-            } shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left`}
+            } shadow-sm hover:shadow-md transition-shadow cursor-pointer text-left`}
           >
-            <div className="flex items-center justify-between mb-0.5">
-              <div className="h-7 w-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-md flex items-center justify-center shadow-sm">
-                <Users className="h-3.5 w-3.5 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex-shrink-0 shadow-sm">
+                <Users className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{todayPatients}</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">{dateLabel.main}</p>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-semibold text-emerald-700 dark:text-emerald-400 opacity-90">{todayPatients}</div>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">{dateLabel.sub}</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{dateLabel.main}</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">{dateLabel.sub}</p>
           </button>
 
           {/* Active Visits - Clickable */}
@@ -2340,20 +2344,24 @@ export default function Treatment() {
             type="button"
             onClick={handleActiveVisitsClick}
             data-testid="stat-card-active"
-            className={`group bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-2 border ${
+            className={`group bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-3 border ${
               quickFilter === "active" 
                 ? "border-blue-500 dark:border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700" 
                 : "border-blue-200 dark:border-blue-800/50"
-            } shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left`}
+            } shadow-sm hover:shadow-md transition-shadow cursor-pointer text-left`}
           >
-            <div className="flex items-center justify-between mb-0.5">
-              <div className="h-7 w-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-md flex items-center justify-center shadow-sm">
-                <Activity className="h-3.5 w-3.5 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex-shrink-0 shadow-sm">
+                <Activity className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold text-blue-700 dark:text-blue-400">{activeEncountersCount}</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">Open Visits</p>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-semibold text-blue-700 dark:text-blue-400 opacity-90">{activeEncountersCount}</div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">Click to view queue</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Open Visits</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Click to view queue</p>
           </button>
 
           {/* Orders Waiting - Clickable */}
@@ -2361,20 +2369,24 @@ export default function Treatment() {
             type="button"
             onClick={handlePendingOrdersClick}
             data-testid="stat-card-orders-waiting"
-            className={`group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-2 border ${
+            className={`group bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-3 border ${
               quickFilter === "pending" 
                 ? "border-amber-500 dark:border-amber-500 ring-2 ring-amber-300 dark:ring-amber-700" 
                 : "border-amber-200 dark:border-amber-800/50"
-            } shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left`}
+            } shadow-sm hover:shadow-md transition-shadow cursor-pointer text-left`}
           >
-            <div className="flex items-center justify-between mb-0.5">
-              <div className="h-7 w-7 bg-gradient-to-br from-amber-500 to-orange-600 rounded-md flex items-center justify-center shadow-sm">
-                <ClipboardList className="h-3.5 w-3.5 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex-shrink-0 shadow-sm">
+                <ClipboardList className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold text-amber-700 dark:text-amber-400">{ordersWaitingCount}</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Orders Waiting</p>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-semibold text-amber-700 dark:text-amber-400 opacity-90">{ordersWaitingCount}</div>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">Lab/X-ray/Ultrasound</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Orders Waiting</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Lab/X-ray/Ultrasound</p>
           </button>
 
           {/* Results Ready - NEW - Clickable */}
@@ -2382,16 +2394,20 @@ export default function Treatment() {
             type="button"
             onClick={handleResultsReadyClick}
             data-testid="stat-card-results-ready"
-            className="group bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 rounded-lg p-2 border border-purple-200 dark:border-purple-800/50 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer text-left"
+            className="group bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 rounded-lg p-3 border border-purple-200 dark:border-purple-800/50 shadow-sm hover:shadow-md transition-shadow cursor-pointer text-left"
           >
-            <div className="flex items-center justify-between mb-0.5">
-              <div className="h-7 w-7 bg-gradient-to-br from-purple-500 to-violet-600 rounded-md flex items-center justify-center shadow-sm">
-                <CheckCircle className="h-3.5 w-3.5 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex-shrink-0 shadow-sm">
+                <CheckCircle className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold text-purple-700 dark:text-purple-400">{resultsReadyCount}</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-purple-900 dark:text-purple-100">Results Ready</p>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-semibold text-purple-700 dark:text-purple-400 opacity-90">{resultsReadyCount}</div>
+                  <p className="text-xs text-purple-600 dark:text-purple-400">{dateLabel.sub}</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Results Ready</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">{dateLabel.sub}</p>
           </button>
         </div>
       </div>
@@ -2416,7 +2432,7 @@ export default function Treatment() {
                       "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200",
                       dateFilter === "today"
                         ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
                     )}
                   >
                     Today
@@ -2427,7 +2443,7 @@ export default function Treatment() {
                       "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200",
                       dateFilter === "yesterday"
                         ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
                     )}
                   >
                     Yesterday
@@ -2438,7 +2454,7 @@ export default function Treatment() {
                       "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200",
                       dateFilter === "last7"
                         ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
                     )}
                   >
                     Last 7 Days
@@ -2449,7 +2465,7 @@ export default function Treatment() {
                       "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200",
                       dateFilter === "last30"
                         ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:shadow-md"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
                     )}
                   >
                     Last 30 Days
@@ -2460,7 +2476,7 @@ export default function Treatment() {
                       "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all duration-200 flex items-center gap-1.5",
                       dateFilter === "custom"
                         ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
                     )}
                   >
                     <Calendar className="w-3.5 h-3.5" />
@@ -2472,7 +2488,7 @@ export default function Treatment() {
                       "px-3 py-1.5 rounded-full border-2 font-medium text-sm transition-all flex items-center gap-1.5",
                       showDateFilter
                         ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:shadow-md"
                     )}
                   >
                     <Search className="w-4 h-4" />
@@ -2605,7 +2621,12 @@ export default function Treatment() {
                       <span className="hidden sm:inline">Orders & Results</span>
                       <span className="sm:hidden">Orders</span>
                       {diagnosticTestCount > 0 && (
-                        <Badge className="ml-2 transition-all duration-200 animate-in fade-in bg-blue-600 text-white">
+                        <Badge 
+                          variant="outline" 
+                          className="ml-2 bg-blue-50 text-blue-700 border-blue-300 
+                                   dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-700 
+                                   text-xs px-1.5 py-0 font-medium"
+                        >
                           {diagnosticTestCount}
                         </Badge>
                       )}
@@ -2623,7 +2644,12 @@ export default function Treatment() {
                       <span className="hidden sm:inline">Medications</span>
                       <span className="sm:hidden">Meds</span>
                       {prescriptions.filter(p => p.status !== 'cancelled').length > 0 && (
-                        <Badge className="ml-2 transition-all duration-200 animate-in fade-in bg-purple-600 text-white">
+                        <Badge 
+                          variant="outline" 
+                          className="ml-2 bg-purple-50 text-purple-700 border-purple-300 
+                                   dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-700 
+                                   text-xs px-1.5 py-0 font-medium"
+                        >
                           {prescriptions.filter(p => p.status !== 'cancelled').length}
                         </Badge>
                       )}
@@ -2931,7 +2957,7 @@ export default function Treatment() {
                             </Accordion>
 
                             {/* Actions */}
-                            <div className="flex gap-3 justify-between items-center pt-6 mt-6 border-t-2 border-gray-300 dark:border-gray-600">
+                            <div className="flex gap-3 justify-between items-center pt-6 mt-6 border-t-[3px] border-gray-300 dark:border-gray-600">
                               <div className="flex gap-3">
                                 {selectedPatient && currentEncounter && (
                                   <DischargeSummary 
@@ -3914,9 +3940,9 @@ export default function Treatment() {
                                 <h3 className="font-bold text-lg text-amber-800 dark:text-amber-300 flex items-center gap-2">
                                   <Clock className="h-5 w-5 animate-pulse" />
                                   Pending Orders
-                                  <Badge variant="secondary" className="bg-amber-600 text-white ml-2 px-2 py-0.5 text-sm font-bold">
-                                    {pendingOrders.length}
-                                  </Badge>
+                                  <span className="text-sm text-amber-600 dark:text-amber-400 font-normal ml-2">
+                                    ({pendingOrders.length})
+                                  </span>
                                 </h3>
                                 <p className="text-sm text-amber-700 dark:text-amber-400">Awaiting processing</p>
                               </div>
@@ -4070,18 +4096,18 @@ export default function Treatment() {
                             <h3 className="font-bold text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
                               <FileText className="h-5 w-5" />
                               Completed Results {qoTab !== 'all' ? `(${qoTab.charAt(0).toUpperCase() + qoTab.slice(1)})` : ''}
+                              {(() => {
+                                const completedCount = 
+                                  labTests.filter((t: any) => t.status === "completed").length +
+                                  xrays.filter((x: any) => x.status === "completed").length +
+                                  ultrasounds.filter((u: any) => u.status === "completed").length;
+                                return completedCount > 0 ? (
+                                  <span className="text-sm text-green-600 dark:text-green-400 font-normal ml-2">
+                                    ({completedCount})
+                                  </span>
+                                ) : null;
+                              })()}
                             </h3>
-                            {(() => {
-                              const completedCount = 
-                                labTests.filter((t: any) => t.status === "completed").length +
-                                xrays.filter((x: any) => x.status === "completed").length +
-                                ultrasounds.filter((u: any) => u.status === "completed").length;
-                              return completedCount > 0 ? (
-                                <Badge variant="secondary" className="bg-green-600 text-white px-2 py-0.5 text-sm font-bold">
-                                  {completedCount}
-                                </Badge>
-                              ) : null;
-                            })()}
                           </div>
                           
                           {/* Labs */}
