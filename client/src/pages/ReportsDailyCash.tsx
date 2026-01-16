@@ -400,7 +400,7 @@ export default function ReportsDailyCash() {
               variance < 0 ? "text-red-600 dark:text-red-400" : 
               "text-gray-900 dark:text-gray-100"
             )}>
-              {closingStatus.closed ? (variance >= 0 ? '+' : '') + formatSSP(Math.abs(variance)) : "—"}
+              {closingStatus.closed ? (variance > 0 ? '+' : variance < 0 ? '' : '') + formatSSP(Math.abs(variance)) : "—"}
             </div>
           </div>
           
