@@ -32,6 +32,8 @@ import {
   FileDown,
   RefreshCw,
   AlertTriangle,
+  CheckCircle,
+  Info,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -64,6 +66,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
@@ -901,69 +904,122 @@ export default function Ultrasound() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="max-w-7xl mx-auto space-y-4">
-        {/* Premium Header */}
-        <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)]">
-          <CardContent className="p-6">
-            {/* Top Section: Title + CTA */}
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-500 flex items-center justify-center shadow-xl shadow-indigo-500/30">
-                  <Waves className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">
-                    Ultrasound Department
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Advanced diagnostic imaging and ultrasound services
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  variant="outline"
-                  size="sm"
-                  className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950 transition-all duration-200 shadow-sm"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="w-full px-6 py-6 space-y-6">
+        {/* Header Section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <Waves className="w-8 h-8 text-white" />
             </div>
-
-            {/* Stats Bar */}
-            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-500" />
-                <span className="text-sm text-gray-600">Pending: <strong>{pendingExams.length}</strong></span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-gray-600">Completed: <strong>{completedExams.length}</strong></span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Waves className="w-4 h-4 text-indigo-500" />
-                <span className="text-sm text-gray-600">Total: <strong>{allUltrasoundExams.length}</strong></span>
-              </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Ultrasound Department
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Advanced diagnostic imaging and ultrasound services
+              </p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Simple ordering notice */}
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-sm text-blue-900 dark:text-blue-100">
-            <strong>Note:</strong> New orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Staff can update results and status for existing orders.
-          </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="default"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* Pending Card */}
+          <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
+                    Pending
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-3xl font-bold text-orange-700 dark:text-orange-400">
+                      {pendingExams.length}
+                    </p>
+                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                      requests
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 bg-orange-600 rounded-xl shadow-sm">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Completed Card */}
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
+                    Completed
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-3xl font-bold text-green-700 dark:text-green-400">
+                      {completedExams.length}
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      results
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 bg-green-600 rounded-xl shadow-sm">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Card */}
+          <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800 hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">
+                    Total Exams
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
+                      {allUltrasoundExams.length}
+                    </p>
+                    <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                      all time
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 bg-indigo-600 rounded-xl shadow-sm">
+                  <Waves className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Note Banner */}
+        <Alert className="bg-indigo-50 dark:bg-indigo-950/20 border-2 border-indigo-200 dark:border-indigo-800">
+          <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <AlertDescription className="text-indigo-900 dark:text-indigo-100">
+            <strong>Note:</strong> New ultrasound orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Staff can update results and status for existing orders.
+          </AlertDescription>
+        </Alert>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+          <CardHeader className="bg-orange-50 dark:bg-orange-950/20 border-b">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
                 <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
@@ -1035,7 +1091,7 @@ export default function Ultrasound() {
               )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
+                <Input placeholder="Search by patient name, ID, or exam type..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                 {pendingExams.length} pending{patientSearchTerm && ` matching "${patientSearchTerm}"`}
@@ -1070,7 +1126,7 @@ export default function Ultrasound() {
 
         {/* RIGHT – Completed Results (Ultrasound) */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+          <CardHeader className="bg-green-50 dark:bg-green-950/20 border-b">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -1142,7 +1198,7 @@ export default function Ultrasound() {
               )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
+                <Input placeholder="Search by patient name, ID, or exam type..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                 {completedExams.length} completed{patientSearchTerm && ` matching "${patientSearchTerm}"`}
