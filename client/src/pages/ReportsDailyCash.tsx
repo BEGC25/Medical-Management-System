@@ -378,7 +378,7 @@ export default function ReportsDailyCash() {
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
             <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Counted Cash</div>
             <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
-              {closingStatus.closing?.counted_amount ? formatSSP(closingStatus.closing.counted_amount) : "—"}
+              {closingStatus.closing?.counted_amount != null ? formatSSP(closingStatus.closing.counted_amount) : "—"}
             </div>
           </div>
           
@@ -390,9 +390,9 @@ export default function ReportsDailyCash() {
             </div>
             <div className={cn(
               "text-xl sm:text-2xl font-bold tabular-nums",
-              variance > 0 ? "text-green-600 dark:text-green-400" : variance < 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-gray-100"
+              variance === 0 ? "text-gray-900 dark:text-gray-100" : "text-red-600 dark:text-red-400"
             )}>
-              {closingStatus.closed ? (variance >= 0 ? '+' : '') + formatSSP(variance) : "—"}
+              {closingStatus.closed ? formatSSP(variance) : "—"}
             </div>
           </div>
           
