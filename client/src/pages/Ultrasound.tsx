@@ -797,13 +797,22 @@ export default function Ultrasound() {
     return (
       <div
         className={cx(
-          "rounded-lg p-2 border-l-4 cursor-pointer transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:shadow-[0_4px_16px_rgba(99,102,241,0.15)] hover:-translate-y-0.5 group",
+          "rounded-lg p-2 border-l-4 cursor-pointer transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:shadow-[0_4px_16px_rgba(99,102,241,0.15)] hover:-translate-y-0.5 group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900",
           isCompleted && "border-l-emerald-500 bg-white dark:bg-gray-800",
           !isCompleted && isPaid && "border-l-orange-500 bg-white dark:bg-gray-800",
           !isCompleted && !isPaid && "border-l-red-500 bg-red-50/50 dark:bg-red-900/10",
           !canPerform && "opacity-70 hover:shadow-none"
         )}
+        role="button"
+        tabIndex={canPerform ? 0 : -1}
         onClick={() => canPerform && handleUltrasoundExamSelect(exam)}
+        onKeyDown={(e) => {
+          if (canPerform && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            handleUltrasoundExamSelect(exam);
+          }
+        }}
+        aria-label={`${patient ? fullName(patient) : exam.patientId} - ${getUltrasoundDisplayName(exam)} exam`}
         style={!canPerform ? { cursor: "not-allowed" } : {}}
         data-testid={`card-ultrasound-${exam.examId}`}
       >
@@ -907,20 +916,20 @@ export default function Ultrasound() {
         {/* Header Section - Premium Gradient Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Premium gradient icon with glow - Purple theme */}
+            {/* Premium gradient icon with glow - Refined indigo/purple theme */}
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-violet-600 
-                            rounded-2xl blur-xl opacity-40 animate-pulse" />
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 
-                            flex items-center justify-center shadow-lg shadow-purple-500/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 
+                            rounded-2xl blur-xl opacity-30 animate-pulse" />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 
+                            flex items-center justify-center shadow-lg shadow-indigo-500/40">
                 <Waves className="w-8 h-8 text-white drop-shadow-lg" />
               </div>
             </div>
             
             {/* Premium title with gradient text */}
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-700 to-violet-600 
-                           bg-clip-text text-transparent dark:from-purple-400 dark:to-violet-300">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-700 to-purple-600 
+                           bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-300">
                 Ultrasound Department
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 font-medium">
@@ -934,9 +943,9 @@ export default function Ultrasound() {
             variant="outline"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="hover:bg-purple-50 dark:hover:bg-purple-950/20 
-                     hover:border-purple-400 dark:hover:border-purple-500 
-                     hover:text-purple-700 dark:hover:text-purple-400
+            className="hover:bg-indigo-50 dark:hover:bg-indigo-950/20 
+                     hover:border-indigo-400 dark:hover:border-indigo-500 
+                     hover:text-indigo-700 dark:hover:text-indigo-400
                      transition-all duration-200"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />

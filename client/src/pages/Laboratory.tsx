@@ -1086,12 +1086,21 @@ return (
                     <div
                       key={test.testId}
                       data-testid={`card-pending-test-${test.testId}`}
+                      role="button"
+                      tabIndex={canPerform ? 0 : -1}
+                      aria-label={`${fullName(p) || test.patientId} - ${tests.length} test${tests.length !== 1 ? 's' : ''}`}
                       className={cx(
-                        "rounded-xl p-2.5 border-l-4 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer",
+                        "rounded-xl p-2.5 border-l-4 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2",
                         !isPaid ? "bg-red-50 dark:bg-red-900/20 border-red-500" : "bg-white dark:bg-gray-800 border-orange-500",
                         !canPerform && "opacity-75"
                       )}
                       onClick={() => canPerform && handleLabTestSelect(test)}
+                      onKeyDown={(e) => {
+                        if ((e.key === 'Enter' || e.key === ' ') && canPerform) {
+                          e.preventDefault();
+                          handleLabTestSelect(test);
+                        }
+                      }}
                       style={!canPerform ? { cursor: "not-allowed" } : {}}
                     >
                       <div className="flex items-center justify-between">
@@ -1277,8 +1286,17 @@ return (
                     <div
                       key={test.testId}
                       data-testid={`card-completed-test-${test.testId}`}
-                      className="bg-white dark:bg-gray-800 rounded-xl p-2.5 border-l-4 border-green-500 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${fullName(p) || test.patientId} - ${tests.length} test${tests.length !== 1 ? 's' : ''}`}
+                      className="bg-white dark:bg-gray-800 rounded-xl p-2.5 border-l-4 border-green-500 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer group focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                       onClick={() => handleLabTestSelect(test)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleLabTestSelect(test);
+                        }
+                      }}
                     >
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
