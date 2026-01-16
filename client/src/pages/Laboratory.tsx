@@ -846,30 +846,43 @@ export default function Laboratory() {
 
 return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full px-6 py-6 space-y-6">
-        {/* Header Section */}
+      <div className="w-full pt-4 pb-6 px-6 space-y-6">
+        {/* Header Section - Premium Gradient Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
-              <TestTube className="w-8 h-8 text-white" />
+            {/* Premium gradient icon with glow */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 
+                            rounded-2xl blur-xl opacity-40 animate-pulse" />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-700 
+                            flex items-center justify-center shadow-lg shadow-green-500/50">
+                <TestTube className="w-8 h-8 text-white drop-shadow-lg" />
+              </div>
             </div>
+            
+            {/* Premium title with gradient text */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 
+                           bg-clip-text text-transparent dark:from-green-400 dark:to-emerald-300">
                 Laboratory Department
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 font-medium">
                 Clinical laboratory testing and diagnostics
               </p>
             </div>
           </div>
+
+          {/* Right: Refresh Button */}
           <Button 
-            variant="outline" 
-            size="default"
+            variant="outline"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 hover:bg-green-50 dark:hover:bg-green-950/20 hover:border-green-400 dark:hover:border-green-500 transition-all"
+            className="hover:bg-green-50 dark:hover:bg-green-950/20 
+                     hover:border-green-400 dark:hover:border-green-500 
+                     hover:text-green-700 dark:hover:text-green-400
+                     transition-all duration-200"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -878,23 +891,23 @@ return (
         <div className="grid grid-cols-3 gap-4">
           {/* Pending Card */}
           <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
                     Pending
                   </p>
-                  <div className="flex items-baseline gap-2 mt-2">
-                    <p className="text-3xl font-bold text-orange-700 dark:text-orange-400" data-testid="stat-pending">
+                  <div className="flex items-baseline gap-1.5 mt-1.5">
+                    <p className="text-2xl font-bold text-orange-700 dark:text-orange-400" data-testid="stat-pending">
                       {pendingTests.length}
                     </p>
-                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                    <p className="text-xs text-orange-600 dark:text-orange-400">
                       requests
                     </p>
                   </div>
                 </div>
-                <div className="p-3 bg-orange-600 rounded-xl shadow-sm">
-                  <Clock className="w-6 h-6 text-white" />
+                <div className="p-2.5 bg-orange-600 rounded-lg shadow-sm">
+                  <Clock className="w-5 h-5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -902,23 +915,23 @@ return (
 
           {/* Completed Card */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
                     Completed
                   </p>
-                  <div className="flex items-baseline gap-2 mt-2">
-                    <p className="text-3xl font-bold text-green-700 dark:text-green-400" data-testid="stat-completed">
+                  <div className="flex items-baseline gap-1.5 mt-1.5">
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-400" data-testid="stat-completed">
                       {completedTests.length}
                     </p>
-                    <p className="text-sm text-green-600 dark:text-green-400">
+                    <p className="text-xs text-green-600 dark:text-green-400">
                       results
                     </p>
                   </div>
                 </div>
-                <div className="p-3 bg-green-600 rounded-xl shadow-sm">
-                  <CheckCircle className="w-6 h-6 text-white" />
+                <div className="p-2.5 bg-green-600 rounded-lg shadow-sm">
+                  <CheckCircle className="w-5 h-5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -926,23 +939,23 @@ return (
 
           {/* Total Card */}
           <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 uppercase tracking-wide">
                     Total Exams
                   </p>
-                  <div className="flex items-baseline gap-2 mt-2">
-                    <p className="text-3xl font-bold text-blue-700 dark:text-blue-400" data-testid="stat-total">
+                  <div className="flex items-baseline gap-1.5 mt-1.5">
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-400" data-testid="stat-total">
                       {allLabTests.length}
                     </p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
                       all time
                     </p>
                   </div>
                 </div>
-                <div className="p-3 bg-blue-600 rounded-xl shadow-sm">
-                  <Activity className="w-6 h-6 text-white" />
+                <div className="p-2.5 bg-blue-600 rounded-lg shadow-sm">
+                  <Activity className="w-5 h-5 text-white" />
                 </div>
               </div>
             </CardContent>
