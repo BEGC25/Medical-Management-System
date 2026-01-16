@@ -25,6 +25,7 @@ import {
   Download,
   Activity,
   Stethoscope,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -781,6 +782,17 @@ export default function Patients() {
     window.location.href = path;
   };
 
+  // Refresh handler for patient list
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+    setLastRefresh(new Date());
+    toast({
+      title: "Refreshed",
+      description: "Patient list refreshed successfully",
+    });
+  };
+
   // Export patients to CSV
   const exportToCSV = () => {
     const headers = ["Patient ID", "First Name", "Last Name", "Age", "Gender", "Phone Number", "Registered Date", "Consultation Status"];
@@ -1208,17 +1220,28 @@ export default function Patients() {
                                bg-gradient-to-r from-gray-50/80 to-white 
                                dark:from-gray-800/60 dark:to-gray-900
                                rounded-t-xl py-2.5 px-5">
-          <div className="flex items-center gap-2 mb-0">
-            <Users className="w-4 h-4 text-gray-500" />
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {showSearch && searchQuery ? `Search Results for "${searchQuery}"` :
-              showSearch && !searchQuery ? "Enter search query" :
-              dateFilter === "today" ? "Patients from Today" :
-              dateFilter === "yesterday" ? "Patients from Yesterday" :
-              dateFilter === "last7days" ? "Patients from Last 7 Days" :
-              dateFilter === "last30days" ? "Patients from Last 30 Days" :
-              "Patients in Custom Range"}
-            </h3>
+          <div className="flex items-center justify-between mb-0">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-500" />
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {showSearch && searchQuery ? `Search Results for "${searchQuery}"` :
+                showSearch && !searchQuery ? "Enter search query" :
+                dateFilter === "today" ? "Patients from Today" :
+                dateFilter === "yesterday" ? "Patients from Yesterday" :
+                dateFilter === "last7days" ? "Patients from Last 7 Days" :
+                dateFilter === "last30days" ? "Patients from Last 30 Days" :
+                "Patients in Custom Range"}
+              </h3>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              className="flex items-center gap-1.5 text-xs"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refresh
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -1300,116 +1323,118 @@ export default function Patients() {
           </div>
         ) : (
             <>
-              {/* Desktop Card View - Card-based layout */}
-              <div className="hidden md:block space-y-2 p-4">
-                {patientsToDisplay.map((patient: any, index: number) => (
-                  <div
-                    key={patient.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 
-                             dark:border-gray-700 p-3 hover:shadow-xl hover:border-blue-400 
-                             dark:hover:border-blue-500 transition-all duration-200
-                             hover:scale-[1.01] group"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      {/* Left side: Patient information */}
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {/* Avatar */}
-                        <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 
+              {/* Desktop Hybrid Table-Card View */}
+              <div className="hidden md:block">
+                {/* Table Column Headers */}
+                <div className="grid grid-cols-12 gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
+                                border-b border-gray-200 dark:border-gray-700 
+                                text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-3">Patient</div>
+                  <div className="col-span-2">Contact</div>
+                  <div className="col-span-2">Info</div>
+                  <div className="col-span-2">Registration</div>
+                  <div className="col-span-2">Status</div>
+                  <div className="col-span-1 text-right">Actions</div>
+                </div>
+
+                {/* Table Rows as Cards */}
+                <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {patientsToDisplay.map((patient: any, index: number) => (
+                    <div
+                      key={patient.id}
+                      className="grid grid-cols-12 gap-3 px-4 py-2.5
+                                 bg-white dark:bg-gray-800 
+                                 border-l-4 border-l-transparent
+                                 hover:bg-gray-50 dark:hover:bg-gray-700/50
+                                 hover:border-l-blue-500 dark:hover:border-l-blue-400
+                                 hover:shadow-md
+                                 transition-all duration-200
+                                 group"
+                    >
+                      {/* Column 1: Patient (Name + Avatar) */}
+                      <div className="col-span-3 flex items-center gap-2 min-w-0">
+                        <Avatar className="h-8 w-8 flex-shrink-0 ring-1 ring-gray-200 
                                          dark:ring-gray-700 group-hover:ring-blue-400 
                                          dark:group-hover:ring-blue-500">
                           <AvatarFallback className={getAvatarColor(patient.firstName || '')}>
                             {(patient.firstName?.[0] || '?').toUpperCase()}{(patient.lastName?.[0] || '?').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-
-                        {/* Patient details */}
-                        <div className="flex-1 min-w-0">
-                          {/* Top row: Name, ID, Age/Gender, Contact */}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-gray-900 dark:text-white text-base">
-                              {patient.firstName} {patient.lastName}
-                            </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              ID: {patient.patientId}
-                            </span>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {patient.age} • {patient.gender === 'Male' ? 'M' : 'F'}
-                            </span>
-                            {patient.phoneNumber ? (
-                              <>
-                                <span className="text-gray-400">•</span>
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                  {patient.phoneNumber}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-gray-400">•</span>
-                                <Badge variant="outline" className="text-xs border-orange-300 bg-orange-50 
-                                                                   text-orange-700 dark:border-orange-700 
-                                                                   dark:bg-orange-900/20 dark:text-orange-400">
-                                  ⚠️ No contact
-                                </Badge>
-                              </>
-                            )}
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                            {patient.firstName} {patient.lastName}
                           </div>
-
-                          {/* Bottom row: Registration date, status, external referral badge */}
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              Registered: {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
-                            </span>
-                            
-                            {/* Consultation status */}
-                            {patient.patientType === "referral_diagnostic" ? (
-                              <>
-                                <span className="text-gray-400">•</span>
-                                <Badge className="text-xs bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400">
-                                  N/A
-                                </Badge>
-                              </>
-                            ) : patient.serviceStatus && (
-                              <>
-                                <span className="text-gray-400">•</span>
-                                <Badge className={cn(
-                                  "text-xs",
-                                  ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0
-                                    ? "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                    : "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400"
-                                )}>
-                                  {((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
-                                    `Unpaid`
-                                  ) : (
-                                    <>✓ Paid</>
-                                  )}
-                                </Badge>
-                              </>
-                            )}
-
-                            {/* External Referral Badge */}
-                            {patient.patientType === "referral_diagnostic" && (
-                              <>
-                                <span className="text-gray-400">•</span>
-                                <Badge variant="outline" className="text-xs border-orange-400 bg-orange-100 
-                                                                   text-orange-700 dark:border-orange-600 
-                                                                   dark:bg-orange-900/30 dark:text-orange-400 
-                                                                   font-medium">
-                                  🔥 External Referral
-                                </Badge>
-                              </>
-                            )}
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            ID: {patient.patientId}
                           </div>
                         </div>
                       </div>
 
-                      {/* Right side: Actions dropdown */}
-                      <div className="flex-shrink-0">
+                      {/* Column 2: Contact */}
+                      <div className="col-span-2 flex items-center min-w-0">
+                        {patient.phoneNumber ? (
+                          <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            {patient.phoneNumber}
+                          </span>
+                        ) : (
+                          <Badge variant="outline" className="text-xs border-orange-300 bg-orange-50 
+                                                             text-orange-700 dark:border-orange-700 
+                                                             dark:bg-orange-900/20 dark:text-orange-400">
+                            ⚠️ No contact
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Column 3: Info (Age/Gender) */}
+                      <div className="col-span-2 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        {patient.age} • {patient.gender === 'Male' ? 'M' : 'F'}
+                      </div>
+
+                      {/* Column 4: Registration */}
+                      <div className="col-span-2 flex items-center">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
+                          </span>
+                          {patient.patientType === "referral_diagnostic" && (
+                            <Badge variant="outline" className="text-xs border-orange-400 bg-orange-100 
+                                                               text-orange-700 dark:border-orange-600 
+                                                               dark:bg-orange-900/30 dark:text-orange-400 
+                                                               font-medium mt-1 w-fit">
+                              🔥 External
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Column 5: Status */}
+                      <div className="col-span-2 flex items-center">
+                        {patient.patientType === "referral_diagnostic" ? (
+                          <Badge className="text-xs bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400">
+                            N/A
+                          </Badge>
+                        ) : patient.serviceStatus && (
+                          <Badge className={cn(
+                            "text-xs",
+                            ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0
+                              ? "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400"
+                          )}>
+                            {((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0 ? (
+                              `Unpaid`
+                            ) : (
+                              <>✓ Paid</>
+                            )}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Column 6: Actions */}
+                      <div className="col-span-1 flex items-center justify-end">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8">
-                              Actions
-                              <MoreVertical className="w-4 h-4 ml-1" />
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                              <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -1454,8 +1479,8 @@ export default function Patients() {
                         </DropdownMenu>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               {/* Mobile Card View - shown only on mobile */}
