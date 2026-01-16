@@ -252,7 +252,7 @@ export default function ReportsDailyCash() {
     <>
       <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Premium Finance Header */}
-        <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50 to-white dark:from-slate-900 dark:via-blue-950 dark:to-gray-900 border-b-2 border-gradient-to-r from-blue-200 to-transparent dark:from-blue-800 dark:to-transparent shadow-lg overflow-hidden print:rounded-none print:shadow-none">
+        <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50 to-white dark:from-slate-900 dark:via-blue-950 dark:to-gray-900 border-b-2 border-blue-200 dark:border-blue-800 shadow-lg overflow-hidden print:rounded-none print:shadow-none">
           <div className="p-6 md:p-8 space-y-4">
             {/* Top Row: Title & Status */}
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -279,7 +279,10 @@ export default function ReportsDailyCash() {
                 reportStatus.color === "amber" && "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
                 reportStatus.color === "red" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
               )}>
-                <reportStatus.icon className="h-4 w-4" />
+                {(() => {
+                  const StatusIcon = reportStatus.icon
+                  return <StatusIcon className="h-4 w-4" />
+                })()}
                 {reportStatus.label}
               </div>
             </div>
