@@ -67,6 +67,7 @@ import { QuickAdjustModal } from "@/components/pharmacy/QuickAdjustModal";
 import { ExportModal, ExportColumn } from "@/components/pharmacy/ExportModal";
 import { AnalyticsDashboard } from "@/components/pharmacy/AnalyticsDashboard";
 import { exportData } from "@/lib/export-utils";
+import { formatDrugQuantity } from "@/utils/pharmacy";
 
 // Constants
 const DEFAULT_REORDER_LEVEL = 10;
@@ -370,6 +371,20 @@ export default function PharmacyInventory() {
     queryKey: ['/api/pharmacy/batches'],
   });
 
+  // Create a map of drugId to drug form for quick lookup
+  const drugFormMap = useMemo(() => {
+    const map = new Map<number, string>();
+    drugsWithStock.forEach(drug => {
+      map.set(drug.id, drug.form);
+    });
+    drugs.forEach(drug => {
+      if (!map.has(drug.id)) {
+        map.set(drug.id, drug.form);
+      }
+    });
+    return map;
+  }, [drugsWithStock, drugs]);
+
   // Create drug mutation
   const createDrugMutation = useMutation({
     mutationFn: async (data: typeof newDrug) => {
@@ -414,7 +429,7 @@ export default function PharmacyInventory() {
       toast({
         title: "✅ Stock Received Successfully",
         description: drug 
-          ? `${drug.name}: ${newBatch.quantityOnHand} units received (Expires: ${new Date(newBatch.expiryDate).toLocaleDateString()})` 
+          ? `${drug.name}: ${formatDrugQuantity(newBatch.quantityOnHand, drug.form)} received (Expires: ${new Date(newBatch.expiryDate).toLocaleDateString()})` 
           : "New stock has been received and added to inventory.",
       });
       
@@ -699,9 +714,11 @@ export default function PharmacyInventory() {
     reason?: string;
   }) => {
     // TODO: Implement API call for quick adjustment
+    const drug = drugsWithStock.find(d => d.id === adjustment.drugId);
+    const drugForm = drug?.form || 'other';
     toast({
       title: "Stock Adjusted",
-      description: `${adjustment.type === "receive" ? "Added" : "Removed"} ${adjustment.quantity} units`,
+      description: `${adjustment.type === "receive" ? "Added" : "Removed"} ${formatDrugQuantity(adjustment.quantity, drugForm)}`,
     });
     
     // Refresh data
@@ -1288,7 +1305,7 @@ export default function PharmacyInventory() {
                         <TableCell className="capitalize text-gray-700 dark:text-gray-300 py-5">{drug.form}</TableCell>
                         <TableCell className="text-right tabular-nums py-5">
                           <span className={`font-bold text-base ${isOutOfStock ? "text-gray-400 dark:text-gray-600" : isLowStock ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                            {stockLevel}
+                            {formatDrugQuantity(stockLevel, drug.form)}
                           </span>
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums text-gray-900 dark:text-white font-semibold py-5">
@@ -1519,7 +1536,7 @@ export default function PharmacyInventory() {
                             "bg-red-500"
                           )} />
                           <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {stockLevel} units
+                            {formatDrugQuantity(stockLevel, drug.form)}
                           </span>
                         </div>
                       </TableCell>
@@ -1684,13 +1701,13 @@ export default function PharmacyInventory() {
                           <div className="flex items-center gap-2">
                             <span className="text-gray-600 dark:text-gray-400">Current Stock:</span>
                             <span className="font-bold text-red-600 dark:text-red-400 text-base">
-                              {drug.stockOnHand}
+                              {formatDrugQuantity(drug.stockOnHand, drug.form)}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-gray-600 dark:text-gray-400">Reorder Level:</span>
                             <span className="font-semibold text-gray-900 dark:text-white">
-                              {drug.reorderLevel}
+                              {formatDrugQuantity(drug.reorderLevel, drug.form)}
                             </span>
                           </div>
                         </div>
@@ -1845,7 +1862,9 @@ export default function PharmacyInventory() {
                           <div className="mt-2 flex items-center gap-4 text-sm">
                             <div>
                               <span className="text-gray-600 dark:text-gray-400">Stock:</span>
-                              <span className="ml-2 font-semibold text-gray-900 dark:text-white">{batch.quantityOnHand}</span>
+                              <span className="ml-2 font-semibold text-gray-900 dark:text-white">
+                                {formatDrugQuantity(batch.quantityOnHand, drugFormMap.get(batch.drugId) || 'other')}
+                              </span>
                             </div>
                             <div>
                               <span className="text-gray-600 dark:text-gray-400">Expiry:</span>
@@ -2028,7 +2047,8 @@ export default function PharmacyInventory() {
                           </Badge>
                         </TableCell>
                         <TableCell className={`text-right tabular-nums font-semibold py-5 ${entry.quantity < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                          {entry.quantity > 0 ? '+' : ''}{entry.quantity}
+                          {entry.quantity > 0 ? '+' : ''}
+                          {formatDrugQuantity(Math.abs(entry.quantity), drugFormMap.get(entry.drugId) || 'other')}
                         </TableCell>
                         <TableCell className={`text-right font-mono tabular-nums font-semibold py-5 ${(entry.totalValue || 0) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                           {(entry.totalValue || 0) > 0 ? '+' : ''}{Math.round(entry.totalValue || 0).toLocaleString()}
