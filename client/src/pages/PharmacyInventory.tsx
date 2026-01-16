@@ -51,6 +51,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { getClinicDayKey } from "@/lib/date-utils";
 import PharmacyInventoryHelp from "@/components/PharmacyInventoryHelp";
@@ -1409,6 +1415,7 @@ export default function PharmacyInventory() {
                     <TableHead className="font-semibold">Generic Name</TableHead>
                     <TableHead className="font-semibold">Strength</TableHead>
                     <TableHead className="font-semibold">Form</TableHead>
+                    <TableHead className="font-semibold">Stock Level</TableHead>
                     <TableHead className="text-right font-semibold">Reorder Level</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="text-right font-semibold">Actions</TableHead>
@@ -1417,7 +1424,7 @@ export default function PharmacyInventory() {
                 <TableBody>
                   {filteredCatalogDrugs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-12">
+                      <TableCell colSpan={10} className="text-center py-12">
                         <div className="flex flex-col items-center gap-4">
                           <div className="p-6 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 
                                         rounded-2xl shadow-premium-sm">
@@ -1442,6 +1449,11 @@ export default function PharmacyInventory() {
                   ) : (
                     filteredCatalogDrugs.map((drug, index) => {
                       const isSelected = selectedCatalogItems.has(drug.id);
+                      // Get current stock level for this drug
+                      const drugWithStock = drugsWithStock.find(d => d.id === drug.id);
+                      const stockLevel = drugWithStock?.stockOnHand || 0;
+                      const reorderLevel = drug.reorderLevel;
+                      
                       return (
                       <TableRow 
                         key={drug.id} 
@@ -1474,6 +1486,19 @@ export default function PharmacyInventory() {
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.genericName || '-'}</TableCell>
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.strength || '-'}</TableCell>
                       <TableCell className="capitalize text-gray-700 dark:text-gray-300 py-5">{drug.form}</TableCell>
+                      <TableCell className="py-5">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            stockLevel > reorderLevel * 2 ? "bg-green-500" :
+                            stockLevel > reorderLevel ? "bg-yellow-500" :
+                            "bg-red-500"
+                          )} />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {stockLevel} units
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right tabular-nums text-gray-900 dark:text-white font-semibold py-5">{drug.reorderLevel}</TableCell>
                       <TableCell className="py-5">
                         <Badge 
