@@ -794,19 +794,6 @@ export default function Ultrasound() {
     const canPerform = exam.status === 'completed' || isPaid;
     const isCompleted = exam.status === 'completed';
     
-    const handleExamSelect = () => {
-      if (canPerform) {
-        handleUltrasoundExamSelect(exam);
-      }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if ((e.key === 'Enter' || e.key === ' ') && canPerform) {
-        e.preventDefault();
-        handleUltrasoundExamSelect(exam);
-      }
-    };
-    
     return (
       <div
         className={cx(
@@ -818,9 +805,14 @@ export default function Ultrasound() {
         )}
         role="button"
         tabIndex={canPerform ? 0 : -1}
-        onClick={handleExamSelect}
-        onKeyDown={handleKeyDown}
-        aria-label={`${patient ? fullName(patient) : exam.patientId} - ${getUltrasoundDisplayName(exam)} exam${!canPerform ? ' (not available)' : ''}`}
+        onClick={() => canPerform && handleUltrasoundExamSelect(exam)}
+        onKeyDown={(e) => {
+          if (canPerform && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            handleUltrasoundExamSelect(exam);
+          }
+        }}
+        aria-label={`${patient ? fullName(patient) : exam.patientId} - ${getUltrasoundDisplayName(exam)} exam`}
         style={!canPerform ? { cursor: "not-allowed" } : {}}
         data-testid={`card-ultrasound-${exam.examId}`}
       >
