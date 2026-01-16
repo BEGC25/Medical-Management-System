@@ -825,7 +825,17 @@ router.get("/api/treatments", async (req, res) => {
     let endDayKey: string | undefined;
     
     // Use direct day-key calculation for presets
-    if (preset) {
+    if (preset && preset.toLowerCase() === 'custom') {
+      // Custom range: use from/to parameters directly
+      if (from && to) {
+        startDayKey = from;
+        endDayKey = to;
+        console.log(`[treatments] Custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
+      } else {
+        console.warn('[treatments] Custom preset specified but from/to parameters missing');
+      }
+    } else if (preset) {
+      // Standard preset (today, yesterday, last7, last30)
       const { getPresetDayKeys } = await import('./utils/clinic-range');
       const dayKeys = getPresetDayKeys(preset);
       
@@ -835,10 +845,10 @@ router.get("/api/treatments", async (req, res) => {
         console.log(`[treatments] Preset ${preset}: ${startDayKey} to ${endDayKey} (inclusive)`);
       }
     } else if (from && to) {
-      // Custom range from client
+      // Legacy: from/to without preset
       startDayKey = from;
       endDayKey = to;
-      console.log(`[treatments] Custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
+      console.log(`[treatments] Legacy custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
     } else if (req.query.today === '1' || req.query.today === 'true') {
       // Legacy: today=1
       console.warn('[treatments] DEPRECATED: today=1 parameter. Use preset=today instead.');
@@ -1753,7 +1763,17 @@ router.get("/api/payments", async (req, res) => {
     let endDayKey: string | undefined;
     
     // Use direct day-key calculation for presets
-    if (preset) {
+    if (preset && (preset as string).toLowerCase() === 'custom') {
+      // Custom range: use from/to parameters directly
+      if (from && to) {
+        startDayKey = from as string;
+        endDayKey = to as string;
+        console.log(`[payments] Custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
+      } else {
+        console.warn('[payments] Custom preset specified but from/to parameters missing');
+      }
+    } else if (preset) {
+      // Standard preset (today, yesterday, last7, last30)
       const { getPresetDayKeys } = await import('./utils/clinic-range');
       const dayKeys = getPresetDayKeys(preset as string);
       
@@ -1763,10 +1783,10 @@ router.get("/api/payments", async (req, res) => {
         console.log(`[payments] Preset ${preset}: ${startDayKey} to ${endDayKey} (inclusive)`);
       }
     } else if (from && to) {
-      // Custom range from client
+      // Legacy: from/to without preset
       startDayKey = from as string;
       endDayKey = to as string;
-      console.log(`[payments] Custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
+      console.log(`[payments] Legacy custom range: ${startDayKey} to ${endDayKey} (inclusive)`);
     } else if (req.query.today === '1' || req.query.today === 'true') {
       // Legacy: today=1
       console.warn('[payments] DEPRECATED: today=1 parameter. Use preset=today instead.');
