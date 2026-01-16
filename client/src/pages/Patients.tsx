@@ -1388,7 +1388,7 @@ export default function Patients() {
 
                       {/* Column 4: Contact */}
                       <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {patient.phoneNumber || <span className="text-gray-400 dark:text-gray-500">—</span>}
+                        {patient.phoneNumber ? patient.phoneNumber : <span className="text-gray-400 dark:text-gray-500">—</span>}
                       </div>
 
                       {/* Column 5: Registered */}
