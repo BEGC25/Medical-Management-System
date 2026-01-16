@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +51,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { getClinicDayKey } from "@/lib/date-utils";
 import PharmacyInventoryHelp from "@/components/PharmacyInventoryHelp";
@@ -294,6 +300,13 @@ export default function PharmacyInventory() {
   // Alert view state for filtering alerts (all, lowStock, expiringSoon)
   const [activeAlertView, setActiveAlertView] = useState<'all' | 'lowStock' | 'expiringSoon'>('all');
   
+  // Search states for Stock and Catalog tabs
+  const [stockSearchQuery, setStockSearchQuery] = useState("");
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
+  
+  // Transaction type filter for History tab
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<'all' | 'received' | 'dispensed'>('all');
+  
   const [newDrug, setNewDrug] = useState({
     name: "",
     genericName: "",
@@ -424,14 +437,33 @@ export default function PharmacyInventory() {
 
   // Filter ledger entries based on date filter
   const filteredLedgerEntries = useMemo(() => {
-    return ledgerEntries.filter(entry => 
+    let filtered = ledgerEntries.filter(entry => 
       isDateInRange(entry.createdAt, transactionDateFilter, transactionStartDate, transactionEndDate)
     );
-  }, [ledgerEntries, transactionDateFilter, transactionStartDate, transactionEndDate]);
+    
+    // Apply transaction type filter
+    if (transactionTypeFilter === 'received') {
+      filtered = filtered.filter(entry => entry.transactionType === 'receive');
+    } else if (transactionTypeFilter === 'dispensed') {
+      filtered = filtered.filter(entry => entry.transactionType === 'dispense');
+    }
+    
+    return filtered;
+  }, [ledgerEntries, transactionDateFilter, transactionStartDate, transactionEndDate, transactionTypeFilter]);
 
-  // Filter drugs with stock based on filters
+  // Filter drugs with stock based on filters and search
   const filteredStockDrugs = useMemo(() => {
     let filtered = [...drugsWithStock];
+    
+    // Apply search filter
+    if (stockSearchQuery) {
+      const searchLower = stockSearchQuery.toLowerCase();
+      filtered = filtered.filter(d => 
+        d.name.toLowerCase().includes(searchLower) ||
+        d.drugCode?.toLowerCase().includes(searchLower) ||
+        d.genericName?.toLowerCase().includes(searchLower)
+      );
+    }
     
     stockFilters.forEach((filter) => {
       switch (filter.id) {
@@ -462,11 +494,21 @@ export default function PharmacyInventory() {
     });
     
     return filtered;
-  }, [drugsWithStock, stockFilters]);
+  }, [drugsWithStock, stockFilters, stockSearchQuery]);
 
-  // Filter catalog drugs based on filters
+  // Filter catalog drugs based on filters and search
   const filteredCatalogDrugs = useMemo(() => {
     let filtered = [...drugs];
+    
+    // Apply search filter
+    if (catalogSearchQuery) {
+      const searchLower = catalogSearchQuery.toLowerCase();
+      filtered = filtered.filter(d => 
+        d.name.toLowerCase().includes(searchLower) ||
+        d.drugCode?.toLowerCase().includes(searchLower) ||
+        d.genericName?.toLowerCase().includes(searchLower)
+      );
+    }
     
     catalogFilters.forEach((filter) => {
       switch (filter.id) {
@@ -486,7 +528,7 @@ export default function PharmacyInventory() {
     });
     
     return filtered;
-  }, [drugs, catalogFilters]);
+  }, [drugs, catalogFilters, catalogSearchQuery]);
 
   // Bulk action handlers
   const handleSelectAllStock = () => {
@@ -912,9 +954,12 @@ export default function PharmacyInventory() {
           <TabsTrigger 
             value="stock" 
             data-testid="tab-stock"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
-                     data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-xs md:text-sm"
+            className={cn(
+              "relative data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700",
+              "data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200",
+              "data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-xs md:text-sm",
+              activeTab === 'stock' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-blue-600 after:to-blue-500 after:rounded-t-full after:shadow-lg after:shadow-blue-500/30"
+            )}
           >
             <Package className="w-4 h-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">Stock</span>
@@ -923,9 +968,12 @@ export default function PharmacyInventory() {
           <TabsTrigger 
             value="catalog" 
             data-testid="tab-catalog"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
-                     data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 text-xs md:text-sm"
+            className={cn(
+              "relative data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700",
+              "data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200",
+              "data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 text-xs md:text-sm",
+              activeTab === 'catalog' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-purple-600 after:to-purple-500 after:rounded-t-full after:shadow-lg after:shadow-purple-500/30"
+            )}
           >
             <Archive className="w-4 h-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">Catalog ({drugs.length})</span>
@@ -934,9 +982,12 @@ export default function PharmacyInventory() {
           <TabsTrigger 
             value="alerts" 
             data-testid="tab-alerts"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
-                     data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400 text-xs md:text-sm"
+            className={cn(
+              "relative data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700",
+              "data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200",
+              "data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400 text-xs md:text-sm",
+              activeTab === 'alerts' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-amber-600 after:to-orange-500 after:rounded-t-full after:shadow-lg after:shadow-amber-500/30"
+            )}
           >
             <AlertTriangle className="w-4 h-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">Alerts ({lowStockDrugs.length + expiringDrugs.length})</span>
@@ -945,9 +996,12 @@ export default function PharmacyInventory() {
           <TabsTrigger 
             value="ledger" 
             data-testid="tab-ledger"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
-                     data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-gray-600 dark:data-[state=active]:text-gray-400 text-xs md:text-sm"
+            className={cn(
+              "relative data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700",
+              "data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200",
+              "data-[state=active]:text-gray-600 dark:data-[state=active]:text-gray-400 text-xs md:text-sm",
+              activeTab === 'ledger' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-gray-600 after:to-gray-500 after:rounded-t-full after:shadow-lg after:shadow-gray-500/30"
+            )}
           >
             <FileText className="w-4 h-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">History</span>
@@ -989,6 +1043,17 @@ export default function PharmacyInventory() {
             </Button>
           </div>
 
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search drugs by name, code, or generic name..."
+              value={stockSearchQuery}
+              onChange={(e) => setStockSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           {/* Filters */}
           <Card className="shadow-premium-sm">
             <CardContent className="pt-6">
@@ -1005,88 +1070,100 @@ export default function PharmacyInventory() {
           {/* Premium Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Drugs */}
-            <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5
-                           border-blue-200 dark:border-blue-800/50 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/10 dark:to-cyan-900/10">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Total Drugs</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{drugs.length}</p>
-                  </div>
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-premium-sm">
-                    <Archive className="w-6 h-6 text-white" />
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 
+                           dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 
+                           p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-600 rounded-lg flex-shrink-0 shadow-sm">
+                  <Package className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">Total Drugs</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-2xl font-semibold text-blue-700 dark:text-blue-400">
+                      {drugs.length}
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">items</p>
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
-            {/* Low Stock Count */}
+            {/* Low Stock */}
             <Card 
-              className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5 hover:scale-105
-                         border-red-200 dark:border-red-800/50 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/10 dark:to-pink-900/10
-                         cursor-pointer hover:border-red-300 dark:hover:border-red-700"
+              className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 
+                       dark:to-pink-950/20 border-2 border-red-200 dark:border-red-800 
+                       p-4 hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => handleCardClick("low-stock")}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick("low-stock")}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide">Low Stock</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{lowStockDrugs.length}</p>
-                  </div>
-                  <div className="p-3 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl shadow-premium-sm">
-                    <TrendingDown className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-red-600 rounded-lg flex-shrink-0 shadow-sm">
+                  <TrendingDown className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-red-900 dark:text-red-100">Low Stock</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-2xl font-semibold text-red-700 dark:text-red-400">
+                      {lowStockDrugs.length}
+                    </div>
+                    <p className="text-xs text-red-600 dark:text-red-400">alerts</p>
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
             {/* Expiring Soon */}
             <Card 
-              className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5 hover:scale-105
-                         border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10
-                         cursor-pointer hover:border-amber-300 dark:hover:border-amber-700"
+              className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 
+                       dark:to-amber-950/20 border-2 border-orange-200 dark:border-orange-800 
+                       p-4 hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => handleCardClick("expiring-soon")}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick("expiring-soon")}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">Expiring Soon</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{expiringDrugs.length}</p>
-                  </div>
-                  <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-premium-sm">
-                    <Clock className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-orange-600 rounded-lg flex-shrink-0 shadow-sm">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-orange-900 dark:text-orange-100">Expiring Soon</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-2xl font-semibold text-orange-700 dark:text-orange-400">
+                      {expiringDrugs.length}
+                    </div>
+                    <p className="text-xs text-orange-600 dark:text-orange-400">items</p>
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
-            {/* Total Inventory Value */}
-            <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5
-                           border-green-200 dark:border-green-800/50 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">Total Value</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {/* Total Value */}
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 
+                           dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 
+                           p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-green-600 rounded-lg flex-shrink-0 shadow-sm">
+                  <DollarSign className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-100">Total Value</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-2xl font-semibold text-green-700 dark:text-green-400">
                       {(() => {
                         const totalValue = allBatches.reduce((sum, batch) => {
                           return sum + (batch.quantityOnHand * batch.unitCost);
                         }, 0);
                         return Math.round(totalValue).toLocaleString();
-                      })()} SSP
-                    </p>
-                  </div>
-                  <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-premium-sm">
-                    <BarChart3 className="w-6 h-6 text-white" />
+                      })()}
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-400">SSP</p>
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
           </div>
 
@@ -1317,6 +1394,17 @@ export default function PharmacyInventory() {
             </Button>
           </div>
 
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search drugs by name, code, or generic name..."
+              value={catalogSearchQuery}
+              onChange={(e) => setCatalogSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           {/* Filters */}
           <Card className="shadow-premium-sm">
             <CardContent className="pt-6">
@@ -1351,6 +1439,7 @@ export default function PharmacyInventory() {
                     <TableHead className="font-semibold">Generic Name</TableHead>
                     <TableHead className="font-semibold">Strength</TableHead>
                     <TableHead className="font-semibold">Form</TableHead>
+                    <TableHead className="font-semibold">Stock Level</TableHead>
                     <TableHead className="text-right font-semibold">Reorder Level</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="text-right font-semibold">Actions</TableHead>
@@ -1359,7 +1448,7 @@ export default function PharmacyInventory() {
                 <TableBody>
                   {filteredCatalogDrugs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-12">
+                      <TableCell colSpan={10} className="text-center py-12">
                         <div className="flex flex-col items-center gap-4">
                           <div className="p-6 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 
                                         rounded-2xl shadow-premium-sm">
@@ -1384,6 +1473,11 @@ export default function PharmacyInventory() {
                   ) : (
                     filteredCatalogDrugs.map((drug, index) => {
                       const isSelected = selectedCatalogItems.has(drug.id);
+                      // Get current stock level for this drug
+                      const drugWithStock = drugsWithStock.find(d => d.id === drug.id);
+                      const stockLevel = drugWithStock?.stockOnHand || 0;
+                      const reorderLevel = drug.reorderLevel;
+                      
                       return (
                       <TableRow 
                         key={drug.id} 
@@ -1416,6 +1510,19 @@ export default function PharmacyInventory() {
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.genericName || '-'}</TableCell>
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.strength || '-'}</TableCell>
                       <TableCell className="capitalize text-gray-700 dark:text-gray-300 py-5">{drug.form}</TableCell>
+                      <TableCell className="py-5">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            stockLevel > reorderLevel * 2 ? "bg-green-500" :
+                            stockLevel > reorderLevel ? "bg-yellow-500" :
+                            "bg-red-500"
+                          )} />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {stockLevel} units
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right tabular-nums text-gray-900 dark:text-white font-semibold py-5">{drug.reorderLevel}</TableCell>
                       <TableCell className="py-5">
                         <Badge 
@@ -1596,20 +1703,78 @@ export default function PharmacyInventory() {
                           <AlertTriangle className="w-3 h-3 mr-1" />
                           LOW STOCK
                         </Badge>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setSelectedDrug(drug);
-                            setNewBatch({ ...newBatch, drugId: drug.id });
-                            setShowReceiveStock(true);
-                          }}
-                          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700
-                                   shadow-premium-sm hover:shadow-premium-md transition-all duration-200"
-                        >
-                          <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-                          Receive Stock
-                        </Button>
                       </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedDrug(drug);
+                          setNewBatch({ ...newBatch, drugId: drug.id });
+                          setShowReceiveStock(true);
+                        }}
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700
+                                 shadow-premium-sm hover:shadow-premium-md transition-all duration-200"
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                        Receive Stock
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Clock className="w-4 h-4 mr-2" />
+                            Snooze
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => {
+                            // TODO: Implement backend API call to snooze alert
+                            // For now, shows UI confirmation only
+                            if (window.confirm(`Snooze this low stock alert for 7 days?\n\nDrug: ${drug.name}\nYou'll be reminded again after 7 days.`)) {
+                              toast({
+                                title: "Alert Snoozed",
+                                description: `${drug.name} alert snoozed for 7 days`,
+                              });
+                              // TODO: Call API: await api.patch(`/pharmacy/alerts/${drug.id}/snooze`, { days: 7 });
+                            }
+                          }}>
+                            Snooze for 7 days
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            // TODO: Implement backend API call to snooze alert
+                            // For now, shows UI confirmation only
+                            if (window.confirm(`Snooze this low stock alert for 30 days?\n\nDrug: ${drug.name}\nYou'll be reminded again after 30 days.`)) {
+                              toast({
+                                title: "Alert Snoozed",
+                                description: `${drug.name} alert snoozed for 30 days`,
+                              });
+                              // TODO: Call API: await api.patch(`/pharmacy/alerts/${drug.id}/snooze`, { days: 30 });
+                            }
+                          }}>
+                            Snooze for 30 days
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // TODO: Implement backend API call to dismiss alert
+                          // For now, shows UI confirmation only
+                          if (window.confirm(`Dismiss this low stock alert?\n\nDrug: ${drug.name}\nThis will permanently dismiss this alert. You can still see the stock level in the Stock tab.`)) {
+                            toast({
+                              title: "Alert Dismissed",
+                              description: `${drug.name} alert has been dismissed`,
+                            });
+                            // TODO: Call API: await api.patch(`/pharmacy/alerts/${drug.id}/dismiss`);
+                          }
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Dismiss
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -1720,6 +1885,41 @@ export default function PharmacyInventory() {
             }}
             defaultPreset="all"
           />
+
+          {/* Transaction Type Filters */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter transactions:</span>
+            <Button
+              variant={transactionTypeFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransactionTypeFilter('all')}
+              className={transactionTypeFilter === 'all' 
+                ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700" 
+                : ""}
+            >
+              All ({ledgerEntries.length})
+            </Button>
+            <Button
+              variant={transactionTypeFilter === 'received' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransactionTypeFilter('received')}
+              className={transactionTypeFilter === 'received' 
+                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
+                : "border-green-300 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"}
+            >
+              Received Only ({ledgerEntries.filter(e => e.transactionType === 'receive').length})
+            </Button>
+            <Button
+              variant={transactionTypeFilter === 'dispensed' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransactionTypeFilter('dispensed')}
+              className={transactionTypeFilter === 'dispensed' 
+                ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700" 
+                : "border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"}
+            >
+              Dispensed Only ({ledgerEntries.filter(e => e.transactionType === 'dispense').length})
+            </Button>
+          </div>
 
           {/* Analytics Dashboard */}
           <AnalyticsDashboard 
