@@ -1601,21 +1601,6 @@ export default function PharmacyInventory() {
         </TabsContent>
 
         <TabsContent value="catalog" className="space-y-4">
-          {/* Quick Actions Bar */}
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setExportContext("catalog");
-                setShowExportModal(true);
-              }}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Catalog
-            </Button>
-          </div>
-
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -1627,51 +1612,68 @@ export default function PharmacyInventory() {
             />
           </div>
 
-          {/* Compact Filter Row for Catalog */}
-          <div className="flex items-center justify-end gap-2">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-              Filter:
-            </span>
-            
-            <Select value={catalogFormFilter} onValueChange={handleCompactCatalogForm}>
-              <SelectTrigger className="w-36 h-8 text-xs">
-                <Package className="w-3.5 h-3.5 mr-1.5" />
-                <SelectValue placeholder="All Forms" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Forms</SelectItem>
-                <SelectItem value="tablet">Tablets</SelectItem>
-                <SelectItem value="capsule">Capsules</SelectItem>
-                <SelectItem value="syrup">Syrups</SelectItem>
-                <SelectItem value="injection">Injections</SelectItem>
-                <SelectItem value="cream">Creams</SelectItem>
-                <SelectItem value="inhaler">Inhalers</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Compact Filter Row for Catalog with Export Button */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Left: Filters */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Filter:
+              </span>
+              
+              <Select value={catalogFormFilter} onValueChange={handleCompactCatalogForm}>
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <Package className="w-3.5 h-3.5 mr-1.5" />
+                  <SelectValue placeholder="All Forms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Forms</SelectItem>
+                  <SelectItem value="tablet">Tablets</SelectItem>
+                  <SelectItem value="capsule">Capsules</SelectItem>
+                  <SelectItem value="syrup">Syrups</SelectItem>
+                  <SelectItem value="injection">Injections</SelectItem>
+                  <SelectItem value="cream">Creams</SelectItem>
+                  <SelectItem value="inhaler">Inhalers</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Select value={catalogStatusFilter} onValueChange={handleCompactCatalogStatus}>
-              <SelectTrigger className="w-36 h-8 text-xs">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={catalogStatusFilter} onValueChange={handleCompactCatalogStatus}>
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {hasActiveCatalogFilters && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={clearAllCatalogCompactFilters} 
-                className="h-8 text-xs"
-              >
-                <X className="w-3.5 h-3.5 mr-1" />
-                Clear
-              </Button>
-            )}
+              {hasActiveCatalogFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearAllCatalogCompactFilters} 
+                  className="h-8 text-xs"
+                >
+                  <X className="w-3.5 h-3.5 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            {/* Right: Export Catalog Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setExportContext("catalog");
+                setShowExportModal(true);
+              }}
+              className="h-8"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Catalog
+            </Button>
           </div>
 
           <Card className="shadow-premium-md border-gray-200 dark:border-gray-700 
