@@ -1644,14 +1644,14 @@ export default function ServiceManagement() {
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   Price Range
                 </p>
-                <div className="flex items-center gap-1.5 mt-1">
+                <div className="flex items-center gap-2 mt-1">
                   <div className="text-center">
                     <div className="text-base font-bold text-purple-600 dark:text-purple-400">
                       {stats.minPrice.toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-500">Min</div>
                   </div>
-                  <ArrowRight className="w-3 h-3 text-gray-400" />
+                  <ArrowRight className="w-4 h-4 text-gray-400" />
                   <div className="text-center">
                     <div className="text-base font-bold text-purple-600 dark:text-purple-400">
                       {stats.maxPrice.toLocaleString()}
