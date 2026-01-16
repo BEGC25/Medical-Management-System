@@ -1730,21 +1730,27 @@ export default function PharmacyInventory() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                           <DropdownMenuItem onClick={() => {
+                            // TODO: Implement backend API call to snooze alert
+                            // For now, shows UI confirmation only
                             if (window.confirm(`Snooze this low stock alert for 7 days?\n\nDrug: ${drug.name}\nYou'll be reminded again after 7 days.`)) {
                               toast({
                                 title: "Alert Snoozed",
                                 description: `${drug.name} alert snoozed for 7 days`,
                               });
+                              // TODO: Call API: await api.patch(`/pharmacy/alerts/${drug.id}/snooze`, { days: 7 });
                             }
                           }}>
                             Snooze for 7 days
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => {
+                            // TODO: Implement backend API call to snooze alert
+                            // For now, shows UI confirmation only
                             if (window.confirm(`Snooze this low stock alert for 30 days?\n\nDrug: ${drug.name}\nYou'll be reminded again after 30 days.`)) {
                               toast({
                                 title: "Alert Snoozed",
                                 description: `${drug.name} alert snoozed for 30 days`,
                               });
+                              // TODO: Call API: await api.patch(`/pharmacy/alerts/${drug.id}/snooze`, { days: 30 });
                             }
                           }}>
                             Snooze for 30 days
@@ -1755,11 +1761,14 @@ export default function PharmacyInventory() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
+                          // TODO: Implement backend API call to dismiss alert
+                          // For now, shows UI confirmation only
                           if (window.confirm(`Dismiss this low stock alert?\n\nDrug: ${drug.name}\nThis will permanently dismiss this alert. You can still see the stock level in the Stock tab.`)) {
                             toast({
                               title: "Alert Dismissed",
                               description: `${drug.name} alert has been dismissed`,
                             });
+                            // TODO: Call API: await api.patch(`/pharmacy/alerts/${drug.id}/dismiss`);
                           }
                         }}
                       >
