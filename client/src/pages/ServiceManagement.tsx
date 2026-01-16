@@ -1537,7 +1537,7 @@ export default function ServiceManagement() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Services Card */}
         <Card 
           className="border-2 border-blue-200 dark:border-blue-800 hover:shadow-lg hover:-translate-y-1 
@@ -1548,24 +1548,24 @@ export default function ServiceManagement() {
             setCurrentPage(1);
           }}
         >
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   Total Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-2">
+                <div className="flex items-baseline gap-2 mt-1">
                   <CountUp
                     end={stats.total}
                     duration={2}
-                    className="text-3xl font-bold text-blue-600 dark:text-blue-400"
+                    className="text-2xl font-bold text-blue-600 dark:text-blue-400"
                   />
-                  <span className="text-sm text-gray-500">services</span>
+                  <span className="text-xs text-gray-500">services</span>
                 </div>
               </div>
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl 
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg 
                             shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Package className="w-6 h-6 text-white" />
+                <Package className="w-5 h-5 text-white" />
               </div>
             </div>
           </CardContent>
@@ -1577,27 +1577,27 @@ export default function ServiceManagement() {
                      transition-all duration-300 cursor-pointer group"
           onClick={() => filterByStatus('active')}
         >
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   Active Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-2">
+                <div className="flex items-baseline gap-2 mt-1">
                   <CountUp
                     end={stats.active}
                     duration={2}
-                    className="text-3xl font-bold text-green-600 dark:text-green-400"
+                    className="text-2xl font-bold text-green-600 dark:text-green-400"
                   />
                   <TrendingUp className="w-4 h-4 text-green-500" />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-0.5">
                   {stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(0) : 0}% of total
                 </p>
               </div>
-              <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl 
+              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg 
                             shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <CheckCircle className="w-6 h-6 text-white" />
+                <CheckCircle className="w-5 h-5 text-white" />
               </div>
             </div>
           </CardContent>
@@ -1609,27 +1609,27 @@ export default function ServiceManagement() {
                      transition-all duration-300 cursor-pointer group"
           onClick={() => filterByStatus('inactive')}
         >
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   Inactive Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-2">
+                <div className="flex items-baseline gap-2 mt-1">
                   <CountUp
                     end={stats.inactive}
                     duration={2}
-                    className="text-3xl font-bold text-red-600 dark:text-red-400"
+                    className="text-2xl font-bold text-red-600 dark:text-red-400"
                   />
                   <TrendingDown className="w-4 h-4 text-red-500" />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-0.5">
                   {stats.total > 0 ? ((stats.inactive / stats.total) * 100).toFixed(0) : 0}% of total
                 </p>
               </div>
-              <div className="p-3 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl 
+              <div className="p-2 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg 
                             shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <XCircle className="w-6 h-6 text-white" />
+                <XCircle className="w-5 h-5 text-white" />
               </div>
             </div>
           </CardContent>
@@ -1638,34 +1638,34 @@ export default function ServiceManagement() {
         {/* Price Range Card */}
         <Card className="border-2 border-purple-200 dark:border-purple-800 hover:shadow-lg hover:-translate-y-1 
                        transition-all duration-300 group">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   Price Range
                 </p>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-1">
                   <div className="text-center">
-                    <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    <div className="text-base font-bold text-purple-600 dark:text-purple-400">
                       {stats.minPrice.toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-500">Min</div>
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-400" />
                   <div className="text-center">
-                    <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    <div className="text-base font-bold text-purple-600 dark:text-purple-400">
                       {stats.maxPrice.toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-500">Max</div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 mt-0.5">
                   Spread: {(stats.maxPrice - stats.minPrice).toLocaleString()} SSP
                 </p>
               </div>
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl 
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg 
                             shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="w-6 h-6 text-white" />
+                <TrendingUp className="w-5 h-5 text-white" />
               </div>
             </div>
           </CardContent>
@@ -1781,28 +1781,7 @@ export default function ServiceManagement() {
 
             {/* Advanced Filters */}
             {showFilters && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
-                {/* Category Multi-Select */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Categories</label>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.keys(CATEGORY_ICONS).map((cat) => (
-                      <Badge
-                        key={cat}
-                        variant={categoryFilter.includes(cat) ? "default" : "outline"}
-                        className={`cursor-pointer transition-all ${
-                          categoryFilter.includes(cat) 
-                            ? (CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS]?.bg || "bg-gray-500") + " text-white"
-                            : "hover:bg-gray-100"
-                        }`}
-                        onClick={() => toggleCategoryFilter(cat)}
-                      >
-                        {cat}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                 {/* Status Filter */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
