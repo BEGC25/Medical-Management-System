@@ -725,7 +725,7 @@ export default function XRay() {
     return (
       <div
         className={cx(
-          "rounded-lg p-2.5 border-l-4 cursor-pointer transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:shadow-[0_4px_16px_rgba(37,99,235,0.15)] hover:-translate-y-0.5 group",
+          "rounded-lg p-2 border-l-4 cursor-pointer transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:shadow-[0_4px_16px_rgba(37,99,235,0.15)] hover:-translate-y-0.5 group",
           isCompleted && "border-l-emerald-500 bg-white dark:bg-gray-800",
           !isCompleted && isPaid && "border-l-orange-500 bg-white dark:bg-gray-800",
           !isCompleted && !isPaid && "border-l-red-500 bg-red-50/50 dark:bg-red-900/10",
@@ -772,21 +772,19 @@ export default function XRay() {
               </div>
             </div>
             
-            {/* Line 2: Exam summary without redundant label */}
-            <div className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 truncate">
-              {getXrayDisplayName(exam)} • {timeAgo(exam.createdAt)}
-            </div>
-            
-            {/* Line 3: "Ordered by Doctor" badge */}
-            {!isCompleted && (
-              <div className="mt-1">
-                <span className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 rounded-full border border-teal-200 dark:border-teal-800">
+            {/* Line 2: Exam summary with "Ordered by Doctor" badge inline */}
+            <div className="mt-0.5 flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                {getXrayDisplayName(exam)} • {timeAgo(exam.createdAt)}
+              </span>
+              {!isCompleted && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 rounded-full border border-teal-200 dark:border-teal-800 shrink-0">
                   Ordered by Doctor
                 </span>
-              </div>
-            )}
+              )}
+            </div>
             
-            {/* Line 4: Warning if UNPAID (compact, single line) */}
+            {/* Line 3: Warning if UNPAID (compact, single line) */}
             {!isPaid && !isCompleted && (
               <div className="flex items-center gap-1.5 mt-1 text-xs text-amber-700 dark:text-amber-400 truncate">
                 <AlertTriangle className="w-3 h-3 shrink-0" />
@@ -812,7 +810,7 @@ export default function XRay() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full pt-4 pb-6 px-6 space-y-6">
+      <div className="w-full pt-2 pb-6 px-6 space-y-4">
         {/* Header Section - Premium Gradient Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
