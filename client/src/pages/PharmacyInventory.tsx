@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +67,7 @@ import { QuickAdjustModal } from "@/components/pharmacy/QuickAdjustModal";
 import { ExportModal, ExportColumn } from "@/components/pharmacy/ExportModal";
 import { AnalyticsDashboard } from "@/components/pharmacy/AnalyticsDashboard";
 import { exportData } from "@/lib/export-utils";
+import { formatDrugQuantity } from "@/utils/pharmacy";
 
 // Constants
 const DEFAULT_REORDER_LEVEL = 10;
@@ -304,6 +305,16 @@ export default function PharmacyInventory() {
   const [stockSearchQuery, setStockSearchQuery] = useState("");
   const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
   
+  // Compact filter states for Stock tab
+  const [stockStatusFilter, setStockStatusFilter] = useState<string>('all');
+  const [stockFormFilter, setStockFormFilter] = useState<string>('all');
+  const [stockMin, setStockMin] = useState<string>('');
+  const [stockMax, setStockMax] = useState<string>('');
+  
+  // Compact filter states for Catalog tab
+  const [catalogFormFilter, setCatalogFormFilter] = useState<string>('all');
+  const [catalogStatusFilter, setCatalogStatusFilter] = useState<string>('all');
+  
   // Transaction type filter for History tab
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<'all' | 'received' | 'dispensed'>('all');
   
@@ -370,6 +381,20 @@ export default function PharmacyInventory() {
     queryKey: ['/api/pharmacy/batches'],
   });
 
+  // Create a map of drugId to drug form for quick lookup
+  const drugFormMap = useMemo(() => {
+    const map = new Map<number, string>();
+    drugsWithStock.forEach(drug => {
+      map.set(drug.id, drug.form);
+    });
+    drugs.forEach(drug => {
+      if (!map.has(drug.id)) {
+        map.set(drug.id, drug.form);
+      }
+    });
+    return map;
+  }, [drugsWithStock, drugs]);
+
   // Create drug mutation
   const createDrugMutation = useMutation({
     mutationFn: async (data: typeof newDrug) => {
@@ -414,7 +439,7 @@ export default function PharmacyInventory() {
       toast({
         title: "✅ Stock Received Successfully",
         description: drug 
-          ? `${drug.name}: ${newBatch.quantityOnHand} units received (Expires: ${new Date(newBatch.expiryDate).toLocaleDateString()})` 
+          ? `${drug.name}: ${formatDrugQuantity(newBatch.quantityOnHand, drug.form)} received (Expires: ${new Date(newBatch.expiryDate).toLocaleDateString()})` 
           : "New stock has been received and added to inventory.",
       });
       
@@ -621,6 +646,74 @@ export default function PharmacyInventory() {
     }
   };
 
+  // Compact filter handlers
+  const handleCompactStatusFilter = (status: string) => {
+    const newStatus = stockStatusFilter === status ? 'all' : status;
+    setStockStatusFilter(newStatus);
+    handleStockFilterChange('status', newStatus === 'all' ? '' : 
+      status === 'lowstock' ? 'low_stock' : 'out_of_stock');
+  };
+
+  const handleCompactFormFilter = (form: string) => {
+    setStockFormFilter(form);
+    handleStockFilterChange('form', form === 'all' ? '' : form);
+  };
+
+  const handleCompactStockRange = () => {
+    if (stockMin || stockMax) {
+      handleStockFilterChange('stock_range', {
+        min: stockMin,
+        max: stockMax
+      });
+    }
+  };
+
+  const clearCompactStockRange = () => {
+    setStockMin('');
+    setStockMax('');
+    handleStockFilterChange('stock_range', '');
+  };
+
+  const clearAllCompactFilters = () => {
+    setStockStatusFilter('all');
+    setStockFormFilter('all');
+    setStockMin('');
+    setStockMax('');
+    setStockFilters([]);
+  };
+
+  const hasActiveCompactFilters = useMemo(() => {
+    return stockStatusFilter !== 'all' || 
+           stockFormFilter !== 'all' || 
+           stockMin !== '' || 
+           stockMax !== '';
+  }, [stockStatusFilter, stockFormFilter, stockMin, stockMax]);
+
+  const lowStockCount = useMemo(() => {
+    return drugsWithStock.filter(d => d.stockOnHand > 0 && d.stockOnHand <= d.reorderLevel).length;
+  }, [drugsWithStock]);
+
+  // Catalog compact filter handlers
+  const handleCompactCatalogForm = (form: string) => {
+    setCatalogFormFilter(form);
+    handleCatalogFilterChange('form', form === 'all' ? '' : form);
+  };
+
+  const handleCompactCatalogStatus = (status: string) => {
+    setCatalogStatusFilter(status);
+    handleCatalogFilterChange('status', status === 'all' ? '' : status);
+  };
+
+  const clearAllCatalogCompactFilters = () => {
+    setCatalogFormFilter('all');
+    setCatalogStatusFilter('all');
+    setCatalogFilters([]);
+  };
+
+  const hasActiveCatalogFilters = useMemo(() => {
+    return catalogFormFilter !== 'all' || catalogStatusFilter !== 'all';
+  }, [catalogFormFilter, catalogStatusFilter]);
+
   const getFilterLabel = (filterId: string): string => {
     const labels: Record<string, string> = {
       status: "Status",
@@ -699,9 +792,11 @@ export default function PharmacyInventory() {
     reason?: string;
   }) => {
     // TODO: Implement API call for quick adjustment
+    const drug = drugsWithStock.find(d => d.id === adjustment.drugId);
+    const drugForm = drug?.form || 'other';
     toast({
       title: "Stock Adjusted",
-      description: `${adjustment.type === "receive" ? "Added" : "Removed"} ${adjustment.quantity} units`,
+      description: `${adjustment.type === "receive" ? "Added" : "Removed"} ${formatDrugQuantity(adjustment.quantity, drugForm)}`,
     });
     
     // Refresh data
@@ -1054,18 +1149,145 @@ export default function PharmacyInventory() {
             />
           </div>
 
-          {/* Filters */}
-          <Card className="shadow-premium-sm">
-            <CardContent className="pt-6">
-              <FilterBar
-                filters={getStockFilters()}
-                activeFilters={stockFilters}
-                onFilterChange={handleStockFilterChange}
-                onClearAll={() => setStockFilters([])}
-                onClearFilter={(id) => setStockFilters(stockFilters.filter(f => f.id !== id))}
-              />
-            </CardContent>
-          </Card>
+          {/* Compact Filter Row */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Left: Quick Filter Pills */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Quick:
+              </span>
+              <Button
+                variant={stockStatusFilter === 'lowstock' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleCompactStatusFilter('lowstock')}
+                className={cn(
+                  "h-8 text-xs",
+                  stockStatusFilter === 'lowstock' 
+                    ? "bg-red-600 hover:bg-red-700 text-white" 
+                    : "border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
+                )}
+              >
+                <TrendingDown className="w-3.5 h-3.5 mr-1.5" />
+                Low Stock
+                {lowStockCount > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 bg-white/20 text-white h-5 px-1.5">
+                    {lowStockCount}
+                  </Badge>
+                )}
+              </Button>
+              
+              <Button
+                variant={stockStatusFilter === 'outofstock' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleCompactStatusFilter('outofstock')}
+                className={cn(
+                  "h-8 text-xs",
+                  stockStatusFilter === 'outofstock' 
+                    ? "bg-gray-600 hover:bg-gray-700 text-white" 
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400"
+                )}
+              >
+                <X className="w-3.5 h-3.5 mr-1.5" />
+                Out of Stock
+              </Button>
+            </div>
+
+            {/* Right: Advanced Filters */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Filter:
+              </span>
+              
+              {/* Form Filter */}
+              <Select value={stockFormFilter} onValueChange={handleCompactFormFilter}>
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <Package className="w-3.5 h-3.5 mr-1.5" />
+                  <SelectValue placeholder="All Forms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Forms</SelectItem>
+                  <SelectItem value="tablet">Tablets</SelectItem>
+                  <SelectItem value="capsule">Capsules</SelectItem>
+                  <SelectItem value="syrup">Syrups</SelectItem>
+                  <SelectItem value="injection">Injections</SelectItem>
+                  <SelectItem value="cream">Creams</SelectItem>
+                  <SelectItem value="inhaler">Inhalers</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Stock Range Filter - Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs">
+                    <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+                    Stock: {stockMin || 0}-{stockMax || '∞'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="end">
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">Stock Level Range</h4>
+                      <p className="text-xs text-gray-500">Filter drugs by quantity in stock</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="stock-min" className="text-xs">Minimum</Label>
+                        <Input
+                          id="stock-min"
+                          type="number"
+                          value={stockMin}
+                          onChange={(e) => setStockMin(e.target.value)}
+                          placeholder="0"
+                          className="h-9 mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="stock-max" className="text-xs">Maximum</Label>
+                        <Input
+                          id="stock-max"
+                          type="number"
+                          value={stockMax}
+                          onChange={(e) => setStockMax(e.target.value)}
+                          placeholder="No limit"
+                          className="h-9 mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleCompactStockRange} 
+                        className="flex-1"
+                        size="sm"
+                      >
+                        Apply
+                      </Button>
+                      <Button 
+                        onClick={clearCompactStockRange} 
+                        variant="outline"
+                        size="sm"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Clear All Filters */}
+              {hasActiveCompactFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={clearAllCompactFilters}
+                  className="h-8 text-xs text-gray-600 hover:text-gray-900"
+                >
+                  <X className="w-3.5 h-3.5 mr-1" />
+                  Clear All
+                </Button>
+              )}
+            </div>
+          </div>
 
           {/* Premium Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1288,7 +1510,7 @@ export default function PharmacyInventory() {
                         <TableCell className="capitalize text-gray-700 dark:text-gray-300 py-5">{drug.form}</TableCell>
                         <TableCell className="text-right tabular-nums py-5">
                           <span className={`font-bold text-base ${isOutOfStock ? "text-gray-400 dark:text-gray-600" : isLowStock ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                            {stockLevel}
+                            {formatDrugQuantity(stockLevel, drug.form)}
                           </span>
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums text-gray-900 dark:text-white font-semibold py-5">
@@ -1405,18 +1627,52 @@ export default function PharmacyInventory() {
             />
           </div>
 
-          {/* Filters */}
-          <Card className="shadow-premium-sm">
-            <CardContent className="pt-6">
-              <FilterBar
-                filters={getCatalogFilters()}
-                activeFilters={catalogFilters}
-                onFilterChange={handleCatalogFilterChange}
-                onClearAll={() => setCatalogFilters([])}
-                onClearFilter={(id) => setCatalogFilters(catalogFilters.filter(f => f.id !== id))}
-              />
-            </CardContent>
-          </Card>
+          {/* Compact Filter Row for Catalog */}
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+              Filter:
+            </span>
+            
+            <Select value={catalogFormFilter} onValueChange={handleCompactCatalogForm}>
+              <SelectTrigger className="w-36 h-8 text-xs">
+                <Package className="w-3.5 h-3.5 mr-1.5" />
+                <SelectValue placeholder="All Forms" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Forms</SelectItem>
+                <SelectItem value="tablet">Tablets</SelectItem>
+                <SelectItem value="capsule">Capsules</SelectItem>
+                <SelectItem value="syrup">Syrups</SelectItem>
+                <SelectItem value="injection">Injections</SelectItem>
+                <SelectItem value="cream">Creams</SelectItem>
+                <SelectItem value="inhaler">Inhalers</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={catalogStatusFilter} onValueChange={handleCompactCatalogStatus}>
+              <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {hasActiveCatalogFilters && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearAllCatalogCompactFilters} 
+                className="h-8 text-xs"
+              >
+                <X className="w-3.5 h-3.5 mr-1" />
+                Clear
+              </Button>
+            )}
+          </div>
 
           <Card className="shadow-premium-md border-gray-200 dark:border-gray-700 
                          hover:shadow-premium-lg transition-all duration-200">
@@ -1519,7 +1775,7 @@ export default function PharmacyInventory() {
                             "bg-red-500"
                           )} />
                           <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {stockLevel} units
+                            {formatDrugQuantity(stockLevel, drug.form)}
                           </span>
                         </div>
                       </TableCell>
@@ -1684,13 +1940,13 @@ export default function PharmacyInventory() {
                           <div className="flex items-center gap-2">
                             <span className="text-gray-600 dark:text-gray-400">Current Stock:</span>
                             <span className="font-bold text-red-600 dark:text-red-400 text-base">
-                              {drug.stockOnHand}
+                              {formatDrugQuantity(drug.stockOnHand, drug.form)}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-gray-600 dark:text-gray-400">Reorder Level:</span>
                             <span className="font-semibold text-gray-900 dark:text-white">
-                              {drug.reorderLevel}
+                              {formatDrugQuantity(drug.reorderLevel, drug.form)}
                             </span>
                           </div>
                         </div>
@@ -1845,7 +2101,9 @@ export default function PharmacyInventory() {
                           <div className="mt-2 flex items-center gap-4 text-sm">
                             <div>
                               <span className="text-gray-600 dark:text-gray-400">Stock:</span>
-                              <span className="ml-2 font-semibold text-gray-900 dark:text-white">{batch.quantityOnHand}</span>
+                              <span className="ml-2 font-semibold text-gray-900 dark:text-white">
+                                {formatDrugQuantity(batch.quantityOnHand, drugFormMap.get(batch.drugId) || 'other')}
+                              </span>
                             </div>
                             <div>
                               <span className="text-gray-600 dark:text-gray-400">Expiry:</span>
@@ -2028,7 +2286,8 @@ export default function PharmacyInventory() {
                           </Badge>
                         </TableCell>
                         <TableCell className={`text-right tabular-nums font-semibold py-5 ${entry.quantity < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                          {entry.quantity > 0 ? '+' : ''}{entry.quantity}
+                          {entry.quantity > 0 ? '+' : ''}
+                          {formatDrugQuantity(Math.abs(entry.quantity), drugFormMap.get(entry.drugId) || 'other')}
                         </TableCell>
                         <TableCell className={`text-right font-mono tabular-nums font-semibold py-5 ${(entry.totalValue || 0) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
                           {(entry.totalValue || 0) > 0 ? '+' : ''}{Math.round(entry.totalValue || 0).toLocaleString()}
