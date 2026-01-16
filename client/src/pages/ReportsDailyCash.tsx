@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Calendar as CalendarIcon, Download, RefreshCcw, Receipt, CircleDollarSign, Printer, CheckCircle, XCircle, Lock, ChevronRight, Building2, FileText, CheckCircle2, AlertCircle, Clock } from "lucide-react"
+import { Calendar as CalendarIcon, Download, RefreshCcw, Printer, Lock, ChevronRight, CheckCircle2 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { ROLES } from "@shared/auth-roles"
 import { Calendar } from "@/components/ui/calendar"
@@ -67,9 +67,6 @@ function yesterdayYMD() {
 
 const CURRENCY = "SSP"
 
-// Variance threshold for status determination (in SSP)
-const MINOR_VARIANCE_THRESHOLD = 100
-
 function formatSSP(amount: number): string {
   return `${CURRENCY} ${Math.round(amount).toLocaleString('en-US')}`
 }
@@ -78,17 +75,6 @@ function getVarianceText(variance: number): string {
   if (variance === 0) return "Balanced"
   if (variance < 0) return `Short by ${formatSSP(Math.abs(variance))}`
   return `Over by ${formatSSP(variance)}`
-}
-
-// Status logic for premium header
-function getReportStatus(closingStatus: ClosingStatus) {
-  if (closingStatus.closed && closingStatus.closing) {
-    const variance = Math.abs(closingStatus.closing.counted_amount - closingStatus.closing.expected_amount)
-    if (variance === 0) return { label: "Reconciled", color: "green", icon: CheckCircle2 }
-    if (variance < MINOR_VARIANCE_THRESHOLD) return { label: "Minor Variance", color: "amber", icon: AlertCircle }
-    return { label: "Discrepancy", color: "red", icon: AlertCircle }
-  }
-  return { label: "Open", color: "blue", icon: Clock }
 }
 
 export default function ReportsDailyCash() {
@@ -247,141 +233,67 @@ export default function ReportsDailyCash() {
   const variance = closingStatus.closing 
     ? closingStatus.closing.counted_amount - closingStatus.closing.expected_amount 
     : 0
-  const showVarianceBlock = closingStatus.closed || (isAdmin && !closingStatus.closed)
-  const reportStatus = getReportStatus(closingStatus)
-  // Report number format: DCR-YYYYMMDD-001 (sequential number is placeholder for now)
-  const reportNumber = `DCR-${date.replace(/-/g, '')}-001`
 
   return (
     <>
       <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
-        {/* Premium Finance Header */}
-        <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50 to-white dark:from-slate-900 dark:via-blue-950 dark:to-gray-900 border-b-2 border-blue-200 dark:border-blue-800 shadow-lg overflow-hidden print:rounded-none print:shadow-none">
-          <div className="p-6 md:p-8 space-y-4">
-            {/* Top Row: Title & Status */}
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-              {/* Left: Branding */}
-              <div className="flex items-start gap-4">
-                <div className="hidden sm:flex rounded-xl bg-blue-100 dark:bg-blue-900 p-3 shadow-md">
-                  <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 mb-1">
-                    Daily Cash Report
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Cash receipts summarized per department
-                  </p>
-                </div>
-              </div>
-
-              {/* Right: Status Badge */}
-              <div className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm shadow-md transition-all hover:shadow-lg",
-                reportStatus.color === "green" && "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-                reportStatus.color === "blue" && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-                reportStatus.color === "amber" && "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-                reportStatus.color === "red" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-              )}>
-                {(() => {
-                  const StatusIcon = reportStatus.icon
-                  return <StatusIcon className="h-4 w-4" />
-                })()}
-                {reportStatus.label}
-              </div>
+        {/* Compact Premium Header */}
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            {/* Left: Title & Subtitle */}
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                Daily Cash Report
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                Cash receipts summarized per department
+              </p>
             </div>
-
-            {/* Metadata Bar */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                <span className="font-medium">Report #:</span>
-                <span className="font-mono text-gray-900 dark:text-gray-100">{reportNumber}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span className="font-medium">Generated:</span>
-                <span>{format(ymdToLocalDate(date), "PPP")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                <span className="font-medium">Fiscal Period:</span>
-                <span>{format(ymdToLocalDate(date), "MMMM yyyy")}</span>
-              </div>
-            </div>
-
-            {/* Key Summary Metrics Row */}
-            {showVarianceBlock && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
-                  <div>
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Expected</div>
-                    <div className="text-lg font-bold tabular-nums text-gray-900 dark:text-gray-100">
-                      {formatSSP(closingStatus.closing?.expected_amount || totals.total_amount)}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
-                  <div>
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Counted</div>
-                    <div className="text-lg font-bold tabular-nums text-gray-900 dark:text-gray-100">
-                      {closingStatus.closing ? formatSSP(closingStatus.closing.counted_amount) : "—"}
-                    </div>
-                  </div>
-                </div>
-                <div className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border",
-                  variance === 0 
-                    ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
-                    : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
+            
+            {/* Right: Metadata & Actions */}
+            <div className="flex items-center gap-4">
+              {/* Metadata - Compact */}
+              <div className="hidden md:flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                <span className="font-mono">DCR-{date.replace(/-/g, '')}</span>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <span>{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+                  closingStatus.closed 
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                    : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
                 )}>
-                  <div>
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                      Variance
-                      {variance === 0 ? (
-                        <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
-                      ) : (
-                        <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
-                      )}
-                    </div>
-                    <div className={cn(
-                      "text-lg font-bold tabular-nums",
-                      variance === 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
-                    )}>
-                      {closingStatus.closing ? (variance === 0 ? "Balanced" : formatSSP(Math.abs(variance))) : "—"}
-                    </div>
-                  </div>
-                </div>
+                  {closingStatus.closed ? "Reconciled" : "Open"}
+                </span>
               </div>
-            )}
-
-            {/* Action Buttons Row - inside header for cohesive design */}
-            <div className="flex flex-wrap gap-2 pt-2 print:hidden">
-              <button
-                onClick={handlePrint}
-                className="inline-flex items-center gap-2 rounded-lg bg-gray-600 text-white px-3 sm:px-4 py-2 text-sm font-semibold shadow-md hover:bg-gray-700 hover:shadow-lg transition-all"
-              >
-                <Printer className="h-4 w-4" />
-                <span className="hidden sm:inline">Print/PDF</span>
-                <span className="sm:hidden">Print</span>
-              </button>
-              <a
-                href={csvUrl}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0066CC] text-white px-3 sm:px-4 py-2 text-sm font-semibold shadow-md hover:bg-[#0052A3] hover:shadow-lg transition-all"
-                data-testid="button-download-csv"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Download CSV</span>
-                <span className="sm:hidden">CSV</span>
-              </a>
-              <button
-                onClick={load}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0066CC] text-white px-3 sm:px-4 py-2 text-sm font-semibold shadow-md hover:bg-[#0052A3] hover:shadow-lg transition-all"
-                data-testid="button-refresh"
-              >
-                <RefreshCcw className="h-4 w-4" />
-                <span className="hidden sm:inline">Refresh</span>
-              </button>
+              
+              {/* Action Icons - Minimal */}
+              <div className="flex items-center gap-1 print:hidden">
+                <button
+                  onClick={handlePrint}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+                  title="Print/PDF"
+                >
+                  <Printer className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100" />
+                </button>
+                <a
+                  href={csvUrl}
+                  download
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+                  title="Download CSV"
+                  data-testid="button-download-csv"
+                >
+                  <Download className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100" />
+                </a>
+                <button
+                  onClick={load}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+                  title="Refresh"
+                  data-testid="button-refresh"
+                >
+                  <RefreshCcw className="h-4 w-4 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -452,90 +364,59 @@ export default function ReportsDailyCash() {
           </div>
         )}
 
-        {/* Expected vs Counted vs Variance - mobile optimized cards */}
-        {showVarianceBlock && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950 dark:to-gray-900 p-4 sm:p-5 shadow-md">
-              <div className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Expected Cash</div>
-              <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
-                {formatSSP(closingStatus.closing?.expected_amount || totals.total_amount)}
-              </div>
-            </div>
-            
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-900 p-4 sm:p-5 shadow-md">
-              <div className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">Counted Cash</div>
-              <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
-                {closingStatus.closing 
-                  ? formatSSP(closingStatus.closing.counted_amount)
-                  : "—"}
-              </div>
-            </div>
-            
-            <div className={`rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-5 shadow-md ${
-              variance === 0 
-                ? "bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-900" 
-                : "bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-gray-900"
-            }`}>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300">Variance</div>
-                {variance === 0 ? (
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                )}
-              </div>
-              <div className={`text-lg sm:text-xl font-bold tabular-nums ${
-                variance === 0 ? "text-green-700 dark:text-green-400" : variance > 0 ? "text-red-700 dark:text-red-400" : "text-orange-700 dark:text-orange-400"
-              }`}>
-                {closingStatus.closing ? getVarianceText(variance) : "—"}
-              </div>
-              {closingStatus.closing && variance !== 0 && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {formatSSP(variance)}
-                </div>
-              )}
+        {/* Single Metrics Row - REPLACES all duplicate cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+          {/* Expected Cash */}
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
+            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Expected Cash</div>
+            <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+              {formatSSP(closingStatus.closing?.expected_amount || totals.total_amount)}
             </div>
           </div>
-        )}
+          
+          {/* Counted Cash */}
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
+            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Counted Cash</div>
+            <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+              {closingStatus.closing?.counted_amount ? formatSSP(closingStatus.closing.counted_amount) : "—"}
+            </div>
+          </div>
+          
+          {/* Variance */}
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
+            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
+              Variance
+              {closingStatus.closed && variance === 0 && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+            </div>
+            <div className={cn(
+              "text-xl sm:text-2xl font-bold tabular-nums",
+              variance > 0 ? "text-green-600 dark:text-green-400" : variance < 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-gray-100"
+            )}>
+              {closingStatus.closed ? (variance >= 0 ? '+' : '') + formatSSP(variance) : "—"}
+            </div>
+          </div>
+          
+          {/* Total Receipts */}
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
+            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total Receipts</div>
+            <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+              {totals.receipt_count.toLocaleString()}
+            </div>
+          </div>
+        </div>
 
-        {/* Close Day button - admin only */}
+        {/* Close Day Button - Compact, Integrated */}
         {isAdmin && !closingStatus.closed && (
-          <div className="flex justify-end print:hidden">
+          <div className="mb-5">
             <button
               onClick={() => setShowCloseDialog(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-600 text-white px-4 py-2.5 text-sm font-semibold shadow-md hover:bg-green-700 hover:shadow-lg transition-all"
+              className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
             >
               <Lock className="h-4 w-4" />
               Close Day
             </button>
           </div>
         )}
-
-        {/* KPI cards - mobile optimized */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-900 p-4 sm:p-6 shadow-lg hover:shadow-2xl transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Total Cash</span>
-              <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2 sm:p-2.5 shadow-md">
-                <CircleDollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-            <div className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
-              {formatSSP(totals.total_amount)}
-            </div>
-          </div>
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950 dark:to-gray-900 p-4 sm:p-6 shadow-lg hover:shadow-2xl transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Receipts</span>
-              <div className="rounded-lg bg-blue-100 dark:bg-blue-900 p-2 sm:p-2.5 shadow-md">
-                <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-            <div className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
-              {Number(totals.receipt_count).toLocaleString()}
-            </div>
-          </div>
-        </div>
 
         {/* Table - mobile optimized */}
         <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg hover:shadow-xl transition-shadow">
