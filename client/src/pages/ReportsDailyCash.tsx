@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Calendar as CalendarIcon, Download, RefreshCcw, Printer, Lock, ChevronRight, CheckCircle2 } from "lucide-react"
+import { Calendar as CalendarIcon, Download, RefreshCcw, Printer, Lock, ChevronRight, CheckCircle2, Clock } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { ROLES } from "@shared/auth-roles"
 import { Calendar } from "@/components/ui/calendar"
@@ -239,7 +239,7 @@ export default function ReportsDailyCash() {
       <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Compact Premium Header */}
         <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-5">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-3">
             {/* Left: Title & Subtitle */}
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
@@ -251,23 +251,29 @@ export default function ReportsDailyCash() {
             </div>
             
             {/* Right: Metadata & Actions */}
-            <div className="flex items-center gap-4">
-              {/* Metadata - Compact */}
-              <div className="hidden md:flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              {/* Metadata */}
+              <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
                 <span className="font-mono">DCR-{date.replace(/-/g, '')}</span>
-                <span className="text-gray-300 dark:text-gray-600">•</span>
-                <span>{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
+                <span className="hidden sm:inline">
+                  {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
                 <span className={cn(
                   "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
                   closingStatus.closed 
                     ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                     : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
                 )}>
-                  {closingStatus.closed ? "Reconciled" : "Open"}
+                  {closingStatus.closed ? (
+                    <><CheckCircle2 className="h-3 w-3" /> Reconciled</>
+                  ) : (
+                    <><Clock className="h-3 w-3" /> Open</>
+                  )}
                 </span>
               </div>
               
-              {/* Action Icons - Minimal */}
+              {/* Action Icons */}
               <div className="flex items-center gap-1 print:hidden">
                 <button
                   onClick={handlePrint}
@@ -296,63 +302,55 @@ export default function ReportsDailyCash() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Controls - single row, mobile friendly */}
-        <div className="flex flex-wrap items-center gap-3 print:hidden">
-          <label className="text-sm font-medium">Date</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={`justify-start text-left font-normal min-w-[200px] ${
-                  !date && "text-muted-foreground"
-                }`}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {/* Use ymdToLocalDate to avoid UTC parsing timezone shift */}
-                {date ? format(ymdToLocalDate(date), "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-50" align="start">
-              {/* Use ymdToLocalDate to avoid UTC parsing timezone shift */}
-              <Calendar
-                mode="single"
-                selected={date ? ymdToLocalDate(date) : undefined}
-                onSelect={(selectedDate) => {
-                  if (selectedDate) {
-                    setDate(format(selectedDate, 'yyyy-MM-dd'))
-                  }
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
           
-          {/* Quick date shortcuts */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDate(todayYMD())}
-            className="font-medium"
-          >
-            Today
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDate(yesterdayYMD())}
-            className="font-medium"
-          >
-            Yesterday
-          </Button>
-          
-          {closingStatus.closed && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-              <Lock className="h-3.5 w-3.5" />
-              Day Closed
-            </div>
-          )}
+          {/* Date Picker Row - Now inline */}
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal w-[200px]",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(ymdToLocalDate(date), "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-50" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date ? ymdToLocalDate(date) : undefined}
+                  onSelect={(d) => d && setDate(format(d, "yyyy-MM-dd"))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDate(todayYMD())}
+              className="text-sm"
+            >
+              Today
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDate(yesterdayYMD())}
+              className="text-sm"
+            >
+              Yesterday
+            </Button>
+            {closingStatus.closed && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-medium ml-auto">
+                <Lock className="h-3.5 w-3.5" />
+                Day Closed
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Error */}
@@ -367,39 +365,51 @@ export default function ReportsDailyCash() {
         {/* Single Metrics Row - REPLACES all duplicate cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
           {/* Expected Cash */}
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 
+               bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 
+               p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Expected Cash</div>
-            <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+            <div className="text-2xl sm:text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
               {formatSSP(closingStatus.closing?.expected_amount || totals.total_amount)}
             </div>
           </div>
           
           {/* Counted Cash */}
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 
+               bg-gradient-to-br from-blue-50 to-white dark:from-blue-950 dark:to-gray-800 
+               p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Counted Cash</div>
-            <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+            <div className="text-2xl sm:text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
               {closingStatus.closing?.counted_amount != null ? formatSSP(closingStatus.closing.counted_amount) : "—"}
             </div>
           </div>
           
           {/* Variance */}
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 
+               bg-gradient-to-br from-amber-50 to-white dark:from-amber-950 dark:to-gray-800 
+               p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
               Variance
-              {closingStatus.closed && variance === 0 && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+              {closingStatus.closed && variance === 0 && (
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+              )}
             </div>
             <div className={cn(
-              "text-xl sm:text-2xl font-bold tabular-nums",
-              variance === 0 ? "text-gray-900 dark:text-gray-100" : "text-red-600 dark:text-red-400"
+              "text-2xl sm:text-3xl font-bold tabular-nums",
+              variance > 0 ? "text-green-600 dark:text-green-400" : 
+              variance < 0 ? "text-red-600 dark:text-red-400" : 
+              "text-gray-900 dark:text-gray-100"
             )}>
-              {closingStatus.closed ? formatSSP(variance) : "—"}
+              {closingStatus.closed ? (variance >= 0 ? '+' : '') + formatSSP(Math.abs(variance)) : "—"}
             </div>
           </div>
           
           {/* Total Receipts */}
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 
+               bg-gradient-to-br from-green-50 to-white dark:from-green-950 dark:to-gray-800 
+               p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total Receipts</div>
-            <div className="text-xl sm:text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+            <div className="text-2xl sm:text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
               {totals.receipt_count.toLocaleString()}
             </div>
           </div>
@@ -407,10 +417,14 @@ export default function ReportsDailyCash() {
 
         {/* Close Day Button - Compact, Integrated */}
         {isAdmin && !closingStatus.closed && (
-          <div className="mb-5">
+          <div className="flex justify-end mb-5">
             <button
               onClick={() => setShowCloseDialog(true)}
-              className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 
+                         bg-gradient-to-r from-green-600 to-green-700 
+                         hover:from-green-700 hover:to-green-800 
+                         text-white rounded-lg font-semibold shadow-md hover:shadow-lg 
+                         transition-all duration-200"
             >
               <Lock className="h-4 w-4" />
               Close Day
@@ -447,13 +461,18 @@ export default function ReportsDailyCash() {
                     </tr>
                   ))
                 ) : (
-                  rows.map((r) => (
+                  rows.map((r, index) => (
                     <tr 
                       key={r.department} 
-                      className="hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer print:cursor-auto"
+                      className={cn(
+                        "hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer print:cursor-auto",
+                        index % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/30"
+                      )}
                       onClick={() => loadReceiptDetails(r.department)}
                     >
-                      <td className="px-3 sm:px-4 py-3 capitalize font-medium text-gray-900 dark:text-gray-100">{r.department}</td>
+                      <td className="px-3 sm:px-4 py-3 capitalize font-medium text-gray-900 dark:text-gray-100">
+                        {r.department}
+                      </td>
                       <td className="px-3 sm:px-4 py-3 text-right tabular-nums text-gray-900 dark:text-gray-100">
                         {Number(r.receipt_count).toLocaleString()}
                       </td>
@@ -468,13 +487,15 @@ export default function ReportsDailyCash() {
                 )}
               </tbody>
               {!loading && (
-                <tfoot className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-t-2 border-gray-200 dark:border-gray-700">
+                <tfoot className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border-t-2 border-gray-300 dark:border-gray-600">
                   <tr>
-                    <td className="px-3 sm:px-4 py-3 font-bold text-gray-900 dark:text-gray-100">Total</td>
-                    <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-bold text-gray-900 dark:text-gray-100">
-                      {Number(totals.receipt_count).toLocaleString()}
+                    <td className="px-3 sm:px-4 py-3 font-bold text-base text-gray-900 dark:text-gray-100">
+                      Total
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-bold text-gray-900 dark:text-gray-100">
+                    <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-bold text-base text-gray-900 dark:text-gray-100">
+                      {totals.receipt_count.toLocaleString()}
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-right tabular-nums font-bold text-base text-gray-900 dark:text-gray-100">
                       {Number(totals.total_amount).toLocaleString()}
                     </td>
                     <td className="px-3 sm:px-4 py-3 print:hidden"></td>
