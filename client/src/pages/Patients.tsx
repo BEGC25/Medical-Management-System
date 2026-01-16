@@ -1326,36 +1326,33 @@ export default function Patients() {
               {/* Desktop Hybrid Table-Card View */}
               <div className="hidden md:block">
                 {/* Table Column Headers */}
-                <div className="grid grid-cols-12 gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
+                <div className="grid grid-cols-[2fr_0.8fr_0.9fr_1.1fr_0.9fr_0.8fr_0.5fr] gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
                                 border-b border-gray-200 dark:border-gray-700 
                                 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  <div className="col-span-3">Patient</div>
-                  <div className="col-span-2">Contact</div>
-                  <div className="col-span-2">Info</div>
-                  <div className="col-span-2">Registration</div>
-                  <div className="col-span-2">Status</div>
-                  <div className="col-span-1 text-right">Actions</div>
+                  <div>Patient</div>
+                  <div>ID</div>
+                  <div>Age/Gender</div>
+                  <div>Contact</div>
+                  <div>Registered</div>
+                  <div>Status</div>
+                  <div className="text-right">Actions</div>
                 </div>
 
-                {/* Table Rows as Cards */}
-                <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {/* Patient Cards */}
+                <div className="space-y-1.5 p-2">
                   {patientsToDisplay.map((patient: any, index: number) => (
                     <div
                       key={patient.id}
-                      className="grid grid-cols-12 gap-3 px-4 py-2.5
-                                 bg-white dark:bg-gray-800 
-                                 border-l-4 border-l-transparent
-                                 hover:bg-gray-50 dark:hover:bg-gray-700/50
-                                 hover:border-l-blue-500 dark:hover:border-l-blue-400
-                                 hover:shadow-md
-                                 transition-all duration-200
+                      className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 
+                                 dark:border-gray-700 px-4 py-2 hover:shadow-lg hover:border-blue-400 
+                                 dark:hover:border-blue-500 transition-all duration-200
+                                 grid grid-cols-[2fr_0.8fr_0.9fr_1.1fr_0.9fr_0.8fr_0.5fr] gap-3 items-center
                                  group"
                     >
-                      {/* Column 1: Patient (Name + Avatar) */}
-                      <div className="col-span-3 flex items-center gap-2 min-w-0">
-                        <Avatar className="h-8 w-8 flex-shrink-0 ring-1 ring-gray-200 
-                                         dark:ring-gray-700 group-hover:ring-blue-400 
-                                         dark:group-hover:ring-blue-500">
+                      {/* Column 1: Patient - Avatar + Name + Badges */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 
+                                         group-hover:ring-blue-400 dark:group-hover:ring-blue-500 transition-all">
                           <AvatarFallback className={getAvatarColor(patient.firstName || '')}>
                             {(patient.firstName?.[0] || '?').toUpperCase()}{(patient.lastName?.[0] || '?').toUpperCase()}
                           </AvatarFallback>
@@ -1364,58 +1361,55 @@ export default function Patients() {
                           <div className="font-semibold text-sm text-gray-900 dark:text-white truncate">
                             {patient.firstName} {patient.lastName}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            ID: {patient.patientId}
+                          {/* Badges on same line if possible */}
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {patient.patientType === "referral_diagnostic" && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1 border-orange-400 
+                                                                 bg-orange-50 text-orange-700 dark:border-orange-600 
+                                                                 dark:bg-orange-900/30 dark:text-orange-400">
+                                🔥 External
+                              </Badge>
+                            )}
+                            {!patient.phoneNumber && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1 border-orange-300 
+                                                                 bg-orange-50 text-orange-700 dark:border-orange-700 
+                                                                 dark:bg-orange-900/20 dark:text-orange-400">
+                                ⚠️ No contact
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      {/* Column 2: Contact */}
-                      <div className="col-span-2 flex items-center min-w-0">
-                        {patient.phoneNumber ? (
-                          <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                            {patient.phoneNumber}
-                          </span>
-                        ) : (
-                          <Badge variant="outline" className="text-xs border-orange-300 bg-orange-50 
-                                                             text-orange-700 dark:border-orange-700 
-                                                             dark:bg-orange-900/20 dark:text-orange-400">
-                            ⚠️ No contact
-                          </Badge>
-                        )}
+                      {/* Column 2: ID */}
+                      <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        {patient.patientId}
                       </div>
 
-                      {/* Column 3: Info (Age/Gender) */}
-                      <div className="col-span-2 flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        {patient.age} • {patient.gender === 'Male' ? 'M' : 'F'}
+                      {/* Column 3: Age/Gender */}
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {patient.age} • {patient.gender === 'Male' ? 'M' : patient.gender === 'Female' ? 'F' : patient.gender || '—'}
                       </div>
 
-                      {/* Column 4: Registration */}
-                      <div className="col-span-2 flex items-center">
-                        <div className="flex flex-col">
-                          <span className="text-xs text-gray-600 dark:text-gray-400">
-                            {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
-                          </span>
-                          {patient.patientType === "referral_diagnostic" && (
-                            <Badge variant="outline" className="text-xs border-orange-400 bg-orange-100 
-                                                               text-orange-700 dark:border-orange-600 
-                                                               dark:bg-orange-900/30 dark:text-orange-400 
-                                                               font-medium mt-1 w-fit">
-                              🔥 External
-                            </Badge>
-                          )}
-                        </div>
+                      {/* Column 4: Contact */}
+                      <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        {patient.phoneNumber || '—'}
                       </div>
 
-                      {/* Column 5: Status */}
-                      <div className="col-span-2 flex items-center">
+                      {/* Column 5: Registered */}
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatClinicDay((patient as any).clinicDay || patient.createdAt)}
+                      </div>
+
+                      {/* Column 6: Consultation Status */}
+                      <div>
                         {patient.patientType === "referral_diagnostic" ? (
-                          <Badge className="text-xs bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400">
+                          <Badge className="text-xs h-5 px-2 bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400">
                             N/A
                           </Badge>
                         ) : patient.serviceStatus && (
                           <Badge className={cn(
-                            "text-xs",
+                            "text-xs h-5 px-2",
                             ((patient.serviceStatus.balanceToday ?? patient.serviceStatus.balance) || 0) > 0
                               ? "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
                               : "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400"
@@ -1429,12 +1423,12 @@ export default function Patients() {
                         )}
                       </div>
 
-                      {/* Column 6: Actions */}
-                      <div className="col-span-1 flex items-center justify-end">
+                      {/* Column 7: Actions */}
+                      <div className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                              <MoreVertical className="w-4 h-4" />
+                              <MoreVertical className="w-3.5 h-3.5" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
