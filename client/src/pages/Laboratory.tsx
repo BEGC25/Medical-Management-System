@@ -963,7 +963,7 @@ return (
         {/* LEFT – Pending Test Requests (Always Visible) */}
 
         <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)] border-0 overflow-hidden">
-          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+          <CardHeader className="bg-orange-50 dark:bg-orange-950/20 border-b">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
                 <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
@@ -1163,7 +1163,7 @@ return (
 
         {/* RIGHT – Completed Tests */}
         <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)] border-0 overflow-hidden">
-          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
+          <CardHeader className="bg-green-50 dark:bg-green-950/20 border-b">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
