@@ -6,6 +6,7 @@ import session from "express-session";
 import { hashPassword } from "./auth-service";
 import { today } from "./utils/date";
 import { getClinicDayKey } from "@shared/clinic-date";
+import { generateTransactionId } from "./utils/transactionId";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
@@ -24,7 +25,6 @@ let encounterCounter = 0;
 let invoiceCounter = 0;
 let drugCodeCounter = 0;
 let batchCounter = 0;
-let ledgerCounter = 0;
 
 const XRAY_RELATED_TYPES = ["xray", "xray_exam"] as const;
 const LAB_RELATED_TYPES = ["lab", "lab_test"] as const;
@@ -170,12 +170,8 @@ async function generateBatchId(): Promise<string> {
 }
 
 async function generateLedgerId(): Promise<string> {
-  if (ledgerCounter === 0) {
-    const allLedger = await db.select().from(inventoryLedger);
-    ledgerCounter = allLedger.length;
-  }
-  ledgerCounter++;
-  return `TXN${ledgerCounter.toString().padStart(8, '0')}`;
+  // Use new date-based transaction ID format: TXNYYMMDDSSSrrrr
+  return await generateTransactionId();
 }
 
 export interface IStorage {
