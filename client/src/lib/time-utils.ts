@@ -34,7 +34,9 @@ export function timeAgo(iso?: string | null): string {
     }
     
     // formatDistanceToNow compares against Date.now() which is UTC-based
-    return formatDistanceToNow(date, { addSuffix: true, includeSeconds: true });
+    // Remove "about " prefix for cleaner display (e.g., "12 hours ago" instead of "about 12 hours ago")
+    const timeString = formatDistanceToNow(date, { addSuffix: true, includeSeconds: true });
+    return timeString.replace(/^about\s+/, '');
   } catch (error) {
     console.error('[timeAgo] Error:', error, 'Input:', iso);
     return '';

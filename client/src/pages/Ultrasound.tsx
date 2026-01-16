@@ -905,30 +905,43 @@ export default function Ultrasound() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full px-6 py-6 space-y-6">
-        {/* Header Section */}
+      <div className="w-full pt-4 pb-6 px-6 space-y-6">
+        {/* Header Section - Premium Gradient Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <Waves className="w-8 h-8 text-white" />
+            {/* Premium gradient icon with glow - Purple theme */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-violet-600 
+                            rounded-2xl blur-xl opacity-40 animate-pulse" />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 
+                            flex items-center justify-center shadow-lg shadow-purple-500/50">
+                <Waves className="w-8 h-8 text-white drop-shadow-lg" />
+              </div>
             </div>
+            
+            {/* Premium title with gradient text */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-700 to-violet-600 
+                           bg-clip-text text-transparent dark:from-purple-400 dark:to-violet-300">
                 Ultrasound Department
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 font-medium">
                 Advanced diagnostic imaging and ultrasound services
               </p>
             </div>
           </div>
+
+          {/* Right: Refresh Button */}
           <Button 
-            variant="outline" 
-            size="default"
+            variant="outline"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all"
+            className="hover:bg-purple-50 dark:hover:bg-purple-950/20 
+                     hover:border-purple-400 dark:hover:border-purple-500 
+                     hover:text-purple-700 dark:hover:text-purple-400
+                     transition-all duration-200"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -937,23 +950,23 @@ export default function Ultrasound() {
         <div className="grid grid-cols-3 gap-4">
           {/* Pending Card */}
           <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
                     Pending
                   </p>
-                  <div className="flex items-baseline gap-2 mt-2">
-                    <p className="text-3xl font-bold text-orange-700 dark:text-orange-400">
+                  <div className="flex items-baseline gap-1.5 mt-1.5">
+                    <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">
                       {pendingExams.length}
                     </p>
-                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                    <p className="text-xs text-orange-600 dark:text-orange-400">
                       requests
                     </p>
                   </div>
                 </div>
-                <div className="p-3 bg-orange-600 rounded-xl shadow-sm">
-                  <Clock className="w-6 h-6 text-white" />
+                <div className="p-2.5 bg-orange-600 rounded-lg shadow-sm">
+                  <Clock className="w-5 h-5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -961,23 +974,23 @@ export default function Ultrasound() {
 
           {/* Completed Card */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
                     Completed
                   </p>
-                  <div className="flex items-baseline gap-2 mt-2">
-                    <p className="text-3xl font-bold text-green-700 dark:text-green-400">
+                  <div className="flex items-baseline gap-1.5 mt-1.5">
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-400">
                       {completedExams.length}
                     </p>
-                    <p className="text-sm text-green-600 dark:text-green-400">
+                    <p className="text-xs text-green-600 dark:text-green-400">
                       results
                     </p>
                   </div>
                 </div>
-                <div className="p-3 bg-green-600 rounded-xl shadow-sm">
-                  <CheckCircle className="w-6 h-6 text-white" />
+                <div className="p-2.5 bg-green-600 rounded-lg shadow-sm">
+                  <CheckCircle className="w-5 h-5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -985,23 +998,23 @@ export default function Ultrasound() {
 
           {/* Total Card */}
           <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">
                     Total Exams
                   </p>
-                  <div className="flex items-baseline gap-2 mt-2">
-                    <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
+                  <div className="flex items-baseline gap-1.5 mt-1.5">
+                    <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">
                       {allUltrasoundExams.length}
                     </p>
-                    <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400">
                       all time
                     </p>
                   </div>
                 </div>
-                <div className="p-3 bg-indigo-600 rounded-xl shadow-sm">
-                  <Waves className="w-6 h-6 text-white" />
+                <div className="p-2.5 bg-indigo-600 rounded-lg shadow-sm">
+                  <Waves className="w-5 h-5 text-white" />
                 </div>
               </div>
             </CardContent>
