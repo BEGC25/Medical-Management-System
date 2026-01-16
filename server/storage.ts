@@ -25,7 +25,6 @@ let encounterCounter = 0;
 let invoiceCounter = 0;
 let drugCodeCounter = 0;
 let batchCounter = 0;
-let ledgerCounter = 0;
 
 const XRAY_RELATED_TYPES = ["xray", "xray_exam"] as const;
 const LAB_RELATED_TYPES = ["lab", "lab_test"] as const;

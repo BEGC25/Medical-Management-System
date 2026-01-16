@@ -122,10 +122,10 @@ export function parseTransactionId(transactionId: string): {
   
   const [, year, month, day, seq, rand] = match;
   
-  // Use pivot year approach: years 00-49 are 2000-2049, years 50-99 are 1950-1999
-  // Since this is a new system (2026), we assume all years are 2000+
+  // Since this is a new system (2026+), all 2-digit years represent 20XX
+  // This will work correctly until year 2100
   const yy = parseInt(year, 10);
-  const fullYear = yy >= 0 && yy <= 99 ? 2000 + yy : yy;
+  const fullYear = 2000 + yy;
   const date = new Date(fullYear, parseInt(month, 10) - 1, parseInt(day, 10));
   
   return {
