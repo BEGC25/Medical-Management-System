@@ -427,22 +427,22 @@ export default function Billing() {
 
   return (
     <div className="space-y-6">
-      {/* Header with gradient */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-md p-6">
+      {/* Header with sophisticated muted gradient */}
+      <div className="bg-gradient-to-r from-slate-700 via-slate-600 to-blue-700 dark:from-slate-800 dark:via-slate-700 dark:to-blue-800 text-white rounded-xl shadow-lg p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-3 rounded-lg">
+            <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl shadow-md hover:bg-white/20 transition-all duration-200">
               <Receipt className="h-8 w-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Billing & Invoices</h1>
-              <p className="text-blue-100 mt-1">Manage patient visits and generate invoices</p>
+              <h1 className="text-3xl font-bold tracking-tight">Billing & Invoices</h1>
+              <p className="text-slate-200 dark:text-slate-300 mt-1 text-sm">Manage patient visits and generate invoices</p>
             </div>
           </div>
           
           <Dialog open={showNewEncounterDialog} onOpenChange={setShowNewEncounterDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-white text-blue-700 hover:bg-blue-50 shadow-md">
+              <Button className="bg-white text-slate-700 hover:bg-slate-50 shadow-md hover:shadow-lg transition-all duration-200 font-semibold">
                 <Plus className="h-4 w-4 mr-2" />
                 New Visit
               </Button>
