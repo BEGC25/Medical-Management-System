@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
-  Plus, Search, Edit2, X, Check,
+  Plus, Search, Edit2, X, Check, Filter, 
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
   DollarSign, Package, XCircle, MoreVertical, Copy,
@@ -573,12 +573,15 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function ServiceManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("laboratory");
   const [useCustomName, setUseCustomName] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Service | null; direction: "asc" | "desc" }>({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
   const [predefinedSearch, setPredefinedSearch] = useState("");
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const itemsPerPage = 10;
@@ -929,6 +932,11 @@ export default function ServiceManagement() {
     }
   };
 
+  const filterByStatus = (status: 'active' | 'inactive') => {
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
+
   const handleEdit = (service: Service) => {
     setEditingService(service);
     form.reset({
@@ -969,9 +977,18 @@ export default function ServiceManagement() {
       
       const matchesCategory = categoryFilter.length === 0 || categoryFilter.includes(service.category);
       
-      return matchesSearch && matchesCategory;
+      const matchesStatus = 
+        statusFilter === "all" ||
+        (statusFilter === "active" && isServiceActive(service)) ||
+        (statusFilter === "inactive" && !isServiceActive(service));
+      
+      const matchesPriceRange = 
+        (!priceRange.min || Number(service.price) >= Number(priceRange.min)) &&
+        (!priceRange.max || Number(service.price) <= Number(priceRange.max));
+      
+      return matchesSearch && matchesCategory && matchesStatus && matchesPriceRange;
     });
-  }, [services, debouncedSearch, categoryFilter]);
+  }, [services, debouncedSearch, categoryFilter, statusFilter, priceRange]);
 
   // Sort services
   const sortedServices = useMemo(() => {
@@ -1042,6 +1059,8 @@ export default function ServiceManagement() {
   const clearFilters = () => {
     setSearchTerm("");
     setCategoryFilter([]);
+    setStatusFilter("all");
+    setPriceRange({ min: "", max: "" });
     setCurrentPage(1);
   };
 
@@ -1054,7 +1073,7 @@ export default function ServiceManagement() {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = searchTerm || categoryFilter.length > 0;
+  const hasActiveFilters = searchTerm || categoryFilter.length > 0 || statusFilter !== "all" || priceRange.min || priceRange.max;
 
   // Handle predefined service selection and auto-generate code
   const handlePredefinedServiceSelect = (serviceName: string) => {
@@ -1131,52 +1150,39 @@ export default function ServiceManagement() {
   };
 
   return (
-    <div className="space-y-3 px-4 sm:px-6 pt-2 sm:pt-3 pb-4 sm:pb-6">
-      {/* Premium Header Section */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Service Management
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Manage pricing and catalog for all clinic services
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Refresh Button */}
-            <Button
-              variant="outline"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/services"] })}
-              className="hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            
-            {/* Add Service Button */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={() => {
-                    setEditingService(null);
-                    form.reset({
-                      name: "",
-                      code: "",
-                      category: "consultation",
-                      price: 0,
-                      description: "",
-                      isActive: 1
-                    });
-                    setIsDialogOpen(true);
-                  }}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Service
-                </Button>
-              </DialogTrigger>
+    <div className="space-y-6 p-4 sm:p-6">
+      {/* Header with gradient */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Service Management
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Manage pricing and catalog for all clinic services
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/services"] })}
+            disabled={isLoading}
+            className="gap-2"
+            data-testid="button-refresh-services"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={handleAddNew} 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl font-semibold transition-all transform hover:scale-105" 
+                data-testid="button-add-service"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Service
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">
@@ -1527,7 +1533,6 @@ export default function ServiceManagement() {
             </Form>
           </DialogContent>
         </Dialog>
-          </div>
         </div>
       </div>
 
@@ -1539,6 +1544,7 @@ export default function ServiceManagement() {
                      transition-all duration-300 cursor-pointer group"
           onClick={() => {
             setCategoryFilter([]);
+            setStatusFilter('all');
             setCurrentPage(1);
           }}
         >
@@ -1569,10 +1575,7 @@ export default function ServiceManagement() {
         <Card 
           className="border-2 border-green-200 dark:border-green-800 hover:shadow-lg hover:-translate-y-1 
                      transition-all duration-300 cursor-pointer group"
-          onClick={() => {
-            setCategoryFilter([]);
-            setCurrentPage(1);
-          }}
+          onClick={() => filterByStatus('active')}
         >
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
@@ -1604,10 +1607,7 @@ export default function ServiceManagement() {
         <Card 
           className="border-2 border-red-200 dark:border-red-800 hover:shadow-lg hover:-translate-y-1 
                      transition-all duration-300 cursor-pointer group"
-          onClick={() => {
-            setCategoryFilter([]);
-            setCurrentPage(1);
-          }}
+          onClick={() => filterByStatus('inactive')}
         >
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
@@ -1691,6 +1691,40 @@ export default function ServiceManagement() {
               />
             </div>
 
+            {/* Filters Toggle */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                {showFilters ? "Hide Filters" : "Show Filters"}
+                {hasActiveFilters && (
+                  <Badge variant="default" className="ml-1 bg-blue-600">
+                    {[
+                      searchTerm && 1,
+                      categoryFilter.length,
+                      statusFilter !== "all" && 1,
+                      (priceRange.min || priceRange.max) && 1,
+                    ].filter(Boolean).reduce((a, b) => Number(a) + Number(b), 0)}
+                  </Badge>
+                )}
+              </Button>
+              
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Clear All Filters
+                </Button>
+              )}
+            </div>
+
             {/* Premium Category Filter Pills */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -1745,6 +1779,56 @@ export default function ServiceManagement() {
               )}
             </div>
 
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
+                {/* Status Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select value={statusFilter} onValueChange={(value) => {
+                    setStatusFilter(value);
+                    setCurrentPage(1);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active Only</SelectItem>
+                      <SelectItem value="inactive">Inactive Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Price Range */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Price Range (SSP)</label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={priceRange.min}
+                      onChange={(e) => {
+                        setPriceRange({ ...priceRange, min: e.target.value });
+                        setCurrentPage(1);
+                      }}
+                      className="w-1/2"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={priceRange.max}
+                      onChange={(e) => {
+                        setPriceRange({ ...priceRange, max: e.target.value });
+                        setCurrentPage(1);
+                      }}
+                      className="w-1/2"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Active Filter Chips */}
             {hasActiveFilters && (
               <div className="flex flex-wrap gap-2 pt-2">
@@ -1766,6 +1850,24 @@ export default function ServiceManagement() {
                     />
                   </Badge>
                 ))}
+                {statusFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1 capitalize">
+                    Status: {statusFilter}
+                    <X
+                      className="w-3 h-3 cursor-pointer hover:text-red-600"
+                      onClick={() => setStatusFilter("all")}
+                    />
+                  </Badge>
+                )}
+                {(priceRange.min || priceRange.max) && (
+                  <Badge variant="secondary" className="gap-1">
+                    Price: {priceRange.min || "0"} - {priceRange.max || "∞"}
+                    <X
+                      className="w-3 h-3 cursor-pointer hover:text-red-600"
+                      onClick={() => setPriceRange({ min: "", max: "" })}
+                    />
+                  </Badge>
+                )}
               </div>
             )}
           </div>
