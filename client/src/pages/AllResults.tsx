@@ -380,27 +380,49 @@ export default function AllResults() {
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* Patient Information */}
-            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-              <h4 className="font-medium mb-2 flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Patient Information
-              </h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Name:</span> {patient?.firstName} {patient?.lastName}
-                </div>
-                <div>
-                  <span className="font-medium">Patient ID:</span> {patient?.patientId}
-                </div>
-                <div>
-                  <span className="font-medium">Age:</span> {patient?.age || 'Not provided'}
-                </div>
-                <div>
-                  <span className="font-medium">Gender:</span> {patient?.gender || 'Not provided'}
+            {/* Patient Information - Only show if data exists */}
+            {(patient?.firstName || patient?.age || patient?.gender) && (
+              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                  <User className="h-4 w-4" />
+                  Patient Information
+                </h4>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  {patient?.firstName && patient?.lastName && (
+                    <div>
+                      <span className="text-slate-600 dark:text-slate-400">Name:</span>
+                      <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">
+                        {patient.firstName} {patient.lastName}
+                      </span>
+                    </div>
+                  )}
+                  {patient?.patientId && (
+                    <div>
+                      <span className="text-slate-600 dark:text-slate-400">Patient ID:</span>
+                      <span className="ml-2 font-medium font-mono text-slate-900 dark:text-slate-100">
+                        {patient.patientId}
+                      </span>
+                    </div>
+                  )}
+                  {patient?.age && (
+                    <div>
+                      <span className="text-slate-600 dark:text-slate-400">Age:</span>
+                      <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">
+                        {patient.age} years
+                      </span>
+                    </div>
+                  )}
+                  {patient?.gender && (
+                    <div>
+                      <span className="text-slate-600 dark:text-slate-400">Gender:</span>
+                      <span className="ml-2 font-medium text-slate-900 dark:text-slate-100 capitalize">
+                        {patient.gender}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Test/Exam Specific Information */}
             {result.type === 'lab' && (
@@ -1339,19 +1361,25 @@ export default function AllResults() {
               </div>
             )}
 
-            {/* Dates */}
-            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-              <h4 className="font-medium mb-2 flex items-center gap-2">
+            {/* Timeline */}
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+              <h4 className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100">
                 <Calendar className="h-4 w-4" />
                 Timeline
               </h4>
               <div className="space-y-2 text-sm">
-                <div>
-                  <span className="font-medium">Requested:</span> {format(new Date(result.createdAt), 'MMM dd, yyyy HH:mm')}
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600 dark:text-slate-400">Requested:</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    {format(new Date(result.createdAt), 'MMM dd, yyyy HH:mm')}
+                  </span>
                 </div>
                 {result.completedDate && (
-                  <div>
-                    <span className="font-medium">Completed:</span> {format(new Date(result.completedDate), 'MMM dd, yyyy HH:mm')}
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Completed:</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                      {format(new Date(result.completedDate), 'MMM dd, yyyy HH:mm')}
+                    </span>
                   </div>
                 )}
               </div>

@@ -98,7 +98,7 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
             <div
               key={`${result.type}-${result.id}`}
               className={`
-                rounded-lg p-3.5 cursor-pointer transition-all duration-200
+                rounded-lg p-3 cursor-pointer transition-all duration-200
                 border ${colors.border}
                 ${isSelected 
                   ? 'bg-white dark:bg-slate-800 shadow-md ring-2 ring-blue-400 dark:ring-blue-500' 
@@ -125,10 +125,12 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
                       <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                        {result.patient?.firstName} {result.patient?.lastName}
+                        {result.patient?.firstName && result.patient?.lastName 
+                          ? `${result.patient.firstName} ${result.patient.lastName}`
+                          : result.patientId || 'Unknown Patient'}
                       </h3>
                       <Badge variant="outline" className="text-xs flex-shrink-0">
-                        {result.patient?.patientId}
+                        {result.patient?.patientId || result.patientId}
                       </Badge>
                     </div>
                     

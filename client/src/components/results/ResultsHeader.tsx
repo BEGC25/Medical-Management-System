@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { Search, ShieldCheck } from "lucide-react";
+import { Search, ShieldCheck, FileText } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 interface ResultsHeaderProps {
@@ -22,27 +22,32 @@ export function ResultsHeader({ searchTerm, onSearchChange }: ResultsHeaderProps
   return (
     <div className="sticky top-0 z-10 bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-md">
       <div className="container mx-auto px-6 py-6">
-        {/* Title Section */}
-        <div className="flex items-start justify-between mb-4 gap-6">
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-50 tracking-tight mb-2 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-50 dark:to-slate-200 bg-clip-text text-transparent">
-              Results Command Center
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
-              <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              HIPAA Compliant • Audit Trail Enabled
-            </p>
+        {/* Premium Gradient Header - Matches Billing & Invoices */}
+        <div className="bg-gradient-to-r from-slate-700 via-slate-600 to-blue-700 dark:from-slate-800 dark:via-slate-700 dark:to-blue-800 text-white rounded-xl shadow-lg p-5 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl shadow-md hover:bg-white/20 transition-all duration-200">
+                <FileText className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Results Command Center</h1>
+                <p className="text-slate-200 dark:text-slate-300 mt-1 text-sm flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4" />
+                  HIPAA Compliant • Audit Trail Enabled
+                </p>
+              </div>
+            </div>
           </div>
         </div>
         
-        {/* Search Section */}
+        {/* Search Section - Moved below header */}
         <div className="relative max-w-2xl">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           <Input
             placeholder="Quick search: patient name, ID, or test number..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            className="pl-11 h-12 text-base border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent rounded-lg"
+            className="pl-11 h-11 text-base border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent rounded-lg"
             aria-label="Search results by patient name, ID, or test number"
           />
         </div>
