@@ -1091,7 +1091,7 @@ export default function Ultrasound() {
               )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
+                <Input placeholder="Search by patient name, ID, or exam type..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                 {pendingExams.length} pending{patientSearchTerm && ` matching "${patientSearchTerm}"`}
@@ -1198,7 +1198,7 @@ export default function Ultrasound() {
               )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search by patient name or ID..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
+                <Input placeholder="Search by patient name, ID, or exam type..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                 {completedExams.length} completed{patientSearchTerm && ` matching "${patientSearchTerm}"`}

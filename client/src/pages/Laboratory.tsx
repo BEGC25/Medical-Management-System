@@ -1047,7 +1047,7 @@ return (
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search by patient name, ID, or test type (press / to focus)..."
+                  placeholder="Search by patient name, ID, or exam type..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all duration-300 placeholder:text-gray-400"
@@ -1242,7 +1242,7 @@ return (
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search by patient name, ID, or test type (press / to focus)..."
+                  placeholder="Search by patient name, ID, or exam type..."
                   value={patientSearchTerm}
                   onChange={(e) => setPatientSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all duration-300 placeholder:text-gray-400"
