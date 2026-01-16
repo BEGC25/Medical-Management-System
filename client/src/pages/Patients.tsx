@@ -1388,14 +1388,12 @@ export default function Patients() {
 
                       {/* Column 3: Age/Gender */}
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {patient.age} • {patient.gender === 'Male' ? 'M' : patient.gender === 'Female' ? 'F' : patient.gender}
+                        {patient.age} • {patient.gender === 'Male' ? 'M' : patient.gender === 'Female' ? 'F' : patient.gender || '—'}
                       </div>
 
                       {/* Column 4: Contact */}
                       <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {patient.phoneNumber || (
-                          <span className="text-orange-600 dark:text-orange-400 text-xs">No contact</span>
-                        )}
+                        {patient.phoneNumber || '—'}
                       </div>
 
                       {/* Column 5: Registered */}
@@ -1429,7 +1427,7 @@ export default function Patients() {
                       <div className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                               <MoreVertical className="w-3.5 h-3.5" />
                             </Button>
                           </DropdownMenuTrigger>
