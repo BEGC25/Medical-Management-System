@@ -31,47 +31,75 @@ export async function generateTransactionId(): Promise<string> {
   const day = now.getDate().toString().padStart(2, '0'); // 16
   const datePrefix = `${year}${month}${day}`; // 260116
   
-  try {
-    // Get today's date range in ISO format (for SQLite datetime comparison)
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayEnd = new Date(todayStart);
-    todayEnd.setDate(todayEnd.getDate() + 1);
-    
-    const todayStartStr = todayStart.toISOString();
-    const todayEndStr = todayEnd.toISOString();
-    
-    // Count transactions created today to get the daily sequence
-    // Using SQL to ensure compatibility with both SQLite and PostgreSQL
-    const result = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(inventoryLedger)
-      .where(
-        and(
-          gte(inventoryLedger.createdAt, todayStartStr),
-          lt(inventoryLedger.createdAt, todayEndStr)
-        )
-      );
-    
-    const todayCount = result[0]?.count || 0;
-    const sequence = todayCount + 1;
-    const seqPadded = sequence.toString().padStart(3, '0'); // 001
-    
-    // Random component (1000-9999) for uniqueness and unpredictability
-    const random = Math.floor(1000 + Math.random() * 9000); // 1000-9999
-    
-    // Construct final transaction ID
-    const transactionId = `TXN${datePrefix}${seqPadded}${random}`;
-    
-    return transactionId;
-    
-  } catch (error) {
-    console.error('Error generating transaction ID:', error);
-    
-    // Fallback: use timestamp-based ID to ensure uniqueness
-    const timestamp = Date.now().toString().slice(-8);
-    const fallbackRandom = Math.floor(1000 + Math.random() * 9000);
-    return `TXN${timestamp}${fallbackRandom}`;
+  // Retry loop to handle potential race conditions
+  const maxRetries = 5;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Get today's date range in ISO format (for SQLite datetime comparison)
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayEnd = new Date(todayStart);
+      todayEnd.setDate(todayEnd.getDate() + 1);
+      
+      const todayStartStr = todayStart.toISOString();
+      const todayEndStr = todayEnd.toISOString();
+      
+      // Count transactions created today to get the daily sequence
+      // Using SQL to ensure compatibility with both SQLite and PostgreSQL
+      const result = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(inventoryLedger)
+        .where(
+          and(
+            gte(inventoryLedger.createdAt, todayStartStr),
+            lt(inventoryLedger.createdAt, todayEndStr)
+          )
+        );
+      
+      const todayCount = result[0]?.count || 0;
+      const sequence = todayCount + 1;
+      const seqPadded = sequence.toString().padStart(3, '0'); // 001
+      
+      // Random component (1000-9999) for uniqueness and unpredictability
+      // This helps prevent collisions even if there's a race condition
+      const random = Math.floor(1000 + Math.random() * 9000); // 1000-9999
+      
+      // Construct final transaction ID
+      const transactionId = `TXN${datePrefix}${seqPadded}${random}`;
+      
+      // Verify uniqueness by checking if this ID already exists
+      const existing = await db
+        .select()
+        .from(inventoryLedger)
+        .where(sql`${inventoryLedger.transactionId} = ${transactionId}`)
+        .limit(1);
+      
+      if (existing.length === 0) {
+        // ID is unique, return it
+        return transactionId;
+      }
+      
+      // If ID exists (very rare due to random component), retry with different random number
+      if (attempt === maxRetries - 1) {
+        throw new Error('Failed to generate unique transaction ID after multiple attempts');
+      }
+      
+    } catch (error) {
+      if (attempt === maxRetries - 1) {
+        console.error('Error generating transaction ID:', error);
+        
+        // Fallback: use full timestamp-based ID with additional entropy to ensure uniqueness
+        const timestamp = Date.now().toString();
+        const fallbackRandom = Math.floor(1000 + Math.random() * 9000);
+        return `TXN${timestamp}${fallbackRandom}`;
+      }
+      // Retry on error
+    }
   }
+  
+  // This should never be reached due to the fallback in the catch block
+  const timestamp = Date.now().toString();
+  const fallbackRandom = Math.floor(1000 + Math.random() * 9000);
+  return `TXN${timestamp}${fallbackRandom}`;
 }
 
 /**
@@ -94,8 +122,10 @@ export function parseTransactionId(transactionId: string): {
   
   const [, year, month, day, seq, rand] = match;
   
-  // Construct date (assume 2000s for YY)
-  const fullYear = 2000 + parseInt(year, 10);
+  // Use pivot year approach: years 00-49 are 2000-2049, years 50-99 are 1950-1999
+  // Since this is a new system (2026), we assume all years are 2000+
+  const yy = parseInt(year, 10);
+  const fullYear = yy >= 0 && yy <= 99 ? 2000 + yy : yy;
   const date = new Date(fullYear, parseInt(month, 10) - 1, parseInt(day, 10));
   
   return {
