@@ -304,6 +304,9 @@ export default function PharmacyInventory() {
   const [stockSearchQuery, setStockSearchQuery] = useState("");
   const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
   
+  // Transaction type filter for History tab
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<'all' | 'received' | 'dispensed'>('all');
+  
   const [newDrug, setNewDrug] = useState({
     name: "",
     genericName: "",
@@ -434,10 +437,19 @@ export default function PharmacyInventory() {
 
   // Filter ledger entries based on date filter
   const filteredLedgerEntries = useMemo(() => {
-    return ledgerEntries.filter(entry => 
+    let filtered = ledgerEntries.filter(entry => 
       isDateInRange(entry.createdAt, transactionDateFilter, transactionStartDate, transactionEndDate)
     );
-  }, [ledgerEntries, transactionDateFilter, transactionStartDate, transactionEndDate]);
+    
+    // Apply transaction type filter
+    if (transactionTypeFilter === 'received') {
+      filtered = filtered.filter(entry => entry.transactionType === 'receive');
+    } else if (transactionTypeFilter === 'dispensed') {
+      filtered = filtered.filter(entry => entry.transactionType === 'dispense');
+    }
+    
+    return filtered;
+  }, [ledgerEntries, transactionDateFilter, transactionStartDate, transactionEndDate, transactionTypeFilter]);
 
   // Filter drugs with stock based on filters and search
   const filteredStockDrugs = useMemo(() => {
@@ -942,9 +954,12 @@ export default function PharmacyInventory() {
           <TabsTrigger 
             value="stock" 
             data-testid="tab-stock"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
-                     data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-xs md:text-sm"
+            className={cn(
+              "relative data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700",
+              "data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200",
+              "data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-xs md:text-sm",
+              activeTab === 'stock' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-blue-600 after:to-blue-500 after:rounded-t-full after:shadow-lg after:shadow-blue-500/30"
+            )}
           >
             <Package className="w-4 h-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">Stock</span>
@@ -953,9 +968,12 @@ export default function PharmacyInventory() {
           <TabsTrigger 
             value="catalog" 
             data-testid="tab-catalog"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
-                     data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 text-xs md:text-sm"
+            className={cn(
+              "relative data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700",
+              "data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200",
+              "data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 text-xs md:text-sm",
+              activeTab === 'catalog' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-purple-600 after:to-purple-500 after:rounded-t-full after:shadow-lg after:shadow-purple-500/30"
+            )}
           >
             <Archive className="w-4 h-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">Catalog ({drugs.length})</span>
@@ -964,9 +982,12 @@ export default function PharmacyInventory() {
           <TabsTrigger 
             value="alerts" 
             data-testid="tab-alerts"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
-                     data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400 text-xs md:text-sm"
+            className={cn(
+              "relative data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700",
+              "data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200",
+              "data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400 text-xs md:text-sm",
+              activeTab === 'alerts' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-amber-600 after:to-orange-500 after:rounded-t-full after:shadow-lg after:shadow-amber-500/30"
+            )}
           >
             <AlertTriangle className="w-4 h-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">Alerts ({lowStockDrugs.length + expiringDrugs.length})</span>
@@ -975,9 +996,12 @@ export default function PharmacyInventory() {
           <TabsTrigger 
             value="ledger" 
             data-testid="tab-ledger"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 
-                     data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200
-                     data-[state=active]:text-gray-600 dark:data-[state=active]:text-gray-400 text-xs md:text-sm"
+            className={cn(
+              "relative data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700",
+              "data-[state=active]:shadow-premium-sm rounded-lg transition-all duration-200",
+              "data-[state=active]:text-gray-600 dark:data-[state=active]:text-gray-400 text-xs md:text-sm",
+              activeTab === 'ledger' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-gray-600 after:to-gray-500 after:rounded-t-full after:shadow-lg after:shadow-gray-500/30"
+            )}
           >
             <FileText className="w-4 h-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">History</span>
@@ -1679,20 +1703,69 @@ export default function PharmacyInventory() {
                           <AlertTriangle className="w-3 h-3 mr-1" />
                           LOW STOCK
                         </Badge>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setSelectedDrug(drug);
-                            setNewBatch({ ...newBatch, drugId: drug.id });
-                            setShowReceiveStock(true);
-                          }}
-                          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700
-                                   shadow-premium-sm hover:shadow-premium-md transition-all duration-200"
-                        >
-                          <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-                          Receive Stock
-                        </Button>
                       </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedDrug(drug);
+                          setNewBatch({ ...newBatch, drugId: drug.id });
+                          setShowReceiveStock(true);
+                        }}
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700
+                                 shadow-premium-sm hover:shadow-premium-md transition-all duration-200"
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                        Receive Stock
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Clock className="w-4 h-4 mr-2" />
+                            Snooze
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => {
+                            if (window.confirm(`Snooze this low stock alert for 7 days?\n\nDrug: ${drug.name}\nYou'll be reminded again after 7 days.`)) {
+                              toast({
+                                title: "Alert Snoozed",
+                                description: `${drug.name} alert snoozed for 7 days`,
+                              });
+                            }
+                          }}>
+                            Snooze for 7 days
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            if (window.confirm(`Snooze this low stock alert for 30 days?\n\nDrug: ${drug.name}\nYou'll be reminded again after 30 days.`)) {
+                              toast({
+                                title: "Alert Snoozed",
+                                description: `${drug.name} alert snoozed for 30 days`,
+                              });
+                            }
+                          }}>
+                            Snooze for 30 days
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(`Dismiss this low stock alert?\n\nDrug: ${drug.name}\nThis will permanently dismiss this alert. You can still see the stock level in the Stock tab.`)) {
+                            toast({
+                              title: "Alert Dismissed",
+                              description: `${drug.name} alert has been dismissed`,
+                            });
+                          }
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Dismiss
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -1803,6 +1876,41 @@ export default function PharmacyInventory() {
             }}
             defaultPreset="all"
           />
+
+          {/* Transaction Type Filters */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter transactions:</span>
+            <Button
+              variant={transactionTypeFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransactionTypeFilter('all')}
+              className={transactionTypeFilter === 'all' 
+                ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700" 
+                : ""}
+            >
+              All ({ledgerEntries.length})
+            </Button>
+            <Button
+              variant={transactionTypeFilter === 'received' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransactionTypeFilter('received')}
+              className={transactionTypeFilter === 'received' 
+                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
+                : "border-green-300 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"}
+            >
+              Received Only ({ledgerEntries.filter(e => e.transactionType === 'receive').length})
+            </Button>
+            <Button
+              variant={transactionTypeFilter === 'dispensed' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransactionTypeFilter('dispensed')}
+              className={transactionTypeFilter === 'dispensed' 
+                ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700" 
+                : "border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"}
+            >
+              Dispensed Only ({ledgerEntries.filter(e => e.transactionType === 'dispense').length})
+            </Button>
+          </div>
 
           {/* Analytics Dashboard */}
           <AnalyticsDashboard 

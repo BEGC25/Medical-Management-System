@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { TrendingUp, TrendingDown, Package, ShoppingCart, DollarSign, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InventoryLedger } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 import {
   LineChart,
   Line,
@@ -60,6 +61,8 @@ function MetricCard({ title, value, trend, icon, colorClass }: MetricCardProps) 
 }
 
 export function AnalyticsDashboard({ ledgerEntries, className = "", dateFilterPreset = "all", customDateRange }: AnalyticsDashboardProps) {
+  const { toast } = useToast();
+  
   // Generate dynamic chart title based on filter
   const getChartTitle = () => {
     switch (dateFilterPreset) {
@@ -274,9 +277,39 @@ export function AnalyticsDashboard({ ledgerEntries, className = "", dateFilterPr
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
               <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
-              <Tooltip />
+              <Tooltip 
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-white dark:bg-gray-800 p-3 border-2 border-orange-200 dark:border-orange-700 rounded-lg shadow-lg">
+                        <p className="font-semibold text-gray-900 dark:text-white">{payload[0].payload.name}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          Quantity: <strong className="text-orange-600 dark:text-orange-400">{payload[0].value}</strong> units
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 italic">
+                          Click bar for details
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
               <Legend />
-              <Bar dataKey="quantity" fill="#d97706" name="Quantity Dispensed" />
+              <Bar 
+                dataKey="quantity" 
+                fill="#f97316" 
+                name="Quantity Dispensed"
+                cursor="pointer"
+                onClick={(data) => {
+                  if (data && data.name) {
+                    toast({
+                      title: `${data.name}`,
+                      description: `Total dispensed: ${data.quantity} units`,
+                    });
+                  }
+                }}
+              />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
