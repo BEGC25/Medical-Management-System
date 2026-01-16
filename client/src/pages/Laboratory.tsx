@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import {
   Beaker,
   Plus,
@@ -22,6 +22,9 @@ import {
   User,
   Zap,
   RefreshCw,
+  CheckCircle,
+  Activity,
+  Info,
 } from "lucide-react";
 
 import { ObjectUploader } from "@/components/ObjectUploader";
@@ -55,6 +58,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useServicesByCategory } from "@/hooks/useServicesByCategory";
 
@@ -841,78 +845,119 @@ export default function Laboratory() {
     ) : null;
 
 return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 pt-1.5 pb-6">
-      <div className="max-w-7xl mx-auto space-y-3">
-        {/* Premium Header - Matching Ultrasound/X-Ray Pattern */}
-        <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)]">
-          <CardContent className="p-6">
-            {/* Top Section: Title + CTA */}
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 via-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/30">
-                  <TestTube className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    Laboratory Department
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Clinical laboratory testing and diagnostics
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  variant="outline"
-                  size="sm"
-                  className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300 dark:border-teal-800 dark:text-teal-400 dark:hover:bg-teal-950 transition-all duration-200 shadow-sm"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="w-full px-6 py-6 space-y-6">
+        {/* Header Section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
+              <TestTube className="w-8 h-8 text-white" />
             </div>
-
-            {/* Ordering Notice */}
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-900 dark:text-blue-100">
-                <strong>Note:</strong> New lab orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Lab staff can update results and status for existing orders.
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Laboratory Department
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Clinical laboratory testing and diagnostics
               </p>
             </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="default"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 hover:bg-green-50 dark:hover:bg-green-950/20 hover:border-green-400 dark:hover:border-green-500 transition-all"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
 
-            {/* Compact Stats Bar (Like Patient Page) */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white/50 dark:bg-gray-800/50 py-2.5 px-4">
-              {/* Pending */}
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                <span className="text-gray-600 dark:text-gray-400">Pending:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-pending">{pendingTests.length}</span>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* Pending Card */}
+          <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
+                    Pending
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-3xl font-bold text-orange-700 dark:text-orange-400" data-testid="stat-pending">
+                      {pendingTests.length}
+                    </p>
+                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                      requests
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 bg-orange-600 rounded-xl shadow-sm">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
               </div>
-              
-              {/* Divider */}
-              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
-              
-              {/* Completed */}
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-                <span className="text-gray-600 dark:text-gray-400">Completed:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-completed">{completedTests.length}</span>
+            </CardContent>
+          </Card>
+
+          {/* Completed Card */}
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
+                    Completed
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-3xl font-bold text-green-700 dark:text-green-400" data-testid="stat-completed">
+                      {completedTests.length}
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      results
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 bg-green-600 rounded-xl shadow-sm">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
               </div>
-              
-              {/* Divider */}
-              <span className="hidden sm:inline text-gray-300 dark:text-gray-700">|</span>
-              
-              {/* Total */}
-              <div className="flex items-center gap-2">
-                <TestTube className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                <span className="text-gray-600 dark:text-gray-400">Total Tests:</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums" data-testid="stat-total">{allLabTests.length}</span>
+            </CardContent>
+          </Card>
+
+          {/* Total Card */}
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 uppercase tracking-wide">
+                    Total Exams
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-3xl font-bold text-blue-700 dark:text-blue-400" data-testid="stat-total">
+                      {allLabTests.length}
+                    </p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      all time
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 bg-blue-600 rounded-xl shadow-sm">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Note Banner */}
+        <Alert className="bg-green-50 dark:bg-green-950/20 border-2 border-green-200 dark:border-green-800">
+          <Info className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-900 dark:text-green-100">
+            <strong>Note:</strong> New lab orders can only be created from the{' '}
+            <Link to="/treatment" className="underline font-semibold">Treatment page</Link>
+            {' '}by doctors during patient visits. Lab staff can update results and status for existing orders.
+          </AlertDescription>
+        </Alert>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* LEFT – Pending Test Requests (Always Visible) */}
