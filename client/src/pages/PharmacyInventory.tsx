@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -294,6 +294,10 @@ export default function PharmacyInventory() {
   // Alert view state for filtering alerts (all, lowStock, expiringSoon)
   const [activeAlertView, setActiveAlertView] = useState<'all' | 'lowStock' | 'expiringSoon'>('all');
   
+  // Search states for Stock and Catalog tabs
+  const [stockSearchQuery, setStockSearchQuery] = useState("");
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
+  
   const [newDrug, setNewDrug] = useState({
     name: "",
     genericName: "",
@@ -429,9 +433,19 @@ export default function PharmacyInventory() {
     );
   }, [ledgerEntries, transactionDateFilter, transactionStartDate, transactionEndDate]);
 
-  // Filter drugs with stock based on filters
+  // Filter drugs with stock based on filters and search
   const filteredStockDrugs = useMemo(() => {
     let filtered = [...drugsWithStock];
+    
+    // Apply search filter
+    if (stockSearchQuery) {
+      const searchLower = stockSearchQuery.toLowerCase();
+      filtered = filtered.filter(d => 
+        d.name.toLowerCase().includes(searchLower) ||
+        d.drugCode?.toLowerCase().includes(searchLower) ||
+        d.genericName?.toLowerCase().includes(searchLower)
+      );
+    }
     
     stockFilters.forEach((filter) => {
       switch (filter.id) {
@@ -462,11 +476,21 @@ export default function PharmacyInventory() {
     });
     
     return filtered;
-  }, [drugsWithStock, stockFilters]);
+  }, [drugsWithStock, stockFilters, stockSearchQuery]);
 
-  // Filter catalog drugs based on filters
+  // Filter catalog drugs based on filters and search
   const filteredCatalogDrugs = useMemo(() => {
     let filtered = [...drugs];
+    
+    // Apply search filter
+    if (catalogSearchQuery) {
+      const searchLower = catalogSearchQuery.toLowerCase();
+      filtered = filtered.filter(d => 
+        d.name.toLowerCase().includes(searchLower) ||
+        d.drugCode?.toLowerCase().includes(searchLower) ||
+        d.genericName?.toLowerCase().includes(searchLower)
+      );
+    }
     
     catalogFilters.forEach((filter) => {
       switch (filter.id) {
@@ -486,7 +510,7 @@ export default function PharmacyInventory() {
     });
     
     return filtered;
-  }, [drugs, catalogFilters]);
+  }, [drugs, catalogFilters, catalogSearchQuery]);
 
   // Bulk action handlers
   const handleSelectAllStock = () => {
@@ -989,6 +1013,17 @@ export default function PharmacyInventory() {
             </Button>
           </div>
 
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search drugs by name, code, or generic name..."
+              value={stockSearchQuery}
+              onChange={(e) => setStockSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           {/* Filters */}
           <Card className="shadow-premium-sm">
             <CardContent className="pt-6">
@@ -1005,88 +1040,100 @@ export default function PharmacyInventory() {
           {/* Premium Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Drugs */}
-            <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5
-                           border-blue-200 dark:border-blue-800/50 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/10 dark:to-cyan-900/10">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Total Drugs</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{drugs.length}</p>
-                  </div>
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-premium-sm">
-                    <Archive className="w-6 h-6 text-white" />
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 
+                           dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 
+                           p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-600 rounded-lg flex-shrink-0 shadow-sm">
+                  <Package className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">Total Drugs</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-2xl font-semibold text-blue-700 dark:text-blue-400">
+                      {drugs.length}
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">items</p>
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
-            {/* Low Stock Count */}
+            {/* Low Stock */}
             <Card 
-              className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5 hover:scale-105
-                         border-red-200 dark:border-red-800/50 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/10 dark:to-pink-900/10
-                         cursor-pointer hover:border-red-300 dark:hover:border-red-700"
+              className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 
+                       dark:to-pink-950/20 border-2 border-red-200 dark:border-red-800 
+                       p-4 hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => handleCardClick("low-stock")}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick("low-stock")}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide">Low Stock</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{lowStockDrugs.length}</p>
-                  </div>
-                  <div className="p-3 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl shadow-premium-sm">
-                    <TrendingDown className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-red-600 rounded-lg flex-shrink-0 shadow-sm">
+                  <TrendingDown className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-red-900 dark:text-red-100">Low Stock</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-2xl font-semibold text-red-700 dark:text-red-400">
+                      {lowStockDrugs.length}
+                    </div>
+                    <p className="text-xs text-red-600 dark:text-red-400">alerts</p>
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
             {/* Expiring Soon */}
             <Card 
-              className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5 hover:scale-105
-                         border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10
-                         cursor-pointer hover:border-amber-300 dark:hover:border-amber-700"
+              className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 
+                       dark:to-amber-950/20 border-2 border-orange-200 dark:border-orange-800 
+                       p-4 hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => handleCardClick("expiring-soon")}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick("expiring-soon")}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">Expiring Soon</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{expiringDrugs.length}</p>
-                  </div>
-                  <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-premium-sm">
-                    <Clock className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-orange-600 rounded-lg flex-shrink-0 shadow-sm">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-orange-900 dark:text-orange-100">Expiring Soon</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-2xl font-semibold text-orange-700 dark:text-orange-400">
+                      {expiringDrugs.length}
+                    </div>
+                    <p className="text-xs text-orange-600 dark:text-orange-400">items</p>
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
-            {/* Total Inventory Value */}
-            <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-200 hover:-translate-y-0.5
-                           border-green-200 dark:border-green-800/50 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">Total Value</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {/* Total Value */}
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 
+                           dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 
+                           p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-green-600 rounded-lg flex-shrink-0 shadow-sm">
+                  <DollarSign className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-100">Total Value</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-2xl font-semibold text-green-700 dark:text-green-400">
                       {(() => {
                         const totalValue = allBatches.reduce((sum, batch) => {
                           return sum + (batch.quantityOnHand * batch.unitCost);
                         }, 0);
                         return Math.round(totalValue).toLocaleString();
-                      })()} SSP
-                    </p>
-                  </div>
-                  <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-premium-sm">
-                    <BarChart3 className="w-6 h-6 text-white" />
+                      })()}
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-400">SSP</p>
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
           </div>
 
@@ -1315,6 +1362,17 @@ export default function PharmacyInventory() {
               <Download className="w-4 h-4 mr-2" />
               Export Catalog
             </Button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search drugs by name, code, or generic name..."
+              value={catalogSearchQuery}
+              onChange={(e) => setCatalogSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
 
           {/* Filters */}
