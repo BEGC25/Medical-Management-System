@@ -1237,10 +1237,11 @@ export default function Patients() {
               variant="outline"
               size="sm"
               onClick={handleRefresh}
-              className="flex items-center gap-1.5 text-xs"
+              className="flex items-center gap-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/20 
+                       hover:border-blue-400 dark:hover:border-blue-500 transition-all"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Refresh
+              <span className="text-xs">Refresh</span>
             </Button>
           </div>
         </CardHeader>
@@ -1334,7 +1335,7 @@ export default function Patients() {
                   <div>Age/Gender</div>
                   <div>Contact</div>
                   <div>Registered</div>
-                  <div>Status</div>
+                  <div>Consultation</div>
                   <div className="text-right">Actions</div>
                 </div>
 
@@ -1370,13 +1371,7 @@ export default function Patients() {
                                 🔥 External
                               </Badge>
                             )}
-                            {!patient.phoneNumber && (
-                              <Badge variant="outline" className="text-[10px] h-4 px-1 border-orange-300 
-                                                                 bg-orange-50 text-orange-700 dark:border-orange-700 
-                                                                 dark:bg-orange-900/20 dark:text-orange-400">
-                                ⚠️ No contact
-                              </Badge>
-                            )}
+                            {/* Removed "No contact" badge - rural clinic context */}
                           </div>
                         </div>
                       </div>
@@ -1393,7 +1388,7 @@ export default function Patients() {
 
                       {/* Column 4: Contact */}
                       <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {patient.phoneNumber || '—'}
+                        {patient.phoneNumber || <span className="text-gray-400 dark:text-gray-500">—</span>}
                       </div>
 
                       {/* Column 5: Registered */}
@@ -1427,7 +1422,12 @@ export default function Patients() {
                       <div className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 w-7 p-0"
+                              title="Patient actions"
+                            >
                               <MoreVertical className="w-3.5 h-3.5" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -1539,10 +1539,7 @@ export default function Patients() {
                           {patient.phoneNumber ? (
                             <span className="text-gray-600 dark:text-gray-400">{patient.phoneNumber}</span>
                           ) : (
-                            <span className="text-orange-500 dark:text-orange-400 text-xs italic flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              No contact info
-                            </span>
+                            <span className="text-gray-400 dark:text-gray-500">—</span>
                           )}
                         </div>
                         
@@ -2456,7 +2453,7 @@ export default function Patients() {
                             {!patient.phoneNumber && (
                               <>
                                 <span className="text-gray-400">•</span>
-                                <span className="text-orange-600 dark:text-orange-400">⚠️ No contact</span>
+                                <span className="text-gray-400 dark:text-gray-500">—</span>
                               </>
                             )}
                           </div>
