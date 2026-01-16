@@ -67,6 +67,9 @@ function yesterdayYMD() {
 
 const CURRENCY = "SSP"
 
+// Variance threshold for status determination (in SSP)
+const MINOR_VARIANCE_THRESHOLD = 100
+
 function formatSSP(amount: number): string {
   return `${CURRENCY} ${Math.round(amount).toLocaleString('en-US')}`
 }
@@ -82,7 +85,7 @@ function getReportStatus(closingStatus: ClosingStatus) {
   if (closingStatus.closed && closingStatus.closing) {
     const variance = Math.abs(closingStatus.closing.counted_amount - closingStatus.closing.expected_amount)
     if (variance === 0) return { label: "Reconciled", color: "green", icon: CheckCircle2 }
-    if (variance < 100) return { label: "Minor Variance", color: "amber", icon: AlertCircle }
+    if (variance < MINOR_VARIANCE_THRESHOLD) return { label: "Minor Variance", color: "amber", icon: AlertCircle }
     return { label: "Discrepancy", color: "red", icon: AlertCircle }
   }
   return { label: "Open", color: "blue", icon: Clock }
@@ -246,6 +249,7 @@ export default function ReportsDailyCash() {
     : 0
   const showVarianceBlock = closingStatus.closed || (isAdmin && !closingStatus.closed)
   const reportStatus = getReportStatus(closingStatus)
+  // Report number format: DCR-YYYYMMDD-001 (sequential number is placeholder for now)
   const reportNumber = `DCR-${date.replace(/-/g, '')}-001`
 
   return (
