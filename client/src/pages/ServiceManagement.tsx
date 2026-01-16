@@ -573,6 +573,7 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function ServiceManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("laboratory");
@@ -959,6 +960,13 @@ export default function ServiceManagement() {
     setIsDialogOpen(true);
   };
 
+  // Filter by status helper function
+  const filterByStatus = (status: 'active' | 'inactive' | 'all') => {
+    setStatusFilter(status);
+    setCategoryFilter([]); // Clear category filter when filtering by status
+    setCurrentPage(1);
+  };
+
   // Filter services
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
@@ -969,9 +977,15 @@ export default function ServiceManagement() {
       
       const matchesCategory = categoryFilter.length === 0 || categoryFilter.includes(service.category);
       
-      return matchesSearch && matchesCategory;
+      // Add status filtering
+      const matchesStatus = 
+        statusFilter === "all" ||
+        (statusFilter === "active" && isServiceActive(service)) ||
+        (statusFilter === "inactive" && !isServiceActive(service));
+      
+      return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [services, debouncedSearch, categoryFilter]);
+  }, [services, debouncedSearch, categoryFilter, statusFilter]);
 
   // Sort services
   const sortedServices = useMemo(() => {
@@ -1042,6 +1056,7 @@ export default function ServiceManagement() {
   const clearFilters = () => {
     setSearchTerm("");
     setCategoryFilter([]);
+    setStatusFilter("all");
     setCurrentPage(1);
   };
 
@@ -1054,7 +1069,7 @@ export default function ServiceManagement() {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = searchTerm || categoryFilter.length > 0;
+  const hasActiveFilters = searchTerm || categoryFilter.length > 0 || statusFilter !== "all";
 
   // Handle predefined service selection and auto-generate code
   const handlePredefinedServiceSelect = (serviceName: string) => {
@@ -1537,10 +1552,7 @@ export default function ServiceManagement() {
         <Card 
           className="border-2 border-blue-200 dark:border-blue-800 hover:shadow-lg hover:-translate-y-1 
                      transition-all duration-300 cursor-pointer group"
-          onClick={() => {
-            setCategoryFilter([]);
-            setCurrentPage(1);
-          }}
+          onClick={clearFilters}
         >
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
@@ -1569,10 +1581,7 @@ export default function ServiceManagement() {
         <Card 
           className="border-2 border-green-200 dark:border-green-800 hover:shadow-lg hover:-translate-y-1 
                      transition-all duration-300 cursor-pointer group"
-          onClick={() => {
-            setCategoryFilter([]);
-            setCurrentPage(1);
-          }}
+          onClick={() => filterByStatus('active')}
         >
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
@@ -1604,10 +1613,7 @@ export default function ServiceManagement() {
         <Card 
           className="border-2 border-red-200 dark:border-red-800 hover:shadow-lg hover:-translate-y-1 
                      transition-all duration-300 cursor-pointer group"
-          onClick={() => {
-            setCategoryFilter([]);
-            setCurrentPage(1);
-          }}
+          onClick={() => filterByStatus('inactive')}
         >
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
