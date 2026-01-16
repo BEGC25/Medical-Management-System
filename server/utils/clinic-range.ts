@@ -249,6 +249,12 @@ export function getPresetDayKeys(
       return { startDayKey: startKey, endDayKey: todayKey };
     }
 
+    case 'custom': {
+      // Custom range should use from/to parameters, not preset-based calculation
+      // Return null to signal that caller should use from/to params
+      return null;
+    }
+
     default:
       // Unknown preset, default to today
       return { startDayKey: todayKey, endDayKey: todayKey };
