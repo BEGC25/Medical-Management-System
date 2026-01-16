@@ -1552,11 +1552,7 @@ export default function ServiceManagement() {
         <Card 
           className="border-2 border-blue-200 dark:border-blue-800 hover:shadow-lg hover:-translate-y-1 
                      transition-all duration-300 cursor-pointer group"
-          onClick={() => {
-            setCategoryFilter([]);
-            setStatusFilter('all');
-            setCurrentPage(1);
-          }}
+          onClick={clearFilters}
         >
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
