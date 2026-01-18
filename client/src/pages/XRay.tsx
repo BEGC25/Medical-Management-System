@@ -822,9 +822,9 @@ export default function XRay() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full pt-6 pb-6 px-6">
+      <div className="w-full pt-2 pb-6 px-6 space-y-4">
         {/* Header Section - Premium Gradient Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Premium gradient icon with glow - Refined indigo theme */}
             <div className="relative">
@@ -864,7 +864,7 @@ export default function XRay() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4 mb-3">
+        <div className="grid grid-cols-3 gap-4">
           {/* Pending Card */}
           <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
             <CardContent className="p-4">
@@ -939,7 +939,7 @@ export default function XRay() {
         </div>
 
         {/* Note Banner */}
-        <Alert className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 mb-4">
+        <Alert className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800">
           <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           <AlertDescription className="text-blue-900 dark:text-blue-100">
             <strong>Note:</strong> New X-ray orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Staff can update results and status for existing orders.
