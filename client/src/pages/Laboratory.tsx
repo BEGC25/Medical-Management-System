@@ -846,9 +846,9 @@ export default function Laboratory() {
 
 return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full pt-2 pb-6 px-6 space-y-4">
+      <div className="w-full pt-6 pb-6 px-6">
         {/* Header Section - Premium Gradient Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             {/* Premium gradient icon with glow */}
             <div className="relative">
@@ -888,7 +888,7 @@ return (
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 mb-3">
           {/* Pending Card */}
           <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
             <CardContent className="p-4">
@@ -963,7 +963,7 @@ return (
         </div>
 
         {/* Note Banner */}
-        <Alert className="bg-green-50 dark:bg-green-950/20 border-2 border-green-200 dark:border-green-800">
+        <Alert className="bg-green-50 dark:bg-green-950/20 border-2 border-green-200 dark:border-green-800 mb-4">
           <Info className="w-4 h-4 text-green-600 dark:text-green-400" />
           <AlertDescription className="text-green-900 dark:text-green-100">
             <strong>Note:</strong> New lab orders can only be created from the{' '}
