@@ -195,15 +195,23 @@ export default function Patients() {
       }
       
       // Ctrl+S or Cmd+S to submit form (when registration form is open)
+      // Only trigger if not actively typing in an input/textarea
       if ((e.ctrlKey || e.metaKey) && e.key === 's' && showRegistrationForm) {
-        e.preventDefault();
-        form.handleSubmit(onSubmit)();
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          form.handleSubmit(onSubmit)();
+        }
       }
       
       // Ctrl+N or Cmd+N to trigger "Register & Next" (when registration form is open and not editing)
+      // Only trigger if not actively typing in an input/textarea
       if ((e.ctrlKey || e.metaKey) && e.key === 'n' && showRegistrationForm && !editingPatient) {
-        e.preventDefault();
-        handleRegisterAndNext();
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          handleRegisterAndNext();
+        }
       }
     };
 
@@ -1762,7 +1770,7 @@ export default function Patients() {
                     name="age"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Age *</FormLabel>
+                        <FormLabel>Age</FormLabel>
                         
                         {/* Quick Age Category Buttons */}
                         <div className="grid grid-cols-4 gap-2 mb-2">
@@ -1777,7 +1785,7 @@ export default function Patients() {
                             className="text-xs hover:bg-orange-50 hover:border-orange-400 dark:hover:bg-orange-950/20 dark:hover:border-orange-700"
                             data-testid="button-age-infant"
                           >
-                            <span className="mr-1">👶</span>
+                            <span className="mr-1" aria-hidden="true">👶</span>
                             Infant
                           </Button>
                           <Button
@@ -1791,7 +1799,7 @@ export default function Patients() {
                             className="text-xs hover:bg-yellow-50 hover:border-yellow-400 dark:hover:bg-yellow-950/20 dark:hover:border-yellow-700"
                             data-testid="button-age-child"
                           >
-                            <span className="mr-1">🧒</span>
+                            <span className="mr-1" aria-hidden="true">🧒</span>
                             Child
                           </Button>
                           <Button
@@ -1805,7 +1813,7 @@ export default function Patients() {
                             className="text-xs hover:bg-green-50 hover:border-green-400 dark:hover:bg-green-950/20 dark:hover:border-green-700"
                             data-testid="button-age-teen"
                           >
-                            <span className="mr-1">👦</span>
+                            <span className="mr-1" aria-hidden="true">👦</span>
                             Teen
                           </Button>
                           <Button
@@ -1819,7 +1827,7 @@ export default function Patients() {
                             className="text-xs hover:bg-blue-50 hover:border-blue-400 dark:hover:bg-blue-950/20 dark:hover:border-blue-700"
                             data-testid="button-age-adult"
                           >
-                            <span className="mr-1">🧑</span>
+                            <span className="mr-1" aria-hidden="true">🧑</span>
                             Adult
                           </Button>
                         </div>
@@ -1846,7 +1854,7 @@ export default function Patients() {
                     name="gender"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Gender *</FormLabel>
+                        <FormLabel>Gender</FormLabel>
                         <FormControl>
                           <div className="grid grid-cols-3 gap-2">
                             <Button
@@ -1860,7 +1868,7 @@ export default function Patients() {
                               }`}
                               data-testid="button-gender-male"
                             >
-                              <span className="text-xl mr-2">👨</span>
+                              <span className="text-xl mr-2" aria-hidden="true">👨</span>
                               Male
                             </Button>
                             <Button
@@ -1874,7 +1882,7 @@ export default function Patients() {
                               }`}
                               data-testid="button-gender-female"
                             >
-                              <span className="text-xl mr-2">👩</span>
+                              <span className="text-xl mr-2" aria-hidden="true">👩</span>
                               Female
                             </Button>
                             <Button
@@ -1888,7 +1896,7 @@ export default function Patients() {
                               }`}
                               data-testid="button-gender-other"
                             >
-                              <span className="text-xl mr-2">⚧</span>
+                              <span className="text-xl mr-2" aria-hidden="true">⚧</span>
                               Other
                             </Button>
                           </div>
@@ -2136,7 +2144,7 @@ export default function Patients() {
 
                     {/* Keyboard Shortcut Hints */}
                     <div className="flex justify-center gap-4 pt-2 text-xs text-gray-500 dark:text-gray-400">
-                      <span>💡 Tip: <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Ctrl+S</kbd> to register</span>
+                      <span><span aria-hidden="true">💡</span> Tip: <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Ctrl+S</kbd> to register</span>
                       <span><kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Ctrl+N</kbd> for next</span>
                     </div>
                   </>
