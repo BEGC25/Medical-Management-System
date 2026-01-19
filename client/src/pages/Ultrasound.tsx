@@ -292,6 +292,7 @@ export default function Ultrasound() {
   
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showInfoDialog, setShowInfoDialog] = useState(false);
   
   // Server now handles all date filtering - no need for client-side date filtering
   // Split by status for the two tabs
@@ -849,7 +850,7 @@ export default function Ultrasound() {
                     UNPAID
                   </Badge>
                 )}
-                {canPerform && <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />}
+                {canPerform && <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
             </div>
             
@@ -938,26 +939,40 @@ export default function Ultrasound() {
             </div>
           </div>
 
-          {/* Right: Refresh Button */}
-          <Button 
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="hover:bg-indigo-50 dark:hover:bg-indigo-950/20 
-                     hover:border-indigo-400 dark:hover:border-indigo-500 
-                     hover:text-indigo-700 dark:hover:text-indigo-400
-                     transition-all duration-200"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          {/* Right: Info Button + Refresh Button */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => setShowInfoDialog(true)}
+              className="hover:bg-indigo-50 dark:hover:bg-indigo-950/20 
+                       hover:border-indigo-400 dark:hover:border-indigo-500 
+                       hover:text-indigo-700 dark:hover:text-indigo-400
+                       transition-all duration-200"
+              aria-label="Show information about ultrasound orders"
+            >
+              <Info className="w-4 h-4 mr-2" />
+              Info
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="hover:bg-indigo-50 dark:hover:bg-indigo-950/20 
+                       hover:border-indigo-400 dark:hover:border-indigo-500 
+                       hover:text-indigo-700 dark:hover:text-indigo-400
+                       transition-all duration-200"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-4">
           {/* Pending Card */}
           <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
@@ -981,7 +996,7 @@ export default function Ultrasound() {
 
           {/* Completed Card */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
@@ -1005,7 +1020,7 @@ export default function Ultrasound() {
 
           {/* Total Card */}
           <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">
@@ -1028,32 +1043,24 @@ export default function Ultrasound() {
           </Card>
         </div>
 
-        {/* Note Banner */}
-        <Alert className="bg-indigo-50 dark:bg-indigo-950/20 border-2 border-indigo-200 dark:border-indigo-800">
-          <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <AlertDescription className="text-indigo-900 dark:text-indigo-100">
-            <strong>Note:</strong> New ultrasound orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Staff can update results and status for existing orders.
-          </AlertDescription>
-        </Alert>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardHeader className="bg-orange-50 dark:bg-orange-950/20 border-b">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+          <CardHeader className="bg-orange-50 dark:bg-orange-950/20 border-b py-2.5 px-4">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
               </div>
               Pending Test Requests
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             {/* Date Filter and Search Controls */}
-            <div className="mb-4 space-y-3">
-              <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="mb-3 space-y-1.5">
+              <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setDateFilter("today")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "today"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1063,7 +1070,7 @@ export default function Ultrasound() {
                 </button>
                 <button
                   onClick={() => setDateFilter("yesterday")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "yesterday"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1073,7 +1080,7 @@ export default function Ultrasound() {
                 </button>
                 <button
                   onClick={() => setDateFilter("last7days")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "last7days"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1083,7 +1090,7 @@ export default function Ultrasound() {
                 </button>
                 <button
                   onClick={() => setDateFilter("last30days")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "last30days"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1093,7 +1100,7 @@ export default function Ultrasound() {
                 </button>
                 <button
                   onClick={() => setDateFilter("custom")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "custom"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1110,7 +1117,7 @@ export default function Ultrasound() {
                 </div>
               )}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <Input placeholder="Search by patient name, ID, or exam type..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
@@ -1118,17 +1125,17 @@ export default function Ultrasound() {
               </div>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {pendingExams.length > 0 ? (
                 pendingExams.map((exam) => (
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-14 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
                     <Clock className="w-7 h-7 text-orange-500 dark:text-orange-400" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "All caught up!"}
@@ -1146,21 +1153,21 @@ export default function Ultrasound() {
 
         {/* RIGHT – Completed Results (Ultrasound) */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardHeader className="bg-green-50 dark:bg-green-950/20 border-b">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <CardHeader className="bg-green-50 dark:bg-green-950/20 border-b py-2.5 px-4">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
               </div>
               Completed Results (Ultrasound)
             </CardTitle>
           </CardHeader>
           <CardContent>
             {/* Same filter controls for completed tests */}
-            <div className="mb-4 space-y-3">
-              <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="mb-3 space-y-1.5">
+              <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setDateFilter("today")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "today"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1170,7 +1177,7 @@ export default function Ultrasound() {
                 </button>
                 <button
                   onClick={() => setDateFilter("yesterday")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "yesterday"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1180,7 +1187,7 @@ export default function Ultrasound() {
                 </button>
                 <button
                   onClick={() => setDateFilter("last7days")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "last7days"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1190,7 +1197,7 @@ export default function Ultrasound() {
                 </button>
                 <button
                   onClick={() => setDateFilter("last30days")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "last30days"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1200,7 +1207,7 @@ export default function Ultrasound() {
                 </button>
                 <button
                   onClick={() => setDateFilter("custom")}
-                  className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                  className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                     dateFilter === "custom"
                       ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-indigo-600 after:to-blue-500 after:shadow-[0_0_8px_rgba(99,102,241,0.6)]"
                       : "text-gray-500 hover:text-indigo-500"
@@ -1217,7 +1224,7 @@ export default function Ultrasound() {
                 </div>
               )}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <Input placeholder="Search by patient name, ID, or exam type..." value={patientSearchTerm} onChange={(e) => setPatientSearchTerm(e.target.value)} className="pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
@@ -1225,17 +1232,17 @@ export default function Ultrasound() {
               </div>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {completedExams.length > 0 ? (
                 completedExams.map((exam) => (
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="flex flex-col items-center justify-center py-6 text-center">
                   <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
                     <Check className="w-6 h-6 text-green-500 dark:text-green-400" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "No completed exams"}
@@ -1260,7 +1267,7 @@ export default function Ultrasound() {
           <div className="bg-gradient-to-r from-indigo-600 to-purple-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
                   <FileText className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -2548,6 +2555,23 @@ export default function Ultrasound() {
         </div>
       )}
       
+      {/* Info Dialog */}
+      <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              Ultrasound Information
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              New ultrasound orders can only be created from the Treatment page by doctors during patient visits. Staff can update results and status for existing orders.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Custom Scrollbar Styling */}
       <style>{`
         .scrollbar-thin::-webkit-scrollbar {

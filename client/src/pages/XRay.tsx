@@ -310,6 +310,7 @@ export default function XRay() {
   
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showInfoDialog, setShowInfoDialog] = useState(false);
   
   // Server now handles all date filtering - no need for client-side date filtering
   // Split by status for the two tabs
@@ -951,14 +952,6 @@ export default function XRay() {
           </Card>
         </div>
 
-        {/* Note Banner */}
-        <Alert className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800">
-          <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-blue-900 dark:text-blue-100">
-            <strong>Note:</strong> New X-ray orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Staff can update results and status for existing orders.
-          </AlertDescription>
-        </Alert>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
@@ -972,7 +965,7 @@ export default function XRay() {
           </CardHeader>
           <CardContent className="p-3">
             {/* Date Filter and Search Controls */}
-            <div className="mb-3 space-y-2">
+            <div className="mb-3 space-y-1.5">
               <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
@@ -999,7 +992,7 @@ export default function XRay() {
                   <DatePicker date={customEndDate} onDateChange={setCustomEndDate} placeholder="End Date" className="w-48" />
                 </div>
               )}
-              <div className="relative mt-3">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
                   type="text"
@@ -1029,7 +1022,7 @@ export default function XRay() {
                       ? "Select date range"
                       : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select dates above to view exams."
                       : "No pending exams at the moment."}
@@ -1052,7 +1045,7 @@ export default function XRay() {
           </CardHeader>
           <CardContent className="p-3">
             {/* Same filter controls for completed tests */}
-            <div className="mb-3 space-y-2">
+            <div className="mb-3 space-y-1.5">
               <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
@@ -1079,7 +1072,7 @@ export default function XRay() {
                   <DatePicker date={customEndDate} onDateChange={setCustomEndDate} placeholder="End Date" className="w-48" />
                 </div>
               )}
-              <div className="relative mt-3">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
                   type="text"
@@ -1109,7 +1102,7 @@ export default function XRay() {
                       ? "Select date range"
                       : "No completed exams"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select dates above to view exams."
                       : "Completed exams will appear here."}
@@ -2405,6 +2398,23 @@ export default function XRay() {
         </div>
       )}
       
+      {/* Info Dialog */}
+      <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              X-Ray Information
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              New X-ray orders can only be created from the Treatment page by doctors during patient visits. Staff can update results and status for existing orders.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Custom Scrollbar Styling */}
       <style>{`
         .scrollbar-thin::-webkit-scrollbar {
