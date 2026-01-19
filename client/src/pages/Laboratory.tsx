@@ -1946,7 +1946,6 @@ return (
           background: rgb(45 212 191);
         }
       `}</style>
-        </div>
       </div>
     </div>
     </TooltipProvider>
