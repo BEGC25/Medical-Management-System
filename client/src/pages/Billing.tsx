@@ -427,8 +427,8 @@ export default function Billing() {
 
   return (
     <div className="space-y-6">
-      {/* Header with sophisticated muted gradient */}
-      <div className="bg-gradient-to-r from-slate-700 via-slate-600 to-blue-700 dark:from-slate-800 dark:via-slate-700 dark:to-blue-800 text-white rounded-xl shadow-lg p-6">
+      {/* Header with softened gradient */}
+      <div className="mt-2 bg-gradient-to-r from-slate-500 via-slate-400 to-blue-500 dark:from-slate-700 dark:via-slate-600 dark:to-blue-700 text-white rounded-xl shadow-md p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl shadow-md hover:bg-white/20 transition-all duration-200">

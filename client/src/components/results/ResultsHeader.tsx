@@ -21,9 +21,9 @@ export function ResultsHeader({ searchTerm, onSearchChange }: ResultsHeaderProps
 
   return (
     <div className="sticky top-0 z-10 bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-md">
-      <div className="container mx-auto px-6 py-6">
-        {/* Premium Gradient Header - Matches Billing & Invoices */}
-        <div className="bg-gradient-to-r from-slate-700 via-slate-600 to-blue-700 dark:from-slate-800 dark:via-slate-700 dark:to-blue-800 text-white rounded-xl shadow-lg p-5 mb-6">
+      <div className="container mx-auto px-6 py-4">
+        {/* Softened Gradient Header - Matches Billing & Invoices */}
+        <div className="bg-gradient-to-r from-slate-500 via-slate-400 to-blue-500 dark:from-slate-700 dark:via-slate-600 dark:to-blue-700 text-white rounded-xl shadow-md p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl shadow-md hover:bg-white/20 transition-all duration-200">
