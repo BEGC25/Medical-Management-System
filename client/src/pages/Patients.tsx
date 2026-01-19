@@ -26,6 +26,8 @@ import {
   Activity,
   Stethoscope,
   RefreshCw,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -149,6 +156,13 @@ export default function Patients() {
 
   // Ref for search input (for keyboard shortcuts)
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Refs for patient registration form - for quick focus
+  const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const ageInputRef = useRef<HTMLInputElement>(null);
+  
+  // State for collapsible optional fields
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
 
   // Read query parameters and apply them to search
   useEffect(() => {
@@ -179,11 +193,31 @@ export default function Patients() {
         setSearchQuery("");
         setShowSearch(false);
       }
+      
+      // Ctrl+S or Cmd+S to submit form (when registration form is open)
+      // Only trigger if not actively typing in an input/textarea
+      if ((e.ctrlKey || e.metaKey) && e.key === 's' && showRegistrationForm) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          form.handleSubmit(onSubmit)();
+        }
+      }
+      
+      // Ctrl+N or Cmd+N to trigger "Register & Next" (when registration form is open and not editing)
+      // Only trigger if not actively typing in an input/textarea
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n' && showRegistrationForm && !editingPatient) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          handleRegisterAndNext();
+        }
+      }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [searchQuery]);
+  }, [searchQuery, showRegistrationForm, editingPatient]);
 
   // Calculate date range based on filter using timezone-aware utilities
   // This ensures consistent "Today" filtering across all pages
@@ -652,6 +686,71 @@ export default function Patients() {
     setCollectConsultationFee(true); // Default to checked
     setSelectedConsultationServiceId(defaultConsultationService?.id || null); // Reset to default
     setShowRegistrationForm(true);
+    setShowOptionalFields(false); // Reset optional fields visibility
+  };
+
+  // Handle "Register & Next Patient" - submits current form and keeps modal open for next patient
+  const handleRegisterAndNext = async () => {
+    // Trigger form validation and submission
+    const isValid = await form.trigger();
+    if (!isValid) {
+      return; // Don't proceed if validation fails
+    }
+
+    // Validate consultation service requirement
+    if (collectConsultationFee && activeConsultationServices.length === 0) {
+      toast({
+        title: "Cannot Register Patient",
+        description: "No active consultation services found. Please create and activate a consultation service in Service Management first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get form data
+    const formData = form.getValues();
+    
+    // Submit the patient
+    createPatientMutation.mutate(formData, {
+      onSuccess: (data) => {
+        const patientName = `${formData.firstName} ${formData.lastName}`;
+        const patientId = data?.patient?.patientId || '';
+        
+        toast({
+          title: "✓ Patient Registered Successfully",
+          description: `${patientName} (${patientId}) registered. Ready for next patient.`,
+        });
+        
+        // Reset form but keep modal open
+        form.reset({
+          firstName: "",
+          lastName: "",
+          age: "",
+          gender: undefined,
+          phoneNumber: "",
+          allergies: "",
+          medicalHistory: "",
+          patientType: "regular",
+        });
+        
+        // Reset other states
+        setCollectConsultationFee(true);
+        setPatientType("regular");
+        setSelectedConsultationServiceId(defaultConsultationService?.id || null);
+        setShowOptionalFields(false); // Collapse optional fields for next patient
+        
+        // Auto-focus first name for next patient
+        setTimeout(() => {
+          firstNameInputRef.current?.focus();
+        }, 100);
+        
+        // Invalidate queries to refresh patient list
+        queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/patients/counts"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+      },
+    });
   };
 
   // NEW: open quick-view panel instead of toast
@@ -1634,6 +1733,7 @@ export default function Patients() {
                         <FormControl>
                           <Input
                             {...field}
+                            ref={firstNameInputRef}
                             data-testid="input-firstname"
                             placeholder="Enter first name"
                             className="mt-1"
@@ -1671,14 +1771,79 @@ export default function Patients() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Age</FormLabel>
+                        
+                        {/* Quick Age Category Buttons */}
+                        <div className="grid grid-cols-4 gap-2 mb-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              field.onChange('6 months');
+                              ageInputRef.current?.focus();
+                            }}
+                            className="text-xs hover:bg-orange-50 hover:border-orange-400 dark:hover:bg-orange-950/20 dark:hover:border-orange-700"
+                            data-testid="button-age-infant"
+                          >
+                            <span className="mr-1" aria-hidden="true">👶</span>
+                            Infant
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              field.onChange('5 years');
+                              ageInputRef.current?.focus();
+                            }}
+                            className="text-xs hover:bg-yellow-50 hover:border-yellow-400 dark:hover:bg-yellow-950/20 dark:hover:border-yellow-700"
+                            data-testid="button-age-child"
+                          >
+                            <span className="mr-1" aria-hidden="true">🧒</span>
+                            Child
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              field.onChange('15 years');
+                              ageInputRef.current?.focus();
+                            }}
+                            className="text-xs hover:bg-green-50 hover:border-green-400 dark:hover:bg-green-950/20 dark:hover:border-green-700"
+                            data-testid="button-age-teen"
+                          >
+                            <span className="mr-1" aria-hidden="true">👦</span>
+                            Teen
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              field.onChange('25 years');
+                              ageInputRef.current?.focus();
+                            }}
+                            className="text-xs hover:bg-blue-50 hover:border-blue-400 dark:hover:bg-blue-950/20 dark:hover:border-blue-700"
+                            data-testid="button-age-adult"
+                          >
+                            <span className="mr-1" aria-hidden="true">🧑</span>
+                            Adult
+                          </Button>
+                        </div>
+                        
                         <FormControl>
                           <Input
                             {...field}
+                            ref={ageInputRef}
                             data-testid="input-age"
                             placeholder="e.g., 25, 6 months, 2 years"
                             className="mt-1"
                           />
                         </FormControl>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Quick select above or type exact age
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1690,20 +1855,52 @@ export default function Patients() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Gender</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-gender" className="mt-1">
-                              <SelectValue placeholder="Select gender" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Male">Male</SelectItem>
-                            <SelectItem value="Female">Female</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <div className="grid grid-cols-3 gap-2">
+                            <Button
+                              type="button"
+                              variant={field.value === 'Male' ? 'default' : 'outline'}
+                              onClick={() => field.onChange('Male')}
+                              className={`h-12 ${
+                                field.value === 'Male'
+                                  ? 'bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-600' 
+                                  : 'hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950/20 dark:hover:border-blue-700'
+                              }`}
+                              data-testid="button-gender-male"
+                            >
+                              <span className="text-xl mr-2" aria-hidden="true">👨</span>
+                              Male
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={field.value === 'Female' ? 'default' : 'outline'}
+                              onClick={() => field.onChange('Female')}
+                              className={`h-12 ${
+                                field.value === 'Female'
+                                  ? 'bg-pink-600 hover:bg-pink-700 text-white border-2 border-pink-600' 
+                                  : 'hover:bg-pink-50 hover:border-pink-300 dark:hover:bg-pink-950/20 dark:hover:border-pink-700'
+                              }`}
+                              data-testid="button-gender-female"
+                            >
+                              <span className="text-xl mr-2" aria-hidden="true">👩</span>
+                              Female
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={field.value === 'Other' ? 'default' : 'outline'}
+                              onClick={() => field.onChange('Other')}
+                              className={`h-12 ${
+                                field.value === 'Other'
+                                  ? 'bg-purple-600 hover:bg-purple-700 text-white border-2 border-purple-600' 
+                                  : 'hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/20 dark:hover:border-purple-700'
+                              }`}
+                              data-testid="button-gender-other"
+                            >
+                              <span className="text-xl mr-2" aria-hidden="true">⚧</span>
+                              Other
+                            </Button>
+                          </div>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1729,45 +1926,68 @@ export default function Patients() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="allergies"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Allergies</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          data-testid="textarea-allergies"
-                          placeholder="List any known allergies"
-                          rows={2}
-                          className="mt-1"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Optional Medical Information - Collapsible */}
+                <Collapsible open={showOptionalFields} onOpenChange={setShowOptionalFields}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800"
+                      data-testid="button-toggle-optional-fields"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Info className="w-4 h-4" />
+                        Add allergies & medical history (optional)
+                      </span>
+                      {showOptionalFields ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-3 mt-3">
+                    <FormField
+                      control={form.control}
+                      name="allergies"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Allergies</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              data-testid="textarea-allergies"
+                              placeholder="List any known allergies"
+                              rows={2}
+                              className="mt-1"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="medicalHistory"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Medical History</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          data-testid="textarea-medical-history"
-                          placeholder="Previous conditions, surgeries, etc."
-                          rows={3}
-                          className="mt-1"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="medicalHistory"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Medical History</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              data-testid="textarea-medical-history"
+                              placeholder="Previous conditions, surgeries, etc."
+                              rows={3}
+                              className="mt-1"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
 
                 {!editingPatient && (
                   <>
@@ -1896,36 +2116,67 @@ export default function Patients() {
                   </>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500 
-                               hover:from-teal-600 hover:to-cyan-600
-                               dark:from-teal-500 dark:to-cyan-400
-                               dark:hover:from-teal-600 dark:hover:to-cyan-500
-                               text-white font-semibold
-                               shadow-[0_4px_12px_rgba(20,184,166,0.25),0_2px_6px_rgba(6,182,212,0.15)]
-                               hover:shadow-[0_8px_20px_rgba(20,184,166,0.35),0_4px_10px_rgba(6,182,212,0.25)]
-                               transition-all duration-300"
-                    disabled={
-                      createPatientMutation.isPending ||
-                      updatePatientMutation.isPending
-                    }
-                    data-testid="button-save-patient"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {editingPatient ? "Update Patient" : "Register Patient"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCancelEdit}
-                    className="sm:w-auto"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
+                {/* Action Buttons - Dual Submit Options for new patients */}
+                {!editingPatient ? (
+                  <>
+                    <div className="flex gap-3 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleRegisterAndNext}
+                        disabled={createPatientMutation.isPending}
+                        className="flex-1 h-12 font-semibold hover:bg-teal-50 hover:border-teal-600 hover:text-teal-700 dark:hover:bg-teal-950/20 dark:hover:border-teal-500"
+                        data-testid="button-register-and-next"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Register & Next Patient
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createPatientMutation.isPending}
+                        className="flex-1 h-12 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg font-semibold"
+                        data-testid="button-save-patient"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Register Patient
+                      </Button>
+                    </div>
+
+                    {/* Keyboard Shortcut Hints */}
+                    <div className="flex justify-center gap-4 pt-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span><span aria-hidden="true">💡</span> Tip: <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Ctrl+S</kbd> to register</span>
+                      <span><kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Ctrl+N</kbd> for next</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-2 pt-4">
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500 
+                                 hover:from-teal-600 hover:to-cyan-600
+                                 dark:from-teal-500 dark:to-cyan-400
+                                 dark:hover:from-teal-600 dark:hover:to-cyan-500
+                                 text-white font-semibold
+                                 shadow-[0_4px_12px_rgba(20,184,166,0.25),0_2px_6px_rgba(6,182,212,0.15)]
+                                 hover:shadow-[0_8px_20px_rgba(20,184,166,0.35),0_4px_10px_rgba(6,182,212,0.25)]
+                                 transition-all duration-300"
+                      disabled={updatePatientMutation.isPending}
+                      data-testid="button-save-patient"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Update Patient
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      className="sm:w-auto"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </form>
             </Form>
           </div>
