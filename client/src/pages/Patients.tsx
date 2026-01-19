@@ -105,6 +105,9 @@ function money(n?: number) {
   return `${Math.round(v).toLocaleString()} SSP`;
 }
 
+// Phone number constants
+const PHONE_MAX_LENGTH = 12; // 10 digits + 2 spaces
+
 // Phone number formatting for South Sudan (spaces, not dashes)
 function formatPhoneNumber(value: string): string {
   // Remove all non-digits
@@ -1973,7 +1976,7 @@ export default function Patients() {
                             placeholder="091 234 5678"
                             value={field.value}
                             onChange={(e) => field.onChange(formatPhoneNumber(e.target.value))}
-                            maxLength={12}
+                            maxLength={PHONE_MAX_LENGTH}
                             className="border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100
                                        bg-white dark:bg-gray-800 rounded-lg pl-11 pr-11 py-3 text-base h-12
                                        placeholder:text-gray-400 transition-all duration-200
