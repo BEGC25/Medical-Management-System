@@ -291,6 +291,7 @@ export default function XRay() {
       radiologist: '',
     },
   });
+  const [showInfoDialog, setShowInfoDialog] = useState(false);
   
   // Refs for voice input
   const viewDescriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -861,13 +862,25 @@ export default function XRay() {
             <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setShowInfoDialog(true)}
+            className="hover:bg-indigo-50 dark:hover:bg-indigo-950/20 
+                     hover:border-indigo-400 dark:hover:border-indigo-500 
+                     hover:text-indigo-700 dark:hover:text-indigo-400
+                     transition-all duration-200"
+            aria-label="Show information about X-ray orders"
+          >
+            <Info className="w-4 h-4 mr-2" />
+            Info
+          </Button>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-4">
           {/* Pending Card */}
           <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
@@ -891,7 +904,7 @@ export default function XRay() {
 
           {/* Completed Card */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
@@ -915,7 +928,7 @@ export default function XRay() {
 
           {/* Total Card */}
           <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 uppercase tracking-wide">
@@ -938,34 +951,26 @@ export default function XRay() {
           </Card>
         </div>
 
-        {/* Note Banner */}
-        <Alert className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800">
-          <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-blue-900 dark:text-blue-100">
-            <strong>Note:</strong> New X-ray orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Staff can update results and status for existing orders.
-          </AlertDescription>
-        </Alert>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardHeader className="bg-orange-50 dark:bg-orange-950/20 border-b">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+          <CardHeader className="bg-orange-50 dark:bg-orange-950/20 border-b py-2.5 px-4">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
               </div>
               Pending Test Requests
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             {/* Date Filter and Search Controls */}
-            <div className="mb-4 space-y-3">
-              <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+            <div className="mb-3 space-y-1.5">
+              <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 pb-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setDateFilter(filter as any)}
-                    className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                       dateFilter === filter
                         ? "text-blue-600 dark:text-blue-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-600 after:to-cyan-500 after:shadow-[0_0_8px_rgba(37,99,235,0.6)]"
                         : "text-gray-500 hover:text-blue-500"
@@ -986,8 +991,8 @@ export default function XRay() {
                   <DatePicker date={customEndDate} onDateChange={setCustomEndDate} placeholder="End Date" className="w-48" />
                 </div>
               )}
-              <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by patient name, ID, or exam type..."
@@ -1001,22 +1006,22 @@ export default function XRay() {
               </div>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {pendingExams.length > 0 ? (
                 pendingExams.map((exam) => (
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-14 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
-                    <Clock className="w-7 h-7 text-orange-500 dark:text-orange-400" />
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
+                    <Clock className="w-6 h-6 text-orange-500 dark:text-orange-400" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select dates above to view exams."
                       : "No pending exams at the moment."}
@@ -1029,23 +1034,23 @@ export default function XRay() {
 
         {/* RIGHT – Completed Results (X-Ray) */}
         <Card className="shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] border-0">
-          <CardHeader className="bg-green-50 dark:bg-green-950/20 border-b">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <CardHeader className="bg-green-50 dark:bg-green-950/20 border-b py-2.5 px-4">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
               </div>
               Completed Results (X-Ray)
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             {/* Same filter controls for completed tests */}
-            <div className="mb-4 space-y-3">
-              <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+            <div className="mb-3 space-y-2">
+              <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide pb-1">
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setDateFilter(filter as any)}
-                    className={`pb-2 text-sm font-medium whitespace-nowrap transition-all duration-300 relative ${
+                    className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
                       dateFilter === filter
                         ? "text-blue-600 dark:text-blue-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-600 after:to-cyan-500 after:shadow-[0_0_8px_rgba(37,99,235,0.6)]"
                         : "text-gray-500 hover:text-blue-500"
@@ -1066,8 +1071,8 @@ export default function XRay() {
                   <DatePicker date={customEndDate} onDateChange={setCustomEndDate} placeholder="End Date" className="w-48" />
                 </div>
               )}
-              <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by patient name, ID, or exam type..."
@@ -1081,7 +1086,7 @@ export default function XRay() {
               </div>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {completedExams.length > 0 ? (
                 completedExams.map((exam) => (
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
@@ -1091,12 +1096,12 @@ export default function XRay() {
                   <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
                     <Check className="w-6 h-6 text-green-500 dark:text-green-400" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "No completed exams"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select dates above to view exams."
                       : "Completed exams will appear here."}
@@ -1116,7 +1121,7 @@ export default function XRay() {
           <div className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
                   <FileText className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -2392,6 +2397,23 @@ export default function XRay() {
         </div>
       )}
       
+      {/* Info Dialog */}
+      <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              X-Ray Information
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              New X-ray orders can only be created from the Treatment page by doctors during patient visits. Staff can update results and status for existing orders.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Custom Scrollbar Styling */}
       <style>{`
         .scrollbar-thin::-webkit-scrollbar {
