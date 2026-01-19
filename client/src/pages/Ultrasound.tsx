@@ -1141,7 +1141,7 @@ export default function Ultrasound() {
                       ? "Select date range"
                       : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select dates above to view exams."
                       : "No pending exams at the moment."}
@@ -1162,11 +1162,10 @@ export default function Ultrasound() {
               Completed Results (Ultrasound)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3">
             {/* Same filter controls for completed tests */}
             <div className="mb-3 space-y-1.5">
               <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700">
-              <div className="pb-1"></div>
                 <button
                   onClick={() => setDateFilter("today")}
                   className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
@@ -1218,6 +1217,7 @@ export default function Ultrasound() {
                   Custom Range
                 </button>
               </div>
+              <div className="pb-1"></div>
               {dateFilter === "custom" && (
                 <div className="flex gap-2 items-center">
                   <DatePicker date={customStartDate} onDateChange={setCustomStartDate} placeholder="Start Date" className="w-48" />
