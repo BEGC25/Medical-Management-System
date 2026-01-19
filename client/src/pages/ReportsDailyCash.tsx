@@ -257,7 +257,7 @@ export default function ReportsDailyCash() {
                 <span className="font-mono">DCR-{date.replace(/-/g, '')}</span>
                 <span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
                 <span className="hidden sm:inline">
-                  {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {ymdToLocalDate(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
                 <span className={cn(
                   "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
