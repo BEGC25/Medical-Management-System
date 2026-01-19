@@ -28,6 +28,7 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
+  Phone,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,6 +103,30 @@ import { cn } from "@/lib/utils";
 function money(n?: number) {
   const v = Number.isFinite(n as number) ? (n as number) : 0;
   return `${Math.round(v).toLocaleString()} SSP`;
+}
+
+// Phone number constants
+const PHONE_MAX_LENGTH = 12; // 10 digits + 2 spaces
+
+// Phone number formatting for South Sudan (spaces, not dashes)
+function formatPhoneNumber(value: string): string {
+  // Remove all non-digits
+  const cleaned = value.replace(/\D/g, '');
+  
+  // South Sudan format: 091 234 5678 (spaces, not dashes)
+  if (cleaned.length <= 3) {
+    return cleaned;
+  } else if (cleaned.length <= 6) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
+  } else {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 10)}`;
+  }
+}
+
+// Phone validation for South Sudan
+function isValidPhone(phone: string): boolean {
+  const cleaned = phone.replace(/\D/g, '');
+  return cleaned.length === 10 && cleaned.startsWith('0');
 }
 
 export default function Patients() {
@@ -1729,15 +1754,25 @@ export default function Patients() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>First Name *</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          First Name *
+                        </FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            ref={firstNameInputRef}
-                            data-testid="input-firstname"
-                            placeholder="Enter first name"
-                            className="mt-1"
-                          />
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              ref={firstNameInputRef}
+                              data-testid="input-firstname"
+                              placeholder="Enter first name"
+                              className="border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100
+                                         bg-white dark:bg-gray-800 rounded-lg px-4 py-3 text-base h-12
+                                         placeholder:text-gray-400 transition-all duration-200
+                                         hover:border-gray-400 shadow-sm"
+                            />
+                            {field.value && field.value.length >= 2 && (
+                              <CheckCircle className="absolute right-3 top-3.5 w-5 h-5 text-green-600" />
+                            )}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1749,14 +1784,24 @@ export default function Patients() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name *</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          Last Name *
+                        </FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            data-testid="input-lastname"
-                            placeholder="Enter last name"
-                            className="mt-1"
-                          />
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              data-testid="input-lastname"
+                              placeholder="Enter last name"
+                              className="border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100
+                                         bg-white dark:bg-gray-800 rounded-lg px-4 py-3 text-base h-12
+                                         placeholder:text-gray-400 transition-all duration-200
+                                         hover:border-gray-400 shadow-sm"
+                            />
+                            {field.value && field.value.length >= 2 && (
+                              <CheckCircle className="absolute right-3 top-3.5 w-5 h-5 text-green-600" />
+                            )}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1770,10 +1815,12 @@ export default function Patients() {
                     name="age"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Age</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          Age *
+                        </FormLabel>
                         
                         {/* Quick Age Category Buttons */}
-                        <div className="grid grid-cols-4 gap-2 mb-2">
+                        <div className="grid grid-cols-4 gap-2 mb-3">
                           <Button
                             type="button"
                             size="sm"
@@ -1782,10 +1829,11 @@ export default function Patients() {
                               field.onChange('6 months');
                               ageInputRef.current?.focus();
                             }}
-                            className="text-xs hover:bg-orange-50 hover:border-orange-400 dark:hover:bg-orange-950/20 dark:hover:border-orange-700"
+                            className="border-2 hover:bg-orange-50 hover:border-orange-500 hover:scale-105
+                                       transition-all duration-200 shadow-sm text-xs"
                             data-testid="button-age-infant"
                           >
-                            <span className="mr-1" aria-hidden="true">👶</span>
+                            <span className="mr-1.5" aria-hidden="true">👶</span>
                             Infant
                           </Button>
                           <Button
@@ -1796,10 +1844,11 @@ export default function Patients() {
                               field.onChange('5 years');
                               ageInputRef.current?.focus();
                             }}
-                            className="text-xs hover:bg-yellow-50 hover:border-yellow-400 dark:hover:bg-yellow-950/20 dark:hover:border-yellow-700"
+                            className="border-2 hover:bg-yellow-50 hover:border-yellow-500 hover:scale-105
+                                       transition-all duration-200 shadow-sm text-xs"
                             data-testid="button-age-child"
                           >
-                            <span className="mr-1" aria-hidden="true">🧒</span>
+                            <span className="mr-1.5" aria-hidden="true">🧒</span>
                             Child
                           </Button>
                           <Button
@@ -1810,10 +1859,11 @@ export default function Patients() {
                               field.onChange('15 years');
                               ageInputRef.current?.focus();
                             }}
-                            className="text-xs hover:bg-green-50 hover:border-green-400 dark:hover:bg-green-950/20 dark:hover:border-green-700"
+                            className="border-2 hover:bg-green-50 hover:border-green-500 hover:scale-105
+                                       transition-all duration-200 shadow-sm text-xs"
                             data-testid="button-age-teen"
                           >
-                            <span className="mr-1" aria-hidden="true">👦</span>
+                            <span className="mr-1.5" aria-hidden="true">👦</span>
                             Teen
                           </Button>
                           <Button
@@ -1824,24 +1874,33 @@ export default function Patients() {
                               field.onChange('25 years');
                               ageInputRef.current?.focus();
                             }}
-                            className="text-xs hover:bg-blue-50 hover:border-blue-400 dark:hover:bg-blue-950/20 dark:hover:border-blue-700"
+                            className="border-2 hover:bg-blue-50 hover:border-blue-500 hover:scale-105
+                                       transition-all duration-200 shadow-sm text-xs"
                             data-testid="button-age-adult"
                           >
-                            <span className="mr-1" aria-hidden="true">🧑</span>
+                            <span className="mr-1.5" aria-hidden="true">🧑</span>
                             Adult
                           </Button>
                         </div>
                         
                         <FormControl>
-                          <Input
-                            {...field}
-                            ref={ageInputRef}
-                            data-testid="input-age"
-                            placeholder="e.g., 25, 6 months, 2 years"
-                            className="mt-1"
-                          />
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              ref={ageInputRef}
+                              data-testid="input-age"
+                              placeholder="e.g., 25, 6 months, 2 years"
+                              className="border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100
+                                         bg-white dark:bg-gray-800 rounded-lg px-4 py-3 text-base h-12
+                                         placeholder:text-gray-400 transition-all duration-200
+                                         hover:border-gray-400 shadow-sm"
+                            />
+                            {field.value && (
+                              <CheckCircle className="absolute right-3 top-3.5 w-5 h-5 text-green-600" />
+                            )}
+                          </div>
                         </FormControl>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <p className="text-xs text-gray-500 italic mt-1">
                           Quick select above or type exact age
                         </p>
                         <FormMessage />
@@ -1854,50 +1913,38 @@ export default function Patients() {
                     name="gender"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Gender</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          Gender *
+                        </FormLabel>
                         <FormControl>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-2 gap-3">
                             <Button
                               type="button"
                               variant={field.value === 'Male' ? 'default' : 'outline'}
                               onClick={() => field.onChange('Male')}
-                              className={`h-12 ${
+                              className={`h-14 text-base border-2 transition-all duration-200 shadow-sm ${
                                 field.value === 'Male'
-                                  ? 'bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-600' 
-                                  : 'hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950/20 dark:hover:border-blue-700'
+                                  ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-lg scale-105' 
+                                  : 'hover:bg-blue-50 hover:border-blue-400 hover:scale-[1.02] border-gray-300'
                               }`}
                               data-testid="button-gender-male"
                             >
-                              <span className="text-xl mr-2" aria-hidden="true">👨</span>
-                              Male
+                              <span className="text-2xl mr-2" aria-hidden="true">👨</span>
+                              <span className="font-semibold">Male</span>
                             </Button>
                             <Button
                               type="button"
                               variant={field.value === 'Female' ? 'default' : 'outline'}
                               onClick={() => field.onChange('Female')}
-                              className={`h-12 ${
+                              className={`h-14 text-base border-2 transition-all duration-200 shadow-sm ${
                                 field.value === 'Female'
-                                  ? 'bg-pink-600 hover:bg-pink-700 text-white border-2 border-pink-600' 
-                                  : 'hover:bg-pink-50 hover:border-pink-300 dark:hover:bg-pink-950/20 dark:hover:border-pink-700'
+                                  ? 'bg-pink-600 hover:bg-pink-700 text-white border-pink-600 shadow-lg scale-105' 
+                                  : 'hover:bg-pink-50 hover:border-pink-400 hover:scale-[1.02] border-gray-300'
                               }`}
                               data-testid="button-gender-female"
                             >
-                              <span className="text-xl mr-2" aria-hidden="true">👩</span>
-                              Female
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={field.value === 'Other' ? 'default' : 'outline'}
-                              onClick={() => field.onChange('Other')}
-                              className={`h-12 ${
-                                field.value === 'Other'
-                                  ? 'bg-purple-600 hover:bg-purple-700 text-white border-2 border-purple-600' 
-                                  : 'hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/20 dark:hover:border-purple-700'
-                              }`}
-                              data-testid="button-gender-other"
-                            >
-                              <span className="text-xl mr-2" aria-hidden="true">⚧</span>
-                              Other
+                              <span className="text-2xl mr-2" aria-hidden="true">👩</span>
+                              <span className="font-semibold">Female</span>
                             </Button>
                           </div>
                         </FormControl>
@@ -1912,15 +1959,39 @@ export default function Patients() {
                   name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Phone Number
+                      </FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          data-testid="input-phone"
-                          placeholder="Enter phone number"
-                          className="mt-1"
-                        />
+                        <div className="relative">
+                          {/* Phone icon on left */}
+                          <div className="absolute left-3 top-3.5 pointer-events-none">
+                            <Phone className="w-5 h-5 text-gray-500" />
+                          </div>
+                          
+                          <Input
+                            {...field}
+                            type="tel"
+                            data-testid="input-phone"
+                            placeholder="091 234 5678"
+                            value={field.value}
+                            onChange={(e) => field.onChange(formatPhoneNumber(e.target.value))}
+                            maxLength={PHONE_MAX_LENGTH}
+                            className="border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100
+                                       bg-white dark:bg-gray-800 rounded-lg pl-11 pr-11 py-3 text-base h-12
+                                       placeholder:text-gray-400 transition-all duration-200
+                                       hover:border-gray-400 shadow-sm font-mono"
+                          />
+                          
+                          {/* Validation checkmark on right */}
+                          {field.value && isValidPhone(field.value) && (
+                            <CheckCircle className="absolute right-3 top-3.5 w-5 h-5 text-green-600" />
+                          )}
+                        </div>
                       </FormControl>
+                      <p className="text-xs text-gray-500 italic mt-1">
+                        South Sudan format: 091 234 5678
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
