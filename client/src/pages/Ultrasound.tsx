@@ -911,8 +911,8 @@ export default function Ultrasound() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full pt-2 pb-6 px-6 space-y-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900 -m-3 sm:-m-4 md:-m-5 p-3 sm:p-4 md:p-5">
+      <div className="space-y-3">
         {/* Header Section - Premium Gradient Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

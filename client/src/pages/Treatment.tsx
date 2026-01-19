@@ -2283,10 +2283,10 @@ export default function Treatment() {
 
   // ---------- UI ----------
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* World-Class Department Header - Mobile Responsive */}
       <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-3 md:p-4 shadow-lg border border-emerald-100 dark:border-emerald-900/30">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-2 md:gap-3">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl blur-sm opacity-75"></div>
