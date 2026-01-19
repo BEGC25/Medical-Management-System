@@ -62,7 +62,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
@@ -822,7 +821,6 @@ export default function XRay() {
   const allSafetyChecksPassed = safetyChecklist.pregnancy && safetyChecklist.metal && safetyChecklist.cooperation;
 
   return (
-    <TooltipProvider>
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900 -m-3 sm:-m-4 md:-m-5 p-3 sm:p-4 md:p-5">
       <div className="space-y-3">
         {/* Header Section - Premium Gradient Header */}
@@ -940,62 +938,13 @@ export default function XRay() {
           </Card>
         </div>
 
-        {/* Compact header with integrated actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Pending Section Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-orange-50 dark:bg-orange-950/20 border-l-4 border-orange-400 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                Pending Test Requests
-              </h2>
-            </div>
-          </div>
-
-          {/* Completed Section Header + Actions */}
-          <div className="flex items-center justify-between px-4 py-3 bg-green-50 dark:bg-green-950/20 border-l-4 border-green-400 rounded-lg">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                Completed Results (X-Ray)
-              </h2>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {/* Info Button with Tooltip */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                    aria-label="Show information about X-ray order creation"
-                  >
-                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="end" className="max-w-md p-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold">ℹ️ Note:</p>
-                    <p className="text-sm">
-                      New X-ray orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. 
-                      Staff can update results and status for existing orders.
-                    </p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Refresh Button */}
-              <button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
-                aria-label="Refresh test data"
-              >
-                <RefreshCw className={`h-5 w-5 text-gray-600 dark:text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* Note Banner */}
+        <Alert className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800">
+          <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-blue-900 dark:text-blue-100">
+            <strong>Note:</strong> New X-ray orders can only be created from the <strong>Treatment page</strong> by doctors during patient visits. Staff can update results and status for existing orders.
+          </AlertDescription>
+        </Alert>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT – Pending Test Requests */}
@@ -2463,6 +2412,5 @@ export default function XRay() {
       `}</style>
       </div>
     </div>
-    </TooltipProvider>
   );
 }
