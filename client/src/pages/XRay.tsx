@@ -1044,8 +1044,8 @@ export default function XRay() {
           </CardHeader>
           <CardContent className="p-3">
             {/* Same filter controls for completed tests */}
-            <div className="mb-3 space-y-1.5">
-              <div className="pb-1"></div>
+            <div className="mb-3 space-y-2">
+              <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide pb-1">
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
                     key={filter}
