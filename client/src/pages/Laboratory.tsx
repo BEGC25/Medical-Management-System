@@ -432,6 +432,7 @@ export default function Laboratory() {
   const { data: allLabTests = [], refetch: refetchLabTests } = useLabTests(dateFilter, customStartDate, customEndDate);
   
   // Refresh state
+  const [showInfoDialog, setShowInfoDialog] = useState(false);
   
   // Fetch active laboratory services for catalog enforcement
   const { data: laboratoryServices = [] } = useServicesByCategory('laboratory');
@@ -872,33 +873,47 @@ return (
             </div>
           </div>
 
-          {/* Right: Refresh Button */}
-          <Button 
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="hover:bg-green-50 dark:hover:bg-green-950/20 
-                     hover:border-green-400 dark:hover:border-green-500 
-                     hover:text-green-700 dark:hover:text-green-400
-                     transition-all duration-200"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          {/* Right: Info Button + Refresh Button */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => setShowInfoDialog(true)}
+              className="hover:bg-green-50 dark:hover:bg-green-950/20 
+                       hover:border-green-400 dark:hover:border-green-500 
+                       hover:text-green-700 dark:hover:text-green-400
+                       transition-all duration-200"
+              aria-label="Show information about lab orders"
+            >
+              <Info className="w-4 h-4 mr-2" />
+              Info
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="hover:bg-green-50 dark:hover:bg-green-950/20 
+                       hover:border-green-400 dark:hover:border-green-500 
+                       hover:text-green-700 dark:hover:text-green-400
+                       transition-all duration-200"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           {/* Pending Card */}
           <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-orange-900 dark:text-orange-100 uppercase tracking-wide">
                     Pending
                   </p>
-                  <div className="flex items-baseline gap-1.5 mt-1.5">
-                    <p className="text-2xl font-bold text-orange-700 dark:text-orange-400" data-testid="stat-pending">
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <p className="text-xl font-bold text-orange-700 dark:text-orange-400" data-testid="stat-pending">
                       {pendingTests.length}
                     </p>
                     <p className="text-xs text-orange-600 dark:text-orange-400">
@@ -906,8 +921,8 @@ return (
                     </p>
                   </div>
                 </div>
-                <div className="p-2.5 bg-orange-600 rounded-lg shadow-sm">
-                  <Clock className="w-5 h-5 text-white" />
+                <div className="p-2 bg-orange-600 rounded-lg shadow-sm">
+                  <Clock className="w-4 h-4 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -915,14 +930,14 @@ return (
 
           {/* Completed Card */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-green-900 dark:text-green-100 uppercase tracking-wide">
                     Completed
                   </p>
-                  <div className="flex items-baseline gap-1.5 mt-1.5">
-                    <p className="text-2xl font-bold text-green-700 dark:text-green-400" data-testid="stat-completed">
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <p className="text-xl font-bold text-green-700 dark:text-green-400" data-testid="stat-completed">
                       {completedTests.length}
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400">
@@ -930,8 +945,8 @@ return (
                     </p>
                   </div>
                 </div>
-                <div className="p-2.5 bg-green-600 rounded-lg shadow-sm">
-                  <CheckCircle className="w-5 h-5 text-white" />
+                <div className="p-2 bg-green-600 rounded-lg shadow-sm">
+                  <CheckCircle className="w-4 h-4 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -939,14 +954,14 @@ return (
 
           {/* Total Card */}
           <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 uppercase tracking-wide">
                     Total Exams
                   </p>
-                  <div className="flex items-baseline gap-1.5 mt-1.5">
-                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-400" data-testid="stat-total">
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <p className="text-xl font-bold text-blue-700 dark:text-blue-400" data-testid="stat-total">
                       {allLabTests.length}
                     </p>
                     <p className="text-xs text-blue-600 dark:text-blue-400">
@@ -954,32 +969,22 @@ return (
                     </p>
                   </div>
                 </div>
-                <div className="p-2.5 bg-blue-600 rounded-lg shadow-sm">
-                  <Activity className="w-5 h-5 text-white" />
+                <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
+                  <Activity className="w-4 h-4 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Note Banner */}
-        <Alert className="bg-green-50 dark:bg-green-950/20 border-2 border-green-200 dark:border-green-800">
-          <Info className="w-4 h-4 text-green-600 dark:text-green-400" />
-          <AlertDescription className="text-green-900 dark:text-green-100">
-            <strong>Note:</strong> New lab orders can only be created from the{' '}
-            <Link to="/treatment" className="underline font-semibold">Treatment page</Link>
-            {' '}by doctors during patient visits. Lab staff can update results and status for existing orders.
-          </AlertDescription>
-        </Alert>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* LEFT – Pending Test Requests (Always Visible) */}
 
         <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)] border-0 overflow-hidden">
-          <CardHeader className="bg-orange-50 dark:bg-orange-950/20 border-b">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+          <CardHeader className="bg-orange-50 dark:bg-orange-950/20 border-b py-2.5 px-4">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
               </div>
               Pending Test Requests
             </CardTitle>
@@ -1877,6 +1882,23 @@ return (
           technicianNotes: resultsForm.getValues("technicianNotes"),
         }}
       />
+
+      {/* Info Dialog */}
+      <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-green-600 dark:text-green-400" />
+              Laboratory Information
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              New lab orders can only be created from the Treatment page by doctors during patient visits. Lab staff can update results and status for existing orders.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Custom Scrollbar Styling */}
       <style>{`

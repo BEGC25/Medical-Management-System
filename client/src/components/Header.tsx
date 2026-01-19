@@ -77,18 +77,6 @@ export default function Header({ isMobileMenuOpen = false, onToggleMobileMenu }:
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur-md transition-all duration-300">
-              <div className="relative">
-                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]'}`}></div>
-                {isOnline && (
-                  <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-400 
-                                  animate-ping opacity-75"></div>
-                )}
-              </div>
-              {isOnline ? <Wifi className="w-4 h-4 text-white" /> : <WifiOff className="w-4 h-4 text-white" />}
-              <span className="text-sm font-medium text-white hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
-            </div>
-            
             {user && (
               <>
                 <button className="group relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl
