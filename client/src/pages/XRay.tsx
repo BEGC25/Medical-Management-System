@@ -966,6 +966,7 @@ export default function XRay() {
             {/* Date Filter and Search Controls */}
             <div className="mb-3 space-y-1.5">
               <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+              <div className="pb-1"></div>
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
                     key={filter}
@@ -1046,6 +1047,7 @@ export default function XRay() {
             {/* Same filter controls for completed tests */}
             <div className="mb-3 space-y-1.5">
               <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+              <div className="pb-1"></div>
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
                     key={filter}

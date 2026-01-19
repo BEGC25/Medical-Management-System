@@ -1058,6 +1058,7 @@ export default function Ultrasound() {
             {/* Date Filter and Search Controls */}
             <div className="mb-3 space-y-1.5">
               <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="pb-1"></div>
                 <button
                   onClick={() => setDateFilter("today")}
                   className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
@@ -1165,6 +1166,7 @@ export default function Ultrasound() {
             {/* Same filter controls for completed tests */}
             <div className="mb-3 space-y-1.5">
               <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="pb-1"></div>
                 <button
                   onClick={() => setDateFilter("today")}
                   className={`pb-1.5 text-xs font-medium whitespace-nowrap transition-all duration-300 relative ${
