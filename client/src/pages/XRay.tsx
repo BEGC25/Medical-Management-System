@@ -965,8 +965,7 @@ export default function XRay() {
           <CardContent className="p-3">
             {/* Date Filter and Search Controls */}
             <div className="mb-3 space-y-1.5">
-              <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
-              <div className="pb-1"></div>
+              <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 pb-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
                     key={filter}
@@ -1013,7 +1012,7 @@ export default function XRay() {
                   <ExamCard key={exam.examId} exam={exam} patient={patientsMap.data?.[exam.patientId]} />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="flex flex-col items-center justify-center py-6 text-center">
                   <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
                     <Clock className="w-6 h-6 text-orange-500 dark:text-orange-400" />
                   </div>
@@ -1046,7 +1045,6 @@ export default function XRay() {
           <CardContent className="p-3">
             {/* Same filter controls for completed tests */}
             <div className="mb-3 space-y-1.5">
-              <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
               <div className="pb-1"></div>
                 {["today", "yesterday", "last7days", "last30days", "custom"].map((filter) => (
                   <button
@@ -1096,7 +1094,7 @@ export default function XRay() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
-                    <Check className="w-5 h-5 text-green-500 dark:text-green-400" />
+                    <Check className="w-6 h-6 text-green-500 dark:text-green-400" />
                   </div>
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
