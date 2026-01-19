@@ -1163,21 +1163,21 @@ return (
                   );
                 })
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="flex flex-col items-center justify-center py-6 text-center">
                   <div className="relative">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
-                      <Clock className="w-10 h-10 text-orange-600 dark:text-orange-400" />
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 flex items-center justify-center shadow-lg">
+                      <Clock className="w-8 h-8 text-orange-600 dark:text-orange-400" />
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center border-2 border-green-500">
                       <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight mt-4">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select date range"
                       : "All caught up!"}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 max-w-sm leading-relaxed">
                     {dateFilter === "custom" && !customStartDate && !customEndDate
                       ? "Select start and end dates above to view tests"
                       : 'No pending tests. Create a new lab request or register a patient to get started.'}
@@ -1190,10 +1190,10 @@ return (
 
         {/* RIGHT – Completed Tests */}
         <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.04)] border-0 overflow-hidden">
-          <CardHeader className="bg-green-50 dark:bg-green-950/20 border-b">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <CardHeader className="bg-green-50 dark:bg-green-950/20 border-b py-2.5 px-4">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
               </div>
               Completed Results (Lab)
             </CardTitle>

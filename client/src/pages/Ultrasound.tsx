@@ -1133,7 +1133,7 @@ export default function Ultrasound() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-6 text-center">
                   <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
-                    <Clock className="w-7 h-7 text-orange-500 dark:text-orange-400" />
+                    <Clock className="w-6 h-6 text-orange-500 dark:text-orange-400" />
                   </div>
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     {dateFilter === "custom" && !customStartDate && !customEndDate

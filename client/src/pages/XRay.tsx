@@ -310,7 +310,6 @@ export default function XRay() {
   
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showInfoDialog, setShowInfoDialog] = useState(false);
   
   // Server now handles all date filtering - no need for client-side date filtering
   // Split by status for the two tabs
