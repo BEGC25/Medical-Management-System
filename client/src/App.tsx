@@ -47,8 +47,8 @@ function AppLayout() {
         onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
       />
 
-      <main className="min-h-screen ml-0 lg:ml-64 pt-16 transition-all duration-300">
-        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+      <main className="min-h-screen ml-0 lg:ml-64 pt-12 transition-all duration-300">
+        <div className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
           <Switch>
             {/* Dashboard - All roles */}
             <ProtectedRoute path="/" component={Dashboard} allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.LAB, ROLES.RADIOLOGY, ROLES.RECEPTION]} />
