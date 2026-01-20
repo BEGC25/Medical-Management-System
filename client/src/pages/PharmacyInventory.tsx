@@ -273,7 +273,8 @@ export default function PharmacyInventory() {
   // Help panel state
   const [helpCollapsed, setHelpCollapsed] = useState(() => {
     const saved = localStorage.getItem("pharmacyInventoryHelpCollapsed");
-    return saved === "true";
+    // Default to collapsed (true) if no preference is saved
+    return saved !== "false";
   });
   
   // Transaction history date filter

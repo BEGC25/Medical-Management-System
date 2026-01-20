@@ -92,7 +92,8 @@ export default function Pharmacy() {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [helpCollapsed, setHelpCollapsed] = useState(() => {
     const saved = localStorage.getItem("pharmacyHelpCollapsed");
-    return saved === "true";
+    // Default to collapsed (true) if no preference is saved
+    return saved !== "false";
   });
   
   // Date filter states
