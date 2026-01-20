@@ -25,7 +25,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getClinicDayKey, getClinicNow } from "@/lib/date-utils";
 import { startOfMonth, startOfWeek, subDays } from "date-fns";
@@ -39,7 +38,6 @@ import { LoadingSkeleton } from "@/components/reports/LoadingSkeleton";
 import { PendingBacklog } from "@/components/reports/PendingBacklog";
 
 interface ReportFilters {
-  reportType: string;
   fromDate: string;
   toDate: string;
 }
@@ -137,7 +135,6 @@ export default function Reports() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filters, setFilters] = useState<ReportFilters>({
-    reportType: "daily",
     fromDate: getClinicDayKey(),
     toDate: getClinicDayKey(),
   });
@@ -212,6 +209,10 @@ export default function Reports() {
       case "last-30-days":
         fromDate = getClinicDayKey(subDays(today, 30));
         break;
+      case "custom-range":
+        // Don't update dates, let user select them manually
+        setActiveQuickFilter(preset);
+        return;
     }
 
     setFilters(prev => ({ ...prev, fromDate, toDate }));
@@ -231,7 +232,7 @@ export default function Reports() {
       setLastUpdated(new Date());
       toast({
         title: "Report Generated",
-        description: `${filters.reportType.charAt(0).toUpperCase() + filters.reportType.slice(1)} report updated successfully for ${filters.fromDate} to ${filters.toDate}`,
+        description: `Report updated successfully for ${filters.fromDate} to ${filters.toDate}`,
       });
     } catch (error) {
       toast({
@@ -276,7 +277,6 @@ export default function Reports() {
     // Create CSV content
     const csvContent = [
       ['Bahr El Ghazal Clinic - Report'],
-      [`Report Type: ${filters.reportType}`],
       [`Date Range: ${filters.fromDate} to ${filters.toDate}`],
       [''],
       ['Summary Statistics (Period-Scoped)'],
@@ -374,7 +374,6 @@ export default function Reports() {
             </div>
             
             <div class="info-section">
-              <div><strong>Report Type:</strong> ${filters.reportType.charAt(0).toUpperCase() + filters.reportType.slice(1)} Summary</div>
               <div><strong>Date Range:</strong> ${filters.fromDate} to ${filters.toDate}</div>
               <div><strong>Generated:</strong> ${currentDate}</div>
             </div>
@@ -502,62 +501,53 @@ export default function Reports() {
                 >
                   Last 30 Days
                 </Button>
+                <Button
+                  variant={activeQuickFilter === "custom-range" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQuickFilter("custom-range")}
+                  className={activeQuickFilter === "custom-range" ? "bg-blue-600 text-white hover:bg-blue-700 border-blue-600" : "hover:bg-blue-50 dark:hover:bg-blue-900/20"}
+                >
+                  Custom Range
+                </Button>
               </div>
 
-              {/* Detailed Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Report Type
-                  </label>
-                  <Select 
-                    value={filters.reportType} 
-                    onValueChange={(value) => handleFilterChange("reportType", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily Summary</SelectItem>
-                      <SelectItem value="weekly">Weekly Report</SelectItem>
-                      <SelectItem value="monthly">Monthly Report</SelectItem>
-                      <SelectItem value="custom">Custom Range</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Custom Range Date Pickers - Only visible when Custom Range is selected */}
+              {activeQuickFilter === "custom-range" && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      From Date
+                    </label>
+                    <Input 
+                      type="date" 
+                      value={filters.fromDate}
+                      onChange={(e) => handleFilterChange("fromDate", e.target.value)}
+                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      To Date
+                    </label>
+                    <Input 
+                      type="date" 
+                      value={filters.toDate}
+                      onChange={(e) => handleFilterChange("toDate", e.target.value)}
+                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button 
+                      onClick={generateReport}
+                      disabled={isGenerating}
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 w-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                    >
+                      <Activity className="w-4 h-4 mr-2" />
+                      {isGenerating ? "Generating..." : "Update Report"}
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    From Date
-                  </label>
-                  <Input 
-                    type="date" 
-                    value={filters.fromDate}
-                    onChange={(e) => handleFilterChange("fromDate", e.target.value)}
-                    className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    To Date
-                  </label>
-                  <Input 
-                    type="date" 
-                    value={filters.toDate}
-                    onChange={(e) => handleFilterChange("toDate", e.target.value)}
-                    className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button 
-                    onClick={generateReport}
-                    disabled={isGenerating}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 w-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-                  >
-                    <Activity className="w-4 h-4 mr-2" />
-                    {isGenerating ? "Generating..." : "Update Report"}
-                  </Button>
-                </div>
-              </div>
+              )}
               
               {lastGenerated && (
                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-3 flex items-center gap-2">
