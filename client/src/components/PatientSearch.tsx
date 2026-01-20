@@ -193,42 +193,49 @@ export default function PatientSearch({
       )}
 
       {filteredPatients && filteredPatients.length > 0 && (
-        <div className="space-y-2">
-          {filteredPatients.map((p, index) => {
-            // ALWAYS use patient's actual dateOfService from API when available
-            const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
-              ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
-                ? selectedDate
-                : (p.updatedAt || p.createdAt));
-            
-            const isSelected = selectedPatientId === p.patientId;
-            const indicators = getPatientIndicators(p, resultsReadyMap);
+        <div>
+          {/* Table Column Headers */}
+          <div className="grid grid-cols-[2fr_0.8fr_0.9fr_1.1fr_0.9fr_0.8fr] gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
+                          border-b border-gray-200 dark:border-gray-700 
+                          text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+            <div>Patient</div>
+            <div>ID</div>
+            <div>Age/Gender</div>
+            <div>Contact</div>
+            <div>Registered</div>
+            <div>Status</div>
+          </div>
 
-            return (
-              <div
-                key={p.id || p.patientId}
-                onClick={() => onViewPatient?.(p)}
-                className={cn(
-                  "bg-white dark:bg-gray-800 rounded-lg border-2 p-3",
-                  "hover:shadow-xl hover:border-blue-400 dark:hover:border-blue-500",
-                  "transition-all duration-200 cursor-pointer hover:scale-[1.01] group",
-                  isSelected
-                    ? "border-blue-500 dark:border-blue-400 shadow-lg"
-                    : "border-gray-200 dark:border-gray-700"
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  {/* Left side: Patient information */}
-                  <div className="flex items-center gap-3 flex-1">
-                    {/* Row number */}
-                    <div className="flex-shrink-0 w-6 text-center">
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        {index + 1}
-                      </span>
-                    </div>
+          {/* Patient Cards */}
+          <div className="space-y-1.5 p-2">
+            {filteredPatients.map((p, index) => {
+              // ALWAYS use patient's actual dateOfService from API when available
+              const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
+                ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
+                  ? selectedDate
+                  : (p.updatedAt || p.createdAt));
+              
+              const isSelected = selectedPatientId === p.patientId;
+              const indicators = getPatientIndicators(p, resultsReadyMap);
 
-                    {/* Avatar */}
-                    <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-400 dark:group-hover:ring-blue-500">
+              return (
+                <div
+                  key={p.id || p.patientId}
+                  onClick={() => onViewPatient?.(p)}
+                  className={cn(
+                    "bg-white dark:bg-gray-800 rounded-lg border-2 px-4 py-2",
+                    "hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500",
+                    "transition-all duration-200 cursor-pointer group",
+                    "grid grid-cols-[2fr_0.8fr_0.9fr_1.1fr_0.9fr_0.8fr] gap-3 items-center",
+                    isSelected
+                      ? "border-blue-500 dark:border-blue-400 shadow-lg"
+                      : "border-gray-200 dark:border-gray-700"
+                  )}
+                >
+                  {/* Column 1: Patient - Avatar + Name + Badges */}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-700 
+                                     group-hover:ring-blue-400 dark:group-hover:ring-blue-500 transition-all">
                       <AvatarFallback 
                         className={cn(
                           "text-sm font-semibold",
@@ -240,98 +247,88 @@ export default function PatientSearch({
                         {(p.lastName?.[0] || "").toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-
-                    {/* Patient details */}
-                    <div className="flex-1 min-w-0">
-                      {/* Top row: Name and basic info */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900 dark:text-white text-base">
-                          {p.firstName} {p.lastName}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          ID: {p.patientId}
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {p.age ?? "—"} • {formatGender(p.gender)}
-                        </span>
-                        {p.phoneNumber && (
-                          <>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {p.phoneNumber}
-                            </span>
-                          </>
-                        )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                        {p.firstName} {p.lastName}
                       </div>
-
-                      {/* Bottom row: Status and diagnostics */}
-                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        {/* Visit Status */}
-                        {p.visitStatus ? (
-                          <Badge className={cn(
-                            "text-xs",
-                            p.visitStatus === 'open' 
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
-                              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                          )}>
-                            {getVisitStatusLabel(p.visitStatus)}
-                          </Badge>
-                        ) : null}
-
-                        {/* Diagnostics badges */}
-                        {indicators.waiting.length > 0 && (
-                          <Badge 
-                            variant="outline"
-                            className="text-xs border-yellow-300 bg-yellow-50 text-yellow-700 dark:border-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400 flex items-center gap-1"
-                          >
-                            <AlertCircle className="w-3 h-3" aria-hidden="true" />
-                            <span>Waiting: {indicators.waiting.join(', ')}</span>
+                      {/* Badges inline */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {p.patientType === "referral_diagnostic" && (
+                          <Badge variant="outline" className="text-[10px] h-4 px-1 border-orange-400 
+                                                             bg-orange-50 text-orange-700 dark:border-orange-600 
+                                                             dark:bg-orange-900/30 dark:text-orange-400">
+                            🔥 External
                           </Badge>
                         )}
-                        
-                        {indicators.ready.length > 0 && (
-                          <Badge 
-                            variant="outline"
-                            className="text-xs border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-900/20 dark:text-green-400 flex items-center gap-1"
-                          >
-                            <CheckCircle className="w-3 h-3" aria-hidden="true" />
-                            <span>Ready: {indicators.ready.join(', ')}</span>
+                        {!p.phoneNumber && (
+                          <Badge variant="outline" className="text-[10px] h-4 px-1 border-gray-300 
+                                                             bg-gray-50 text-gray-600 dark:border-gray-600 
+                                                             dark:bg-gray-800/50 dark:text-gray-400">
+                            No Contact
                           </Badge>
-                        )}
-                        
-                        {indicators.waiting.length === 0 && indicators.ready.length === 0 && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500 italic">
-                            No diagnostics pending
-                          </span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Right side: Date of service */}
-                  <div className="flex-shrink-0 ml-4 text-right">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {formatDate(displayDate)}
-                    </div>
-                    {showActions && (
-                      <Button
-                        size="sm"
+                  {/* Column 2: ID */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    {p.patientId}
+                  </div>
+
+                  {/* Column 3: Age/Gender */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {p.age ?? "—"} • {formatGender(p.gender)}
+                  </div>
+
+                  {/* Column 4: Contact */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    {p.phoneNumber || <span className="text-gray-400 dark:text-gray-500">—</span>}
+                  </div>
+
+                  {/* Column 5: Registered */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatDate(displayDate)}
+                  </div>
+
+                  {/* Column 6: Status */}
+                  <div>
+                    {/* Show results ready/waiting indicators if available */}
+                    {indicators.ready.length > 0 ? (
+                      <Badge 
                         variant="outline"
-                        className="mt-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onViewPatient?.(p);
-                        }}
+                        className="text-xs h-5 px-2 border-green-300 bg-green-50 text-green-700 
+                                   dark:border-green-700 dark:bg-green-900/20 dark:text-green-400 flex items-center gap-1"
                       >
-                        View
-                      </Button>
+                        <CheckCircle className="w-3 h-3" aria-hidden="true" />
+                        <span>Ready</span>
+                      </Badge>
+                    ) : indicators.waiting.length > 0 ? (
+                      <Badge 
+                        variant="outline"
+                        className="text-xs h-5 px-2 border-yellow-300 bg-yellow-50 text-yellow-700 
+                                   dark:border-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400 flex items-center gap-1"
+                      >
+                        <AlertCircle className="w-3 h-3" aria-hidden="true" />
+                        <span>Waiting</span>
+                      </Badge>
+                    ) : p.visitStatus ? (
+                      <Badge className={cn(
+                        "text-xs h-5 px-2",
+                        p.visitStatus === 'open' 
+                          ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400" 
+                          : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400"
+                      )}>
+                        {getVisitStatusLabel(p.visitStatus)}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">—</span>
                     )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
