@@ -5850,7 +5850,7 @@ export default function Treatment() {
                         
                         {/* Contact */}
                         <div className="text-sm text-gray-700 dark:text-gray-300">
-                          {patient.phoneNumberNumber || <span className="text-gray-400">-</span>}
+                          {patient.phoneNumber || <span className="text-gray-400">-</span>}
                         </div>
                         
                         {/* Visit Status */}
