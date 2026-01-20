@@ -54,11 +54,11 @@ export function PremiumStatCard({
       {/* Glass effect overlay */}
       <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-sm" />
 
-      <CardContent className="relative p-6 text-white">
+      <CardContent className="relative p-4 text-white">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-medium opacity-90">{title}</p>
-            <div className="text-4xl font-bold tabular-nums tracking-tight">
+            <p className="text-xs font-medium opacity-90">{title}</p>
+            <div className="text-3xl font-bold tabular-nums tracking-tight">
               {typeof value === "number" ? (
                 <CountUp
                   end={numericValue}
@@ -70,18 +70,18 @@ export function PremiumStatCard({
               )}
             </div>
             {subtitle && (
-              <p className="text-sm opacity-80 mt-1">{subtitle}</p>
+              <p className="text-xs opacity-80 mt-0.5">{subtitle}</p>
             )}
             {trend && (
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1.5">
                 {trend.value > 0 ? (
-                  <TrendingUp className="h-4 w-4" />
+                  <TrendingUp className="h-3.5 w-3.5" />
                 ) : trend.value < 0 ? (
-                  <TrendingDown className="h-4 w-4" />
+                  <TrendingDown className="h-3.5 w-3.5" />
                 ) : (
-                  <Minus className="h-4 w-4" />
+                  <Minus className="h-3.5 w-3.5" />
                 )}
-                <span className="text-sm font-medium">
+                <span className="text-xs font-medium">
                   {trend.value > 0 ? "+" : ""}{trend.value}%
                 </span>
                 {trend.label && (
@@ -91,8 +91,8 @@ export function PremiumStatCard({
             )}
           </div>
           <div className="relative">
-            <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:bg-white/20 group-hover:scale-110">
-              <Icon className="h-8 w-8 text-white" />
+            <div className="rounded-xl bg-white/10 p-2.5 backdrop-blur-sm transition-all duration-300 group-hover:bg-white/20 group-hover:scale-110">
+              <Icon className="h-7 w-7 text-white" />
             </div>
           </div>
         </div>
