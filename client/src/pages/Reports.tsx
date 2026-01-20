@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { getClinicDayKey } from "@/lib/date-utils";
+import { getClinicDayKey, getClinicNow } from "@/lib/date-utils";
 import { PremiumStatCard } from "@/components/reports/PremiumStatCard";
 import { VisitsTrendChart } from "@/components/reports/VisitsTrendChart";
 import { TestsBarChart } from "@/components/reports/TestsBarChart";
@@ -194,7 +194,7 @@ export default function Reports() {
   };
 
   const setQuickFilter = (preset: string) => {
-    const today = new Date();
+    const today = getClinicNow();
     let fromDate = getClinicDayKey();
     let toDate = getClinicDayKey();
 
@@ -205,7 +205,7 @@ export default function Reports() {
       case "this-week":
         const weekStart = new Date(today);
         weekStart.setDate(today.getDate() - today.getDay());
-        fromDate = weekStart.toISOString().split('T')[0];
+        fromDate = getClinicDayKey(weekStart);
         break;
       case "this-month":
         fromDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
@@ -213,7 +213,7 @@ export default function Reports() {
       case "last-30-days":
         const thirtyDaysAgo = new Date(today);
         thirtyDaysAgo.setDate(today.getDate() - 30);
-        fromDate = thirtyDaysAgo.toISOString().split('T')[0];
+        fromDate = getClinicDayKey(thirtyDaysAgo);
         break;
     }
 

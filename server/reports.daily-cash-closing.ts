@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { today } from "./utils/date";
 
 // Extend express-session types to include our user
 declare module "express-session" {
@@ -35,7 +36,7 @@ async function getRunner(): Promise<Runner> {
 }
 
 function ymd(v?: string) {
-  const s = v ?? new Date().toISOString().slice(0,10);
+  const s = v ?? today('date');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error("Invalid date");
   return s;
 }

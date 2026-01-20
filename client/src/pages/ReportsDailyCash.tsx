@@ -5,8 +5,9 @@ import { ROLES } from "@shared/auth-roles"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
+import { getClinicDayKey, getClinicNow } from "@/lib/date-utils"
 
 type ApiRow = {
   department: string
@@ -56,13 +57,12 @@ function ymdToLocalDate(ymd: string): Date {
 }
 
 function todayYMD() {
-  return formatDateYMD(new Date())
+  return getClinicDayKey()
 }
 
 function yesterdayYMD() {
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  return formatDateYMD(yesterday)
+  const yesterday = subDays(getClinicNow(), 1)
+  return getClinicDayKey(yesterday)
 }
 
 const CURRENCY = "SSP"

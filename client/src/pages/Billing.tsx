@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
-import { getClinicDayKey } from "@/lib/date-utils";
+import { getClinicDayKey, getClinicNow } from "@/lib/date-utils";
 import { PrintableInvoice } from "@/components/PrintableInvoice";
 import { formatCurrency, calculateOrderLinesTotal } from "@/lib/utils";
 import { format } from "date-fns";
@@ -259,7 +259,7 @@ function BillingPatientSearch({ onPatientSelect }: { onPatientSelect: (patient: 
 export default function Billing() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(getClinicNow());
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedEncounter, setSelectedEncounter] = useState<EncounterWithPatient | null>(null);
   const [showNewEncounterDialog, setShowNewEncounterDialog] = useState(false);
