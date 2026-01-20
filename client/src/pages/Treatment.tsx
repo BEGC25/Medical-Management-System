@@ -5681,7 +5681,10 @@ export default function Treatment() {
 
                           {/* Column 3: Age/Sex */}
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {patient.age || '—'} • {patient.gender || '—'}
+                            {(patient.age && patient.gender) 
+                              ? `${patient.age} • ${patient.gender}`
+                              : patient.age || patient.gender || '—'
+                            }
                           </div>
 
                           {/* Column 4: Contact */}
@@ -5708,7 +5711,7 @@ export default function Treatment() {
                           <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
                             {pendingDepts.length > 0 
                               ? pendingDepts.join(', ')
-                              : <span className="text-gray-400">No diagnostics pending</span>
+                              : <span className="text-gray-400 dark:text-gray-500">No diagnostics pending</span>
                             }
                           </div>
 
