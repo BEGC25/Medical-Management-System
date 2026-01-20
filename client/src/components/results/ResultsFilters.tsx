@@ -69,6 +69,12 @@ export function ResultsFiltersBar({ filters, patients, onFilterChange, resultCou
             >
               <option value="all">All Dates</option>
               <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="last7days">Last 7 Days</option>
+              <option value="last30days">Last 30 Days</option>
+              <option value="thisweek">This Week</option>
+              <option value="thismonth">This Month</option>
+              <option value="custom">Custom Range</option>
               <option value="date">Specific Date</option>
             </select>
           </div>
@@ -92,9 +98,47 @@ export function ResultsFiltersBar({ filters, patients, onFilterChange, resultCou
               </div>
             </div>
           )}
+
+          {/* Custom Date Range Pickers (conditional) */}
+          {filters.dateFilter === "custom" && (
+            <>
+              <div>
+                <Label htmlFor="custom-start-date" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5 block">
+                  From Date
+                </Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <Input
+                    id="custom-start-date"
+                    type="date"
+                    value={filters.customStartDate || ''}
+                    onChange={(e) => onFilterChange({ customStartDate: e.target.value })}
+                    className="pl-10 h-9 text-sm"
+                    aria-label="Select start date"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="custom-end-date" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5 block">
+                  To Date
+                </Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <Input
+                    id="custom-end-date"
+                    type="date"
+                    value={filters.customEndDate || ''}
+                    onChange={(e) => onFilterChange({ customEndDate: e.target.value })}
+                    className="pl-10 h-9 text-sm"
+                    aria-label="Select end date"
+                  />
+                </div>
+              </div>
+            </>
+          )}
           
           {/* Result Count Display */}
-          {filters.dateFilter !== "date" && (
+          {filters.dateFilter !== "date" && filters.dateFilter !== "custom" && (
             <div className="flex items-end">
               <div className="text-sm text-slate-600 dark:text-slate-400">
                 <span className="font-semibold text-slate-900 dark:text-slate-100">{resultCount}</span> results found

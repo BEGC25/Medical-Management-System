@@ -88,6 +88,8 @@ export interface ResultsFilters {
   typeFilter: string;
   dateFilter: string;
   selectedDate: string;
+  customStartDate?: string;
+  customEndDate?: string;
 }
 
 export interface ResultsKPI {

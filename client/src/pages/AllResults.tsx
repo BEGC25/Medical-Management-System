@@ -124,6 +124,8 @@ export default function AllResults() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<string>(getClinicDayKey());
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [detailsResult, setDetailsResult] = useState<any | null>(null);
@@ -223,6 +225,30 @@ export default function AllResults() {
       // Extract the date portion from createdAt timestamp in clinic timezone
       const resultDate = getClinicDayKey(new Date(result.createdAt));
       matchesDate = resultDate === today;
+    } else if (dateFilter === "yesterday") {
+      const yesterday = getClinicDayKey(new Date(Date.now() - 86400000));
+      const resultDate = getClinicDayKey(new Date(result.createdAt));
+      matchesDate = resultDate === yesterday;
+    } else if (dateFilter === "last7days") {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
+      matchesDate = new Date(result.createdAt) >= sevenDaysAgo;
+    } else if (dateFilter === "last30days") {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+      matchesDate = new Date(result.createdAt) >= thirtyDaysAgo;
+    } else if (dateFilter === "thisweek") {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - dayOfWeek);
+      startOfWeek.setHours(0, 0, 0, 0);
+      matchesDate = new Date(result.createdAt) >= startOfWeek;
+    } else if (dateFilter === "thismonth") {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      matchesDate = new Date(result.createdAt) >= startOfMonth;
+    } else if (dateFilter === "custom" && customStartDate && customEndDate) {
+      const resultDate = getClinicDayKey(new Date(result.createdAt));
+      matchesDate = resultDate >= customStartDate && resultDate <= customEndDate;
     } else if (dateFilter === "date" && selectedDate) {
       const resultDate = getClinicDayKey(new Date(result.createdAt));
       matchesDate = resultDate === selectedDate;
@@ -1390,14 +1416,14 @@ export default function AllResults() {
     );
   };
 
-  // Calculate KPIs
+  // Calculate KPIs - using filteredResults to reflect active filters
   const kpi = {
-    total: allResults.length,
-    lab: allResults.filter(r => r.type === 'lab').length,
-    xray: allResults.filter(r => r.type === 'xray').length,
-    ultrasound: allResults.filter(r => r.type === 'ultrasound').length,
-    completed: allResults.filter(r => r.status === 'completed').length,
-    pending: allResults.filter(r => r.status === 'pending').length,
+    total: filteredResults.length,
+    lab: filteredResults.filter(r => r.type === 'lab').length,
+    xray: filteredResults.filter(r => r.type === 'xray').length,
+    ultrasound: filteredResults.filter(r => r.type === 'ultrasound').length,
+    completed: filteredResults.filter(r => r.status === 'completed').length,
+    pending: filteredResults.filter(r => r.status === 'pending').length,
   };
 
   const filters = {
@@ -1407,6 +1433,8 @@ export default function AllResults() {
     typeFilter,
     dateFilter,
     selectedDate,
+    customStartDate,
+    customEndDate,
   };
 
   const handleFilterChange = (newFilters: Partial<typeof filters>) => {
@@ -1416,6 +1444,8 @@ export default function AllResults() {
     if (newFilters.typeFilter !== undefined) setTypeFilter(newFilters.typeFilter);
     if (newFilters.dateFilter !== undefined) setDateFilter(newFilters.dateFilter);
     if (newFilters.selectedDate !== undefined) setSelectedDate(newFilters.selectedDate);
+    if (newFilters.customStartDate !== undefined) setCustomStartDate(newFilters.customStartDate);
+    if (newFilters.customEndDate !== undefined) setCustomEndDate(newFilters.customEndDate);
   };
 
   const handleClearAllFilters = () => {
@@ -1425,6 +1455,8 @@ export default function AllResults() {
     setTypeFilter("all");
     setDateFilter("all");
     setSelectedDate(getClinicDayKey());
+    setCustomStartDate("");
+    setCustomEndDate("");
   };
 
   return (
