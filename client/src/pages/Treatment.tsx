@@ -5619,72 +5619,121 @@ export default function Treatment() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {openVisitsPatients
-                  .filter((patient) => {
-                    if (!queueFilter) return true;
-                    const needle = queueFilter.toLowerCase();
-                    const name = `${patient.firstName} ${patient.lastName}`.toLowerCase();
-                    return (
-                      name.includes(needle) ||
-                      patient.patientId.toLowerCase().includes(needle)
-                    );
-                  })
-                  .map((patient, index) => {
-                    const visitStatus = patient.visitStatus || "open";
-                    const displayStatus = getVisitStatusLabel(visitStatus);
-                    return (
-                      <div 
-                        key={patient.patientId} 
-                        className="p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer"
-                        onClick={() => handlePatientFromQueue(patient.patientId)}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold text-sm">
-                              {index + 1}
+              <>
+                {/* Column Headers */}
+                <div className="grid grid-cols-[0.5fr_2fr_0.8fr_1fr_0.9fr_1.2fr_0.9fr] gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
+                                border-b border-gray-200 dark:border-gray-700 
+                                text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <div>No.</div>
+                  <div>Patient Name</div>
+                  <div>Age/Sex</div>
+                  <div>Contact</div>
+                  <div>Visit Status</div>
+                  <div>Diagnostics</div>
+                  <div className="text-right">Date</div>
+                </div>
+
+                {/* Patient Rows */}
+                <div className="space-y-1.5 p-2">
+                  {openVisitsPatients
+                    .filter((patient) => {
+                      if (!queueFilter) return true;
+                      const needle = queueFilter.toLowerCase();
+                      const name = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+                      return (
+                        name.includes(needle) ||
+                        patient.patientId.toLowerCase().includes(needle)
+                      );
+                    })
+                    .map((patient, index) => {
+                      const visitStatus = patient.visitStatus || "open";
+                      const displayStatus = getVisitStatusLabel(visitStatus);
+                      const pendingDepts = getDiagnosticPendingDepartments(patient);
+                      const visitDate = patient.dateOfService ? formatClinicDateTime(patient.dateOfService) : '';
+                      
+                      return (
+                        <div 
+                          key={patient.patientId} 
+                          className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 
+                                     dark:border-gray-700 px-4 py-2 hover:shadow-lg hover:border-blue-400 
+                                     dark:hover:border-blue-500 transition-all duration-200
+                                     grid grid-cols-[0.5fr_2fr_0.8fr_1fr_0.9fr_1.2fr_0.9fr] gap-3 items-center
+                                     group cursor-pointer"
+                          onClick={() => handlePatientFromQueue(patient.patientId)}
+                        >
+                          {/* No. */}
+                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          
+                          {/* Patient Name */}
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">
+                              {patient.firstName} {patient.lastName}
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-gray-900 dark:text-white">
-                                  {patient.firstName} {patient.lastName}
-                                </h4>
-                                <Badge variant="outline" className="text-xs">
-                                  {patient.patientId}
-                                </Badge>
-                                {/* Visit Status Badge - C) Display "Treated" instead of "Closed" */}
-                                <Badge 
-                                  variant={visitStatus === "open" ? "default" : visitStatus === "closed" ? "secondary" : "outline"}
-                                  className={`text-xs capitalize ${
-                                    visitStatus === "open" ? "bg-green-600 text-white" :
-                                    visitStatus === "closed" ? "bg-gray-600 text-white" :
-                                    "bg-yellow-600 text-white"
-                                  }`}
-                                >
-                                  {displayStatus}
-                                </Badge>
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {patient.age && <span>{patient.age} years • </span>}
-                                {patient.gender && <span>{patient.gender}</span>}
-                              </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {patient.patientId}
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePatientFromQueue(patient.patientId);
-                            }}
-                          >
-                            View
-                          </Button>
+                          
+                          {/* Age/Sex */}
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                            {patient.age && patient.gender ? (
+                              <>{patient.age}Y / {patient.gender.charAt(0)}</>
+                            ) : patient.age ? (
+                              <>{patient.age}Y</>
+                            ) : patient.gender ? (
+                              <>{patient.gender}</>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </div>
+                          
+                          {/* Contact */}
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                            {patient.phoneNumber || <span className="text-gray-400">-</span>}
+                          </div>
+                          
+                          {/* Visit Status */}
+                          <div>
+                            <Badge 
+                              variant={visitStatus === "open" ? "default" : visitStatus === "closed" ? "secondary" : "outline"}
+                              className={`text-xs capitalize ${
+                                visitStatus === "open" ? "bg-green-600 text-white" :
+                                visitStatus === "closed" ? "bg-gray-600 text-white" :
+                                "bg-yellow-600 text-white"
+                              }`}
+                            >
+                              {displayStatus}
+                            </Badge>
+                          </div>
+                          
+                          {/* Diagnostics */}
+                          <div className="flex flex-wrap gap-1">
+                            {pendingDepts.length > 0 ? (
+                              pendingDepts.map((dept, i) => (
+                                <Badge 
+                                  key={i}
+                                  variant="secondary" 
+                                  className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700"
+                                >
+                                  {dept}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </div>
+                          
+                          {/* Date */}
+                          <div className="text-sm text-gray-700 dark:text-gray-300 text-right">
+                            {visitDate || <span className="text-gray-400">-</span>}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-              </div>
+                      );
+                    })}
+                </div>
+              </>
             )}
           </div>
         </DialogContent>
@@ -5737,83 +5786,109 @@ export default function Treatment() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {patientsWithOrdersWaiting.map((patient, index) => {
-                  const pendingDepts = getDiagnosticPendingDepartments(patient);
-                  const visitStatus = patient.visitStatus || "open";
-                  return (
-                    <div 
-                      key={patient.patientId} 
-                      className="p-4 bg-gradient-to-r from-amber-50/50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-amber-200 dark:border-amber-800/50 hover:shadow-md transition-all cursor-pointer"
-                      onClick={() => {
-                        handlePatientFromQueue(patient.patientId);
-                        setOrdersWaitingOpen(false);
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-bold text-sm">
-                            {index + 1}
+              <>
+                {/* Column Headers */}
+                <div className="grid grid-cols-[0.5fr_2fr_0.8fr_1fr_0.9fr_1.2fr_0.9fr] gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
+                                border-b border-gray-200 dark:border-gray-700 
+                                text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <div>No.</div>
+                  <div>Patient Name</div>
+                  <div>Age/Sex</div>
+                  <div>Contact</div>
+                  <div>Visit Status</div>
+                  <div>Diagnostics</div>
+                  <div className="text-right">Date</div>
+                </div>
+
+                {/* Patient Rows */}
+                <div className="space-y-1.5 p-2">
+                  {patientsWithOrdersWaiting.map((patient, index) => {
+                    const pendingDepts = getDiagnosticPendingDepartments(patient);
+                    const visitStatus = patient.visitStatus || "open";
+                    const visitDate = patient.dateOfService ? formatClinicDateTime(patient.dateOfService) : '';
+                    
+                    return (
+                      <div 
+                        key={patient.patientId} 
+                        className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 
+                                   dark:border-gray-700 px-4 py-2 hover:shadow-lg hover:border-amber-400 
+                                   dark:hover:border-amber-500 transition-all duration-200
+                                   grid grid-cols-[0.5fr_2fr_0.8fr_1fr_0.9fr_1.2fr_0.9fr] gap-3 items-center
+                                   group cursor-pointer"
+                        onClick={() => {
+                          handlePatientFromQueue(patient.patientId);
+                          setOrdersWaitingOpen(false);
+                        }}
+                      >
+                        {/* No. */}
+                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        
+                        {/* Patient Name */}
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white">
+                            {patient.firstName} {patient.lastName}
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <h4 className="font-semibold text-gray-900 dark:text-white">
-                                {patient.firstName} {patient.lastName}
-                              </h4>
-                              <Badge variant="outline" className="text-xs">
-                                {patient.patientId}
-                              </Badge>
-                              {/* Visit Status Badge - C) Display "Treated" instead of "Closed" */}
-                              <Badge 
-                                variant={visitStatus === "open" ? "default" : "outline"}
-                                className={`text-xs capitalize ${
-                                  visitStatus === "open" ? "bg-green-600 text-white" :
-                                  visitStatus === "closed" ? "bg-gray-600 text-white" :
-                                  "bg-yellow-600 text-white"
-                                }`}
-                              >
-                                {getVisitStatusLabel(visitStatus)}
-                              </Badge>
-                            </div>
-                            
-                            {/* Pending departments */}
-                            <div className="flex items-center gap-2 flex-wrap mb-2">
-                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Waiting:</span>
-                              {pendingDepts.map((dept, i) => (
-                                <Badge 
-                                  key={i}
-                                  variant="secondary" 
-                                  className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700"
-                                >
-                                  {dept}
-                                </Badge>
-                              ))}
-                            </div>
-                            
-                            {/* Patient info */}
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {patient.age && <span>{patient.age} years • </span>}
-                              {patient.gender && <span>{patient.gender}</span>}
-                            </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {patient.patientId}
                           </div>
                         </div>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="border-amber-300 hover:bg-amber-50 dark:border-amber-700 dark:hover:bg-amber-900/20"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePatientFromQueue(patient.patientId);
-                            setOrdersWaitingOpen(false);
-                          }}
-                        >
-                          View
-                        </Button>
+                        
+                        {/* Age/Sex */}
+                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                          {patient.age && patient.gender ? (
+                            <>{patient.age}Y / {patient.gender.charAt(0)}</>
+                          ) : patient.age ? (
+                            <>{patient.age}Y</>
+                          ) : patient.gender ? (
+                            <>{patient.gender}</>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </div>
+                        
+                        {/* Contact */}
+                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                          {patient.phoneNumberNumber || <span className="text-gray-400">-</span>}
+                        </div>
+                        
+                        {/* Visit Status */}
+                        <div>
+                          <Badge 
+                            variant={visitStatus === "open" ? "default" : "outline"}
+                            className={`text-xs capitalize ${
+                              visitStatus === "open" ? "bg-green-600 text-white" :
+                              visitStatus === "closed" ? "bg-gray-600 text-white" :
+                              "bg-yellow-600 text-white"
+                            }`}
+                          >
+                            {getVisitStatusLabel(visitStatus)}
+                          </Badge>
+                        </div>
+                        
+                        {/* Diagnostics */}
+                        <div className="flex flex-wrap gap-1">
+                          {pendingDepts.map((dept, i) => (
+                            <Badge 
+                              key={i}
+                              variant="secondary" 
+                              className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700"
+                            >
+                              {dept}
+                            </Badge>
+                          ))}
+                        </div>
+                        
+                        {/* Date */}
+                        <div className="text-sm text-gray-700 dark:text-gray-300 text-right">
+                          {visitDate || <span className="text-gray-400">-</span>}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         </DialogContent>
@@ -5866,94 +5941,120 @@ export default function Treatment() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {resultsReadyByPatient
-                  .filter((entry) => {
-                    if (!resultsReadyFilter) return true;
-                    const needle = resultsReadyFilter.toLowerCase();
-                    const name = `${entry.patient.firstName} ${entry.patient.lastName}`.toLowerCase();
-                    return (
-                      name.includes(needle) ||
-                      entry.patient.patientId.toLowerCase().includes(needle)
-                    );
-                  })
-                  .map((entry, index) => {
-                    const patient = entry.patient;
-                    const visitStatus = patient.visitStatus || "open";
-                    return (
-                      <div 
-                        key={patient.patientId} 
-                        className="p-4 bg-gradient-to-r from-purple-50/50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-purple-200 dark:border-purple-800/50 hover:shadow-md transition-all cursor-pointer"
-                        onClick={() => {
-                          handlePatientFromQueue(patient.patientId);
-                          setResultsReadyOpen(false);
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-bold text-sm">
-                              {index + 1}
+              <>
+                {/* Column Headers */}
+                <div className="grid grid-cols-[0.5fr_2fr_0.8fr_1fr_0.9fr_1.2fr_0.9fr] gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
+                                border-b border-gray-200 dark:border-gray-700 
+                                text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <div>No.</div>
+                  <div>Patient Name</div>
+                  <div>Age/Sex</div>
+                  <div>Contact</div>
+                  <div>Visit Status</div>
+                  <div>Diagnostics</div>
+                  <div className="text-right">Date</div>
+                </div>
+
+                {/* Patient Rows */}
+                <div className="space-y-1.5 p-2">
+                  {resultsReadyByPatient
+                    .filter((entry) => {
+                      if (!resultsReadyFilter) return true;
+                      const needle = resultsReadyFilter.toLowerCase();
+                      const name = `${entry.patient.firstName} ${entry.patient.lastName}`.toLowerCase();
+                      return (
+                        name.includes(needle) ||
+                        entry.patient.patientId.toLowerCase().includes(needle)
+                      );
+                    })
+                    .map((entry, index) => {
+                      const patient = entry.patient;
+                      const visitStatus = patient.visitStatus || "open";
+                      const visitDate = patient.dateOfService ? formatClinicDateTime(patient.dateOfService) : '';
+                      
+                      return (
+                        <div 
+                          key={patient.patientId} 
+                          className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 
+                                     dark:border-gray-700 px-4 py-2 hover:shadow-lg hover:border-purple-400 
+                                     dark:hover:border-purple-500 transition-all duration-200
+                                     grid grid-cols-[0.5fr_2fr_0.8fr_1fr_0.9fr_1.2fr_0.9fr] gap-3 items-center
+                                     group cursor-pointer"
+                          onClick={() => {
+                            handlePatientFromQueue(patient.patientId);
+                            setResultsReadyOpen(false);
+                          }}
+                        >
+                          {/* No. */}
+                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          
+                          {/* Patient Name */}
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">
+                              {patient.firstName} {patient.lastName}
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <h4 className="font-semibold text-gray-900 dark:text-white">
-                                  {patient.firstName} {patient.lastName}
-                                </h4>
-                                <Badge variant="outline" className="text-xs">
-                                  {patient.patientId}
-                                </Badge>
-                                {/* Visit Status Badge */}
-                                <Badge 
-                                  variant={visitStatus === "open" ? "default" : "outline"}
-                                  className={`text-xs capitalize ${
-                                    visitStatus === "open" ? "bg-green-600 text-white" :
-                                    visitStatus === "closed" ? "bg-gray-600 text-white" :
-                                    "bg-yellow-600 text-white"
-                                  }`}
-                                >
-                                  {getVisitStatusLabel(visitStatus)}
-                                </Badge>
-                              </div>
-                              
-                              {/* Completed departments */}
-                              <div className="flex items-center gap-2 flex-wrap mb-2">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Results Ready:</span>
-                                {entry.departments.map((dept, i) => (
-                                  <Badge 
-                                    key={i}
-                                    variant="secondary" 
-                                    className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700"
-                                  >
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    {dept}
-                                  </Badge>
-                                ))}
-                              </div>
-                              
-                              {/* Patient info */}
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {patient.age && <span>{patient.age} years • </span>}
-                                {patient.gender && <span>{patient.gender}</span>}
-                              </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {patient.patientId}
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:hover:bg-purple-900/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePatientFromQueue(patient.patientId);
-                              setResultsReadyOpen(false);
-                            }}
-                          >
-                            View
-                          </Button>
+                          
+                          {/* Age/Sex */}
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                            {patient.age && patient.gender ? (
+                              <>{patient.age}Y / {patient.gender.charAt(0)}</>
+                            ) : patient.age ? (
+                              <>{patient.age}Y</>
+                            ) : patient.gender ? (
+                              <>{patient.gender}</>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </div>
+                          
+                          {/* Contact */}
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                            {patient.phoneNumber || <span className="text-gray-400">-</span>}
+                          </div>
+                          
+                          {/* Visit Status */}
+                          <div>
+                            <Badge 
+                              variant={visitStatus === "open" ? "default" : "outline"}
+                              className={`text-xs capitalize ${
+                                visitStatus === "open" ? "bg-green-600 text-white" :
+                                visitStatus === "closed" ? "bg-gray-600 text-white" :
+                                "bg-yellow-600 text-white"
+                              }`}
+                            >
+                              {getVisitStatusLabel(visitStatus)}
+                            </Badge>
+                          </div>
+                          
+                          {/* Diagnostics - Results Ready */}
+                          <div className="flex flex-wrap gap-1">
+                            {entry.departments.map((dept, i) => (
+                              <Badge 
+                                key={i}
+                                variant="secondary" 
+                                className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700"
+                              >
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                {dept}
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          {/* Date */}
+                          <div className="text-sm text-gray-700 dark:text-gray-300 text-right">
+                            {visitDate || <span className="text-gray-400">-</span>}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-              </div>
+                      );
+                    })}
+                </div>
+              </>
             )}
           </div>
         </DialogContent>
