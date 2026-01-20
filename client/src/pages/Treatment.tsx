@@ -5630,7 +5630,7 @@ export default function Treatment() {
                   <div>Contact</div>
                   <div>Visit Status</div>
                   <div>Diagnostics</div>
-                  <div className="text-right">Date</div>
+                  <div className="text-right">Date of Service</div>
                 </div>
 
                 {/* Patient Rows */}
@@ -5691,7 +5691,7 @@ export default function Treatment() {
                           
                           {/* Contact */}
                           <div className="text-sm text-gray-700 dark:text-gray-300">
-                            {patient.phoneNumber || <span className="text-gray-400">-</span>}
+                            {patient.phoneNumber || <span className="text-gray-400">N/A</span>}
                           </div>
                           
                           {/* Visit Status */}
@@ -5797,7 +5797,7 @@ export default function Treatment() {
                   <div>Contact</div>
                   <div>Visit Status</div>
                   <div>Diagnostics</div>
-                  <div className="text-right">Date</div>
+                  <div className="text-right">Date of Service</div>
                 </div>
 
                 {/* Patient Rows */}
@@ -5850,7 +5850,7 @@ export default function Treatment() {
                         
                         {/* Contact */}
                         <div className="text-sm text-gray-700 dark:text-gray-300">
-                          {patient.phoneNumber || <span className="text-gray-400">-</span>}
+                          {patient.phoneNumber || <span className="text-gray-400">N/A</span>}
                         </div>
                         
                         {/* Visit Status */}
@@ -5952,7 +5952,7 @@ export default function Treatment() {
                   <div>Contact</div>
                   <div>Visit Status</div>
                   <div>Diagnostics</div>
-                  <div className="text-right">Date</div>
+                  <div className="text-right">Date of Service</div>
                 </div>
 
                 {/* Patient Rows */}
@@ -6015,7 +6015,7 @@ export default function Treatment() {
                           
                           {/* Contact */}
                           <div className="text-sm text-gray-700 dark:text-gray-300">
-                            {patient.phoneNumber || <span className="text-gray-400">-</span>}
+                            {patient.phoneNumber || <span className="text-gray-400">N/A</span>}
                           </div>
                           
                           {/* Visit Status */}
