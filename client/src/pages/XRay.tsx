@@ -877,7 +877,7 @@ export default function XRay() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Pending Card */}
           <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow">
             <CardContent className="p-3">
@@ -1399,7 +1399,7 @@ export default function XRay() {
                     
                     {/* Image Gallery */}
                     {uploadedImages.length > 0 && (
-                      <div className="mt-4 grid grid-cols-3 md:grid-cols-4 gap-3">
+                      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {uploadedImages.map((img, idx) => (
                           <div key={idx} className="relative group rounded-lg overflow-hidden border-2 border-blue-300 dark:border-blue-700 shadow-md hover:shadow-xl transition-all">
                             <img src={img.url} alt={img.name} className="w-full h-24 object-cover" />
@@ -2270,7 +2270,7 @@ export default function XRay() {
               </div>
 
               {/* Patient & Exam Information Cards - Side by Side like Invoice */}
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 {/* Patient Information Box */}
                 <div className="border border-gray-300 shadow-sm rounded p-2 bg-blue-50">
                   <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
@@ -2369,7 +2369,7 @@ export default function XRay() {
               )}
 
               {/* SIGNATURE SECTION - MATCHES INVOICE */}
-              <div className="grid grid-cols-2 gap-12 mt-6 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6 mb-4">
                 <div>
                   <div className="border-t-2 border-gray-800 pt-2 mt-20">
                     <p className="text-sm font-bold">Radiologist:</p>
