@@ -86,7 +86,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime, formatClinicDay } from "@/lib/date-utils";
+import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, getVisitStatusLabel, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
@@ -5620,109 +5620,70 @@ export default function Treatment() {
               </div>
             ) : (
               <div className="space-y-2">
-                {/* Column Headers */}
-                <div className="grid grid-cols-[0.4fr_2fr_0.9fr_1.1fr_0.9fr_1.2fr_1fr] gap-3 px-4 py-2 mb-2 
-                             text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  <div>#</div>
-                  <div>Patient</div>
-                  <div>Age/Sex</div>
-                  <div>Contact</div>
-                  <div>Visit Status</div>
-                  <div>Diagnostics</div>
-                  <div>Date of Service</div>
-                </div>
-
-                {/* Patient Cards */}
-                <div className="space-y-1.5">
-                  {openVisitsPatients
-                    .filter((patient) => {
-                      if (!queueFilter) return true;
-                      const needle = queueFilter.toLowerCase();
-                      const name = `${patient.firstName} ${patient.lastName}`.toLowerCase();
-                      return (
-                        name.includes(needle) ||
-                        patient.patientId.toLowerCase().includes(needle)
-                      );
-                    })
-                    .map((patient, index) => {
-                      const visitStatus = patient.visitStatus || "open";
-                      const pendingDepts = getDiagnosticPendingDepartments(patient);
-                      return (
-                        <div
-                          key={patient.patientId}
-                          className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 
-                                     dark:border-gray-700 px-4 py-2 hover:shadow-lg hover:border-blue-400 
-                                     dark:hover:border-blue-500 transition-all duration-200
-                                     grid grid-cols-[0.4fr_2fr_0.9fr_1.1fr_0.9fr_1.2fr_1fr] gap-3 items-center
-                                     group cursor-pointer"
-                          onClick={() => handlePatientFromQueue(patient.patientId)}
-                        >
-                          {/* Column 1: Number */}
-                          <div className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                            {index + 1}
-                          </div>
-
-                          {/* Column 2: Patient (Avatar + Name + ID) */}
-                          <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 
-                                          text-blue-700 dark:text-blue-300 font-bold text-sm 
-                                          flex items-center justify-center flex-shrink-0">
-                              {patient.firstName?.[0]?.toUpperCase() || '?'}{patient.lastName?.[0]?.toUpperCase() || ''}
+                {openVisitsPatients
+                  .filter((patient) => {
+                    if (!queueFilter) return true;
+                    const needle = queueFilter.toLowerCase();
+                    const name = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+                    return (
+                      name.includes(needle) ||
+                      patient.patientId.toLowerCase().includes(needle)
+                    );
+                  })
+                  .map((patient, index) => {
+                    const visitStatus = patient.visitStatus || "open";
+                    const displayStatus = getVisitStatusLabel(visitStatus);
+                    return (
+                      <div 
+                        key={patient.patientId} 
+                        className="p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => handlePatientFromQueue(patient.patientId)}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold text-sm">
+                              {index + 1}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                                {patient.firstName} {patient.lastName}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-gray-900 dark:text-white">
+                                  {patient.firstName} {patient.lastName}
+                                </h4>
+                                <Badge variant="outline" className="text-xs">
+                                  {patient.patientId}
+                                </Badge>
+                                {/* Visit Status Badge - C) Display "Treated" instead of "Closed" */}
+                                <Badge 
+                                  variant={visitStatus === "open" ? "default" : visitStatus === "closed" ? "secondary" : "outline"}
+                                  className={`text-xs capitalize ${
+                                    visitStatus === "open" ? "bg-green-600 text-white" :
+                                    visitStatus === "closed" ? "bg-gray-600 text-white" :
+                                    "bg-yellow-600 text-white"
+                                  }`}
+                                >
+                                  {displayStatus}
+                                </Badge>
                               </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                {patient.patientId}
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {patient.age && <span>{patient.age} years • </span>}
+                                {patient.gender && <span>{patient.gender}</span>}
                               </div>
                             </div>
                           </div>
-
-                          {/* Column 3: Age/Sex */}
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {(patient.age && patient.gender) 
-                              ? `${patient.age} • ${patient.gender}`
-                              : patient.age || patient.gender || '—'
-                            }
-                          </div>
-
-                          {/* Column 4: Contact */}
-                          <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                            {patient.phoneNumber || <span className="text-gray-400 dark:text-gray-500">—</span>}
-                          </div>
-
-                          {/* Column 5: Visit Status */}
-                          <div>
-                            <Badge 
-                              variant={visitStatus === "open" ? "default" : "outline"}
-                              className={cn(
-                                "text-xs h-5 px-2",
-                                visitStatus === "open" ? "bg-green-600 text-white" :
-                                visitStatus === "closed" ? "bg-gray-600 text-white" :
-                                "bg-yellow-600 text-white"
-                              )}
-                            >
-                              {getVisitStatusLabel(visitStatus)}
-                            </Badge>
-                          </div>
-
-                          {/* Column 6: Diagnostics */}
-                          <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                            {pendingDepts.length > 0 
-                              ? pendingDepts.join(', ')
-                              : <span className="text-gray-400 dark:text-gray-500">No diagnostics pending</span>
-                            }
-                          </div>
-
-                          {/* Column 7: Date of Service */}
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {formatClinicDay(patient.visitDate || patient.createdAt)}
-                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePatientFromQueue(patient.patientId);
+                            }}
+                          >
+                            View
+                          </Button>
                         </div>
-                      );
-                    })}
-                </div>
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>
