@@ -5,7 +5,7 @@ import session from "express-session";
 import { z } from "zod";
 import { storage } from "./storage";
 import { db } from "./db";
-import { eq, gte, lte, and, sql, isNotNull, ne } from "drizzle-orm";
+import { eq, gte, lte, and, sql, isNotNull, isNull, or, ne } from "drizzle-orm";
 import {
   insertPatientSchema,
   insertTreatmentSchema,
@@ -3730,14 +3730,27 @@ async function getDashboardStats(fromDate: string, toDate: string) {
   const totalVisits = encountersInRange.length;
 
   // Count new patients registered in range
+  // Handle NULL clinicDay by falling back to DATE(createdAt)
   const newPatientsResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(patients)
     .where(
       and(
-        sql`clinic_day >= ${fromDate}`,
-        sql`clinic_day <= ${toDate}`,
-        eq(patients.isDeleted, 0)
+        eq(patients.isDeleted, 0),
+        or(
+          // Use clinicDay if available
+          and(
+            isNotNull(patients.clinicDay),
+            gte(patients.clinicDay, fromDate),
+            lte(patients.clinicDay, toDate)
+          ),
+          // Fall back to createdAt date if clinicDay is NULL
+          and(
+            isNull(patients.clinicDay),
+            sql`DATE(${patients.createdAt}) >= ${fromDate}`,
+            sql`DATE(${patients.createdAt}) <= ${toDate}`
+          )
+        )
       )
     );
 
