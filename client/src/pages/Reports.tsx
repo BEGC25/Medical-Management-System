@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getClinicDayKey, getClinicNow } from "@/lib/date-utils";
+import { startOfMonth } from "date-fns";
 import { PremiumStatCard } from "@/components/reports/PremiumStatCard";
 import { VisitsTrendChart } from "@/components/reports/VisitsTrendChart";
 import { TestsBarChart } from "@/components/reports/TestsBarChart";
@@ -208,7 +209,7 @@ export default function Reports() {
         fromDate = getClinicDayKey(weekStart);
         break;
       case "this-month":
-        fromDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+        fromDate = getClinicDayKey(startOfMonth(today));
         break;
       case "last-30-days":
         const thirtyDaysAgo = new Date(today);
