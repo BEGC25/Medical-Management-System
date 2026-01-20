@@ -197,13 +197,13 @@ export default function PatientSearch({
                           border-b border-gray-200 dark:border-gray-700 
                           text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
             <div>No.</div>
-            <div>Patient</div>
-            <div>ID</div>
+            <div>Patient Name</div>
+            <div>Patient ID</div>
             <div>Age/Sex</div>
             <div>Contact</div>
             <div>Status</div>
             <div>Diagnostics</div>
-            <div className="text-right">Date</div>
+            <div className="text-right">Date of Service</div>
           </div>
 
           {/* Patient Rows */}
@@ -259,7 +259,7 @@ export default function PatientSearch({
                   
                   {/* Contact */}
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {p.phoneNumber || '—'}
+                    {p.phoneNumber || 'N/A'}
                   </div>
                   
                   {/* Visit Status */}
