@@ -203,12 +203,12 @@ export default function PatientSearch({
             <div>Age/Gender</div>
             <div>Contact</div>
             <div>Registered</div>
-            <div>Status</div>
+            <div>Consultation</div>
           </div>
 
           {/* Patient Cards */}
           <div className="space-y-1.5 p-2">
-            {filteredPatients.map((p, index) => {
+            {filteredPatients.map((p: Patient, index: number) => {
               // ALWAYS use patient's actual dateOfService from API when available
               const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
                 ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
@@ -260,13 +260,7 @@ export default function PatientSearch({
                             🔥 External
                           </Badge>
                         )}
-                        {!p.phoneNumber && (
-                          <Badge variant="outline" className="text-[10px] h-4 px-1 border-gray-300 
-                                                             bg-gray-50 text-gray-600 dark:border-gray-600 
-                                                             dark:bg-gray-800/50 dark:text-gray-400">
-                            No Contact
-                          </Badge>
-                        )}
+                        {/* Removed "No contact" badge - rural clinic context */}
                       </div>
                     </div>
                   </div>
