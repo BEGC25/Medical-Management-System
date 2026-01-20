@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Search, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { Patient } from "@shared/schema";
+import type { Patient, PatientWithStatus } from "@shared/schema";
 import { formatClinicDay } from "@/lib/date-utils";
 import { hasPendingOrders, getPatientIndicators, type ResultsReadyMap } from "@/lib/patient-utils";
 import { getVisitStatusLabel } from "@/lib/display-utils";
@@ -208,7 +208,7 @@ export default function PatientSearch({
 
           {/* Patient Rows */}
           <div className="space-y-1.5 p-2">
-            {filteredPatients.map((p: any, index: number) => {
+            {filteredPatients.map((p: PatientWithStatus & { lastEncounterDate?: string; updatedAt?: string }, index: number) => {
               // ALWAYS use patient's actual dateOfService from API when available
               const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
                 ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
@@ -254,7 +254,7 @@ export default function PatientSearch({
                   
                   {/* Age/Sex */}
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {p.age ?? '—'} • {formatGender(p.gender ?? undefined)}
+                    {p.age ?? '—'} • {formatGender(p.gender || undefined)}
                   </div>
                   
                   {/* Contact */}
