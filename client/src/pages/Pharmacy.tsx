@@ -92,7 +92,8 @@ export default function Pharmacy() {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [helpCollapsed, setHelpCollapsed] = useState(() => {
     const saved = localStorage.getItem("pharmacyHelpCollapsed");
-    return saved === "true";
+    // Default to collapsed (true) if no preference is saved
+    return saved !== "false";
   });
   
   // Date filter states
@@ -929,7 +930,7 @@ export default function Pharmacy() {
                   <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></div>
                   Patient Information
                 </h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
                     <span className="text-gray-600 dark:text-gray-400 text-xs">Patient ID</span>
                     <p className="font-semibold text-gray-900 dark:text-white" data-testid="text-patient-id">

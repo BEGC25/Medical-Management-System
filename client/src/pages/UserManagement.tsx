@@ -116,15 +116,9 @@ export default function UserManagement() {
       return acc;
     }, {} as RoleBreakdown);
     
-    // Recently added (last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentlyAdded = typedUsers.filter((u) => new Date(u.createdAt) > sevenDaysAgo).length;
-    
     return {
       totalUsers,
       roleBreakdown,
-      recentlyAdded,
     };
   }, [users]);
 
@@ -730,7 +724,7 @@ export default function UserManagement() {
 
         {/* Stats Section */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
             {/* Total Users */}
             <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-300 border-l-4 border-l-blue-500">
               <CardContent className="p-4">
@@ -788,21 +782,6 @@ export default function UserManagement() {
                   </div>
                   <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
                     <FlaskConical className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recently Added */}
-            <Card className="shadow-premium-md hover:shadow-premium-lg transition-all duration-300 border-l-4 border-l-indigo-500">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Recent (7d)</p>
-                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1 tabular-nums">{stats.recentlyAdded}</p>
-                  </div>
-                  <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                    <UserPlus className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
                 </div>
               </CardContent>
