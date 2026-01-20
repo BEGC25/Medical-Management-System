@@ -3735,8 +3735,8 @@ async function getDashboardStats(fromDate: string, toDate: string) {
     .from(patients)
     .where(
       and(
-        gte(patients.createdAt, fromDate),
-        lte(patients.createdAt, toDate),
+        sql`clinic_day >= ${fromDate}`,
+        sql`clinic_day <= ${toDate}`,
         eq(patients.isDeleted, 0)
       )
     );
