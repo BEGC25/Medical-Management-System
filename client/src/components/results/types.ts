@@ -83,7 +83,6 @@ export type AnyResult = LabResult | XRayResult | UltrasoundResult;
 
 export interface ResultsFilters {
   searchTerm: string;
-  selectedPatient: string;
   statusFilter: string;
   typeFilter: string;
   dateFilter: string;

@@ -15,49 +15,8 @@ export function ResultsFiltersBar({ filters, patients, onFilterChange, resultCou
   return (
     <Card className="border-slate-200 dark:border-slate-700">
       <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Patient Filter */}
-          <div>
-            <Label htmlFor="patient-filter" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5 block">
-              Filter by Patient
-            </Label>
-            <select
-              id="patient-filter"
-              value={filters.selectedPatient}
-              onChange={(e) => onFilterChange({ selectedPatient: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
-              aria-label="Filter by patient"
-            >
-              <option value="">All Patients</option>
-              {patients.map((patient) => (
-                <option key={patient.id} value={patient.patientId}>
-                  {patient.firstName} {patient.lastName} ({patient.patientId})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <Label htmlFor="status-filter" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5 block">
-              Status
-            </Label>
-            <select
-              id="status-filter"
-              value={filters.statusFilter}
-              onChange={(e) => onFilterChange({ statusFilter: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
-              aria-label="Filter by status"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="overdue">⚠️ Overdue Only</option>
-              <option value="abnormal">🚨 Abnormal/Critical Only</option>
-            </select>
-          </div>
-
-          {/* Date Filter */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Date Filter - NOW FIRST */}
           <div>
             <Label htmlFor="date-filter" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5 block">
               Date Filter
@@ -78,6 +37,26 @@ export function ResultsFiltersBar({ filters, patients, onFilterChange, resultCou
               <option value="thismonth">This Month</option>
               <option value="custom">Custom Range</option>
               <option value="date">Specific Date</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <Label htmlFor="status-filter" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5 block">
+              Status
+            </Label>
+            <select
+              id="status-filter"
+              value={filters.statusFilter}
+              onChange={(e) => onFilterChange({ statusFilter: e.target.value })}
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
+              aria-label="Filter by status"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="overdue">⚠️ Overdue Only</option>
+              <option value="abnormal">🚨 Abnormal/Critical Only</option>
             </select>
           </div>
 

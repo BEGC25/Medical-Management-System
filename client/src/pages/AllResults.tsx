@@ -122,10 +122,9 @@ export default function AllResults() {
   }
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("today");
   const [selectedDate, setSelectedDate] = useState<string>(getClinicDayKey());
   const [customStartDate, setCustomStartDate] = useState<string>("");
   const [customEndDate, setCustomEndDate] = useState<string>("");
@@ -237,8 +236,6 @@ export default function AllResults() {
       (result.type === 'lab' && (result as any).testId.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (result.type === 'xray' && (result as any).examId.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (result.type === 'ultrasound' && (result as any).examId.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesPatient = selectedPatient === "" || result.patientId === selectedPatient;
     
     // Updated status filter to handle "overdue" and "abnormal" options
     let matchesStatus = true;
@@ -297,7 +294,7 @@ export default function AllResults() {
       matchesDate = resultDate === selectedDate;
     }
 
-    return matchesSearch && matchesPatient && matchesStatus && matchesType && matchesDate;
+    return matchesSearch && matchesStatus && matchesType && matchesDate;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Clear selection if the selected result is no longer in the filtered list
@@ -1481,7 +1478,6 @@ export default function AllResults() {
 
   const filters = {
     searchTerm,
-    selectedPatient,
     statusFilter,
     typeFilter,
     dateFilter,
@@ -1492,7 +1488,6 @@ export default function AllResults() {
 
   const handleFilterChange = (newFilters: Partial<typeof filters>) => {
     if (newFilters.searchTerm !== undefined) setSearchTerm(newFilters.searchTerm);
-    if (newFilters.selectedPatient !== undefined) setSelectedPatient(newFilters.selectedPatient);
     if (newFilters.statusFilter !== undefined) setStatusFilter(newFilters.statusFilter);
     if (newFilters.typeFilter !== undefined) setTypeFilter(newFilters.typeFilter);
     if (newFilters.dateFilter !== undefined) setDateFilter(newFilters.dateFilter);
@@ -1503,7 +1498,6 @@ export default function AllResults() {
 
   const handleClearAllFilters = () => {
     setSearchTerm("");
-    setSelectedPatient("");
     setStatusFilter("all");
     setTypeFilter("all");
     setDateFilter("all");
