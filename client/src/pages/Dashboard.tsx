@@ -27,7 +27,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
-import { getClinicNow } from "@/lib/date-utils";
 import { formatDistanceToNow } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 
@@ -124,8 +123,7 @@ export default function Dashboard() {
   };
 
   // Get current clinic date for display
-  const clinicNow = getClinicNow();
-  const formattedDate = formatInTimeZone(clinicNow, 'Africa/Juba', 'EEEE, MMM d, yyyy');
+  const formattedDate = formatInTimeZone(new Date(), 'Africa/Juba', 'EEEE, MMM d, yyyy');
 
   const quickActions: Array<{
     title: string;
