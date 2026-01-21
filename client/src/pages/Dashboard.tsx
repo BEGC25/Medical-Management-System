@@ -207,7 +207,7 @@ export default function Dashboard() {
       {/* Ultra-compact inline premium header */}
       <div className="px-4 py-1.5 mb-2 border-b border-gray-200/30 dark:border-gray-700/20">
         <div 
-          className="group inline-flex items-center gap-2.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 rounded-lg px-3 py-1.5"
+          className="group inline-flex items-center gap-2.5 text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition-all duration-200 rounded-lg px-3 py-1.5"
           onClick={handleRefresh}
           onKeyDown={(e) => e.key === 'Enter' && handleRefresh()}
           role="button"
