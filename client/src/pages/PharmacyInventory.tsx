@@ -2480,76 +2480,153 @@ export default function PharmacyInventory() {
             )}
           </div>
           <div className="space-y-4">
-            {/* Quick Select from Common Drugs - Searchable Combobox */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-              <Label htmlFor="commonDrug">Quick Select (Common Drugs)</Label>
+            {/* Quick Select from Common Drugs - Enhanced Premium Dropdown */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <Label htmlFor="commonDrug" className="text-base font-semibold">Quick Select (Common Drugs)</Label>
               <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={openCombobox}
-                    className="w-full justify-between mt-1.5"
+                    aria-label="Search and select from common drugs list"
+                    className="w-full justify-between mt-2 h-11 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     data-testid="select-common-drug"
                   >
-                    {comboboxSearch || "Search and select from common drugs list..."}
+                    <span className="truncate">{comboboxSearch || "Search and select from common drugs list..."}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                  <Command>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 max-w-lg" align="start">
+                  <Command className="rounded-lg border shadow-md" shouldFilter={false}>
                     <CommandInput 
-                      placeholder="Type to search drugs..." 
+                      placeholder="Type to search drugs by name, category, or generic name..." 
                       value={comboboxSearch}
                       onValueChange={setComboboxSearch}
+                      className="h-12"
+                      aria-label="Search drugs"
                     />
-                    <CommandEmpty>No drug found.</CommandEmpty>
-                    <CommandGroup className="max-h-96 overflow-auto">
-                      {COMMON_DRUGS
-                        .filter(drug => 
+                    <CommandEmpty className="py-8 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Search className="h-8 w-8 text-gray-400" />
+                        <p className="text-sm font-medium">No drugs found</p>
+                        <p className="text-xs text-muted-foreground">Try searching with a different term</p>
+                      </div>
+                    </CommandEmpty>
+                    <div className="max-h-[450px] overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }} role="listbox">
+                      {(() => {
+                        // Filter drugs based on search
+                        const filteredDrugs = COMMON_DRUGS.filter(drug => 
                           !comboboxSearch || 
                           drug.name.toLowerCase().includes(comboboxSearch.toLowerCase()) ||
                           (drug.genericName?.toLowerCase() || '').includes(comboboxSearch.toLowerCase()) ||
                           drug.category.toLowerCase().includes(comboboxSearch.toLowerCase())
-                        )
-                        .map((drug) => (
-                          <CommandItem
-                            key={drug.name}
-                            value={drug.name}
-                            onSelect={() => {
-                              setNewDrug({
-                                ...newDrug,
-                                name: drug.name,
-                                genericName: drug.genericName || "",
-                                strength: drug.strength,
-                                form: drug.form as any,
-                                unitOfMeasure: drug.form,
-                                category: drug.category || "",
-                              });
-                              setComboboxSearch(drug.name);
-                              setOpenCombobox(false);
-                            }}
+                        );
+
+                        // Group drugs by category
+                        const groupedDrugs = filteredDrugs.reduce((acc, drug) => {
+                          if (!acc[drug.category]) {
+                            acc[drug.category] = [];
+                          }
+                          acc[drug.category].push(drug);
+                          return acc;
+                        }, {} as Record<string, typeof COMMON_DRUGS>);
+
+                        // Category icons mapping
+                        const categoryIcons: Record<string, string> = {
+                          'Analgesic': '💊',
+                          'Antibiotic': '💉',
+                          'Antihypertensive': '❤️',
+                          'Antidiabetic': '🩸',
+                          'Gastrointestinal': '🔬',
+                          'Antihistamine': '🤧',
+                          'Respiratory': '🫁',
+                          'Vitamin': '🌟',
+                          'Antimalarial': '🦟',
+                          'Antiparasitic': '🐛',
+                          'IV Fluid': '💧',
+                          'Antiemetic': '🤢',
+                          'Corticosteroid': '💪',
+                          'Antispasmodic': '✨',
+                          'Sedative': '😴',
+                          'Anesthetic': '💉',
+                          'Emergency': '🚨',
+                          'Diuretic': '💧',
+                        };
+
+                        return Object.entries(groupedDrugs).map(([category, drugs]) => (
+                          <CommandGroup 
+                            key={category} 
+                            heading={
+                              <div className="flex items-center gap-2 px-2 py-2 font-semibold text-sm sticky top-0 bg-gray-50 dark:bg-gray-900 border-b">
+                                <span className="text-lg" role="img" aria-label={category}>{categoryIcons[category] || '💊'}</span>
+                                <span>{category}</span>
+                                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                                  {drugs.length} {drugs.length === 1 ? 'drug' : 'drugs'}
+                                </span>
+                              </div>
+                            }
+                            className="p-0"
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                comboboxSearch === drug.name ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <div className="flex flex-col">
-                              <span>{drug.name}</span>
-                              <span className="text-xs text-gray-500">
-                                {drug.category} {drug.genericName ? `• ${drug.genericName}` : ""}
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                    </CommandGroup>
+                            {drugs.map((drug) => (
+                              <CommandItem
+                                key={drug.name}
+                                value={drug.name}
+                                onSelect={() => {
+                                  setNewDrug({
+                                    ...newDrug,
+                                    name: drug.name,
+                                    genericName: drug.genericName || "",
+                                    strength: drug.strength,
+                                    form: drug.form as any,
+                                    unitOfMeasure: drug.form,
+                                    category: drug.category || "",
+                                  });
+                                  setComboboxSearch(drug.name);
+                                  setOpenCombobox(false);
+                                }}
+                                className="py-3 px-4 cursor-pointer hover:bg-accent/80 data-[selected='true']:bg-accent/90 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                                role="option"
+                                aria-selected={comboboxSearch === drug.name}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-3 h-4 w-4 shrink-0 text-primary",
+                                    comboboxSearch === drug.name ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold text-sm leading-tight">{drug.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    {drug.genericName && (
+                                      <>
+                                        <span className="font-medium">{drug.genericName}</span>
+                                        <span className="text-gray-400">•</span>
+                                      </>
+                                    )}
+                                    <span className="capitalize">{drug.form}</span>
+                                    {drug.strength && (
+                                      <>
+                                        <span className="text-gray-400">•</span>
+                                        <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{drug.strength}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        ));
+                      })()}
+                    </div>
                   </Command>
                 </PopoverContent>
               </Popover>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Or type custom drug name below
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-1">
+                <span className="font-medium">💡 Tip:</span> 
+                <span>Or type custom drug name below</span>
               </p>
             </div>
 

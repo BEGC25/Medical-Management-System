@@ -58,7 +58,16 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+    className={cn(
+      "max-h-[300px] overflow-y-auto overflow-x-hidden",
+      "scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent",
+      "hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 dark:hover:scrollbar-thumb-gray-500",
+      className
+    )}
+    style={{ 
+      WebkitOverflowScrolling: 'touch',
+      overscrollBehavior: 'contain'
+    }}
     {...props}
   />
 ))
@@ -113,7 +122,12 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      "relative flex cursor-pointer gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+      "transition-colors duration-150",
+      "hover:bg-accent hover:text-accent-foreground",
+      "focus:bg-accent focus:text-accent-foreground focus:outline-2 focus:outline-offset-2 focus:outline-primary",
+      "data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50",
+      "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
       className
     )}
     {...props}
