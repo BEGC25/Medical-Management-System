@@ -25,17 +25,6 @@ export function FilterChips({ filters, patients, onFilterChange, onClearAll }: F
     });
   }
 
-  // Patient filter chip
-  if (filters.selectedPatient) {
-    const patient = patients.find(p => p.patientId === filters.selectedPatient);
-    activeFilters.push({
-      key: 'patient',
-      label: 'Patient',
-      value: patient ? `${patient.firstName} ${patient.lastName}` : filters.selectedPatient,
-      onRemove: () => onFilterChange({ selectedPatient: '' }),
-    });
-  }
-
   // Status filter chip
   if (filters.statusFilter !== 'all') {
     activeFilters.push({
