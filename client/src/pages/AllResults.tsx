@@ -211,19 +211,20 @@ export default function AllResults() {
       ...test,
       type: 'lab' as const,
       date: test.createdAt || test.completedDate || test.requestedDate,
-      patient: patients.find(p => p.patientId === test.patientId)
+      // Patient data is already included from the backend
     })),
     ...xrayExams.map(exam => ({
       ...exam,
       type: 'xray' as const,
       date: exam.createdAt || exam.completedDate || exam.requestedDate,
-      patient: patients.find(p => p.patientId === exam.patientId)
+      // Patient data is already included from the backend
     })),
     ...ultrasoundExams.map(exam => ({
       ...exam,
       type: 'ultrasound' as const,
       date: exam.createdAt || exam.completedDate || exam.requestedDate,
-      patient: patients.find(p => p.patientId === exam.patientId)
+      // Ultrasound backend doesn't include patient, so we need to look it up
+      patient: exam.patient || patients.find(p => p.patientId === exam.patientId)
     }))
   ];
 
