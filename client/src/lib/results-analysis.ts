@@ -171,13 +171,17 @@ export function getAbnormalFindings(results: string | null): { critical: string[
 export function hasAbnormalImagingFindings(findings: string | null, impression: string | null): boolean {
   const text = `${findings || ''} ${impression || ''}`.toLowerCase();
   
-  // Keywords that suggest abnormal findings
+  // Keywords that suggest abnormal findings - using word boundaries to avoid false positives
   const abnormalKeywords = [
-    'fracture', 'mass', 'tumor', 'abnormal', 'pathological',
-    'infection', 'inflammation', 'fluid', 'effusion', 'pneumonia',
-    'consolidation', 'opacity', 'nodule', 'lesion', 'stricture',
-    'obstruction', 'dilation', 'enlarged', 'thickening', 'atrophy'
+    '\\bfracture\\b', '\\bmass\\b', '\\btumor\\b', '\\babnormal\\b', '\\bpathological\\b',
+    '\\binfection\\b', '\\binflammation\\b', '\\bfluid\\b', '\\beffusion\\b', '\\bpneumonia\\b',
+    '\\bconsolidation\\b', '\\bopacity\\b', '\\bnodule\\b', '\\blesion\\b', '\\bstricture\\b',
+    '\\bobstruction\\b', '\\bdilation\\b', '\\benlarged\\b', '\\bthickening\\b', '\\batrophy\\b'
   ];
   
-  return abnormalKeywords.some(keyword => text.includes(keyword));
+  // Use word boundary regex matching to avoid false positives
+  return abnormalKeywords.some(keyword => {
+    const regex = new RegExp(keyword, 'i');
+    return regex.test(text);
+  });
 }

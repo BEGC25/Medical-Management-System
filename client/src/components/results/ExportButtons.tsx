@@ -22,7 +22,7 @@ export function ExportButtons({ results, filters }: ExportButtonsProps) {
    */
   const exportToCSV = () => {
     if (results.length === 0) {
-      alert("No results to export");
+      console.warn("Export cancelled: No results to export");
       return;
     }
 
@@ -90,14 +90,14 @@ export function ExportButtons({ results, filters }: ExportButtonsProps) {
    */
   const exportToPDF = () => {
     if (results.length === 0) {
-      alert("No results to export");
+      console.warn("Export cancelled: No results to export");
       return;
     }
 
     // Create a printable HTML document
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert("Please allow popups to export PDF");
+      console.error("Could not open print window. Please allow popups and try again.");
       return;
     }
 

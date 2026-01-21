@@ -188,7 +188,6 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
                           : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700'
                       }`}
                     >
-                      {agingInfo.isOverdue && <AlertTriangle className="h-3 w-3 mr-1 inline" />}
                       {agingInfo.isOverdue ? '🚨' : '⏰'} {agingInfo.daysOld}d
                     </Badge>
                   )}
@@ -202,17 +201,7 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
                           : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-700'
                       }`}
                     >
-                      {abnormalInfo.isCritical ? (
-                        <>
-                          <AlertOctagon className="h-3 w-3 mr-1 inline" />
-                          🚨 CRITICAL
-                        </>
-                      ) : (
-                        <>
-                          <AlertTriangle className="h-3 w-3 mr-1 inline" />
-                          ⚠️ Abnormal
-                        </>
-                      )}
+                      {abnormalInfo.isCritical ? '🚨 CRITICAL' : '⚠️ Abnormal'}
                     </Badge>
                   )}
                   
