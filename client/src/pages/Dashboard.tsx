@@ -207,7 +207,7 @@ export default function Dashboard() {
       {/* Ultra-compact inline premium header */}
       <div className="px-4 py-1.5 mb-2 border-b border-gray-200/30 dark:border-gray-700/20">
         <div 
-          className="inline-flex items-center gap-2.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 rounded-lg px-3 py-1.5 -ml-3"
+          className="group inline-flex items-center gap-2.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 rounded-lg px-3 py-1.5 -ml-3"
           onClick={handleRefresh}
           onKeyDown={(e) => e.key === 'Enter' && handleRefresh()}
           role="button"
@@ -220,7 +220,7 @@ export default function Dashboard() {
           <span className="text-gray-400 dark:text-gray-600 select-none">•</span>
           <RefreshCw 
             className={`h-3.5 w-3.5 text-gray-500 dark:text-gray-500 ${
-              isRefreshing ? 'animate-spin' : 'hover:rotate-180'
+              isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'
             } transition-transform duration-300`} 
           />
           <span className="text-gray-600 dark:text-gray-400 text-xs">
