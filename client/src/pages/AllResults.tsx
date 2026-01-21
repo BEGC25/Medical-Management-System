@@ -188,15 +188,20 @@ export default function AllResults() {
   // Check if any data is being fetched
   const isRefreshing = isFetchingLab || isFetchingXray || isFetchingUltrasound || isFetchingPatients;
 
-  // Refresh handler
+  // Refresh handler with error handling
   const handleRefresh = async () => {
-    await Promise.all([
-      refetchLabTests(),
-      refetchXrays(),
-      refetchUltrasounds(),
-      refetchPatients(),
-    ]);
-    setLastUpdated(new Date());
+    try {
+      await Promise.all([
+        refetchLabTests(),
+        refetchXrays(),
+        refetchUltrasounds(),
+        refetchPatients(),
+      ]);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Failed to refresh results:', error);
+      // React Query handles errors internally, so failures are logged but don't crash the app
+    }
   };
 
   // Combine all results for a unified view

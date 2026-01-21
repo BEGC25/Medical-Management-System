@@ -11,6 +11,19 @@ interface ResultsKPICardsProps {
 }
 
 export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange, statusFilter, onStatusFilterChange }: ResultsKPICardsProps) {
+  // Helper function to generate card className based on filter state
+  const getCardClassName = (
+    isActive: boolean, 
+    baseColors: string,
+    activeBorderColor: string
+  ) => {
+    return `cursor-pointer transition-all duration-200 hover:shadow-xl ${baseColors} border-2 ${
+      isActive
+        ? `ring-2 ${activeBorderColor} shadow-lg scale-[1.02]`
+        : 'hover:scale-[1.01]'
+    }`;
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4">{/* Changed to 6 columns */}
       {/* Total Results */}
@@ -147,11 +160,11 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange, statusFil
 
       {/* Overdue Results - Clickable */}
       <Card 
-        className={`cursor-pointer transition-all duration-200 hover:shadow-xl bg-gradient-to-br from-orange-50 to-white dark:from-orange-950 dark:to-slate-800 border-2 ${
-          statusFilter === 'overdue' 
-            ? 'ring-2 ring-orange-400 dark:ring-orange-500 shadow-lg scale-[1.02]' 
-            : 'border-orange-200 dark:border-orange-800 hover:scale-[1.01]'
-        }`}
+        className={getCardClassName(
+          statusFilter === 'overdue',
+          'bg-gradient-to-br from-orange-50 to-white dark:from-orange-950 dark:to-slate-800 border-orange-200 dark:border-orange-800',
+          'ring-orange-400 dark:ring-orange-500'
+        )}
         onClick={() => onStatusFilterChange?.('overdue')}
         role="button"
         tabIndex={0}
@@ -180,11 +193,11 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange, statusFil
 
       {/* Critical Findings - Clickable */}
       <Card 
-        className={`cursor-pointer transition-all duration-200 hover:shadow-xl bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-slate-800 border-2 ${
-          statusFilter === 'abnormal' 
-            ? 'ring-2 ring-red-400 dark:ring-red-500 shadow-lg scale-[1.02]' 
-            : 'border-red-200 dark:border-red-800 hover:scale-[1.01]'
-        }`}
+        className={getCardClassName(
+          statusFilter === 'abnormal',
+          'bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-slate-800 border-red-200 dark:border-red-800',
+          'ring-red-400 dark:ring-red-500'
+        )}
         onClick={() => onStatusFilterChange?.('abnormal')}
         role="button"
         tabIndex={0}
