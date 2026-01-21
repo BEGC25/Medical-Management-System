@@ -1,9 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, Clock, AlertCircle, Microscope, Camera, Stethoscope } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, Microscope, Camera, Stethoscope, AlertTriangle, AlertOctagon } from "lucide-react";
 import { format } from "date-fns";
 import type { AnyResult } from "./types";
 import { formatDepartmentName } from "@/lib/display-utils";
+import { getAgingInfo, hasAbnormalFindings, hasCriticalFindings, hasAbnormalImagingFindings } from "@/lib/results-analysis";
 
 interface ResultsListProps {
   results: AnyResult[];
@@ -77,6 +78,28 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
     }
   };
 
+  /**
+   * Check if a result has abnormal/critical findings
+   */
+  const checkAbnormal = (result: AnyResult): { hasAbnormal: boolean; isCritical: boolean } => {
+    if (result.status !== 'completed') {
+      return { hasAbnormal: false, isCritical: false };
+    }
+
+    if (result.type === 'lab') {
+      const labResult = result as any;
+      const critical = hasCriticalFindings(labResult.results);
+      const abnormal = hasAbnormalFindings(labResult.results);
+      return { hasAbnormal: abnormal, isCritical: critical };
+    } else if (result.type === 'xray' || result.type === 'ultrasound') {
+      const imagingResult = result as any;
+      const abnormal = hasAbnormalImagingFindings(imagingResult.findings, imagingResult.impression);
+      return { hasAbnormal: abnormal, isCritical: false };
+    }
+
+    return { hasAbnormal: false, isCritical: false };
+  };
+
   if (results.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-slate-500 dark:text-slate-400 p-8">
@@ -93,6 +116,8 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
         {results.map((result) => {
           const colors = getDepartmentColors(result.type);
           const isSelected = selectedResultId === result.id && (!selectedResultType || selectedResultType === result.type);
+          const agingInfo = getAgingInfo((result as any).requestedDate, result.type as any, result.status);
+          const abnormalInfo = checkAbnormal(result);
           
           return (
             <div
@@ -100,9 +125,11 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
               className={`
                 rounded-lg p-3 cursor-pointer transition-all duration-200
                 border ${colors.border}
-                ${isSelected 
-                  ? 'bg-white dark:bg-slate-800 shadow-md ring-2 ring-blue-400 dark:ring-blue-500' 
-                  : `${colors.bg} hover:bg-white dark:hover:bg-slate-800 hover:shadow-md border-slate-200 dark:border-slate-700`
+                ${agingInfo.isOverdue 
+                  ? 'bg-orange-50/80 dark:bg-orange-950/40 border-orange-300 dark:border-orange-700 hover:bg-orange-100 dark:hover:bg-orange-900' 
+                  : isSelected 
+                    ? 'bg-white dark:bg-slate-800 shadow-md ring-2 ring-blue-400 dark:ring-blue-500' 
+                    : `${colors.bg} hover:bg-white dark:hover:bg-slate-800 hover:shadow-md border-slate-200 dark:border-slate-700`
                 }
               `}
               onClick={() => onSelectResult(result)}
@@ -151,7 +178,45 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+                  {/* Aging Badge for Pending Results */}
+                  {result.status === 'pending' && agingInfo.daysOld > 0 && (
+                    <Badge 
+                      className={`text-xs font-medium ${
+                        agingInfo.isOverdue 
+                          ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900 dark:text-orange-200 dark:border-orange-700' 
+                          : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700'
+                      }`}
+                    >
+                      {agingInfo.isOverdue && <AlertTriangle className="h-3 w-3 mr-1 inline" />}
+                      {agingInfo.isOverdue ? '🚨' : '⏰'} {agingInfo.daysOld}d
+                    </Badge>
+                  )}
+                  
+                  {/* Critical/Abnormal Badge for Completed Results */}
+                  {abnormalInfo.hasAbnormal && (
+                    <Badge 
+                      className={`text-xs font-medium ${
+                        abnormalInfo.isCritical 
+                          ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-700' 
+                          : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-700'
+                      }`}
+                    >
+                      {abnormalInfo.isCritical ? (
+                        <>
+                          <AlertOctagon className="h-3 w-3 mr-1 inline" />
+                          🚨 CRITICAL
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="h-3 w-3 mr-1 inline" />
+                          ⚠️ Abnormal
+                        </>
+                      )}
+                    </Badge>
+                  )}
+                  
+                  {/* Status Badge */}
                   {getStatusIcon(result.status)}
                   <Badge className={`text-xs font-medium ${getStatusColor(result.status)}`}>
                     {result.status}

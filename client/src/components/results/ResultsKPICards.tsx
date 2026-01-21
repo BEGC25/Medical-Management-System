@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Microscope, Scan, MonitorSpeaker } from "lucide-react";
+import { FileText, Microscope, Scan, MonitorSpeaker, AlertTriangle, AlertOctagon } from "lucide-react";
 import type { ResultsKPI, ResultType } from "./types";
 
 interface ResultsKPICardsProps {
@@ -10,7 +10,7 @@ interface ResultsKPICardsProps {
 
 export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: ResultsKPICardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">{/* Changed to 6 columns */}
       {/* Total Results */}
       <Card 
         className={`cursor-pointer transition-all duration-200 hover:shadow-xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-2 ${
@@ -138,6 +138,50 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
             </div>
             <div className="rounded-lg bg-teal-100 dark:bg-teal-900 p-2 shadow-md">
               <MonitorSpeaker className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Overdue Results - NEW */}
+      <Card 
+        className="cursor-pointer transition-all duration-200 hover:shadow-xl bg-gradient-to-br from-orange-50 to-white dark:from-orange-950 dark:to-slate-800 border-2 border-orange-200 dark:border-orange-800 hover:scale-[1.01]"
+        role="button"
+        tabIndex={0}
+        aria-label="View overdue results"
+      >
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">⚠️ Overdue</p>
+              <p className="text-2xl font-bold tabular-nums text-orange-600 dark:text-orange-400">
+                {kpi.overdue}
+              </p>
+            </div>
+            <div className="rounded-lg bg-orange-100 dark:bg-orange-900 p-2 shadow-md">
+              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Critical/Abnormal Results - NEW */}
+      <Card 
+        className="cursor-pointer transition-all duration-200 hover:shadow-xl bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-slate-800 border-2 border-red-200 dark:border-red-800 hover:scale-[1.01]"
+        role="button"
+        tabIndex={0}
+        aria-label="View critical/abnormal results"
+      >
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">🚨 Critical</p>
+              <p className="text-2xl font-bold tabular-nums text-red-600 dark:text-red-400">
+                {kpi.critical}
+              </p>
+            </div>
+            <div className="rounded-lg bg-red-100 dark:bg-red-900 p-2 shadow-md">
+              <AlertOctagon className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
           </div>
         </CardContent>
