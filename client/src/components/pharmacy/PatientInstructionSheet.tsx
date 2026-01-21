@@ -228,6 +228,11 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               border-bottom: 1px solid #1e3a8a;
               color: #1e3a8a;
             }
+            .patient-info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 8px;
+            }
             
             /* Section Headers - Navy Blue */
             .section {
@@ -447,7 +452,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             <!-- Patient Information Section -->
             <div class="patient-info">
               <div class="patient-info-header">Patient Information</div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div class="patient-info-grid">
                 <div><strong>Patient Name:</strong> ${patient.firstName} ${patient.lastName}</div>
                 <div><strong>Patient ID:</strong> ${patient.patientId}</div>
                 <div><strong>Order Number:</strong> ${prescription.orderId}</div>
