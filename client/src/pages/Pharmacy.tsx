@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { PharmacyOrder, Patient, DrugBatch } from "@shared/schema";
+import { PharmacyOrder, Patient, DrugBatch, Drug } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,8 @@ import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
 import { PharmacyReceipt } from "@/components/pharmacy/PharmacyReceipt";
 import { DrugInfoModal } from "@/components/pharmacy/DrugInfoModal";
 import { DrugInfoTooltip } from "@/components/pharmacy/DrugInfoTooltip";
+import { QuickDrugTooltip } from "@/components/pharmacy/QuickDrugTooltip";
+import { PatientInstructionSheet } from "@/components/pharmacy/PatientInstructionSheet";
 
 // Helper function to format dates consistently
 function formatDate(dateString: string): string {
@@ -58,6 +60,26 @@ function formatDateTime(dateString: string): string {
   } catch {
     return dateString;
   }
+}
+
+// Helper to get route icon from drug form
+function getRouteIcon(form: string): string {
+  const formLower = form.toLowerCase();
+  if (formLower.includes("tablet") || formLower.includes("capsule")) return "💊";
+  if (formLower.includes("injection")) return "💉";
+  if (formLower.includes("cream") || formLower.includes("ointment")) return "🧴";
+  if (formLower.includes("syrup") || formLower.includes("drops")) return "🥄";
+  return "💊";
+}
+
+// Helper to get route badge color
+function getRouteBadgeColor(form: string): string {
+  const formLower = form.toLowerCase();
+  if (formLower.includes("tablet") || formLower.includes("capsule")) return "blue";
+  if (formLower.includes("injection")) return "red";
+  if (formLower.includes("cream") || formLower.includes("ointment")) return "green";
+  if (formLower.includes("syrup") || formLower.includes("drops")) return "orange";
+  return "blue";
 }
 
 interface PrescriptionWithPatient extends PharmacyOrder {
@@ -111,7 +133,7 @@ export default function Pharmacy() {
   
   // Drug info modal state
   const [showDrugInfo, setShowDrugInfo] = useState(false);
-  const [drugInfoData, setDrugInfoData] = useState<{ name: string; genericName?: string; strength?: string; form: string } | null>(null);
+  const [drugInfoData, setDrugInfoData] = useState<Drug | null>(null);
   
   const { toast } = useToast();
 
@@ -148,6 +170,11 @@ export default function Pharmacy() {
       return response.json();
     },
     enabled: !!selectedOrder?.drugId,
+  });
+  
+  // Fetch all drugs for drug info modal
+  const { data: drugs = [] } = useQuery<Drug[]>({
+    queryKey: ['/api/pharmacy/drugs'],
   });
   
   // Helper function to check if a date is within the filter range
@@ -1093,11 +1120,56 @@ export default function Pharmacy() {
                   Prescription Details
                 </h3>
                 <div className="space-y-2 text-sm">
+                  {/* Drug Name with Route Icon and Info Button */}
                   <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
                     <span className="text-gray-600 dark:text-gray-400">Drug:</span>
-                    <span className="font-semibold text-blue-600 dark:text-blue-400" data-testid="text-drug-name">
-                      {selectedOrder.drugName}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const drug = drugs.find(d => d.id === selectedOrder.drugId);
+                        if (!drug) {
+                          return (
+                            <span className="font-semibold text-blue-600 dark:text-blue-400" data-testid="text-drug-name">
+                              {selectedOrder.drugName}
+                            </span>
+                          );
+                        }
+                        
+                        const routeIcon = getRouteIcon(drug.form);
+                        const routeColor = getRouteBadgeColor(drug.form);
+                        
+                        return (
+                          <>
+                            <span className="text-lg">{routeIcon}</span>
+                            <QuickDrugTooltip drug={drug}>
+                              <span className="font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer" data-testid="text-drug-name">
+                                {selectedOrder.drugName}
+                              </span>
+                            </QuickDrugTooltip>
+                            <button
+                              onClick={() => {
+                                setDrugInfoData(drug);
+                                setShowDrugInfo(true);
+                              }}
+                              className="text-purple-600 hover:text-purple-700 transition-colors"
+                              title="View full drug information"
+                            >
+                              <Info className="w-4 h-4" />
+                            </button>
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs capitalize
+                                ${routeColor === 'blue' ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
+                                ${routeColor === 'red' ? 'bg-red-50 text-red-700 border-red-200' : ''}
+                                ${routeColor === 'green' ? 'bg-green-50 text-green-700 border-green-200' : ''}
+                                ${routeColor === 'orange' ? 'bg-orange-50 text-orange-700 border-orange-200' : ''}
+                              `}
+                            >
+                              {drug.form}
+                            </Badge>
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
                     <span className="text-gray-600 dark:text-gray-400">Dosage:</span>
@@ -1118,6 +1190,32 @@ export default function Pharmacy() {
                     </span>
                   </div>
                 </div>
+                
+                {/* Patient Instructions Button */}
+                {(() => {
+                  const drug = drugs.find(d => d.id === selectedOrder.drugId);
+                  if (!drug) return null;
+                  
+                  return (
+                    <div className="mt-3">
+                      <PatientInstructionSheet
+                        patient={{
+                          patientId: selectedOrder.patient?.patientId || '',
+                          firstName: selectedOrder.patient?.firstName || '',
+                          lastName: selectedOrder.patient?.lastName || '',
+                        }}
+                        drug={drug}
+                        prescription={{
+                          orderId: selectedOrder.orderId || '',
+                          dosage: selectedOrder.dosage || 'As prescribed',
+                          quantity: selectedOrder.quantity,
+                          instructions: selectedOrder.instructions || 'Follow prescription',
+                        }}
+                        date={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      />
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Batch Selection (FEFO) - Premium */}
@@ -1311,21 +1409,7 @@ export default function Pharmacy() {
       {/* Drug Info Modal */}
       {drugInfoData && (
         <DrugInfoModal
-          drug={{
-            id: 0,
-            name: drugInfoData.name,
-            genericName: drugInfoData.genericName || null,
-            strength: drugInfoData.strength || null,
-            form: drugInfoData.form as any,
-            drugCode: null,
-            manufacturer: null,
-            defaultPrice: null,
-            reorderLevel: 0,
-            isActive: 1,
-            notes: null,
-            createdAt: '',
-            updatedAt: ''
-          }}
+          drug={drugInfoData}
           open={showDrugInfo}
           onOpenChange={setShowDrugInfo}
         />
