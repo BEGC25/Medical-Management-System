@@ -14,7 +14,6 @@ import {
   AlertTriangle, 
   Clock, 
   Users, 
-  Package,
   CheckCircle,
   XCircle
 } from "lucide-react";
@@ -445,68 +444,6 @@ export function DrugInfoModal({ drug, stockInfo, open, onOpenChange }: DrugInfoM
                 </div>
               </div>
             </div>
-
-            {/* Stock Information */}
-            {stockInfo && (
-              <>
-                <Separator />
-                <div>
-                  <div className="flex items-center gap-3 mb-4 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg border-l-4 border-emerald-500">
-                    <Package className="w-[18px] h-[18px] text-emerald-600" />
-                    <h3 className="font-bold text-base uppercase text-gray-800 dark:text-gray-200">Stock Information</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Stock Card */}
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-5 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">📦</span>
-                        <p className="font-bold text-xs uppercase text-blue-700 dark:text-blue-400">In Stock</p>
-                      </div>
-                      <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{stockInfo.stockOnHand}</p>
-                      <p className="text-[13px] text-blue-600 dark:text-blue-400">units available</p>
-                    </div>
-
-                    {/* Price Card */}
-                    <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-lg p-5 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">💰</span>
-                        <p className="font-bold text-xs uppercase text-green-700 dark:text-green-400">Price</p>
-                      </div>
-                      <p className="text-xl font-bold text-green-900 dark:text-green-100">{stockInfo.price}</p>
-                      <p className="text-[13px] text-green-600 dark:text-green-400">SSP per unit</p>
-                    </div>
-
-                    {/* Expiry Card */}
-                    {stockInfo.expiryDate && (
-                      <div className="bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg p-5 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">📅</span>
-                          <p className="font-bold text-xs uppercase text-orange-700 dark:text-orange-400">Expires</p>
-                        </div>
-                        <p className="text-xl font-bold text-orange-900 dark:text-orange-100">
-                          {(() => {
-                            try {
-                              const date = new Date(stockInfo.expiryDate);
-                              if (isNaN(date.getTime())) {
-                                return stockInfo.expiryDate;
-                              }
-                              return date.toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric', 
-                                year: 'numeric' 
-                              });
-                            } catch {
-                              return stockInfo.expiryDate;
-                            }
-                          })()}
-                        </p>
-                        <p className="text-[13px] text-orange-600 dark:text-orange-400">expiration date</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
           </div>
         </ScrollArea>
       </DialogContent>
