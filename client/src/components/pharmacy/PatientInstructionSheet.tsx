@@ -487,7 +487,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
 
             <!-- Important Warnings - Highlighted Box -->
             <div class="section">
-              <div class="section-header">⚠️ Important Warnings</div>
+              <div class="section-header">Important Warnings</div>
               <div class="warning-box">
                 <div class="warning-header">⚠️ IMPORTANT - DO NOT:</div>
                 <ul>
@@ -498,9 +498,9 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
 
             <!-- When to Return to Clinic -->
             <div class="section">
-              <div class="section-header">🚨 When to Return to Clinic</div>
+              <div class="section-header">When to Return to Clinic</div>
               <div class="return-box">
-                <div class="return-box-header">WHEN TO RETURN TO CLINIC:</div>
+                <div class="return-box-header">🚨 WHEN TO RETURN TO CLINIC:</div>
                 <p style="font-weight: bold; margin-bottom: 8px; font-size: 11px;">Return immediately if you experience:</p>
                 <ul>
                   ${content.warnings.map(warning => `<li>${warning}</li>`).join('')}
