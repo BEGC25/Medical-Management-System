@@ -125,7 +125,7 @@ export default function Dashboard() {
 
   // Get current clinic date for display
   const clinicNow = getClinicNow();
-  const formattedDate = formatInTimeZone(clinicNow, 'Africa/Juba', 'EEEE, MMMM d, yyyy');
+  const formattedDate = formatInTimeZone(clinicNow, 'Africa/Juba', 'EEEE, MMM d, yyyy');
 
   const quickActions: Array<{
     title: string;
