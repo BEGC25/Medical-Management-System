@@ -1,6 +1,7 @@
 // client/src/pages/Dashboard.tsx
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useState } from "react";
 import {
   UserPlus,
   Search,
@@ -20,11 +21,15 @@ import {
   FlaskConical,
   RadioTower,
   CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
+import { getClinicNow } from "@/lib/date-utils";
+import { formatDistanceToNow } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 const QUICK_ACTION_THEMES = {
   blue: {
@@ -68,25 +73,51 @@ const QUICK_ACTION_THEMES = {
 type QuickActionTheme = keyof typeof QUICK_ACTION_THEMES;
 
 export default function Dashboard() {
-  const { data: stats } = useQuery({
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  const { data: stats, refetch: refetchStats, isFetching: isFetchingStats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
-  const { data: recentPatients } = useQuery({
+  const { data: recentPatients, refetch: refetchRecentPatients, isFetching: isFetchingRecentPatients } = useQuery({
     queryKey: ["/api/dashboard/recent-patients"],
+    refetchInterval: 30000,
   });
 
-  const { data: patientFlow } = useQuery({
+  const { data: patientFlow, refetch: refetchPatientFlow, isFetching: isFetchingPatientFlow } = useQuery({
     queryKey: ["/api/dashboard/patient-flow"],
+    refetchInterval: 30000,
   });
 
-  const { data: outstandingPayments } = useQuery({
+  const { data: outstandingPayments, refetch: refetchOutstandingPayments, isFetching: isFetchingOutstandingPayments } = useQuery({
     queryKey: ["/api/dashboard/outstanding-payments"],
+    refetchInterval: 30000,
   });
 
-  const { data: resultsReady } = useQuery({
+  const { data: resultsReady, refetch: refetchResultsReady, isFetching: isFetchingResultsReady } = useQuery({
     queryKey: ["/api/dashboard/results-ready"],
+    refetchInterval: 30000,
   });
+
+  // Check if any data is being fetched
+  const isRefreshing = isFetchingStats || isFetchingRecentPatients || isFetchingPatientFlow || isFetchingOutstandingPayments || isFetchingResultsReady;
+
+  // Manual refresh handler
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchStats(),
+      refetchRecentPatients(),
+      refetchPatientFlow(),
+      refetchOutstandingPayments(),
+      refetchResultsReady(),
+    ]);
+    setLastUpdated(new Date());
+  };
+
+  // Get current clinic date for display
+  const clinicNow = getClinicNow();
+  const formattedDate = formatInTimeZone(clinicNow, 'Africa/Juba', 'EEEE, MMMM d, yyyy');
 
   const quickActions: Array<{
     title: string;
@@ -165,6 +196,36 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 px-2 sm:px-0 transition-colors duration-300 space-y-4 sm:space-y-6 md:space-y-8 animate-in fade-in duration-500">
+      {/* Dashboard Header with Date and Refresh */}
+      <div className="flex items-center justify-between gap-4 mb-2">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+            📊 Dashboard
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            {formattedDate}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <div className="hidden sm:block text-right text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-xs opacity-75">Last updated</div>
+              <div className="font-medium">{formatDistanceToNow(lastUpdated, { addSuffix: true })}</div>
+            </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </Button>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
         {quickActions.map((action, index) => {
