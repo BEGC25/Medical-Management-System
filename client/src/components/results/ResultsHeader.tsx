@@ -1,13 +1,18 @@
 import { Input } from "@/components/ui/input";
-import { Search, ShieldCheck, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, ShieldCheck, FileText, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 
 interface ResultsHeaderProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  lastUpdated?: Date;
 }
 
-export function ResultsHeader({ searchTerm, onSearchChange }: ResultsHeaderProps) {
+export function ResultsHeader({ searchTerm, onSearchChange, onRefresh, isRefreshing, lastUpdated }: ResultsHeaderProps) {
   const [localSearch, setLocalSearch] = useState(searchTerm);
 
   // Debounce search input
@@ -36,6 +41,28 @@ export function ResultsHeader({ searchTerm, onSearchChange }: ResultsHeaderProps
                   HIPAA Compliant • Audit Trail Enabled
                 </p>
               </div>
+            </div>
+            
+            {/* Refresh Button and Last Updated */}
+            <div className="flex items-center gap-3">
+              {lastUpdated && (
+                <div className="text-sm text-slate-200 dark:text-slate-300">
+                  <div className="text-xs opacity-75">Last updated</div>
+                  <div className="font-medium">{formatDistanceToNow(lastUpdated, { addSuffix: true })}</div>
+                </div>
+              )}
+              {onRefresh && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white hover:border-white/30 transition-all duration-200 shadow-md"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="ml-2">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>

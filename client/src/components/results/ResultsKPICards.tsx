@@ -6,9 +6,24 @@ interface ResultsKPICardsProps {
   kpi: ResultsKPI;
   typeFilter: string;
   onTypeFilterChange: (type: string) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
 }
 
-export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: ResultsKPICardsProps) {
+export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange, statusFilter, onStatusFilterChange }: ResultsKPICardsProps) {
+  // Helper function to generate card className based on filter state
+  const getCardClassName = (
+    isActive: boolean, 
+    baseColors: string,
+    activeBorderColor: string
+  ) => {
+    return `cursor-pointer transition-all duration-200 hover:shadow-xl ${baseColors} border-2 ${
+      isActive
+        ? `ring-2 ${activeBorderColor} shadow-lg scale-[1.02]`
+        : 'hover:scale-[1.01]'
+    }`;
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4">{/* Changed to 6 columns */}
       {/* Total Results */}
@@ -143,12 +158,23 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
         </CardContent>
       </Card>
 
-      {/* Overdue Results - NEW */}
+      {/* Overdue Results - Clickable */}
       <Card 
-        className="cursor-pointer transition-all duration-200 hover:shadow-xl bg-gradient-to-br from-orange-50 to-white dark:from-orange-950 dark:to-slate-800 border-2 border-orange-200 dark:border-orange-800 hover:scale-[1.01]"
+        className={getCardClassName(
+          statusFilter === 'overdue',
+          'bg-gradient-to-br from-orange-50 to-white dark:from-orange-950 dark:to-slate-800 border-orange-200 dark:border-orange-800',
+          'ring-orange-400 dark:ring-orange-500'
+        )}
+        onClick={() => onStatusFilterChange?.('overdue')}
         role="button"
         tabIndex={0}
-        aria-label="View overdue results"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onStatusFilterChange?.('overdue');
+          }
+        }}
+        aria-label="Filter to show overdue results only"
       >
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
@@ -165,17 +191,28 @@ export function ResultsKPICards({ kpi, typeFilter, onTypeFilterChange }: Results
         </CardContent>
       </Card>
 
-      {/* Critical/Abnormal Results - NEW */}
+      {/* Critical Findings - Clickable */}
       <Card 
-        className="cursor-pointer transition-all duration-200 hover:shadow-xl bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-slate-800 border-2 border-red-200 dark:border-red-800 hover:scale-[1.01]"
+        className={getCardClassName(
+          statusFilter === 'abnormal',
+          'bg-gradient-to-br from-red-50 to-white dark:from-red-950 dark:to-slate-800 border-red-200 dark:border-red-800',
+          'ring-red-400 dark:ring-red-500'
+        )}
+        onClick={() => onStatusFilterChange?.('abnormal')}
         role="button"
         tabIndex={0}
-        aria-label="View critical/abnormal results"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onStatusFilterChange?.('abnormal');
+          }
+        }}
+        aria-label="Filter to show results with critical findings only"
       >
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">🚨 Critical</p>
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">⚠️ Critical Findings</p>
               <p className="text-2xl font-bold tabular-nums text-red-600 dark:text-red-400">
                 {kpi.critical}
               </p>

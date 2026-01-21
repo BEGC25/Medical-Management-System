@@ -132,6 +132,7 @@ export default function AllResults() {
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [detailsResult, setDetailsResult] = useState<any | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Get today's date in clinic timezone for filtering
   const today = getClinicDayKey();
@@ -144,7 +145,7 @@ export default function AllResults() {
   };
 
   // Fetch data based on date filter selection
-  const { data: labTests = [] } = useQuery<LabTest[]>({
+  const { data: labTests = [], refetch: refetchLabTests, isFetching: isFetchingLab } = useQuery<LabTest[]>({
     queryKey: ["/api/lab-tests", getQueryParams()],
     queryFn: async () => {
       const params = new URLSearchParams(getQueryParams());
@@ -154,7 +155,7 @@ export default function AllResults() {
     },
   });
 
-  const { data: xrayExams = [] } = useQuery<XRayExam[]>({
+  const { data: xrayExams = [], refetch: refetchXrays, isFetching: isFetchingXray } = useQuery<XRayExam[]>({
     queryKey: ["/api/xray-exams", getQueryParams()],
     queryFn: async () => {
       const params = new URLSearchParams(getQueryParams());
@@ -164,7 +165,7 @@ export default function AllResults() {
     },
   });
 
-  const { data: ultrasoundExams = [] } = useQuery<UltrasoundExam[]>({
+  const { data: ultrasoundExams = [], refetch: refetchUltrasounds, isFetching: isFetchingUltrasound } = useQuery<UltrasoundExam[]>({
     queryKey: ["/api/ultrasound-exams", getQueryParams()],
     queryFn: async () => {
       const params = new URLSearchParams(getQueryParams());
@@ -175,7 +176,7 @@ export default function AllResults() {
   });
 
   // Only load patients when needed for search
-  const { data: patients = [] } = useQuery<Patient[]>({
+  const { data: patients = [], refetch: refetchPatients, isFetching: isFetchingPatients } = useQuery<Patient[]>({
     queryKey: ["/api/patients", "withStatus"],
     queryFn: async () => {
       const response = await fetch('/api/patients?withStatus=true&today=true');
@@ -183,6 +184,25 @@ export default function AllResults() {
       return response.json();
     },
   });
+
+  // Check if any data is being fetched
+  const isRefreshing = isFetchingLab || isFetchingXray || isFetchingUltrasound || isFetchingPatients;
+
+  // Refresh handler with error handling
+  const handleRefresh = async () => {
+    try {
+      await Promise.all([
+        refetchLabTests(),
+        refetchXrays(),
+        refetchUltrasounds(),
+        refetchPatients(),
+      ]);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Failed to refresh results:', error);
+      // React Query handles errors internally, so failures are logged but don't crash the app
+    }
+  };
 
   // Combine all results for a unified view
   // Use createdAt as primary date field (industry standard for operational "results inbox" views)
@@ -1495,7 +1515,13 @@ export default function AllResults() {
   return (
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
       {/* Sticky Header */}
-      <ResultsHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+      <ResultsHeader 
+        searchTerm={searchTerm} 
+        onSearchChange={setSearchTerm}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        lastUpdated={lastUpdated}
+      />
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
@@ -1505,6 +1531,8 @@ export default function AllResults() {
             kpi={kpi}
             typeFilter={typeFilter}
             onTypeFilterChange={setTypeFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
           />
 
           {/* Filters */}
