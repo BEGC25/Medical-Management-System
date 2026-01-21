@@ -104,7 +104,11 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
   const handlePrint = () => {
     // Create a new window for printing
     const printWindow = window.open('', '', 'width=800,height=600');
-    if (!printWindow) return;
+    if (!printWindow) {
+      // Popup was blocked or failed to open
+      alert('Please allow popups for this website to print patient instructions. You can also try using Ctrl+P to print this page.');
+      return;
+    }
 
     // Generate the print content
     const printContent = `

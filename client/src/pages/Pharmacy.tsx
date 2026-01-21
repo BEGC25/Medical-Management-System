@@ -134,7 +134,6 @@ export default function Pharmacy() {
   // Drug info modal state
   const [showDrugInfo, setShowDrugInfo] = useState(false);
   const [drugInfoData, setDrugInfoData] = useState<Drug | null>(null);
-  const [selectedDrugForInfo, setSelectedDrugForInfo] = useState<number | null>(null);
   
   const { toast } = useToast();
 
