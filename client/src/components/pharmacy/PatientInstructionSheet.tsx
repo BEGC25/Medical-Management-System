@@ -100,6 +100,9 @@ const getInstructionContent = (drug: Drug) => {
 
 export function PatientInstructionSheet({ patient, drug, prescription, date }: PatientInstructionSheetProps) {
   const content = getInstructionContent(drug);
+  
+  // Helper for quantity display
+  const quantityText = `${prescription.quantity} ${drug.form}${prescription.quantity !== 1 ? 's' : ''}`;
 
   const handlePrint = () => {
     // Create a new window for printing
@@ -463,7 +466,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               <div class="details-box">
                 <p><strong>Form:</strong> ${drug.form}</p>
                 ${drug.strength ? `<p><strong>Strength:</strong> ${drug.strength}</p>` : ''}
-                <p><strong>Quantity:</strong> ${prescription.quantity} ${drug.form}${prescription.quantity !== 1 ? 's' : ''}</p>
+                <p><strong>Quantity:</strong> ${quantityText}</p>
               </div>
             </div>
 
@@ -478,7 +481,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               <div class="section-header">💊 How to Take It</div>
               <div class="details-box">
                 <p><strong>Dosage:</strong> ${prescription.dosage}</p>
-                <p><strong>Quantity:</strong> ${prescription.quantity} ${drug.form}${prescription.quantity !== 1 ? 's' : ''}</p>
+                <p><strong>Quantity:</strong> ${quantityText}</p>
                 <p><strong>Instructions:</strong> ${prescription.instructions}</p>
                 ${prescription.duration ? `<p><strong>Duration:</strong> ${prescription.duration}</p>` : ''}
               </div>

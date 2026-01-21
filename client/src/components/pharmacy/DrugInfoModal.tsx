@@ -444,8 +444,6 @@ export function DrugInfoModal({ drug, stockInfo, open, onOpenChange }: DrugInfoM
                 </div>
               </div>
             </div>
-
-
           </div>
         </ScrollArea>
       </DialogContent>
