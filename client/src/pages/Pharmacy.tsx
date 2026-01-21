@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp, CheckCircle, User, Printer, HelpCircle } from "lucide-react";
+import { Pill, Clock, Check, AlertCircle, Search, AlertTriangle, Package, ArrowRight, RefreshCw, ChevronDown, ChevronUp, CheckCircle, User, Printer, HelpCircle, Info } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PharmacyHelp from "@/components/PharmacyHelp";
 import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
 import { PharmacyReceipt } from "@/components/pharmacy/PharmacyReceipt";
+import { DrugInfoModal } from "@/components/pharmacy/DrugInfoModal";
+import { DrugInfoTooltip } from "@/components/pharmacy/DrugInfoTooltip";
 
 // Helper function to format dates consistently
 function formatDate(dateString: string): string {
@@ -106,6 +108,10 @@ export default function Pharmacy() {
   
   // Print receipt state
   const [printOrder, setPrintOrder] = useState<PrescriptionWithPatient | null>(null);
+  
+  // Drug info modal state
+  const [showDrugInfo, setShowDrugInfo] = useState(false);
+  const [drugInfoData, setDrugInfoData] = useState<{ name: string; genericName?: string; strength?: string; form: string } | null>(null);
   
   const { toast } = useToast();
 
@@ -511,9 +517,45 @@ export default function Pharmacy() {
                                 <span className="font-medium text-gray-900 dark:text-white">{order.orderId}</span>
                                 <span className="text-gray-400">|</span>
                                 <span className="text-gray-600 dark:text-gray-400">Drug:</span>
-                                <span className="font-semibold text-blue-600 dark:text-blue-400">
-                                  {order.drugName || <span className="text-red-600 font-semibold">Not specified</span>}
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                    {order.drugName || <span className="text-red-600 font-semibold">Not specified</span>}
+                                  </span>
+                                  {order.drugName && (
+                                    <DrugInfoTooltip drug={{
+                                      id: 0,
+                                      name: order.drugName,
+                                      genericName: null,
+                                      strength: order.dosage || null,
+                                      form: order.route?.toLowerCase() === 'oral' ? 'tablet' : 'other',
+                                      drugCode: null,
+                                      manufacturer: null,
+                                      defaultPrice: null,
+                                      reorderLevel: 0,
+                                      isActive: 1,
+                                      notes: null,
+                                      createdAt: '',
+                                      updatedAt: ''
+                                    }}>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setDrugInfoData({
+                                            name: order.drugName!,
+                                            strength: order.dosage || undefined,
+                                            form: order.route?.toLowerCase() === 'oral' ? 'tablet' : 'other'
+                                          });
+                                          setShowDrugInfo(true);
+                                        }}
+                                        className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 
+                                                 transition-colors duration-150 hover:scale-110"
+                                        title="View Drug Information"
+                                      >
+                                        <Info className="w-4 h-4" />
+                                      </button>
+                                    </DrugInfoTooltip>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex items-center gap-4 text-sm">
                                 <div>
@@ -677,7 +719,43 @@ export default function Pharmacy() {
                                 <span className="font-medium text-gray-900 dark:text-white">{order.orderId}</span>
                                 <span className="text-gray-400">|</span>
                                 <span className="text-gray-600 dark:text-gray-400">Drug:</span>
-                                <span className="font-semibold text-blue-600 dark:text-blue-400">{order.drugName}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold text-blue-600 dark:text-blue-400">{order.drugName}</span>
+                                  {order.drugName && (
+                                    <DrugInfoTooltip drug={{
+                                      id: 0,
+                                      name: order.drugName,
+                                      genericName: null,
+                                      strength: order.dosage || null,
+                                      form: order.route?.toLowerCase() === 'oral' ? 'tablet' : 'other',
+                                      drugCode: null,
+                                      manufacturer: null,
+                                      defaultPrice: null,
+                                      reorderLevel: 0,
+                                      isActive: 1,
+                                      notes: null,
+                                      createdAt: '',
+                                      updatedAt: ''
+                                    }}>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setDrugInfoData({
+                                            name: order.drugName!,
+                                            strength: order.dosage || undefined,
+                                            form: order.route?.toLowerCase() === 'oral' ? 'tablet' : 'other'
+                                          });
+                                          setShowDrugInfo(true);
+                                        }}
+                                        className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 
+                                                 transition-colors duration-150 hover:scale-110"
+                                        title="View Drug Information"
+                                      >
+                                        <Info className="w-4 h-4" />
+                                      </button>
+                                    </DrugInfoTooltip>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex items-center gap-4 text-sm">
                                 <div>
@@ -856,9 +934,45 @@ export default function Pharmacy() {
                               <span className="font-medium text-gray-900 dark:text-white">{order.orderId}</span>
                               <span className="text-gray-400">|</span>
                               <span className="text-gray-600 dark:text-gray-400">Drug:</span>
-                              <span className="font-semibold text-orange-600 dark:text-orange-400">
-                                {order.drugName || <span className="text-orange-600 font-semibold">Not specified</span>}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-orange-600 dark:text-orange-400">
+                                  {order.drugName || <span className="text-orange-600 font-semibold">Not specified</span>}
+                                </span>
+                                {order.drugName && (
+                                  <DrugInfoTooltip drug={{
+                                    id: 0,
+                                    name: order.drugName,
+                                    genericName: null,
+                                    strength: order.dosage || null,
+                                    form: order.route?.toLowerCase() === 'oral' ? 'tablet' : 'other',
+                                    drugCode: null,
+                                    manufacturer: null,
+                                    defaultPrice: null,
+                                    reorderLevel: 0,
+                                    isActive: 1,
+                                    notes: null,
+                                    createdAt: '',
+                                    updatedAt: ''
+                                  }}>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDrugInfoData({
+                                          name: order.drugName!,
+                                          strength: order.dosage || undefined,
+                                          form: order.route?.toLowerCase() === 'oral' ? 'tablet' : 'other'
+                                        });
+                                        setShowDrugInfo(true);
+                                      }}
+                                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 
+                                               transition-colors duration-150 hover:scale-110"
+                                      title="View Drug Information"
+                                    >
+                                      <Info className="w-4 h-4" />
+                                    </button>
+                                  </DrugInfoTooltip>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-4 text-sm">
                               <div>
@@ -1193,6 +1307,29 @@ export default function Pharmacy() {
 
       {/* Print Receipt Dialog */}
       <PharmacyReceipt order={printOrder} onClose={() => setPrintOrder(null)} />
+
+      {/* Drug Info Modal */}
+      {drugInfoData && (
+        <DrugInfoModal
+          drug={{
+            id: 0,
+            name: drugInfoData.name,
+            genericName: drugInfoData.genericName || null,
+            strength: drugInfoData.strength || null,
+            form: drugInfoData.form as any,
+            drugCode: null,
+            manufacturer: null,
+            defaultPrice: null,
+            reorderLevel: 0,
+            isActive: 1,
+            notes: null,
+            createdAt: '',
+            updatedAt: ''
+          }}
+          open={showDrugInfo}
+          onOpenChange={setShowDrugInfo}
+        />
+      )}
     </div>
   );
 }
