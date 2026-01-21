@@ -1256,13 +1256,18 @@ export function getDrugEducationalInfo(genericName: string): DrugEducationalInfo
   }
 
   // Pattern matching for partial names
-  for (const [key, info] of Object.entries(DRUG_DATABASE)) {
-    // Check if the search term is contained in the key or vice versa
-    if (searchName.includes(key) || key.includes(searchName)) {
-      return info;
+  // Only match if search term is at least 4 characters to avoid false positives
+  if (searchName.length >= 4) {
+    for (const [key, info] of Object.entries(DRUG_DATABASE)) {
+      // Check if the search term is contained in the key or vice versa
+      if (searchName.includes(key) || key.includes(searchName)) {
+        return info;
+      }
     }
-    
-    // Special handling for common aliases and combinations
+  }
+  
+  // Special handling for common aliases and brand names
+  for (const [key, info] of Object.entries(DRUG_DATABASE)) {
     if (searchName.includes("coartem") && key === "artemether-lumefantrine") {
       return info;
     }
@@ -1275,7 +1280,7 @@ export function getDrugEducationalInfo(genericName: string): DrugEducationalInfo
     if (searchName.includes("augmentin") && key === "amoxicillin-clavulanate") {
       return info;
     }
-    if (searchName.includes("sp") && key === "sulfadoxine-pyrimethamine") {
+    if (searchName.includes("fansidar") && key === "sulfadoxine-pyrimethamine") {
       return info;
     }
     if (searchName.includes("ventolin") && key === "salbutamol") {
