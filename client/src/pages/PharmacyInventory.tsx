@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -241,10 +241,128 @@ const COMMON_DRUGS = [
   { name: "Albendazole 400mg", genericName: "Albendazole", strength: "400mg", form: "tablet", category: "Antiparasitic" },
   { name: "Mebendazole 100mg", genericName: "Mebendazole", strength: "100mg", form: "tablet", category: "Antiparasitic" },
   
+  // Injectable Antibiotics
+  { name: "Ceftriaxone Injection 250mg", genericName: "Ceftriaxone", strength: "250mg", form: "injection", category: "Antibiotic" },
+  { name: "Ceftriaxone Injection 500mg", genericName: "Ceftriaxone", strength: "500mg", form: "injection", category: "Antibiotic" },
+  { name: "Ceftriaxone Injection 1g", genericName: "Ceftriaxone", strength: "1g", form: "injection", category: "Antibiotic" },
+  { name: "Ceftriaxone Injection 2g", genericName: "Ceftriaxone", strength: "2g", form: "injection", category: "Antibiotic" },
+  { name: "Cefotaxime Injection 500mg", genericName: "Cefotaxime", strength: "500mg", form: "injection", category: "Antibiotic" },
+  { name: "Cefotaxime Injection 1g", genericName: "Cefotaxime", strength: "1g", form: "injection", category: "Antibiotic" },
+  { name: "Gentamicin Injection 40mg/ml", genericName: "Gentamicin", strength: "40mg/ml", form: "injection", category: "Antibiotic" },
+  { name: "Gentamicin Injection 80mg/2ml", genericName: "Gentamicin", strength: "80mg/2ml", form: "injection", category: "Antibiotic" },
+  { name: "Ampicillin Injection 500mg", genericName: "Ampicillin", strength: "500mg", form: "injection", category: "Antibiotic" },
+  { name: "Ampicillin Injection 1g", genericName: "Ampicillin", strength: "1g", form: "injection", category: "Antibiotic" },
+  { name: "Penicillin G Injection 1MU", genericName: "Penicillin G", strength: "1MU", form: "injection", category: "Antibiotic" },
+  { name: "Penicillin G Injection 5MU", genericName: "Penicillin G", strength: "5MU", form: "injection", category: "Antibiotic" },
+  { name: "Benzathine Penicillin Injection 1.2MU", genericName: "Benzathine Penicillin", strength: "1.2MU", form: "injection", category: "Antibiotic" },
+  { name: "Benzathine Penicillin Injection 2.4MU", genericName: "Benzathine Penicillin", strength: "2.4MU", form: "injection", category: "Antibiotic" },
+  { name: "Cefuroxime Injection 750mg", genericName: "Cefuroxime", strength: "750mg", form: "injection", category: "Antibiotic" },
+  { name: "Cefuroxime Injection 1.5g", genericName: "Cefuroxime", strength: "1.5g", form: "injection", category: "Antibiotic" },
+  { name: "Amikacin Injection 250mg", genericName: "Amikacin", strength: "250mg", form: "injection", category: "Antibiotic" },
+  { name: "Amikacin Injection 500mg", genericName: "Amikacin", strength: "500mg", form: "injection", category: "Antibiotic" },
+  { name: "Vancomycin Injection 500mg", genericName: "Vancomycin", strength: "500mg", form: "injection", category: "Antibiotic" },
+  { name: "Vancomycin Injection 1g", genericName: "Vancomycin", strength: "1g", form: "injection", category: "Antibiotic" },
+  { name: "Meropenem Injection 500mg", genericName: "Meropenem", strength: "500mg", form: "injection", category: "Antibiotic" },
+  { name: "Meropenem Injection 1g", genericName: "Meropenem", strength: "1g", form: "injection", category: "Antibiotic" },
+  
+  // More Oral Antibiotics
+  { name: "Erythromycin 250mg", genericName: "Erythromycin", strength: "250mg", form: "tablet", category: "Antibiotic" },
+  { name: "Erythromycin 500mg", genericName: "Erythromycin", strength: "500mg", form: "tablet", category: "Antibiotic" },
+  { name: "Nitrofurantoin 50mg", genericName: "Nitrofurantoin", strength: "50mg", form: "capsule", category: "Antibiotic" },
+  { name: "Nitrofurantoin 100mg", genericName: "Nitrofurantoin", strength: "100mg", form: "capsule", category: "Antibiotic" },
+  { name: "Norfloxacin 400mg", genericName: "Norfloxacin", strength: "400mg", form: "tablet", category: "Antibiotic" },
+  { name: "Ofloxacin 200mg", genericName: "Ofloxacin", strength: "200mg", form: "tablet", category: "Antibiotic" },
+  { name: "Ofloxacin 400mg", genericName: "Ofloxacin", strength: "400mg", form: "tablet", category: "Antibiotic" },
+  { name: "Levofloxacin 250mg", genericName: "Levofloxacin", strength: "250mg", form: "tablet", category: "Antibiotic" },
+  { name: "Levofloxacin 500mg", genericName: "Levofloxacin", strength: "500mg", form: "tablet", category: "Antibiotic" },
+  { name: "Levofloxacin 750mg", genericName: "Levofloxacin", strength: "750mg", form: "tablet", category: "Antibiotic" },
+  { name: "Clarithromycin 250mg", genericName: "Clarithromycin", strength: "250mg", form: "tablet", category: "Antibiotic" },
+  { name: "Clarithromycin 500mg", genericName: "Clarithromycin", strength: "500mg", form: "tablet", category: "Antibiotic" },
+  
+  // IV Fluids & Solutions
+  { name: "Normal Saline (0.9% NaCl) 500ml", genericName: "Sodium Chloride", strength: "0.9%", form: "other", category: "IV Fluid" },
+  { name: "Normal Saline (0.9% NaCl) 1000ml", genericName: "Sodium Chloride", strength: "0.9%", form: "other", category: "IV Fluid" },
+  { name: "Ringer's Lactate 500ml", genericName: "Ringer's Lactate", strength: "500ml", form: "other", category: "IV Fluid" },
+  { name: "Ringer's Lactate 1000ml", genericName: "Ringer's Lactate", strength: "1000ml", form: "other", category: "IV Fluid" },
+  { name: "Dextrose 5% 500ml", genericName: "Dextrose", strength: "5%", form: "other", category: "IV Fluid" },
+  { name: "Dextrose 5% 1000ml", genericName: "Dextrose", strength: "5%", form: "other", category: "IV Fluid" },
+  { name: "Dextrose Saline 500ml", genericName: "Dextrose Saline", strength: "500ml", form: "other", category: "IV Fluid" },
+  { name: "Dextrose Saline 1000ml", genericName: "Dextrose Saline", strength: "1000ml", form: "other", category: "IV Fluid" },
+  
+  // Antiemetics
+  { name: "Ondansetron 4mg", genericName: "Ondansetron", strength: "4mg", form: "tablet", category: "Antiemetic" },
+  { name: "Ondansetron 8mg", genericName: "Ondansetron", strength: "8mg", form: "tablet", category: "Antiemetic" },
+  { name: "Ondansetron Injection 4mg/2ml", genericName: "Ondansetron", strength: "4mg/2ml", form: "injection", category: "Antiemetic" },
+  { name: "Ondansetron Injection 8mg/4ml", genericName: "Ondansetron", strength: "8mg/4ml", form: "injection", category: "Antiemetic" },
+  { name: "Metoclopramide 10mg", genericName: "Metoclopramide", strength: "10mg", form: "tablet", category: "Antiemetic" },
+  { name: "Metoclopramide Injection 10mg/2ml", genericName: "Metoclopramide", strength: "10mg/2ml", form: "injection", category: "Antiemetic" },
+  { name: "Domperidone 10mg", genericName: "Domperidone", strength: "10mg", form: "tablet", category: "Antiemetic" },
+  
+  // Antacids/PPIs
+  { name: "Pantoprazole 20mg", genericName: "Pantoprazole", strength: "20mg", form: "tablet", category: "Gastrointestinal" },
+  { name: "Pantoprazole 40mg", genericName: "Pantoprazole", strength: "40mg", form: "tablet", category: "Gastrointestinal" },
+  { name: "Esomeprazole 20mg", genericName: "Esomeprazole", strength: "20mg", form: "capsule", category: "Gastrointestinal" },
+  { name: "Esomeprazole 40mg", genericName: "Esomeprazole", strength: "40mg", form: "capsule", category: "Gastrointestinal" },
+  { name: "Lansoprazole 15mg", genericName: "Lansoprazole", strength: "15mg", form: "capsule", category: "Gastrointestinal" },
+  { name: "Lansoprazole 30mg", genericName: "Lansoprazole", strength: "30mg", form: "capsule", category: "Gastrointestinal" },
+  
+  // Steroids
+  { name: "Dexamethasone 0.5mg", genericName: "Dexamethasone", strength: "0.5mg", form: "tablet", category: "Corticosteroid" },
+  { name: "Dexamethasone 4mg", genericName: "Dexamethasone", strength: "4mg", form: "tablet", category: "Corticosteroid" },
+  { name: "Dexamethasone Injection 4mg/ml", genericName: "Dexamethasone", strength: "4mg/ml", form: "injection", category: "Corticosteroid" },
+  { name: "Hydrocortisone Injection 100mg", genericName: "Hydrocortisone", strength: "100mg", form: "injection", category: "Corticosteroid" },
+  { name: "Hydrocortisone Injection 250mg", genericName: "Hydrocortisone", strength: "250mg", form: "injection", category: "Corticosteroid" },
+  { name: "Methylprednisolone Injection 40mg", genericName: "Methylprednisolone", strength: "40mg", form: "injection", category: "Corticosteroid" },
+  { name: "Methylprednisolone Injection 125mg", genericName: "Methylprednisolone", strength: "125mg", form: "injection", category: "Corticosteroid" },
+  { name: "Methylprednisolone Injection 500mg", genericName: "Methylprednisolone", strength: "500mg", form: "injection", category: "Corticosteroid" },
+  
+  // Antispasmodics
+  { name: "Hyoscine (Buscopan) 10mg", genericName: "Hyoscine Butylbromide", strength: "10mg", form: "tablet", category: "Antispasmodic" },
+  { name: "Hyoscine Injection 20mg/ml", genericName: "Hyoscine Butylbromide", strength: "20mg/ml", form: "injection", category: "Antispasmodic" },
+  { name: "Dicyclomine 10mg", genericName: "Dicyclomine", strength: "10mg", form: "tablet", category: "Antispasmodic" },
+  { name: "Dicyclomine 20mg", genericName: "Dicyclomine", strength: "20mg", form: "tablet", category: "Antispasmodic" },
+  
+  // Sedatives/Anxiolytics
+  { name: "Diazepam 5mg", genericName: "Diazepam", strength: "5mg", form: "tablet", category: "Sedative" },
+  { name: "Diazepam 10mg", genericName: "Diazepam", strength: "10mg", form: "tablet", category: "Sedative" },
+  { name: "Diazepam Injection 5mg/ml", genericName: "Diazepam", strength: "5mg/ml", form: "injection", category: "Sedative" },
+  { name: "Lorazepam 1mg", genericName: "Lorazepam", strength: "1mg", form: "tablet", category: "Sedative" },
+  { name: "Lorazepam 2mg", genericName: "Lorazepam", strength: "2mg", form: "tablet", category: "Sedative" },
+  { name: "Midazolam Injection 5mg/ml", genericName: "Midazolam", strength: "5mg/ml", form: "injection", category: "Sedative" },
+  
+  // Local Anesthetics
+  { name: "Lidocaine 1% Injection", genericName: "Lidocaine", strength: "1%", form: "injection", category: "Anesthetic" },
+  { name: "Lidocaine 2% Injection", genericName: "Lidocaine", strength: "2%", form: "injection", category: "Anesthetic" },
+  { name: "Lidocaine with Epinephrine Injection", genericName: "Lidocaine with Epinephrine", strength: "1%", form: "injection", category: "Anesthetic" },
+  
+  // Emergency Medications
+  { name: "Adrenaline (Epinephrine) 1mg/ml Injection", genericName: "Epinephrine", strength: "1mg/ml", form: "injection", category: "Emergency" },
+  { name: "Atropine 0.5mg/ml Injection", genericName: "Atropine", strength: "0.5mg/ml", form: "injection", category: "Emergency" },
+  { name: "Atropine 1mg/ml Injection", genericName: "Atropine", strength: "1mg/ml", form: "injection", category: "Emergency" },
+  { name: "Aminophylline Injection 250mg/10ml", genericName: "Aminophylline", strength: "250mg/10ml", form: "injection", category: "Emergency" },
+  { name: "Furosemide (Lasix) 20mg", genericName: "Furosemide", strength: "20mg", form: "tablet", category: "Diuretic" },
+  { name: "Furosemide (Lasix) 40mg", genericName: "Furosemide", strength: "40mg", form: "tablet", category: "Diuretic" },
+  { name: "Furosemide Injection 20mg/2ml", genericName: "Furosemide", strength: "20mg/2ml", form: "injection", category: "Diuretic" },
+  
   // Other Common Drugs
   { name: "Prednisolone 5mg", genericName: "Prednisolone", strength: "5mg", form: "tablet", category: "Corticosteroid" },
   { name: "Prednisolone 10mg", genericName: "Prednisolone", strength: "10mg", form: "tablet", category: "Corticosteroid" },
   { name: "Prednisolone 20mg", genericName: "Prednisolone", strength: "20mg", form: "tablet", category: "Corticosteroid" },
+  { name: "Tramadol 50mg", genericName: "Tramadol", strength: "50mg", form: "capsule", category: "Analgesic" },
+  { name: "Tramadol 100mg", genericName: "Tramadol", strength: "100mg", form: "capsule", category: "Analgesic" },
+  { name: "Tramadol Injection 50mg/ml", genericName: "Tramadol", strength: "50mg/ml", form: "injection", category: "Analgesic" },
+  { name: "Ranitidine Injection 50mg/2ml", genericName: "Ranitidine", strength: "50mg/2ml", form: "injection", category: "Gastrointestinal" },
+  { name: "Aminophylline 100mg", genericName: "Aminophylline", strength: "100mg", form: "tablet", category: "Respiratory" },
+  { name: "Aminophylline 200mg", genericName: "Aminophylline", strength: "200mg", form: "tablet", category: "Respiratory" },
+  { name: "Theophylline 100mg", genericName: "Theophylline", strength: "100mg", form: "tablet", category: "Respiratory" },
+  { name: "Theophylline 200mg", genericName: "Theophylline", strength: "200mg", form: "tablet", category: "Respiratory" },
+  { name: "Theophylline 300mg", genericName: "Theophylline", strength: "300mg", form: "tablet", category: "Respiratory" },
+  { name: "Calcium Gluconate Injection 10%", genericName: "Calcium Gluconate", strength: "10%", form: "injection", category: "Electrolyte" },
+  { name: "Magnesium Sulfate Injection 50%", genericName: "Magnesium Sulfate", strength: "50%", form: "injection", category: "Electrolyte" },
+  { name: "Potassium Chloride tablets/solution", genericName: "Potassium Chloride", strength: "600mg", form: "tablet", category: "Electrolyte" },
+  { name: "Ferrous Fumarate 200mg", genericName: "Ferrous Fumarate", strength: "200mg", form: "tablet", category: "Vitamin" },
+  { name: "Tranexamic Acid 500mg", genericName: "Tranexamic Acid", strength: "500mg", form: "tablet", category: "Hemostatic" },
+  { name: "Tranexamic Acid Injection 500mg/5ml", genericName: "Tranexamic Acid", strength: "500mg/5ml", form: "injection", category: "Hemostatic" },
   { name: "Warfarin 2mg", genericName: "Warfarin", strength: "2mg", form: "tablet", category: "Anticoagulant" },
   { name: "Warfarin 5mg", genericName: "Warfarin", strength: "5mg", form: "tablet", category: "Anticoagulant" },
   { name: "Levothyroxine 50mcg", genericName: "Levothyroxine", strength: "50mcg", form: "tablet", category: "Thyroid" },
@@ -275,6 +393,12 @@ export default function PharmacyInventory() {
     const saved = localStorage.getItem("pharmacyInventoryHelpCollapsed");
     // Default to collapsed (true) if no preference is saved
     return saved !== "false";
+  });
+  
+  // Add Drug info box collapsed state
+  const [addDrugInfoCollapsed, setAddDrugInfoCollapsed] = useState(() => {
+    const saved = localStorage.getItem("pharmacyAddDrugInfoCollapsed");
+    return saved !== "false"; // Default to collapsed
   });
   
   // Transaction history date filter
@@ -346,6 +470,11 @@ export default function PharmacyInventory() {
   useEffect(() => {
     localStorage.setItem("pharmacyInventoryHelpCollapsed", String(helpCollapsed));
   }, [helpCollapsed]);
+  
+  // Persist add drug info collapsed state
+  useEffect(() => {
+    localStorage.setItem("pharmacyAddDrugInfoCollapsed", String(addDrugInfoCollapsed));
+  }, [addDrugInfoCollapsed]);
 
   // Fetch drugs
   const { data: drugs = [] } = useQuery<Drug[]>({
@@ -2324,19 +2453,31 @@ export default function PharmacyInventory() {
             </div>
           </DialogHeader>
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 
-                        p-4 rounded-xl border border-blue-200 dark:border-blue-800 shadow-premium-sm">
-            <div className="flex items-start gap-2">
-              <div className="p-1.5 bg-blue-600 rounded-lg mt-0.5">
-                <Package className="w-4 h-4 text-white" />
+                        rounded-xl border border-blue-200 dark:border-blue-800 shadow-premium-sm overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setAddDrugInfoCollapsed(!addDrugInfoCollapsed)}
+              className="w-full p-3 flex items-center justify-between hover:bg-blue-100/50 dark:hover:bg-blue-800/30 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-600 rounded-lg">
+                  <Package className="w-4 h-4 text-white" />
+                </div>
+                <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">ℹ️ What is "Add Drug"?</h4>
               </div>
-              <div>
-                <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100 mb-1">ℹ️ What is "Add Drug"?</h4>
+              <ChevronDown className={cn(
+                "w-4 h-4 text-blue-600 transition-transform duration-200",
+                !addDrugInfoCollapsed && "rotate-180"
+              )} />
+            </button>
+            {!addDrugInfoCollapsed && (
+              <div className="px-4 pb-4 pt-2">
                 <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
                   This adds the drug to your catalog <strong>once</strong>. You don't set prices or expiry here - 
                   those come later when you "Receive Stock" (when you actually buy the drugs).
                 </p>
               </div>
-            </div>
+            )}
           </div>
           <div className="space-y-4">
             {/* Quick Select from Common Drugs - Searchable Combobox */}
@@ -2363,7 +2504,7 @@ export default function PharmacyInventory() {
                       onValueChange={setComboboxSearch}
                     />
                     <CommandEmpty>No drug found.</CommandEmpty>
-                    <CommandGroup className="max-h-64 overflow-auto">
+                    <CommandGroup className="max-h-96 overflow-auto">
                       {COMMON_DRUGS
                         .filter(drug => 
                           !comboboxSearch || 
