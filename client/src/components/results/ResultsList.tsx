@@ -201,7 +201,7 @@ export function ResultsList({ results, selectedResultId, selectedResultType, onS
                           : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-700'
                       }`}
                     >
-                      {abnormalInfo.isCritical ? '🚨 CRITICAL' : '⚠️ Abnormal'}
+                      {abnormalInfo.isCritical ? '⚠️ Critical Findings' : '⚠️ Abnormal'}
                     </Badge>
                   )}
                   
