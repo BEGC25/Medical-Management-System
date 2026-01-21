@@ -2513,7 +2513,7 @@ export default function PharmacyInventory() {
                         <p className="text-xs text-muted-foreground">Try searching with a different term</p>
                       </div>
                     </CommandEmpty>
-                    <div className="max-h-[450px] overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }} role="listbox">
+                    <div className="max-h-[450px] overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }} role="listbox">
                       {(() => {
                         // Filter drugs based on search
                         const filteredDrugs = COMMON_DRUGS.filter(drug => 
