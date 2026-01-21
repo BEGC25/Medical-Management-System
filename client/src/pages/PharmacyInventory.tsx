@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X, ChevronDown } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X, ChevronDown, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -66,6 +66,8 @@ import { BulkActionBar, getStockBulkActions, getCatalogBulkActions } from "@/com
 import { QuickAdjustModal } from "@/components/pharmacy/QuickAdjustModal";
 import { ExportModal, ExportColumn } from "@/components/pharmacy/ExportModal";
 import { AnalyticsDashboard } from "@/components/pharmacy/AnalyticsDashboard";
+import { DrugInfoModal } from "@/components/pharmacy/DrugInfoModal";
+import { DrugInfoTooltip } from "@/components/pharmacy/DrugInfoTooltip";
 import { exportData } from "@/lib/export-utils";
 import { formatDrugQuantity } from "@/utils/pharmacy";
 
@@ -456,6 +458,9 @@ export default function PharmacyInventory() {
   const [quickAdjustDrug, setQuickAdjustDrug] = useState<(Drug & { stockOnHand: number }) | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportContext, setExportContext] = useState<"stock" | "catalog" | "ledger">("stock");
+  const [showDrugInfo, setShowDrugInfo] = useState(false);
+  const [drugInfoDrug, setDrugInfoDrug] = useState<Drug | null>(null);
+  const [drugInfoStockData, setDrugInfoStockData] = useState<{ stockOnHand: number; price: number; expiryDate?: string } | undefined>(undefined);
   
   // Tab state for programmatic navigation
   const [activeTab, setActiveTab] = useState("stock");
@@ -1713,6 +1718,37 @@ export default function PharmacyInventory() {
                         </TableCell>
                         <TableCell className="text-right py-5">
                           <div className="flex gap-1 justify-end">
+                            <DrugInfoTooltip drug={drug}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  // Get stock info for the drug
+                                  const batches = drugBatches?.filter(b => b.drugId === drug.id) || [];
+                                  const totalStock = batches.reduce((sum, b) => sum + b.quantityOnHand, 0);
+                                  const avgPrice = batches.length > 0 
+                                    ? batches.reduce((sum, b) => sum + b.unitCost, 0) / batches.length 
+                                    : drug.defaultPrice || 0;
+                                  const nearestExpiry = batches
+                                    .filter(b => b.quantityOnHand > 0)
+                                    .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0];
+                                  
+                                  setDrugInfoDrug(drug);
+                                  setDrugInfoStockData({
+                                    stockOnHand: totalStock,
+                                    price: avgPrice,
+                                    expiryDate: nearestExpiry?.expiryDate
+                                  });
+                                  setShowDrugInfo(true);
+                                }}
+                                className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
+                                         hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
+                                         hover:shadow-premium-sm hover:scale-105"
+                                title="Drug Information"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </Button>
+                            </DrugInfoTooltip>
                             <Button
                               size="sm"
                               variant="outline"
@@ -1720,8 +1756,8 @@ export default function PharmacyInventory() {
                                 setQuickAdjustDrug(drug);
                                 setShowQuickAdjust(true);
                               }}
-                              className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
-                                       hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
+                              className="h-8 px-2.5 border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400
+                                       hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all duration-150
                                        hover:shadow-premium-sm hover:scale-105"
                               title="Quick Adjust"
                             >
@@ -3342,6 +3378,14 @@ export default function PharmacyInventory() {
         selectedCount={exportContext === "stock" ? selectedStockItems.size : selectedCatalogItems.size}
         defaultFilename={`pharmacy-${exportContext}-${new Date().toISOString().split('T')[0]}`}
         onExport={handleExport}
+      />
+
+      {/* Drug Info Modal */}
+      <DrugInfoModal
+        drug={drugInfoDrug}
+        stockInfo={drugInfoStockData}
+        open={showDrugInfo}
+        onOpenChange={setShowDrugInfo}
       />
 
       {/* Bulk Action Bar for Stock */}
