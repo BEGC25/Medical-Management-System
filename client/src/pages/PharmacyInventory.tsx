@@ -122,8 +122,18 @@ function isDateInRange(dateStr: string | null | undefined, preset: DateFilterPre
   return true;
 }
 
+// Interface for common drugs with educational summaries
+interface CommonDrug {
+  name: string;
+  genericName: string;
+  strength: string;
+  form: string;
+  category: string;
+  summary: string;
+}
+
 // Common drugs list for quick selection - Comprehensive list with educational summaries
-const COMMON_DRUGS = [
+const COMMON_DRUGS: CommonDrug[] = [
   // Analgesics (Pain Relief)
   { name: "Paracetamol 500mg", genericName: "Acetaminophen", strength: "500mg", form: "tablet", category: "Analgesic", summary: "Treats pain and reduces fever. Safe for most people including children. Take every 4-6 hours as needed." },
   { name: "Paracetamol 650mg", genericName: "Acetaminophen", strength: "650mg", form: "tablet", category: "Analgesic", summary: "Treats pain and reduces fever. Safe for most people including children. Take every 4-6 hours as needed." },
@@ -2520,7 +2530,6 @@ export default function PharmacyInventory() {
                           WebkitOverflowScrolling: 'touch', 
                           overscrollBehavior: 'contain',
                           scrollBehavior: 'smooth',
-                          overflowY: 'scroll',
                           touchAction: 'pan-y'
                         }} 
                         role="listbox"
@@ -2625,11 +2634,11 @@ export default function PharmacyInventory() {
                                       </>
                                     )}
                                   </div>
-                                  {(drug as any).summary && (
+                                  {drug.summary && (
                                     <div className="flex items-start gap-1.5 mt-1">
                                       <span className="text-xs" role="img" aria-label="Educational info">📝</span>
                                       <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed italic">
-                                        {(drug as any).summary}
+                                        {drug.summary}
                                       </p>
                                     </div>
                                   )}
