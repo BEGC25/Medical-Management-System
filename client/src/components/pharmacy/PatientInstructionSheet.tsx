@@ -121,8 +121,8 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
           <title>Medication Instructions - ${patient.patientId}</title>
           <style>
             @page {
+              margin: 12mm 15mm;
               size: A4;
-              margin: 20mm;
             }
             body {
               font-family: Arial, Helvetica, sans-serif;
@@ -156,7 +156,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               flex: 1;
             }
             .clinic-name {
-              font-size: 20px;
+              font-size: 24px;
               font-weight: bold;
               color: #1e3a8a;
               margin-bottom: 4px;
@@ -165,7 +165,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             .clinic-tagline {
               font-size: 12px;
               font-style: italic;
-              color: #4b5563;
+              color: #6b7280;
               margin-bottom: 8px;
             }
             .clinic-contact {
@@ -191,25 +191,33 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               padding: 4px;
             }
             
-            /* Document Title - Navy Blue Header */
+            /* Blue Accent Bar */
+            .blue-accent-bar {
+              height: 4px;
+              background: linear-gradient(to right, #1e3a8a, #1e40af);
+              margin-bottom: 15px;
+            }
+            
+            /* Document Title - Navy Blue Bar */
             .doc-title {
               background: #1e3a8a;
               color: white;
               font-size: 16px;
               font-weight: bold;
               text-align: center;
-              padding: 12px;
-              margin: 15px 0;
+              padding: 10px;
+              margin-bottom: 15px;
               text-transform: uppercase;
               letter-spacing: 0.5px;
             }
             
             /* Patient Information Section */
             .patient-info {
-              border: 1px solid #4b5563;
+              border: 1px solid #d1d5db;
               border-radius: 4px;
               padding: 16px;
               margin-bottom: 20px;
+              background: #f9fafb;
             }
             .patient-info-header {
               font-weight: bold;
@@ -217,20 +225,8 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               text-transform: uppercase;
               margin-bottom: 12px;
               padding-bottom: 6px;
-              border-bottom: 1px solid #4b5563;
-            }
-            .info-row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 8px;
-              line-height: 1.6;
-            }
-            .info-label {
-              font-weight: bold;
-              font-size: 11px;
-            }
-            .info-value {
-              font-size: 11px;
+              border-bottom: 1px solid #1e3a8a;
+              color: #1e3a8a;
             }
             
             /* Section Headers - Navy Blue */
@@ -326,6 +322,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             .warning-header {
               font-weight: bold;
               font-size: 12px;
+              color: #dc2626;
               margin-bottom: 8px;
             }
             
@@ -344,6 +341,12 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               content: "•";
               color: #f59e0b;
             }
+            .return-box-header {
+              font-weight: bold;
+              font-size: 11px;
+              color: #b45309;
+              margin-bottom: 8px;
+            }
             .contact-info {
               font-weight: bold;
               font-size: 11px;
@@ -353,8 +356,8 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             
             /* Dispenser Section */
             .dispenser-section {
-              border-top: 1px solid #4b5563;
-              border-bottom: 1px solid #4b5563;
+              border-top: 1px solid #d1d5db;
+              border-bottom: 1px solid #d1d5db;
               padding: 12px 0;
               margin: 20px 0;
               font-size: 10px;
@@ -368,10 +371,12 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             
             /* Footer - Match Invoice Style */
             .footer {
-              border-top: 2px solid #4b5563;
-              margin-top: 30px;
-              padding-top: 15px;
               text-align: center;
+              font-size: 10px;
+              color: #6b7280;
+              border-top: 2px solid #d1d5db;
+              padding-top: 15px;
+              margin-top: 20px;
             }
             .footer-computer-generated {
               font-size: 9px;
@@ -431,6 +436,9 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               </div>
             </div>
 
+            <!-- Blue Accent Bar -->
+            <div class="blue-accent-bar"></div>
+
             <!-- Document Title - Navy Blue Bar -->
             <div class="doc-title">
               Medication Instructions - Patient Copy
@@ -439,21 +447,11 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             <!-- Patient Information Section -->
             <div class="patient-info">
               <div class="patient-info-header">Patient Information</div>
-              <div class="info-row">
-                <span class="info-label">Patient Name:</span>
-                <span class="info-value">${patient.firstName} ${patient.lastName}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Patient ID:</span>
-                <span class="info-value">${patient.patientId}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Order Number:</span>
-                <span class="info-value">${prescription.orderId}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Date Dispensed:</span>
-                <span class="info-value">${date}</span>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div><strong>Patient Name:</strong> ${patient.firstName} ${patient.lastName}</div>
+                <div><strong>Patient ID:</strong> ${patient.patientId}</div>
+                <div><strong>Order Number:</strong> ${prescription.orderId}</div>
+                <div><strong>Date Dispensed:</strong> ${date}</div>
               </div>
             </div>
 
@@ -491,7 +489,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             <div class="section">
               <div class="section-header">⚠️ Important Warnings</div>
               <div class="warning-box">
-                <div class="warning-header">DO NOT:</div>
+                <div class="warning-header">⚠️ IMPORTANT - DO NOT:</div>
                 <ul>
                   ${content.donts.map(dont => `<li>${dont}</li>`).join('')}
                 </ul>
@@ -502,6 +500,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             <div class="section">
               <div class="section-header">🚨 When to Return to Clinic</div>
               <div class="return-box">
+                <div class="return-box-header">WHEN TO RETURN TO CLINIC:</div>
                 <p style="font-weight: bold; margin-bottom: 8px; font-size: 11px;">Return immediately if you experience:</p>
                 <ul>
                   ${content.warnings.map(warning => `<li>${warning}</li>`).join('')}
