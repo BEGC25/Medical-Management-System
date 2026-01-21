@@ -72,36 +72,44 @@ const QUICK_ACTION_THEMES = {
 
 type QuickActionTheme = keyof typeof QUICK_ACTION_THEMES;
 
+const DASHBOARD_REFRESH_INTERVAL = 30000; // Auto-refresh every 30 seconds
+
 export default function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const { data: stats, refetch: refetchStats, isFetching: isFetchingStats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL,
   });
 
   const { data: recentPatients, refetch: refetchRecentPatients, isFetching: isFetchingRecentPatients } = useQuery({
     queryKey: ["/api/dashboard/recent-patients"],
-    refetchInterval: 30000,
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL,
   });
 
   const { data: patientFlow, refetch: refetchPatientFlow, isFetching: isFetchingPatientFlow } = useQuery({
     queryKey: ["/api/dashboard/patient-flow"],
-    refetchInterval: 30000,
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL,
   });
 
   const { data: outstandingPayments, refetch: refetchOutstandingPayments, isFetching: isFetchingOutstandingPayments } = useQuery({
     queryKey: ["/api/dashboard/outstanding-payments"],
-    refetchInterval: 30000,
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL,
   });
 
   const { data: resultsReady, refetch: refetchResultsReady, isFetching: isFetchingResultsReady } = useQuery({
     queryKey: ["/api/dashboard/results-ready"],
-    refetchInterval: 30000,
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL,
   });
 
   // Check if any data is being fetched
-  const isRefreshing = isFetchingStats || isFetchingRecentPatients || isFetchingPatientFlow || isFetchingOutstandingPayments || isFetchingResultsReady;
+  const isRefreshing = [
+    isFetchingStats,
+    isFetchingRecentPatients,
+    isFetchingPatientFlow,
+    isFetchingOutstandingPayments,
+    isFetchingResultsReady
+  ].some(Boolean);
 
   // Manual refresh handler
   const handleRefresh = async () => {
