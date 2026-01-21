@@ -1756,8 +1756,8 @@ export default function PharmacyInventory() {
                                 setQuickAdjustDrug(drug);
                                 setShowQuickAdjust(true);
                               }}
-                              className="h-8 px-2.5 border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400
-                                       hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all duration-150
+                              className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
+                                       hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
                                        hover:shadow-premium-sm hover:scale-105"
                               title="Quick Adjust"
                             >

@@ -412,11 +412,21 @@ export function DrugInfoModal({ drug, stockInfo, open, onOpenChange }: DrugInfoM
                       <div>
                         <p className="font-medium text-sm text-gray-500 dark:text-gray-400">Expires</p>
                         <p className="text-lg font-semibold">
-                          {new Date(stockInfo.expiryDate).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric' 
-                          })}
+                          {(() => {
+                            try {
+                              const date = new Date(stockInfo.expiryDate);
+                              if (isNaN(date.getTime())) {
+                                return stockInfo.expiryDate;
+                              }
+                              return date.toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                              });
+                            } catch {
+                              return stockInfo.expiryDate;
+                            }
+                          })()}
                         </p>
                       </div>
                     )}
