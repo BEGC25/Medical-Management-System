@@ -58,6 +58,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { PremiumDrugSelector } from "@/components/pharmacy/PremiumDrugSelector";
 import { getClinicDayKey } from "@/lib/date-utils";
 import PharmacyInventoryHelp from "@/components/PharmacyInventoryHelp";
 import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
@@ -2852,21 +2853,12 @@ export default function PharmacyInventory() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="drug">Select Drug *</Label>
-              <Select
-                value={newBatch.drugId.toString()}
-                onValueChange={(value) => setNewBatch({ ...newBatch, drugId: parseInt(value) })}
-              >
-                <SelectTrigger id="drug" data-testid="select-drug">
-                  <SelectValue placeholder="Select a drug" />
-                </SelectTrigger>
-                <SelectContent>
-                  {drugs.map((drug) => (
-                    <SelectItem key={drug.id} value={drug.id.toString()}>
-                      {drug.name} - {drug.strength || 'N/A'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PremiumDrugSelector
+                drugs={drugsWithStock}
+                value={newBatch.drugId}
+                onChange={(drugId) => setNewBatch({ ...newBatch, drugId })}
+                placeholder="Search and select a drug..."
+              />
               <p className="text-xs text-gray-500 mt-1">Which drug did you receive?</p>
             </div>
             
