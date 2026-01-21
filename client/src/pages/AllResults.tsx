@@ -211,13 +211,13 @@ export default function AllResults() {
       ...test,
       type: 'lab' as const,
       date: test.createdAt || test.completedDate || test.requestedDate,
-      // Patient data is already included from the backend
+      // Backend includes patient: { id, patientId, firstName, lastName, age, gender }
     })),
     ...xrayExams.map(exam => ({
       ...exam,
       type: 'xray' as const,
       date: exam.createdAt || exam.completedDate || exam.requestedDate,
-      // Patient data is already included from the backend
+      // Backend includes patient: { id, patientId, firstName, lastName, age, gender }
     })),
     ...ultrasoundExams.map(exam => ({
       ...exam,
@@ -1501,7 +1501,7 @@ export default function AllResults() {
     setSearchTerm("");
     setStatusFilter("all");
     setTypeFilter("all");
-    setDateFilter("all");
+    setDateFilter("today"); // Reset to default "today" instead of "all"
     setSelectedDate(getClinicDayKey());
     setCustomStartDate("");
     setCustomEndDate("");
