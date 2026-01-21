@@ -203,30 +203,30 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 px-2 sm:px-0 transition-colors duration-300 space-y-4 sm:space-y-6 md:space-y-8 animate-in fade-in duration-500">
-      {/* Ultra-minimal premium header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-white via-slate-50/30 to-white dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-gray-200/40 dark:border-gray-700/20 mb-4">
-        <div className="flex items-center gap-3 text-sm">
+    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 px-2 sm:px-0 transition-colors duration-300 space-y-2 sm:space-y-3 animate-in fade-in duration-500">
+      {/* Ultra-compact inline premium header */}
+      <div className="px-4 py-1.5 mb-2 border-b border-gray-200/30 dark:border-gray-700/20">
+        <div 
+          className="inline-flex items-center gap-2.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 rounded-lg px-3 py-1.5 -ml-3"
+          onClick={handleRefresh}
+          onKeyDown={(e) => e.key === 'Enter' && handleRefresh()}
+          role="button"
+          tabIndex={0}
+          aria-label="Refresh dashboard data"
+        >
           <span className="font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
             {formattedDate}
           </span>
-          <span className="text-gray-400 dark:text-gray-600">•</span>
-          <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="text-xs">Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}</span>
+          <span className="text-gray-400 dark:text-gray-600 select-none">•</span>
+          <RefreshCw 
+            className={`h-3.5 w-3.5 text-gray-500 dark:text-gray-500 ${
+              isRefreshing ? 'animate-spin' : 'hover:rotate-180'
+            } transition-transform duration-300`} 
+          />
+          <span className="text-gray-600 dark:text-gray-400 text-xs">
+            Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
           </span>
         </div>
-        
-        {/* Subtle refresh button on right */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="h-8 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </Button>
       </div>
 
       {/* Quick Actions */}
