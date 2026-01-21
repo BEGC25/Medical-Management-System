@@ -118,177 +118,410 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
           <title>Medication Instructions - ${patient.patientId}</title>
           <style>
             @page {
-              margin: 1.5cm;
+              size: A4;
+              margin: 20mm;
             }
             body {
-              font-family: Arial, sans-serif;
+              font-family: Arial, Helvetica, sans-serif;
+              font-size: 11pt;
               line-height: 1.6;
               color: #000;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            * {
+              box-sizing: border-box;
+            }
+            .container {
               max-width: 800px;
               margin: 0 auto;
-              padding: 20px;
             }
+            
+            /* Header - Premium Design Matching Invoice */
             .header {
-              text-align: center;
-              border-bottom: 3px solid #000;
-              padding-bottom: 15px;
-              margin-bottom: 20px;
+              border-bottom: 3px solid #1e3a8a;
+              padding-bottom: 12px;
+              margin-bottom: 15px;
+            }
+            .clinic-branding {
+              display: flex;
+              justify-content: space-between;
+              align-items: start;
+              margin-bottom: 10px;
+            }
+            .clinic-info {
+              flex: 1;
             }
             .clinic-name {
-              font-size: 24px;
+              font-size: 20px;
               font-weight: bold;
-              margin-bottom: 5px;
+              color: #1e3a8a;
+              margin-bottom: 4px;
+              letter-spacing: -0.02em;
             }
+            .clinic-tagline {
+              font-size: 12px;
+              font-style: italic;
+              color: #4b5563;
+              margin-bottom: 8px;
+            }
+            .clinic-contact {
+              font-size: 10px;
+              color: #374151;
+              line-height: 1.5;
+            }
+            .clinic-contact p {
+              margin: 2px 0;
+            }
+            .logo-placeholder {
+              width: 80px;
+              height: 80px;
+              background: #f3f4f6;
+              border: 2px solid #1e3a8a;
+              border-radius: 4px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 9px;
+              color: #6b7280;
+              text-align: center;
+              padding: 4px;
+            }
+            
+            /* Document Title - Navy Blue Header */
             .doc-title {
-              font-size: 18px;
+              background: #1e3a8a;
+              color: white;
+              font-size: 16px;
               font-weight: bold;
+              text-align: center;
+              padding: 12px;
               margin: 15px 0;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
             }
+            
+            /* Patient Information Section */
             .patient-info {
-              background: #f5f5f5;
-              padding: 15px;
-              border-radius: 8px;
+              border: 1px solid #4b5563;
+              border-radius: 4px;
+              padding: 16px;
               margin-bottom: 20px;
+            }
+            .patient-info-header {
+              font-weight: bold;
+              font-size: 12px;
+              text-transform: uppercase;
+              margin-bottom: 12px;
+              padding-bottom: 6px;
+              border-bottom: 1px solid #4b5563;
             }
             .info-row {
               display: flex;
+              justify-content: space-between;
               margin-bottom: 8px;
+              line-height: 1.6;
             }
             .info-label {
               font-weight: bold;
-              width: 150px;
+              font-size: 11px;
             }
+            .info-value {
+              font-size: 11px;
+            }
+            
+            /* Section Headers - Navy Blue */
             .section {
-              margin-bottom: 25px;
+              margin-bottom: 20px;
               page-break-inside: avoid;
             }
-            .section-title {
-              font-size: 16px;
-              font-weight: bold;
-              background: #000;
-              color: #fff;
-              padding: 8px 12px;
-              border-radius: 4px;
-              margin-bottom: 10px;
-            }
-            .medication-name {
-              font-size: 20px;
-              font-weight: bold;
-              color: #2563eb;
-              margin-bottom: 10px;
-            }
-            .description {
-              margin-bottom: 10px;
+            .section-header {
+              background: #1e3a8a;
+              color: white;
               font-size: 14px;
+              font-weight: bold;
+              text-align: center;
+              padding: 8px;
+              margin-bottom: 12px;
+              text-transform: uppercase;
             }
+            
+            /* Medication Name */
+            .medication-name {
+              font-size: 18px;
+              font-weight: bold;
+              color: #1e3a8a;
+              margin-bottom: 8px;
+            }
+            .generic-name {
+              font-size: 12px;
+              font-style: italic;
+              color: #6b7280;
+              margin-bottom: 10px;
+            }
+            
+            /* Details Box */
+            .details-box {
+              border: 1px solid #d1d5db;
+              border-radius: 4px;
+              padding: 12px;
+              margin-bottom: 12px;
+            }
+            .details-box p {
+              margin: 6px 0;
+              font-size: 11px;
+              line-height: 1.8;
+            }
+            .details-box strong {
+              font-weight: bold;
+            }
+            
+            /* Content Text */
+            .content-text {
+              font-size: 11px;
+              line-height: 1.7;
+              color: #1f2937;
+              margin-bottom: 12px;
+            }
+            
+            /* Lists */
             ul {
               margin: 10px 0;
               padding-left: 25px;
+              list-style: none;
             }
             li {
               margin-bottom: 8px;
-              font-size: 14px;
+              font-size: 11px;
+              line-height: 1.8;
+              position: relative;
+              padding-left: 20px;
             }
-            .warning-list {
-              background: #fff3cd;
-              border-left: 4px solid #ffc107;
-              padding: 10px 15px;
-            }
-            .donts-list {
-              background: #f8d7da;
-              border-left: 4px solid #dc3545;
-              padding: 10px 15px;
-            }
-            .footer {
-              margin-top: 30px;
-              padding-top: 15px;
-              border-top: 2px solid #000;
-              text-align: center;
-              font-size: 12px;
-            }
-            .contact-info {
-              margin-top: 10px;
+            li:before {
+              content: "✓";
+              position: absolute;
+              left: 0;
+              color: #1e3a8a;
               font-weight: bold;
             }
+            
+            /* Warnings Box - Highlighted */
+            .warning-box {
+              border: 2px solid #dc2626;
+              background-color: #fef2f2;
+              border-radius: 4px;
+              padding: 16px;
+              margin: 12px 0;
+            }
+            .warning-box ul {
+              margin: 8px 0 0 0;
+            }
+            .warning-box li:before {
+              content: "✗";
+              color: #dc2626;
+            }
+            .warning-header {
+              font-weight: bold;
+              font-size: 12px;
+              margin-bottom: 8px;
+            }
+            
+            /* Return Box */
+            .return-box {
+              background-color: #fffbeb;
+              border: 2px solid #f59e0b;
+              border-radius: 4px;
+              padding: 16px;
+              margin: 12px 0;
+            }
+            .return-box ul {
+              margin: 8px 0 0 0;
+            }
+            .return-box li:before {
+              content: "•";
+              color: #f59e0b;
+            }
+            .contact-info {
+              font-weight: bold;
+              font-size: 11px;
+              margin-top: 12px;
+              color: #1e3a8a;
+            }
+            
+            /* Dispenser Section */
+            .dispenser-section {
+              border-top: 1px solid #4b5563;
+              border-bottom: 1px solid #4b5563;
+              padding: 12px 0;
+              margin: 20px 0;
+              font-size: 10px;
+            }
+            .dispenser-section p {
+              margin: 4px 0;
+            }
+            .dispenser-section strong {
+              font-weight: bold;
+            }
+            
+            /* Footer - Match Invoice Style */
+            .footer {
+              border-top: 2px solid #4b5563;
+              margin-top: 30px;
+              padding-top: 15px;
+              text-align: center;
+            }
+            .footer-computer-generated {
+              font-size: 9px;
+              font-weight: bold;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 8px;
+              color: #374151;
+            }
+            .footer-clinic-name {
+              font-size: 11px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-bottom: 4px;
+            }
+            .footer-credentials {
+              font-size: 9px;
+              color: #6b7280;
+              margin-bottom: 6px;
+            }
+            .footer-tagline {
+              font-size: 10px;
+              font-style: italic;
+              color: #6b7280;
+            }
+            
             @media print {
               body {
                 padding: 0;
+              }
+              .section {
+                page-break-inside: avoid;
+              }
+              button, .no-print {
+                display: none !important;
               }
             }
           </style>
         </head>
         <body>
-          <div class="header">
-            <div class="clinic-name">🏥 BAHR EL GHAZAL CLINIC</div>
-            <div class="doc-title">MEDICATION INSTRUCTIONS</div>
-          </div>
-
-          <div class="patient-info">
-            <div class="info-row">
-              <span class="info-label">Patient Name:</span>
-              <span>${patient.firstName} ${patient.lastName}</span>
+          <div class="container">
+            <!-- Premium Header Matching Invoice -->
+            <div class="header">
+              <div class="clinic-branding">
+                <div class="clinic-info">
+                  <div class="clinic-name">Bahr El Ghazal Clinic</div>
+                  <div class="clinic-tagline">Excellence in Healthcare</div>
+                  <div class="clinic-contact">
+                    <p><strong>Aweil, South Sudan</strong></p>
+                    <p>Tel: +211916759060 / +211928754760</p>
+                    <p>Email: bahr.ghazal.clinic@gmail.com</p>
+                  </div>
+                </div>
+                <div class="logo-placeholder">
+                  [LOGO]
+                </div>
+              </div>
             </div>
-            <div class="info-row">
-              <span class="info-label">Patient ID:</span>
-              <span>${patient.patientId}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Order Number:</span>
-              <span>${prescription.orderId}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Date:</span>
-              <span>${date}</span>
-            </div>
-          </div>
 
-          <div class="section">
-            <div class="section-title">💊 YOUR MEDICATION</div>
-            <div class="medication-name">${drug.name.toUpperCase()}</div>
-            <div class="description">
-              <strong>Generic Name:</strong> ${drug.genericName || 'N/A'}<br>
-              <strong>Form:</strong> ${drug.form}<br>
-              <strong>Strength:</strong> ${drug.strength || 'N/A'}
+            <!-- Document Title - Navy Blue Bar -->
+            <div class="doc-title">
+              Medication Instructions - Patient Copy
             </div>
-          </div>
 
-          <div class="section">
-            <div class="section-title">📋 WHAT THIS MEDICINE DOES</div>
-            <p class="description">${content.whatItDoes}</p>
-          </div>
-
-          <div class="section">
-            <div class="section-title">💊 HOW TO TAKE IT</div>
-            <p class="description">
-              <strong>Dosage:</strong> ${prescription.dosage}<br>
-              <strong>Quantity:</strong> ${prescription.quantity} ${drug.form}s<br>
-              <strong>Instructions:</strong> ${prescription.instructions}
-              ${prescription.duration ? `<br><strong>Duration:</strong> ${prescription.duration}` : ''}
-            </p>
-          </div>
-
-          <div class="section">
-            <div class="section-title">⚠️ IMPORTANT - DO NOT</div>
-            <div class="donts-list">
-              <ul>
-                ${content.donts.map(dont => `<li>${dont}</li>`).join('')}
-              </ul>
+            <!-- Patient Information Section -->
+            <div class="patient-info">
+              <div class="patient-info-header">Patient Information</div>
+              <div class="info-row">
+                <span class="info-label">Patient Name:</span>
+                <span class="info-value">${patient.firstName} ${patient.lastName}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Patient ID:</span>
+                <span class="info-value">${patient.patientId}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Order Number:</span>
+                <span class="info-value">${prescription.orderId}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Date Dispensed:</span>
+                <span class="info-value">${date}</span>
+              </div>
             </div>
-          </div>
 
-          <div class="section">
-            <div class="section-title">🚨 WHEN TO RETURN TO CLINIC</div>
-            <div class="warning-list">
-              <p><strong>Come back to the clinic immediately if:</strong></p>
-              <ul>
-                ${content.warnings.map(warning => `<li>${warning}</li>`).join('')}
-              </ul>
+            <!-- Medication Details Section -->
+            <div class="section">
+              <div class="section-header">💊 Your Medication</div>
+              <div class="medication-name">${drug.name.toUpperCase()}</div>
+              ${drug.genericName ? `<div class="generic-name">(Generic Name: ${drug.genericName})</div>` : ''}
+              
+              <div class="details-box">
+                <p><strong>Form:</strong> ${drug.form}</p>
+                ${drug.strength ? `<p><strong>Strength:</strong> ${drug.strength}</p>` : ''}
+                <p><strong>Quantity:</strong> ${prescription.quantity} ${drug.form}${prescription.quantity !== 1 ? 's' : ''}</p>
+              </div>
             </div>
-          </div>
 
-          <div class="footer">
-            <div class="contact-info">📞 QUESTIONS? Contact the clinic immediately if you have concerns</div>
-            <p style="margin-top: 15px; font-style: italic;">Keep this instruction sheet for reference. Take all medication as prescribed.</p>
+            <!-- What This Medicine Does -->
+            <div class="section">
+              <div class="section-header">📋 What This Medicine Does</div>
+              <p class="content-text">${content.whatItDoes}</p>
+            </div>
+
+            <!-- How to Take It -->
+            <div class="section">
+              <div class="section-header">💊 How to Take It</div>
+              <div class="details-box">
+                <p><strong>Dosage:</strong> ${prescription.dosage}</p>
+                <p><strong>Quantity:</strong> ${prescription.quantity} ${drug.form}${prescription.quantity !== 1 ? 's' : ''}</p>
+                <p><strong>Instructions:</strong> ${prescription.instructions}</p>
+                ${prescription.duration ? `<p><strong>Duration:</strong> ${prescription.duration}</p>` : ''}
+              </div>
+            </div>
+
+            <!-- Important Warnings - Highlighted Box -->
+            <div class="section">
+              <div class="section-header">⚠️ Important Warnings</div>
+              <div class="warning-box">
+                <div class="warning-header">DO NOT:</div>
+                <ul>
+                  ${content.donts.map(dont => `<li>${dont}</li>`).join('')}
+                </ul>
+              </div>
+            </div>
+
+            <!-- When to Return to Clinic -->
+            <div class="section">
+              <div class="section-header">🚨 When to Return to Clinic</div>
+              <div class="return-box">
+                <p style="font-weight: bold; margin-bottom: 8px; font-size: 11px;">Return immediately if you experience:</p>
+                <ul>
+                  ${content.warnings.map(warning => `<li>${warning}</li>`).join('')}
+                </ul>
+                <div class="contact-info">Contact us: +211916759060</div>
+              </div>
+            </div>
+
+            <!-- Dispenser/Date Section -->
+            <div class="dispenser-section">
+              <p><strong>Dispensed By:</strong> Pharmacy Department</p>
+              <p><strong>Date:</strong> ${date}</p>
+            </div>
+
+            <!-- Official Footer Matching Invoice -->
+            <div class="footer">
+              <p class="footer-computer-generated">
+                This is a computer-generated medication guide
+              </p>
+              <p class="footer-clinic-name">Bahr El Ghazal Clinic</p>
+              <p class="footer-credentials">Accredited Medical Facility | Republic of South Sudan</p>
+              <p class="footer-tagline">Your health is our priority</p>
+            </div>
           </div>
         </body>
       </html>
