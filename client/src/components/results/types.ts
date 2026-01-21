@@ -90,6 +90,7 @@ export interface ResultsFilters {
   selectedDate: string;
   customStartDate?: string;
   customEndDate?: string;
+  groupByPatient?: boolean;
 }
 
 export interface ResultsKPI {
@@ -99,4 +100,6 @@ export interface ResultsKPI {
   ultrasound: number;
   completed: number;
   pending: number;
+  overdue: number;
+  critical: number;
 }

@@ -43,6 +43,9 @@ import { FilterChips } from "@/components/results/FilterChips";
 import { ResultsList } from "@/components/results/ResultsList";
 import { ResultsPreview } from "@/components/results/ResultsPreview";
 import { getResultValueColor } from "@/components/results/utils";
+import { ExportButtons } from "@/components/results/ExportButtons";
+import { TATStats } from "@/components/results/TATStats";
+import { isOverdue, hasAbnormalFindings, hasCriticalFindings, hasAbnormalImagingFindings } from "@/lib/results-analysis";
 
 interface Patient {
   id: number;
@@ -216,7 +219,27 @@ export default function AllResults() {
       (result.type === 'ultrasound' && (result as any).examId.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesPatient = selectedPatient === "" || result.patientId === selectedPatient;
-    const matchesStatus = statusFilter === "all" || result.status === statusFilter;
+    
+    // Updated status filter to handle "overdue" and "abnormal" options
+    let matchesStatus = true;
+    if (statusFilter === "overdue") {
+      // Show only overdue pending results
+      matchesStatus = isOverdue((result as any).requestedDate, result.type as any, result.status);
+    } else if (statusFilter === "abnormal") {
+      // Show only abnormal/critical completed results
+      if (result.status !== 'completed') {
+        matchesStatus = false;
+      } else if (result.type === 'lab') {
+        matchesStatus = hasAbnormalFindings((result as any).results);
+      } else if (result.type === 'xray' || result.type === 'ultrasound') {
+        matchesStatus = hasAbnormalImagingFindings((result as any).findings, (result as any).impression);
+      } else {
+        matchesStatus = false;
+      }
+    } else if (statusFilter !== "all") {
+      matchesStatus = result.status === statusFilter;
+    }
+    
     const matchesType = typeFilter === "all" || result.type === typeFilter;
 
     // Date filtering using clinic timezone
@@ -1424,6 +1447,16 @@ export default function AllResults() {
     ultrasound: filteredResults.filter(r => r.type === 'ultrasound').length,
     completed: filteredResults.filter(r => r.status === 'completed').length,
     pending: filteredResults.filter(r => r.status === 'pending').length,
+    overdue: filteredResults.filter(r => isOverdue((r as any).requestedDate, r.type as any, r.status)).length,
+    critical: filteredResults.filter(r => {
+      if (r.status !== 'completed') return false;
+      if (r.type === 'lab') {
+        return hasCriticalFindings((r as any).results) || hasAbnormalFindings((r as any).results);
+      } else if (r.type === 'xray' || r.type === 'ultrasound') {
+        return hasAbnormalImagingFindings((r as any).findings, (r as any).impression);
+      }
+      return false;
+    }).length,
   };
 
   const filters = {
@@ -1489,6 +1522,16 @@ export default function AllResults() {
             onFilterChange={handleFilterChange}
             onClearAll={handleClearAllFilters}
           />
+
+          {/* TAT Statistics and Export Buttons */}
+          <div className="flex gap-4 items-start">
+            <div className="flex-1">
+              <TATStats results={filteredResults} />
+            </div>
+            <div className="flex-shrink-0">
+              <ExportButtons results={filteredResults} filters={filters} />
+            </div>
+          </div>
 
           {/* Two-Pane Layout */}
           <div className="flex-1 min-h-0">

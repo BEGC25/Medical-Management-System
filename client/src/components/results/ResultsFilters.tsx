@@ -52,6 +52,8 @@ export function ResultsFiltersBar({ filters, patients, onFilterChange, resultCou
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
+              <option value="overdue">⚠️ Overdue Only</option>
+              <option value="abnormal">🚨 Abnormal/Critical Only</option>
             </select>
           </div>
 
