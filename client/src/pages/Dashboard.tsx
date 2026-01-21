@@ -22,7 +22,6 @@ import {
   RadioTower,
   CheckCircle2,
   RefreshCw,
-  User,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +30,6 @@ import { StatCard } from "@/components/ui/stat-card";
 import { getClinicNow } from "@/lib/date-utils";
 import { formatDistanceToNow } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
-import { useAuth } from "@/hooks/use-auth";
 
 const QUICK_ACTION_THEMES = {
   blue: {
@@ -77,7 +75,6 @@ type QuickActionTheme = keyof typeof QUICK_ACTION_THEMES;
 const DASHBOARD_REFRESH_INTERVAL = 30000; // Auto-refresh every 30 seconds
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const { data: stats, refetch: refetchStats, isFetching: isFetchingStats } = useQuery({
@@ -207,50 +204,29 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 px-2 sm:px-0 transition-colors duration-300 space-y-4 sm:space-y-6 md:space-y-8 animate-in fade-in duration-500">
-      {/* Premium Compact Dashboard Header */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-b border-gray-200/50 dark:border-gray-700/30 shadow-sm rounded-t-lg mb-4">
-        {/* Left Side: Dashboard Title, Date, Last Updated */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 tracking-tight whitespace-nowrap">
-            📊 Dashboard
-          </h1>
-          <span className="hidden sm:inline text-gray-400 dark:text-gray-600">•</span>
-          <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
-            {formatInTimeZone(clinicNow, 'Africa/Juba', 'EEE, MMM d, yyyy')}
-          </p>
-          {lastUpdated && (
-            <>
-              <span className="hidden md:inline text-gray-400 dark:text-gray-600">•</span>
-              <div className="hidden md:flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-500">
-                <RefreshCw className="h-3.5 w-3.5" />
-                <span>Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}</span>
-              </div>
-            </>
-          )}
+      {/* Ultra-minimal premium header */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-white via-slate-50/30 to-white dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-gray-200/40 dark:border-gray-700/20 mb-4">
+        <div className="flex items-center gap-3 text-sm">
+          <span className="font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
+            {formattedDate}
+          </span>
+          <span className="text-gray-400 dark:text-gray-600">•</span>
+          <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="text-xs">Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}</span>
+          </span>
         </div>
-
-        {/* Right Side: Refresh Button and User Badge */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:shadow-md"
-          >
-            <RefreshCw className={`h-4 w-4 transition-transform duration-500 ease-in-out ${isRefreshing ? 'animate-spin' : 'hover:rotate-180'}`} />
-            <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-          </Button>
-          {user && (
-            <>
-              <span className="hidden sm:inline text-gray-400 dark:text-gray-600">•</span>
-              <Badge variant="secondary" className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-700 dark:text-blue-300 border-blue-200/50 dark:border-blue-700/30">
-                <User className="h-3.5 w-3.5" />
-                <span className="font-medium">{user.role === 'admin' ? 'Administrator' : user.role}</span>
-              </Badge>
-            </>
-          )}
-        </div>
+        
+        {/* Subtle refresh button on right */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="h-8 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       {/* Quick Actions */}
