@@ -203,7 +203,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950 px-2 sm:px-0 transition-colors duration-300 space-y-2 sm:space-y-3 animate-in fade-in duration-500">
+    <div className="-mt-6 min-h-screen bg-gray-50/80 dark:bg-gray-950 px-2 sm:px-0 transition-colors duration-300 space-y-2 sm:space-y-3 animate-in fade-in duration-500">
       {/* Ultra-compact inline premium header */}
       <div className="px-4 py-1.5 mb-2 border-b border-gray-200/30 dark:border-gray-700/20">
         <div 
