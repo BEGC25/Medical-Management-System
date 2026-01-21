@@ -122,255 +122,265 @@ function isDateInRange(dateStr: string | null | undefined, preset: DateFilterPre
   return true;
 }
 
-// Common drugs list for quick selection - Comprehensive list
-const COMMON_DRUGS = [
+// Interface for common drugs with educational summaries
+interface CommonDrug {
+  name: string;
+  genericName: string;
+  strength: string;
+  form: string;
+  category: string;
+  summary: string;
+}
+
+// Common drugs list for quick selection - Comprehensive list with educational summaries
+const COMMON_DRUGS: CommonDrug[] = [
   // Analgesics (Pain Relief)
-  { name: "Paracetamol 500mg", genericName: "Acetaminophen", strength: "500mg", form: "tablet", category: "Analgesic" },
-  { name: "Paracetamol 650mg", genericName: "Acetaminophen", strength: "650mg", form: "tablet", category: "Analgesic" },
-  { name: "Paracetamol Syrup 120mg/5ml", genericName: "Acetaminophen", strength: "120mg/5ml", form: "syrup", category: "Analgesic" },
-  { name: "Ibuprofen 200mg", genericName: "Ibuprofen", strength: "200mg", form: "tablet", category: "Analgesic" },
-  { name: "Ibuprofen 400mg", genericName: "Ibuprofen", strength: "400mg", form: "tablet", category: "Analgesic" },
-  { name: "Ibuprofen 600mg", genericName: "Ibuprofen", strength: "600mg", form: "tablet", category: "Analgesic" },
-  { name: "Ibuprofen Syrup 100mg/5ml", genericName: "Ibuprofen", strength: "100mg/5ml", form: "syrup", category: "Analgesic" },
-  { name: "Aspirin 75mg", genericName: "Acetylsalicylic Acid", strength: "75mg", form: "tablet", category: "Analgesic" },
-  { name: "Aspirin 300mg", genericName: "Acetylsalicylic Acid", strength: "300mg", form: "tablet", category: "Analgesic" },
-  { name: "Aspirin 500mg", genericName: "Acetylsalicylic Acid", strength: "500mg", form: "tablet", category: "Analgesic" },
-  { name: "Diclofenac 50mg", genericName: "Diclofenac", strength: "50mg", form: "tablet", category: "Analgesic" },
-  { name: "Diclofenac 75mg", genericName: "Diclofenac", strength: "75mg", form: "tablet", category: "Analgesic" },
-  { name: "Diclofenac SR 100mg", genericName: "Diclofenac", strength: "100mg", form: "tablet", category: "Analgesic" },
+  { name: "Paracetamol 500mg", genericName: "Acetaminophen", strength: "500mg", form: "tablet", category: "Analgesic", summary: "Treats pain and reduces fever. Safe for most people including children. Take every 4-6 hours as needed." },
+  { name: "Paracetamol 650mg", genericName: "Acetaminophen", strength: "650mg", form: "tablet", category: "Analgesic", summary: "Treats pain and reduces fever. Safe for most people including children. Take every 4-6 hours as needed." },
+  { name: "Paracetamol Syrup 120mg/5ml", genericName: "Acetaminophen", strength: "120mg/5ml", form: "syrup", category: "Analgesic", summary: "Liquid form for children. Treats pain and fever. Easy to swallow and measure doses." },
+  { name: "Ibuprofen 200mg", genericName: "Ibuprofen", strength: "200mg", form: "tablet", category: "Analgesic", summary: "Reduces pain, fever and inflammation. Good for headaches, muscle pain. Take with food to protect stomach." },
+  { name: "Ibuprofen 400mg", genericName: "Ibuprofen", strength: "400mg", form: "tablet", category: "Analgesic", summary: "Reduces pain, fever and inflammation. Good for headaches, muscle pain. Take with food to protect stomach." },
+  { name: "Ibuprofen 600mg", genericName: "Ibuprofen", strength: "600mg", form: "tablet", category: "Analgesic", summary: "Reduces pain, fever and inflammation. Good for headaches, muscle pain. Take with food to protect stomach." },
+  { name: "Ibuprofen Syrup 100mg/5ml", genericName: "Ibuprofen", strength: "100mg/5ml", form: "syrup", category: "Analgesic", summary: "Liquid pain and fever reducer for children. Reduces inflammation. Give with food or milk." },
+  { name: "Aspirin 75mg", genericName: "Acetylsalicylic Acid", strength: "75mg", form: "tablet", category: "Analgesic", summary: "Low dose for heart protection. Prevents blood clots. Take daily as prescribed by doctor." },
+  { name: "Aspirin 300mg", genericName: "Acetylsalicylic Acid", strength: "300mg", form: "tablet", category: "Analgesic", summary: "Treats pain and fever. Reduces inflammation. Take with food or water to protect stomach." },
+  { name: "Aspirin 500mg", genericName: "Acetylsalicylic Acid", strength: "500mg", form: "tablet", category: "Analgesic", summary: "Treats pain and fever. Reduces inflammation. Take with food or water to protect stomach." },
+  { name: "Diclofenac 50mg", genericName: "Diclofenac", strength: "50mg", form: "tablet", category: "Analgesic", summary: "Strong pain and inflammation reliever. Good for joint pain and arthritis. Take with food." },
+  { name: "Diclofenac 75mg", genericName: "Diclofenac", strength: "75mg", form: "tablet", category: "Analgesic", summary: "Strong pain and inflammation reliever. Good for joint pain and arthritis. Take with food." },
+  { name: "Diclofenac SR 100mg", genericName: "Diclofenac", strength: "100mg", form: "tablet", category: "Analgesic", summary: "Long-acting pain reliever. Works all day with one dose. Take with food in morning." },
   
   // Antibiotics
-  { name: "Amoxicillin 250mg", genericName: "Amoxicillin", strength: "250mg", form: "capsule", category: "Antibiotic" },
-  { name: "Amoxicillin 500mg", genericName: "Amoxicillin", strength: "500mg", form: "capsule", category: "Antibiotic" },
-  { name: "Amoxicillin Syrup 125mg/5ml", genericName: "Amoxicillin", strength: "125mg/5ml", form: "syrup", category: "Antibiotic" },
-  { name: "Amoxicillin Syrup 250mg/5ml", genericName: "Amoxicillin", strength: "250mg/5ml", form: "syrup", category: "Antibiotic" },
-  { name: "Amoxicillin-Clavulanate 375mg", genericName: "Amoxicillin-Clavulanate", strength: "375mg", form: "tablet", category: "Antibiotic" },
-  { name: "Amoxicillin-Clavulanate 625mg", genericName: "Amoxicillin-Clavulanate", strength: "625mg", form: "tablet", category: "Antibiotic" },
-  { name: "Amoxicillin-Clavulanate 1000mg", genericName: "Amoxicillin-Clavulanate", strength: "1000mg", form: "tablet", category: "Antibiotic" },
-  { name: "Azithromycin 250mg", genericName: "Azithromycin", strength: "250mg", form: "tablet", category: "Antibiotic" },
-  { name: "Azithromycin 500mg", genericName: "Azithromycin", strength: "500mg", form: "tablet", category: "Antibiotic" },
-  { name: "Azithromycin Syrup 200mg/5ml", genericName: "Azithromycin", strength: "200mg/5ml", form: "syrup", category: "Antibiotic" },
-  { name: "Ciprofloxacin 250mg", genericName: "Ciprofloxacin", strength: "250mg", form: "tablet", category: "Antibiotic" },
-  { name: "Ciprofloxacin 500mg", genericName: "Ciprofloxacin", strength: "500mg", form: "tablet", category: "Antibiotic" },
-  { name: "Ciprofloxacin 750mg", genericName: "Ciprofloxacin", strength: "750mg", form: "tablet", category: "Antibiotic" },
-  { name: "Metronidazole 200mg", genericName: "Metronidazole", strength: "200mg", form: "tablet", category: "Antibiotic" },
-  { name: "Metronidazole 400mg", genericName: "Metronidazole", strength: "400mg", form: "tablet", category: "Antibiotic" },
-  { name: "Metronidazole 500mg", genericName: "Metronidazole", strength: "500mg", form: "tablet", category: "Antibiotic" },
-  { name: "Cephalexin 250mg", genericName: "Cephalexin", strength: "250mg", form: "capsule", category: "Antibiotic" },
-  { name: "Cephalexin 500mg", genericName: "Cephalexin", strength: "500mg", form: "capsule", category: "Antibiotic" },
-  { name: "Doxycycline 100mg", genericName: "Doxycycline", strength: "100mg", form: "capsule", category: "Antibiotic" },
-  { name: "Clindamycin 150mg", genericName: "Clindamycin", strength: "150mg", form: "capsule", category: "Antibiotic" },
-  { name: "Clindamycin 300mg", genericName: "Clindamycin", strength: "300mg", form: "capsule", category: "Antibiotic" },
-  { name: "Ampicillin 500mg", genericName: "Ampicillin", strength: "500mg", form: "tablet", category: "Antibiotic" },
-  { name: "Cotrimoxazole 960mg", genericName: "Trimethoprim-Sulfamethoxazole", strength: "960mg", form: "tablet", category: "Antibiotic" },
+  { name: "Amoxicillin 250mg", genericName: "Amoxicillin", strength: "250mg", form: "capsule", category: "Antibiotic", summary: "Kills bacteria causing infections. Treats chest, ear, throat and skin infections. Take full course even if feeling better." },
+  { name: "Amoxicillin 500mg", genericName: "Amoxicillin", strength: "500mg", form: "capsule", category: "Antibiotic", summary: "Kills bacteria causing infections. Treats chest, ear, throat and skin infections. Take full course even if feeling better." },
+  { name: "Amoxicillin Syrup 125mg/5ml", genericName: "Amoxicillin", strength: "125mg/5ml", form: "syrup", category: "Antibiotic", summary: "Liquid antibiotic for children. Treats ear, throat and chest infections. Finish all medicine even when child feels better." },
+  { name: "Amoxicillin Syrup 250mg/5ml", genericName: "Amoxicillin", strength: "250mg/5ml", form: "syrup", category: "Antibiotic", summary: "Liquid antibiotic for children. Treats ear, throat and chest infections. Finish all medicine even when child feels better." },
+  { name: "Amoxicillin-Clavulanate 375mg", genericName: "Amoxicillin-Clavulanate", strength: "375mg", form: "tablet", category: "Antibiotic", summary: "Stronger antibiotic for resistant infections. Treats severe chest, ear and sinus infections. Take with food to reduce stomach upset." },
+  { name: "Amoxicillin-Clavulanate 625mg", genericName: "Amoxicillin-Clavulanate", strength: "625mg", form: "tablet", category: "Antibiotic", summary: "Stronger antibiotic for resistant infections. Treats severe chest, ear and sinus infections. Take with food to reduce stomach upset." },
+  { name: "Amoxicillin-Clavulanate 1000mg", genericName: "Amoxicillin-Clavulanate", strength: "1000mg", form: "tablet", category: "Antibiotic", summary: "Stronger antibiotic for resistant infections. Treats severe chest, ear and sinus infections. Take with food to reduce stomach upset." },
+  { name: "Azithromycin 250mg", genericName: "Azithromycin", strength: "250mg", form: "tablet", category: "Antibiotic", summary: "Treats chest, throat and ear infections. Short course usually 3-5 days. Good for patients allergic to penicillin." },
+  { name: "Azithromycin 500mg", genericName: "Azithromycin", strength: "500mg", form: "tablet", category: "Antibiotic", summary: "Treats chest, throat and ear infections. Short course usually 3-5 days. Good for patients allergic to penicillin." },
+  { name: "Azithromycin Syrup 200mg/5ml", genericName: "Azithromycin", strength: "200mg/5ml", form: "syrup", category: "Antibiotic", summary: "Liquid antibiotic for children. Short course for chest and ear infections. Give once daily for 3 days." },
+  { name: "Ciprofloxacin 250mg", genericName: "Ciprofloxacin", strength: "250mg", form: "tablet", category: "Antibiotic", summary: "Treats urinary, stomach and intestinal infections. Also treats typhoid fever. Drink plenty of water when taking." },
+  { name: "Ciprofloxacin 500mg", genericName: "Ciprofloxacin", strength: "500mg", form: "tablet", category: "Antibiotic", summary: "Treats urinary, stomach and intestinal infections. Also treats typhoid fever. Drink plenty of water when taking." },
+  { name: "Ciprofloxacin 750mg", genericName: "Ciprofloxacin", strength: "750mg", form: "tablet", category: "Antibiotic", summary: "Treats urinary, stomach and intestinal infections. Also treats typhoid fever. Drink plenty of water when taking." },
+  { name: "Metronidazole 200mg", genericName: "Metronidazole", strength: "200mg", form: "tablet", category: "Antibiotic", summary: "Kills parasites and certain bacteria. Treats stomach infections, amoeba and giardia. Do not drink alcohol while taking." },
+  { name: "Metronidazole 400mg", genericName: "Metronidazole", strength: "400mg", form: "tablet", category: "Antibiotic", summary: "Kills parasites and certain bacteria. Treats stomach infections, amoeba and giardia. Do not drink alcohol while taking." },
+  { name: "Metronidazole 500mg", genericName: "Metronidazole", strength: "500mg", form: "tablet", category: "Antibiotic", summary: "Kills parasites and certain bacteria. Treats stomach infections, amoeba and giardia. Do not drink alcohol while taking." },
+  { name: "Cephalexin 250mg", genericName: "Cephalexin", strength: "250mg", form: "capsule", category: "Antibiotic", summary: "Treats skin, bone and urinary infections. Safe for most patients. Take 4 times daily for best results." },
+  { name: "Cephalexin 500mg", genericName: "Cephalexin", strength: "500mg", form: "capsule", category: "Antibiotic", summary: "Treats skin, bone and urinary infections. Safe for most patients. Take 4 times daily for best results." },
+  { name: "Doxycycline 100mg", genericName: "Doxycycline", strength: "100mg", form: "capsule", category: "Antibiotic", summary: "Treats chest infections, cholera and some sexually transmitted infections. Take with food and plenty of water. Avoid sun exposure." },
+  { name: "Clindamycin 150mg", genericName: "Clindamycin", strength: "150mg", form: "capsule", category: "Antibiotic", summary: "Strong antibiotic for skin, bone and dental infections. Can cause diarrhea - report if severe. Good for penicillin allergic patients." },
+  { name: "Clindamycin 300mg", genericName: "Clindamycin", strength: "300mg", form: "capsule", category: "Antibiotic", summary: "Strong antibiotic for skin, bone and dental infections. Can cause diarrhea - report if severe. Good for penicillin allergic patients." },
+  { name: "Ampicillin 500mg", genericName: "Ampicillin", strength: "500mg", form: "tablet", category: "Antibiotic", summary: "Treats chest, ear and urinary infections. Related to penicillin. Take on empty stomach 1 hour before meals." },
+  { name: "Cotrimoxazole 960mg", genericName: "Trimethoprim-Sulfamethoxazole", strength: "960mg", form: "tablet", category: "Antibiotic", summary: "Treats urinary, chest and ear infections. Also prevents infections in HIV patients. Drink plenty of water." },
   
   // Antihypertensives (Blood Pressure)
-  { name: "Amlodipine 5mg", genericName: "Amlodipine", strength: "5mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Amlodipine 10mg", genericName: "Amlodipine", strength: "10mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Losartan 50mg", genericName: "Losartan", strength: "50mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Losartan 100mg", genericName: "Losartan", strength: "100mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Atenolol 25mg", genericName: "Atenolol", strength: "25mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Atenolol 50mg", genericName: "Atenolol", strength: "50mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Atenolol 100mg", genericName: "Atenolol", strength: "100mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Lisinopril 5mg", genericName: "Lisinopril", strength: "5mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Lisinopril 10mg", genericName: "Lisinopril", strength: "10mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Lisinopril 20mg", genericName: "Lisinopril", strength: "20mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Hydrochlorothiazide 12.5mg", genericName: "Hydrochlorothiazide", strength: "12.5mg", form: "tablet", category: "Antihypertensive" },
-  { name: "Hydrochlorothiazide 25mg", genericName: "Hydrochlorothiazide", strength: "25mg", form: "tablet", category: "Antihypertensive" },
+  { name: "Amlodipine 5mg", genericName: "Amlodipine", strength: "5mg", form: "tablet", category: "Antihypertensive", summary: "Lowers blood pressure by relaxing blood vessels. Take once daily at same time. Works slowly and gently on heart." },
+  { name: "Amlodipine 10mg", genericName: "Amlodipine", strength: "10mg", form: "tablet", category: "Antihypertensive", summary: "Lowers blood pressure by relaxing blood vessels. Take once daily at same time. Works slowly and gently on heart." },
+  { name: "Losartan 50mg", genericName: "Losartan", strength: "50mg", form: "tablet", category: "Antihypertensive", summary: "Lowers blood pressure and protects kidneys. Safe for diabetics. Take once daily with or without food." },
+  { name: "Losartan 100mg", genericName: "Losartan", strength: "100mg", form: "tablet", category: "Antihypertensive", summary: "Lowers blood pressure and protects kidneys. Safe for diabetics. Take once daily with or without food." },
+  { name: "Atenolol 25mg", genericName: "Atenolol", strength: "25mg", form: "tablet", category: "Antihypertensive", summary: "Slows heart rate and lowers blood pressure. Good for heart problems. Do not stop suddenly without doctor advice." },
+  { name: "Atenolol 50mg", genericName: "Atenolol", strength: "50mg", form: "tablet", category: "Antihypertensive", summary: "Slows heart rate and lowers blood pressure. Good for heart problems. Do not stop suddenly without doctor advice." },
+  { name: "Atenolol 100mg", genericName: "Atenolol", strength: "100mg", form: "tablet", category: "Antihypertensive", summary: "Slows heart rate and lowers blood pressure. Good for heart problems. Do not stop suddenly without doctor advice." },
+  { name: "Lisinopril 5mg", genericName: "Lisinopril", strength: "5mg", form: "tablet", category: "Antihypertensive", summary: "Lowers blood pressure and helps heart work better. Protects kidneys in diabetes. May cause dry cough in some people." },
+  { name: "Lisinopril 10mg", genericName: "Lisinopril", strength: "10mg", form: "tablet", category: "Antihypertensive", summary: "Lowers blood pressure and helps heart work better. Protects kidneys in diabetes. May cause dry cough in some people." },
+  { name: "Lisinopril 20mg", genericName: "Lisinopril", strength: "20mg", form: "tablet", category: "Antihypertensive", summary: "Lowers blood pressure and helps heart work better. Protects kidneys in diabetes. May cause dry cough in some people." },
+  { name: "Hydrochlorothiazide 12.5mg", genericName: "Hydrochlorothiazide", strength: "12.5mg", form: "tablet", category: "Antihypertensive", summary: "Water pill that lowers blood pressure. Makes you urinate more. Take in morning to avoid night urination." },
+  { name: "Hydrochlorothiazide 25mg", genericName: "Hydrochlorothiazide", strength: "25mg", form: "tablet", category: "Antihypertensive", summary: "Water pill that lowers blood pressure. Makes you urinate more. Take in morning to avoid night urination." },
   
   // Antidiabetics
-  { name: "Metformin 500mg", genericName: "Metformin", strength: "500mg", form: "tablet", category: "Antidiabetic" },
-  { name: "Metformin 850mg", genericName: "Metformin", strength: "850mg", form: "tablet", category: "Antidiabetic" },
-  { name: "Metformin 1000mg", genericName: "Metformin", strength: "1000mg", form: "tablet", category: "Antidiabetic" },
-  { name: "Metformin XR 500mg", genericName: "Metformin Extended Release", strength: "500mg", form: "tablet", category: "Antidiabetic" },
-  { name: "Glimepiride 1mg", genericName: "Glimepiride", strength: "1mg", form: "tablet", category: "Antidiabetic" },
-  { name: "Glimepiride 2mg", genericName: "Glimepiride", strength: "2mg", form: "tablet", category: "Antidiabetic" },
-  { name: "Glimepiride 4mg", genericName: "Glimepiride", strength: "4mg", form: "tablet", category: "Antidiabetic" },
-  { name: "Sitagliptin 50mg", genericName: "Sitagliptin", strength: "50mg", form: "tablet", category: "Antidiabetic" },
-  { name: "Sitagliptin 100mg", genericName: "Sitagliptin", strength: "100mg", form: "tablet", category: "Antidiabetic" },
+  { name: "Metformin 500mg", genericName: "Metformin", strength: "500mg", form: "tablet", category: "Antidiabetic", summary: "Controls blood sugar in diabetes. First choice medicine for type 2 diabetes. Take with meals to reduce stomach upset." },
+  { name: "Metformin 850mg", genericName: "Metformin", strength: "850mg", form: "tablet", category: "Antidiabetic", summary: "Controls blood sugar in diabetes. First choice medicine for type 2 diabetes. Take with meals to reduce stomach upset." },
+  { name: "Metformin 1000mg", genericName: "Metformin", strength: "1000mg", form: "tablet", category: "Antidiabetic", summary: "Controls blood sugar in diabetes. First choice medicine for type 2 diabetes. Take with meals to reduce stomach upset." },
+  { name: "Metformin XR 500mg", genericName: "Metformin Extended Release", strength: "500mg", form: "tablet", category: "Antidiabetic", summary: "Long-acting blood sugar control. Take once daily with evening meal. Causes less stomach problems than regular metformin." },
+  { name: "Glimepiride 1mg", genericName: "Glimepiride", strength: "1mg", form: "tablet", category: "Antidiabetic", summary: "Helps pancreas make more insulin. Take before breakfast. Can cause low blood sugar - eat regular meals." },
+  { name: "Glimepiride 2mg", genericName: "Glimepiride", strength: "2mg", form: "tablet", category: "Antidiabetic", summary: "Helps pancreas make more insulin. Take before breakfast. Can cause low blood sugar - eat regular meals." },
+  { name: "Glimepiride 4mg", genericName: "Glimepiride", strength: "4mg", form: "tablet", category: "Antidiabetic", summary: "Helps pancreas make more insulin. Take before breakfast. Can cause low blood sugar - eat regular meals." },
+  { name: "Sitagliptin 50mg", genericName: "Sitagliptin", strength: "50mg", form: "tablet", category: "Antidiabetic", summary: "Helps control blood sugar without causing low sugar. Take once daily with or without food. Safe for kidneys." },
+  { name: "Sitagliptin 100mg", genericName: "Sitagliptin", strength: "100mg", form: "tablet", category: "Antidiabetic", summary: "Helps control blood sugar without causing low sugar. Take once daily with or without food. Safe for kidneys." },
   
   // Gastrointestinal
-  { name: "Omeprazole 20mg", genericName: "Omeprazole", strength: "20mg", form: "capsule", category: "Gastrointestinal" },
-  { name: "Omeprazole 40mg", genericName: "Omeprazole", strength: "40mg", form: "capsule", category: "Gastrointestinal" },
-  { name: "Ranitidine 150mg", genericName: "Ranitidine", strength: "150mg", form: "tablet", category: "Gastrointestinal" },
-  { name: "Ranitidine 300mg", genericName: "Ranitidine", strength: "300mg", form: "tablet", category: "Gastrointestinal" },
-  { name: "Antacid Tablet 400mg/400mg", genericName: "Aluminum/Magnesium Hydroxide", strength: "400mg/400mg", form: "tablet", category: "Gastrointestinal" },
-  { name: "Antacid Syrup", genericName: "Aluminum/Magnesium Hydroxide", strength: "various", form: "syrup", category: "Gastrointestinal" },
-  { name: "Loperamide 2mg", genericName: "Loperamide", strength: "2mg", form: "capsule", category: "Gastrointestinal" },
-  { name: "Bisacodyl 5mg", genericName: "Bisacodyl", strength: "5mg", form: "tablet", category: "Gastrointestinal" },
-  { name: "ORS (Oral Rehydration Salts)", genericName: "ORS", strength: "20.5g", form: "other", category: "Gastrointestinal" },
+  { name: "Omeprazole 20mg", genericName: "Omeprazole", strength: "20mg", form: "capsule", category: "Gastrointestinal", summary: "Reduces stomach acid for ulcers and heartburn. Take before breakfast on empty stomach. Heals stomach and prevents damage." },
+  { name: "Omeprazole 40mg", genericName: "Omeprazole", strength: "40mg", form: "capsule", category: "Gastrointestinal", summary: "Reduces stomach acid for ulcers and heartburn. Take before breakfast on empty stomach. Heals stomach and prevents damage." },
+  { name: "Ranitidine 150mg", genericName: "Ranitidine", strength: "150mg", form: "tablet", category: "Gastrointestinal", summary: "Reduces stomach acid for heartburn and ulcers. Take twice daily or at bedtime. Works quickly to relieve symptoms." },
+  { name: "Ranitidine 300mg", genericName: "Ranitidine", strength: "300mg", form: "tablet", category: "Gastrointestinal", summary: "Reduces stomach acid for heartburn and ulcers. Take twice daily or at bedtime. Works quickly to relieve symptoms." },
+  { name: "Antacid Tablet 400mg/400mg", genericName: "Aluminum/Magnesium Hydroxide", strength: "400mg/400mg", form: "tablet", category: "Gastrointestinal", summary: "Quickly relieves heartburn and stomach pain. Chew tablets well before swallowing. Works immediately for acid relief." },
+  { name: "Antacid Syrup", genericName: "Aluminum/Magnesium Hydroxide", strength: "various", form: "syrup", category: "Gastrointestinal", summary: "Quickly relieves heartburn and stomach pain. Liquid form works fast. Take after meals or when symptoms occur." },
+  { name: "Loperamide 2mg", genericName: "Loperamide", strength: "2mg", form: "capsule", category: "Gastrointestinal", summary: "Stops diarrhea by slowing intestines. Take after each loose stool. Drink fluids to prevent dehydration." },
+  { name: "Bisacodyl 5mg", genericName: "Bisacodyl", strength: "5mg", form: "tablet", category: "Gastrointestinal", summary: "Treats constipation. Take at bedtime for morning bowel movement. Drink plenty of water." },
+  { name: "ORS (Oral Rehydration Salts)", genericName: "ORS", strength: "20.5g", form: "other", category: "Gastrointestinal", summary: "Replaces water and salts lost from diarrhea. Mix one sachet in 1 liter clean water. Essential for cholera and severe diarrhea." },
   
   // Antihistamines
-  { name: "Cetirizine 5mg", genericName: "Cetirizine", strength: "5mg", form: "tablet", category: "Antihistamine" },
-  { name: "Cetirizine 10mg", genericName: "Cetirizine", strength: "10mg", form: "tablet", category: "Antihistamine" },
-  { name: "Cetirizine Syrup 5mg/5ml", genericName: "Cetirizine", strength: "5mg/5ml", form: "syrup", category: "Antihistamine" },
-  { name: "Loratadine 10mg", genericName: "Loratadine", strength: "10mg", form: "tablet", category: "Antihistamine" },
-  { name: "Chlorpheniramine 4mg", genericName: "Chlorpheniramine", strength: "4mg", form: "tablet", category: "Antihistamine" },
-  { name: "Chlorpheniramine Syrup 2mg/5ml", genericName: "Chlorpheniramine", strength: "2mg/5ml", form: "syrup", category: "Antihistamine" },
+  { name: "Cetirizine 5mg", genericName: "Cetirizine", strength: "5mg", form: "tablet", category: "Antihistamine", summary: "Treats allergies, itching and hives. Does not cause drowsiness. Take once daily for 24-hour relief." },
+  { name: "Cetirizine 10mg", genericName: "Cetirizine", strength: "10mg", form: "tablet", category: "Antihistamine", summary: "Treats allergies, itching and hives. Does not cause drowsiness. Take once daily for 24-hour relief." },
+  { name: "Cetirizine Syrup 5mg/5ml", genericName: "Cetirizine", strength: "5mg/5ml", form: "syrup", category: "Antihistamine", summary: "Liquid allergy medicine for children. Treats itching, rashes and runny nose. Give once daily." },
+  { name: "Loratadine 10mg", genericName: "Loratadine", strength: "10mg", form: "tablet", category: "Antihistamine", summary: "Treats allergies without causing sleep. Good for hay fever and skin allergies. Take once daily." },
+  { name: "Chlorpheniramine 4mg", genericName: "Chlorpheniramine", strength: "4mg", form: "tablet", category: "Antihistamine", summary: "Treats allergies and itching. May cause drowsiness. Take at bedtime if sleepy." },
+  { name: "Chlorpheniramine Syrup 2mg/5ml", genericName: "Chlorpheniramine", strength: "2mg/5ml", form: "syrup", category: "Antihistamine", summary: "Liquid allergy medicine for children. Treats itching and runny nose. May make child sleepy." },
   
   // Respiratory
-  { name: "Salbutamol 2mg", genericName: "Albuterol", strength: "2mg", form: "tablet", category: "Respiratory" },
-  { name: "Salbutamol 4mg", genericName: "Albuterol", strength: "4mg", form: "tablet", category: "Respiratory" },
-  { name: "Salbutamol Inhaler 100mcg", genericName: "Albuterol", strength: "100mcg", form: "inhaler", category: "Respiratory" },
-  { name: "Montelukast 4mg Chewable", genericName: "Montelukast", strength: "4mg", form: "tablet", category: "Respiratory" },
-  { name: "Montelukast 5mg Chewable", genericName: "Montelukast", strength: "5mg", form: "tablet", category: "Respiratory" },
-  { name: "Montelukast 10mg", genericName: "Montelukast", strength: "10mg", form: "tablet", category: "Respiratory" },
-  { name: "Pseudoephedrine 30mg", genericName: "Pseudoephedrine", strength: "30mg", form: "tablet", category: "Respiratory" },
-  { name: "Pseudoephedrine 60mg", genericName: "Pseudoephedrine", strength: "60mg", form: "tablet", category: "Respiratory" },
-  { name: "Cough Syrup", genericName: "Various", strength: "100ml", form: "syrup", category: "Respiratory" },
+  { name: "Salbutamol 2mg", genericName: "Albuterol", strength: "2mg", form: "tablet", category: "Respiratory", summary: "Opens airways in asthma and breathing problems. Take when needed for wheezing. May cause shaking or fast heartbeat." },
+  { name: "Salbutamol 4mg", genericName: "Albuterol", strength: "4mg", form: "tablet", category: "Respiratory", summary: "Opens airways in asthma and breathing problems. Take when needed for wheezing. May cause shaking or fast heartbeat." },
+  { name: "Salbutamol Inhaler 100mcg", genericName: "Albuterol", strength: "100mcg", form: "inhaler", category: "Respiratory", summary: "Fast-acting inhaler for asthma attacks. Breathe in deeply when using. Works within minutes to open airways." },
+  { name: "Montelukast 4mg Chewable", genericName: "Montelukast", strength: "4mg", form: "tablet", category: "Respiratory", summary: "Prevents asthma attacks in children. Chew tablet before swallowing. Take daily even when feeling well." },
+  { name: "Montelukast 5mg Chewable", genericName: "Montelukast", strength: "5mg", form: "tablet", category: "Respiratory", summary: "Prevents asthma attacks in children. Chew tablet before swallowing. Take daily even when feeling well." },
+  { name: "Montelukast 10mg", genericName: "Montelukast", strength: "10mg", form: "tablet", category: "Respiratory", summary: "Prevents asthma attacks and allergies. Take once daily in evening. Not for acute asthma attacks." },
+  { name: "Pseudoephedrine 30mg", genericName: "Pseudoephedrine", strength: "30mg", form: "tablet", category: "Respiratory", summary: "Unblocks stuffy nose from colds. Take during day not at bedtime. May cause difficulty sleeping." },
+  { name: "Pseudoephedrine 60mg", genericName: "Pseudoephedrine", strength: "60mg", form: "tablet", category: "Respiratory", summary: "Unblocks stuffy nose from colds. Take during day not at bedtime. May cause difficulty sleeping." },
+  { name: "Cough Syrup", genericName: "Various", strength: "100ml", form: "syrup", category: "Respiratory", summary: "Relieves cough and loosens mucus. Check if for dry or wet cough. Take as directed on label." },
   
   // Vitamins & Supplements
-  { name: "Vitamin C 500mg", genericName: "Ascorbic Acid", strength: "500mg", form: "tablet", category: "Vitamin" },
-  { name: "Vitamin C 1000mg", genericName: "Ascorbic Acid", strength: "1000mg", form: "tablet", category: "Vitamin" },
-  { name: "Vitamin D3 1000 IU", genericName: "Cholecalciferol", strength: "1000 IU", form: "capsule", category: "Vitamin" },
-  { name: "Vitamin D3 2000 IU", genericName: "Cholecalciferol", strength: "2000 IU", form: "capsule", category: "Vitamin" },
-  { name: "Vitamin D3 5000 IU", genericName: "Cholecalciferol", strength: "5000 IU", form: "capsule", category: "Vitamin" },
-  { name: "Multivitamin Adult Formula", genericName: "Multivitamin", strength: "various", form: "tablet", category: "Vitamin" },
-  { name: "Folic Acid 400mcg", genericName: "Folic Acid", strength: "400mcg", form: "tablet", category: "Vitamin" },
-  { name: "Folic Acid 5mg", genericName: "Folic Acid", strength: "5mg", form: "tablet", category: "Vitamin" },
-  { name: "Iron (Ferrous Sulfate) 200mg", genericName: "Ferrous Sulfate", strength: "200mg", form: "tablet", category: "Vitamin" },
-  { name: "Vitamin B Complex", genericName: "Vitamin B Complex", strength: "various", form: "tablet", category: "Vitamin" },
-  { name: "Zinc Sulfate 20mg", genericName: "Zinc Sulfate", strength: "20mg", form: "tablet", category: "Vitamin" },
+  { name: "Vitamin C 500mg", genericName: "Ascorbic Acid", strength: "500mg", form: "tablet", category: "Vitamin", summary: "Boosts immunity and helps wound healing. Prevents scurvy. Take daily for general health." },
+  { name: "Vitamin C 1000mg", genericName: "Ascorbic Acid", strength: "1000mg", form: "tablet", category: "Vitamin", summary: "Boosts immunity and helps wound healing. Prevents scurvy. Take daily for general health." },
+  { name: "Vitamin D3 1000 IU", genericName: "Cholecalciferol", strength: "1000 IU", form: "capsule", category: "Vitamin", summary: "Strengthens bones and immune system. Important for children and pregnant women. Take daily." },
+  { name: "Vitamin D3 2000 IU", genericName: "Cholecalciferol", strength: "2000 IU", form: "capsule", category: "Vitamin", summary: "Strengthens bones and immune system. Important for children and pregnant women. Take daily." },
+  { name: "Vitamin D3 5000 IU", genericName: "Cholecalciferol", strength: "5000 IU", form: "capsule", category: "Vitamin", summary: "Strengthens bones and immune system. Important for children and pregnant women. Take daily." },
+  { name: "Multivitamin Adult Formula", genericName: "Multivitamin", strength: "various", form: "tablet", category: "Vitamin", summary: "Contains many vitamins and minerals. Helps prevent deficiency. Take one daily with food." },
+  { name: "Folic Acid 400mcg", genericName: "Folic Acid", strength: "400mcg", form: "tablet", category: "Vitamin", summary: "Essential for pregnant women to prevent birth defects. Also treats anemia. Take daily before and during pregnancy." },
+  { name: "Folic Acid 5mg", genericName: "Folic Acid", strength: "5mg", form: "tablet", category: "Vitamin", summary: "Treats severe folic acid deficiency and certain anemias. Higher dose for treatment. Take as prescribed." },
+  { name: "Iron (Ferrous Sulfate) 200mg", genericName: "Ferrous Sulfate", strength: "200mg", form: "tablet", category: "Vitamin", summary: "Treats and prevents iron deficiency anemia. Important in pregnancy. Take on empty stomach with vitamin C for better absorption." },
+  { name: "Vitamin B Complex", genericName: "Vitamin B Complex", strength: "various", form: "tablet", category: "Vitamin", summary: "Contains B vitamins for energy and nerve health. Helps prevent deficiency. Take once daily." },
+  { name: "Zinc Sulfate 20mg", genericName: "Zinc Sulfate", strength: "20mg", form: "tablet", category: "Vitamin", summary: "Boosts immunity and helps wounds heal. Important for children's growth. Take with food to avoid nausea." },
   
   // Antimalarials
-  { name: "Artemether+Lumefantrine (Coartem)", genericName: "Artemether-Lumefantrine", strength: "20mg/120mg", form: "tablet", category: "Antimalarial" },
-  { name: "Quinine 300mg", genericName: "Quinine", strength: "300mg", form: "tablet", category: "Antimalarial" },
-  { name: "Chloroquine 250mg", genericName: "Chloroquine", strength: "250mg", form: "tablet", category: "Antimalarial" },
+  { name: "Artemether+Lumefantrine (Coartem)", genericName: "Artemether-Lumefantrine", strength: "20mg/120mg", form: "tablet", category: "Antimalarial", summary: "First-line treatment for malaria. Take with food or milk for 3 days. Complete all doses even if feeling better." },
+  { name: "Quinine 300mg", genericName: "Quinine", strength: "300mg", form: "tablet", category: "Antimalarial", summary: "Treats severe malaria. Take 3 times daily for 7 days. May cause ringing in ears and dizziness." },
+  { name: "Chloroquine 250mg", genericName: "Chloroquine", strength: "250mg", form: "tablet", category: "Antimalarial", summary: "Prevents and treats malaria in some areas. Resistance is common. Take weekly for prevention or 3 days for treatment." },
   
   // Antiparasitics
-  { name: "Albendazole 400mg", genericName: "Albendazole", strength: "400mg", form: "tablet", category: "Antiparasitic" },
-  { name: "Mebendazole 100mg", genericName: "Mebendazole", strength: "100mg", form: "tablet", category: "Antiparasitic" },
+  { name: "Albendazole 400mg", genericName: "Albendazole", strength: "400mg", form: "tablet", category: "Antiparasitic", summary: "Kills intestinal worms. Single dose for most worms. Take with fatty food for better absorption." },
+  { name: "Mebendazole 100mg", genericName: "Mebendazole", strength: "100mg", form: "tablet", category: "Antiparasitic", summary: "Treats pinworms and other intestinal worms. Take twice daily for 3 days. May need to repeat after 2 weeks." },
   
   // Injectable Antibiotics
-  { name: "Ceftriaxone Injection 250mg", genericName: "Ceftriaxone", strength: "250mg", form: "injection", category: "Antibiotic" },
-  { name: "Ceftriaxone Injection 500mg", genericName: "Ceftriaxone", strength: "500mg", form: "injection", category: "Antibiotic" },
-  { name: "Ceftriaxone Injection 1g", genericName: "Ceftriaxone", strength: "1g", form: "injection", category: "Antibiotic" },
-  { name: "Ceftriaxone Injection 2g", genericName: "Ceftriaxone", strength: "2g", form: "injection", category: "Antibiotic" },
-  { name: "Cefotaxime Injection 500mg", genericName: "Cefotaxime", strength: "500mg", form: "injection", category: "Antibiotic" },
-  { name: "Cefotaxime Injection 1g", genericName: "Cefotaxime", strength: "1g", form: "injection", category: "Antibiotic" },
-  { name: "Gentamicin Injection 40mg/ml", genericName: "Gentamicin", strength: "40mg/ml", form: "injection", category: "Antibiotic" },
-  { name: "Gentamicin Injection 80mg/2ml", genericName: "Gentamicin", strength: "80mg/2ml", form: "injection", category: "Antibiotic" },
-  { name: "Ampicillin Injection 500mg", genericName: "Ampicillin", strength: "500mg", form: "injection", category: "Antibiotic" },
-  { name: "Ampicillin Injection 1g", genericName: "Ampicillin", strength: "1g", form: "injection", category: "Antibiotic" },
-  { name: "Penicillin G Injection 1MU", genericName: "Penicillin G", strength: "1MU", form: "injection", category: "Antibiotic" },
-  { name: "Penicillin G Injection 5MU", genericName: "Penicillin G", strength: "5MU", form: "injection", category: "Antibiotic" },
-  { name: "Benzathine Penicillin Injection 1.2MU", genericName: "Benzathine Penicillin", strength: "1.2MU", form: "injection", category: "Antibiotic" },
-  { name: "Benzathine Penicillin Injection 2.4MU", genericName: "Benzathine Penicillin", strength: "2.4MU", form: "injection", category: "Antibiotic" },
-  { name: "Cefuroxime Injection 750mg", genericName: "Cefuroxime", strength: "750mg", form: "injection", category: "Antibiotic" },
-  { name: "Cefuroxime Injection 1.5g", genericName: "Cefuroxime", strength: "1.5g", form: "injection", category: "Antibiotic" },
-  { name: "Amikacin Injection 250mg", genericName: "Amikacin", strength: "250mg", form: "injection", category: "Antibiotic" },
-  { name: "Amikacin Injection 500mg", genericName: "Amikacin", strength: "500mg", form: "injection", category: "Antibiotic" },
-  { name: "Vancomycin Injection 500mg", genericName: "Vancomycin", strength: "500mg", form: "injection", category: "Antibiotic" },
-  { name: "Vancomycin Injection 1g", genericName: "Vancomycin", strength: "1g", form: "injection", category: "Antibiotic" },
-  { name: "Meropenem Injection 500mg", genericName: "Meropenem", strength: "500mg", form: "injection", category: "Antibiotic" },
-  { name: "Meropenem Injection 1g", genericName: "Meropenem", strength: "1g", form: "injection", category: "Antibiotic" },
+  { name: "Ceftriaxone Injection 250mg", genericName: "Ceftriaxone", strength: "250mg", form: "injection", category: "Antibiotic", summary: "Strong injectable antibiotic for severe infections. Treats pneumonia, meningitis and sepsis. Given once or twice daily." },
+  { name: "Ceftriaxone Injection 500mg", genericName: "Ceftriaxone", strength: "500mg", form: "injection", category: "Antibiotic", summary: "Strong injectable antibiotic for severe infections. Treats pneumonia, meningitis and sepsis. Given once or twice daily." },
+  { name: "Ceftriaxone Injection 1g", genericName: "Ceftriaxone", strength: "1g", form: "injection", category: "Antibiotic", summary: "Strong injectable antibiotic for severe infections. Treats pneumonia, meningitis and sepsis. Given once or twice daily." },
+  { name: "Ceftriaxone Injection 2g", genericName: "Ceftriaxone", strength: "2g", form: "injection", category: "Antibiotic", summary: "Strong injectable antibiotic for severe infections. Treats pneumonia, meningitis and sepsis. Given once or twice daily." },
+  { name: "Cefotaxime Injection 500mg", genericName: "Cefotaxime", strength: "500mg", form: "injection", category: "Antibiotic", summary: "Injectable antibiotic for serious infections. Similar to ceftriaxone. Given every 6-8 hours." },
+  { name: "Cefotaxime Injection 1g", genericName: "Cefotaxime", strength: "1g", form: "injection", category: "Antibiotic", summary: "Injectable antibiotic for serious infections. Similar to ceftriaxone. Given every 6-8 hours." },
+  { name: "Gentamicin Injection 40mg/ml", genericName: "Gentamicin", strength: "40mg/ml", form: "injection", category: "Antibiotic", summary: "Strong antibiotic for severe infections. Can harm kidneys and ears if used incorrectly. Monitor patient closely." },
+  { name: "Gentamicin Injection 80mg/2ml", genericName: "Gentamicin", strength: "80mg/2ml", form: "injection", category: "Antibiotic", summary: "Strong antibiotic for severe infections. Can harm kidneys and ears if used incorrectly. Monitor patient closely." },
+  { name: "Ampicillin Injection 500mg", genericName: "Ampicillin", strength: "500mg", form: "injection", category: "Antibiotic", summary: "Injectable penicillin-type antibiotic. Treats meningitis, pneumonia and sepsis. Give every 6 hours." },
+  { name: "Ampicillin Injection 1g", genericName: "Ampicillin", strength: "1g", form: "injection", category: "Antibiotic", summary: "Injectable penicillin-type antibiotic. Treats meningitis, pneumonia and sepsis. Give every 6 hours." },
+  { name: "Penicillin G Injection 1MU", genericName: "Penicillin G", strength: "1MU", form: "injection", category: "Antibiotic", summary: "Classic injectable penicillin for severe infections. Treats pneumonia and meningitis. Give multiple times daily." },
+  { name: "Penicillin G Injection 5MU", genericName: "Penicillin G", strength: "5MU", form: "injection", category: "Antibiotic", summary: "Classic injectable penicillin for severe infections. Treats pneumonia and meningitis. Give multiple times daily." },
+  { name: "Benzathine Penicillin Injection 1.2MU", genericName: "Benzathine Penicillin", strength: "1.2MU", form: "injection", category: "Antibiotic", summary: "Long-acting penicillin injection. Treats syphilis and prevents rheumatic fever. Single dose lasts weeks." },
+  { name: "Benzathine Penicillin Injection 2.4MU", genericName: "Benzathine Penicillin", strength: "2.4MU", form: "injection", category: "Antibiotic", summary: "Long-acting penicillin injection. Treats syphilis and prevents rheumatic fever. Single dose lasts weeks." },
+  { name: "Cefuroxime Injection 750mg", genericName: "Cefuroxime", strength: "750mg", form: "injection", category: "Antibiotic", summary: "Injectable antibiotic for pneumonia and surgical infections. Give every 8 hours. Safe for most patients." },
+  { name: "Cefuroxime Injection 1.5g", genericName: "Cefuroxime", strength: "1.5g", form: "injection", category: "Antibiotic", summary: "Injectable antibiotic for pneumonia and surgical infections. Give every 8 hours. Safe for most patients." },
+  { name: "Amikacin Injection 250mg", genericName: "Amikacin", strength: "250mg", form: "injection", category: "Antibiotic", summary: "Very strong antibiotic for resistant infections. Can harm kidneys and hearing. Use only when needed." },
+  { name: "Amikacin Injection 500mg", genericName: "Amikacin", strength: "500mg", form: "injection", category: "Antibiotic", summary: "Very strong antibiotic for resistant infections. Can harm kidneys and hearing. Use only when needed." },
+  { name: "Vancomycin Injection 500mg", genericName: "Vancomycin", strength: "500mg", form: "injection", category: "Antibiotic", summary: "Reserved for serious resistant infections. Give slowly by IV drip. Monitor kidney function." },
+  { name: "Vancomycin Injection 1g", genericName: "Vancomycin", strength: "1g", form: "injection", category: "Antibiotic", summary: "Reserved for serious resistant infections. Give slowly by IV drip. Monitor kidney function." },
+  { name: "Meropenem Injection 500mg", genericName: "Meropenem", strength: "500mg", form: "injection", category: "Antibiotic", summary: "Most powerful antibiotic for life-threatening infections. Reserve for critical cases. Give every 8 hours." },
+  { name: "Meropenem Injection 1g", genericName: "Meropenem", strength: "1g", form: "injection", category: "Antibiotic", summary: "Most powerful antibiotic for life-threatening infections. Reserve for critical cases. Give every 8 hours." },
   
   // More Oral Antibiotics
-  { name: "Erythromycin 250mg", genericName: "Erythromycin", strength: "250mg", form: "tablet", category: "Antibiotic" },
-  { name: "Erythromycin 500mg", genericName: "Erythromycin", strength: "500mg", form: "tablet", category: "Antibiotic" },
-  { name: "Nitrofurantoin 50mg", genericName: "Nitrofurantoin", strength: "50mg", form: "capsule", category: "Antibiotic" },
-  { name: "Nitrofurantoin 100mg", genericName: "Nitrofurantoin", strength: "100mg", form: "capsule", category: "Antibiotic" },
-  { name: "Norfloxacin 400mg", genericName: "Norfloxacin", strength: "400mg", form: "tablet", category: "Antibiotic" },
-  { name: "Ofloxacin 200mg", genericName: "Ofloxacin", strength: "200mg", form: "tablet", category: "Antibiotic" },
-  { name: "Ofloxacin 400mg", genericName: "Ofloxacin", strength: "400mg", form: "tablet", category: "Antibiotic" },
-  { name: "Levofloxacin 250mg", genericName: "Levofloxacin", strength: "250mg", form: "tablet", category: "Antibiotic" },
-  { name: "Levofloxacin 500mg", genericName: "Levofloxacin", strength: "500mg", form: "tablet", category: "Antibiotic" },
-  { name: "Levofloxacin 750mg", genericName: "Levofloxacin", strength: "750mg", form: "tablet", category: "Antibiotic" },
-  { name: "Clarithromycin 250mg", genericName: "Clarithromycin", strength: "250mg", form: "tablet", category: "Antibiotic" },
-  { name: "Clarithromycin 500mg", genericName: "Clarithromycin", strength: "500mg", form: "tablet", category: "Antibiotic" },
+  { name: "Erythromycin 250mg", genericName: "Erythromycin", strength: "250mg", form: "tablet", category: "Antibiotic", summary: "Alternative to penicillin for allergic patients. Treats chest and skin infections. Take on empty stomach." },
+  { name: "Erythromycin 500mg", genericName: "Erythromycin", strength: "500mg", form: "tablet", category: "Antibiotic", summary: "Alternative to penicillin for allergic patients. Treats chest and skin infections. Take on empty stomach." },
+  { name: "Nitrofurantoin 50mg", genericName: "Nitrofurantoin", strength: "50mg", form: "capsule", category: "Antibiotic", summary: "Specific antibiotic for urinary tract infections. Take with food and plenty of water. Urine may turn dark yellow." },
+  { name: "Nitrofurantoin 100mg", genericName: "Nitrofurantoin", strength: "100mg", form: "capsule", category: "Antibiotic", summary: "Specific antibiotic for urinary tract infections. Take with food and plenty of water. Urine may turn dark yellow." },
+  { name: "Norfloxacin 400mg", genericName: "Norfloxacin", strength: "400mg", form: "tablet", category: "Antibiotic", summary: "Treats urinary and stomach infections. Take on empty stomach with water. Avoid dairy products." },
+  { name: "Ofloxacin 200mg", genericName: "Ofloxacin", strength: "200mg", form: "tablet", category: "Antibiotic", summary: "Treats urinary, eye and ear infections. Broad-spectrum antibiotic. Take twice daily with water." },
+  { name: "Ofloxacin 400mg", genericName: "Ofloxacin", strength: "400mg", form: "tablet", category: "Antibiotic", summary: "Treats urinary, eye and ear infections. Broad-spectrum antibiotic. Take twice daily with water." },
+  { name: "Levofloxacin 250mg", genericName: "Levofloxacin", strength: "250mg", form: "tablet", category: "Antibiotic", summary: "Strong antibiotic for chest, urinary and sinus infections. Take once daily. Avoid sun exposure." },
+  { name: "Levofloxacin 500mg", genericName: "Levofloxacin", strength: "500mg", form: "tablet", category: "Antibiotic", summary: "Strong antibiotic for chest, urinary and sinus infections. Take once daily. Avoid sun exposure." },
+  { name: "Levofloxacin 750mg", genericName: "Levofloxacin", strength: "750mg", form: "tablet", category: "Antibiotic", summary: "Strong antibiotic for chest, urinary and sinus infections. Take once daily. Avoid sun exposure." },
+  { name: "Clarithromycin 250mg", genericName: "Clarithromycin", strength: "250mg", form: "tablet", category: "Antibiotic", summary: "Treats chest infections and stomach ulcers with H. pylori. Similar to erythromycin but better tolerated. Take with food." },
+  { name: "Clarithromycin 500mg", genericName: "Clarithromycin", strength: "500mg", form: "tablet", category: "Antibiotic", summary: "Treats chest infections and stomach ulcers with H. pylori. Similar to erythromycin but better tolerated. Take with food." },
   
   // IV Fluids & Solutions
-  { name: "Normal Saline (0.9% NaCl) 500ml", genericName: "Sodium Chloride", strength: "0.9%", form: "other", category: "IV Fluid" },
-  { name: "Normal Saline (0.9% NaCl) 1000ml", genericName: "Sodium Chloride", strength: "0.9%", form: "other", category: "IV Fluid" },
-  { name: "Ringer's Lactate 500ml", genericName: "Ringer's Lactate", strength: "500ml", form: "other", category: "IV Fluid" },
-  { name: "Ringer's Lactate 1000ml", genericName: "Ringer's Lactate", strength: "1000ml", form: "other", category: "IV Fluid" },
-  { name: "Dextrose 5% 500ml", genericName: "Dextrose", strength: "5%", form: "other", category: "IV Fluid" },
-  { name: "Dextrose 5% 1000ml", genericName: "Dextrose", strength: "5%", form: "other", category: "IV Fluid" },
-  { name: "Dextrose Saline 500ml", genericName: "Dextrose Saline", strength: "500ml", form: "other", category: "IV Fluid" },
-  { name: "Dextrose Saline 1000ml", genericName: "Dextrose Saline", strength: "1000ml", form: "other", category: "IV Fluid" },
+  { name: "Normal Saline (0.9% NaCl) 500ml", genericName: "Sodium Chloride", strength: "0.9%", form: "other", category: "IV Fluid", summary: "Basic IV fluid for dehydration and medication dilution. Replaces water and salt. Safe for most patients." },
+  { name: "Normal Saline (0.9% NaCl) 1000ml", genericName: "Sodium Chloride", strength: "0.9%", form: "other", category: "IV Fluid", summary: "Basic IV fluid for dehydration and medication dilution. Replaces water and salt. Safe for most patients." },
+  { name: "Ringer's Lactate 500ml", genericName: "Ringer's Lactate", strength: "500ml", form: "other", category: "IV Fluid", summary: "Balanced IV fluid for dehydration and shock. Better than saline for severe fluid loss. Contains electrolytes." },
+  { name: "Ringer's Lactate 1000ml", genericName: "Ringer's Lactate", strength: "1000ml", form: "other", category: "IV Fluid", summary: "Balanced IV fluid for dehydration and shock. Better than saline for severe fluid loss. Contains electrolytes." },
+  { name: "Dextrose 5% 500ml", genericName: "Dextrose", strength: "5%", form: "other", category: "IV Fluid", summary: "Sugar water IV fluid for hydration and low blood sugar. Provides calories and water. Monitor blood sugar." },
+  { name: "Dextrose 5% 1000ml", genericName: "Dextrose", strength: "5%", form: "other", category: "IV Fluid", summary: "Sugar water IV fluid for hydration and low blood sugar. Provides calories and water. Monitor blood sugar." },
+  { name: "Dextrose Saline 500ml", genericName: "Dextrose Saline", strength: "500ml", form: "other", category: "IV Fluid", summary: "Combination of sugar and salt IV fluid. Good for general hydration. Provides both calories and electrolytes." },
+  { name: "Dextrose Saline 1000ml", genericName: "Dextrose Saline", strength: "1000ml", form: "other", category: "IV Fluid", summary: "Combination of sugar and salt IV fluid. Good for general hydration. Provides both calories and electrolytes." },
   
   // Antiemetics
-  { name: "Ondansetron 4mg", genericName: "Ondansetron", strength: "4mg", form: "tablet", category: "Antiemetic" },
-  { name: "Ondansetron 8mg", genericName: "Ondansetron", strength: "8mg", form: "tablet", category: "Antiemetic" },
-  { name: "Ondansetron Injection 4mg/2ml", genericName: "Ondansetron", strength: "4mg/2ml", form: "injection", category: "Antiemetic" },
-  { name: "Ondansetron Injection 8mg/4ml", genericName: "Ondansetron", strength: "8mg/4ml", form: "injection", category: "Antiemetic" },
-  { name: "Metoclopramide 10mg", genericName: "Metoclopramide", strength: "10mg", form: "tablet", category: "Antiemetic" },
-  { name: "Metoclopramide Injection 10mg/2ml", genericName: "Metoclopramide", strength: "10mg/2ml", form: "injection", category: "Antiemetic" },
-  { name: "Domperidone 10mg", genericName: "Domperidone", strength: "10mg", form: "tablet", category: "Antiemetic" },
+  { name: "Ondansetron 4mg", genericName: "Ondansetron", strength: "4mg", form: "tablet", category: "Antiemetic", summary: "Prevents nausea and vomiting. Very effective and safe. Take before chemotherapy or after surgery." },
+  { name: "Ondansetron 8mg", genericName: "Ondansetron", strength: "8mg", form: "tablet", category: "Antiemetic", summary: "Prevents nausea and vomiting. Very effective and safe. Take before chemotherapy or after surgery." },
+  { name: "Ondansetron Injection 4mg/2ml", genericName: "Ondansetron", strength: "4mg/2ml", form: "injection", category: "Antiemetic", summary: "Injectable form to stop severe vomiting. Works quickly. Give slowly by IV or IM injection." },
+  { name: "Ondansetron Injection 8mg/4ml", genericName: "Ondansetron", strength: "8mg/4ml", form: "injection", category: "Antiemetic", summary: "Injectable form to stop severe vomiting. Works quickly. Give slowly by IV or IM injection." },
+  { name: "Metoclopramide 10mg", genericName: "Metoclopramide", strength: "10mg", form: "tablet", category: "Antiemetic", summary: "Stops vomiting and helps stomach empty. Take 30 minutes before meals. May cause drowsiness." },
+  { name: "Metoclopramide Injection 10mg/2ml", genericName: "Metoclopramide", strength: "10mg/2ml", form: "injection", category: "Antiemetic", summary: "Stops severe vomiting quickly. Give by IM or slow IV injection. Watch for muscle spasms in young patients." },
+  { name: "Domperidone 10mg", genericName: "Domperidone", strength: "10mg", form: "tablet", category: "Antiemetic", summary: "Prevents nausea and bloating. Helps stomach work better. Take before meals 3 times daily." },
   
   // Antacids/PPIs
-  { name: "Pantoprazole 20mg", genericName: "Pantoprazole", strength: "20mg", form: "tablet", category: "Gastrointestinal" },
-  { name: "Pantoprazole 40mg", genericName: "Pantoprazole", strength: "40mg", form: "tablet", category: "Gastrointestinal" },
-  { name: "Esomeprazole 20mg", genericName: "Esomeprazole", strength: "20mg", form: "capsule", category: "Gastrointestinal" },
-  { name: "Esomeprazole 40mg", genericName: "Esomeprazole", strength: "40mg", form: "capsule", category: "Gastrointestinal" },
-  { name: "Lansoprazole 15mg", genericName: "Lansoprazole", strength: "15mg", form: "capsule", category: "Gastrointestinal" },
-  { name: "Lansoprazole 30mg", genericName: "Lansoprazole", strength: "30mg", form: "capsule", category: "Gastrointestinal" },
+  { name: "Pantoprazole 20mg", genericName: "Pantoprazole", strength: "20mg", form: "tablet", category: "Gastrointestinal", summary: "Reduces stomach acid like omeprazole. Treats ulcers and reflux. Take before breakfast." },
+  { name: "Pantoprazole 40mg", genericName: "Pantoprazole", strength: "40mg", form: "tablet", category: "Gastrointestinal", summary: "Reduces stomach acid like omeprazole. Treats ulcers and reflux. Take before breakfast." },
+  { name: "Esomeprazole 20mg", genericName: "Esomeprazole", strength: "20mg", form: "capsule", category: "Gastrointestinal", summary: "Strong acid reducer for ulcers and heartburn. Take 30 minutes before eating. Works all day." },
+  { name: "Esomeprazole 40mg", genericName: "Esomeprazole", strength: "40mg", form: "capsule", category: "Gastrointestinal", summary: "Strong acid reducer for ulcers and heartburn. Take 30 minutes before eating. Works all day." },
+  { name: "Lansoprazole 15mg", genericName: "Lansoprazole", strength: "15mg", form: "capsule", category: "Gastrointestinal", summary: "Reduces stomach acid for ulcers. Similar to omeprazole. Take before meals on empty stomach." },
+  { name: "Lansoprazole 30mg", genericName: "Lansoprazole", strength: "30mg", form: "capsule", category: "Gastrointestinal", summary: "Reduces stomach acid for ulcers. Similar to omeprazole. Take before meals on empty stomach." },
   
   // Steroids
-  { name: "Dexamethasone 0.5mg", genericName: "Dexamethasone", strength: "0.5mg", form: "tablet", category: "Corticosteroid" },
-  { name: "Dexamethasone 4mg", genericName: "Dexamethasone", strength: "4mg", form: "tablet", category: "Corticosteroid" },
-  { name: "Dexamethasone Injection 4mg/ml", genericName: "Dexamethasone", strength: "4mg/ml", form: "injection", category: "Corticosteroid" },
-  { name: "Hydrocortisone Injection 100mg", genericName: "Hydrocortisone", strength: "100mg", form: "injection", category: "Corticosteroid" },
-  { name: "Hydrocortisone Injection 250mg", genericName: "Hydrocortisone", strength: "250mg", form: "injection", category: "Corticosteroid" },
-  { name: "Methylprednisolone Injection 40mg", genericName: "Methylprednisolone", strength: "40mg", form: "injection", category: "Corticosteroid" },
-  { name: "Methylprednisolone Injection 125mg", genericName: "Methylprednisolone", strength: "125mg", form: "injection", category: "Corticosteroid" },
-  { name: "Methylprednisolone Injection 500mg", genericName: "Methylprednisolone", strength: "500mg", form: "injection", category: "Corticosteroid" },
+  { name: "Dexamethasone 0.5mg", genericName: "Dexamethasone", strength: "0.5mg", form: "tablet", category: "Corticosteroid", summary: "Strong steroid for inflammation and allergies. Used for asthma, allergic reactions and brain swelling. Take with food." },
+  { name: "Dexamethasone 4mg", genericName: "Dexamethasone", strength: "4mg", form: "tablet", category: "Corticosteroid", summary: "Strong steroid for inflammation and allergies. Used for asthma, allergic reactions and brain swelling. Take with food." },
+  { name: "Dexamethasone Injection 4mg/ml", genericName: "Dexamethasone", strength: "4mg/ml", form: "injection", category: "Corticosteroid", summary: "Injectable steroid for severe allergies and inflammation. Works quickly for emergencies. Give by IV or IM." },
+  { name: "Hydrocortisone Injection 100mg", genericName: "Hydrocortisone", strength: "100mg", form: "injection", category: "Corticosteroid", summary: "Emergency steroid for shock and severe allergic reactions. Life-saving in emergencies. Give by IV injection." },
+  { name: "Hydrocortisone Injection 250mg", genericName: "Hydrocortisone", strength: "250mg", form: "injection", category: "Corticosteroid", summary: "Emergency steroid for shock and severe allergic reactions. Life-saving in emergencies. Give by IV injection." },
+  { name: "Methylprednisolone Injection 40mg", genericName: "Methylprednisolone", strength: "40mg", form: "injection", category: "Corticosteroid", summary: "Strong steroid injection for allergies and inflammation. Used for asthma attacks and joint pain. Give by IM or IV." },
+  { name: "Methylprednisolone Injection 125mg", genericName: "Methylprednisolone", strength: "125mg", form: "injection", category: "Corticosteroid", summary: "Strong steroid injection for allergies and inflammation. Used for asthma attacks and joint pain. Give by IM or IV." },
+  { name: "Methylprednisolone Injection 500mg", genericName: "Methylprednisolone", strength: "500mg", form: "injection", category: "Corticosteroid", summary: "Strong steroid injection for allergies and inflammation. Used for asthma attacks and joint pain. Give by IM or IV." },
   
   // Antispasmodics
-  { name: "Hyoscine (Buscopan) 10mg", genericName: "Hyoscine Butylbromide", strength: "10mg", form: "tablet", category: "Antispasmodic" },
-  { name: "Hyoscine Injection 20mg/ml", genericName: "Hyoscine Butylbromide", strength: "20mg/ml", form: "injection", category: "Antispasmodic" },
-  { name: "Dicyclomine 10mg", genericName: "Dicyclomine", strength: "10mg", form: "tablet", category: "Antispasmodic" },
-  { name: "Dicyclomine 20mg", genericName: "Dicyclomine", strength: "20mg", form: "tablet", category: "Antispasmodic" },
+  { name: "Hyoscine (Buscopan) 10mg", genericName: "Hyoscine Butylbromide", strength: "10mg", form: "tablet", category: "Antispasmodic", summary: "Relieves stomach and intestinal cramps. Good for colic pain and menstrual cramps. Take when pain occurs." },
+  { name: "Hyoscine Injection 20mg/ml", genericName: "Hyoscine Butylbromide", strength: "20mg/ml", form: "injection", category: "Antispasmodic", summary: "Quickly relieves severe stomach or intestinal cramps. Give by IM or slow IV injection. Works within minutes." },
+  { name: "Dicyclomine 10mg", genericName: "Dicyclomine", strength: "10mg", form: "tablet", category: "Antispasmodic", summary: "Treats stomach cramps and irritable bowel syndrome. Reduces intestinal spasms. Take before meals." },
+  { name: "Dicyclomine 20mg", genericName: "Dicyclomine", strength: "20mg", form: "tablet", category: "Antispasmodic", summary: "Treats stomach cramps and irritable bowel syndrome. Reduces intestinal spasms. Take before meals." },
   
   // Sedatives/Anxiolytics
-  { name: "Diazepam 5mg", genericName: "Diazepam", strength: "5mg", form: "tablet", category: "Sedative" },
-  { name: "Diazepam 10mg", genericName: "Diazepam", strength: "10mg", form: "tablet", category: "Sedative" },
-  { name: "Diazepam Injection 5mg/ml", genericName: "Diazepam", strength: "5mg/ml", form: "injection", category: "Sedative" },
-  { name: "Lorazepam 1mg", genericName: "Lorazepam", strength: "1mg", form: "tablet", category: "Sedative" },
-  { name: "Lorazepam 2mg", genericName: "Lorazepam", strength: "2mg", form: "tablet", category: "Sedative" },
-  { name: "Midazolam Injection 5mg/ml", genericName: "Midazolam", strength: "5mg/ml", form: "injection", category: "Sedative" },
+  { name: "Diazepam 5mg", genericName: "Diazepam", strength: "5mg", form: "tablet", category: "Sedative", summary: "Calms anxiety and relaxes muscles. Also treats seizures. Can be addictive - use short term only." },
+  { name: "Diazepam 10mg", genericName: "Diazepam", strength: "10mg", form: "tablet", category: "Sedative", summary: "Calms anxiety and relaxes muscles. Also treats seizures. Can be addictive - use short term only." },
+  { name: "Diazepam Injection 5mg/ml", genericName: "Diazepam", strength: "5mg/ml", form: "injection", category: "Sedative", summary: "Emergency medicine for seizures and severe anxiety. Give slowly by IV. Keep patient monitored." },
+  { name: "Lorazepam 1mg", genericName: "Lorazepam", strength: "1mg", form: "tablet", category: "Sedative", summary: "Treats anxiety and helps with sleep. Shorter acting than diazepam. Take at bedtime or as needed." },
+  { name: "Lorazepam 2mg", genericName: "Lorazepam", strength: "2mg", form: "tablet", category: "Sedative", summary: "Treats anxiety and helps with sleep. Shorter acting than diazepam. Take at bedtime or as needed." },
+  { name: "Midazolam Injection 5mg/ml", genericName: "Midazolam", strength: "5mg/ml", form: "injection", category: "Sedative", summary: "Strong sedative for procedures and seizures. Give by IV or IM. Monitor breathing closely." },
   
   // Local Anesthetics
-  { name: "Lidocaine 1% Injection", genericName: "Lidocaine", strength: "1%", form: "injection", category: "Anesthetic" },
-  { name: "Lidocaine 2% Injection", genericName: "Lidocaine", strength: "2%", form: "injection", category: "Anesthetic" },
-  { name: "Lidocaine with Epinephrine Injection", genericName: "Lidocaine with Epinephrine", strength: "1%", form: "injection", category: "Anesthetic" },
+  { name: "Lidocaine 1% Injection", genericName: "Lidocaine", strength: "1%", form: "injection", category: "Anesthetic", summary: "Numbs area for minor surgery and stitches. Works quickly and safely. Inject under skin around wound." },
+  { name: "Lidocaine 2% Injection", genericName: "Lidocaine", strength: "2%", form: "injection", category: "Anesthetic", summary: "Stronger numbing medicine for procedures. Works quickly and safely. Inject under skin around wound." },
+  { name: "Lidocaine with Epinephrine Injection", genericName: "Lidocaine with Epinephrine", strength: "1%", form: "injection", category: "Anesthetic", summary: "Numbing medicine with blood vessel constrictor. Lasts longer and reduces bleeding. Do not use on fingers or toes." },
   
   // Emergency Medications
-  { name: "Adrenaline (Epinephrine) 1mg/ml Injection", genericName: "Epinephrine", strength: "1mg/ml", form: "injection", category: "Emergency" },
-  { name: "Atropine 0.5mg/ml Injection", genericName: "Atropine", strength: "0.5mg/ml", form: "injection", category: "Emergency" },
-  { name: "Atropine 1mg/ml Injection", genericName: "Atropine", strength: "1mg/ml", form: "injection", category: "Emergency" },
-  { name: "Aminophylline Injection 250mg/10ml", genericName: "Aminophylline", strength: "250mg/10ml", form: "injection", category: "Emergency" },
-  { name: "Furosemide (Lasix) 20mg", genericName: "Furosemide", strength: "20mg", form: "tablet", category: "Diuretic" },
-  { name: "Furosemide (Lasix) 40mg", genericName: "Furosemide", strength: "40mg", form: "tablet", category: "Diuretic" },
-  { name: "Furosemide Injection 20mg/2ml", genericName: "Furosemide", strength: "20mg/2ml", form: "injection", category: "Diuretic" },
+  { name: "Adrenaline (Epinephrine) 1mg/ml Injection", genericName: "Epinephrine", strength: "1mg/ml", form: "injection", category: "Emergency", summary: "Life-saving medicine for severe allergic reactions and cardiac arrest. Give immediately by IM injection in emergency. Keep available always." },
+  { name: "Atropine 0.5mg/ml Injection", genericName: "Atropine", strength: "0.5mg/ml", form: "injection", category: "Emergency", summary: "Emergency medicine for slow heart rate and certain poisonings. Give by IV or IM injection. Works within minutes." },
+  { name: "Atropine 1mg/ml Injection", genericName: "Atropine", strength: "1mg/ml", form: "injection", category: "Emergency", summary: "Emergency medicine for slow heart rate and certain poisonings. Give by IV or IM injection. Works within minutes." },
+  { name: "Aminophylline Injection 250mg/10ml", genericName: "Aminophylline", strength: "250mg/10ml", form: "injection", category: "Emergency", summary: "Emergency medicine for severe asthma attacks. Give slowly by IV drip. Monitor heart rate and breathing." },
+  { name: "Furosemide (Lasix) 20mg", genericName: "Furosemide", strength: "20mg", form: "tablet", category: "Diuretic", summary: "Water pill for heart failure and fluid retention. Makes you urinate more. Take in morning to avoid night urination." },
+  { name: "Furosemide (Lasix) 40mg", genericName: "Furosemide", strength: "40mg", form: "tablet", category: "Diuretic", summary: "Water pill for heart failure and fluid retention. Makes you urinate more. Take in morning to avoid night urination." },
+  { name: "Furosemide Injection 20mg/2ml", genericName: "Furosemide", strength: "20mg/2ml", form: "injection", category: "Diuretic", summary: "Emergency water pill for heart failure and lung fluid. Works quickly by IV injection. Monitor blood pressure." },
   
   // Other Common Drugs
-  { name: "Prednisolone 5mg", genericName: "Prednisolone", strength: "5mg", form: "tablet", category: "Corticosteroid" },
-  { name: "Prednisolone 10mg", genericName: "Prednisolone", strength: "10mg", form: "tablet", category: "Corticosteroid" },
-  { name: "Prednisolone 20mg", genericName: "Prednisolone", strength: "20mg", form: "tablet", category: "Corticosteroid" },
-  { name: "Tramadol 50mg", genericName: "Tramadol", strength: "50mg", form: "capsule", category: "Analgesic" },
-  { name: "Tramadol 100mg", genericName: "Tramadol", strength: "100mg", form: "capsule", category: "Analgesic" },
-  { name: "Tramadol Injection 50mg/ml", genericName: "Tramadol", strength: "50mg/ml", form: "injection", category: "Analgesic" },
-  { name: "Ranitidine Injection 50mg/2ml", genericName: "Ranitidine", strength: "50mg/2ml", form: "injection", category: "Gastrointestinal" },
-  { name: "Aminophylline 100mg", genericName: "Aminophylline", strength: "100mg", form: "tablet", category: "Respiratory" },
-  { name: "Aminophylline 200mg", genericName: "Aminophylline", strength: "200mg", form: "tablet", category: "Respiratory" },
-  { name: "Theophylline 100mg", genericName: "Theophylline", strength: "100mg", form: "tablet", category: "Respiratory" },
-  { name: "Theophylline 200mg", genericName: "Theophylline", strength: "200mg", form: "tablet", category: "Respiratory" },
-  { name: "Theophylline 300mg", genericName: "Theophylline", strength: "300mg", form: "tablet", category: "Respiratory" },
-  { name: "Calcium Gluconate Injection 10%", genericName: "Calcium Gluconate", strength: "10%", form: "injection", category: "Electrolyte" },
-  { name: "Magnesium Sulfate Injection 50%", genericName: "Magnesium Sulfate", strength: "50%", form: "injection", category: "Electrolyte" },
-  { name: "Potassium Chloride tablets/solution", genericName: "Potassium Chloride", strength: "600mg", form: "tablet", category: "Electrolyte" },
-  { name: "Ferrous Fumarate 200mg", genericName: "Ferrous Fumarate", strength: "200mg", form: "tablet", category: "Vitamin" },
-  { name: "Tranexamic Acid 500mg", genericName: "Tranexamic Acid", strength: "500mg", form: "tablet", category: "Hemostatic" },
-  { name: "Tranexamic Acid Injection 500mg/5ml", genericName: "Tranexamic Acid", strength: "500mg/5ml", form: "injection", category: "Hemostatic" },
-  { name: "Warfarin 2mg", genericName: "Warfarin", strength: "2mg", form: "tablet", category: "Anticoagulant" },
-  { name: "Warfarin 5mg", genericName: "Warfarin", strength: "5mg", form: "tablet", category: "Anticoagulant" },
-  { name: "Levothyroxine 50mcg", genericName: "Levothyroxine", strength: "50mcg", form: "tablet", category: "Thyroid" },
-  { name: "Levothyroxine 75mcg", genericName: "Levothyroxine", strength: "75mcg", form: "tablet", category: "Thyroid" },
-  { name: "Levothyroxine 100mcg", genericName: "Levothyroxine", strength: "100mcg", form: "tablet", category: "Thyroid" },
-  { name: "Hydrocortisone Cream 1%", genericName: "Hydrocortisone", strength: "1%", form: "cream", category: "Topical" },
-  { name: "Gentian Violet Solution", genericName: "Gentian Violet", strength: "0.5%", form: "other", category: "Topical" },
-  { name: "Eye Drops (Chloramphenicol)", genericName: "Chloramphenicol", strength: "0.5%", form: "drops", category: "Ophthalmic" },
+  { name: "Prednisolone 5mg", genericName: "Prednisolone", strength: "5mg", form: "tablet", category: "Corticosteroid", summary: "Steroid for inflammation, asthma and allergies. Take with food in morning. Do not stop suddenly after long use." },
+  { name: "Prednisolone 10mg", genericName: "Prednisolone", strength: "10mg", form: "tablet", category: "Corticosteroid", summary: "Steroid for inflammation, asthma and allergies. Take with food in morning. Do not stop suddenly after long use." },
+  { name: "Prednisolone 20mg", genericName: "Prednisolone", strength: "20mg", form: "tablet", category: "Corticosteroid", summary: "Steroid for inflammation, asthma and allergies. Take with food in morning. Do not stop suddenly after long use." },
+  { name: "Tramadol 50mg", genericName: "Tramadol", strength: "50mg", form: "capsule", category: "Analgesic", summary: "Moderate to strong pain reliever. Good for chronic pain. Can cause drowsiness and constipation." },
+  { name: "Tramadol 100mg", genericName: "Tramadol", strength: "100mg", form: "capsule", category: "Analgesic", summary: "Moderate to strong pain reliever. Good for chronic pain. Can cause drowsiness and constipation." },
+  { name: "Tramadol Injection 50mg/ml", genericName: "Tramadol", strength: "50mg/ml", form: "injection", category: "Analgesic", summary: "Injectable pain reliever for moderate to severe pain. Give by IM or slow IV. Monitor for drowsiness." },
+  { name: "Ranitidine Injection 50mg/2ml", genericName: "Ranitidine", strength: "50mg/2ml", form: "injection", category: "Gastrointestinal", summary: "Injectable acid reducer for severe ulcers. Give by slow IV or IM injection. Prevents stress ulcers in critical patients." },
+  { name: "Aminophylline 100mg", genericName: "Aminophylline", strength: "100mg", form: "tablet", category: "Respiratory", summary: "Opens airways in asthma and breathing problems. Take regularly to prevent attacks. May cause nausea and fast heartbeat." },
+  { name: "Aminophylline 200mg", genericName: "Aminophylline", strength: "200mg", form: "tablet", category: "Respiratory", summary: "Opens airways in asthma and breathing problems. Take regularly to prevent attacks. May cause nausea and fast heartbeat." },
+  { name: "Theophylline 100mg", genericName: "Theophylline", strength: "100mg", form: "tablet", category: "Respiratory", summary: "Long-acting medicine for asthma prevention. Take twice daily at same times. Monitor blood levels if possible." },
+  { name: "Theophylline 200mg", genericName: "Theophylline", strength: "200mg", form: "tablet", category: "Respiratory", summary: "Long-acting medicine for asthma prevention. Take twice daily at same times. Monitor blood levels if possible." },
+  { name: "Theophylline 300mg", genericName: "Theophylline", strength: "300mg", form: "tablet", category: "Respiratory", summary: "Long-acting medicine for asthma prevention. Take twice daily at same times. Monitor blood levels if possible." },
+  { name: "Calcium Gluconate Injection 10%", genericName: "Calcium Gluconate", strength: "10%", form: "injection", category: "Electrolyte", summary: "Replaces low calcium in emergencies. Treats eclampsia and calcium deficiency. Give slowly by IV to avoid heart problems." },
+  { name: "Magnesium Sulfate Injection 50%", genericName: "Magnesium Sulfate", strength: "50%", form: "injection", category: "Electrolyte", summary: "Emergency treatment for eclampsia in pregnancy. Also treats low magnesium and certain seizures. Give by IM or IV drip." },
+  { name: "Potassium Chloride tablets/solution", genericName: "Potassium Chloride", strength: "600mg", form: "tablet", category: "Electrolyte", summary: "Replaces potassium lost from diarrhea or water pills. Take with food and water. Important for heart function." },
+  { name: "Ferrous Fumarate 200mg", genericName: "Ferrous Fumarate", strength: "200mg", form: "tablet", category: "Vitamin", summary: "Iron supplement for anemia. Similar to ferrous sulfate. Take on empty stomach with vitamin C for better absorption." },
+  { name: "Tranexamic Acid 500mg", genericName: "Tranexamic Acid", strength: "500mg", form: "tablet", category: "Hemostatic", summary: "Stops bleeding by helping blood clot. Used for heavy periods and after delivery. Take 3 times daily when bleeding." },
+  { name: "Tranexamic Acid Injection 500mg/5ml", genericName: "Tranexamic Acid", strength: "500mg/5ml", form: "injection", category: "Hemostatic", summary: "Stops severe bleeding quickly. Life-saving after delivery and in trauma. Give by slow IV injection." },
+  { name: "Warfarin 2mg", genericName: "Warfarin", strength: "2mg", form: "tablet", category: "Anticoagulant", summary: "Blood thinner to prevent clots. Requires regular blood tests. Avoid foods high in vitamin K." },
+  { name: "Warfarin 5mg", genericName: "Warfarin", strength: "5mg", form: "tablet", category: "Anticoagulant", summary: "Blood thinner to prevent clots. Requires regular blood tests. Avoid foods high in vitamin K." },
+  { name: "Levothyroxine 50mcg", genericName: "Levothyroxine", strength: "50mcg", form: "tablet", category: "Thyroid", summary: "Replaces thyroid hormone in hypothyroidism. Take on empty stomach in morning. Need for life." },
+  { name: "Levothyroxine 75mcg", genericName: "Levothyroxine", strength: "75mcg", form: "tablet", category: "Thyroid", summary: "Replaces thyroid hormone in hypothyroidism. Take on empty stomach in morning. Need for life." },
+  { name: "Levothyroxine 100mcg", genericName: "Levothyroxine", strength: "100mcg", form: "tablet", category: "Thyroid", summary: "Replaces thyroid hormone in hypothyroidism. Take on empty stomach in morning. Need for life." },
+  { name: "Hydrocortisone Cream 1%", genericName: "Hydrocortisone", strength: "1%", form: "cream", category: "Topical", summary: "Mild steroid cream for skin rashes and itching. Apply thinly 2-3 times daily. Do not use on face long term." },
+  { name: "Gentian Violet Solution", genericName: "Gentian Violet", strength: "0.5%", form: "other", category: "Topical", summary: "Purple antiseptic for mouth sores and skin infections. Apply to affected area. Stains clothing and skin purple." },
+  { name: "Eye Drops (Chloramphenicol)", genericName: "Chloramphenicol", strength: "0.5%", form: "drops", category: "Ophthalmic", summary: "Antibiotic eye drops for eye infections. Put 1-2 drops in affected eye 4 times daily. Complete full course." },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function PharmacyInventory() {
@@ -2438,9 +2448,9 @@ export default function PharmacyInventory() {
         </TabsContent>
       </Tabs>
 
-      {/* Add Drug Dialog - Modernized */}
+      {/* Add Drug Dialog - Modernized & Expanded */}
       <Dialog open={showAddDrug} onOpenChange={setShowAddDrug}>
-        <DialogContent className="max-w-2xl shadow-premium-2xl" data-testid="dialog-add-drug">
+        <DialogContent className="max-w-[680px] shadow-premium-2xl" data-testid="dialog-add-drug">
           <DialogHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-premium-md">
@@ -2497,8 +2507,8 @@ export default function PharmacyInventory() {
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 max-w-lg" align="start">
-                  <Command className="rounded-lg border shadow-md" shouldFilter={false}>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 max-w-lg shadow-[0_8px_24px_rgba(0,0,0,0.12)]" align="start">
+                  <Command className="rounded-lg border" shouldFilter={false}>
                     <CommandInput 
                       placeholder="Type to search drugs by name, category, or generic name..." 
                       value={comboboxSearch}
@@ -2513,7 +2523,17 @@ export default function PharmacyInventory() {
                         <p className="text-xs text-muted-foreground">Try searching with a different term</p>
                       </div>
                     </CommandEmpty>
-                    <div className="max-h-[450px] overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }} role="listbox">
+                    <CommandGroup className="p-0">
+                      <div 
+                        className="max-h-[450px] overflow-y-scroll overflow-x-hidden scrollbar-premium" 
+                        style={{ 
+                          WebkitOverflowScrolling: 'touch', 
+                          overscrollBehavior: 'contain',
+                          scrollBehavior: 'smooth',
+                          touchAction: 'pan-y'
+                        }} 
+                        role="listbox"
+                      >
                       {(() => {
                         // Filter drugs based on search
                         const filteredDrugs = COMMON_DRUGS.filter(drug => 
@@ -2558,10 +2578,10 @@ export default function PharmacyInventory() {
                           <CommandGroup 
                             key={category} 
                             heading={
-                              <div className="flex items-center gap-2 px-2 py-2 font-semibold text-sm sticky top-0 bg-gray-50 dark:bg-gray-900 border-b">
+                              <div className="flex items-center gap-2 px-3 py-2.5 font-bold text-sm sticky top-0 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm z-10">
                                 <span className="text-lg" role="img" aria-label={category}>{categoryIcons[category] || '💊'}</span>
-                                <span>{category}</span>
-                                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                                <span className="text-gray-800 dark:text-gray-200">{category}</span>
+                                <span className="ml-auto text-xs font-normal text-muted-foreground bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full">
                                   {drugs.length} {drugs.length === 1 ? 'drug' : 'drugs'}
                                 </span>
                               </div>
@@ -2585,7 +2605,7 @@ export default function PharmacyInventory() {
                                   setComboboxSearch(drug.name);
                                   setOpenCombobox(false);
                                 }}
-                                className="py-3 px-4 cursor-pointer hover:bg-accent/80 data-[selected='true']:bg-accent/90 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                                className="py-4 px-4 cursor-pointer hover:bg-accent/80 data-[selected='true']:bg-accent/90 transition-all duration-200 border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:translate-x-1"
                                 role="option"
                                 aria-selected={comboboxSearch === drug.name}
                               >
@@ -2595,9 +2615,9 @@ export default function PharmacyInventory() {
                                     comboboxSearch === drug.name ? "opacity-100" : "opacity-0"
                                   )}
                                 />
-                                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                                   <div className="flex items-start gap-2">
-                                    <span className="font-semibold text-sm leading-tight">{drug.name}</span>
+                                    <span className="font-bold text-base leading-tight text-gray-900 dark:text-gray-100">{drug.name}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     {drug.genericName && (
@@ -2614,13 +2634,22 @@ export default function PharmacyInventory() {
                                       </>
                                     )}
                                   </div>
+                                  {drug.summary && (
+                                    <div className="flex items-start gap-1.5 mt-1">
+                                      <span className="text-xs" role="img" aria-label="Educational info">📝</span>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed italic">
+                                        {drug.summary}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                               </CommandItem>
                             ))}
                           </CommandGroup>
                         ));
                       })()}
-                    </div>
+                      </div>
+                    </CommandGroup>
                   </Command>
                 </PopoverContent>
               </Popover>
