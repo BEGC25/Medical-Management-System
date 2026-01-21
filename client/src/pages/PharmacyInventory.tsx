@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X, ChevronDown } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X, ChevronDown, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -66,6 +66,8 @@ import { BulkActionBar, getStockBulkActions, getCatalogBulkActions } from "@/com
 import { QuickAdjustModal } from "@/components/pharmacy/QuickAdjustModal";
 import { ExportModal, ExportColumn } from "@/components/pharmacy/ExportModal";
 import { AnalyticsDashboard } from "@/components/pharmacy/AnalyticsDashboard";
+import { DrugInfoModal } from "@/components/pharmacy/DrugInfoModal";
+import { DrugInfoTooltip } from "@/components/pharmacy/DrugInfoTooltip";
 import { exportData } from "@/lib/export-utils";
 import { formatDrugQuantity } from "@/utils/pharmacy";
 
@@ -242,10 +244,37 @@ const COMMON_DRUGS: CommonDrug[] = [
   { name: "Vitamin B Complex", genericName: "Vitamin B Complex", strength: "various", form: "tablet", category: "Vitamin", summary: "Contains B vitamins for energy and nerve health. Helps prevent deficiency. Take once daily." },
   { name: "Zinc Sulfate 20mg", genericName: "Zinc Sulfate", strength: "20mg", form: "tablet", category: "Vitamin", summary: "Boosts immunity and helps wounds heal. Important for children's growth. Take with food to avoid nausea." },
   
-  // Antimalarials
-  { name: "Artemether+Lumefantrine (Coartem)", genericName: "Artemether-Lumefantrine", strength: "20mg/120mg", form: "tablet", category: "Antimalarial", summary: "First-line treatment for malaria. Take with food or milk for 3 days. Complete all doses even if feeling better." },
-  { name: "Quinine 300mg", genericName: "Quinine", strength: "300mg", form: "tablet", category: "Antimalarial", summary: "Treats severe malaria. Take 3 times daily for 7 days. May cause ringing in ears and dizziness." },
-  { name: "Chloroquine 250mg", genericName: "Chloroquine", strength: "250mg", form: "tablet", category: "Antimalarial", summary: "Prevents and treats malaria in some areas. Resistance is common. Take weekly for prevention or 3 days for treatment." },
+  // Antimalarials - First-Line Treatments (ACTs)
+  { name: "Artemether+Lumefantrine (Coartem)", genericName: "Artemether-Lumefantrine", strength: "20mg/120mg", form: "tablet", category: "Antimalarial • ACT", summary: "First-line treatment for uncomplicated malaria. Take twice daily for 3 days with food or milk. Very effective when full course is completed." },
+  { name: "Artesunate-Amodiaquine (AS-AQ)", genericName: "Artesunate-Amodiaquine", strength: "100mg/270mg", form: "tablet", category: "Antimalarial • ACT", summary: "First-line malaria treatment in South Sudan. Take once daily for 3 days. Cures malaria in 95% of cases when taken correctly." },
+  { name: "Artesunate-Amodiaquine Pediatric 25mg/67.5mg", genericName: "Artesunate-Amodiaquine", strength: "25mg/67.5mg", form: "tablet", category: "Antimalarial • ACT • Pediatric", summary: "Pediatric dose for young children. Take once daily for 3 days. First-line treatment in South Sudan." },
+  { name: "Artesunate-Amodiaquine Pediatric 50mg/135mg", genericName: "Artesunate-Amodiaquine", strength: "50mg/135mg", form: "tablet", category: "Antimalarial • ACT • Pediatric", summary: "Pediatric dose for children. Take once daily for 3 days. First-line treatment in South Sudan." },
+  { name: "Dihydroartemisinin-Piperaquine (DHA-PPQ)", genericName: "Dihydroartemisinin-Piperaquine", strength: "40mg/320mg", form: "tablet", category: "Antimalarial • ACT", summary: "Alternative first-line treatment for malaria. Take once daily for 3 days. Longer protection against re-infection compared to other ACTs." },
+  { name: "Dihydroartemisinin-Piperaquine Pediatric", genericName: "Dihydroartemisinin-Piperaquine", strength: "20mg/160mg", form: "tablet", category: "Antimalarial • ACT • Pediatric", summary: "Pediatric formulation. Take once daily for 3 days. Longer protection against re-infection." },
+  { name: "Artesunate-Mefloquine (AS-MQ)", genericName: "Artesunate-Mefloquine", strength: "100mg/250mg", form: "tablet", category: "Antimalarial • ACT", summary: "Treats malaria in areas with drug resistance. Take once daily for 3 days. Not for pregnant women in first trimester." },
+  { name: "Artesunate-Sulfadoxine-Pyrimethamine", genericName: "Artesunate-SP", strength: "fixed-dose", form: "tablet", category: "Antimalarial • ACT", summary: "Combination malaria treatment. Effective where parasites remain sensitive to sulfadoxine-pyrimethamine." },
+  
+  // Antimalarials - Severe Malaria Treatments
+  { name: "Artesunate Injectable", genericName: "Artesunate", strength: "60mg", form: "injection", category: "Antimalarial • Emergency • Injection", summary: "EMERGENCY treatment for severe malaria. Given by injection when patient cannot swallow or has severe disease. Can save lives within hours." },
+  { name: "Artemether Injectable", genericName: "Artemether", strength: "80mg/mL", form: "injection", category: "Antimalarial • Emergency • Injection", summary: "Injectable treatment for severe malaria when artesunate not available. Given by muscle injection." },
+  { name: "Quinine Injectable", genericName: "Quinine", strength: "300mg/mL", form: "injection", category: "Antimalarial • Emergency • Injection", summary: "Alternative treatment for severe malaria. Given slowly by IV drip. Requires close monitoring for side effects." },
+  { name: "Quinine 300mg", genericName: "Quinine", strength: "300mg", form: "tablet", category: "Antimalarial • Tablet", summary: "Older malaria treatment, now second-line. Take 3 times daily for 7 days. Often combined with antibiotic for better cure." },
+  { name: "Quinine 200mg", genericName: "Quinine", strength: "200mg", form: "tablet", category: "Antimalarial • Tablet", summary: "Lower dose for children or smaller adults. Take 3 times daily for 7 days. May cause ringing in ears and dizziness." },
+  
+  // Antimalarials - Prevention Medications
+  { name: "Atovaquone-Proguanil (Malarone) Adult", genericName: "Atovaquone-Proguanil", strength: "250mg/100mg", form: "tablet", category: "Antimalarial • Prevention", summary: "Prevents malaria for travelers. Take daily starting 1-2 days before travel. Safe for children and short-term use." },
+  { name: "Atovaquone-Proguanil Pediatric", genericName: "Atovaquone-Proguanil", strength: "62.5mg/25mg", form: "tablet", category: "Antimalarial • Prevention • Pediatric", summary: "Pediatric malaria prevention. Take daily starting before travel. Safe for children." },
+  { name: "Doxycycline 100mg", genericName: "Doxycycline", strength: "100mg", form: "capsule", category: "Antibiotic • Antimalarial Prevention", summary: "Prevents malaria when taken daily. Also treats infections. Not for children under 8 or pregnant women. Take with food." },
+  { name: "Mefloquine 250mg", genericName: "Mefloquine", strength: "250mg", form: "tablet", category: "Antimalarial • Prevention", summary: "Weekly malaria prevention for travelers. Start 2 weeks before travel. Not for people with mental health conditions." },
+  { name: "Sulfadoxine-Pyrimethamine (SP, Fansidar)", genericName: "Sulfadoxine-Pyrimethamine", strength: "500mg/25mg", form: "tablet", category: "Antimalarial • Prevention", summary: "Used for malaria prevention in pregnant women (IPTp). Given monthly during pregnancy. Also prevents malaria in young children." },
+  { name: "Primaquine 15mg", genericName: "Primaquine", strength: "15mg", form: "tablet", category: "Antimalarial", summary: "Prevents malaria relapse from certain types. Requires G6PD blood test before use. Not for pregnant women." },
+  { name: "Primaquine 7.5mg", genericName: "Primaquine", strength: "7.5mg", form: "tablet", category: "Antimalarial", summary: "Lower dose for children or G6PD testing. Prevents relapse. Not for pregnant women." },
+  { name: "Chloroquine 250mg", genericName: "Chloroquine", strength: "250mg", form: "tablet", category: "Antimalarial", summary: "Old malaria drug. Now only used where parasites remain sensitive (rare in Africa). Also treats some autoimmune diseases." },
+  { name: "Chloroquine Syrup 50mg/5mL", genericName: "Chloroquine", strength: "50mg/5mL", form: "syrup", category: "Antimalarial", summary: "Liquid form for children. Limited use due to resistance. Also for autoimmune diseases." },
+  
+  // Antimalarials - Pediatric-Specific Formulations
+  { name: "Artemether-Lumefantrine Dispersible", genericName: "Artemether-Lumefantrine", strength: "20mg/120mg", form: "tablet", category: "Antimalarial • ACT • Pediatric", summary: "Child-friendly malaria tablets that dissolve in water. Taste better for children. Same effectiveness as adult tablets." },
+  { name: "Artesunate Suppositories", genericName: "Artesunate", strength: "pediatric", form: "other", category: "Antimalarial • Emergency • Pediatric", summary: "Emergency treatment for children with severe malaria who cannot swallow. Insert rectally before transferring to hospital." },
   
   // Antiparasitics
   { name: "Albendazole 400mg", genericName: "Albendazole", strength: "400mg", form: "tablet", category: "Antiparasitic", summary: "Kills intestinal worms. Single dose for most worms. Take with fatty food for better absorption." },
@@ -429,6 +458,9 @@ export default function PharmacyInventory() {
   const [quickAdjustDrug, setQuickAdjustDrug] = useState<(Drug & { stockOnHand: number }) | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportContext, setExportContext] = useState<"stock" | "catalog" | "ledger">("stock");
+  const [showDrugInfo, setShowDrugInfo] = useState(false);
+  const [drugInfoDrug, setDrugInfoDrug] = useState<Drug | null>(null);
+  const [drugInfoStockData, setDrugInfoStockData] = useState<{ stockOnHand: number; price: number; expiryDate?: string } | undefined>(undefined);
   
   // Tab state for programmatic navigation
   const [activeTab, setActiveTab] = useState("stock");
@@ -1686,6 +1718,37 @@ export default function PharmacyInventory() {
                         </TableCell>
                         <TableCell className="text-right py-5">
                           <div className="flex gap-1 justify-end">
+                            <DrugInfoTooltip drug={drug}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  // Get stock info for the drug
+                                  const batches = drugBatches?.filter(b => b.drugId === drug.id) || [];
+                                  const totalStock = batches.reduce((sum, b) => sum + b.quantityOnHand, 0);
+                                  const avgPrice = batches.length > 0 
+                                    ? batches.reduce((sum, b) => sum + b.unitCost, 0) / batches.length 
+                                    : drug.defaultPrice || 0;
+                                  const nearestExpiry = batches
+                                    .filter(b => b.quantityOnHand > 0)
+                                    .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0];
+                                  
+                                  setDrugInfoDrug(drug);
+                                  setDrugInfoStockData({
+                                    stockOnHand: totalStock,
+                                    price: avgPrice,
+                                    expiryDate: nearestExpiry?.expiryDate
+                                  });
+                                  setShowDrugInfo(true);
+                                }}
+                                className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
+                                         hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
+                                         hover:shadow-premium-sm hover:scale-105"
+                                title="Drug Information"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </Button>
+                            </DrugInfoTooltip>
                             <Button
                               size="sm"
                               variant="outline"
@@ -3315,6 +3378,14 @@ export default function PharmacyInventory() {
         selectedCount={exportContext === "stock" ? selectedStockItems.size : selectedCatalogItems.size}
         defaultFilename={`pharmacy-${exportContext}-${new Date().toISOString().split('T')[0]}`}
         onExport={handleExport}
+      />
+
+      {/* Drug Info Modal */}
+      <DrugInfoModal
+        drug={drugInfoDrug}
+        stockInfo={drugInfoStockData}
+        open={showDrugInfo}
+        onOpenChange={setShowDrugInfo}
       />
 
       {/* Bulk Action Bar for Stock */}
