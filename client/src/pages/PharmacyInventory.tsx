@@ -1955,8 +1955,8 @@ export default function PharmacyInventory() {
               <CardTitle>Drug Catalog</CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
+              <Table className="table-zebra">
+                <TableHeader className="sticky top-0 z-10 table-header-premium">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
                     <TableHead className="w-12">
                       <Checkbox
@@ -1965,15 +1965,15 @@ export default function PharmacyInventory() {
                         aria-label="Select all"
                       />
                     </TableHead>
-                    <TableHead className="font-semibold">Drug Code</TableHead>
-                    <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Generic Name</TableHead>
-                    <TableHead className="font-semibold">Strength</TableHead>
-                    <TableHead className="font-semibold">Form</TableHead>
-                    <TableHead className="font-semibold">Stock Level</TableHead>
-                    <TableHead className="text-right font-semibold">Reorder Level</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="text-right font-semibold">Actions</TableHead>
+                    <TableHead>Drug Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Generic Name</TableHead>
+                    <TableHead>Strength</TableHead>
+                    <TableHead>Form</TableHead>
+                    <TableHead>Stock Level</TableHead>
+                    <TableHead className="text-right">Reorder Level</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2013,13 +2013,8 @@ export default function PharmacyInventory() {
                       <TableRow 
                         key={drug.id} 
                         data-testid={`drug-row-${drug.id}`}
-                        className={`transition-all duration-150 ease-in-out cursor-pointer border-b border-gray-100 dark:border-gray-800
-                                  ${index % 2 === 0 
-                                    ? "bg-white dark:bg-gray-900" 
-                                    : "bg-slate-50 dark:bg-gray-800/50"
-                                  }
-                                  ${isSelected ? "bg-blue-50 dark:bg-blue-900/20" : ""}
-                                  hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-l-4 hover:border-l-purple-500`}
+                        className={`table-row-premium border-b border-gray-100 dark:border-gray-800
+                                  ${isSelected ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
                       >
                         <TableCell className="py-5">
                           <Checkbox
@@ -2037,19 +2032,24 @@ export default function PharmacyInventory() {
                           />
                         </TableCell>
                         <TableCell className="font-medium text-gray-900 dark:text-white py-5">{drug.drugCode}</TableCell>
-                      <TableCell className="font-semibold text-gray-900 dark:text-white py-5">{drug.name}</TableCell>
+                      <TableCell className="drug-name-catalog py-5">{drug.name}</TableCell>
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.genericName || '-'}</TableCell>
                       <TableCell className="text-gray-700 dark:text-gray-300 py-5">{drug.strength || '-'}</TableCell>
                       <TableCell className="capitalize text-gray-700 dark:text-gray-300 py-5">{drug.form}</TableCell>
-                      <TableCell className="py-5">
+                      <TableCell className={cn(
+                        "py-5 stock-level-cell rounded-md",
+                        stockLevel === 0 ? "level-critical" :
+                        stockLevel <= reorderLevel ? "level-low" :
+                        "level-good"
+                      )}>
                         <div className="flex items-center gap-2">
                           <div className={cn(
-                            "w-2 h-2 rounded-full",
-                            stockLevel > reorderLevel * 2 ? "bg-green-500" :
-                            stockLevel > reorderLevel ? "bg-yellow-500" :
-                            "bg-red-500"
+                            "w-2.5 h-2.5 rounded-full shadow-sm",
+                            stockLevel === 0 ? "bg-red-600 animate-pulse" :
+                            stockLevel <= reorderLevel ? "bg-orange-500" :
+                            "bg-green-500"
                           )} />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="text-sm font-semibold">
                             {formatDrugQuantity(stockLevel, drug.form)}
                           </span>
                         </div>
@@ -2067,37 +2067,42 @@ export default function PharmacyInventory() {
                       </TableCell>
                       <TableCell className="text-right py-5">
                         <div className="flex gap-1 justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingDrug(drug);
-                              setShowEditDrug(true);
-                            }}
-                            className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
-                                     hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
-                                     hover:shadow-premium-sm hover:scale-105"
-                            title="Edit Drug"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedDrug(drug);
-                              setNewBatch({ ...newBatch, drugId: drug.id });
-                              setShowReceiveStock(true);
-                            }}
-                            className="h-8 px-2.5 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
-                                     hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
-                                     hover:shadow-premium-sm hover:scale-105"
-                            title="Receive Stock"
-                          >
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="sm"
+                          <div className="icon-tooltip-wrapper">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingDrug(drug);
+                                setShowEditDrug(true);
+                              }}
+                              className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
+                                       hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
+                                       hover:shadow-premium-sm hover:scale-105"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </Button>
+                            <span className="icon-tooltip">Edit Drug</span>
+                          </div>
+                          <div className="icon-tooltip-wrapper">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedDrug(drug);
+                                setNewBatch({ ...newBatch, drugId: drug.id });
+                                setShowReceiveStock(true);
+                              }}
+                              className="h-8 px-2.5 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
+                                       hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
+                                       hover:shadow-premium-sm hover:scale-105"
+                            >
+                              <ShoppingCart className="w-3.5 h-3.5" />
+                            </Button>
+                            <span className="icon-tooltip">Receive Stock</span>
+                          </div>
+                          <div className="icon-tooltip-wrapper">
+                            <Button
+                              size="sm"
                             variant="outline"
                             onClick={() => {
                               setBatchesDrug(drug);
@@ -2106,13 +2111,14 @@ export default function PharmacyInventory() {
                             className="h-8 px-2.5 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
                                      hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-150
                                      hover:shadow-premium-sm hover:scale-105"
-                            title="View Batches"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </Button>
+                          <span className="icon-tooltip">View Batches</span>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                     );
                     })
                   )}
