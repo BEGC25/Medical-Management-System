@@ -748,6 +748,264 @@
   .animate-fade-in-up {
     animation: fade-in-up 0.4s ease-out;
   }
+
+  /* ========================================
+     PREMIUM PHARMACY INVENTORY STYLES
+     ======================================== */
+
+  /* Premium Input Fields */
+  .input-premium {
+    @apply bg-gray-50/50 dark:bg-gray-800/50;
+    @apply border-gray-300 dark:border-gray-600;
+    @apply transition-all duration-200;
+    @apply focus:bg-white dark:focus:bg-gray-900;
+    @apply focus:border-purple-500 dark:focus:border-purple-400;
+    @apply focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20;
+    @apply focus:shadow-lg focus:shadow-purple-500/10;
+  }
+
+  /* Premium Select Fields */
+  .select-premium {
+    @apply bg-gray-50/50 dark:bg-gray-800/50;
+    @apply border-gray-300 dark:border-gray-600;
+    @apply transition-all duration-200;
+    @apply hover:bg-gray-100/50 dark:hover:bg-gray-700/50;
+    @apply focus:bg-white dark:focus:bg-gray-900;
+    @apply focus:border-purple-500 dark:focus:border-purple-400;
+    @apply focus:ring-2 focus:ring-purple-500/20;
+  }
+
+  /* Premium Textarea */
+  .textarea-premium {
+    @apply bg-gray-50/50 dark:bg-gray-800/50;
+    @apply border-gray-300 dark:border-gray-600;
+    @apply transition-all duration-200;
+    @apply focus:bg-white dark:focus:bg-gray-900;
+    @apply focus:border-purple-500 dark:focus:border-purple-400;
+    @apply focus:ring-2 focus:ring-purple-500/20;
+    @apply focus:shadow-lg focus:shadow-purple-500/10;
+  }
+
+  /* Premium Section Divider */
+  .section-divider {
+    @apply border-t border-gray-200/60 dark:border-gray-700/60;
+    @apply my-6;
+    position: relative;
+  }
+
+  .section-divider::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(147, 51, 234, 0.2) 50%, 
+      transparent 100%
+    );
+  }
+
+  /* Enhanced Table Row Hover */
+  .table-row-premium {
+    @apply transition-all duration-200;
+    @apply hover:bg-gray-50/80 dark:hover:bg-gray-800/40;
+    @apply hover:shadow-md;
+    @apply hover:-translate-y-0.5;
+    @apply cursor-pointer;
+  }
+
+  /* Table Header Premium */
+  .table-header-premium {
+    @apply bg-gradient-to-r from-gray-50 to-gray-100/50;
+    @apply dark:from-gray-800/50 dark:to-gray-900/30;
+    @apply border-b-2 border-gray-200 dark:border-gray-700;
+    @apply font-semibold text-gray-700 dark:text-gray-300;
+  }
+
+  /* Stat Card Glassmorphism */
+  .stat-card-glass {
+    @apply relative overflow-hidden;
+    @apply backdrop-blur-sm;
+    @apply bg-gradient-to-br;
+    @apply shadow-premium-md hover:shadow-premium-lg;
+    @apply transition-all duration-300;
+    @apply border border-white/20 dark:border-gray-700/30;
+  }
+
+  .stat-card-glass:hover {
+    @apply -translate-y-1 scale-[1.02];
+  }
+
+  .stat-card-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Badge Prominent - For OUT OF STOCK */
+  .badge-prominent-red {
+    @apply inline-flex items-center px-2.5 py-1;
+    @apply text-xs font-semibold;
+    @apply bg-gradient-to-r from-red-500 to-red-600;
+    @apply text-white;
+    @apply rounded-full;
+    @apply shadow-md shadow-red-500/30;
+    @apply animate-pulse-subtle;
+  }
+
+  /* Icon Tooltip Container */
+  .icon-tooltip-wrapper {
+    @apply relative inline-flex;
+  }
+
+  .icon-tooltip {
+    @apply absolute z-50;
+    @apply -top-10 left-1/2 -translate-x-1/2;
+    @apply px-2 py-1;
+    @apply bg-gray-900 dark:bg-gray-100;
+    @apply text-white dark:text-gray-900;
+    @apply text-xs font-medium;
+    @apply rounded shadow-lg;
+    @apply opacity-0 invisible;
+    @apply transition-all duration-200;
+    @apply whitespace-nowrap;
+    pointer-events: none;
+  }
+
+  .icon-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: theme('colors.gray.900');
+  }
+
+  .dark .icon-tooltip::after {
+    border-top-color: theme('colors.gray.100');
+  }
+
+  .icon-tooltip-wrapper:hover .icon-tooltip {
+    @apply opacity-100 visible;
+  }
+
+  /* Field Group Container */
+  .field-group {
+    @apply p-4 rounded-lg;
+    @apply bg-gray-50/30 dark:bg-gray-800/20;
+    @apply border border-gray-200/50 dark:border-gray-700/50;
+    @apply space-y-3;
+  }
+
+  /* Highlighted Section - For Bulk Purchase */
+  .section-highlight {
+    @apply relative p-4 rounded-lg;
+    @apply bg-gradient-to-br from-blue-50/50 to-indigo-50/30;
+    @apply dark:from-blue-900/10 dark:to-indigo-900/5;
+    @apply border border-blue-200/40 dark:border-blue-700/30;
+    @apply shadow-sm;
+  }
+
+  .section-highlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Auto-calculated Field Indicator */
+  .field-auto-calc {
+    @apply relative;
+  }
+
+  .field-auto-calc::after {
+    content: '🔢';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Enhanced Tip Text */
+  .tip-text-premium {
+    @apply flex items-start gap-2;
+    @apply text-sm;
+    @apply p-3 rounded-lg;
+    @apply bg-blue-50/50 dark:bg-blue-900/10;
+    @apply border-l-4 border-blue-400 dark:border-blue-600;
+    @apply text-blue-800 dark:text-blue-200;
+  }
+
+  /* Drug Name Bold in Catalog */
+  .drug-name-catalog {
+    @apply font-bold text-gray-900 dark:text-gray-100;
+    @apply text-base;
+    @apply tracking-tight;
+  }
+
+  /* Stock Level Color-Coded Cell */
+  .stock-level-cell {
+    @apply relative;
+  }
+
+  .stock-level-cell.level-critical {
+    @apply bg-red-50/50 dark:bg-red-900/10;
+    @apply text-red-700 dark:text-red-400;
+    @apply font-semibold;
+  }
+
+  .stock-level-cell.level-low {
+    @apply bg-orange-50/50 dark:bg-orange-900/10;
+    @apply text-orange-700 dark:text-orange-400;
+  }
+
+  .stock-level-cell.level-good {
+    @apply bg-green-50/50 dark:bg-green-900/10;
+    @apply text-green-700 dark:text-green-400;
+  }
+
+  /* Zebra Striping for Tables */
+  .table-zebra tbody tr:nth-child(even) {
+    @apply bg-gray-50/30 dark:bg-gray-800/20;
+  }
+
+  /* Enhanced Cancel Button */
+  .button-cancel-premium {
+    @apply border-2 border-gray-300 dark:border-gray-600;
+    @apply text-gray-700 dark:text-gray-300;
+    @apply bg-white dark:bg-gray-800;
+    @apply hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply hover:border-gray-400 dark:hover:border-gray-500;
+    @apply transition-all duration-200;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  /* Form Section Header */
+  .form-section-header {
+    @apply text-sm font-semibold;
+    @apply text-gray-700 dark:text-gray-300;
+    @apply mb-2;
+    @apply flex items-center gap-2;
+  }
+
+  .form-section-header::before {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(180deg, #9333ea 0%, #6366f1 100%);
+    border-radius: 2px;
+  }
   
   /* Premium Auth Page Animations */
   @keyframes gradient-shift {
