@@ -98,7 +98,7 @@ const categorizeDrug = (drug: Drug): string => {
   const cardioKeywords = [
     'amlodipine', 'atenolol', 'lisinopril', 'losartan',
     'furosemide', 'hydrochlorothiazide', 'enalapril', 'metoprolol',
-    'nifedipine', 'digoxin', 'warfarin', 'aspirin'
+    'nifedipine', 'digoxin', 'warfarin'
   ];
   if (cardioKeywords.some(kw => searchText.includes(kw))) {
     return "CARDIOVASCULAR";
@@ -152,7 +152,7 @@ const categorizeDrug = (drug: Drug): string => {
   // Antiparasitics
   const antiparasiticKeywords = [
     'mebendazole', 'albendazole', 'ivermectin', 'praziquantel',
-    'metronidazole', 'antiparasitic', 'deworming'
+    'antiparasitic', 'deworming'
   ];
   if (antiparasiticKeywords.some(kw => searchText.includes(kw))) {
     return "ANTIPARASITICS";
