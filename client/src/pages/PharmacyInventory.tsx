@@ -411,6 +411,68 @@ const COMMON_DRUGS: CommonDrug[] = [
   { name: "Hydrocortisone Cream 1%", genericName: "Hydrocortisone", strength: "1%", form: "cream", category: "Topical", summary: "Mild steroid cream for skin rashes and itching. Apply thinly 2-3 times daily. Do not use on face long term." },
   { name: "Gentian Violet Solution", genericName: "Gentian Violet", strength: "0.5%", form: "other", category: "Topical", summary: "Purple antiseptic for mouth sores and skin infections. Apply to affected area. Stains clothing and skin purple." },
   { name: "Eye Drops (Chloramphenicol)", genericName: "Chloramphenicol", strength: "0.5%", form: "drops", category: "Ophthalmic", summary: "Antibiotic eye drops for eye infections. Put 1-2 drops in affected eye 4 times daily. Complete full course." },
+  
+  // Antifungals
+  { name: "Fluconazole 150mg", genericName: "Fluconazole", strength: "150mg", form: "capsule", category: "Antifungal", summary: "Treats yeast infections including vaginal thrush and oral candidiasis. Single dose for vaginal infections. Safe and effective." },
+  { name: "Fluconazole 200mg", genericName: "Fluconazole", strength: "200mg", form: "capsule", category: "Antifungal", summary: "Treats systemic fungal infections and severe candidiasis. Take once daily. Used for serious fungal infections." },
+  { name: "Nystatin Oral Suspension 100,000 IU/mL", genericName: "Nystatin", strength: "100,000 IU/mL", form: "syrup", category: "Antifungal", summary: "Treats oral thrush in babies and adults. Swish in mouth and swallow. Apply 4 times daily after feeds." },
+  { name: "Nystatin Tablets 500,000 IU", genericName: "Nystatin", strength: "500,000 IU", form: "tablet", category: "Antifungal", summary: "Treats intestinal yeast infections. Not absorbed into blood. Take 3-4 times daily." },
+  { name: "Clotrimazole Cream 1%", genericName: "Clotrimazole", strength: "1%", form: "cream", category: "Antifungal", summary: "Treats skin fungal infections including athlete's foot and ringworm. Apply twice daily to affected area. Continue for 2 weeks." },
+  { name: "Clotrimazole Pessary 500mg", genericName: "Clotrimazole", strength: "500mg", form: "other", category: "Antifungal", summary: "Treats vaginal yeast infections. Insert one pessary at bedtime. Single dose treatment very effective." },
+  { name: "Ketoconazole 200mg", genericName: "Ketoconazole", strength: "200mg", form: "tablet", category: "Antifungal", summary: "Treats systemic fungal infections. Take once daily with food. Monitor liver function with long-term use." },
+  { name: "Miconazole Oral Gel 2%", genericName: "Miconazole", strength: "2%", form: "other", category: "Antifungal", summary: "Treats oral thrush in infants and children. Apply to affected areas 4 times daily. Safe for babies." },
+  
+  // Obstetric/Gynecology
+  { name: "Oxytocin Injection 10 IU/mL", genericName: "Oxytocin", strength: "10 IU/mL", form: "injection", category: "Obstetric", summary: "Induces labor and controls bleeding after delivery. Life-saving for postpartum hemorrhage. Give by IM or IV drip." },
+  { name: "Misoprostol 200mcg", genericName: "Misoprostol", strength: "200mcg", form: "tablet", category: "Obstetric", summary: "Prevents and treats postpartum hemorrhage. Also used for labor induction. Important life-saving medication for delivery." },
+  { name: "Ergometrine Injection 0.5mg/mL", genericName: "Ergometrine", strength: "0.5mg/mL", form: "injection", category: "Obstetric", summary: "Emergency treatment for postpartum bleeding. Contracts uterus to stop hemorrhage. Give by IM injection immediately after delivery." },
+  
+  // Contraceptives
+  { name: "Combined Oral Contraceptive (Ethinylestradiol/Levonorgestrel)", genericName: "Ethinylestradiol/Levonorgestrel", strength: "30mcg/150mcg", form: "tablet", category: "Contraceptive", summary: "Prevents pregnancy with estrogen and progestin. Take one pill daily at same time. Very effective when taken correctly." },
+  { name: "Progestin-Only Pill (Levonorgestrel 0.03mg)", genericName: "Levonorgestrel", strength: "0.03mg", form: "tablet", category: "Contraceptive", summary: "Progestin-only contraception safe for breastfeeding mothers. Take daily at exact same time. No estrogen side effects." },
+  { name: "Emergency Contraceptive (Levonorgestrel 1.5mg)", genericName: "Levonorgestrel", strength: "1.5mg", form: "tablet", category: "Contraceptive", summary: "Emergency contraception after unprotected intercourse. Take within 72 hours. More effective if taken sooner." },
+  { name: "Medroxyprogesterone Injection 150mg (Depo-Provera)", genericName: "Medroxyprogesterone", strength: "150mg", form: "injection", category: "Contraceptive", summary: "Injectable contraception lasting 3 months. Very effective long-acting contraception. Give by deep IM injection every 12 weeks." },
+  
+  // Antiretrovirals - HIV
+  { name: "TDF/3TC/DTG (Tenofovir/Lamivudine/Dolutegravir)", genericName: "Tenofovir/Lamivudine/Dolutegravir", strength: "300mg/300mg/50mg", form: "tablet", category: "Antiretroviral", summary: "First-line HIV treatment. Single daily tablet. Most effective and well-tolerated ARV combination. Take with or without food." },
+  { name: "TDF/3TC/EFV (Tenofovir/Lamivudine/Efavirenz)", genericName: "Tenofovir/Lamivudine/Efavirenz", strength: "300mg/300mg/600mg", form: "tablet", category: "Antiretroviral", summary: "Alternative first-line HIV treatment. Take once daily at bedtime. May cause vivid dreams or dizziness initially." },
+  { name: "AZT/3TC (Zidovudine/Lamivudine)", genericName: "Zidovudine/Lamivudine", strength: "300mg/150mg", form: "tablet", category: "Antiretroviral", summary: "Used for prevention of mother-to-child transmission (PMTCT). Take twice daily. Important for pregnant women with HIV." },
+  { name: "Nevirapine Syrup 10mg/mL", genericName: "Nevirapine", strength: "10mg/mL", form: "syrup", category: "Antiretroviral", summary: "Pediatric HIV treatment and PMTCT. Give to babies born to HIV-positive mothers. Critical for preventing infant HIV infection." },
+  { name: "Lopinavir/Ritonavir 200mg/50mg", genericName: "Lopinavir/Ritonavir", strength: "200mg/50mg", form: "tablet", category: "Antiretroviral", summary: "Second-line HIV treatment when first-line fails. Take twice daily with food. Used for drug-resistant HIV." },
+  { name: "Dolutegravir 50mg", genericName: "Dolutegravir", strength: "50mg", form: "tablet", category: "Antiretroviral", summary: "Powerful HIV medication with high barrier to resistance. Take once daily. Can be used as part of first or second-line treatment." },
+  
+  // Vaccines/Immunizations
+  { name: "Tetanus Toxoid Injection", genericName: "Tetanus Toxoid", strength: "0.5mL", form: "injection", category: "Vaccine", summary: "Prevents tetanus infection. Given to pregnant women and after injuries. Part of routine immunization schedule." },
+  { name: "Hepatitis B Vaccine", genericName: "Hepatitis B Vaccine", strength: "10mcg", form: "injection", category: "Vaccine", summary: "Prevents hepatitis B infection. Given at birth, 6 weeks, and 14 weeks. Important for healthcare workers." },
+  { name: "Rabies Vaccine", genericName: "Rabies Vaccine", strength: "2.5 IU", form: "injection", category: "Vaccine", summary: "Prevents rabies after animal bites. Give immediately after dog or bat bite. Series of 4-5 doses required." },
+  { name: "BCG Vaccine", genericName: "BCG Vaccine", strength: "0.05mL", form: "injection", category: "Vaccine", summary: "Prevents severe tuberculosis in children. Given at birth or soon after. Single dose provides lifelong protection." },
+  { name: "Measles Vaccine", genericName: "Measles Vaccine", strength: "0.5mL", form: "injection", category: "Vaccine", summary: "Prevents measles infection. Given at 9 months and 18 months. Part of routine childhood immunization." },
+  { name: "OPV (Oral Polio Vaccine)", genericName: "Oral Polio Vaccine", strength: "2 drops", form: "other", category: "Vaccine", summary: "Prevents polio infection. Given orally at birth, 6, 10, and 14 weeks. Two drops by mouth." },
+  { name: "Pentavalent Vaccine (DPT-HepB-Hib)", genericName: "Pentavalent Vaccine", strength: "0.5mL", form: "injection", category: "Vaccine", summary: "Protects against 5 diseases: diphtheria, pertussis, tetanus, hepatitis B, and Haemophilus influenzae. Given at 6, 10, and 14 weeks." },
+  
+  // Additional Ophthalmics
+  { name: "Tetracycline Eye Ointment 1%", genericName: "Tetracycline", strength: "1%", form: "ointment", category: "Ophthalmic", summary: "Antibiotic eye ointment for eye infections. Apply thin strip to lower eyelid 2-4 times daily. Used for trachoma and conjunctivitis." },
+  { name: "Gentamicin Eye Drops 0.3%", genericName: "Gentamicin", strength: "0.3%", form: "drops", category: "Ophthalmic", summary: "Strong antibiotic eye drops for bacterial eye infections. Put 1-2 drops every 4 hours. Effective for severe infections." },
+  { name: "Ciprofloxacin Eye Drops 0.3%", genericName: "Ciprofloxacin", strength: "0.3%", form: "drops", category: "Ophthalmic", summary: "Broad-spectrum antibiotic eye drops. Treats bacterial conjunctivitis and corneal ulcers. Apply every 2-4 hours initially." },
+  
+  // Additional Antibiotics
+  { name: "Flucloxacillin 250mg", genericName: "Flucloxacillin", strength: "250mg", form: "capsule", category: "Antibiotic", summary: "Treats staph skin infections and boils. Resistant to staph enzymes. Take on empty stomach 4 times daily." },
+  { name: "Flucloxacillin 500mg", genericName: "Flucloxacillin", strength: "500mg", form: "capsule", category: "Antibiotic", summary: "Treats severe staph infections and cellulitis. Resistant to staph enzymes. Take on empty stomach 4 times daily." },
+  { name: "Phenoxymethylpenicillin (Penicillin V) 250mg", genericName: "Phenoxymethylpenicillin", strength: "250mg", form: "tablet", category: "Antibiotic", summary: "Oral penicillin for throat and skin infections. Take 4 times daily on empty stomach. Good for strep throat." },
+  { name: "Phenoxymethylpenicillin (Penicillin V) 500mg", genericName: "Phenoxymethylpenicillin", strength: "500mg", form: "tablet", category: "Antibiotic", summary: "Oral penicillin for throat and skin infections. Take 4 times daily on empty stomach. Good for strep throat." },
+  
+  // Opioid Analgesics
+  { name: "Morphine Sulfate 10mg", genericName: "Morphine", strength: "10mg", form: "tablet", category: "Opioid Analgesic", summary: "Strong pain reliever for severe pain. Used for cancer pain and post-operative pain. May cause drowsiness and constipation." },
+  { name: "Morphine Injection 10mg/mL", genericName: "Morphine", strength: "10mg/mL", form: "injection", category: "Opioid Analgesic", summary: "Injectable strong pain reliever for severe pain. Give by IM or slow IV. Monitor breathing and blood pressure." },
+  { name: "Codeine Phosphate 30mg", genericName: "Codeine", strength: "30mg", form: "tablet", category: "Opioid Analgesic", summary: "Moderate pain reliever and cough suppressant. Take every 4-6 hours as needed. May cause constipation and drowsiness." },
+  { name: "Pethidine Injection 50mg/mL", genericName: "Pethidine", strength: "50mg/mL", form: "injection", category: "Opioid Analgesic", summary: "Injectable pain reliever for labor pain and post-operative pain. Give by IM injection. Shorter acting than morphine." },
+  
+  // Antidiabetic Additions
+  { name: "Insulin Regular (Soluble) 100 IU/mL", genericName: "Regular Insulin", strength: "100 IU/mL", form: "injection", category: "Antidiabetic", summary: "Short-acting insulin for diabetes. Inject 30 minutes before meals. Controls blood sugar spikes after eating." },
+  { name: "Insulin NPH (Isophane) 100 IU/mL", genericName: "NPH Insulin", strength: "100 IU/mL", form: "injection", category: "Antidiabetic", summary: "Intermediate-acting insulin lasting 12-18 hours. Give once or twice daily. Provides basal insulin coverage." },
+  { name: "Insulin 70/30 (Mixed) 100 IU/mL", genericName: "Mixed Insulin", strength: "100 IU/mL", form: "injection", category: "Antidiabetic", summary: "Pre-mixed insulin combining short and intermediate acting. Give twice daily before meals. Convenient fixed combination." },
+  { name: "Gliclazide 80mg", genericName: "Gliclazide", strength: "80mg", form: "tablet", category: "Antidiabetic", summary: "Stimulates pancreas to produce insulin. Take before breakfast. Lower risk of low blood sugar than other sulfonylureas." },
+  { name: "Glibenclamide 5mg", genericName: "Glibenclamide", strength: "5mg", form: "tablet", category: "Antidiabetic", summary: "Strong blood sugar lowering medication. Take before breakfast. Risk of low blood sugar - eat regular meals." },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function PharmacyInventory() {
@@ -2710,6 +2772,12 @@ export default function PharmacyInventory() {
                           'Anesthetic': '💉',
                           'Emergency': '🚨',
                           'Diuretic': '💧',
+                          'Antifungal': '🦠',
+                          'Obstetric': '🤰',
+                          'Contraceptive': '💊',
+                          'Antiretroviral': '🔴',
+                          'Vaccine': '💉',
+                          'Opioid Analgesic': '💊',
                         };
 
                         return Object.entries(groupedDrugs).map(([category, drugs]) => (
