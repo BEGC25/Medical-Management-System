@@ -3157,7 +3157,9 @@ export class MemStorage implements IStorage {
   }
 
   async getAllDrugsWithStock(): Promise<(schema.Drug & { stockOnHand: number })[]> {
-    // Get ALL drugs, not just active ones - doctors need to see all drugs in dropdown
+    // Get ALL drugs regardless of isActive status for doctor's prescription dropdown
+    // This ensures drugs are discoverable even if not properly marked as active during creation
+    // The UI can still show stock status (out of stock) to help doctors make informed decisions
     const allDrugs = await db.select().from(drugs).orderBy(drugs.name);
     const drugsWithStock: (schema.Drug & { stockOnHand: number })[] = [];
 
