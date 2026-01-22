@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X, ChevronDown, Info } from "lucide-react";
+import { Package, Plus, AlertTriangle, Clock, TrendingDown, TrendingUp, FileText, Eye, Edit, Download, BarChart3, ShoppingCart, Archive, HelpCircle, Filter as FilterIcon, ArrowLeft, Check, ChevronsUpDown, Search, DollarSign, X, ChevronDown, Info, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -463,6 +463,9 @@ export default function PharmacyInventory() {
   const [drugInfoDrug, setDrugInfoDrug] = useState<Drug | null>(null);
   const [drugInfoStockData, setDrugInfoStockData] = useState<{ stockOnHand: number; price: number; expiryDate?: string } | undefined>(undefined);
   
+  // Refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
   // Tab state for programmatic navigation
   const [activeTab, setActiveTab] = useState("stock");
   
@@ -553,6 +556,37 @@ export default function PharmacyInventory() {
   const { data: allBatches = [] } = useQuery<DrugBatch[]>({
     queryKey: ['/api/pharmacy/batches'],
   });
+
+  // Refresh all inventory data
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/drugs'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/stock/all'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/alerts/low-stock'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/alerts/expiring'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/ledger'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/pharmacy/batches'] }),
+      ]);
+      
+      // Wait a bit for queries to refetch
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      toast({
+        title: "✅ Inventory Refreshed",
+        description: "All inventory data has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "❌ Refresh Failed",
+        description: "Failed to refresh inventory data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Create a map of drugId to drug form for quick lookup
   const drugFormMap = useMemo(() => {
@@ -1183,6 +1217,18 @@ export default function PharmacyInventory() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 md:gap-3">
+          <Button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            variant="outline"
+            size="sm"
+            className="border-teal-300 dark:border-teal-600 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20 
+                     transition-all duration-200 hover:shadow-md hover:scale-105 md:size-default"
+            data-testid="button-refresh"
+          >
+            <RefreshCw className={`w-4 h-4 md:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </Button>
           <Button
             onClick={() => setHelpCollapsed(!helpCollapsed)}
             variant="outline"

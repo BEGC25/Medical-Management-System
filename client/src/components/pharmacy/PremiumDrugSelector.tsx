@@ -162,8 +162,8 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
           </div>
 
           {/* Categorized drug list */}
-          <ScrollArea className="flex-1" style={{ maxHeight: "400px" }}>
-            <div className="p-2">
+          <ScrollArea className="flex-1 scrollbar-premium" style={{ maxHeight: "400px" }}>
+            <div className="p-2" onWheel={(e) => e.stopPropagation()}>
               {Object.entries(categorizedDrugs).map(([category, categoryDrugs]) => {
                 if (categoryDrugs.length === 0) return null;
 

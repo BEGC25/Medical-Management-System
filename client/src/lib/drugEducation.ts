@@ -178,6 +178,31 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
+  "ampicillin": {
+    whatItDoes: "Treats chest, ear and urinary infections. Related to penicillin. Penicillin-type antibiotic effective against many common bacteria.",
+    commonUses: [
+      "Chest infections (pneumonia, bronchitis)",
+      "Ear infections",
+      "Urinary tract infections",
+      "Meningitis prevention/treatment",
+      "Stomach and intestinal infections"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach 1 hour before meals", "Take every 6 hours (4 times daily)", "Complete full course of treatment", "Finish all tablets even if feeling better"],
+      donts: ["Stop if allergic rash develops", "Do not use if penicillin allergy", "Do not take with food (reduces absorption)", "Report severe diarrhea immediately"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-10 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe in all trimesters",
+      breastfeeding: "Safe",
+      children: "Safe, commonly used antibiotic",
+      elderly: "Safe, adjust dose if kidney problems"
+    }
+  },
+
   "azithromycin": {
     whatItDoes: "Treats chest, throat and ear infections. Works against bacteria resistant to penicillin. Good for patients allergic to penicillin.",
     commonUses: [
