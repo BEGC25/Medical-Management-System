@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { Drug } from "@shared/schema";
 import { Search, Package, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { getDrugQuickSummary } from "@/lib/drugEducation";
 
@@ -305,9 +304,15 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
             </div>
           </div>
 
-          {/* Categorized drug list */}
-          <ScrollArea className="flex-1 scrollbar-premium" style={{ maxHeight: "400px" }}>
-            <div className="p-2" onWheel={(e) => e.stopPropagation()}>
+          {/* Categorized drug list - USE NATIVE SCROLL */}
+          <div 
+            className="flex-1 overflow-y-auto"
+            style={{ 
+              maxHeight: "400px",
+              WebkitOverflowScrolling: "touch"
+            }}
+          >
+            <div className="p-2">
               {Object.entries(categorizedDrugs).map(([category, categoryDrugs]) => {
                 if (categoryDrugs.length === 0) return null;
 
@@ -401,7 +406,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       )}
 
