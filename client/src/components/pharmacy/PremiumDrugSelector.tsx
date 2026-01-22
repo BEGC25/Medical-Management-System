@@ -406,7 +406,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                               hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 
                               dark:hover:from-purple-900/20 dark:hover:to-indigo-900/20
                               hover:shadow-md hover:shadow-purple-500/5
-                              hover:scale-[1.01] hover:-translate-y-0.5
+                              motion-safe:hover:scale-[1.01] motion-safe:hover:-translate-y-0.5
                               ${isSelected 
                                 ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 ring-2 ring-purple-500 shadow-lg shadow-purple-500/20' 
                                 : 'bg-white/50 dark:bg-gray-800/50'}
