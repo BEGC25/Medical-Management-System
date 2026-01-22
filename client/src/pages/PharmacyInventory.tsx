@@ -1099,7 +1099,7 @@ export default function PharmacyInventory() {
           stockOnHand: drug.stockOnHand,
           currentPrice: currentPrice ? Math.round(currentPrice) : "-",
           nearestExpiry: nearestExpiry ? new Date(nearestExpiry).toLocaleDateString() : "-",
-          status: drug.stockOnHand === 0 ? "OUT OF STOCK" : drug.stockOnHand <= drug.reorderLevel ? "LOW STOCK" : "In Stock",
+          status: drug.stockOnHand === 0 ? "Out of Stock" : drug.stockOnHand <= drug.reorderLevel ? "LOW STOCK" : "In Stock",
         };
       });
       columnLabels = {
@@ -1814,7 +1814,7 @@ export default function PharmacyInventory() {
                             <Badge 
                               className="badge-prominent-red"
                             >
-                              OUT OF STOCK
+                              <span className="text-sm">⊘</span> Out of Stock
                             </Badge>
                           ) : isLowStock ? (
                             <Badge 
@@ -2651,7 +2651,7 @@ export default function PharmacyInventory() {
 
       {/* Add Drug Dialog - Modernized & Expanded */}
       <Dialog open={showAddDrug} onOpenChange={setShowAddDrug}>
-        <DialogContent className="max-w-[680px] shadow-premium-2xl" data-testid="dialog-add-drug">
+        <DialogContent className="max-w-[680px] max-h-[90vh] overflow-y-auto shadow-premium-2xl" data-testid="dialog-add-drug">
           <DialogHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-premium-md">
