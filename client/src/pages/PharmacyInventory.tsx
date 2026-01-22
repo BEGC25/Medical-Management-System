@@ -2803,94 +2803,114 @@ export default function PharmacyInventory() {
                   </Command>
                 </PopoverContent>
               </Popover>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-1">
-                <span className="font-medium">💡 Tip:</span> 
-                <span>Or type custom drug name below</span>
-              </p>
+              <div className="tip-text-premium mt-2">
+                <span className="text-lg">💡</span>
+                <span className="font-medium">Tip: Or type custom drug name below</span>
+              </div>
             </div>
 
+            {/* Drug Name Section */}
+            <div className="section-divider"></div>
+            <div className="form-section-header">Drug Information</div>
             <div>
-              <Label htmlFor="name">Drug Name *</Label>
+              <Label htmlFor="name" className="text-sm font-semibold">Drug Name *</Label>
               <Input
                 id="name"
                 value={newDrug.name}
                 onChange={(e) => setNewDrug({ ...newDrug, name: e.target.value })}
                 placeholder="Type custom drug name or select above"
+                className="input-premium"
                 data-testid="input-drug-name"
               />
-              <p className="text-xs text-gray-500 mt-1">What the drug is called</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">What the drug is called</p>
             </div>
             <div>
-              <Label htmlFor="genericName">Generic Name (Optional)</Label>
+              <Label htmlFor="genericName" className="text-sm font-semibold">Generic Name (Optional)</Label>
               <Input
                 id="genericName"
                 value={newDrug.genericName}
                 onChange={(e) => setNewDrug({ ...newDrug, genericName: e.target.value })}
                 placeholder="e.g., Acetaminophen"
+                className="input-premium"
                 data-testid="input-generic-name"
               />
-              <p className="text-xs text-gray-500 mt-1">Scientific/chemical name (optional)</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Scientific/chemical name (optional)</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="strength">Strength</Label>
-                <Input
-                  id="strength"
-                  value={newDrug.strength}
-                  onChange={(e) => setNewDrug({ ...newDrug, strength: e.target.value })}
-                  placeholder="e.g., 500mg"
-                  data-testid="input-strength"
-                />
-                <p className="text-xs text-gray-500 mt-1">How strong (500mg, 10ml, etc.)</p>
-              </div>
-              <div>
-                <Label htmlFor="form">Form</Label>
-                <Select
-                  value={newDrug.form}
-                  onValueChange={(value: DrugForm) => setNewDrug({ ...newDrug, form: value })}
-                >
-                  <SelectTrigger id="form" data-testid="select-form">
-                    <SelectValue placeholder="Select form" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tablet">Tablet</SelectItem>
-                    <SelectItem value="capsule">Capsule</SelectItem>
-                    <SelectItem value="syrup">Syrup</SelectItem>
-                    <SelectItem value="injection">Injection</SelectItem>
-                    <SelectItem value="cream">Cream</SelectItem>
-                    <SelectItem value="ointment">Ointment</SelectItem>
-                    <SelectItem value="drops">Drops</SelectItem>
-                    <SelectItem value="inhaler">Inhaler</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={newDrug.category}
-                  onChange={(e) => setNewDrug({ ...newDrug, category: e.target.value })}
-                  placeholder="e.g., Analgesic"
-                  data-testid="input-category"
-                />
-              </div>
-              <div>
-                <Label htmlFor="reorderLevel">Reorder Level</Label>
-                <Input
-                  id="reorderLevel"
-                  type="number"
-                  value={newDrug.reorderLevel}
-                  onChange={(e) => setNewDrug({ ...newDrug, reorderLevel: parseInt(e.target.value) || DEFAULT_REORDER_LEVEL })}
-                  data-testid="input-reorder-level"
-                />
-                <p className="text-xs text-gray-500 mt-1">Alert when stock falls below this number</p>
+            
+            {/* Strength & Form Group */}
+            <div className="field-group">
+              <div className="form-section-header mb-3">Dosage & Form</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="strength" className="text-sm font-semibold">Strength</Label>
+                  <Input
+                    id="strength"
+                    value={newDrug.strength}
+                    onChange={(e) => setNewDrug({ ...newDrug, strength: e.target.value })}
+                    placeholder="e.g., 500mg"
+                    className="input-premium"
+                    data-testid="input-strength"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">How strong (500mg, 10ml, etc.)</p>
+                </div>
+                <div>
+                  <Label htmlFor="form" className="text-sm font-semibold">Form</Label>
+                  <Select
+                    value={newDrug.form}
+                    onValueChange={(value: DrugForm) => setNewDrug({ ...newDrug, form: value })}
+                  >
+                    <SelectTrigger id="form" className="select-premium" data-testid="select-form">
+                      <SelectValue placeholder="Select form" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tablet">Tablet</SelectItem>
+                      <SelectItem value="capsule">Capsule</SelectItem>
+                      <SelectItem value="syrup">Syrup</SelectItem>
+                      <SelectItem value="injection">Injection</SelectItem>
+                      <SelectItem value="cream">Cream</SelectItem>
+                      <SelectItem value="ointment">Ointment</SelectItem>
+                      <SelectItem value="drops">Drops</SelectItem>
+                      <SelectItem value="inhaler">Inhaler</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowAddDrug(false)}>
+
+            {/* Category & Reorder Level Group */}
+            <div className="field-group">
+              <div className="form-section-header mb-3">Inventory Management</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category" className="text-sm font-semibold">Category</Label>
+                  <Input
+                    id="category"
+                    value={newDrug.category}
+                    onChange={(e) => setNewDrug({ ...newDrug, category: e.target.value })}
+                    placeholder="e.g., Analgesic"
+                    className="input-premium"
+                    data-testid="input-category"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="reorderLevel" className="text-sm font-semibold">Reorder Level</Label>
+                  <Input
+                    id="reorderLevel"
+                    type="number"
+                    value={newDrug.reorderLevel}
+                    onChange={(e) => setNewDrug({ ...newDrug, reorderLevel: parseInt(e.target.value) || DEFAULT_REORDER_LEVEL })}
+                    className="input-premium"
+                    data-testid="input-reorder-level"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Alert when stock falls below this number</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button variant="outline" onClick={() => setShowAddDrug(false)} className="button-cancel-premium">
                 Cancel
               </Button>
               <Button
@@ -2938,14 +2958,14 @@ export default function PharmacyInventory() {
           </div>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="drug">Select Drug *</Label>
+              <Label htmlFor="drug" className="text-sm font-semibold">Select Drug *</Label>
               <PremiumDrugSelector
                 drugs={drugsWithStock}
                 value={newBatch.drugId}
                 onChange={(drugId) => setNewBatch({ ...newBatch, drugId })}
                 placeholder="Search and select a drug..."
               />
-              <p className="text-xs text-gray-500 mt-1">Which drug did you receive?</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Which drug did you receive?</p>
             </div>
             
             {/* Drug Context Display */}
@@ -2993,38 +3013,49 @@ export default function PharmacyInventory() {
               ) : null;
             })()}
             
+            {/* Batch Details Section */}
+            <div className="section-divider"></div>
+            <div className="form-section-header">Batch Details</div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="lotNumber">Lot Number (Optional)</Label>
+                <Label htmlFor="lotNumber" className="text-sm font-semibold flex items-center gap-1.5">
+                  <span>📦</span> Lot Number (Optional)
+                </Label>
                 <Input
                   id="lotNumber"
                   value={newBatch.lotNumber}
                   onChange={(e) => setNewBatch({ ...newBatch, lotNumber: e.target.value })}
                   placeholder="e.g., LOT12345"
+                  className="input-premium"
                   data-testid="input-lot-number"
                 />
-                <p className="text-xs text-gray-500 mt-1">Batch number from box (optional)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Batch number from box (optional)</p>
               </div>
               <div>
-                <Label htmlFor="expiryDate">Expiry Date *</Label>
+                <Label htmlFor="expiryDate" className="text-sm font-semibold flex items-center gap-1.5">
+                  <span>📅</span> Expiry Date *
+                </Label>
                 <Input
                   id="expiryDate"
                   type="date"
                   value={newBatch.expiryDate}
                   onChange={(e) => setNewBatch({ ...newBatch, expiryDate: e.target.value })}
+                  className="input-premium"
                   data-testid="input-expiry-date"
                 />
-                <p className="text-xs text-gray-500 mt-1">When these drugs expire</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">When these drugs expire</p>
               </div>
             </div>
 
-            {/* Bulk Quantity Section */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-3">
-              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Bulk Purchase (Optional)</h4>
-              <p className="text-xs text-gray-600 dark:text-gray-400">If you bought in cartons/boxes, fill this to auto-calculate total quantity</p>
+            {/* Bulk Quantity Section - Enhanced */}
+            <div className="section-highlight">
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                <span>📊</span> Bulk Purchase (Optional)
+              </h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">If you bought in cartons/boxes, fill this to auto-calculate total quantity</p>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <Label htmlFor="unitsPerCarton" className="text-xs">Units per Carton</Label>
+                  <Label htmlFor="unitsPerCarton" className="text-xs font-medium">Units per Carton</Label>
                   <Input
                     id="unitsPerCarton"
                     type="number"
@@ -3039,11 +3070,12 @@ export default function PharmacyInventory() {
                       });
                     }}
                     placeholder="e.g., 100"
+                    className="input-premium"
                     data-testid="input-units-per-carton"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="cartonsReceived" className="text-xs">Cartons Received</Label>
+                  <Label htmlFor="cartonsReceived" className="text-xs font-medium">Cartons Received</Label>
                   <Input
                     id="cartonsReceived"
                     type="number"
@@ -3058,29 +3090,38 @@ export default function PharmacyInventory() {
                       });
                     }}
                     placeholder="e.g., 5"
+                    className="input-premium"
                     data-testid="input-cartons-received"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="autoQuantity" className="text-xs">Total Quantity</Label>
+                  <Label htmlFor="autoQuantity" className="text-xs font-medium flex items-center gap-1">
+                    <span>🔢</span> Total Quantity
+                  </Label>
                   <Input
                     id="autoQuantity"
                     type="number"
                     value={(newBatch.unitsPerCarton && newBatch.cartonsReceived) ? (newBatch.unitsPerCarton * newBatch.cartonsReceived) : newBatch.quantityOnHand}
                     readOnly
-                    className="bg-gray-100 dark:bg-gray-800"
+                    className="field-auto-calc input-premium bg-gray-100/50 dark:bg-gray-800/50"
                     data-testid="display-auto-quantity"
                   />
                 </div>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                💡 Use bulk fields for carton purchases OR enter manual quantity below (entering one clears the other).
-              </p>
+              <div className="tip-text-premium mt-3 text-xs">
+                <span>💡</span>
+                <span>Use bulk fields for carton purchases OR enter manual quantity below (entering one clears the other).</span>
+              </div>
             </div>
 
+            {/* Quantity & Price Section */}
+            <div className="section-divider"></div>
+            <div className="form-section-header">Quantity & Pricing</div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="quantity">Manual Quantity *</Label>
+                <Label htmlFor="quantity" className="text-sm font-semibold flex items-center gap-1.5">
+                  <span>📝</span> Manual Quantity *
+                </Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -3095,12 +3136,15 @@ export default function PharmacyInventory() {
                     });
                   }}
                   placeholder="e.g., 100"
+                  className="input-premium"
                   data-testid="input-quantity"
                 />
-                <p className="text-xs text-gray-500 mt-1">How many tablets/bottles you got</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">How many tablets/bottles you got</p>
               </div>
               <div>
-                <Label htmlFor="unitCost">Unit Cost (SSP) *</Label>
+                <Label htmlFor="unitCost" className="text-sm font-semibold flex items-center gap-1.5">
+                  <span>💰</span> Unit Cost (SSP) *
+                </Label>
                 <Input
                   id="unitCost"
                   type="number"
@@ -3111,25 +3155,31 @@ export default function PharmacyInventory() {
                     setNewBatch({ ...newBatch, unitCost: cost });
                   }}
                   placeholder="e.g., 5.50"
+                  className="input-premium"
                   data-testid="input-unit-cost"
                 />
-                <p className="text-xs text-gray-500 mt-1">Price per one tablet/bottle</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Price per one tablet/bottle</p>
               </div>
             </div>
 
             <div>
-              <Label htmlFor="supplier">Supplier (Optional)</Label>
+              <Label htmlFor="supplier" className="text-sm font-semibold flex items-center gap-1.5">
+                <span>🏪</span> Supplier (Optional)
+              </Label>
               <Input
                 id="supplier"
                 value={newBatch.supplier}
                 onChange={(e) => setNewBatch({ ...newBatch, supplier: e.target.value })}
                 placeholder="Supplier name"
+                className="input-premium"
                 data-testid="input-supplier"
               />
-              <p className="text-xs text-gray-500 mt-1">Where you bought from (optional)</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Where you bought from (optional)</p>
             </div>
+            
+            {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-4 border-t-2 border-gray-200 dark:border-gray-700">
-              <Button variant="outline" onClick={() => setShowReceiveStock(false)}>
+              <Button variant="outline" onClick={() => setShowReceiveStock(false)} className="button-cancel-premium">
                 Cancel
               </Button>
               <Button
