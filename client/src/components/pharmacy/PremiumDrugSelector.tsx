@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Drug } from "@shared/schema";
 import { Search, Package, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,6 @@ const getDrugDisplayName = (drug: Drug): string => {
 
 interface DrugWithStock extends Drug {
   stockOnHand?: number;
-  reorderLevel?: number;
 }
 
 interface PremiumDrugSelectorProps {
@@ -41,53 +40,148 @@ interface PremiumDrugSelectorProps {
 
 // Categorize drugs based on generic name or name
 const categorizeDrug = (drug: Drug): string => {
-  const name = drug.name.toLowerCase();
-  const genericName = drug.genericName?.toLowerCase() || "";
-  // Check both name and genericName for better categorization
-  const combined = `${name} ${genericName}`;
+  // Combine name and genericName for comprehensive matching
+  const searchText = `${drug.name} ${drug.genericName || ''}`.toLowerCase();
   
-  // Antibiotics - check both name and genericName
-  if (
-    combined.includes("amoxicillin") || combined.includes("ampicillin") ||
-    combined.includes("azithromycin") || combined.includes("ciprofloxacin") ||
-    combined.includes("doxycycline") || combined.includes("metronidazole") ||
-    combined.includes("cephalexin") || combined.includes("penicillin") ||
-    combined.includes("antibiotic") || combined.includes("ceftriaxone") ||
-    combined.includes("erythromycin") || combined.includes("cloxacillin")
-  ) {
+  // Antibiotics - check combined text
+  const antibioticKeywords = [
+    'amoxicillin', 'ampicillin', 'azithromycin', 'ciprofloxacin',
+    'doxycycline', 'metronidazole', 'cephalexin', 'penicillin',
+    'clindamycin', 'erythromycin', 'gentamicin', 'ceftriaxone',
+    'antibiotic', 'cefixime', 'levofloxacin', 'trimethoprim',
+    'nitrofurantoin', 'flucloxacillin'
+  ];
+  if (antibioticKeywords.some(kw => searchText.includes(kw))) {
     return "ANTIBIOTICS";
   }
   
-  // Antimalarials - check both name and genericName
-  if (
-    combined.includes("artemether") || combined.includes("artesunate") ||
-    combined.includes("coartem") || combined.includes("lumefantrine") ||
-    combined.includes("quinine") || combined.includes("chloroquine") ||
-    combined.includes("malaria")
-  ) {
+  // Antimalarials
+  const antimalarialKeywords = [
+    'artemether', 'artesunate', 'coartem', 'lumefantrine',
+    'quinine', 'chloroquine', 'malaria', 'artemisinin',
+    'primaquine', 'mefloquine', 'amodiaquine'
+  ];
+  if (antimalarialKeywords.some(kw => searchText.includes(kw))) {
     return "ANTIMALARIALS";
   }
   
-  // Analgesics - check both name and genericName (catches "Paracetamol 500mg")
-  if (
-    combined.includes("paracetamol") || combined.includes("acetaminophen") ||
-    combined.includes("ibuprofen") || combined.includes("aspirin") ||
-    combined.includes("diclofenac") || combined.includes("morphine") ||
-    combined.includes("pain")
-  ) {
+  // Analgesics / Pain Relief
+  const analgesicKeywords = [
+    'paracetamol', 'acetaminophen', 'ibuprofen', 'aspirin',
+    'diclofenac', 'morphine', 'tramadol', 'codeine',
+    'naproxen', 'pain', 'analgesic', 'meloxicam', 'piroxicam'
+  ];
+  if (analgesicKeywords.some(kw => searchText.includes(kw))) {
     return "ANALGESICS";
   }
   
+  // Gastrointestinal
+  const giKeywords = [
+    'omeprazole', 'ranitidine', 'metoclopramide', 'loperamide',
+    'antacid', 'bisacodyl', 'lactulose', 'ondansetron',
+    'pantoprazole', 'esomeprazole', 'domperidone'
+  ];
+  if (giKeywords.some(kw => searchText.includes(kw))) {
+    return "GASTROINTESTINAL";
+  }
+  
+  // Vitamins & Supplements
+  const vitaminKeywords = [
+    'vitamin', 'folic', 'iron', 'calcium', 'zinc',
+    'multivitamin', 'b12', 'b-complex', 'supplement'
+  ];
+  if (vitaminKeywords.some(kw => searchText.includes(kw))) {
+    return "VITAMINS";
+  }
+  
+  // Cardiovascular
+  const cardioKeywords = [
+    'amlodipine', 'atenolol', 'lisinopril', 'losartan',
+    'furosemide', 'hydrochlorothiazide', 'enalapril', 'metoprolol',
+    'nifedipine', 'digoxin', 'warfarin', 'aspirin'
+  ];
+  if (cardioKeywords.some(kw => searchText.includes(kw))) {
+    return "CARDIOVASCULAR";
+  }
+  
+  // Antidiabetics
+  const diabetesKeywords = [
+    'metformin', 'glibenclamide', 'gliclazide', 'insulin',
+    'glimepiride', 'diabetes', 'diabetic'
+  ];
+  if (diabetesKeywords.some(kw => searchText.includes(kw))) {
+    return "ANTIDIABETICS";
+  }
+  
+  // Respiratory
+  const respiratoryKeywords = [
+    'salbutamol', 'beclomethasone', 'budesonide', 'theophylline',
+    'montelukast', 'inhaler', 'nebulizer', 'asthma'
+  ];
+  if (respiratoryKeywords.some(kw => searchText.includes(kw))) {
+    return "RESPIRATORY";
+  }
+  
+  // Antihistamines / Allergy
+  const antihistamineKeywords = [
+    'cetirizine', 'loratadine', 'chlorpheniramine', 'diphenhydramine',
+    'promethazine', 'antihistamine', 'allergy', 'fexofenadine'
+  ];
+  if (antihistamineKeywords.some(kw => searchText.includes(kw))) {
+    return "ANTIHISTAMINES";
+  }
+  
+  // Antifungals
+  const antifungalKeywords = [
+    'fluconazole', 'clotrimazole', 'ketoconazole', 'nystatin',
+    'miconazole', 'terbinafine', 'antifungal', 'griseofulvin'
+  ];
+  if (antifungalKeywords.some(kw => searchText.includes(kw))) {
+    return "ANTIFUNGALS";
+  }
+  
+  // Steroids / Corticosteroids
+  const steroidKeywords = [
+    'prednisolone', 'dexamethasone', 'hydrocortisone', 'prednisone',
+    'betamethasone', 'steroid', 'corticosteroid'
+  ];
+  if (steroidKeywords.some(kw => searchText.includes(kw))) {
+    return "STEROIDS";
+  }
+  
+  // Antiparasitics
+  const antiparasiticKeywords = [
+    'mebendazole', 'albendazole', 'ivermectin', 'praziquantel',
+    'metronidazole', 'antiparasitic', 'deworming'
+  ];
+  if (antiparasiticKeywords.some(kw => searchText.includes(kw))) {
+    return "ANTIPARASITICS";
+  }
+
   return "OTHER";
 };
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
-    case "ANTIBIOTICS": return "🔬";
+    case "ANTIBIOTICS": return "🦠";
     case "ANTIMALARIALS": return "🦟";
     case "ANALGESICS": return "💊";
+    case "GASTROINTESTINAL": return "🔬";
+    case "CARDIOVASCULAR": return "❤️";
+    case "ANTIDIABETICS": return "🩸";
+    case "RESPIRATORY": return "🫁";
+    case "ANTIHISTAMINES": return "🤧";
+    case "ANTIFUNGALS": return "🍄";
+    case "ANTIPARASITICS": return "🐛";
+    case "STEROIDS": return "💪";
+    case "VITAMINS": return "🌟";
     default: return "🩺";
   }
+};
+
+const getCategoryDisplayName = (category: string) => {
+  if (category === "OTHER") return "OTHER MEDICATIONS";
+  return category;
 };
 
 const getStockStatus = (drug: DrugWithStock) => {
@@ -107,6 +201,15 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
+  // Add debug logging for development
+  useEffect(() => {
+    if (drugs.length === 0) {
+      console.warn('[PremiumDrugSelector] No drugs received - check API');
+    } else if (drugs.length < 5) {
+      console.log('[PremiumDrugSelector] Low drug count:', drugs.length, drugs);
+    }
+  }, [drugs]);
+
   // Filter and categorize drugs
   const categorizedDrugs = useMemo(() => {
     const filtered = drugs.filter(drug => {
@@ -120,8 +223,17 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
 
     const categories: Record<string, DrugWithStock[]> = {
       ANTIBIOTICS: [],
-      ANTIMALARIALS: [],
       ANALGESICS: [],
+      ANTIMALARIALS: [],
+      GASTROINTESTINAL: [],
+      CARDIOVASCULAR: [],
+      ANTIDIABETICS: [],
+      RESPIRATORY: [],
+      ANTIHISTAMINES: [],
+      ANTIFUNGALS: [],
+      ANTIPARASITICS: [],
+      STEROIDS: [],
+      VITAMINS: [],
       OTHER: []
     };
 
@@ -171,6 +283,13 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
       {isOpen && (
         <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-300 
                         dark:border-gray-600 rounded-lg shadow-2xl max-h-[500px] flex flex-col">
+          {/* Total drug count */}
+          <div className="px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border-b text-sm">
+            <span className="font-medium text-purple-700 dark:text-purple-300">
+              {drugs.length} medications available
+            </span>
+          </div>
+          
           {/* Search input */}
           <div className="p-3 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
@@ -198,7 +317,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                     <div className="flex items-center gap-2 px-3 py-2 mb-2">
                       <span className="text-lg">{getCategoryIcon(category)}</span>
                       <span className="text-xs font-bold uppercase text-gray-600 dark:text-gray-400">
-                        {category}
+                        {getCategoryDisplayName(category)}
                       </span>
                       <Badge variant="secondary" className="text-xs ml-auto">
                         {categoryDrugs.length}
@@ -253,7 +372,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                                     ${stockStatus.color === 'gray' ? 'text-gray-400 dark:text-gray-500' : ''}
                                   `}>
                                     {stockStatus.icon} {stockStatus.label}
-                                    {drug.stockOnHand > 0 && (
+                                    {drug.stockOnHand !== undefined && drug.stockOnHand > 0 && (
                                       <span className="text-gray-500 dark:text-gray-400">
                                         ({drug.stockOnHand} {drug.form?.toLowerCase() === 'tablet' ? 'tablets' : 
                                            drug.form?.toLowerCase() === 'capsule' ? 'capsules' : 
