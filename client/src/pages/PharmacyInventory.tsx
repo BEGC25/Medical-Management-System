@@ -1511,11 +1511,11 @@ export default function PharmacyInventory() {
           {/* Premium Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Drugs */}
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 
-                           dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 
-                           p-4 hover:shadow-md transition-shadow">
+            <Card className="stat-card-glass bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 
+                           dark:to-indigo-950/20 border-blue-200/40 dark:border-blue-800/40 
+                           p-4 shadow-premium-md hover:shadow-premium-lg">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-600 rounded-lg flex-shrink-0 shadow-sm">
+                <div className="p-2.5 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex-shrink-0 shadow-md">
                   <Package className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
@@ -1532,16 +1532,16 @@ export default function PharmacyInventory() {
 
             {/* Low Stock */}
             <Card 
-              className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 
-                       dark:to-pink-950/20 border-2 border-red-200 dark:border-red-800 
-                       p-4 hover:shadow-md transition-shadow cursor-pointer"
+              className="stat-card-glass bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 
+                       dark:to-pink-950/20 border-red-200/40 dark:border-red-800/40 
+                       p-4 shadow-premium-md hover:shadow-premium-lg cursor-pointer"
               onClick={() => handleCardClick("low-stock")}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick("low-stock")}
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-red-600 rounded-lg flex-shrink-0 shadow-sm">
+                <div className="p-2.5 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex-shrink-0 shadow-md">
                   <TrendingDown className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
@@ -1558,16 +1558,16 @@ export default function PharmacyInventory() {
 
             {/* Expiring Soon */}
             <Card 
-              className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 
-                       dark:to-amber-950/20 border-2 border-orange-200 dark:border-orange-800 
-                       p-4 hover:shadow-md transition-shadow cursor-pointer"
+              className="stat-card-glass bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 
+                       dark:to-amber-950/20 border-orange-200/40 dark:border-orange-800/40 
+                       p-4 shadow-premium-md hover:shadow-premium-lg cursor-pointer"
               onClick={() => handleCardClick("expiring-soon")}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick("expiring-soon")}
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-orange-600 rounded-lg flex-shrink-0 shadow-sm">
+                <div className="p-2.5 bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg flex-shrink-0 shadow-md">
                   <Clock className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
@@ -1583,11 +1583,11 @@ export default function PharmacyInventory() {
             </Card>
 
             {/* Total Value */}
-            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 
-                           dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800 
-                           p-4 hover:shadow-md transition-shadow">
+            <Card className="stat-card-glass bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 
+                           dark:to-emerald-950/20 border-green-200/40 dark:border-green-800/40 
+                           p-4 shadow-premium-md hover:shadow-premium-lg">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-green-600 rounded-lg flex-shrink-0 shadow-sm">
+                <div className="p-2.5 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex-shrink-0 shadow-md">
                   <DollarSign className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
@@ -1628,23 +1628,23 @@ export default function PharmacyInventory() {
                 
                 <div className="-mt-6 px-6">
               <Table>
-                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b-2 border-gray-200 dark:border-gray-700">
+                <TableHeader className="sticky top-0 z-10 table-header-premium">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
-                    <TableHead className="w-12 bg-white dark:bg-gray-900">
+                    <TableHead className="w-12">
                       <Checkbox
                         checked={selectedStockItems.size === filteredStockDrugs.length && filteredStockDrugs.length > 0}
                         onCheckedChange={handleSelectAllStock}
                         aria-label="Select all"
                       />
                     </TableHead>
-                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Drug Name</TableHead>
-                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Strength</TableHead>
-                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Form</TableHead>
-                    <TableHead className="text-right font-semibold bg-white dark:bg-gray-900">Stock on Hand</TableHead>
-                    <TableHead className="text-right font-semibold bg-white dark:bg-gray-900">Current Price (SSP)</TableHead>
-                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Nearest Expiry</TableHead>
-                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Status</TableHead>
-                    <TableHead className="text-right font-semibold bg-white dark:bg-gray-900">Actions</TableHead>
+                    <TableHead>Drug Name</TableHead>
+                    <TableHead>Strength</TableHead>
+                    <TableHead>Form</TableHead>
+                    <TableHead className="text-right">Stock on Hand</TableHead>
+                    <TableHead className="text-right">Current Price (SSP)</TableHead>
+                    <TableHead>Nearest Expiry</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1705,16 +1705,16 @@ export default function PharmacyInventory() {
                       <TableRow 
                         key={drug.id} 
                         className={`
-                          transition-all duration-150 ease-in-out cursor-pointer
+                          table-row-premium
                           border-b border-gray-100 dark:border-gray-800
                           ${index % 2 === 0 
                             ? "bg-white dark:bg-gray-900" 
-                            : "bg-slate-50 dark:bg-gray-800/50"
+                            : "bg-slate-50/50 dark:bg-gray-800/30"
                           }
                           ${isSelected ? "bg-blue-50 dark:bg-blue-900/20" : ""}
                           ${isLowStock 
-                            ? "hover:bg-red-100/70 dark:hover:bg-red-900/20" 
-                            : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                            ? "hover:bg-red-50/70 dark:hover:bg-red-900/10" 
+                            : "hover:bg-slate-100/80 dark:hover:bg-slate-800/50"
                           }
                         `}
                       >
@@ -1750,9 +1750,7 @@ export default function PharmacyInventory() {
                         <TableCell className="py-5">
                           {isOutOfStock ? (
                             <Badge 
-                              variant="outline" 
-                              className="border-gray-400 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 
-                                       shadow-premium-sm transition-all duration-150 hover:shadow-premium-md font-medium"
+                              className="badge-prominent-red"
                             >
                               OUT OF STOCK
                             </Badge>
@@ -1774,80 +1772,88 @@ export default function PharmacyInventory() {
                         </TableCell>
                         <TableCell className="text-right py-5">
                           <div className="flex gap-1 justify-end">
-                            <DrugInfoTooltip drug={drug}>
+                            <div className="icon-tooltip-wrapper">
+                              <DrugInfoTooltip drug={drug}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    // Get stock info for the drug
+                                    const batches = drugBatches?.filter(b => b.drugId === drug.id) || [];
+                                    const totalStock = batches.reduce((sum, b) => sum + b.quantityOnHand, 0);
+                                    const avgPrice = batches.length > 0 
+                                      ? batches.reduce((sum, b) => sum + b.unitCost, 0) / batches.length 
+                                      : drug.defaultPrice || 0;
+                                    const nearestExpiry = batches
+                                      .filter(b => b.quantityOnHand > 0)
+                                      .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0];
+                                    
+                                    setDrugInfoDrug(drug);
+                                    setDrugInfoStockData({
+                                      stockOnHand: totalStock,
+                                      price: avgPrice,
+                                      expiryDate: nearestExpiry?.expiryDate
+                                    });
+                                    setShowDrugInfo(true);
+                                  }}
+                                  className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
+                                         hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
+                                         hover:shadow-premium-sm hover:scale-105"
+                                >
+                                  <Info className="w-3.5 h-3.5" />
+                                </Button>
+                              </DrugInfoTooltip>
+                              <span className="icon-tooltip">Drug Information</span>
+                            </div>
+                            <div className="icon-tooltip-wrapper">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  // Get stock info for the drug
-                                  const batches = drugBatches?.filter(b => b.drugId === drug.id) || [];
-                                  const totalStock = batches.reduce((sum, b) => sum + b.quantityOnHand, 0);
-                                  const avgPrice = batches.length > 0 
-                                    ? batches.reduce((sum, b) => sum + b.unitCost, 0) / batches.length 
-                                    : drug.defaultPrice || 0;
-                                  const nearestExpiry = batches
-                                    .filter(b => b.quantityOnHand > 0)
-                                    .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())[0];
-                                  
-                                  setDrugInfoDrug(drug);
-                                  setDrugInfoStockData({
-                                    stockOnHand: totalStock,
-                                    price: avgPrice,
-                                    expiryDate: nearestExpiry?.expiryDate
-                                  });
-                                  setShowDrugInfo(true);
+                                  setQuickAdjustDrug(drug);
+                                  setShowQuickAdjust(true);
                                 }}
                                 className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
                                          hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
                                          hover:shadow-premium-sm hover:scale-105"
-                                title="Drug Information"
                               >
-                                <Info className="w-3.5 h-3.5" />
+                                <Edit className="w-3.5 h-3.5" />
                               </Button>
-                            </DrugInfoTooltip>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setQuickAdjustDrug(drug);
-                                setShowQuickAdjust(true);
-                              }}
-                              className="h-8 px-2.5 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400
-                                       hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150
-                                       hover:shadow-premium-sm hover:scale-105"
-                              title="Quick Adjust"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedDrug(drug);
-                                setNewBatch({ ...newBatch, drugId: drug.id });
-                                setShowReceiveStock(true);
-                              }}
-                              className="h-8 px-2.5 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
-                                       hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
-                                       hover:shadow-premium-sm hover:scale-105"
-                              title="Receive Stock"
-                            >
-                              <ShoppingCart className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setBatchesDrug(drug);
-                                setShowBatchesModal(true);
-                              }}
-                              className="h-8 px-2.5 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
-                                       hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-150
-                                       hover:shadow-premium-sm hover:scale-105"
-                              title="View Batches"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </Button>
+                              <span className="icon-tooltip">Quick Adjust</span>
+                            </div>
+                            <div className="icon-tooltip-wrapper">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedDrug(drug);
+                                  setNewBatch({ ...newBatch, drugId: drug.id });
+                                  setShowReceiveStock(true);
+                                }}
+                                className="h-8 px-2.5 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400
+                                         hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-150
+                                         hover:shadow-premium-sm hover:scale-105"
+                              >
+                                <ShoppingCart className="w-3.5 h-3.5" />
+                              </Button>
+                              <span className="icon-tooltip">Receive Stock</span>
+                            </div>
+                            <div className="icon-tooltip-wrapper">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setBatchesDrug(drug);
+                                  setShowBatchesModal(true);
+                                }}
+                                className="h-8 px-2.5 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400
+                                         hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-150
+                                         hover:shadow-premium-sm hover:scale-105"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </Button>
+                              <span className="icon-tooltip">View Batches</span>
+                            </div>
                           </div>
                         </TableCell>
                       </TableRow>
