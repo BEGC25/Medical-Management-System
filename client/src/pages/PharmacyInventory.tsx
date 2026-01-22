@@ -1813,8 +1813,9 @@ export default function PharmacyInventory() {
                           {isOutOfStock ? (
                             <Badge 
                               className="badge-prominent-red"
+                              aria-label="Out of Stock"
                             >
-                              <span className="text-sm">⊘</span> Out of Stock
+                              <span className="text-sm" aria-hidden="true">⊘</span> Out of Stock
                             </Badge>
                           ) : isLowStock ? (
                             <Badge 

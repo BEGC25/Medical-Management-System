@@ -847,7 +847,7 @@
     border-radius: inherit;
   }
 
-  /* Badge Prominent - For OUT OF STOCK - Redesigned with Muted Gray */
+  /* Badge Prominent - For Out of Stock (Muted Gray Design) */
   .badge-prominent-red {
     @apply inline-flex items-center gap-1 px-2.5 py-1;
     @apply text-xs font-medium;
