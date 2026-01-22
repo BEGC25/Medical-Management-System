@@ -176,19 +176,17 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             .clinic-contact p {
               margin: 2px 0;
             }
-            .logo-placeholder {
+            .logo-container {
               width: 80px;
               height: 80px;
-              background: #f3f4f6;
-              border: 2px solid #1e3a8a;
+              flex-shrink: 0;
+            }
+            .clinic-logo {
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
+              border: 1px solid #e5e7eb;
               border-radius: 4px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 9px;
-              color: #6b7280;
-              text-align: center;
-              padding: 4px;
             }
             
             /* Blue Accent Bar */
@@ -435,8 +433,8 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
                     <p>Email: bahr.ghazal.clinic@gmail.com</p>
                   </div>
                 </div>
-                <div class="logo-placeholder">
-                  [LOGO]
+                <div class="logo-container">
+                  <img src="/clinic-logo.jpg" alt="Bahr El Ghazal Clinic" class="clinic-logo" onerror="this.style.display='none'" />
                 </div>
               </div>
             </div>
