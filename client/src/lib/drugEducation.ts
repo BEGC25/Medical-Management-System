@@ -2082,28 +2082,6 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "glibenclamide": {
-    whatItDoes: "Strong sulfonylurea that stimulates insulin production. Effective for blood sugar control but higher risk of low blood sugar.",
-    commonUses: [
-      "Type 2 diabetes",
-      "Add-on therapy with metformin"
-    ],
-    importantSafety: {
-      dos: ["Take before breakfast", "Eat regular meals essential", "Start with low dose", "Monitor blood sugar closely"],
-      donts: ["Higher risk of low blood sugar than other sulfonylureas", "May cause weight gain", "Avoid if kidney disease", "Do not skip meals"]
-    },
-    howFastItWorks: {
-      onset: "Within 2-3 hours",
-      duration: "12-24 hours"
-    },
-    specialGroups: {
-      pregnancy: "Avoid, use insulin",
-      breastfeeding: "Avoid",
-      children: "Not recommended",
-      elderly: "Higher risk of low blood sugar, use alternatives if possible"
-    }
-  },
-
   // ==================== ADDITIONAL OPHTHALMICS ====================
   
   "tetracycline eye ointment": {
