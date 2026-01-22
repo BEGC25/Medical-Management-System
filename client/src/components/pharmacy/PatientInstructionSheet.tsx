@@ -121,13 +121,13 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
           <title>Medication Instructions - ${patient.patientId}</title>
           <style>
             @page {
-              margin: 12mm 15mm;
+              margin: 10mm 12mm;
               size: A4;
             }
             body {
               font-family: Arial, Helvetica, sans-serif;
-              font-size: 11pt;
-              line-height: 1.6;
+              font-size: 10pt;
+              line-height: 1.4;
               color: #000;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
@@ -143,42 +143,42 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             /* Header - Premium Design Matching Invoice */
             .header {
               border-bottom: 3px solid #1e3a8a;
-              padding-bottom: 12px;
-              margin-bottom: 15px;
+              padding-bottom: 8px;
+              margin-bottom: 10px;
             }
             .clinic-branding {
               display: flex;
               justify-content: space-between;
               align-items: start;
-              margin-bottom: 10px;
+              margin-bottom: 6px;
             }
             .clinic-info {
               flex: 1;
             }
             .clinic-name {
-              font-size: 24px;
+              font-size: 20px;
               font-weight: bold;
               color: #1e3a8a;
-              margin-bottom: 4px;
+              margin-bottom: 2px;
               letter-spacing: -0.02em;
             }
             .clinic-tagline {
-              font-size: 12px;
+              font-size: 10px;
               font-style: italic;
               color: #6b7280;
-              margin-bottom: 8px;
+              margin-bottom: 4px;
             }
             .clinic-contact {
-              font-size: 10px;
+              font-size: 9px;
               color: #374151;
-              line-height: 1.5;
+              line-height: 1.3;
             }
             .clinic-contact p {
-              margin: 2px 0;
+              margin: 1px 0;
             }
             .logo-container {
-              width: 80px;
-              height: 80px;
+              width: 110px;
+              height: 110px;
               flex-shrink: 0;
             }
             .clinic-logo {
@@ -191,20 +191,20 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             
             /* Blue Accent Bar */
             .blue-accent-bar {
-              height: 4px;
+              height: 3px;
               background: linear-gradient(to right, #1e3a8a, #1e40af);
-              margin-bottom: 15px;
+              margin-bottom: 10px;
             }
             
             /* Document Title - Navy Blue Bar */
             .doc-title {
               background: #1e3a8a;
               color: white;
-              font-size: 16px;
+              font-size: 14px;
               font-weight: bold;
               text-align: center;
-              padding: 10px;
-              margin-bottom: 15px;
+              padding: 6px;
+              margin-bottom: 10px;
               text-transform: uppercase;
               letter-spacing: 0.5px;
             }
@@ -213,66 +213,66 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             .patient-info {
               border: 1px solid #d1d5db;
               border-radius: 4px;
-              padding: 16px;
-              margin-bottom: 20px;
+              padding: 10px;
+              margin-bottom: 10px;
               background: #f9fafb;
             }
             .patient-info-header {
               font-weight: bold;
-              font-size: 12px;
+              font-size: 11px;
               text-transform: uppercase;
-              margin-bottom: 12px;
-              padding-bottom: 6px;
+              margin-bottom: 8px;
+              padding-bottom: 4px;
               border-bottom: 1px solid #1e3a8a;
               color: #1e3a8a;
             }
             .patient-info-grid {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 8px;
+              gap: 6px;
             }
             
             /* Section Headers - Navy Blue */
             .section {
-              margin-bottom: 20px;
+              margin-bottom: 10px;
               page-break-inside: avoid;
             }
             .section-header {
               background: #1e3a8a;
               color: white;
-              font-size: 14px;
+              font-size: 12px;
               font-weight: bold;
               text-align: center;
-              padding: 8px;
-              margin-bottom: 12px;
+              padding: 6px 12px;
+              margin-bottom: 8px;
               text-transform: uppercase;
             }
             
             /* Medication Name */
             .medication-name {
-              font-size: 18px;
+              font-size: 16px;
               font-weight: bold;
               color: #1e3a8a;
-              margin-bottom: 8px;
+              margin-bottom: 6px;
             }
             .generic-name {
-              font-size: 12px;
+              font-size: 11px;
               font-style: italic;
               color: #6b7280;
-              margin-bottom: 10px;
+              margin-bottom: 8px;
             }
             
             /* Details Box */
             .details-box {
               border: 1px solid #d1d5db;
               border-radius: 4px;
-              padding: 12px;
-              margin-bottom: 12px;
+              padding: 8px;
+              margin-bottom: 8px;
             }
             .details-box p {
-              margin: 6px 0;
-              font-size: 11px;
-              line-height: 1.8;
+              margin: 3px 0;
+              font-size: 10px;
+              line-height: 1.6;
             }
             .details-box strong {
               font-weight: bold;
@@ -280,24 +280,24 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             
             /* Content Text */
             .content-text {
-              font-size: 11px;
-              line-height: 1.7;
+              font-size: 10px;
+              line-height: 1.5;
               color: #1f2937;
-              margin-bottom: 12px;
+              margin-bottom: 8px;
             }
             
             /* Lists */
             ul {
-              margin: 10px 0;
-              padding-left: 25px;
+              margin: 6px 0;
+              padding-left: 20px;
               list-style: none;
             }
             li {
-              margin-bottom: 8px;
-              font-size: 11px;
-              line-height: 1.8;
+              margin-bottom: 5px;
+              font-size: 10px;
+              line-height: 1.5;
               position: relative;
-              padding-left: 20px;
+              padding-left: 16px;
             }
             li:before {
               content: "✓";
@@ -312,11 +312,11 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               border: 2px solid #dc2626;
               background-color: #fef2f2;
               border-radius: 4px;
-              padding: 16px;
-              margin: 12px 0;
+              padding: 10px;
+              margin: 8px 0;
             }
             .warning-box ul {
-              margin: 8px 0 0 0;
+              margin: 6px 0 0 0;
             }
             .warning-box li:before {
               content: "✗";
@@ -324,9 +324,9 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             }
             .warning-header {
               font-weight: bold;
-              font-size: 12px;
+              font-size: 11px;
               color: #dc2626;
-              margin-bottom: 8px;
+              margin-bottom: 6px;
             }
             
             /* Return Box */
@@ -334,11 +334,11 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               background-color: #fffbeb;
               border: 2px solid #f59e0b;
               border-radius: 4px;
-              padding: 16px;
-              margin: 12px 0;
+              padding: 10px;
+              margin: 8px 0;
             }
             .return-box ul {
-              margin: 8px 0 0 0;
+              margin: 6px 0 0 0;
             }
             .return-box li:before {
               content: "•";
@@ -346,27 +346,39 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             }
             .return-box-header {
               font-weight: bold;
-              font-size: 11px;
+              font-size: 10px;
               color: #b45309;
-              margin-bottom: 8px;
+              margin-bottom: 6px;
             }
             .contact-info {
               font-weight: bold;
-              font-size: 11px;
-              margin-top: 12px;
+              font-size: 10px;
+              margin-top: 8px;
               color: #1e3a8a;
+            }
+            
+            /* Two Column Layout for Warnings and Return sections */
+            .two-column-section {
+              display: flex;
+              gap: 12px;
+              margin-top: 0px;
+              page-break-inside: avoid;
+            }
+            .two-column-section .column {
+              flex: 1;
+              min-width: 0;
             }
             
             /* Dispenser Section */
             .dispenser-section {
               border-top: 1px solid #d1d5db;
               border-bottom: 1px solid #d1d5db;
-              padding: 12px 0;
-              margin: 20px 0;
-              font-size: 10px;
+              padding: 8px 0;
+              margin: 12px 0;
+              font-size: 9px;
             }
             .dispenser-section p {
-              margin: 4px 0;
+              margin: 2px 0;
             }
             .dispenser-section strong {
               font-weight: bold;
@@ -375,33 +387,33 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
             /* Footer - Match Invoice Style */
             .footer {
               text-align: center;
-              font-size: 10px;
+              font-size: 9px;
               color: #6b7280;
               border-top: 2px solid #d1d5db;
-              padding-top: 15px;
-              margin-top: 20px;
+              padding-top: 10px;
+              margin-top: 12px;
             }
             .footer-computer-generated {
-              font-size: 9px;
+              font-size: 8px;
               font-weight: bold;
               text-transform: uppercase;
               letter-spacing: 0.5px;
-              margin-bottom: 8px;
+              margin-bottom: 4px;
               color: #374151;
             }
             .footer-clinic-name {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: bold;
               color: #1f2937;
-              margin-bottom: 4px;
+              margin-bottom: 2px;
             }
             .footer-credentials {
-              font-size: 9px;
+              font-size: 8px;
               color: #6b7280;
-              margin-bottom: 6px;
+              margin-bottom: 3px;
             }
             .footer-tagline {
-              font-size: 10px;
+              font-size: 9px;
               font-style: italic;
               color: #6b7280;
             }
@@ -428,9 +440,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
                   <div class="clinic-name">Bahr El Ghazal Clinic</div>
                   <div class="clinic-tagline">Excellence in Healthcare</div>
                   <div class="clinic-contact">
-                    <p><strong>Aweil, South Sudan</strong></p>
-                    <p>Tel: +211916759060 / +211928754760</p>
-                    <p>Email: bahr.ghazal.clinic@gmail.com</p>
+                    <p><strong>Aweil, South Sudan</strong> | Tel: +211916759060 / +211928754760 | Email: bahr.ghazal.clinic@gmail.com</p>
                   </div>
                 </div>
                 <div class="logo-container">
@@ -488,27 +498,31 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               </div>
             </div>
 
-            <!-- Important Warnings - Highlighted Box -->
-            <div class="section">
-              <div class="section-header">Important Warnings</div>
-              <div class="warning-box">
-                <div class="warning-header">⚠️ IMPORTANT - DO NOT:</div>
-                <ul>
-                  ${content.donts.map(dont => `<li>${dont}</li>`).join('')}
-                </ul>
+            <!-- Important Warnings and When to Return - SIDE BY SIDE -->
+            <div class="two-column-section">
+              <div class="column">
+                <div class="section">
+                  <div class="section-header">Important Warnings</div>
+                  <div class="warning-box">
+                    <div class="warning-header">⚠️ IMPORTANT - DO NOT:</div>
+                    <ul>
+                      ${content.donts.map(dont => `<li>${dont}</li>`).join('')}
+                    </ul>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <!-- When to Return to Clinic -->
-            <div class="section">
-              <div class="section-header">When to Return to Clinic</div>
-              <div class="return-box">
-                <div class="return-box-header">🚨 WHEN TO RETURN TO CLINIC:</div>
-                <p style="font-weight: bold; margin-bottom: 8px; font-size: 11px;">Return immediately if you experience:</p>
-                <ul>
-                  ${content.warnings.map(warning => `<li>${warning}</li>`).join('')}
-                </ul>
-                <div class="contact-info">Contact us: +211916759060</div>
+              <div class="column">
+                <div class="section">
+                  <div class="section-header">When to Return to Clinic</div>
+                  <div class="return-box">
+                    <div class="return-box-header">🚨 WHEN TO RETURN TO CLINIC:</div>
+                    <p style="font-weight: bold; margin-bottom: 6px; font-size: 10px;">Return immediately if you experience:</p>
+                    <ul>
+                      ${content.warnings.map(warning => `<li>${warning}</li>`).join('')}
+                    </ul>
+                    <div class="contact-info">Contact us: +211916759060</div>
+                  </div>
+                </div>
               </div>
             </div>
 
