@@ -1571,25 +1571,34 @@ export default function PharmacyInventory() {
               <CardTitle>Current Stock & Prices</CardTitle>
               <CardDescription>See all drugs, quantities in stock, and current prices</CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="relative p-0">
+              {/* Scroll container with modern visual treatment */}
+              <div className="max-h-[600px] overflow-auto scrollbar-premium rounded-b-lg">
+                {/* Top fade gradient - appears when scrolled */}
+                <div className="sticky top-0 left-0 right-0 h-6 pointer-events-none z-[11]
+                               bg-gradient-to-b from-white via-white/80 to-transparent 
+                               dark:from-gray-900 dark:via-gray-900/80 dark:to-transparent" 
+                     aria-hidden="true"></div>
+                
+                <div className="-mt-6 px-6">
               <Table>
-                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
+                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b-2 border-gray-200 dark:border-gray-700">
                   <TableRow className="border-b-2 border-gray-200 dark:border-gray-700">
-                    <TableHead className="w-12">
+                    <TableHead className="w-12 bg-white dark:bg-gray-900">
                       <Checkbox
                         checked={selectedStockItems.size === filteredStockDrugs.length && filteredStockDrugs.length > 0}
                         onCheckedChange={handleSelectAllStock}
                         aria-label="Select all"
                       />
                     </TableHead>
-                    <TableHead className="font-semibold">Drug Name</TableHead>
-                    <TableHead className="font-semibold">Strength</TableHead>
-                    <TableHead className="font-semibold">Form</TableHead>
-                    <TableHead className="text-right font-semibold">Stock on Hand</TableHead>
-                    <TableHead className="text-right font-semibold">Current Price (SSP)</TableHead>
-                    <TableHead className="font-semibold">Nearest Expiry</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="text-right font-semibold">Actions</TableHead>
+                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Drug Name</TableHead>
+                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Strength</TableHead>
+                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Form</TableHead>
+                    <TableHead className="text-right font-semibold bg-white dark:bg-gray-900">Stock on Hand</TableHead>
+                    <TableHead className="text-right font-semibold bg-white dark:bg-gray-900">Current Price (SSP)</TableHead>
+                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Nearest Expiry</TableHead>
+                    <TableHead className="font-semibold bg-white dark:bg-gray-900">Status</TableHead>
+                    <TableHead className="text-right font-semibold bg-white dark:bg-gray-900">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1800,6 +1809,14 @@ export default function PharmacyInventory() {
                   }))}
                 </TableBody>
               </Table>
+                </div>
+                
+                {/* Bottom fade gradient - always visible to indicate more content */}
+                <div className="sticky bottom-0 left-0 right-0 h-6 pointer-events-none
+                               bg-gradient-to-t from-white via-white/80 to-transparent 
+                               dark:from-gray-900 dark:via-gray-900/80 dark:to-transparent" 
+                     aria-hidden="true"></div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -2589,14 +2606,24 @@ export default function PharmacyInventory() {
                     </CommandEmpty>
                     <CommandGroup className="p-0">
                       <div 
-                        className="max-h-[450px] overflow-y-scroll overflow-x-hidden scrollbar-premium" 
+                        className="max-h-[450px] overflow-y-auto overflow-x-hidden scrollbar-premium" 
                         style={{ 
                           WebkitOverflowScrolling: 'touch', 
                           overscrollBehavior: 'contain',
                           scrollBehavior: 'smooth',
-                          touchAction: 'pan-y'
                         }} 
                         role="listbox"
+                        onWheel={(e) => {
+                          // Ensure mouse wheel scrolling works by preventing event bubbling
+                          // when we're not at scroll boundaries
+                          const element = e.currentTarget;
+                          const isAtTop = element.scrollTop === 0;
+                          const isAtBottom = element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
+                          
+                          if ((e.deltaY < 0 && !isAtTop) || (e.deltaY > 0 && !isAtBottom)) {
+                            e.stopPropagation();
+                          }
+                        }}
                       >
                       {(() => {
                         // Filter drugs based on search
