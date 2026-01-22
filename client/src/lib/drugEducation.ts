@@ -1255,6 +1255,906 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       elderly: "Use lower doses, risk of confusion"
     }
   },
+
+  // ==================== ANTIFUNGALS ====================
+  
+  "fluconazole": {
+    whatItDoes: "Antifungal medication that treats yeast and fungal infections. Works by stopping fungal growth. Single dose effective for vaginal thrush.",
+    commonUses: [
+      "Vaginal yeast infections (thrush)",
+      "Oral thrush (candidiasis)",
+      "Fungal skin infections",
+      "Systemic fungal infections",
+      "Prevention in immunocompromised patients"
+    ],
+    importantSafety: {
+      dos: ["Take with or without food", "Single 150mg dose for vaginal thrush", "Complete full course for serious infections", "Stay well hydrated"],
+      donts: ["Avoid if severe liver disease", "May interact with many medications", "Report yellowing of skin/eyes", "Multiple doses needed for oral thrush"]
+    },
+    howFastItWorks: {
+      onset: "Symptoms improve in 24-48 hours",
+      duration: "Single dose lasts several days"
+    },
+    specialGroups: {
+      pregnancy: "Use only if clearly needed, especially avoid first trimester",
+      breastfeeding: "Safe for single dose, consult for multiple doses",
+      children: "Safe, dose by weight",
+      elderly: "Safe, monitor liver and kidney function"
+    }
+  },
+
+  "nystatin": {
+    whatItDoes: "Antifungal medication that treats yeast infections in mouth and intestines. Not absorbed into blood, works locally. Very safe.",
+    commonUses: [
+      "Oral thrush in babies and adults",
+      "Intestinal candidiasis",
+      "Prevention of fungal infections in immunocompromised",
+      "Thrush in denture wearers"
+    ],
+    importantSafety: {
+      dos: ["Swish oral suspension in mouth before swallowing", "Apply after feeds in babies", "Continue for 48 hours after symptoms clear", "Clean dentures if wearing"],
+      donts: ["Not effective for systemic infections", "Do not swallow tablets whole - let dissolve in mouth", "Minimal side effects", "Safe for long-term use"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-14 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe",
+      breastfeeding: "Safe",
+      children: "Safe from birth, commonly used in infants",
+      elderly: "Safe"
+    }
+  },
+
+  "clotrimazole": {
+    whatItDoes: "Antifungal cream and pessary for skin and vaginal fungal infections. Kills fungi causing athlete's foot, ringworm, and thrush.",
+    commonUses: [
+      "Vaginal yeast infections",
+      "Athlete's foot",
+      "Ringworm",
+      "Jock itch",
+      "Fungal skin infections"
+    ],
+    importantSafety: {
+      dos: ["Apply cream twice daily to clean, dry skin", "Continue for 2 weeks after symptoms clear", "Pessary: single dose at bedtime for vaginal thrush", "Wash hands after application"],
+      donts: ["Do not use on broken skin", "May damage latex condoms/diaphragms", "Avoid eye contact", "Do not swallow cream"]
+    },
+    howFastItWorks: {
+      onset: "Symptoms improve in 2-3 days",
+      duration: "Cream: 2-4 weeks, Pessary: single dose"
+    },
+    specialGroups: {
+      pregnancy: "Cream safe, pessary safe but avoid applicator in pregnancy",
+      breastfeeding: "Safe",
+      children: "Safe for skin infections",
+      elderly: "Safe"
+    }
+  },
+
+  "ketoconazole": {
+    whatItDoes: "Strong antifungal for systemic and resistant fungal infections. Works against many types of fungi. Requires monitoring.",
+    commonUses: [
+      "Severe fungal skin infections",
+      "Systemic fungal infections",
+      "Fungal infections resistant to other treatments",
+      "Certain hormonal conditions"
+    ],
+    importantSafety: {
+      dos: ["Take with food for better absorption", "Monitor liver function regularly", "Take full course as prescribed", "Report any nausea or jaundice"],
+      donts: ["Avoid if liver disease", "Many drug interactions - check with doctor", "May cause liver damage", "Do not take with antacids"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in several days",
+      duration: "Usually 2-6 weeks treatment"
+    },
+    specialGroups: {
+      pregnancy: "Avoid",
+      breastfeeding: "Avoid",
+      children: "Use with caution, monitor closely",
+      elderly: "Use with caution, monitor liver function"
+    }
+  },
+
+  "miconazole": {
+    whatItDoes: "Antifungal gel for oral thrush, especially in infants and immunocompromised patients. Safe and effective.",
+    commonUses: [
+      "Oral thrush in babies",
+      "Oral thrush in adults",
+      "Denture-related thrush",
+      "Prevention in immunocompromised"
+    ],
+    importantSafety: {
+      dos: ["Apply gel to affected areas 4 times daily", "Continue for 2 days after symptoms clear", "Apply after feeds in babies", "Avoid eating/drinking for 30 minutes after"],
+      donts: ["Risk of choking in babies under 4 months", "Avoid in babies with swallowing problems", "Report difficulty breathing", "May interact with warfarin"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-10 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe",
+      breastfeeding: "Safe",
+      children: "Safe from 4 months, use with caution in younger babies",
+      elderly: "Safe"
+    }
+  },
+
+  // ==================== OBSTETRIC/GYNECOLOGY ====================
+  
+  "oxytocin": {
+    whatItDoes: "Hormone that causes uterus to contract. Used to induce labor and prevent/treat bleeding after delivery. Life-saving medication.",
+    commonUses: [
+      "Postpartum hemorrhage prevention",
+      "Postpartum hemorrhage treatment",
+      "Labor induction",
+      "Augmentation of labor",
+      "Abortion management"
+    ],
+    importantSafety: {
+      dos: ["Give immediately after delivery to prevent bleeding", "Can give by IM injection or IV drip", "Monitor contractions and bleeding", "Essential medicine for all deliveries"],
+      donts: ["Must have trained healthcare provider", "Monitor for excessive contractions", "Watch for water retention", "Careful use in scarred uterus"]
+    },
+    howFastItWorks: {
+      onset: "IM: 3-5 minutes, IV: immediate",
+      duration: "30-60 minutes"
+    },
+    specialGroups: {
+      pregnancy: "Used during labor and delivery",
+      breastfeeding: "Safe, helps with milk let-down",
+      children: "Not applicable",
+      elderly: "Not applicable"
+    }
+  },
+
+  "misoprostol": {
+    whatItDoes: "Medication that causes uterine contractions. Prevents and treats postpartum bleeding. Also used for labor induction and medical abortion.",
+    commonUses: [
+      "Prevention of postpartum hemorrhage",
+      "Treatment of postpartum hemorrhage",
+      "Induction of labor",
+      "Medical management of miscarriage",
+      "Cervical ripening before procedures"
+    ],
+    importantSafety: {
+      dos: ["Give 600mcg orally after delivery if no oxytocin available", "Can be given under tongue or vaginally", "Store in cool place", "Keep dry (moisture reduces effectiveness)"],
+      donts: ["Do not use to induce labor in scarred uterus", "May cause fever and chills", "Diarrhea is common side effect", "Not for prevention of stomach ulcers in pregnancy"]
+    },
+    howFastItWorks: {
+      onset: "10-40 minutes depending on route",
+      duration: "Several hours"
+    },
+    specialGroups: {
+      pregnancy: "Used during labor/delivery, causes abortion if used earlier",
+      breastfeeding: "Safe",
+      children: "Not applicable",
+      elderly: "Not applicable for obstetric use"
+    }
+  },
+
+  "ergometrine": {
+    whatItDoes: "Powerful medication that contracts the uterus. Emergency treatment for severe postpartum bleeding. Helps uterus stay contracted.",
+    commonUses: [
+      "Severe postpartum hemorrhage",
+      "Active management of third stage of labor",
+      "Incomplete abortion with bleeding"
+    ],
+    importantSafety: {
+      dos: ["Give by IM injection immediately for severe bleeding", "Can repeat dose if needed", "Monitor blood pressure", "Keep refrigerated for best storage"],
+      donts: ["Do not give before delivery of baby", "Avoid if high blood pressure", "May cause nausea and vomiting", "Can cause severe hypertension"]
+    },
+    howFastItWorks: {
+      onset: "2-5 minutes",
+      duration: "3-6 hours"
+    },
+    specialGroups: {
+      pregnancy: "Only for labor/delivery emergencies",
+      breastfeeding: "Safe",
+      children: "Not applicable",
+      elderly: "Not applicable"
+    }
+  },
+
+  "magnesium sulfate": {
+    whatItDoes: "Emergency treatment for eclampsia (seizures in pregnancy). Also treats severe pre-eclampsia and certain other seizures. Life-saving medication.",
+    commonUses: [
+      "Eclampsia (seizures in pregnancy/postpartum)",
+      "Severe pre-eclampsia prevention",
+      "Magnesium deficiency",
+      "Torsades de pointes (heart rhythm problem)"
+    ],
+    importantSafety: {
+      dos: ["Loading dose then maintenance by IV drip or IM", "Monitor reflexes, breathing, urine output", "Have calcium gluconate ready as antidote", "Check magnesium levels if possible"],
+      donts: ["Toxic if overdosed - monitor closely", "Stop if reflexes disappear", "Watch for breathing depression", "Reduce dose in kidney disease"]
+    },
+    howFastItWorks: {
+      onset: "Immediate by IV, 1 hour by IM",
+      duration: "30 minutes IV, several hours IM"
+    },
+    specialGroups: {
+      pregnancy: "Safe and essential for eclampsia",
+      breastfeeding: "Safe",
+      children: "Used for specific conditions",
+      elderly: "Use with caution, adjust for kidney function"
+    }
+  },
+
+  // ==================== CONTRACEPTIVES ====================
+  
+  "ethinylestradiol/levonorgestrel": {
+    whatItDoes: "Combined oral contraceptive pill containing estrogen and progestin. Prevents pregnancy by stopping ovulation. Very effective when taken correctly.",
+    commonUses: [
+      "Contraception",
+      "Regulation of menstrual cycles",
+      "Reduction of menstrual pain",
+      "Treatment of acne",
+      "Endometriosis management"
+    ],
+    importantSafety: {
+      dos: ["Take one pill daily at same time", "Start on first day of period or Sunday", "Use backup method first 7 days", "Complete each pack before starting next"],
+      donts: ["Do not smoke (especially over 35 years)", "Risk of blood clots", "Not for breastfeeding mothers", "Stop if severe headaches, leg pain, or vision changes"]
+    },
+    howFastItWorks: {
+      onset: "Effective after 7 days if started correctly",
+      duration: "Protection lasts while taking regularly"
+    },
+    specialGroups: {
+      pregnancy: "Do not use, stop if pregnancy suspected",
+      breastfeeding: "Avoid, use progestin-only pill instead",
+      children: "Safe for adolescents after menarche",
+      elderly: "Not typically used after menopause"
+    }
+  },
+
+  "levonorgestrel": {
+    whatItDoes: "Progestin-only contraception. Emergency contraception in high dose. Mini-pill safe for breastfeeding. Prevents pregnancy without estrogen.",
+    commonUses: [
+      "Emergency contraception (1.5mg)",
+      "Daily contraception (0.03mg)",
+      "Contraception while breastfeeding",
+      "Contraception when estrogen contraindicated"
+    ],
+    importantSafety: {
+      dos: ["Mini-pill: take same time daily, no pill-free days", "Emergency: take within 72 hours, sooner is better", "Can use while breastfeeding", "No 7-day break like combined pill"],
+      donts: ["Emergency pill is not regular contraception", "May cause irregular bleeding", "Less effective if obese (emergency)", "Take at exact same time daily for mini-pill"]
+    },
+    howFastItWorks: {
+      onset: "Mini-pill: effective after 48 hours, Emergency: works best if taken early",
+      duration: "Must take daily for continuous protection"
+    },
+    specialGroups: {
+      pregnancy: "Stop if pregnancy occurs",
+      breastfeeding: "Safe, preferred contraceptive while breastfeeding",
+      children: "Safe for adolescents",
+      elderly: "Not typically needed"
+    }
+  },
+
+  "medroxyprogesterone": {
+    whatItDoes: "Long-acting injectable contraception (Depo-Provera). Single injection provides 3 months protection. Very effective and convenient.",
+    commonUses: [
+      "Long-term contraception",
+      "Contraception for those who can't remember daily pills",
+      "Endometriosis treatment",
+      "Reduction of menstrual bleeding"
+    ],
+    importantSafety: {
+      dos: ["Inject deep IM every 12 weeks", "Can start immediately postpartum", "Safe while breastfeeding", "Keep track of injection due dates"],
+      donts: ["Delays return to fertility (average 10 months)", "May cause weight gain", "May reduce bone density with very long-term use", "Irregular bleeding common initially"]
+    },
+    howFastItWorks: {
+      onset: "Immediate if given within 5 days of period start",
+      duration: "3 months per injection"
+    },
+    specialGroups: {
+      pregnancy: "Do not use, but safe if accidentally given early pregnancy",
+      breastfeeding: "Safe and preferred",
+      children: "Safe for adolescents",
+      elderly: "Not typically needed, concern for bone density"
+    }
+  },
+
+  // ==================== ANTIRETROVIRALS ====================
+  
+  "tenofovir/lamivudine/dolutegravir": {
+    whatItDoes: "First-line HIV treatment combining three powerful antiretroviral medications in one pill. Most effective HIV treatment available. Suppresses virus to undetectable levels.",
+    commonUses: [
+      "First-line HIV treatment",
+      "HIV treatment in pregnant women",
+      "HIV treatment in children and adolescents",
+      "Prevention of HIV transmission (when viral load suppressed)"
+    ],
+    importantSafety: {
+      dos: ["Take one tablet daily with or without food", "Take at same time each day", "Never miss doses", "Continue even when feeling well", "Regular viral load and CD4 monitoring"],
+      donts: ["Do not stop suddenly", "Do not share medications", "Report new symptoms", "May cause initial sleep problems or headache", "Inform all healthcare providers you're on ARVs"]
+    },
+    howFastItWorks: {
+      onset: "Viral load decreases within weeks",
+      duration: "Lifelong treatment needed"
+    },
+    specialGroups: {
+      pregnancy: "Safe and preferred regimen in pregnancy",
+      breastfeeding: "Safe, continues during breastfeeding",
+      children: "Safe from age 6 years or weight 25kg+",
+      elderly: "Safe, monitor kidney function"
+    }
+  },
+
+  "tenofovir/lamivudine/efavirenz": {
+    whatItDoes: "Alternative first-line HIV treatment. Three antiretroviral drugs in one pill. Effective at suppressing HIV virus.",
+    commonUses: [
+      "First-line HIV treatment",
+      "Alternative to TDF/3TC/DTG",
+      "HIV treatment when DTG not suitable"
+    ],
+    importantSafety: {
+      dos: ["Take once daily at bedtime", "Take on empty stomach for better absorption", "Never miss doses", "Continue lifelong", "Regular monitoring needed"],
+      donts: ["May cause vivid dreams, dizziness initially", "Do not drive if dizzy", "Avoid alcohol", "Not first choice in pregnancy", "May cause rash - report if severe"]
+    },
+    howFastItWorks: {
+      onset: "Viral load decreases within weeks",
+      duration: "Lifelong treatment"
+    },
+    specialGroups: {
+      pregnancy: "Avoid in first trimester if possible, safe after",
+      breastfeeding: "Safe",
+      children: "Safe, dose by weight",
+      elderly: "Safe, monitor closely"
+    }
+  },
+
+  "zidovudine/lamivudine": {
+    whatItDoes: "Antiretroviral combination used mainly for preventing mother-to-child transmission of HIV. Also part of some second-line regimens.",
+    commonUses: [
+      "Prevention of mother-to-child HIV transmission",
+      "Part of second-line HIV treatment",
+      "HIV treatment in specific situations"
+    ],
+    importantSafety: {
+      dos: ["Take twice daily", "Take with or without food", "Essential during pregnancy for HIV+ mothers", "Continue as prescribed", "Monitor blood counts"],
+      donts: ["May cause anemia - monitor blood", "May cause nausea initially", "Do not miss doses", "Report severe fatigue", "More side effects than newer regimens"]
+    },
+    howFastItWorks: {
+      onset: "Works within weeks",
+      duration: "Continue as prescribed"
+    },
+    specialGroups: {
+      pregnancy: "Safe and important for preventing transmission to baby",
+      breastfeeding: "Safe",
+      children: "Safe from birth",
+      elderly: "Safe, monitor blood counts"
+    }
+  },
+
+  "nevirapine": {
+    whatItDoes: "Antiretroviral for HIV treatment and prevention of mother-to-child transmission. Syrup form for pediatric use and infant prophylaxis.",
+    commonUses: [
+      "Pediatric HIV treatment",
+      "Prevention of mother-to-child transmission",
+      "Single-dose to HIV-exposed newborns",
+      "Part of HIV treatment regimens"
+    ],
+    importantSafety: {
+      dos: ["Give single dose to newborn of HIV+ mother", "For treatment: start with low dose then increase", "Monitor liver function", "Watch for rash carefully"],
+      donts: ["Do not use if severe liver disease", "Serious rash can occur - stop if severe", "May cause hepatitis - monitor liver", "Many drug interactions"]
+    },
+    howFastItWorks: {
+      onset: "Single dose prophylaxis works immediately",
+      duration: "For treatment: lifelong"
+    },
+    specialGroups: {
+      pregnancy: "Safe and used for PMTCT",
+      breastfeeding: "Safe",
+      children: "Safe from birth, commonly used in infants",
+      elderly: "Safe, monitor liver"
+    }
+  },
+
+  "lopinavir/ritonavir": {
+    whatItDoes: "Second-line HIV treatment for patients who failed first-line therapy. Powerful protease inhibitor combination. Used for drug-resistant HIV.",
+    commonUses: [
+      "Second-line HIV treatment",
+      "HIV treatment when first-line fails",
+      "Drug-resistant HIV",
+      "Pediatric HIV treatment"
+    ],
+    importantSafety: {
+      dos: ["Take twice daily with food", "Keep refrigerated if possible", "Monitor cholesterol and blood sugar", "Regular viral load monitoring"],
+      donts: ["Many drug interactions", "May cause diarrhea", "May increase cholesterol", "Taste bad - can mix with food for children"]
+    },
+    howFastItWorks: {
+      onset: "Viral load improves within weeks",
+      duration: "Lifelong treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe second-line option in pregnancy",
+      breastfeeding: "Safe",
+      children: "Safe, syrup available",
+      elderly: "Safe, monitor metabolism"
+    }
+  },
+
+  "dolutegravir": {
+    whatItDoes: "Powerful HIV medication with high barrier to resistance. Often used as part of combination therapy. Very effective integrase inhibitor.",
+    commonUses: [
+      "Part of first-line HIV treatment",
+      "Second-line HIV treatment",
+      "Treatment of drug-resistant HIV"
+    ],
+    importantSafety: {
+      dos: ["Take once or twice daily with or without food", "Very few drug interactions", "High barrier to resistance", "Well tolerated"],
+      donts: ["May cause insomnia or headache initially", "Report muscle pain or weakness", "Avoid taking with antacids", "Weight gain possible"]
+    },
+    howFastItWorks: {
+      onset: "Viral load decreases rapidly",
+      duration: "Lifelong treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe, preferred option",
+      breastfeeding: "Safe",
+      children: "Safe from 6 years or 25kg",
+      elderly: "Safe, well tolerated"
+    }
+  },
+
+  // ==================== VACCINES ====================
+  
+  "tetanus toxoid": {
+    whatItDoes: "Vaccine preventing tetanus (lockjaw). Given to pregnant women to protect mother and baby. Essential after dirty wounds.",
+    commonUses: [
+      "Prevention of tetanus in pregnancy",
+      "Wound prophylaxis after injury",
+      "Primary immunization series",
+      "Booster doses"
+    ],
+    importantSafety: {
+      dos: ["Give to all pregnant women (2-3 doses)", "Give after injuries with dirty wounds", "Safe in all trimesters", "Protects both mother and newborn"],
+      donts: ["Pain and swelling at injection site", "Safe vaccine with minimal side effects", "Previous severe reaction is contraindication", "Low risk of allergic reaction"]
+    },
+    howFastItWorks: {
+      onset: "Protection after 2-3 doses",
+      duration: "Boosters every 10 years or after injury"
+    },
+    specialGroups: {
+      pregnancy: "Safe and essential",
+      breastfeeding: "Safe",
+      children: "Part of routine immunization",
+      elderly: "Safe, important for wound prophylaxis"
+    }
+  },
+
+  "hepatitis b vaccine": {
+    whatItDoes: "Vaccine preventing hepatitis B virus infection. Given at birth and in series. Protects liver from chronic infection.",
+    commonUses: [
+      "Routine infant immunization",
+      "Healthcare worker immunization",
+      "High-risk individuals",
+      "Post-exposure prophylaxis"
+    ],
+    importantSafety: {
+      dos: ["Give at birth, 6 weeks, and 14 weeks", "Safe from birth", "Give IM in thigh (infants) or arm", "Essential for all newborns"],
+      donts: ["Minimal side effects", "Local soreness common", "Low-grade fever possible", "Safe in immunocompromised"]
+    },
+    howFastItWorks: {
+      onset: "Protection after 3 doses",
+      duration: "Long-lasting, usually lifelong"
+    },
+    specialGroups: {
+      pregnancy: "Safe",
+      breastfeeding: "Safe",
+      children: "Safe from birth, essential immunization",
+      elderly: "Safe, may need higher doses"
+    }
+  },
+
+  "rabies vaccine": {
+    whatItDoes: "Vaccine preventing rabies after animal bites. Life-saving - rabies is 100% fatal without treatment. Give immediately after dog/bat bite.",
+    commonUses: [
+      "Post-exposure prophylaxis after bites",
+      "Pre-exposure prophylaxis for high-risk individuals",
+      "Dog, bat, or wild animal bites"
+    ],
+    importantSafety: {
+      dos: ["Give immediately after any dog/bat bite", "Series of 4-5 doses on days 0, 3, 7, 14 (and 28)", "Clean wound thoroughly first", "Give with immunoglobulin if available"],
+      donts: ["Do not delay - rabies is fatal", "Local reactions common", "Complete all doses essential", "Report any bite from animal to health facility immediately"]
+    },
+    howFastItWorks: {
+      onset: "Antibodies develop over 2 weeks",
+      duration: "Protection during series and shortly after"
+    },
+    specialGroups: {
+      pregnancy: "Safe and essential if exposed",
+      breastfeeding: "Safe",
+      children: "Safe from birth, critical for children",
+      elderly: "Safe"
+    }
+  },
+
+  "bcg vaccine": {
+    whatItDoes: "Vaccine preventing severe tuberculosis in children. Given at birth. Protects against TB meningitis and disseminated TB.",
+    commonUses: [
+      "Prevention of childhood tuberculosis",
+      "Prevention of TB meningitis",
+      "Prevention of disseminated TB"
+    ],
+    importantSafety: {
+      dos: ["Give at birth or soon after", "Intradermal injection in left upper arm", "Will leave small scar", "Single dose provides protection"],
+      donts: ["Do not give if HIV+ infant with symptoms", "Do not inject intramuscularly", "Abscess at site may occur", "Safe in most HIV-exposed infants"]
+    },
+    howFastItWorks: {
+      onset: "Protection develops over 6-8 weeks",
+      duration: "Protection lasts years, decreases in adolescence"
+    },
+    specialGroups: {
+      pregnancy: "Not given to pregnant women",
+      breastfeeding: "Given to breastfeeding babies",
+      children: "Essential vaccine for all newborns in TB-endemic areas",
+      elderly: "Not given to elderly"
+    }
+  },
+
+  "measles vaccine": {
+    whatItDoes: "Vaccine preventing measles infection. Part of routine immunization. Prevents serious complications including pneumonia and encephalitis.",
+    commonUses: [
+      "Routine childhood immunization",
+      "Measles outbreak response",
+      "Catch-up immunization"
+    ],
+    importantSafety: {
+      dos: ["Give at 9 months and 18 months", "Safe and effective", "Can give during outbreak to infants as young as 6 months", "Protects against serious disease"],
+      donts: ["Mild fever common day 7-10 after vaccine", "Mild rash may occur", "Do not give if severe immunodeficiency", "Safe in HIV+ children"]
+    },
+    howFastItWorks: {
+      onset: "Protection 2 weeks after vaccination",
+      duration: "Long-lasting, likely lifelong after 2 doses"
+    },
+    specialGroups: {
+      pregnancy: "Avoid during pregnancy",
+      breastfeeding: "Safe to give to breastfeeding baby",
+      children: "Essential childhood vaccine",
+      elderly: "Not routinely given"
+    }
+  },
+
+  "oral polio vaccine": {
+    whatItDoes: "Oral vaccine preventing polio. Given as drops by mouth. Protects against paralytic polio. Easy to administer.",
+    commonUses: [
+      "Routine immunization against polio",
+      "Polio outbreak response",
+      "Supplementary immunization campaigns"
+    ],
+    importantSafety: {
+      dos: ["Give 2 drops by mouth at birth, 6, 10, 14 weeks", "No need to repeat if baby spits or vomits within 5-10 minutes", "Safe and effective", "Can give with other vaccines"],
+      donts: ["Do not give to severely immunocompromised children", "Very rare risk of vaccine-associated paralysis", "Safe in mild illness", "Safe in HIV+ children"]
+    },
+    howFastItWorks: {
+      onset: "Protection after multiple doses",
+      duration: "Long-lasting, boosters may be needed"
+    },
+    specialGroups: {
+      pregnancy: "Generally avoid, use if high risk of exposure",
+      breastfeeding: "Safe to give to breastfeeding baby",
+      children: "Essential childhood vaccine",
+      elderly: "Not routinely given"
+    }
+  },
+
+  "pentavalent vaccine": {
+    whatItDoes: "Combination vaccine protecting against 5 diseases: diphtheria, pertussis (whooping cough), tetanus, hepatitis B, and Hib. Reduces number of injections needed.",
+    commonUses: [
+      "Routine childhood immunization",
+      "Protection against 5 serious diseases at once"
+    ],
+    importantSafety: {
+      dos: ["Give at 6, 10, and 14 weeks of age", "Give IM in thigh", "Safe and effective", "Complete all 3 doses essential"],
+      donts: ["Fever and local swelling common", "Give paracetamol for fever", "Serious reactions very rare", "Do not skip doses"]
+    },
+    howFastItWorks: {
+      onset: "Protection after 3 doses",
+      duration: "Long-lasting, boosters needed for some components"
+    },
+    specialGroups: {
+      pregnancy: "Not given during pregnancy",
+      breastfeeding: "Safe to give to breastfeeding baby",
+      children: "Essential vaccine for infants",
+      elderly: "Not given to elderly"
+    }
+  },
+
+  // ==================== OPIOID ANALGESICS ====================
+  
+  "morphine": {
+    whatItDoes: "Strong opioid pain reliever for severe pain. Gold standard for cancer pain and post-operative pain. Very effective when used correctly.",
+    commonUses: [
+      "Severe cancer pain",
+      "Post-operative pain",
+      "Severe injury pain",
+      "Palliative care",
+      "Myocardial infarction pain"
+    ],
+    importantSafety: {
+      dos: ["Start with low dose and increase as needed", "Take regularly for chronic pain", "Laxatives needed to prevent constipation", "Safe when prescribed correctly"],
+      donts: ["Risk of dependence with long-term use", "Causes constipation - prevent with laxatives", "May cause drowsiness - do not drive", "Respiratory depression if overdosed"]
+    },
+    howFastItWorks: {
+      onset: "Oral: 30-60 minutes, IV: 5-10 minutes",
+      duration: "4-6 hours (immediate release)"
+    },
+    specialGroups: {
+      pregnancy: "Use if pain relief essential, risks of use in late pregnancy",
+      breastfeeding: "Use lowest effective dose",
+      children: "Safe, dose carefully by weight",
+      elderly: "Start with lower doses, increased sensitivity"
+    }
+  },
+
+  "codeine": {
+    whatItDoes: "Moderate pain reliever and cough suppressant. Weaker than morphine. Converted to morphine in body. Good for moderate pain.",
+    commonUses: [
+      "Moderate pain",
+      "Severe cough suppression",
+      "Diarrhea (at low doses)",
+      "Pain not controlled by paracetamol/ibuprofen"
+    ],
+    importantSafety: {
+      dos: ["Take every 4-6 hours as needed", "Can combine with paracetamol", "Drink plenty of fluids", "Take with food if nausea"],
+      donts: ["Causes constipation", "May cause drowsiness", "Not effective in 10% of population (poor metabolizers)", "Risk of dependence with long-term use"]
+    },
+    howFastItWorks: {
+      onset: "30-60 minutes",
+      duration: "4-6 hours"
+    },
+    specialGroups: {
+      pregnancy: "Avoid if possible, especially near delivery",
+      breastfeeding: "Avoid, can cause breathing problems in baby",
+      children: "Not recommended under 12 years",
+      elderly: "Start with lower doses"
+    }
+  },
+
+  "pethidine": {
+    whatItDoes: "Injectable opioid pain reliever. Used for labor pain and post-operative pain. Shorter acting than morphine.",
+    commonUses: [
+      "Labor pain relief",
+      "Post-operative pain",
+      "Acute severe pain",
+      "Pain during procedures"
+    ],
+    importantSafety: {
+      dos: ["Give by IM or slow IV injection", "Monitor breathing and blood pressure", "Shorter acting than morphine", "Good for labor pain"],
+      donts: ["Can slow labor if given too early", "May affect baby's breathing at birth", "Nausea and vomiting common", "Avoid in kidney disease"]
+    },
+    howFastItWorks: {
+      onset: "IM: 10-15 minutes, IV: 2-3 minutes",
+      duration: "2-4 hours"
+    },
+    specialGroups: {
+      pregnancy: "Used for labor pain, may affect baby at delivery",
+      breastfeeding: "Avoid or use minimal doses",
+      children: "Safe, dose by weight",
+      elderly: "Use lower doses, increased side effects"
+    }
+  },
+
+  // ==================== ADDITIONAL ANTIBIOTICS ====================
+  
+  "flucloxacillin": {
+    whatItDoes: "Antibiotic specifically effective against Staphylococcus bacteria. Resistant to staphylococcal enzymes. First choice for staph skin infections.",
+    commonUses: [
+      "Staph skin infections and boils",
+      "Cellulitis",
+      "Bone infections (osteomyelitis)",
+      "Joint infections",
+      "Post-surgical wound infections"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach 30-60 minutes before meals", "Take 4 times daily (every 6 hours)", "Complete full course", "Effective for penicillin-resistant staph"],
+      donts: ["Do not use if penicillin allergy", "May cause liver problems - rare", "Take on empty stomach for best absorption", "Report yellowing of skin/eyes"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-14 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe when needed",
+      breastfeeding: "Safe",
+      children: "Safe, commonly used",
+      elderly: "Safe, monitor liver function"
+    }
+  },
+
+  "phenoxymethylpenicillin": {
+    whatItDoes: "Oral penicillin (Penicillin V) for throat and mild infections. Good for strep throat and prevention of rheumatic fever recurrence.",
+    commonUses: [
+      "Streptococcal throat infections",
+      "Prevention of rheumatic fever",
+      "Mild skin infections",
+      "Dental infections"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach 30 minutes before meals", "Take 3-4 times daily", "Complete full 10-day course for strep throat", "Good for penicillin-sensitive infections"],
+      donts: ["Do not use if penicillin allergy", "Less effective than amoxicillin for many infections", "Food reduces absorption", "Complete full course to prevent rheumatic fever"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 10 days for strep throat"
+    },
+    specialGroups: {
+      pregnancy: "Safe",
+      breastfeeding: "Safe",
+      children: "Safe, commonly used for strep throat",
+      elderly: "Safe"
+    }
+  },
+
+  // ==================== ADDITIONAL INSULIN ====================
+  
+  "regular insulin": {
+    whatItDoes: "Short-acting insulin for diabetes. Controls blood sugar after meals. Can be given IV in emergencies. Clear solution.",
+    commonUses: [
+      "Type 1 diabetes mealtime coverage",
+      "Type 2 diabetes requiring insulin",
+      "Diabetic ketoacidosis (IV)",
+      "Hyperglycemia in hospital"
+    ],
+    importantSafety: {
+      dos: ["Inject 30 minutes before meals", "Rotate injection sites", "Store in refrigerator", "Check blood sugar regularly"],
+      donts: ["Risk of low blood sugar if don't eat after injection", "Clear insulin - check for particles", "Do not freeze", "Expired insulin is less effective"]
+    },
+    howFastItWorks: {
+      onset: "30-60 minutes",
+      duration: "6-8 hours"
+    },
+    specialGroups: {
+      pregnancy: "Safe and preferred insulin in pregnancy",
+      breastfeeding: "Safe",
+      children: "Safe, dose carefully",
+      elderly: "Safe, risk of low blood sugar"
+    }
+  },
+
+  "nph insulin": {
+    whatItDoes: "Intermediate-acting insulin providing basal coverage. Cloudy insulin that must be mixed. Lasts 12-18 hours.",
+    commonUses: [
+      "Basal insulin coverage for type 1 diabetes",
+      "Type 2 diabetes requiring insulin",
+      "Usually given once or twice daily"
+    ],
+    importantSafety: {
+      dos: ["Roll vial gently to mix - cloudy appearance", "Inject 1-2 times daily", "Give before breakfast and/or bedtime", "Eat regular meals to prevent low blood sugar"],
+      donts: ["Cloudy insulin - must mix well", "Peak effect 4-8 hours - risk of low sugar", "Must eat regularly", "Do not shake vigorously"]
+    },
+    howFastItWorks: {
+      onset: "1-2 hours",
+      duration: "12-18 hours, peak at 4-8 hours"
+    },
+    specialGroups: {
+      pregnancy: "Safe",
+      breastfeeding: "Safe",
+      children: "Safe",
+      elderly: "Safe, monitor for low blood sugar"
+    }
+  },
+
+  "mixed insulin": {
+    whatItDoes: "Pre-mixed combination of short and intermediate insulin (70/30 or 30/70). Convenient fixed combination. Cloudy appearance.",
+    commonUses: [
+      "Type 2 diabetes twice daily regimen",
+      "Patients needing simple regimen",
+      "Coverage of both basal and mealtime needs"
+    ],
+    importantSafety: {
+      dos: ["Roll gently to mix before each injection", "Give 30 minutes before breakfast and dinner", "Eat meals regularly", "Rotate injection sites"],
+      donts: ["Less flexible than separate insulins", "Must eat at regular times", "Cloudy - must mix well", "Do not skip meals"]
+    },
+    howFastItWorks: {
+      onset: "30-60 minutes",
+      duration: "12-16 hours"
+    },
+    specialGroups: {
+      pregnancy: "Can be used, may need adjustment",
+      breastfeeding: "Safe",
+      children: "Safe",
+      elderly: "Safe, simpler regimen"
+    }
+  },
+
+  "gliclazide": {
+    whatItDoes: "Sulfonylurea medication that stimulates pancreas to produce insulin. Good blood sugar control with lower risk of low sugar than other sulfonylureas.",
+    commonUses: [
+      "Type 2 diabetes not controlled by metformin alone",
+      "Type 2 diabetes as add-on therapy",
+      "Sometimes as first-line if metformin not tolerated"
+    ],
+    importantSafety: {
+      dos: ["Take before breakfast", "Eat regular meals to prevent low blood sugar", "Monitor blood sugar", "Can combine with metformin"],
+      donts: ["Risk of low blood sugar - eat regularly", "May cause weight gain", "Do not use in type 1 diabetes", "Avoid if severe liver or kidney disease"]
+    },
+    howFastItWorks: {
+      onset: "Starts working within hours",
+      duration: "12-24 hours"
+    },
+    specialGroups: {
+      pregnancy: "Avoid, use insulin instead",
+      breastfeeding: "Avoid",
+      children: "Not recommended",
+      elderly: "Use with caution, risk of low blood sugar"
+    }
+  },
+
+  // ==================== ADDITIONAL OPHTHALMICS ====================
+  
+  "tetracycline eye ointment": {
+    whatItDoes: "Antibiotic ointment for bacterial eye infections. Used for trachoma treatment. Also given to newborns to prevent eye infections.",
+    commonUses: [
+      "Bacterial conjunctivitis",
+      "Trachoma treatment",
+      "Newborn eye infection prevention",
+      "Corneal infections"
+    ],
+    importantSafety: {
+      dos: ["Apply thin strip to lower eyelid", "Use 2-4 times daily", "Continue for 48 hours after symptoms resolve", "Essential for trachoma treatment"],
+      donts: ["Blurs vision temporarily after application", "Use at bedtime if vision blur is problem", "Complete full course", "Wash hands before and after"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-10 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe for eye use",
+      breastfeeding: "Safe for eye use",
+      children: "Safe from birth, used in newborns",
+      elderly: "Safe"
+    }
+  },
+
+  "gentamicin eye drops": {
+    whatItDoes: "Strong antibiotic eye drops for serious bacterial eye infections. Broad spectrum coverage. Effective for severe conjunctivitis and corneal ulcers.",
+    commonUses: [
+      "Severe bacterial conjunctivitis",
+      "Corneal ulcers",
+      "Bacterial keratitis",
+      "Post-operative eye infection prevention"
+    ],
+    importantSafety: {
+      dos: ["Apply 1-2 drops every 4 hours initially", "Can increase to every 1-2 hours for severe infections", "Continue for 48 hours after cure", "Effective for serious infections"],
+      donts: ["Do not use for viral conjunctivitis", "Do not share eye drops", "Discard 28 days after opening", "Report worsening vision"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-10 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe for eye use",
+      breastfeeding: "Safe for eye use",
+      children: "Safe",
+      elderly: "Safe"
+    }
+  },
+
+  "ciprofloxacin eye drops": {
+    whatItDoes: "Fluoroquinolone antibiotic eye drops. Broad spectrum coverage. Excellent for bacterial conjunctivitis and corneal ulcers.",
+    commonUses: [
+      "Bacterial conjunctivitis",
+      "Corneal ulcers",
+      "Eye infection prevention post-surgery",
+      "Severe eye infections"
+    ],
+    importantSafety: {
+      dos: ["Apply every 2-4 hours for first 2 days, then 4 times daily", "Effective against many bacteria", "Good for contact lens-related infections", "Complete full course"],
+      donts: ["Do not use for viral infections", "Temporary stinging on application", "Remove contact lenses before use", "Do not touch dropper to eye"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 1-2 days",
+      duration: "Usually 7-10 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe for eye use",
+      breastfeeding: "Safe for eye use",
+      children: "Safe",
+      elderly: "Safe"
+    }
+  },
 };
 
 // Simple drug summaries for fallback when detailed info not available in DRUG_DATABASE
