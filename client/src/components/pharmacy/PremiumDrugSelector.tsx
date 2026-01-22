@@ -43,34 +43,37 @@ interface PremiumDrugSelectorProps {
 const categorizeDrug = (drug: Drug): string => {
   const name = drug.name.toLowerCase();
   const genericName = drug.genericName?.toLowerCase() || "";
+  // Check both name and genericName for better categorization
+  const combined = `${name} ${genericName}`;
   
-  // Antibiotics
+  // Antibiotics - check both name and genericName
   if (
-    genericName.includes("amoxicillin") || genericName.includes("ampicillin") ||
-    genericName.includes("azithromycin") || genericName.includes("ciprofloxacin") ||
-    genericName.includes("doxycycline") || genericName.includes("metronidazole") ||
-    genericName.includes("cephalexin") || genericName.includes("penicillin") ||
-    name.includes("antibiotic")
+    combined.includes("amoxicillin") || combined.includes("ampicillin") ||
+    combined.includes("azithromycin") || combined.includes("ciprofloxacin") ||
+    combined.includes("doxycycline") || combined.includes("metronidazole") ||
+    combined.includes("cephalexin") || combined.includes("penicillin") ||
+    combined.includes("antibiotic") || combined.includes("ceftriaxone") ||
+    combined.includes("erythromycin") || combined.includes("cloxacillin")
   ) {
     return "ANTIBIOTICS";
   }
   
-  // Antimalarials
+  // Antimalarials - check both name and genericName
   if (
-    genericName.includes("artemether") || genericName.includes("artesunate") ||
-    genericName.includes("coartem") || genericName.includes("lumefantrine") ||
-    genericName.includes("quinine") || genericName.includes("chloroquine") ||
-    name.includes("malaria")
+    combined.includes("artemether") || combined.includes("artesunate") ||
+    combined.includes("coartem") || combined.includes("lumefantrine") ||
+    combined.includes("quinine") || combined.includes("chloroquine") ||
+    combined.includes("malaria")
   ) {
     return "ANTIMALARIALS";
   }
   
-  // Analgesics
+  // Analgesics - check both name and genericName (catches "Paracetamol 500mg")
   if (
-    genericName.includes("paracetamol") || genericName.includes("acetaminophen") ||
-    genericName.includes("ibuprofen") || genericName.includes("aspirin") ||
-    genericName.includes("diclofenac") || genericName.includes("morphine") ||
-    name.includes("pain")
+    combined.includes("paracetamol") || combined.includes("acetaminophen") ||
+    combined.includes("ibuprofen") || combined.includes("aspirin") ||
+    combined.includes("diclofenac") || combined.includes("morphine") ||
+    combined.includes("pain")
   ) {
     return "ANALGESICS";
   }

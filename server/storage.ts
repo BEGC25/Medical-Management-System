@@ -3157,7 +3157,12 @@ export class MemStorage implements IStorage {
   }
 
   async getAllDrugsWithStock(): Promise<(schema.Drug & { stockOnHand: number })[]> {
-    const allDrugs = await db.select().from(drugs).where(eq(drugs.isActive, 1));
+    // Get ALL drugs regardless of isActive status for doctor's prescription dropdown
+    // This ensures drugs are discoverable even if not properly marked as active during creation
+    // The UI can still show stock status (out of stock) to help doctors make informed decisions
+    // Note: If a drug should truly be discontinued, it should be removed from the database
+    // rather than just marked inactive, as the isActive flag may not be consistently set
+    const allDrugs = await db.select().from(drugs).orderBy(drugs.name);
     const drugsWithStock: (schema.Drug & { stockOnHand: number })[] = [];
 
     for (const drug of allDrugs) {
