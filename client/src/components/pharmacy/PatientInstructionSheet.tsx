@@ -350,6 +350,11 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               color: #b45309;
               margin-bottom: 6px;
             }
+            .return-box-intro {
+              font-weight: bold;
+              margin-bottom: 6px;
+              font-size: 10px;
+            }
             .contact-info {
               font-weight: bold;
               font-size: 10px;
@@ -516,7 +521,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
                   <div class="section-header">When to Return to Clinic</div>
                   <div class="return-box">
                     <div class="return-box-header">🚨 WHEN TO RETURN TO CLINIC:</div>
-                    <p style="font-weight: bold; margin-bottom: 6px; font-size: 10px;">Return immediately if you experience:</p>
+                    <p class="return-box-intro">Return immediately if you experience:</p>
                     <ul>
                       ${content.warnings.map(warning => `<li>${warning}</li>`).join('')}
                     </ul>
