@@ -847,15 +847,14 @@
     border-radius: inherit;
   }
 
-  /* Badge Prominent - For OUT OF STOCK */
+  /* Badge Prominent - For Out of Stock (Muted Gray Design) */
   .badge-prominent-red {
-    @apply inline-flex items-center px-2.5 py-1;
-    @apply text-xs font-semibold;
-    @apply bg-gradient-to-r from-red-500 to-red-600;
-    @apply text-white;
-    @apply rounded-full;
-    @apply shadow-md shadow-red-500/30;
-    @apply animate-pulse-subtle;
+    @apply inline-flex items-center gap-1 px-2.5 py-1;
+    @apply text-xs font-medium;
+    @apply bg-gray-100 dark:bg-gray-800;
+    @apply text-gray-600 dark:text-gray-400;
+    @apply border border-gray-300 dark:border-gray-700;
+    @apply rounded;
   }
 
   /* Icon Tooltip Container */

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharmacy Inventory Fixes - Visual Comparison</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 40px;
+            background: #f8f9fa;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #1f2937;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #374151;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        .before, .after {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .before {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .after {
+            border-left: 4px solid #10b981;
+        }
+        
+        .label {
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+        
+        .before .label {
+            color: #ef4444;
+        }
+        
+        .after .label {
+            color: #10b981;
+        }
+        
+        /* Badge Styles */
+        .badge-old {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            background: linear-gradient(to right, #ef4444, #dc2626);
+            color: white;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .badge-new {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+        
+        .badge-in-stock {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            background: linear-gradient(to right, #10b981, #059669);
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge-container {
+            margin: 20px 0;
+        }
+        
+        /* Modal Styles */
+        .modal-demo {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 300px;
+            position: relative;
+        }
+        
+        .modal-demo.no-scroll {
+            overflow: hidden;
+        }
+        
+        .modal-demo.with-scroll {
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+        
+        .modal-content {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        
+        .form-field {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #374151;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #8b5cf6, #6366f1);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: white;
+            border: 1px solid #d1d5db;
+            color: #374151;
+        }
+        
+        .scroll-indicator {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 12px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            margin-right: 10px;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .before .feature-list li:before {
+            content: "✗";
+            color: #ef4444;
+        }
+        
+        .stock-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        
+        .stock-table th {
+            background: #f9fafb;
+            padding: 10px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .stock-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏥 Pharmacy Inventory - UI Fixes Visual Comparison</h1>
+    
+    <h2>Issue 1: Add Drug Modal Scroll Fix</h2>
+    <div class="comparison-container">
+        <div class="before">
+            <div class="label">❌ Before (Broken)</div>
+            <div class="modal-demo no-scroll">
+                <div class="modal-header">Add New Drug</div>
+                <div class="modal-content">
+                    <div class="form-field">
+                        <label class="form-label">Drug Name</label>
+                        <input type="text" class="form-input" placeholder="e.g., Paracetamol">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Generic Name</label>
+                        <input type="text" class="form-input" placeholder="e.g., Acetaminophen">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Strength</label>
+                        <input type="text" class="form-input" placeholder="e.g., 500mg">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Form</label>
+                        <input type="text" class="form-input" placeholder="e.g., Tablet">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Category</label>
+                        <input type="text" class="form-input" placeholder="e.g., Analgesic">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Reorder Level</label>
+                        <input type="number" class="form-input" placeholder="e.g., 50">
+                    </div>
+                    <!-- These buttons are hidden due to no scroll -->
+                    <div class="modal-buttons" style="opacity: 0.3;">
+                        <button class="btn btn-secondary">Cancel</button>
+                        <button class="btn btn-primary">Add Drug</button>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-indicator">⚠️ Content is cut off - can't scroll!</div>
+            <ul class="feature-list">
+                <li>Modal height fixed</li>
+                <li>Content overflow hidden</li>
+                <li>Bottom buttons inaccessible</li>
+                <li>Poor user experience</li>
+            </ul>
+        </div>
+        
+        <div class="after">
+            <div class="label">✅ After (Fixed)</div>
+            <div class="modal-demo with-scroll">
+                <div class="modal-header">Add New Drug</div>
+                <div class="modal-content">
+                    <div class="form-field">
+                        <label class="form-label">Drug Name</label>
+                        <input type="text" class="form-input" placeholder="e.g., Paracetamol">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Generic Name</label>
+                        <input type="text" class="form-input" placeholder="e.g., Acetaminophen">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Strength</label>
+                        <input type="text" class="form-input" placeholder="e.g., 500mg">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Form</label>
+                        <input type="text" class="form-input" placeholder="e.g., Tablet">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Category</label>
+                        <input type="text" class="form-input" placeholder="e.g., Analgesic">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Reorder Level</label>
+                        <input type="number" class="form-input" placeholder="e.g., 50">
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn btn-secondary">Cancel</button>
+                        <button class="btn btn-primary">Add Drug</button>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-indicator">✅ Scroll to see all content!</div>
+            <ul class="feature-list">
+                <li>Max height: 90vh</li>
+                <li>Overflow-y: auto enabled</li>
+                <li>All content accessible</li>
+                <li>Smooth scroll experience</li>
+            </ul>
+        </div>
+    </div>
+    
+    <h2>Issue 2: OUT OF STOCK Badge Redesign</h2>
+    <div class="comparison-container">
+        <div class="before">
+            <div class="label">❌ Before (Aggressive)</div>
+            <div class="badge-container">
+                <div class="badge-old">OUT OF STOCK</div>
+            </div>
+            <p><strong>Problems:</strong></p>
+            <ul class="feature-list">
+                <li>Bright red (#ef4444) background</li>
+                <li>Pulsing animation</li>
+                <li>All caps text</li>
+                <li>Creates visual fatigue</li>
+                <li>Alarming appearance</li>
+            </ul>
+            
+            <h3 style="margin-top: 25px; color: #374151; font-size: 16px;">Multiple Items Example:</h3>
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th>Drug Name</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Paracetamol 500mg</td>
+                        <td>0</td>
+                        <td><span class="badge-old">OUT OF STOCK</span></td>
+                    </tr>
+                    <tr>
+                        <td>Ibuprofen 400mg</td>
+                        <td>0</td>
+                        <td><span class="badge-old">OUT OF STOCK</span></td>
+                    </tr>
+                    <tr>
+                        <td>Amoxicillin 250mg</td>
+                        <td>150</td>
+                        <td><span class="badge-in-stock">In Stock</span></td>
+                    </tr>
+                    <tr>
+                        <td>Metformin 500mg</td>
+                        <td>0</td>
+                        <td><span class="badge-old">OUT OF STOCK</span></td>
+                    </tr>
+                    <tr>
+                        <td>Aspirin 100mg</td>
+                        <td>0</td>
+                        <td><span class="badge-old">OUT OF STOCK</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 15px; color: #ef4444; font-style: italic; font-size: 13px;">
+                ⚠️ "Sea of red" creates visual stress and anxiety
+            </p>
+        </div>
+        
+        <div class="after">
+            <div class="label">✅ After (Professional)</div>
+            <div class="badge-container">
+                <div class="badge-new"><span style="font-size: 14px;">⊘</span> Out of Stock</div>
+            </div>
+            <p><strong>Improvements:</strong></p>
+            <ul class="feature-list">
+                <li>Muted gray (#f3f4f6) background</li>
+                <li>No animation</li>
+                <li>Title case text</li>
+                <li>Professional appearance</li>
+                <li>Includes ⊘ icon</li>
+                <li>Proper accessibility (ARIA)</li>
+            </ul>
+            
+            <h3 style="margin-top: 25px; color: #374151; font-size: 16px;">Multiple Items Example:</h3>
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th>Drug Name</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Paracetamol 500mg</td>
+                        <td>0</td>
+                        <td><span class="badge-new"><span style="font-size: 14px;">⊘</span> Out of Stock</span></td>
+                    </tr>
+                    <tr>
+                        <td>Ibuprofen 400mg</td>
+                        <td>0</td>
+                        <td><span class="badge-new"><span style="font-size: 14px;">⊘</span> Out of Stock</span></td>
+                    </tr>
+                    <tr>
+                        <td>Amoxicillin 250mg</td>
+                        <td>150</td>
+                        <td><span class="badge-in-stock">In Stock</span></td>
+                    </tr>
+                    <tr>
+                        <td>Metformin 500mg</td>
+                        <td>0</td>
+                        <td><span class="badge-new"><span style="font-size: 14px;">⊘</span> Out of Stock</span></td>
+                    </tr>
+                    <tr>
+                        <td>Aspirin 100mg</td>
+                        <td>0</td>
+                        <td><span class="badge-new"><span style="font-size: 14px;">⊘</span> Out of Stock</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 15px; color: #10b981; font-style: italic; font-size: 13px;">
+                ✅ Calm, professional appearance - easy to scan and focus
+            </p>
+        </div>
+    </div>
+    
+    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; border-radius: 8px; margin-top: 40px;">
+        <h3 style="color: #1e40af; margin-top: 0;">🎯 Implementation Summary</h3>
+        <p style="color: #1f2937; line-height: 1.6;">
+            <strong>Files Modified:</strong> 2 files (PharmacyInventory.tsx, index.css)<br>
+            <strong>Lines Changed:</strong> ~10 lines total<br>
+            <strong>Breaking Changes:</strong> None<br>
+            <strong>Security Issues:</strong> None<br>
+            <strong>Build Status:</strong> ✅ Successful<br>
+            <strong>Code Review:</strong> ✅ Passed with accessibility improvements<br>
+        </p>
+        <p style="color: #1f2937; margin-bottom: 0; line-height: 1.6;">
+            Both issues have been resolved with minimal, surgical changes that improve usability and reduce visual fatigue while maintaining professional appearance and accessibility standards.
+        </p>
+    </div>
+</body>
+</html>
