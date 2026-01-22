@@ -827,8 +827,7 @@ export default function Treatment() {
     // Merge all drugs with their stock info (or 0 if no stock data)
     return drugs.map(drug => ({
       ...drug,
-      stockOnHand: stockMap.get(drug.id) ?? 0,
-      reorderLevel: drug.reorderLevel
+      stockOnHand: stockMap.get(drug.id) ?? 0
     }));
   }, [drugs, drugsWithStock]);
   

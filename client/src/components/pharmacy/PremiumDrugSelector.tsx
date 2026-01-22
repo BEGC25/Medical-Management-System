@@ -11,12 +11,20 @@ const DEFAULT_DRUG_INFO_MESSAGE = "Consult with healthcare provider for informat
 
 // Helper function to display drug name with strength, avoiding duplication
 const getDrugDisplayName = (drug: Drug): string => {
-  // If drug.name already contains the strength, just return the name
-  if (drug.strength && drug.name.toLowerCase().includes(drug.strength.toLowerCase())) {
+  if (!drug.strength) {
     return drug.name;
   }
+  
+  // Check if drug.name already ends with the strength (more precise than contains)
+  const nameLower = drug.name.toLowerCase().trim();
+  const strengthLower = drug.strength.toLowerCase().trim();
+  
+  if (nameLower.endsWith(strengthLower)) {
+    return drug.name;
+  }
+  
   // Otherwise, append strength to name
-  return drug.strength ? `${drug.name} ${drug.strength}` : drug.name;
+  return `${drug.name} ${drug.strength}`;
 };
 
 interface DrugWithStock extends Drug {
