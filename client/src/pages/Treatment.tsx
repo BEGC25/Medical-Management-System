@@ -67,6 +67,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import PatientSearch from "@/components/PatientSearch";
+import { PremiumDrugSelector } from "@/components/pharmacy/PremiumDrugSelector";
 
 import ResultDrawer from "@/components/ResultDrawer";
 import { DischargeSummary } from "@/components/DischargeSummary";
@@ -508,10 +509,8 @@ export default function Treatment() {
   const [editingMedicationIndex, setEditingMedicationIndex] = useState<number | null>(null); // New: for editing medications in cart
   const [selectedCommonDrug, setSelectedCommonDrug] = useState<string | null>(null); // New: track selected common medication
   
-  // New state for collapsible order form and searchable dropdown
+  // New state for collapsible order form
   const [isOrderFormExpanded, setIsOrderFormExpanded] = useState(false);
-  const [drugSearchOpen, setDrugSearchOpen] = useState(false);
-  const [drugSearchQuery, setDrugSearchQuery] = useState("");
   
   // State for Bug #2: Edit button functionality on Current Medications
   const [editingCurrentMedication, setEditingCurrentMedication] = useState<PharmacyOrder | null>(null);
@@ -902,21 +901,6 @@ export default function Treatment() {
   const ultrasoundServices = useMemo(() => {
     return services.filter(s => s.category === 'ultrasound' && s.isActive);
   }, [services]);
-  
-  // Filter drugs based on search query and group by category
-  const filteredDrugs = useMemo(() => {
-    return drugs.filter(drug => 
-      drug.name.toLowerCase().includes(drugSearchQuery.toLowerCase()) ||
-      (drug.genericName && drug.genericName.toLowerCase().includes(drugSearchQuery.toLowerCase())) ||
-      (drug.category && drug.category.toLowerCase().includes(drugSearchQuery.toLowerCase()))
-    );
-  }, [drugs, drugSearchQuery]);
-  
-  // Get unique drug categories for grouping
-  const drugCategories = useMemo(() => {
-    const categories = new Set(drugs.map(d => d.category).filter(Boolean));
-    return Array.from(categories).sort();
-  }, [drugs]);
   
   const { data: unpaidOrders } = useQuery({
     queryKey: ["/api/unpaid-orders/all"],
@@ -4655,125 +4639,18 @@ export default function Treatment() {
                           <div id="medication-order-form" className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="space-y-2">
                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Drug</label>
-                              <Popover open={drugSearchOpen} onOpenChange={setDrugSearchOpen}>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={drugSearchOpen}
-                                    className="w-full justify-between border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-600"
-                                    data-testid="select-drug"
-                                  >
-                                    {selectedDrugId ? (() => {
-                                      const drug = drugs.find((d) => d.id.toString() === selectedDrugId);
-                                      return drug ? (
-                                        <span className="flex items-center gap-2">
-                                          <Pill className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                          {drug.genericName || drug.name} - {drug.strength}
-                                        </span>
-                                      ) : <span className="text-gray-500">Search medications...</span>;
-                                    })() : (
-                                      <span className="text-gray-500">Search medications...</span>
-                                    )}
-                                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[400px] p-0" align="start">
-                                  <Command>
-                                    <CommandInput 
-                                      placeholder="Type to search drugs..." 
-                                      value={drugSearchQuery}
-                                      onValueChange={setDrugSearchQuery}
-                                      className="border-none focus:ring-0"
-                                    />
-                                    <CommandList className="max-h-[300px]">
-                                      <CommandEmpty>
-                                        <div className="p-4 text-center text-gray-500">
-                                          <Search className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                                          <p>No medications found</p>
-                                          <p className="text-xs">Try a different search term</p>
-                                        </div>
-                                      </CommandEmpty>
-                                      
-                                      {/* Group by category */}
-                                      {drugCategories.length > 0 ? drugCategories.map(category => {
-                                        const categoryDrugs = filteredDrugs.filter(d => d.category === category);
-                                        if (categoryDrugs.length === 0) return null;
-                                        
-                                        return (
-                                          <CommandGroup key={category} heading={category || "Other"}>
-                                            {categoryDrugs.map(drug => (
-                                              <CommandItem
-                                                key={drug.id}
-                                                value={`${drug.name}-${drug.id}`}
-                                                onSelect={() => {
-                                                  setSelectedDrugId(drug.id.toString());
-                                                  setSelectedDrugName(drug.genericName || drug.name);
-                                                  setDrugSearchOpen(false);
-                                                  setDrugSearchQuery("");
-                                                }}
-                                                className="flex items-center justify-between p-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                                              >
-                                                <div className="flex items-center gap-2">
-                                                  <Pill className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-                                                  <div>
-                                                    <p className="font-medium">{drug.genericName || drug.name}</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{drug.strength} • {drug.form || 'N/A'}</p>
-                                                  </div>
-                                                </div>
-                                                <div className="text-right">
-                                                  {drug.stockLevel !== undefined && (
-                                                    <span className={`text-xs ${
-                                                      drug.stockLevel === 0 ? 'text-red-600 dark:text-red-400' :
-                                                      drug.stockLevel < 20 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'
-                                                    }`}>
-                                                      {drug.stockLevel === 0 ? 'Out of stock' : `${drug.stockLevel} in stock`}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              </CommandItem>
-                                            ))}
-                                          </CommandGroup>
-                                        );
-                                      }) : (
-                                        <CommandGroup>
-                                          {filteredDrugs.map(drug => (
-                                            <CommandItem
-                                              key={drug.id}
-                                              value={`${drug.name}-${drug.id}`}
-                                              onSelect={() => {
-                                                setSelectedDrugId(drug.id.toString());
-                                                setSelectedDrugName(drug.genericName || drug.name);
-                                                setDrugSearchOpen(false);
-                                                setDrugSearchQuery("");
-                                              }}
-                                              className="flex items-center justify-between p-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                                            >
-                                              <div className="flex items-center gap-2">
-                                                <Pill className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-                                                <div>
-                                                  <p className="font-medium">{drug.genericName || drug.name}</p>
-                                                  <p className="text-xs text-gray-500 dark:text-gray-400">{drug.strength} • {drug.form || 'N/A'}</p>
-                                                </div>
-                                              </div>
-                                              <div className="text-right">
-                                                {drug.stockLevel !== undefined && (
-                                                  <span className={`text-xs ${
-                                                    drug.stockLevel === 0 ? 'text-red-600 dark:text-red-400' :
-                                                    drug.stockLevel < 20 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'
-                                                  }`}>
-                                                    {drug.stockLevel === 0 ? 'Out of stock' : `${drug.stockLevel} in stock`}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </CommandItem>
-                                          ))}
-                                        </CommandGroup>
-                                      )}
-                                    </CommandList>
-                                  </Command>
-                                </PopoverContent>
-                              </Popover>
+                              <PremiumDrugSelector
+                                drugs={drugsWithStock}
+                                value={selectedDrugId ? parseInt(selectedDrugId) : 0}
+                                onChange={(drugId) => {
+                                  const drug = drugs.find(d => d.id === drugId);
+                                  if (drug) {
+                                    setSelectedDrugId(drugId.toString());
+                                    setSelectedDrugName(drug.genericName || drug.name);
+                                  }
+                                }}
+                                placeholder="Search medications..."
+                              />
                               
                               {/* === 3. ALLERGY ALERT COMPONENT (HIGH PRIORITY) === */}
                               {selectedDrugId && (() => {

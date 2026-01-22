@@ -4,6 +4,7 @@ import { Search, Package, CheckCircle, AlertTriangle, XCircle } from "lucide-rea
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { getDrugQuickSummary } from "@/lib/drugEducation";
 
 interface DrugWithStock extends Drug {
   stockOnHand?: number;
@@ -70,11 +71,11 @@ const getStockStatus = (drug: DrugWithStock) => {
   const reorder = drug.reorderLevel || 10;
   
   if (stock === 0) {
-    return { label: "OUT OF STOCK", icon: "❌", color: "red" };
+    return { label: "Out of Stock", icon: "⊘", color: "gray", badge: "muted" };
   } else if (stock <= reorder) {
-    return { label: "LOW STOCK", icon: "⚠️", color: "orange" };
+    return { label: "Low Stock", icon: "⚠️", color: "orange", badge: "warning" };
   } else {
-    return { label: "In Stock", icon: "✅", color: "green" };
+    return { label: "In Stock", icon: "✅", color: "green", badge: "success" };
   }
 };
 
@@ -185,6 +186,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                       {categoryDrugs.map(drug => {
                         const stockStatus = getStockStatus(drug);
                         const isSelected = drug.id === value;
+                        const educationalSummary = getDrugQuickSummary(drug.genericName || drug.name);
 
                         return (
                           <button
@@ -211,17 +213,27 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                                   <span className="capitalize">{drug.form}</span>
                                   {drug.manufacturer && <span> • {drug.manufacturer}</span>}
                                 </div>
+                                
+                                {/* Educational Summary */}
+                                {educationalSummary && educationalSummary !== "Consult with healthcare provider for information about this medication." && (
+                                  <div className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5 italic flex items-start gap-1">
+                                    <span className="mt-0.5">📝</span>
+                                    <span className="line-clamp-2">{educationalSummary}</span>
+                                  </div>
+                                )}
+                                
                                 <div className="flex items-center gap-2 mt-1.5">
-                                  <span className="text-[13px] text-gray-500">
-                                    📦 {drug.stockOnHand || 0} units
-                                  </span>
-                                  <span className="text-xs">•</span>
                                   <span className={`text-[13px] font-medium flex items-center gap-1
-                                    ${stockStatus.color === 'green' ? 'text-green-600' : ''}
-                                    ${stockStatus.color === 'orange' ? 'text-orange-600' : ''}
-                                    ${stockStatus.color === 'red' ? 'text-red-600' : ''}
+                                    ${stockStatus.color === 'green' ? 'text-green-600 dark:text-green-500' : ''}
+                                    ${stockStatus.color === 'orange' ? 'text-orange-600 dark:text-orange-500' : ''}
+                                    ${stockStatus.color === 'gray' ? 'text-gray-400 dark:text-gray-500' : ''}
                                   `}>
                                     {stockStatus.icon} {stockStatus.label}
+                                    {drug.stockOnHand > 0 && (
+                                      <span className="text-gray-500 dark:text-gray-400">
+                                        ({drug.stockOnHand} {drug.form === 'tablet' || drug.form === 'capsule' ? drug.form + 's' : 'units'})
+                                      </span>
+                                    )}
                                   </span>
                                 </div>
                               </div>
