@@ -9,6 +9,16 @@ import { getDrugQuickSummary } from "@/lib/drugEducation";
 // Default message returned when no educational info is available
 const DEFAULT_DRUG_INFO_MESSAGE = "Consult with healthcare provider for information about this medication.";
 
+// Helper function to display drug name with strength, avoiding duplication
+const getDrugDisplayName = (drug: Drug): string => {
+  // If drug.name already contains the strength, just return the name
+  if (drug.strength && drug.name.toLowerCase().includes(drug.strength.toLowerCase())) {
+    return drug.name;
+  }
+  // Otherwise, append strength to name
+  return drug.strength ? `${drug.name} ${drug.strength}` : drug.name;
+};
+
 interface DrugWithStock extends Drug {
   stockOnHand?: number;
   reorderLevel?: number;
@@ -129,7 +139,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
             <span className="text-lg">💊</span>
             <div className="flex-1">
               <div className="font-semibold text-gray-900 dark:text-white">
-                {selectedDrug.name} {selectedDrug.strength}
+                {getDrugDisplayName(selectedDrug)}
               </div>
               <div className="text-xs text-gray-500">
                 {selectedDrug.genericName} • {selectedDrug.form}
@@ -209,7 +219,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                               <span className="text-lg mt-0.5">💊</span>
                               <div className="flex-1 min-w-0">
                                 <div className="font-semibold text-[15px] text-gray-900 dark:text-white leading-tight">
-                                  {drug.name} {drug.strength}
+                                  {getDrugDisplayName(drug)}
                                 </div>
                                 <div className="text-[13px] text-gray-600 dark:text-gray-400 mt-0.5">
                                   {drug.genericName && <span>{drug.genericName} • </span>}

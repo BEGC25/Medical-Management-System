@@ -819,6 +819,19 @@ export default function Treatment() {
     staleTime: 300000, // Cache for 5 minutes - stock doesn't change that frequently
   });
   
+  // Merge all drugs with stock information (for dropdown to show all drugs)
+  const allDrugsWithStockInfo = useMemo(() => {
+    // Create a map of stock levels by drug ID
+    const stockMap = new Map(drugsWithStock.map(d => [d.id, d.stockOnHand]));
+    
+    // Merge all drugs with their stock info (or 0 if no stock data)
+    return drugs.map(drug => ({
+      ...drug,
+      stockOnHand: stockMap.get(drug.id) ?? 0,
+      reorderLevel: drug.reorderLevel
+    }));
+  }, [drugs, drugsWithStock]);
+  
   // Filter to only in-stock drugs for quick select
   const inStockDrugs = useMemo(() => {
     return drugsWithStock.filter(d => d.stockOnHand > 0);
@@ -4640,7 +4653,7 @@ export default function Treatment() {
                             <div className="space-y-2">
                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Drug</label>
                               <PremiumDrugSelector
-                                drugs={drugsWithStock}
+                                drugs={allDrugsWithStockInfo}
                                 value={selectedDrugId ? parseInt(selectedDrugId, 10) : 0}
                                 onChange={(drugId) => {
                                   const drug = drugs.find(d => d.id === drugId);
