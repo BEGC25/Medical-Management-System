@@ -1232,7 +1232,8 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
   },
 };
 
-// Simple drug summaries from COMMON_DRUGS - used as fallback when detailed info not available
+// Simple drug summaries for fallback when detailed info not available in DRUG_DATABASE
+// These summaries provide basic educational information for commonly prescribed drugs
 const DRUG_SUMMARIES: Record<string, string> = {
   // Antibiotics not in main database
   "ampicillin": "Treats chest, ear and urinary infections. Related to penicillin. Take on empty stomach 1 hour before meals.",

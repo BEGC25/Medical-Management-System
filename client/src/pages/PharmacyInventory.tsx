@@ -2617,8 +2617,9 @@ export default function PharmacyInventory() {
                           // Ensure mouse wheel scrolling works by preventing event bubbling
                           // when we're not at scroll boundaries
                           const element = e.currentTarget;
+                          const SCROLL_THRESHOLD = 1; // Small threshold to account for subpixel rendering
                           const isAtTop = element.scrollTop === 0;
-                          const isAtBottom = element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
+                          const isAtBottom = element.scrollTop + element.clientHeight >= element.scrollHeight - SCROLL_THRESHOLD;
                           
                           if ((e.deltaY < 0 && !isAtTop) || (e.deltaY > 0 && !isAtBottom)) {
                             e.stopPropagation();
