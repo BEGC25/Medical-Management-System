@@ -1232,6 +1232,111 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
   },
 };
 
+// Simple drug summaries for fallback when detailed info not available in DRUG_DATABASE
+// These summaries provide basic educational information for commonly prescribed drugs
+const DRUG_SUMMARIES: Record<string, string> = {
+  // Antibiotics not in main database
+  "ampicillin": "Treats chest, ear and urinary infections. Related to penicillin. Take on empty stomach 1 hour before meals.",
+  "cephalexin": "Treats skin, bone and urinary infections. Safe for most patients. Take 4 times daily for best results.",
+  "doxycycline": "Treats chest infections, cholera and some sexually transmitted infections. Take with food and plenty of water. Avoid sun exposure.",
+  "clindamycin": "Strong antibiotic for skin, bone and dental infections. Can cause diarrhea - report if severe. Good for penicillin allergic patients.",
+  "trimethoprim-sulfamethoxazole": "Treats urinary, chest and ear infections. Also prevents infections in HIV patients. Drink plenty of water.",
+  "cotrimoxazole": "Treats urinary, chest and ear infections. Also prevents infections in HIV patients. Drink plenty of water.",
+  
+  // Pain relievers
+  "aspirin": "Treats pain and fever. Reduces inflammation. Take with food or water to protect stomach.",
+  "acetylsalicylic acid": "Treats pain and fever. Reduces inflammation. Take with food or water to protect stomach.",
+  "diclofenac": "Strong pain and inflammation reliever. Good for joint pain and arthritis. Take with food.",
+  
+  // Blood pressure medications
+  "amlodipine": "Lowers blood pressure by relaxing blood vessels. Take once daily at same time. Works slowly and gently on heart.",
+  "losartan": "Lowers blood pressure and protects kidneys. Safe for diabetics. Take once daily with or without food.",
+  "atenolol": "Slows heart rate and lowers blood pressure. Good for heart problems. Do not stop suddenly without doctor advice.",
+  "lisinopril": "Lowers blood pressure and helps heart work better. Protects kidneys in diabetes. May cause dry cough in some people.",
+  "hydrochlorothiazide": "Water pill that lowers blood pressure. Makes you urinate more. Take in morning to avoid night urination.",
+  "hctz": "Water pill that lowers blood pressure. Makes you urinate more. Take in morning to avoid night urination.",
+  
+  // Diabetes medications
+  "metformin": "Controls blood sugar in diabetes. First choice medicine for type 2 diabetes. Take with meals to reduce stomach upset.",
+  "glimepiride": "Helps pancreas make more insulin. Take before breakfast. Can cause low blood sugar - eat regular meals.",
+  "sitagliptin": "Helps control blood sugar without causing low sugar. Take once daily with or without food. Safe for kidneys.",
+  
+  // Gastrointestinal
+  "omeprazole": "Reduces stomach acid for ulcers and heartburn. Take before breakfast on empty stomach. Heals stomach and prevents damage.",
+  "ranitidine": "Reduces stomach acid for heartburn and ulcers. Take twice daily or at bedtime. Works quickly to relieve symptoms.",
+  "loperamide": "Stops diarrhea by slowing intestines. Take after each loose stool. Drink fluids to prevent dehydration.",
+  "bisacodyl": "Treats constipation. Take at bedtime for morning bowel movement. Drink plenty of water.",
+  
+  // Antihistamines
+  "cetirizine": "Treats allergies, itching and hives. Does not cause drowsiness. Take once daily for 24-hour relief.",
+  "loratadine": "Treats allergies without causing sleep. Good for hay fever and skin allergies. Take once daily.",
+  "chlorpheniramine": "Treats allergies and itching. May cause drowsiness. Take at bedtime if sleepy.",
+  
+  // Respiratory
+  "salbutamol": "Opens airways in asthma and breathing problems. Take when needed for wheezing. May cause shaking or fast heartbeat.",
+  "albuterol": "Opens airways in asthma and breathing problems. Take when needed for wheezing. May cause shaking or fast heartbeat.",
+  "montelukast": "Prevents asthma attacks. Take daily even when feeling well. Not for acute asthma attacks.",
+  "pseudoephedrine": "Unblocks stuffy nose from colds. Take during day not at bedtime. May cause difficulty sleeping.",
+  
+  // Vitamins
+  "vitamin c": "Boosts immunity and helps wound healing. Prevents scurvy. Take daily for general health.",
+  "ascorbic acid": "Boosts immunity and helps wound healing. Prevents scurvy. Take daily for general health.",
+  "vitamin d3": "Strengthens bones and immune system. Important for children and pregnant women. Take daily.",
+  "cholecalciferol": "Strengthens bones and immune system. Important for children and pregnant women. Take daily.",
+  "folic acid": "Essential for pregnant women to prevent birth defects. Also treats anemia. Take daily before and during pregnancy.",
+  "ferrous sulfate": "Treats and prevents iron deficiency anemia. Important in pregnancy. Take on empty stomach with vitamin C for better absorption.",
+  "zinc sulfate": "Boosts immunity and helps wounds heal. Important for children's growth. Take with food to avoid nausea.",
+  
+  // Antimalarials
+  "artemether-lumefantrine": "First-line treatment for uncomplicated malaria. Take twice daily for 3 days with food or milk. Very effective when full course is completed.",
+  "coartem": "First-line treatment for uncomplicated malaria. Take twice daily for 3 days with food or milk. Very effective when full course is completed.",
+  "artesunate-amodiaquine": "First-line malaria treatment in South Sudan. Take once daily for 3 days. Cures malaria in 95% of cases when taken correctly.",
+  "dihydroartemisinin-piperaquine": "Alternative first-line treatment for malaria. Take once daily for 3 days. Longer protection against re-infection compared to other ACTs.",
+  "quinine": "Treatment for severe malaria. Now second-line. Take 3 times daily for 7 days. May cause ringing in ears and dizziness.",
+  "atovaquone-proguanil": "Prevents malaria for travelers. Take daily starting 1-2 days before travel. Safe for children and short-term use.",
+  "malarone": "Prevents malaria for travelers. Take daily starting 1-2 days before travel. Safe for children and short-term use.",
+  "mefloquine": "Weekly malaria prevention for travelers. Start 2 weeks before travel. Not for people with mental health conditions.",
+  "sulfadoxine-pyrimethamine": "Used for malaria prevention in pregnant women. Given monthly during pregnancy. Also prevents malaria in young children.",
+  "fansidar": "Used for malaria prevention in pregnant women. Given monthly during pregnancy. Also prevents malaria in young children.",
+  "primaquine": "Prevents malaria relapse from certain types. Requires G6PD blood test before use. Not for pregnant women.",
+  "chloroquine": "Old malaria drug. Now only used where parasites remain sensitive. Also treats some autoimmune diseases.",
+  
+  // Antiparasitics
+  "albendazole": "Kills intestinal worms. Single dose for most worms. Take with fatty food for better absorption.",
+  "mebendazole": "Treats pinworms and other intestinal worms. Take twice daily for 3 days. May need to repeat after 2 weeks.",
+  
+  // Injectable medications
+  "ceftriaxone": "Strong injectable antibiotic for severe infections. Treats pneumonia, meningitis and sepsis. Given once or twice daily.",
+  "gentamicin": "Injectable antibiotic for serious infections. Effective against many bacteria. Requires kidney function monitoring.",
+  "benzylpenicillin": "Injectable penicillin for severe infections. Treats pneumonia, meningitis and wound infections. Given every 4-6 hours.",
+  "penicillin g": "Injectable penicillin for severe infections. Treats pneumonia, meningitis and wound infections. Given every 4-6 hours.",
+  
+  // IV Fluids
+  "normal saline": "IV fluid to replace water and salt. Used for dehydration and low blood pressure. Given through IV drip.",
+  "ringer's lactate": "IV fluid for dehydration and blood loss. Contains electrolytes. Closest to body fluids composition.",
+  "dextrose": "IV fluid that provides sugar and water. Used for low blood sugar and dehydration. Contains glucose for energy.",
+  
+  // Emergency medications
+  "adrenaline": "Emergency medicine for severe allergic reactions and cardiac arrest. Works immediately to save lives. Given by injection.",
+  "epinephrine": "Emergency medicine for severe allergic reactions and cardiac arrest. Works immediately to save lives. Given by injection.",
+  "hydrocortisone": "Steroid for severe allergies, asthma and shock. Reduces inflammation quickly. Given by injection or mouth.",
+  "dexamethasone": "Strong steroid for severe inflammation, brain swelling and allergies. Very potent anti-inflammatory. Given by injection or mouth.",
+  "furosemide": "Strong water pill for fluid overload and heart failure. Works quickly to remove excess fluid. Given by mouth or injection.",
+  "lasix": "Strong water pill for fluid overload and heart failure. Works quickly to remove excess fluid. Given by mouth or injection.",
+  
+  // Other medications
+  "prednisolone": "Steroid for inflammation, asthma and allergies. Reduces immune system activity. Take with food.",
+  "hyoscine": "Treats stomach cramps and motion sickness. Stops spasms in intestines. May cause drowsiness.",
+  "buscopan": "Treats stomach cramps and irritable bowel. Stops spasms in intestines. Fast-acting relief.",
+  "diazepam": "Treats anxiety, muscle spasms and seizures. Calming effect on brain. Can be habit-forming.",
+  "valium": "Treats anxiety, muscle spasms and seizures. Calming effect on brain. Can be habit-forming.",
+  "ondansetron": "Prevents nausea and vomiting. Works for chemotherapy, surgery and stomach flu. Very effective anti-nausea medicine.",
+  "promethazine": "Treats nausea, vomiting and allergies. Also helps with motion sickness. Causes drowsiness.",
+  "phenergan": "Treats nausea, vomiting and allergies. Also helps with motion sickness. Causes drowsiness.",
+  "metoclopramide": "Treats nausea and vomiting. Helps stomach empty. Also treats migraine nausea.",
+  "lidocaine": "Local anesthetic for numbing. Used before procedures and stitches. Works within minutes.",
+};
+
 /**
  * Get comprehensive educational information for a drug
  * @param genericName - The generic name of the drug (case-insensitive, partial match supported)
@@ -1294,6 +1399,30 @@ export function getDrugEducationalInfo(genericName: string): DrugEducationalInfo
     }
     if (searchName.includes("hctz") && key === "hydrochlorothiazide") {
       return info;
+    }
+  }
+
+  // Check simple summaries as fallback before returning default
+  for (const [key, summary] of Object.entries(DRUG_SUMMARIES)) {
+    if (searchName.includes(key) || key.includes(searchName)) {
+      return {
+        whatItDoes: summary,
+        commonUses: ["As prescribed by healthcare provider"],
+        importantSafety: {
+          dos: ["Take as prescribed", "Complete full course of treatment", "Store in cool, dry place"],
+          donts: ["Do not share medication", "Do not exceed recommended dose", "Do not use if expired"]
+        },
+        howFastItWorks: {
+          onset: "Varies by medication type",
+          duration: "Follow prescribed schedule"
+        },
+        specialGroups: {
+          pregnancy: "Consult healthcare provider before use",
+          breastfeeding: "Consult healthcare provider before use",
+          children: "Use as directed by healthcare provider",
+          elderly: "May require dose adjustment"
+        }
+      };
     }
   }
 
