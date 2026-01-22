@@ -4641,7 +4641,7 @@ export default function Treatment() {
                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Drug</label>
                               <PremiumDrugSelector
                                 drugs={drugsWithStock}
-                                value={selectedDrugId ? parseInt(selectedDrugId) : 0}
+                                value={selectedDrugId ? parseInt(selectedDrugId, 10) : 0}
                                 onChange={(drugId) => {
                                   const drug = drugs.find(d => d.id === drugId);
                                   if (drug) {

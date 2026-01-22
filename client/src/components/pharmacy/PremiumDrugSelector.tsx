@@ -6,6 +6,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { getDrugQuickSummary } from "@/lib/drugEducation";
 
+// Default message returned when no educational info is available
+const DEFAULT_DRUG_INFO_MESSAGE = "Consult with healthcare provider for information about this medication.";
+
 interface DrugWithStock extends Drug {
   stockOnHand?: number;
   reorderLevel?: number;
@@ -215,7 +218,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                                 </div>
                                 
                                 {/* Educational Summary */}
-                                {educationalSummary && educationalSummary !== "Consult with healthcare provider for information about this medication." && (
+                                {educationalSummary && educationalSummary !== DEFAULT_DRUG_INFO_MESSAGE && (
                                   <div className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5 italic flex items-start gap-1">
                                     <span className="mt-0.5">📝</span>
                                     <span className="line-clamp-2">{educationalSummary}</span>
@@ -231,7 +234,12 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                                     {stockStatus.icon} {stockStatus.label}
                                     {drug.stockOnHand > 0 && (
                                       <span className="text-gray-500 dark:text-gray-400">
-                                        ({drug.stockOnHand} {drug.form === 'tablet' || drug.form === 'capsule' ? drug.form + 's' : 'units'})
+                                        ({drug.stockOnHand} {drug.form?.toLowerCase() === 'tablet' ? 'tablets' : 
+                                           drug.form?.toLowerCase() === 'capsule' ? 'capsules' : 
+                                           drug.form?.toLowerCase() === 'injection' ? 'vials' :
+                                           drug.form?.toLowerCase() === 'syrup' ? 'bottles' :
+                                           drug.form?.toLowerCase() === 'cream' || drug.form?.toLowerCase() === 'ointment' ? 'tubes' :
+                                           'units'})
                                       </span>
                                     )}
                                   </span>
