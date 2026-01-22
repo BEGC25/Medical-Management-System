@@ -3157,7 +3157,8 @@ export class MemStorage implements IStorage {
   }
 
   async getAllDrugsWithStock(): Promise<(schema.Drug & { stockOnHand: number })[]> {
-    const allDrugs = await db.select().from(drugs).where(eq(drugs.isActive, 1));
+    // Get ALL drugs, not just active ones - doctors need to see all drugs in dropdown
+    const allDrugs = await db.select().from(drugs).orderBy(drugs.name);
     const drugsWithStock: (schema.Drug & { stockOnHand: number })[] = [];
 
     for (const drug of allDrugs) {
