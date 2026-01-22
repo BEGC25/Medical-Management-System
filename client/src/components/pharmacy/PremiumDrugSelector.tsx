@@ -310,7 +310,6 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
             className="flex-1 overflow-y-auto"
             style={{ 
               maxHeight: "350px",
-              overflowY: "auto",
               WebkitOverflowScrolling: "touch"
             }}
           >
