@@ -1161,7 +1161,7 @@ export default function Treatment() {
       createEncounterMutation.mutate({
         patientId: selectedPatient.patientId,
         visitDate: getClinicDayKey(),
-        attendingClinician: "Dr. System",
+        attendingClinician: user?.fullName || user?.username || "Dr. System",
       });
     }
   }, [todayEncounter, selectedPatient, visitId]);
@@ -1725,11 +1725,30 @@ export default function Treatment() {
       const r = await apiRequest("POST", "/api/treatments", data);
       return r.json();
     },
-    onSuccess: (treatment: Treatment) => {
+    onSuccess: async (treatment: Treatment) => {
       setSavedTreatment(treatment);
       toast({ title: "Success", description: `Treatment saved (ID: ${treatment.treatmentId})` });
       queryClient.invalidateQueries({ queryKey: ["/api/treatments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      
+      // Update encounter's attendingClinician if it's still "Dr. System" or empty
+      if (currentEncounter && (currentEncounter.attendingClinician === "Dr. System" || !currentEncounter.attendingClinician)) {
+        const doctorName = user?.fullName || user?.username || "Dr. System";
+        try {
+          const updateResponse = await fetch(`/api/encounters/${currentEncounter.encounterId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ attendingClinician: doctorName }),
+          });
+          if (updateResponse.ok) {
+            const updatedEncounter = await updateResponse.json();
+            setCurrentEncounter(updatedEncounter);
+            queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
+          }
+        } catch (error) {
+          console.error("Failed to update attendingClinician:", error);
+        }
+      }
     },
     onError: () => {
       if (!navigator.onLine) {
@@ -2957,19 +2976,9 @@ export default function Treatment() {
                             </Accordion>
 
                             {/* Actions */}
-                            <div className="flex gap-3 justify-between items-center pt-6 mt-6 border-t-[3px] border-gray-300 dark:border-gray-600">
-                              <div className="flex gap-3">
-                                {selectedPatient && currentEncounter && (
-                                  <DischargeSummary 
-                                    encounterId={currentEncounter.encounterId} 
-                                    patientId={selectedPatient.patientId} 
-                                  />
-                                )}
-                              </div>
-                              <div className="flex gap-3">
-                                <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-blue-600 hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
-                                {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/20" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn"><LogOut className="w-4 h-4 mr-2" />{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
-                              </div>
+                            <div className="flex gap-3 justify-end items-center pt-6 mt-6 border-t-[3px] border-gray-300 dark:border-gray-600">
+                              <Button type="submit" disabled={createTreatmentMutation.isPending} className="bg-blue-600 hover:bg-blue-700" data-testid="save-treatment-btn"><Save className="w-4 h-4 mr-2" />{createTreatmentMutation.isPending ? "Saving..." : "Save Visit Notes"}</Button>
+                              {currentEncounter && currentEncounter.status === "open" && ( <Button type="button" onClick={handleCloseVisit} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/20" disabled={closeVisitMutation.isPending} data-testid="close-visit-btn"><LogOut className="w-4 h-4 mr-2" />{closeVisitMutation.isPending ? "Closing..." : "Close Visit"}</Button> )}
                             </div>
                           </form>
                         </Form>
