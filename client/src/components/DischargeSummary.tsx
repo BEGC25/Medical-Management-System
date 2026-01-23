@@ -162,8 +162,8 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             margin: 2px 0;
           }
           .logo {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             object-fit: contain;
           }
           .title-bar {
