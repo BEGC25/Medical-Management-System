@@ -280,7 +280,7 @@ export function LabReportPrint({
                 )}
                 {!hasFindings && (
                   <div className="text-xs text-green-800 bg-green-100 border-l-4 border-green-600 p-1.5 font-medium">
-                    ✓ All test results within normal limits. No critical findings detected.
+                    All test results within normal limits. No critical findings detected.
                   </div>
                 )}
               </div>
