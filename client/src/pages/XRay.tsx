@@ -77,7 +77,7 @@ import {
 
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
-import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from '@/lib/date-utils';
+import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
 import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from '@/components/diagnostics';
@@ -196,23 +196,6 @@ function usePatientSearch(term: string) {
       return res.json();
     },
   });
-}
-
-/* ------------------------------------------------------------------ */
-/* Helper Functions                                                   */
-/* ------------------------------------------------------------------ */
-
-function formatLongDate(date: string | number | Date | null | undefined): string {
-  if (!date) return '';
-  try {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  } catch {
-    return String(date);
-  }
 }
 
 /* ------------------------------------------------------------------ */

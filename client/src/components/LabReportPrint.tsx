@@ -1,5 +1,6 @@
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 import { interpretLabResults } from "@/lib/lab-interpretation";
+import { formatLongDate } from "@/lib/date-utils";
 
 /**
  * Reusable Lab Report Print Component
@@ -32,6 +33,7 @@ interface LabReportPrintProps {
     patientId?: string;
     age?: number | string;
     gender?: string;
+    phoneNumber?: string;
   } | null;
   /** Result field configurations for displaying normal ranges */
   resultFields: Record<string, Record<string, {
@@ -49,19 +51,6 @@ interface LabReportPrintProps {
     resultStatus?: string;
     technicianNotes?: string;
   };
-}
-
-function formatLongDate(date: string | number | Date | null | undefined): string {
-  if (!date) return '';
-  try {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  } catch {
-    return String(date);
-  }
 }
 
 function parseJSON<T = any>(v: any, fallback: T): T {
@@ -162,7 +151,7 @@ export function LabReportPrint({
                 )}
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-semibold text-gray-700">Phone:</span>
-                  <span className="text-xs font-medium text-gray-900">{(patient as any)?.phoneNumber || 'N/A'}</span>
+                  <span className="text-xs font-medium text-gray-900">{patient?.phoneNumber || 'N/A'}</span>
                 </div>
               </div>
             </div>
