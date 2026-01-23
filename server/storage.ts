@@ -1256,8 +1256,8 @@ export class MemStorage implements IStorage {
       const totalLabTests = await db.select({ count: count() }).from(labTests).where(
         and(
           eq(labTests.status, 'completed'),
-          sql`DATE(${labTests.completedDate}) >= ${actualFromDate}`,
-          sql`DATE(${labTests.completedDate}) <= ${actualToDate}`
+          gte(labTests.clinicDay, actualFromDate),
+          lte(labTests.clinicDay, actualToDate)
         )
       );
       
@@ -1265,8 +1265,8 @@ export class MemStorage implements IStorage {
       const totalXrays = await db.select({ count: count() }).from(xrayExams).where(
         and(
           eq(xrayExams.status, 'completed'),
-          sql`DATE(${xrayExams.reportDate}) >= ${actualFromDate}`,
-          sql`DATE(${xrayExams.reportDate}) <= ${actualToDate}`
+          gte(xrayExams.clinicDay, actualFromDate),
+          lte(xrayExams.clinicDay, actualToDate)
         )
       );
       
@@ -1274,8 +1274,8 @@ export class MemStorage implements IStorage {
       const totalUltrasounds = await db.select({ count: count() }).from(ultrasoundExams).where(
         and(
           eq(ultrasoundExams.status, 'completed'),
-          sql`DATE(${ultrasoundExams.reportDate}) >= ${actualFromDate}`,
-          sql`DATE(${ultrasoundExams.reportDate}) <= ${actualToDate}`
+          gte(ultrasoundExams.clinicDay, actualFromDate),
+          lte(ultrasoundExams.clinicDay, actualToDate)
         )
       );
 
@@ -1734,7 +1734,7 @@ export class MemStorage implements IStorage {
         .from(labTests)
         .where(and(
           eq(labTests.status, 'completed'),
-          sql`DATE(${labTests.completedDate}) = ${clinicToday}`
+          eq(labTests.clinicDay, clinicToday)
         ));
       
       // Get TODAY's completed X-rays
@@ -1742,7 +1742,7 @@ export class MemStorage implements IStorage {
         .from(xrayExams)
         .where(and(
           eq(xrayExams.status, 'completed'),
-          sql`DATE(${xrayExams.reportDate}) = ${clinicToday}`
+          eq(xrayExams.clinicDay, clinicToday)
         ));
       
       // Get TODAY's completed ultrasounds
@@ -1750,7 +1750,7 @@ export class MemStorage implements IStorage {
         .from(ultrasoundExams)
         .where(and(
           eq(ultrasoundExams.status, 'completed'),
-          sql`DATE(${ultrasoundExams.reportDate}) = ${clinicToday}`
+          eq(ultrasoundExams.clinicDay, clinicToday)
         ));
       
       // Get all order lines to link tests to encounters (if available)
@@ -1794,7 +1794,7 @@ export class MemStorage implements IStorage {
         // Skip if the encounter is closed or ready_to_bill (treated)
         if (encId) {
           const encounter = encounterMap.get(encId);
-          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill')) {
+          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill' || encounter.status === 'treated')) {
             continue;
           }
         }
@@ -1839,7 +1839,7 @@ export class MemStorage implements IStorage {
         // Skip if the encounter is closed or ready_to_bill (treated)
         if (encId) {
           const encounter = encounterMap.get(encId);
-          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill')) {
+          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill' || encounter.status === 'treated')) {
             continue;
           }
         }
@@ -1883,7 +1883,7 @@ export class MemStorage implements IStorage {
         // Skip if the encounter is closed or ready_to_bill (treated)
         if (encId) {
           const encounter = encounterMap.get(encId);
-          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill')) {
+          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill' || encounter.status === 'treated')) {
             continue;
           }
         }
