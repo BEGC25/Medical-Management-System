@@ -394,9 +394,16 @@
     width: 100%;
   }
   
-  /* Ensure single-page output for all reports */
+  /* Allow multi-page output for lab reports - removed overflow constraints */
   #lab-report-print:not(:empty),
-  #lab-clinical-print:not(:empty),
+  #lab-clinical-print:not(:empty) {
+    /* height: auto to allow content to flow across pages */
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Keep single-page output for xray/ultrasound reports */
   #xray-report-print:not(:empty),
   #ultrasound-report-print:not(:empty) {
     max-height: 273mm !important;
