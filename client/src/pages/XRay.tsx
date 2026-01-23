@@ -77,7 +77,7 @@ import {
 
 import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
-import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey } from '@/lib/date-utils';
+import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
 import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from '@/components/diagnostics';
@@ -2242,12 +2242,12 @@ export default function XRay() {
               body * { visibility: hidden; }
               #xray-report-print, #xray-report-print * { visibility: visible; }
               #xray-report-print { position: absolute; left: 0; top: 0; width: 100%; max-height: 273mm; overflow: hidden; }
-              @page { size: A4; margin: 12mm 15mm; }
+              @page { size: A4; margin: 8mm 10mm; }
             }
           `}</style>
           {/* Premium Professional Report with Border - MATCHES INVOICE */}
           <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
-            <div className="p-6 max-w-4xl mx-auto bg-white">
+            <div className="p-5 max-w-4xl mx-auto bg-white">
               
               {/* HEADER - IDENTICAL TO INVOICE */}
               <div className="flex items-start justify-between mb-4">
@@ -2287,11 +2287,15 @@ export default function XRay() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-semibold text-gray-700">Age:</span>
-                      <span className="text-xs font-medium text-gray-900">{reportPatient.age}</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.age} years</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-semibold text-gray-700">Gender:</span>
                       <span className="text-xs font-medium text-gray-900">{reportPatient.gender}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Phone:</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.phoneNumber || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -2369,7 +2373,7 @@ export default function XRay() {
               )}
 
               {/* SIGNATURE SECTION - MATCHES INVOICE */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-6 mb-4">
                 <div>
                   <div className="border-t-2 border-gray-800 pt-2 mt-20">
                     <p className="text-sm font-bold">Radiologist:</p>
@@ -2379,7 +2383,7 @@ export default function XRay() {
                 <div>
                   <div className="border-t-2 border-gray-800 pt-2 mt-20">
                     <p className="text-sm font-bold">Date:</p>
-                    <p className="text-xs text-gray-600">{resultsForm.getValues('reportDate')}</p>
+                    <p className="text-xs text-gray-600">{formatLongDate(resultsForm.getValues('reportDate'))}</p>
                   </div>
                 </div>
               </div>

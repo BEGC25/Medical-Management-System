@@ -198,3 +198,28 @@ export function formatClinicDateTime(iso: string | undefined | null, formatStr: 
     return '—';
   }
 }
+
+/**
+ * Format a date in long format for print documents (e.g., "January 23, 2026")
+ * Used in diagnostic reports (Ultrasound, X-Ray, Lab) to match Discharge Summary format
+ * 
+ * @param date - Date to format (string, number, Date, or null/undefined)
+ * @returns Formatted date string in long format, or empty string if invalid
+ * 
+ * @example
+ * formatLongDate('2026-01-23') // "January 23, 2026"
+ * formatLongDate(new Date()) // "January 23, 2026"
+ * formatLongDate(null) // ""
+ */
+export function formatLongDate(date: string | number | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  } catch {
+    return '';
+  }
+}
