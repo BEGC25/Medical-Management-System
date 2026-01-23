@@ -174,7 +174,6 @@ export function LabReportPrint({
                     <tbody>
                       {Object.entries(testData).map(([fieldName, value], rowIndex) => {
                         const config = fields?.[fieldName];
-                        const isNormal = config?.normal === value;
                         const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
                         
                         // Format numeric values with commas
