@@ -105,7 +105,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     const win = window.open("", "_blank");
     if (!win) return;
 
-    // Clone the content to preserve inline styles
+    // Get the HTML content to preserve inline styles
     const html = printContent.outerHTML;
     
     win.document.write(`
@@ -356,6 +356,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     win.document.close();
     
     // Wait for images to load before printing
+    const PRINT_FALLBACK_TIMEOUT = 1000;
     let printed = false;
     const doPrint = () => {
       if (printed) return;
@@ -371,9 +372,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     if (win.document.readyState === 'complete') {
       doPrint();
     } else {
-      win.onload = doPrint;
-      // Fallback in case onload doesn't fire
-      setTimeout(doPrint, 1000);
+      win.addEventListener('load', doPrint);
+      // Fallback in case load event doesn't fire
+      setTimeout(doPrint, PRINT_FALLBACK_TIMEOUT);
     }
   };
 
