@@ -48,7 +48,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
   });
 
   // Fetch encounter data
-  const { data: encounter } = useQuery<Encounter>({
+  const { data: encounterResponse } = useQuery<any>({
     queryKey: ["/api/encounters", encounterId],
     queryFn: async () => {
       const r = await fetch(`/api/encounters/${encounterId}`);
@@ -57,6 +57,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     },
     enabled: open,
   });
+
+  // Extract encounter from response (API returns { encounter: {...} })
+  const encounter = encounterResponse?.encounter || encounterResponse;
 
   // Fetch treatment data
   const { data: treatment } = useQuery<Treatment | null>({
@@ -630,7 +633,11 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                     fontSize: '9pt'
                   }}>
                     <span style={{ fontWeight: 600, color: '#4b5563' }}>Type:</span>
-                    <span style={{ fontWeight: 500, color: '#111827' }}>{treatment?.visitType || "Consultation"}</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>
+                      {treatment?.visitType 
+                        ? treatment.visitType.charAt(0).toUpperCase() + treatment.visitType.slice(1)
+                        : "Consultation"}
+                    </span>
                   </div>
                   <div style={{
                     display: 'flex',
@@ -639,7 +646,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                     fontSize: '9pt'
                   }}>
                     <span style={{ fontWeight: 600, color: '#4b5563' }}>Location:</span>
-                    <span style={{ fontWeight: 500, color: '#111827' }}>Bahr El Ghazal</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>Bahr El Ghazal Clinic</span>
                   </div>
                   <div style={{
                     display: 'flex',
