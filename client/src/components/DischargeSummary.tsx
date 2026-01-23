@@ -20,39 +20,6 @@ interface DischargeSummaryProps {
 }
 
 // Helper functions for formatting
-function capitalizeExamType(type: string): string {
-  if (!type) return '';
-  return type.charAt(0).toUpperCase() + type.slice(1);
-}
-
-function formatDate(date: string | number | Date | null | undefined): string {
-  if (!date) return '';
-  try {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return String(date);
-  }
-}
-
-function formatShortDate(date: string | number | Date | null | undefined): string {
-  if (!date) return '';
-  try {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
-    });
-  } catch {
-    return String(date);
-  }
-}
-
 function formatLongDate(date: string | number | Date | null | undefined): string {
   if (!date) return '';
   try {
