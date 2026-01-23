@@ -930,6 +930,7 @@ export default function Treatment() {
       if (!response.ok) return [];
       return response.json();
     },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   const { data: completedXrays = [] } = useQuery<XrayExam[]>({
@@ -942,6 +943,7 @@ export default function Treatment() {
       if (!response.ok) return [];
       return response.json();
     },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   const { data: completedUltrasounds = [] } = useQuery<UltrasoundExam[]>({
@@ -954,6 +956,7 @@ export default function Treatment() {
       if (!response.ok) return [];
       return response.json();
     },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   // Fetch patients with pending (unprocessed) orders for the stat card
@@ -1084,6 +1087,7 @@ export default function Treatment() {
       return r.json();
     },
     enabled: !!selectedPatient?.patientId,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   // Safe access to current medications for drug interaction checking
