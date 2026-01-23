@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { getClinicDayKey } from "@/lib/date-utils";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function VisitRedirector() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const hasRun = useRef(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     // Prevent double invocation from React StrictMode
@@ -47,7 +49,7 @@ export default function VisitRedirector() {
             body: JSON.stringify({
               patientId,
               visitDate: today,
-              attendingClinician: 'Dr. System', // Will be updated with actual user
+              attendingClinician: user?.fullName || user?.username || 'Dr. System',
             }),
           });
 
