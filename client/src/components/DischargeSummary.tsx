@@ -193,6 +193,8 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             border: 1px solid #d1d5db;
             border-radius: 4px;
             overflow: hidden;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .box-title {
             background: #f9fafb;
@@ -229,6 +231,8 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 12px;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .section-title {
             background: #f9fafb;
@@ -277,6 +281,8 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             border-radius: 4px;
             padding: 12px;
             margin: 12px 0;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .warning-title {
             color: #b45309;
@@ -295,6 +301,8 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
           .signature-section {
             margin-top: 24px;
             margin-bottom: 16px;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .signature-row {
             display: grid;
@@ -327,6 +335,8 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             border-top: 2px solid #d1d5db;
             padding-top: 12px;
             margin-top: 16px;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .footer-notice {
             font-weight: 600;
@@ -345,6 +355,11 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
           .footer-tagline {
             font-style: italic;
             margin: 6px 0 0 0;
+          }
+          /* Prevent page breaks inside important sections with inline styles */
+          [style*="border: 2px solid #f59e0b"] {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         </style>
       </head>
@@ -518,7 +533,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               <div style={{
                 border: '1px solid #d1d5db',
                 borderRadius: '4px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                pageBreakInside: 'avoid',
+                breakInside: 'avoid'
               }}>
                 <h3 style={{
                   background: '#f9fafb',
@@ -584,7 +601,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               <div style={{
                 border: '1px solid #d1d5db',
                 borderRadius: '4px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                pageBreakInside: 'avoid',
+                breakInside: 'avoid'
               }}>
                 <h3 style={{
                   background: '#f9fafb',
@@ -657,7 +676,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               border: '1px solid #d1d5db',
               borderRadius: '4px',
               overflow: 'hidden',
-              marginBottom: '12px'
+              marginBottom: '12px',
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid'
             }}>
               <h3 style={{
                 background: '#f9fafb',
@@ -685,7 +706,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               border: '1px solid #d1d5db',
               borderRadius: '4px',
               overflow: 'hidden',
-              marginBottom: '12px'
+              marginBottom: '12px',
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid'
             }}>
               <h3 style={{
                 background: '#f9fafb',
@@ -713,7 +736,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               border: '1px solid #d1d5db',
               borderRadius: '4px',
               overflow: 'hidden',
-              marginBottom: '12px'
+              marginBottom: '12px',
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid'
             }}>
               <h3 style={{
                 background: '#f9fafb',
@@ -749,7 +774,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                 <div style={{
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  pageBreakInside: 'avoid',
+                  breakInside: 'avoid'
                 }}>
                   <h3 style={{
                     background: '#f9fafb',
@@ -804,7 +831,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                 <div style={{
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  pageBreakInside: 'avoid',
+                  breakInside: 'avoid'
                 }}>
                   <h3 style={{
                     background: '#f9fafb',
@@ -907,7 +936,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               border: '1px solid #d1d5db',
               borderRadius: '4px',
               overflow: 'hidden',
-              marginBottom: '12px'
+              marginBottom: '12px',
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid'
             }}>
               <h3 style={{
                 background: '#f9fafb',
@@ -940,7 +971,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             background: '#fffbeb',
             borderRadius: '4px',
             padding: '12px',
-            margin: '12px 0'
+            margin: '12px 0',
+            pageBreakInside: 'avoid',
+            breakInside: 'avoid'
           }}>
             <h3 style={{
               color: '#b45309',
@@ -963,7 +996,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
           {/* Signature Section - Matches Invoice */}
           <div style={{
             marginTop: '24px',
-            marginBottom: '16px'
+            marginBottom: '16px',
+            pageBreakInside: 'avoid',
+            breakInside: 'avoid'
           }}>
             <div style={{
               display: 'grid',
@@ -1020,7 +1055,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             color: '#6b7280',
             borderTop: '2px solid #d1d5db',
             paddingTop: '12px',
-            marginTop: '16px'
+            marginTop: '16px',
+            pageBreakInside: 'avoid',
+            breakInside: 'avoid'
           }}>
             <p style={{
               fontWeight: 600,
