@@ -220,6 +220,6 @@ export function formatLongDate(date: string | number | Date | null | undefined):
       year: 'numeric'
     });
   } catch {
-    return String(date);
+    return '';
   }
 }
