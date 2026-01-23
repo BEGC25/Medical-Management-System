@@ -208,7 +208,7 @@ export function LabReportPrint({
             {Object.entries(results).map(([testName, testData], testIndex) => {
               const fields = resultFields[testName];
               return (
-                <div key={testName} className="mb-4 border-2 border-gray-300 rounded-lg overflow-hidden avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                <div key={testName} className="mb-4 border-2 border-gray-300 rounded-lg overflow-hidden avoid-break">
                   {/* Test Name Header - Premium Style */}
                   <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white px-4 py-2">
                     <h4 className="text-sm font-bold uppercase tracking-wide">■ {testName}</h4>
@@ -272,7 +272,7 @@ export function LabReportPrint({
             const hasFindings = hasCritical || hasWarnings;
 
             return (
-              <div className={`mb-3 rounded-lg p-4 border-2 avoid-break ${hasFindings ? 'bg-yellow-50 border-yellow-400' : 'bg-green-50 border-green-400'}`} style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+              <div className={`mb-3 rounded-lg p-4 border-2 avoid-break ${hasFindings ? 'bg-yellow-50 border-yellow-400' : 'bg-green-50 border-green-400'}`}>
                 <h3 className={`text-base font-bold mb-2 flex items-center ${hasFindings ? 'text-yellow-900' : 'text-green-900'}`}>
                   <span className="text-lg mr-2">ℹ️</span> Clinical Interpretation
                 </h3>
@@ -308,7 +308,7 @@ export function LabReportPrint({
 
           {/* Technician Notes - If Present */}
           {(formValues?.technicianNotes || labTest.technicianNotes) && (
-            <div className="mb-3 border-2 border-yellow-300 rounded-lg p-3 bg-yellow-50 avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+            <div className="mb-3 border-2 border-yellow-300 rounded-lg p-3 bg-yellow-50 avoid-break">
               <h3 className="font-bold text-sm mb-2 text-yellow-900 flex items-center">
                 <span className="mr-2">📝</span> Technician Notes:
               </h3>
@@ -317,7 +317,7 @@ export function LabReportPrint({
           )}
 
           {/* SIGNATURE SECTION - Premium Professional Style - Always on Last Page */}
-          <div className="grid grid-cols-2 gap-12 mt-8 mb-4 avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+          <div className="grid grid-cols-2 gap-12 mt-8 mb-4 avoid-break">
             <div>
               <div className="border-t-2 border-gray-900 pt-3 mt-16">
                 <p className="text-base font-bold text-gray-900">Lab Technician:</p>
@@ -333,7 +333,7 @@ export function LabReportPrint({
           </div>
 
           {/* FOOTER - Premium Professional Style */}
-          <div className="text-center text-sm text-gray-600 border-t-2 border-gray-300 pt-3 mt-4 avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+          <div className="text-center text-sm text-gray-600 border-t-2 border-gray-300 pt-3 mt-4 avoid-break">
             <p className="font-bold text-gray-800 tracking-wide">THIS IS A COMPUTER-GENERATED LABORATORY REPORT</p>
             <p className="font-bold text-blue-900 mt-2 text-base">Bahr El Ghazal Clinic</p>
             <p className="text-gray-600">Accredited Medical Facility | Republic of South Sudan</p>
