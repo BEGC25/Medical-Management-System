@@ -418,74 +418,209 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
         </DialogHeader>
 
         <div id="discharge-summary-print">
-          <div className="discharge-container">
+          <div style={{
+            border: '2px solid #d1d5db',
+            borderRadius: '8px',
+            padding: '24px',
+            maxWidth: '800px',
+            margin: '0 auto',
+            background: 'white'
+          }}>
             {/* Premium Header - Matches Invoice/X-Ray */}
-            <div className="clinic-header">
-              <div className="clinic-info">
-                <h1>Bahr El Ghazal Clinic</h1>
-                <p className="tagline">Excellence in Healthcare</p>
-                <p>Aweil, South Sudan</p>
-                <p>Tel: +211916759060/+211928754760</p>
-                <p>Email: bahr.ghazal.clinic@gmail.com</p>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              marginBottom: '16px'
+            }}>
+              <div>
+                <h1 style={{
+                  fontSize: '24pt',
+                  fontWeight: 700,
+                  color: '#1e3a8a',
+                  margin: 0,
+                  lineHeight: 1.2
+                }}>Bahr El Ghazal Clinic</h1>
+                <p style={{
+                  fontSize: '11pt',
+                  color: '#6b7280',
+                  fontStyle: 'italic',
+                  margin: '4px 0'
+                }}>Excellence in Healthcare</p>
+                <p style={{
+                  fontSize: '9pt',
+                  color: '#6b7280',
+                  margin: '2px 0'
+                }}>Aweil, South Sudan</p>
+                <p style={{
+                  fontSize: '9pt',
+                  color: '#6b7280',
+                  margin: '2px 0'
+                }}>Tel: +211916759060/+211928754760</p>
+                <p style={{
+                  fontSize: '9pt',
+                  color: '#6b7280',
+                  margin: '2px 0'
+                }}>Email: bahr.ghazal.clinic@gmail.com</p>
               </div>
-              <img src={clinicLogo} alt="Clinic Logo" className="logo" />
+              <img src={clinicLogo} alt="Clinic Logo" style={{
+                width: '80px',
+                height: '80px',
+                objectFit: 'contain'
+              }} />
             </div>
 
             {/* Navy Blue Title Bar */}
-            <div className="title-bar">
+            <div style={{
+              background: 'linear-gradient(to right, #1e3a8a, #1e40af)',
+              color: 'white',
+              textAlign: 'center',
+              padding: '12px',
+              fontSize: '14pt',
+              fontWeight: 'bold',
+              letterSpacing: '1px',
+              margin: '16px 0'
+            }}>
               PATIENT DISCHARGE SUMMARY
             </div>
 
             {/* Patient & Visit Information - Two Column Boxes */}
-            <div className="info-grid">
-              <div className="info-box">
-                <h3 className="box-title">PATIENT INFORMATION</h3>
-                <div className="box-content">
-                  <div className="row">
-                    <span>Name:</span>
-                    <span>{patient?.firstName} {patient?.lastName}</span>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '12px',
+              marginBottom: '12px'
+            }}>
+              <div style={{
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <h3 style={{
+                  background: '#f9fafb',
+                  padding: '8px 12px',
+                  fontWeight: 'bold',
+                  fontSize: '10pt',
+                  borderBottom: '1px solid #1e3a8a',
+                  letterSpacing: '0.5px',
+                  color: '#1f2937',
+                  margin: 0
+                }}>PATIENT INFORMATION</h3>
+                <div style={{
+                  padding: '12px',
+                  background: '#fef3c7'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Name:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>{patient?.firstName} {patient?.lastName}</span>
                   </div>
-                  <div className="row">
-                    <span>Patient ID:</span>
-                    <span>{patient?.patientId}</span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Patient ID:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>{patient?.patientId}</span>
                   </div>
-                  <div className="row">
-                    <span>Age:</span>
-                    <span>{patient?.age || "N/A"}</span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Age:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>{patient?.age || "N/A"}</span>
                   </div>
-                  <div className="row">
-                    <span>Gender:</span>
-                    <span>{patient?.gender || "N/A"}</span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Gender:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>{patient?.gender || "N/A"}</span>
                   </div>
-                  <div className="row">
-                    <span>Phone:</span>
-                    <span>{patient?.phoneNumber || "N/A"}</span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Phone:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>{patient?.phoneNumber || "N/A"}</span>
                   </div>
                 </div>
               </div>
-              <div className="info-box">
-                <h3 className="box-title">VISIT DETAILS</h3>
-                <div className="box-content white">
-                  <div className="row">
-                    <span>Date:</span>
-                    <span>{formatLongDate(encounter?.visitDate || new Date())}</span>
+              <div style={{
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <h3 style={{
+                  background: '#f9fafb',
+                  padding: '8px 12px',
+                  fontWeight: 'bold',
+                  fontSize: '10pt',
+                  borderBottom: '1px solid #1e3a8a',
+                  letterSpacing: '0.5px',
+                  color: '#1f2937',
+                  margin: 0
+                }}>VISIT DETAILS</h3>
+                <div style={{
+                  padding: '12px',
+                  background: '#f9fafb'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Date:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>{formatLongDate(encounter?.visitDate || new Date())}</span>
                   </div>
-                  <div className="row">
-                    <span>Type:</span>
-                    <span>{treatment?.visitType || "Consultation"}</span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Type:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>{treatment?.visitType || "Consultation"}</span>
                   </div>
-                  <div className="row">
-                    <span>Location:</span>
-                    <span>Bahr El Ghazal</span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Location:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>Bahr El Ghazal</span>
                   </div>
-                  <div className="row">
-                    <span>Visit ID:</span>
-                    <span>{encounter?.encounterId}</span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    fontSize: '9pt'
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>Visit ID:</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>{encounter?.encounterId}</span>
                   </div>
                   {encounter?.attendingClinician && (
-                    <div className="row">
-                      <span>Clinician:</span>
-                      <span>{encounter.attendingClinician}</span>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '6px',
+                      fontSize: '9pt'
+                    }}>
+                      <span style={{ fontWeight: 600, color: '#4b5563' }}>Clinician:</span>
+                      <span style={{ fontWeight: 500, color: '#111827' }}>{encounter.attendingClinician}</span>
                     </div>
                   )}
                 </div>
@@ -494,42 +629,146 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
 
           {/* Diagnosis - Bordered Box */}
           {treatment?.diagnosis && (
-            <div className="section-box">
-              <h3 className="section-title">DIAGNOSIS</h3>
-              <p className="section-content">{treatment.diagnosis}</p>
+            <div style={{
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              marginBottom: '12px'
+            }}>
+              <h3 style={{
+                background: '#f9fafb',
+                padding: '8px 12px',
+                fontWeight: 'bold',
+                fontSize: '10pt',
+                borderBottom: '2px solid #9ca3af',
+                letterSpacing: '0.5px',
+                margin: 0,
+                color: '#1f2937'
+              }}>DIAGNOSIS</h3>
+              <p style={{
+                padding: '12px',
+                fontSize: '9pt',
+                lineHeight: 1.5,
+                margin: 0,
+                background: 'white'
+              }}>{treatment.diagnosis}</p>
             </div>
           )}
 
           {/* Reason for Visit - Bordered Box */}
           {treatment?.chiefComplaint && (
-            <div className="section-box">
-              <h3 className="section-title">REASON FOR VISIT</h3>
-              <p className="section-content">{treatment.chiefComplaint}</p>
+            <div style={{
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              marginBottom: '12px'
+            }}>
+              <h3 style={{
+                background: '#f9fafb',
+                padding: '8px 12px',
+                fontWeight: 'bold',
+                fontSize: '10pt',
+                borderBottom: '2px solid #9ca3af',
+                letterSpacing: '0.5px',
+                margin: 0,
+                color: '#1f2937'
+              }}>REASON FOR VISIT</h3>
+              <p style={{
+                padding: '12px',
+                fontSize: '9pt',
+                lineHeight: 1.5,
+                margin: 0,
+                background: 'white'
+              }}>{treatment.chiefComplaint}</p>
             </div>
           )}
 
           {/* Treatment Provided - Bordered Box */}
           {treatment?.treatmentPlan && (
-            <div className="section-box">
-              <h3 className="section-title">TREATMENT PROVIDED</h3>
-              <p className="section-content" style={{ whiteSpace: "pre-wrap" }}>{treatment.treatmentPlan}</p>
+            <div style={{
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              marginBottom: '12px'
+            }}>
+              <h3 style={{
+                background: '#f9fafb',
+                padding: '8px 12px',
+                fontWeight: 'bold',
+                fontSize: '10pt',
+                borderBottom: '2px solid #9ca3af',
+                letterSpacing: '0.5px',
+                margin: 0,
+                color: '#1f2937'
+              }}>TREATMENT PROVIDED</h3>
+              <p style={{
+                padding: '12px',
+                fontSize: '9pt',
+                lineHeight: 1.5,
+                margin: 0,
+                background: 'white',
+                whiteSpace: 'pre-wrap'
+              }}>{treatment.treatmentPlan}</p>
             </div>
           )}
 
           {/* Two-Column Layout: Medications & Test Results */}
           {(pharmacyOrders.length > 0 || labTests.length > 0 || xrays.length > 0 || ultrasounds.length > 0) && (
-            <div className="info-grid">
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '12px',
+              marginBottom: '12px'
+            }}>
               {/* Left Column - Medications */}
               {pharmacyOrders.length > 0 && (
-                <div className="info-box">
-                  <h3 className="box-title">MEDICATIONS PRESCRIBED</h3>
-                  <div className="box-content white">
+                <div style={{
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <h3 style={{
+                    background: '#f9fafb',
+                    padding: '8px 12px',
+                    fontWeight: 'bold',
+                    fontSize: '10pt',
+                    borderBottom: '1px solid #1e3a8a',
+                    letterSpacing: '0.5px',
+                    color: '#1f2937',
+                    margin: 0
+                  }}>MEDICATIONS PRESCRIBED</h3>
+                  <div style={{
+                    padding: '12px',
+                    background: '#f9fafb'
+                  }}>
                     {pharmacyOrders.map((order, idx) => (
-                      <div key={order.id} className="medication-item">
-                        <strong>{idx + 1}. {order.drugName}</strong>
-                        {order.dosage && <div>{order.dosage}</div>}
-                        {order.instructions && <div>{order.instructions}</div>}
-                        <div>Qty: {order.quantity}</div>
+                      <div key={order.id} style={{
+                        padding: '6px 8px',
+                        background: '#f9fafb',
+                        borderLeft: '2px solid #1e3a8a',
+                        marginBottom: '4px',
+                        fontSize: '9pt'
+                      }}>
+                        <strong style={{
+                          fontWeight: 600,
+                          display: 'block',
+                          marginBottom: '2px'
+                        }}>{idx + 1}. {order.drugName}</strong>
+                        {order.dosage && <div style={{
+                          fontSize: '8pt',
+                          color: '#6b7280',
+                          marginTop: '2px'
+                        }}>{order.dosage}</div>}
+                        {order.instructions && <div style={{
+                          fontSize: '8pt',
+                          color: '#6b7280',
+                          marginTop: '2px'
+                        }}>{order.instructions}</div>}
+                        <div style={{
+                          fontSize: '8pt',
+                          color: '#6b7280',
+                          marginTop: '2px'
+                        }}>Qty: {order.quantity}</div>
                       </div>
                     ))}
                   </div>
@@ -538,9 +777,25 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
 
               {/* Right Column - Test Results */}
               {(labTests.length > 0 || xrays.length > 0 || ultrasounds.length > 0) && (
-                <div className="info-box">
-                  <h3 className="box-title">TEST RESULTS SUMMARY</h3>
-                  <div className="box-content white">
+                <div style={{
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <h3 style={{
+                    background: '#f9fafb',
+                    padding: '8px 12px',
+                    fontWeight: 'bold',
+                    fontSize: '10pt',
+                    borderBottom: '1px solid #1e3a8a',
+                    letterSpacing: '0.5px',
+                    color: '#1f2937',
+                    margin: 0
+                  }}>TEST RESULTS SUMMARY</h3>
+                  <div style={{
+                    padding: '12px',
+                    background: '#f9fafb'
+                  }}>
                     {/* Lab Tests */}
                     {labTests.length > 0 && (
                       <div style={{ marginBottom: "8px" }}>
@@ -550,7 +805,13 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                         {labTests.map((test) => {
                           const testsOrdered = test.testsOrdered ? JSON.parse(test.testsOrdered) : [];
                           return (
-                            <div key={test.id} className="test-result" style={{ borderLeft: "2px solid #d97706" }}>
+                            <div key={test.id} style={{
+                              padding: '6px 8px',
+                              marginBottom: '4px',
+                              borderLeft: '2px solid #d97706',
+                              background: '#f9fafb',
+                              fontSize: '9pt'
+                            }}>
                               {testsOrdered.length > 0 && (
                                 <div style={{ fontWeight: "600", fontSize: "8pt", marginBottom: "2px" }}>
                                   {testsOrdered.join(", ")}
@@ -574,7 +835,13 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                           📷 X-Ray Results
                         </div>
                         {xrays.map((xray) => (
-                          <div key={xray.id} className="test-result" style={{ borderLeft: "2px solid #8b5cf6" }}>
+                          <div key={xray.id} style={{
+                            padding: '6px 8px',
+                            marginBottom: '4px',
+                            borderLeft: '2px solid #8b5cf6',
+                            background: '#f9fafb',
+                            fontSize: '9pt'
+                          }}>
                             <div style={{ fontWeight: "600", fontSize: "8pt" }}>
                               {xray.bodyPart}: {xray.impression || xray.findings || "Completed"}
                             </div>
@@ -590,7 +857,13 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                           🔊 Ultrasound Results
                         </div>
                         {ultrasounds.map((us) => (
-                          <div key={us.id} className="test-result" style={{ borderLeft: "2px solid #0ea5e9" }}>
+                          <div key={us.id} style={{
+                            padding: '6px 8px',
+                            marginBottom: '4px',
+                            borderLeft: '2px solid #0ea5e9',
+                            background: '#f9fafb',
+                            fontSize: '9pt'
+                          }}>
                             <div style={{ fontWeight: "600", fontSize: "8pt" }}>
                               {us.examType}: {us.impression || us.findings || "Completed"}
                             </div>
@@ -606,9 +879,29 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
 
           {/* Follow-up Instructions */}
           {treatment?.followUpDate && (
-            <div className="section-box">
-              <h3 className="section-title">FOLLOW-UP APPOINTMENT</h3>
-              <div className="section-content">
+            <div style={{
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              marginBottom: '12px'
+            }}>
+              <h3 style={{
+                background: '#f9fafb',
+                padding: '8px 12px',
+                fontWeight: 'bold',
+                fontSize: '10pt',
+                borderBottom: '2px solid #9ca3af',
+                letterSpacing: '0.5px',
+                margin: 0,
+                color: '#1f2937'
+              }}>FOLLOW-UP APPOINTMENT</h3>
+              <div style={{
+                padding: '12px',
+                fontSize: '9pt',
+                lineHeight: 1.5,
+                margin: 0,
+                background: 'white'
+              }}>
                 <div style={{ fontWeight: "600" }}>
                   Return on: {formatLongDate(treatment.followUpDate)}
                 </div>
@@ -618,38 +911,111 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
           )}
 
           {/* Warning Box */}
-          <div className="warning-box">
-            <h3 className="warning-title">⚠️ RETURN TO CLINIC IF</h3>
-            <ul>
-              <li>High fever (very hot body)</li>
-              <li>Severe pain or difficulty breathing</li>
-              <li>Heavy bleeding</li>
-              <li>Cannot eat/drink or confusion</li>
+          <div style={{
+            border: '2px solid #f59e0b',
+            background: '#fffbeb',
+            borderRadius: '4px',
+            padding: '12px',
+            margin: '12px 0'
+          }}>
+            <h3 style={{
+              color: '#b45309',
+              fontWeight: 'bold',
+              margin: '0 0 8px 0',
+              fontSize: '10pt'
+            }}>⚠️ RETURN TO CLINIC IF</h3>
+            <ul style={{
+              margin: 0,
+              paddingLeft: '20px',
+              fontSize: '9pt'
+            }}>
+              <li style={{ marginBottom: '4px' }}>High fever (very hot body)</li>
+              <li style={{ marginBottom: '4px' }}>Severe pain or difficulty breathing</li>
+              <li style={{ marginBottom: '4px' }}>Heavy bleeding</li>
+              <li style={{ marginBottom: '4px' }}>Cannot eat/drink or confusion</li>
             </ul>
           </div>
 
           {/* Signature Section - Matches Invoice */}
-          <div className="signature-section">
-            <div className="signature-row">
-              <div className="signature-block">
-                <div className="signature-line"></div>
-                <p className="signature-label">Doctor's Signature</p>
-                <p className="signature-sublabel">{encounter?.attendingClinician || "Medical Officer"}</p>
+          <div style={{
+            marginTop: '24px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '48px'
+            }}>
+              <div style={{
+                marginTop: '40px'
+              }}>
+                <div style={{
+                  borderTop: '2px solid #1f2937',
+                  paddingTop: '8px',
+                  marginBottom: '4px'
+                }}></div>
+                <p style={{
+                  fontSize: '10pt',
+                  fontWeight: 'bold',
+                  margin: 0,
+                  color: '#1f2937'
+                }}>Doctor's Signature</p>
+                <p style={{
+                  fontSize: '8pt',
+                  color: '#6b7280',
+                  margin: '2px 0 0 0'
+                }}>{encounter?.attendingClinician || "Medical Officer"}</p>
               </div>
-              <div className="signature-block">
-                <div className="signature-line"></div>
-                <p className="signature-label">Date</p>
-                <p className="signature-sublabel">{formatLongDate(encounter?.visitDate || new Date())}</p>
+              <div style={{
+                marginTop: '40px'
+              }}>
+                <div style={{
+                  borderTop: '2px solid #1f2937',
+                  paddingTop: '8px',
+                  marginBottom: '4px'
+                }}></div>
+                <p style={{
+                  fontSize: '10pt',
+                  fontWeight: 'bold',
+                  margin: 0,
+                  color: '#1f2937'
+                }}>Date</p>
+                <p style={{
+                  fontSize: '8pt',
+                  color: '#6b7280',
+                  margin: '2px 0 0 0'
+                }}>{formatLongDate(encounter?.visitDate || new Date())}</p>
               </div>
             </div>
           </div>
 
           {/* Professional Footer - Matches Invoice */}
-          <div className="footer">
-            <p className="footer-notice">THIS IS A COMPUTER-GENERATED DISCHARGE SUMMARY</p>
-            <p className="footer-clinic">Bahr El Ghazal Clinic</p>
-            <p className="footer-accreditation">Accredited Medical Facility | Republic of South Sudan</p>
-            <p className="footer-tagline">Your health is our priority</p>
+          <div style={{
+            textAlign: 'center',
+            fontSize: '9pt',
+            color: '#6b7280',
+            borderTop: '2px solid #d1d5db',
+            paddingTop: '12px',
+            marginTop: '16px'
+          }}>
+            <p style={{
+              fontWeight: 600,
+              color: '#4b5563',
+              letterSpacing: '0.5px',
+              margin: '0 0 6px 0'
+            }}>THIS IS A COMPUTER-GENERATED DISCHARGE SUMMARY</p>
+            <p style={{
+              fontWeight: 600,
+              color: '#1f2937',
+              margin: '6px 0'
+            }}>Bahr El Ghazal Clinic</p>
+            <p style={{
+              margin: '4px 0'
+            }}>Accredited Medical Facility | Republic of South Sudan</p>
+            <p style={{
+              fontStyle: 'italic',
+              margin: '6px 0 0 0'
+            }}>Your health is our priority</p>
           </div>
           </div>
         </div>
