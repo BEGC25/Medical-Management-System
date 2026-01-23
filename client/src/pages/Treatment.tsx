@@ -1735,17 +1735,14 @@ export default function Treatment() {
       if (currentEncounter && (currentEncounter.attendingClinician === "Dr. System" || !currentEncounter.attendingClinician)) {
         const doctorName = user?.fullName || user?.username || "Dr. System";
         try {
-          const updateResponse = await fetch(`/api/encounters/${currentEncounter.encounterId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ attendingClinician: doctorName }),
+          const updateResponse = await apiRequest("PUT", `/api/encounters/${currentEncounter.encounterId}`, {
+            attendingClinician: doctorName,
           });
-          if (updateResponse.ok) {
-            const updatedEncounter = await updateResponse.json();
-            setCurrentEncounter(updatedEncounter);
-            queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
-          }
+          const updatedEncounter = await updateResponse.json();
+          setCurrentEncounter(updatedEncounter);
+          queryClient.invalidateQueries({ queryKey: ["/api/encounters"] });
         } catch (error) {
+          // Log error but don't notify user - treatment was saved successfully
           console.error("Failed to update attendingClinician:", error);
         }
       }
