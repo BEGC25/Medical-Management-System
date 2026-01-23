@@ -25,6 +25,7 @@ interface LabReportPrintProps {
     completedDate?: string;
     resultStatus?: string;
     technicianNotes?: string;
+    completedBy?: string;
   };
   /** Patient data */
   patient?: {
@@ -45,11 +46,12 @@ interface LabReportPrintProps {
   }>>;
   /** Whether to include clinical interpretation (false for patient copy, true for clinical copy) */
   includeInterpretation?: boolean;
-  /** Additional form values (for completedDate, resultStatus, technicianNotes) */
+  /** Additional form values (for completedDate, resultStatus, technicianNotes, completedBy) */
   formValues?: {
     completedDate?: string;
     resultStatus?: string;
     technicianNotes?: string;
+    completedBy?: string;
   };
 }
 
@@ -94,12 +96,12 @@ export function LabReportPrint({
 
   return (
     <div id={containerId} className="prescription" style={{ minHeight: 'auto', height: 'auto' }}>
-      {/* Premium Professional Invoice Layout with Border - MATCHES INVOICE */}
+      {/* Premium Professional Invoice Layout with Border - MATCHES DISCHARGE SUMMARY */}
       <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
-        <div className="p-5 max-w-4xl mx-auto bg-white">
+        <div className="p-6 mx-auto bg-white" style={{ maxWidth: '800px' }}>
           
-          {/* HEADER - IDENTICAL TO INVOICE */}
-          <div className="flex items-start justify-between mb-4">
+          {/* HEADER - IDENTICAL TO DISCHARGE SUMMARY */}
+          <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-blue-900">Bahr El Ghazal Clinic</h1>
               <p className="text-sm text-gray-600 italic">Excellence in Healthcare</p>
@@ -112,8 +114,8 @@ export function LabReportPrint({
             </div>
           </div>
 
-          {/* TITLE WITH ACCENT BAR - MATCHES INVOICE */}
-          <div className="text-center mb-6">
+          {/* TITLE WITH ACCENT BAR - MATCHES DISCHARGE SUMMARY */}
+          <div className="text-center mb-4">
             <h2 className="text-lg font-bold text-gray-900">
               LABORATORY TEST REPORT
               {includeInterpretation && <span className="text-sm ml-2 text-gray-600">(Clinical Copy)</span>}
@@ -121,8 +123,8 @@ export function LabReportPrint({
             <div className="h-1 bg-gradient-to-r from-blue-900 to-blue-800 mt-2" />
           </div>
 
-          {/* Patient & Test Information Cards - Side by Side like Invoice */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          {/* Patient & Test Information Cards - Side by Side like Discharge Summary */}
+          <div className="grid grid-cols-2 gap-3 mb-2">
             {/* Patient Information Box */}
             <div className="border border-gray-300 shadow-sm rounded p-2 bg-blue-50">
               <h3 className="font-bold text-sm mb-1 text-gray-800 border-b border-blue-900 pb-1">
@@ -140,7 +142,7 @@ export function LabReportPrint({
                 {patient?.age && (
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-semibold text-gray-700">Age:</span>
-                    <span className="text-xs font-medium text-gray-900">{patient.age} years</span>
+                    <span className="text-xs font-medium text-gray-900">{patient.age}</span>
                   </div>
                 )}
                 {patient?.gender && (
@@ -183,7 +185,7 @@ export function LabReportPrint({
           </div>
 
           {/* Tests Ordered - Compact */}
-          <div className="mb-3">
+          <div className="mb-2">
             <h3 className="font-bold text-sm mb-1 text-gray-800">Tests Ordered:</h3>
             <div className="flex flex-wrap gap-1">
               {tests.map((test, i) => (
@@ -195,44 +197,58 @@ export function LabReportPrint({
           </div>
 
           {/* Laboratory Results - Professional Table Format */}
-          <div className="mb-3">
+          <div className="mb-2">
             <h3 className="font-bold text-sm mb-2 text-gray-800 border-b-2 border-gray-400 pb-1">
               LABORATORY RESULTS
             </h3>
             {Object.entries(results).map(([testName, testData]) => {
               const fields = resultFields[testName];
               return (
-                <div key={testName} className="mb-3 border border-gray-300 rounded p-2 bg-gray-50">
-                  <h4 className="text-xs font-semibold text-blue-900 mb-2 uppercase">{testName}</h4>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                    {Object.entries(testData).map(([fieldName, value]) => {
-                      const config = fields?.[fieldName];
-                      const isNormal = config?.normal === value;
-                      const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
-                      
-                      // Format numeric values with commas
-                      let displayValue = value;
-                      if (config?.type === 'number' && value) {
-                        displayValue = formatNumber(value);
-                      }
-                      
-                      return (
-                        <div key={fieldName} className="flex justify-between items-center text-xs border-b border-gray-200 py-1">
-                          <span className="font-medium text-gray-700">{fieldName}:</span>
-                          <span className={cx(
-                            "font-semibold",
-                            isNormal && "text-green-600",
-                            isAbnormal && "text-red-600"
-                          )}>
-                            {displayValue} {config?.unit || ""}
-                            {config?.normal && (
-                              <span className="text-xs text-gray-500 ml-1">(Norm: {config.normal})</span>
-                            )}
-                          </span>
-                        </div>
-                      );
-                    })}
+                <div key={testName} className="mb-2 border border-gray-300 overflow-hidden">
+                  {/* Test Name Header */}
+                  <div className="bg-gray-800 text-white px-2 py-1">
+                    <h4 className="text-xs font-bold uppercase">{testName}</h4>
                   </div>
+                  {/* Table */}
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-gray-100 border-b border-gray-300">
+                        <th className="text-left px-2 py-1 font-semibold text-gray-700">Parameter</th>
+                        <th className="text-left px-2 py-1 font-semibold text-gray-700">Result</th>
+                        <th className="text-left px-2 py-1 font-semibold text-gray-700">Normal Range</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(testData).map(([fieldName, value]) => {
+                        const config = fields?.[fieldName];
+                        const isNormal = config?.normal === value;
+                        const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
+                        
+                        // Format numeric values with commas
+                        let displayValue = value;
+                        if (config?.type === 'number' && value) {
+                          displayValue = formatNumber(value);
+                        }
+                        
+                        return (
+                          <tr key={fieldName} className="border-b border-gray-200 bg-white">
+                            <td className="px-2 py-1 font-medium text-gray-700">{fieldName}</td>
+                            <td className={cx(
+                              "px-2 py-1 font-semibold",
+                              isNormal && "text-green-600",
+                              isAbnormal && "text-red-600",
+                              !isNormal && !isAbnormal && "text-gray-900"
+                            )}>
+                              {displayValue} {config?.unit || ""}
+                            </td>
+                            <td className="px-2 py-1 text-gray-500">
+                              {config?.normal || config?.range || "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               );
             })}
@@ -247,7 +263,7 @@ export function LabReportPrint({
             const hasFindings = hasCritical || hasWarnings;
 
             return (
-              <div className={`mb-3 rounded p-2 border-2 ${hasFindings ? 'bg-yellow-50 border-yellow-400' : 'bg-green-50 border-green-400'}`}>
+              <div className={`mb-2 rounded p-2 border-2 ${hasFindings ? 'bg-yellow-50 border-yellow-400' : 'bg-green-50 border-green-400'}`}>
                 <h3 className={`text-sm font-bold mb-1 flex items-center ${hasFindings ? 'text-yellow-900' : 'text-green-900'}`}>
                   <span className="text-base mr-1">ℹ️</span> Clinical Interpretation
                 </h3>
@@ -283,30 +299,30 @@ export function LabReportPrint({
 
           {/* Technician Notes - If Present */}
           {(formValues?.technicianNotes || labTest.technicianNotes) && (
-            <div className="mb-3 border border-gray-300 rounded p-2 bg-gray-50">
+            <div className="mb-2 border border-gray-300 rounded p-2 bg-gray-50">
               <h3 className="font-bold text-xs mb-1 text-gray-800">Technician Notes:</h3>
               <p className="text-xs text-gray-700">{formValues?.technicianNotes || labTest.technicianNotes}</p>
             </div>
           )}
 
-          {/* SIGNATURE SECTION - MATCHES INVOICE */}
-          <div className="grid grid-cols-2 gap-8 mt-6 mb-4">
+          {/* SIGNATURE SECTION - MATCHES DISCHARGE SUMMARY */}
+          <div className="grid grid-cols-2 gap-8 mt-4 mb-3">
             <div>
-              <div className="border-t-2 border-gray-800 pt-2 mt-20">
+              <div className="border-t-2 border-gray-800 pt-2 mt-12">
                 <p className="text-sm font-bold">Lab Technician:</p>
-                <p className="text-xs text-gray-600">Laboratory Department</p>
+                <p className="text-xs text-gray-600">{formValues?.completedBy || labTest.completedBy || "Lab Technician"}</p>
               </div>
             </div>
             <div>
-              <div className="border-t-2 border-gray-800 pt-2 mt-20">
+              <div className="border-t-2 border-gray-800 pt-2 mt-12">
                 <p className="text-sm font-bold">Date:</p>
                 <p className="text-xs text-gray-600">{formatLongDate(formValues?.completedDate || labTest.completedDate)}</p>
               </div>
             </div>
           </div>
 
-          {/* FOOTER - IDENTICAL TO INVOICE */}
-          <div className="text-center text-xs text-gray-600 border-t pt-3 mt-4">
+          {/* FOOTER - IDENTICAL TO DISCHARGE SUMMARY */}
+          <div className="text-center text-xs text-gray-600 border-t pt-2 mt-3">
             <p className="font-semibold">THIS IS A COMPUTER-GENERATED LABORATORY REPORT</p>
             <p className="font-semibold mt-1">Bahr El Ghazal Clinic</p>
             <p>Accredited Medical Facility | Republic of South Sudan</p>
