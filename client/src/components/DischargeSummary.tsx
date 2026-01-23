@@ -53,6 +53,19 @@ function formatShortDate(date: string | number | Date | null | undefined): strin
   }
 }
 
+function formatLongDate(date: string | number | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  } catch {
+    return String(date);
+  }
+}
+
 export function DischargeSummary({ encounterId, patientId }: DischargeSummaryProps) {
   const [open, setOpen] = useState(false);
 
@@ -488,7 +501,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                 <div className="box-content white">
                   <div className="row">
                     <span>Date:</span>
-                    <span>{encounter?.visitDate ? new Date(encounter.visitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    <span>{formatLongDate(encounter?.visitDate || new Date())}</span>
                   </div>
                   <div className="row">
                     <span>Type:</span>
@@ -630,7 +643,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               <h3 className="section-title">FOLLOW-UP APPOINTMENT</h3>
               <div className="section-content">
                 <div style={{ fontWeight: "600" }}>
-                  Return on: {new Date(treatment.followUpDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  Return on: {formatLongDate(treatment.followUpDate)}
                 </div>
                 {treatment.followUpType && <div>Type: {treatment.followUpType}</div>}
               </div>
@@ -659,7 +672,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
               <div className="signature-block">
                 <div className="signature-line"></div>
                 <p className="signature-label">Date</p>
-                <p className="signature-sublabel">{encounter?.visitDate ? new Date(encounter.visitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                <p className="signature-sublabel">{formatLongDate(encounter?.visitDate || new Date())}</p>
               </div>
             </div>
           </div>
