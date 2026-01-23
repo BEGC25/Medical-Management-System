@@ -356,11 +356,6 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             font-style: italic;
             margin: 6px 0 0 0;
           }
-          /* Prevent page breaks inside important sections with inline styles */
-          [style*="border: 2px solid #f59e0b"] {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
         </style>
       </head>
       <body>
