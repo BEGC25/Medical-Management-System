@@ -356,12 +356,22 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     win.document.close();
     
     // Wait for images to load before printing
-    win.onload = () => {
+    const doPrint = () => {
       setTimeout(() => {
         win.focus();
         win.print();
+        win.close();
       }, 300);
     };
+    
+    // Use onload if available, otherwise fallback to immediate timeout
+    if (win.document.readyState === 'complete') {
+      doPrint();
+    } else {
+      win.onload = doPrint;
+      // Fallback in case onload doesn't fire
+      setTimeout(doPrint, 1000);
+    }
   };
 
   // Helper to parse and format lab test results professionally
