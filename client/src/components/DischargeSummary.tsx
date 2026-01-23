@@ -356,7 +356,10 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     win.document.close();
     
     // Wait for images to load before printing
+    let printed = false;
     const doPrint = () => {
+      if (printed) return;
+      printed = true;
       setTimeout(() => {
         win.focus();
         win.print();
