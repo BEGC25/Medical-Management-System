@@ -14,6 +14,9 @@ type XrayExam = any;
 type UltrasoundExam = any;
 type PharmacyOrder = any;
 
+// Type for API response that may wrap encounter in a nested structure
+type EncounterResponse = Encounter | { encounter: Encounter };
+
 interface DischargeSummaryProps {
   encounterId: string;
   patientId: string;
@@ -33,6 +36,11 @@ function formatLongDate(date: string | number | Date | null | undefined): string
   }
 }
 
+function capitalizeFirstLetter(str: string | null | undefined): string {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export function DischargeSummary({ encounterId, patientId }: DischargeSummaryProps) {
   const [open, setOpen] = useState(false);
 
@@ -48,7 +56,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
   });
 
   // Fetch encounter data
-  const { data: encounter } = useQuery<Encounter>({
+  const { data: encounterResponse } = useQuery<EncounterResponse>({
     queryKey: ["/api/encounters", encounterId],
     queryFn: async () => {
       const r = await fetch(`/api/encounters/${encounterId}`);
@@ -57,6 +65,11 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     },
     enabled: open,
   });
+
+  // Extract encounter from response (API returns { encounter: {...} })
+  const encounter = encounterResponse && 'encounter' in encounterResponse 
+    ? encounterResponse.encounter 
+    : encounterResponse;
 
   // Fetch treatment data
   const { data: treatment } = useQuery<Treatment | null>({
@@ -630,7 +643,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                     fontSize: '9pt'
                   }}>
                     <span style={{ fontWeight: 600, color: '#4b5563' }}>Type:</span>
-                    <span style={{ fontWeight: 500, color: '#111827' }}>{treatment?.visitType || "Consultation"}</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>
+                      {capitalizeFirstLetter(treatment?.visitType) || "Consultation"}
+                    </span>
                   </div>
                   <div style={{
                     display: 'flex',
@@ -639,7 +654,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
                     fontSize: '9pt'
                   }}>
                     <span style={{ fontWeight: 600, color: '#4b5563' }}>Location:</span>
-                    <span style={{ fontWeight: 500, color: '#111827' }}>Bahr El Ghazal</span>
+                    <span style={{ fontWeight: 500, color: '#111827' }}>Bahr El Ghazal Clinic</span>
                   </div>
                   <div style={{
                     display: 'flex',
