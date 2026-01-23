@@ -105,7 +105,9 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
     const win = window.open("", "_blank");
     if (!win) return;
 
-    const html = printContent.innerHTML;
+    // Get the HTML content to preserve inline styles
+    const html = printContent.outerHTML;
+    
     win.document.write(`
       <!doctype html>
       <html>
@@ -113,21 +115,26 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
         <meta charset="utf-8" />
         <title>Discharge Summary - ${patient?.patientId || ""}</title>
         <style>
-          @media print {
-            body * { visibility: hidden; }
-            #discharge-summary-print, #discharge-summary-print * { visibility: visible; }
-            #discharge-summary-print { position: absolute; left: 0; top: 0; width: 100%; max-height: 273mm; overflow: hidden; }
-            @page { size: A4; margin: 12mm 15mm; }
-            body {
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
+          @page { 
+            size: A4; 
+            margin: 10mm 12mm; 
           }
           body {
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: #111;
             line-height: 1.4;
             font-size: 10pt;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          img {
+            max-width: 80px;
+            height: auto;
           }
           .discharge-container {
             border: 2px solid #d1d5db;
@@ -347,11 +354,28 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
       </html>
     `);
     win.document.close();
-    win.focus();
-    setTimeout(() => {
-      win.print();
-      win.close();
-    }, 250);
+    
+    // Wait for images to load before printing
+    const PRINT_FALLBACK_TIMEOUT = 1000;
+    let printed = false;
+    const doPrint = () => {
+      if (printed) return;
+      printed = true;
+      setTimeout(() => {
+        win.focus();
+        win.print();
+        win.close();
+      }, 300);
+    };
+    
+    // Use onload if available, otherwise fallback to immediate timeout
+    if (win.document.readyState === 'complete') {
+      doPrint();
+    } else {
+      win.addEventListener('load', doPrint);
+      // Fallback in case load event doesn't fire
+      setTimeout(doPrint, PRINT_FALLBACK_TIMEOUT);
+    }
   };
 
   // Helper to parse and format lab test results professionally
