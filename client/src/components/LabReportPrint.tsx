@@ -230,7 +230,6 @@ export function LabReportPrint({
                               !isNormal && !isAbnormal && "text-gray-900"
                             )}>
                               {displayValue} {config?.unit || ""}
-                              {isNormal && <span className="ml-1 text-green-600">✓</span>}
                             </td>
                             <td className="px-3 py-1 text-gray-600">
                               {config?.normal || config?.range || "—"}
