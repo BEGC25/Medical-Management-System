@@ -60,6 +60,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useServicesByCategory } from "@/hooks/useServicesByCategory";
 
 import {
@@ -353,6 +354,7 @@ function usePatientSearch(term: string) {
 export default function Laboratory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [, navigate] = useLocation();
 
   // Request state
@@ -1880,6 +1882,7 @@ return (
           completedDate: resultsForm.getValues("completedDate"),
           resultStatus: resultsForm.getValues("resultStatus"),
           technicianNotes: resultsForm.getValues("technicianNotes"),
+          completedBy: user?.fullName,
         }}
       />
 
