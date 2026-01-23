@@ -51,6 +51,19 @@ interface LabReportPrintProps {
   };
 }
 
+function formatLongDate(date: string | number | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  } catch {
+    return String(date);
+  }
+}
+
 function parseJSON<T = any>(v: any, fallback: T): T {
   try {
     return typeof v === "object" && v !== null ? v : JSON.parse(v ?? "");
@@ -94,7 +107,7 @@ export function LabReportPrint({
     <div id={containerId} className="prescription" style={{ minHeight: 'auto', height: 'auto' }}>
       {/* Premium Professional Invoice Layout with Border - MATCHES INVOICE */}
       <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
-        <div className="p-6 max-w-4xl mx-auto bg-white">
+        <div className="p-5 max-w-4xl mx-auto bg-white">
           
           {/* HEADER - IDENTICAL TO INVOICE */}
           <div className="flex items-start justify-between mb-4">
@@ -138,7 +151,7 @@ export function LabReportPrint({
                 {patient?.age && (
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-semibold text-gray-700">Age:</span>
-                    <span className="text-xs font-medium text-gray-900">{patient.age}</span>
+                    <span className="text-xs font-medium text-gray-900">{patient.age} years</span>
                   </div>
                 )}
                 {patient?.gender && (
@@ -147,6 +160,10 @@ export function LabReportPrint({
                     <span className="text-xs font-medium text-gray-900">{patient.gender}</span>
                   </div>
                 )}
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-gray-700">Phone:</span>
+                  <span className="text-xs font-medium text-gray-900">{(patient as any)?.phoneNumber || 'N/A'}</span>
+                </div>
               </div>
             </div>
 
@@ -284,7 +301,7 @@ export function LabReportPrint({
           )}
 
           {/* SIGNATURE SECTION - MATCHES INVOICE */}
-          <div className="grid grid-cols-2 gap-12 mt-6 mb-4">
+          <div className="grid grid-cols-2 gap-8 mt-6 mb-4">
             <div>
               <div className="border-t-2 border-gray-800 pt-2 mt-20">
                 <p className="text-sm font-bold">Lab Technician:</p>
@@ -294,7 +311,7 @@ export function LabReportPrint({
             <div>
               <div className="border-t-2 border-gray-800 pt-2 mt-20">
                 <p className="text-sm font-bold">Date:</p>
-                <p className="text-xs text-gray-600">{formValues?.completedDate || labTest.completedDate || new Date().toLocaleDateString()}</p>
+                <p className="text-xs text-gray-600">{formatLongDate(formValues?.completedDate || labTest.completedDate)}</p>
               </div>
             </div>
           </div>

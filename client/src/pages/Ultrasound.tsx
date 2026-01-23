@@ -187,6 +187,23 @@ function usePatientSearch(term: string) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Helper Functions                                                   */
+/* ------------------------------------------------------------------ */
+
+function formatLongDate(date: string | number | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  } catch {
+    return String(date);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -2412,12 +2429,12 @@ export default function Ultrasound() {
               body * { visibility: hidden; }
               #ultrasound-report-print, #ultrasound-report-print * { visibility: visible; }
               #ultrasound-report-print { position: absolute; left: 0; top: 0; width: 100%; max-height: 273mm; overflow: hidden; }
-              @page { size: A4; margin: 12mm 15mm; }
+              @page { size: A4; margin: 8mm 10mm; }
             }
           `}</style>
           {/* Premium Professional Report with Border - MATCHES INVOICE */}
           <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
-            <div className="p-6 max-w-4xl mx-auto bg-white">
+            <div className="p-5 max-w-4xl mx-auto bg-white">
               
               {/* HEADER - IDENTICAL TO INVOICE */}
               <div className="flex items-start justify-between mb-4">
@@ -2463,6 +2480,10 @@ export default function Ultrasound() {
                       <span className="text-xs font-semibold text-gray-700">Gender:</span>
                       <span className="text-xs font-medium text-gray-900">{reportPatient.gender}</span>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-gray-700">Phone:</span>
+                      <span className="text-xs font-medium text-gray-900">{reportPatient.phoneNumber || 'N/A'}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -2482,7 +2503,7 @@ export default function Ultrasound() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-semibold text-gray-700">Report Date:</span>
-                      <span className="text-xs font-medium">{resultsForm.getValues('reportDate')}</span>
+                      <span className="text-xs font-medium">{formatLongDate(resultsForm.getValues('reportDate'))}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-semibold text-gray-700">Image Quality:</span>
@@ -2529,7 +2550,7 @@ export default function Ultrasound() {
               )}
 
               {/* SIGNATURE SECTION - MATCHES INVOICE */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-6 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-6 mb-4">
                 <div>
                   <div className="border-t-2 border-gray-800 pt-2 mt-20">
                     <p className="text-sm font-bold">Sonographer:</p>
@@ -2539,7 +2560,7 @@ export default function Ultrasound() {
                 <div>
                   <div className="border-t-2 border-gray-800 pt-2 mt-20">
                     <p className="text-sm font-bold">Date:</p>
-                    <p className="text-xs text-gray-600">{resultsForm.getValues('reportDate')}</p>
+                    <p className="text-xs text-gray-600">{formatLongDate(resultsForm.getValues('reportDate'))}</p>
                   </div>
                 </div>
               </div>
