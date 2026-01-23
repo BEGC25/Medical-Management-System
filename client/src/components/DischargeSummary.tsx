@@ -671,6 +671,7 @@ export function DischargeSummary({ encounterId, patientId }: DischargeSummaryPro
             <p className="footer-accreditation">Accredited Medical Facility | Republic of South Sudan</p>
             <p className="footer-tagline">Your health is our priority</p>
           </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
