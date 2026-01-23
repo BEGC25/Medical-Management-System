@@ -1252,27 +1252,30 @@ export class MemStorage implements IStorage {
         )
       );
       
-      // Count lab tests by clinic_day (when ordered, not requested_date)
+      // Count lab tests COMPLETED today (not just ordered)
       const totalLabTests = await db.select({ count: count() }).from(labTests).where(
         and(
-          gte(labTests.clinicDay, actualFromDate),
-          lte(labTests.clinicDay, actualToDate)
+          eq(labTests.status, 'completed'),
+          sql`DATE(${labTests.completedDate}) >= ${actualFromDate}`,
+          sql`DATE(${labTests.completedDate}) <= ${actualToDate}`
         )
       );
       
-      // Count X-rays by clinic_day (when ordered, not requested_date)
+      // Count X-rays COMPLETED today (not just ordered)
       const totalXrays = await db.select({ count: count() }).from(xrayExams).where(
         and(
-          gte(xrayExams.clinicDay, actualFromDate),
-          lte(xrayExams.clinicDay, actualToDate)
+          eq(xrayExams.status, 'completed'),
+          sql`DATE(${xrayExams.reportDate}) >= ${actualFromDate}`,
+          sql`DATE(${xrayExams.reportDate}) <= ${actualToDate}`
         )
       );
       
-      // Count ultrasounds by clinic_day (when ordered, not requested_date)
+      // Count ultrasounds COMPLETED today (not just ordered)
       const totalUltrasounds = await db.select({ count: count() }).from(ultrasoundExams).where(
         and(
-          gte(ultrasoundExams.clinicDay, actualFromDate),
-          lte(ultrasoundExams.clinicDay, actualToDate)
+          eq(ultrasoundExams.status, 'completed'),
+          sql`DATE(${ultrasoundExams.reportDate}) >= ${actualFromDate}`,
+          sql`DATE(${ultrasoundExams.reportDate}) <= ${actualToDate}`
         )
       );
 
@@ -1642,6 +1645,32 @@ export class MemStorage implements IStorage {
       ))
       .limit(10);
       
+      // Get TODAY's unpaid consultation fees
+      // Find order_lines with relatedType='consultation' that don't have a payment_item
+      const unpaidConsultations = await db.select({
+        orderLineId: orderLines.id,
+        patientId: encounters.patientId,
+        patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`,
+        serviceDescription: sql<string>`'Consultation: ' || ${orderLines.description}`,
+        orderType: sql<string>`'consultation'`,
+        createdAt: orderLines.createdAt,
+        encounterId: orderLines.encounterId,
+        amount: orderLines.totalPrice,
+      })
+      .from(orderLines)
+      .innerJoin(encounters, eq(orderLines.encounterId, encounters.encounterId))
+      .innerJoin(patients, and(
+        eq(encounters.patientId, patients.patientId),
+        eq(patients.isDeleted, 0)
+      ))
+      .leftJoin(paymentItems, eq(paymentItems.orderLineId, orderLines.id))
+      .where(and(
+        eq(orderLines.relatedType, 'consultation'),
+        isNull(paymentItems.id), // No payment exists for this order line
+        sql`DATE(${orderLines.createdAt}) = ${clinicToday}`
+      ))
+      .limit(10);
+      
       // Format labs (amount already calculated via COALESCE)
       const labsWithAmounts = unpaidLabs.map((lab: any) => ({
         ...lab,
@@ -1660,12 +1689,18 @@ export class MemStorage implements IStorage {
         id: us.examId,
       }));
       
+      // Format consultations
+      const consultationsWithAmounts = unpaidConsultations.map((consult: any) => ({
+        ...consult,
+        id: consult.orderLineId,
+      }));
+      
       // Combine and sort by date, then limit
-      const allUnpaid = [...labsWithAmounts, ...xraysWithAmounts, ...ultrasoundsWithAmounts]
+      const allUnpaid = [...labsWithAmounts, ...xraysWithAmounts, ...ultrasoundsWithAmounts, ...consultationsWithAmounts]
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .slice(0, limit);
       
-      console.log(`Outstanding Payments DEBUG: Found ${unpaidLabs.length} labs, ${unpaidXrays.length} xrays, ${unpaidUltrasounds.length} ultrasounds for TODAY (${today})`);
+      console.log(`Outstanding Payments DEBUG: Found ${unpaidLabs.length} labs, ${unpaidXrays.length} xrays, ${unpaidUltrasounds.length} ultrasounds, ${unpaidConsultations.length} consultations for TODAY (${clinicToday})`);
       console.log('Outstanding Payments Results:', JSON.stringify(allUnpaid, null, 2));
       
       return allUnpaid;
@@ -1685,6 +1720,13 @@ export class MemStorage implements IStorage {
       const patientMap = new Map();
       for (const p of allPatients) {
         patientMap.set(p.patientId, p);
+      }
+      
+      // Get all encounters to check their status (filter out closed/treated encounters)
+      const allEncounters = await db.select().from(encounters);
+      const encounterMap = new Map();
+      for (const enc of allEncounters) {
+        encounterMap.set(enc.encounterId, enc);
       }
       
       // Get TODAY's completed lab tests
@@ -1714,18 +1756,24 @@ export class MemStorage implements IStorage {
       // Get all order lines to link tests to encounters (if available)
       const allOrderLines = await db.select().from(orderLines);
       
-      // Create mappings: testId -> encounterId (some tests may not have order lines)
+      // Create mappings: testId -> encounterId and testId -> acknowledgedBy (some tests may not have order lines)
       const labTestToEncounter = new Map();
       const xrayToEncounter = new Map();
       const ultrasoundToEncounter = new Map();
+      const labTestToAcknowledged = new Map();
+      const xrayToAcknowledged = new Map();
+      const ultrasoundToAcknowledged = new Map();
       
       for (const orderLine of allOrderLines) {
         if ((orderLine.relatedType === 'lab_test' || orderLine.relatedType === 'lab') && orderLine.relatedId) {
           labTestToEncounter.set(orderLine.relatedId, orderLine.encounterId);
+          labTestToAcknowledged.set(orderLine.relatedId, orderLine.acknowledgedBy);
         } else if (XRAY_RELATED_TYPES.includes(orderLine.relatedType as any) && orderLine.relatedId) {
           xrayToEncounter.set(orderLine.relatedId, orderLine.encounterId);
+          xrayToAcknowledged.set(orderLine.relatedId, orderLine.acknowledgedBy);
         } else if ((orderLine.relatedType === 'ultrasound_exam' || orderLine.relatedType === 'ultrasound') && orderLine.relatedId) {
           ultrasoundToEncounter.set(orderLine.relatedId, orderLine.encounterId);
+          ultrasoundToAcknowledged.set(orderLine.relatedId, orderLine.acknowledgedBy);
         }
       }
       
@@ -1738,6 +1786,19 @@ export class MemStorage implements IStorage {
         if (!patient) continue;
         
         const encId = labTestToEncounter.get(lab.testId) || null;
+        const isAcknowledged = labTestToAcknowledged.get(lab.testId);
+        
+        // Skip if the result has been acknowledged by a doctor
+        if (isAcknowledged) continue;
+        
+        // Skip if the encounter is closed or ready_to_bill (treated)
+        if (encId) {
+          const encounter = encounterMap.get(encId);
+          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill')) {
+            continue;
+          }
+        }
+        
         const key = `${lab.patientId}`;
         
         if (!patientResults.has(key)) {
@@ -1770,6 +1831,19 @@ export class MemStorage implements IStorage {
         if (!patient) continue;
         
         const encId = xrayToEncounter.get(xray.examId) || null;
+        const isAcknowledged = xrayToAcknowledged.get(xray.examId);
+        
+        // Skip if the result has been acknowledged by a doctor
+        if (isAcknowledged) continue;
+        
+        // Skip if the encounter is closed or ready_to_bill (treated)
+        if (encId) {
+          const encounter = encounterMap.get(encId);
+          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill')) {
+            continue;
+          }
+        }
+        
         const key = `${xray.patientId}`;
         
         if (!patientResults.has(key)) {
@@ -1801,6 +1875,19 @@ export class MemStorage implements IStorage {
         if (!patient) continue;
         
         const encId = ultrasoundToEncounter.get(us.examId) || null;
+        const isAcknowledged = ultrasoundToAcknowledged.get(us.examId);
+        
+        // Skip if the result has been acknowledged by a doctor
+        if (isAcknowledged) continue;
+        
+        // Skip if the encounter is closed or ready_to_bill (treated)
+        if (encId) {
+          const encounter = encounterMap.get(encId);
+          if (encounter && (encounter.status === 'closed' || encounter.status === 'ready_to_bill')) {
+            continue;
+          }
+        }
+        
         const key = `${us.patientId}`;
         
         if (!patientResults.has(key)) {
