@@ -2534,7 +2534,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
 
   // ==================== CONTRACEPTIVES ====================
   
-  "ethinylestradiol/levonorgestrel": {
+  "ethinylestradiol-levonorgestrel": {
     whatItDoes: "Combined oral contraceptive pill containing estrogen and progestin. Prevents pregnancy by stopping ovulation. Very effective when taken correctly.",
     commonUses: [
       "Contraception",
@@ -2609,7 +2609,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
 
   // ==================== ANTIRETROVIRALS ====================
   
-  "tenofovir/lamivudine/dolutegravir": {
+  "tenofovir-lamivudine-dolutegravir": {
     whatItDoes: "First-line HIV treatment combining three powerful antiretroviral medications in one pill. Most effective HIV treatment available. Suppresses virus to undetectable levels.",
     commonUses: [
       "First-line HIV treatment",
@@ -2633,7 +2633,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "tenofovir/lamivudine/efavirenz": {
+  "tenofovir-lamivudine-efavirenz": {
     whatItDoes: "Alternative first-line HIV treatment. Three antiretroviral drugs in one pill. Effective at suppressing HIV virus.",
     commonUses: [
       "First-line HIV treatment",
@@ -2656,7 +2656,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "zidovudine/lamivudine": {
+  "zidovudine-lamivudine": {
     whatItDoes: "Antiretroviral combination used mainly for preventing mother-to-child transmission of HIV. Also part of some second-line regimens.",
     commonUses: [
       "Prevention of mother-to-child HIV transmission",
@@ -2703,7 +2703,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "lopinavir/ritonavir": {
+  "lopinavir-ritonavir": {
     whatItDoes: "Second-line HIV treatment for patients who failed first-line therapy. Powerful protease inhibitor combination. Used for drug-resistant HIV.",
     commonUses: [
       "Second-line HIV treatment",
@@ -3143,7 +3143,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
 
   // ==================== ADDITIONAL INSULIN ====================
   
-  "regular insulin": {
+  "regular-insulin": {
     whatItDoes: "Short-acting insulin for diabetes. Controls blood sugar after meals. Can be given IV in emergencies. Clear solution.",
     commonUses: [
       "Type 1 diabetes mealtime coverage",
@@ -3167,7 +3167,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "nph insulin": {
+  "nph-insulin": {
     whatItDoes: "Intermediate-acting insulin providing basal coverage. Cloudy insulin that must be mixed. Lasts 12-18 hours.",
     commonUses: [
       "Basal insulin coverage for type 1 diabetes",
@@ -3190,7 +3190,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "mixed insulin": {
+  "mixed-insulin": {
     whatItDoes: "Pre-mixed combination of short and intermediate insulin (70/30 or 30/70). Convenient fixed combination. Cloudy appearance.",
     commonUses: [
       "Type 2 diabetes twice daily regimen",
