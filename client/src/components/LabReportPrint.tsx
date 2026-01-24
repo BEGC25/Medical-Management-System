@@ -95,6 +95,29 @@ export function LabReportPrint({
     return isNaN(parsed) ? String(num) : new Intl.NumberFormat('en-US').format(parsed);
   };
 
+  // Helper function for status badge styling
+  const getStatusBadge = (isHigh: boolean): React.ReactNode => {
+    const badgeText = isHigh ? "HIGH" : "LOW";
+    const bgColor = isHigh ? '#dc2626' : '#f59e0b';
+    
+    return (
+      <span style={{
+        display: 'inline-block',
+        marginLeft: '8px',
+        padding: '2px 8px',
+        borderRadius: '12px',
+        background: bgColor,
+        color: 'white',
+        fontSize: '9px',
+        fontWeight: '700',
+        letterSpacing: '0.5px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+      }}>
+        {badgeText}
+      </span>
+    );
+  };
+
   return (
     <div id={containerId} className="prescription" style={{ minHeight: 'auto', height: 'auto' }}>
       {/* Premium Professional Medical Report Layout - Sophisticated Design */}
@@ -217,8 +240,7 @@ export function LabReportPrint({
               borderCollapse: 'separate',
               borderSpacing: '0',
               border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              overflow: 'hidden'
+              borderRadius: '8px'
             }}>
               <thead>
                 <tr style={{ 
@@ -286,26 +308,7 @@ export function LabReportPrint({
                           const numValue = typeof value === 'string' ? parseFloat(value) : value;
                           const normalValue = parseFloat(config.normal);
                           if (!isNaN(numValue) && !isNaN(normalValue)) {
-                            const isHigh = numValue > normalValue;
-                            const badgeText = isHigh ? "HIGH" : "LOW";
-                            const bgColor = isHigh ? '#dc2626' : '#f59e0b';
-                            
-                            statusBadge = (
-                              <span style={{
-                                display: 'inline-block',
-                                marginLeft: '8px',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                background: bgColor,
-                                color: 'white',
-                                fontSize: '9px',
-                                fontWeight: '700',
-                                letterSpacing: '0.5px',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                              }}>
-                                {badgeText}
-                              </span>
-                            );
+                            statusBadge = getStatusBadge(numValue > normalValue);
                           }
                         }
                         
