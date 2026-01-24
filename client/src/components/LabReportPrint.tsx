@@ -136,34 +136,36 @@ export function LabReportPrint({
         <div className="p-6 bg-white" style={{ width: '100%' }}>
           
           {/* HEADER - Premium Professional Style */}
-          <div className="flex items-start justify-between mb-6 pb-5 border-b border-slate-800">
+          <div className="flex items-start justify-between mb-6 pb-6 border-b-2 border-slate-900">
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-slate-900 mb-1 tracking-wide">Bahr El Ghazal Clinic</h1>
-              <p className="text-base text-slate-600 italic font-medium tracking-wide">Excellence in Healthcare</p>
-              <p className="text-sm text-slate-600 mt-2">Aweil, South Sudan</p>
-              <p className="text-sm text-slate-600">Tel: +211916759060 / +211928754760</p>
-              <p className="text-sm text-slate-600">Email: bahr.ghazal.clinic@gmail.com</p>
+              <h1 className="text-5xl font-bold text-slate-900 mb-2 tracking-tight">Bahr El Ghazal Clinic</h1>
+              <p className="text-lg text-slate-700 italic font-medium tracking-wide">Excellence in Healthcare</p>
+              <div className="mt-4 space-y-1">
+                <p className="text-sm text-slate-600">Aweil, South Sudan</p>
+                <p className="text-sm text-slate-600">Tel: +211916759060 / +211928754760</p>
+                <p className="text-sm text-slate-600">Email: bahr.ghazal.clinic@gmail.com</p>
+              </div>
             </div>
-            <div className="w-28 h-28">
+            <div className="w-32 h-32 flex-shrink-0">
               <img src={clinicLogo} alt="Clinic Logo" className="w-full h-full object-contain" />
             </div>
           </div>
 
           {/* TITLE WITH ACCENT BAR - Premium Style */}
-          <div className="text-center mb-5 pb-4 border-b border-slate-200">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-widest">
+          <div className="text-center mb-6 pb-5 border-b border-slate-300">
+            <h2 className="text-3xl font-bold text-slate-900 tracking-widest">
               LABORATORY TEST REPORT
-              {includeInterpretation && <span className="text-lg ml-2 text-slate-700">(Clinical Copy)</span>}
+              {includeInterpretation && <span className="text-xl ml-3 text-slate-600 font-normal">(Clinical Copy)</span>}
             </h2>
-            <div className="h-0.5 bg-slate-800 mt-3 mx-auto" style={{ width: '60%' }} />
+            <div className="h-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent mt-4 mx-auto" style={{ width: '50%' }} />
           </div>
 
           {/* Patient & Test Information Cards - Premium Side by Side Layout */}
           <div className="grid grid-cols-2 gap-4 mb-5">
             {/* Patient Information Box */}
-            <div className="border border-slate-800 shadow-sm rounded-xl p-4 bg-slate-50">
-              <h3 className="font-bold text-base mb-3 text-slate-900 border-b border-slate-800 pb-2 tracking-wide">
-                PATIENT INFORMATION
+            <div className="border-2 border-slate-800 rounded-lg p-5 bg-white shadow-sm">
+              <h3 className="font-bold text-sm mb-4 text-slate-900 border-b-2 border-slate-800 pb-2 tracking-widest uppercase">
+                Patient Information
               </h3>
               <div className="space-y-2 leading-relaxed">
                 <div className="flex justify-between items-center">
@@ -194,9 +196,9 @@ export function LabReportPrint({
             </div>
 
             {/* Test Information Box */}
-            <div className="border border-slate-300 shadow-sm rounded-xl p-4 bg-gray-50">
-              <h3 className="font-bold text-base mb-3 text-slate-900 border-b border-slate-800 pb-2 tracking-wide">
-                TEST DETAILS
+            <div className="border border-slate-400 rounded-lg p-5 bg-slate-50 shadow-sm">
+              <h3 className="font-bold text-sm mb-4 text-slate-900 border-b-2 border-slate-800 pb-2 tracking-widest uppercase">
+                Test Details
               </h3>
               <div className="space-y-2 leading-relaxed">
                 <div className="flex justify-between items-center">
@@ -224,11 +226,11 @@ export function LabReportPrint({
           </div>
 
           {/* Tests Ordered - Premium Badge Style */}
-          <div className="mb-5 p-4 bg-slate-50 border border-slate-300 rounded-lg shadow-sm">
-            <h3 className="font-bold text-sm mb-3 text-slate-800 tracking-wide">Tests Ordered:</h3>
+          <div className="mb-6 p-5 bg-slate-50 border border-slate-300 rounded-lg">
+            <h3 className="font-bold text-sm mb-3 text-slate-900 tracking-wider uppercase">Tests Ordered</h3>
             <div className="flex flex-wrap gap-2">
               {tests.map((test, i) => (
-                <span key={i} className="inline-block bg-white border border-slate-400 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-800 shadow-sm">
+                <span key={i} className="inline-block bg-white border border-slate-400 px-4 py-2 rounded-md text-sm font-medium text-slate-800">
                   {test}
                 </span>
               ))}
@@ -245,16 +247,16 @@ export function LabReportPrint({
               return (
                 <div key={testName} className="mb-4 border border-slate-300 rounded-xl overflow-hidden shadow-sm avoid-break">
                   {/* Test Name Header - Premium Style */}
-                  <div className="bg-slate-900 text-white px-4 py-3">
-                    <h4 className="text-sm font-bold uppercase tracking-wider">■ {testName}</h4>
+                  <div className="bg-slate-900 text-white px-5 py-3 border-b border-slate-700">
+                    <h4 className="text-sm font-bold uppercase tracking-widest">● {testName}</h4>
                   </div>
                   {/* Professional Table */}
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="bg-slate-100 border-b border-slate-300">
-                        <th className="text-left px-4 py-3 font-bold text-slate-800 border-r border-slate-200" style={{ width: '35%' }}>Parameter</th>
-                        <th className="text-center px-4 py-3 font-bold text-slate-800 border-r border-slate-200" style={{ width: '30%' }}>Result</th>
-                        <th className="text-left px-4 py-3 font-bold text-slate-800" style={{ width: '35%' }}>Normal Range</th>
+                        <th className="text-left px-5 py-4 font-bold text-slate-900 border-r border-slate-300 tracking-wide" style={{ width: '35%' }}>Test</th>
+                        <th className="text-center px-5 py-4 font-bold text-slate-900 border-r border-slate-300 tracking-wide" style={{ width: '30%' }}>Result</th>
+                        <th className="text-left px-5 py-4 font-bold text-slate-900 tracking-wide" style={{ width: '35%' }}>Normal Range</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -278,34 +280,16 @@ export function LabReportPrint({
                         
                         return (
                           <tr key={fieldName} className={`border-b border-slate-200 ${bgColor}`}>
-                            <td className="px-4 py-3 font-semibold text-slate-700 border-r border-slate-200">{fieldName}</td>
+                            <td className="px-5 py-4 font-semibold text-slate-700 border-r border-slate-200">{fieldName}</td>
                             <td className={cx(
-                              "px-4 py-3 text-center font-bold text-base border-r border-slate-200",
-                              isNormal && "text-green-700",
-                              isAbnormal && "text-slate-900",
+                              "px-5 py-4 text-center font-bold text-base border-r border-slate-200",
+                              isNormal && "text-emerald-700",
+                              isAbnormal && "text-red-700",
                               !isNormal && !isAbnormal && "text-slate-900"
                             )}>
-                              <div className="flex items-center justify-center gap-2">
-                                <span>{displayValue} {config?.unit || ""}</span>
-                                {isAbnormal && abnormalType === "HIGH" && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                                    HIGH
-                                  </span>
-                                )}
-                                {isAbnormal && abnormalType === "LOW" && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                    LOW
-                                  </span>
-                                )}
-                                {isAbnormal && !abnormalType && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                                    ABNORMAL
-                                  </span>
-                                )}
-                                {isNormal && <span className="ml-1 text-green-600">✓</span>}
-                              </div>
+                              {displayValue} {config?.unit || ""}
                             </td>
-                            <td className="px-4 py-3 text-slate-600 text-sm">
+                            <td className="px-5 py-4 text-slate-600 text-sm">
                               {config?.normal || config?.range || "—"}
                             </td>
                           </tr>
@@ -388,11 +372,11 @@ export function LabReportPrint({
           </div>
 
           {/* FOOTER - Premium Professional Style */}
-          <div className="text-center text-sm text-slate-600 border-t border-slate-300 pt-4 mt-6 avoid-break">
-            <p className="font-bold text-slate-800 tracking-widest text-xs">THIS IS A COMPUTER-GENERATED LABORATORY REPORT</p>
-            <p className="font-bold text-slate-900 mt-3 text-base tracking-wide">Bahr El Ghazal Clinic</p>
-            <p className="text-slate-600 text-sm">Accredited Medical Facility | Republic of South Sudan</p>
-            <p className="mt-2 italic text-slate-700 tracking-wide">Your health is our priority</p>
+          <div className="text-center text-sm text-slate-600 border-t-2 border-slate-300 pt-5 mt-8 avoid-break">
+            <p className="font-bold text-slate-800 tracking-widest text-xs mb-3">THIS IS A COMPUTER-GENERATED LABORATORY REPORT</p>
+            <p className="font-bold text-slate-900 mt-2 text-lg tracking-wide">Bahr El Ghazal Clinic</p>
+            <p className="text-slate-600 text-sm mt-1">Accredited Medical Facility | Republic of South Sudan</p>
+            <p className="mt-3 italic text-slate-700">Your health is our priority</p>
           </div>
           
         </div>
