@@ -203,6 +203,159 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
+  // Form-specific variants for Amoxicillin
+  "amoxicillin-syrup": {
+    whatItDoes: "Kills bacteria causing infections. Penicillin-type antibiotic that works against many common bacteria. Liquid form ideal for children.",
+    commonUses: [
+      "Chest infections (pneumonia, bronchitis)",
+      "Ear infections",
+      "Throat infections",
+      "Skin and soft tissue infections",
+      "Urinary tract infections"
+    ],
+    importantSafety: {
+      dos: ["Take full course even if feeling better", "Take every 8 hours (3 times daily)", "Can take with or without food", "Finish all of the liquid medicine even when feeling better"],
+      donts: ["Stop if allergic rash develops", "Do not use if penicillin allergy", "May reduce birth control effectiveness", "Report severe diarrhea"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 5-7 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe in all trimesters",
+      breastfeeding: "Safe",
+      children: "Safe, commonly used antibiotic",
+      elderly: "Safe, adjust dose if kidney problems"
+    }
+  },
+
+  // Form-specific variants for Ampicillin
+  "ampicillin-injection": {
+    whatItDoes: "Injectable antibiotic for serious bacterial infections. Penicillin-type antibiotic given via injection when oral medication is not suitable.",
+    commonUses: [
+      "Severe chest infections (pneumonia)",
+      "Meningitis",
+      "Septicemia (blood infections)",
+      "Severe urinary tract infections",
+      "Perioperative prophylaxis"
+    ],
+    importantSafety: {
+      dos: ["Given by healthcare provider via injection", "Complete full course of treatment as prescribed", "Report any injection site reactions", "Monitor for allergic reactions"],
+      donts: ["Stop if allergic rash develops", "Do not use if penicillin allergy", "Report fever or worsening symptoms", "Report severe diarrhea immediately"]
+    },
+    howFastItWorks: {
+      onset: "Rapid onset, works within hours",
+      duration: "Usually given every 4-6 hours"
+    },
+    specialGroups: {
+      pregnancy: "Safe in all trimesters",
+      breastfeeding: "Safe",
+      children: "Safe, commonly used antibiotic",
+      elderly: "Safe, adjust dose if kidney problems"
+    }
+  },
+
+  // Form-specific variants for Ciprofloxacin
+  "ciprofloxacin-drops": {
+    whatItDoes: "Fluoroquinolone antibiotic eye drops. Broad spectrum coverage. Excellent for bacterial conjunctivitis and corneal ulcers.",
+    commonUses: [
+      "Bacterial conjunctivitis",
+      "Corneal ulcers",
+      "Eye infection prevention post-surgery",
+      "Severe eye infections"
+    ],
+    importantSafety: {
+      dos: ["Apply every 2-4 hours for first 2 days, then 4 times daily", "Effective against many bacteria", "Good for contact lens-related infections", "Complete full course"],
+      donts: ["Do not use for viral infections", "Temporary stinging on application", "Remove contact lenses before use", "Do not touch dropper to eye"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 1-2 days",
+      duration: "Usually 7-10 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe for eye use",
+      breastfeeding: "Safe for eye use",
+      children: "Safe",
+      elderly: "Safe"
+    }
+  },
+
+  // Form-specific variants for Gentamicin
+  "gentamicin-injection": {
+    whatItDoes: "Injectable antibiotic for serious bacterial infections. Aminoglycoside antibiotic effective against many bacteria. Requires kidney function monitoring.",
+    commonUses: [
+      "Severe bacterial infections",
+      "Septicemia (blood infections)",
+      "Complicated urinary tract infections",
+      "Intra-abdominal infections",
+      "Bone and joint infections"
+    ],
+    importantSafety: {
+      dos: ["Given by healthcare provider via injection", "Requires regular kidney function monitoring", "Complete full course of treatment", "Report hearing changes immediately"],
+      donts: ["Do not use without monitoring kidney function", "Report ringing in ears or hearing loss", "Report decreased urine output", "Avoid other nephrotoxic drugs"]
+    },
+    howFastItWorks: {
+      onset: "Rapid onset, works within hours",
+      duration: "Usually given once or twice daily"
+    },
+    specialGroups: {
+      pregnancy: "Avoid unless absolutely necessary",
+      breastfeeding: "Use with caution",
+      children: "Use with dose adjustment and monitoring",
+      elderly: "Use cautiously, monitor kidney function closely"
+    }
+  },
+
+  "gentamicin-drops": {
+    whatItDoes: "Strong antibiotic eye drops for serious bacterial eye infections. Broad spectrum coverage. Effective for severe conjunctivitis and corneal ulcers.",
+    commonUses: [
+      "Severe bacterial conjunctivitis",
+      "Corneal ulcers",
+      "Bacterial keratitis",
+      "Post-operative eye infection prevention"
+    ],
+    importantSafety: {
+      dos: ["Apply 1-2 drops every 4 hours initially", "Can increase to every 1-2 hours for severe infections", "Continue for 48 hours after cure", "Effective for serious infections"],
+      donts: ["Do not use for viral conjunctivitis", "Do not share eye drops", "Discard 28 days after opening", "Report worsening vision"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-10 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe for eye use",
+      breastfeeding: "Safe for eye use",
+      children: "Safe",
+      elderly: "Safe"
+    }
+  },
+
+  // Form-specific variants for Metronidazole
+  "metronidazole-injection": {
+    whatItDoes: "Injectable medication that kills parasites and certain bacteria. Used for serious infections when oral medication is not suitable.",
+    commonUses: [
+      "Severe intra-abdominal infections",
+      "Anaerobic bacterial infections",
+      "Perioperative prophylaxis",
+      "Severe pelvic infections",
+      "Brain abscess"
+    ],
+    importantSafety: {
+      dos: ["Given by healthcare provider via IV infusion", "Complete full course of treatment", "NEVER drink alcohol during treatment and 48 hours after", "Monitor for neurological symptoms"],
+      donts: ["NEVER drink alcohol (severe reaction)", "Report tingling or numbness in hands/feet", "Avoid if first trimester pregnancy", "Report severe headache or vision changes"]
+    },
+    howFastItWorks: {
+      onset: "Rapid onset, works within hours",
+      duration: "Usually given every 8 hours"
+    },
+    specialGroups: {
+      pregnancy: "Avoid first trimester, safe in 2nd and 3rd",
+      breastfeeding: "Safe for short courses",
+      children: "Safe, dose by weight",
+      elderly: "Safe, may need lower dose"
+    }
+  },
+
   "azithromycin": {
     whatItDoes: "Treats chest, throat and ear infections. Works against bacteria resistant to penicillin. Good for patients allergic to penicillin.",
     commonUses: [
@@ -2262,12 +2415,30 @@ const DRUG_SUMMARIES: Record<string, string> = {
   "lidocaine": "Local anesthetic for numbing. Used before procedures and stitches. Works within minutes.",
 };
 
+// Form mappings for dosage form normalization
+const FORM_MAPPINGS: Record<string, string> = {
+  "syrup": "syrup",
+  "suspension": "syrup",
+  "injection": "injection",
+  "iv": "injection",
+  "im": "injection",
+  "drops": "drops",
+  "eye drops": "drops",
+  "ear drops": "drops",
+  "tablet": "tablet",
+  "capsule": "capsule",
+  "cream": "cream",
+  "ointment": "ointment",
+  "inhaler": "inhaler"
+};
+
 /**
  * Get comprehensive educational information for a drug
  * @param genericName - The generic name of the drug (case-insensitive, partial match supported)
+ * @param form - Optional dosage form (e.g., "tablet", "syrup", "injection", "drops")
  * @returns DrugEducationalInfo object with all educational content
  */
-export function getDrugEducationalInfo(genericName: string): DrugEducationalInfo {
+export function getDrugEducationalInfo(genericName: string, form?: string): DrugEducationalInfo {
   if (!genericName) {
     return DEFAULT_INFO;
   }
@@ -2280,6 +2451,17 @@ export function getDrugEducationalInfo(genericName: string): DrugEducationalInfo
     .replace(/\s+/g, "-")
     .replace(/\//g, "-")
     .replace(/acetaminophen/i, "paracetamol"); // Handle acetaminophen alias
+
+  // If form is provided, try form-specific lookup first
+  if (form) {
+    const normalizedForm = form.toLowerCase().trim();
+    const mappedForm = FORM_MAPPINGS[normalizedForm] || normalizedForm;
+    const formSpecificKey = `${normalizedKey}-${mappedForm}`;
+    
+    if (DRUG_DATABASE[formSpecificKey]) {
+      return DRUG_DATABASE[formSpecificKey];
+    }
+  }
 
   if (DRUG_DATABASE[normalizedKey]) {
     return DRUG_DATABASE[normalizedKey];
@@ -2358,10 +2540,11 @@ export function getDrugEducationalInfo(genericName: string): DrugEducationalInfo
 /**
  * Get a quick summary of a drug for tooltips
  * @param genericName - The generic name of the drug
+ * @param form - Optional dosage form (e.g., "tablet", "syrup", "injection", "drops")
  * @returns A brief summary string suitable for tooltips
  */
-export function getDrugQuickSummary(genericName: string): string {
-  const info = getDrugEducationalInfo(genericName);
+export function getDrugQuickSummary(genericName: string, form?: string): string {
+  const info = getDrugEducationalInfo(genericName, form);
   
   // For default info, return a generic message
   if (info === DEFAULT_INFO) {

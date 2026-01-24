@@ -38,7 +38,7 @@ interface DrugInfoModalProps {
 
 // Educational drug information from shared module
 const getEducationalInfo = (drug: Drug): DrugEducationalInfo => {
-  return getDrugEducationalInfo(drug.genericName || drug.name);
+  return getDrugEducationalInfo(drug.genericName || drug.name, drug.form);
 };
 
 export function DrugInfoModal({ drug, stockInfo, open, onOpenChange }: DrugInfoModalProps) {
