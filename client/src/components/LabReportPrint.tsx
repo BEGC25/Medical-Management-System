@@ -125,7 +125,11 @@ export function LabReportPrint({
   return (
     <div id={containerId} className="prescription" style={{ minHeight: 'auto', height: 'auto' }}>
       {/* Premium Professional Medical Report Layout - Sophisticated Design */}
-      <div style={{ background: '#ffffff' }}>
+      <div style={{ 
+        background: '#ffffff',
+        borderRadius: '8px',
+        overflow: 'hidden'
+      }}>
         <div style={{ width: '100%' }}>
           
           {/* PREMIUM HEADER - Dark Blue Gradient with WHITE Text */}
@@ -578,7 +582,7 @@ export function LabReportPrint({
             borderTop: '2px solid #e2e8f0',
             paddingTop: '16px',
             marginTop: '24px',
-            padding: '16px 24px 0 24px'
+            padding: '16px 24px 0'
           }}>
             {/* Signature Line */}
             <div style={{
