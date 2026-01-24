@@ -5,7 +5,7 @@ import {
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
   DollarSign, Package, XCircle, MoreVertical, Copy,
-  CheckCircle, Trash2, AlertCircle, ArrowRight, RefreshCw
+  CheckCircle, Trash2, AlertCircle, ArrowRight, RefreshCw, Lock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { type Service, type InsertService, insertServiceSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
+import { generateAndValidateServiceCode, validateServiceCode, sanitizeCode } from "@shared/service-code-utils";
 
 /**
  * Normalize isActive value to handle different data types from database
@@ -495,64 +496,6 @@ const PREDEFINED_SERVICES = {
   pharmacy: {},
 };
 
-// Code generation utility functions
-function generateServiceCode(serviceName: string, category: string): string {
-  const categoryPrefixes: Record<string, string> = {
-    consultation: "CONS",
-    laboratory: "LAB",
-    radiology: "RAD",
-    ultrasound: "US",
-    pharmacy: "PHARM",
-    procedure: "PROC"
-  };
-  
-  const prefix = categoryPrefixes[category] || "SVC";
-  
-  // 1. Check for abbreviation in parentheses (case-insensitive)
-  const abbrevMatch = serviceName.match(/\(([A-Za-z0-9-]+)\)/);
-  if (abbrevMatch) {
-    return `${prefix}-${abbrevMatch[1].toUpperCase()}`;
-  }
-  
-  // 2. Extract first significant word(s), filtering common words and handling empty strings
-  const words = serviceName.split(' ')
-    .map(w => w.trim())
-    .filter(w => w.length > 0 && !['for', 'and', 'or', 'the', 'a', 'an', 'of', 'with'].includes(w.toLowerCase()));
-  
-  if (words.length === 0) {
-    return `${prefix}-SERVICE`;
-  }
-  
-  if (words.length === 1) {
-    return `${prefix}-${words[0].substring(0, 8).toUpperCase()}`;
-  }
-  
-  if (words.length === 2) {
-    return `${prefix}-${words[0].substring(0, 4).toUpperCase()}${words[1].substring(0, 4).toUpperCase()}`;
-  }
-  
-  // 3. Use first letters of first 2-3 words
-  const descriptor = words.slice(0, Math.min(3, words.length))
-    .map(w => w[0])
-    .join('')
-    .toUpperCase();
-    
-  return `${prefix}-${descriptor}`;
-}
-
-// Ensure uniqueness
-function ensureUniqueCode(code: string, existingCodes: string[]): string {
-  let uniqueCode = code;
-  let counter = 1;
-  
-  while (existingCodes.includes(uniqueCode)) {
-    uniqueCode = `${code}${counter}`;
-    counter++;
-  }
-  
-  return uniqueCode;
-}
-
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -608,16 +551,25 @@ export default function ServiceManagement() {
   const watchedName = form.watch("name");
   const watchedCode = form.watch("code");
 
-  // Auto-suggest code based on name and category
+  // Memoize existing codes to avoid unnecessary rerenders
+  const existingCodes = useMemo(() => 
+    services.map(s => s.code).filter(Boolean) as string[], 
+    [services]
+  );
+
+  // Auto-generate code based on name and category
   useEffect(() => {
     if (!editingService && watchedName && watchedCategory) {
-      const suggester = CODE_SUGGESTIONS[watchedCategory as keyof typeof CODE_SUGGESTIONS];
-      if (suggester && !watchedCode) {
-        const suggested = suggester(watchedName);
-        form.setValue("code", suggested);
+      try {
+        const generatedCode = generateAndValidateServiceCode(watchedName, watchedCategory, existingCodes);
+        form.setValue("code", generatedCode);
+      } catch (error) {
+        console.error("Error generating code:", error);
+        // Fallback to empty if generation fails
+        form.setValue("code", "");
       }
     }
-  }, [watchedName, watchedCategory, editingService, watchedCode, form]);
+  }, [watchedName, watchedCategory, editingService, existingCodes, form]);
 
   const createMutation = useMutation({
     mutationFn: async (data: ServiceFormData) => {
@@ -1076,7 +1028,8 @@ export default function ServiceManagement() {
     const category = form.watch('category');
     if (!category || !serviceName) return;
     
-    const generatedCode = generateServiceCode(serviceName, category);
+    const existingCodes = services.map(s => s.code).filter(Boolean) as string[];
+    const generatedCode = generateAndValidateServiceCode(serviceName, category, existingCodes);
     
     form.setValue('name', serviceName);
     form.setValue('code', generatedCode);
@@ -1279,21 +1232,33 @@ export default function ServiceManagement() {
                     name="code"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-1">
-                        <FormLabel className="font-semibold">
+                        <FormLabel className="font-semibold flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-gray-400" />
                           Service Code {watchedCategory === "consultation" && <span className="text-red-500">*</span>}
                         </FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
-                            value={field.value || ""} 
-                            placeholder={getCodePlaceholder(watchedCategory)} 
-                            data-testid="input-service-code"
-                            className="h-11 uppercase"
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                          />
+                          <div className="relative">
+                            <Input 
+                              {...field} 
+                              value={field.value || ""} 
+                              placeholder={getCodePlaceholder(watchedCategory)} 
+                              data-testid="input-service-code"
+                              className="h-11 font-mono font-semibold bg-gray-50 dark:bg-gray-900 border-2 pl-3 pr-8"
+                              readOnly
+                              title="Code is auto-generated from service name"
+                            />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                              {field.value && validateServiceCode(field.value) === null ? (
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                              ) : field.value ? (
+                                <AlertCircle className="w-4 h-4 text-red-500" />
+                              ) : null}
+                            </div>
+                          </div>
                         </FormControl>
-                        <FormDescription className="text-xs">
-                          {getCodeExample(watchedCategory)}
+                        <FormDescription className="text-xs flex items-center gap-1">
+                          <Lock className="w-3 h-3" />
+                          Auto-generated from service name
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -1919,9 +1884,25 @@ export default function ServiceManagement() {
                             />
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
-                            <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                              {service.code || "-"}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded border border-gray-300 dark:border-gray-600">
+                                {service.code || "-"}
+                              </span>
+                              {service.code && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(service.code || '');
+                                    toast({ title: "Code copied!", description: service.code });
+                                  }}
+                                  title={`Copy code: ${service.code}`}
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-4">
                             <div className="font-medium text-gray-900 dark:text-gray-100">

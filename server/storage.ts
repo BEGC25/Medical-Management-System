@@ -7,6 +7,7 @@ import { hashPassword } from "./auth-service";
 import { today } from "./utils/date";
 import { getClinicDayKey } from "@shared/clinic-date";
 import { generateTransactionId } from "./utils/transactionId";
+import { generateAndValidateServiceCode } from "@shared/service-code-utils";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 

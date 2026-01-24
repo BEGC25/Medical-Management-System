@@ -1,0 +1,248 @@
+/**
+ * Enterprise-grade service code generation and validation utilities
+ * 
+ * Ensures all service codes follow a strict, standardized format:
+ * - Character set: A-Z, 0-9, and - only
+ * - Pattern: CAT-ABBR or CAT-SUB-ABBR
+ * - Max length: 24 characters
+ * - No consecutive hyphens, no leading/trailing hyphens
+ */
+
+/**
+ * Category prefix mapping for service codes
+ */
+const CATEGORY_PREFIXES: Record<string, string> = {
+  consultation: "CONS",
+  laboratory: "LAB",
+  radiology: "RAD",
+  ultrasound: "US",
+  pharmacy: "PHARM",
+  procedure: "PROC",
+};
+
+/**
+ * Minimum base code length required to add numeric suffix
+ */
+const MIN_BASE_CODE_LENGTH = 3;
+
+/**
+ * Stopwords to filter out when generating abbreviations
+ */
+const STOPWORDS = new Set([
+  'for', 'and', 'or', 'the', 'a', 'an', 'of', 'with', 'in', 'on', 'at',
+  'to', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be', 'been',
+]);
+
+/**
+ * Maximum allowed length for service codes (including prefix and hyphens)
+ */
+const MAX_CODE_LENGTH = 24;
+
+/**
+ * Sanitizes a string to only contain allowed characters (A-Z, 0-9, -)
+ * - Removes all special characters, whitespace, and punctuation
+ * - Converts to uppercase
+ * - Removes consecutive hyphens
+ * - Removes leading/trailing hyphens
+ */
+export function sanitizeCode(code: string): string {
+  if (!code) return '';
+  
+  return code
+    .toUpperCase()
+    // Replace any non-alphanumeric character (except hyphens) with hyphen
+    .replace(/[^A-Z0-9-]/g, '-')
+    // Remove consecutive hyphens
+    .replace(/-+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Validates a service code against enterprise standards
+ * Returns an error message if invalid, null if valid
+ */
+export function validateServiceCode(code: string | null | undefined): string | null {
+  if (!code || !code.trim()) {
+    return null; // Code is optional for some categories
+  }
+  
+  const trimmed = code.trim();
+  
+  // Check allowed characters only (A-Z, 0-9, -)
+  if (!/^[A-Z0-9-]+$/.test(trimmed)) {
+    return 'Service code must only contain uppercase letters, numbers, and hyphens';
+  }
+  
+  // Check for consecutive hyphens
+  if (/--/.test(trimmed)) {
+    return 'Service code must not contain consecutive hyphens';
+  }
+  
+  // Check for leading/trailing hyphens
+  if (trimmed.startsWith('-') || trimmed.endsWith('-')) {
+    return 'Service code must not start or end with a hyphen';
+  }
+  
+  // Check max length
+  if (trimmed.length > MAX_CODE_LENGTH) {
+    return `Service code must not exceed ${MAX_CODE_LENGTH} characters`;
+  }
+  
+  return null; // Valid
+}
+
+/**
+ * Extracts abbreviation from service name
+ * Priority:
+ * 1. Extract from parentheses if present (e.g., "Blood Test (CBC)" -> "CBC")
+ * 2. Generate from significant words (removing stopwords)
+ */
+function extractAbbreviation(serviceName: string): string {
+  // 1. Check for abbreviation in parentheses - match any content, sanitize after
+  const parenMatch = serviceName.match(/\(([^)]+)\)/);
+  if (parenMatch) {
+    const sanitized = sanitizeCode(parenMatch[1]);
+    // If sanitization resulted in empty string, fall through to word generation
+    if (sanitized) {
+      return sanitized;
+    }
+  }
+  
+  // 2. Generate from significant words
+  const words = serviceName
+    .split(/[\s\-\/]+/) // Split on spaces, hyphens, and slashes
+    .map(w => w.trim())
+    .filter(w => w.length > 0 && !STOPWORDS.has(w.toLowerCase()));
+  
+  if (words.length === 0) {
+    return 'SERVICE';
+  }
+  
+  if (words.length === 1) {
+    // Single word: take first 8 characters and sanitize
+    const sanitized = sanitizeCode(words[0].substring(0, 8));
+    return sanitized || 'SERVICE'; // Fallback if sanitization results in empty
+  }
+  
+  if (words.length === 2) {
+    // Two words: take first 4 chars of each
+    const sanitized = sanitizeCode(
+      words[0].substring(0, 4) + words[1].substring(0, 4)
+    );
+    return sanitized || 'SERVICE'; // Fallback if sanitization results in empty
+  }
+  
+  // Three or more words: use first letters (up to 6 letters)
+  const acronym = words
+    .slice(0, Math.min(6, words.length))
+    .filter(w => w.length > 0) // Ensure word is not empty
+    .map(w => w[0])
+    .join('');
+  
+  return sanitizeCode(acronym || 'SVC'); // Fallback if no valid acronym
+}
+
+/**
+ * Generates a service code from service name and category
+ * Format: CAT-ABBR
+ * 
+ * @param serviceName - The name of the service
+ * @param category - The service category (consultation, laboratory, etc.)
+ * @returns Generated service code following enterprise standards
+ */
+export function generateServiceCode(serviceName: string, category: string): string {
+  const prefix = CATEGORY_PREFIXES[category] || 'SVC';
+  const abbr = extractAbbreviation(serviceName);
+  
+  let code = `${prefix}-${abbr}`;
+  
+  // Ensure max length
+  if (code.length > MAX_CODE_LENGTH) {
+    // Trim abbreviation to fit
+    const maxAbbrLength = MAX_CODE_LENGTH - prefix.length - 1; // -1 for hyphen
+    const trimmedAbbr = abbr.substring(0, maxAbbrLength);
+    code = `${prefix}-${trimmedAbbr}`;
+  }
+  
+  return code;
+}
+
+/**
+ * Ensures a code is unique by adding numeric suffix if needed
+ * Format: CODE -> CODE-02, CODE-03, etc.
+ * 
+ * @param code - The base code to make unique
+ * @param existingCodes - Array of existing codes to check against
+ * @returns Unique code with suffix if needed
+ */
+export function ensureUniqueCode(code: string, existingCodes: string[]): string {
+  const existingSet = new Set(existingCodes.map(c => c?.toUpperCase()).filter(Boolean));
+  
+  if (!existingSet.has(code.toUpperCase())) {
+    return code;
+  }
+  
+  // Add numeric suffix
+  let counter = 2;
+  let uniqueCode: string;
+  
+  while (true) {
+    const suffix = counter.toString().padStart(2, '0'); // 02, 03, etc.
+    const suffixWithHyphen = `-${suffix}`;
+    
+    // Check if code + suffix fits within max length
+    if ((code.length + suffixWithHyphen.length) <= MAX_CODE_LENGTH) {
+      uniqueCode = `${code}${suffixWithHyphen}`;
+    } else {
+      // Need to shorten the base code to fit the suffix
+      const maxBaseLength = MAX_CODE_LENGTH - suffixWithHyphen.length;
+      if (maxBaseLength < MIN_BASE_CODE_LENGTH) {
+        // Code is too long even for minimal suffix - should not happen in practice
+        throw new Error(`Base code "${code}" is too long to add uniqueness suffix`);
+      }
+      const shortenedCode = code.substring(0, maxBaseLength);
+      uniqueCode = `${shortenedCode}${suffixWithHyphen}`;
+    }
+    
+    if (!existingSet.has(uniqueCode.toUpperCase())) {
+      return uniqueCode;
+    }
+    
+    counter++;
+    
+    // Safety check to prevent infinite loop
+    if (counter > 999) {
+      throw new Error(`Unable to generate unique code for base: ${code}`);
+    }
+  }
+}
+
+/**
+ * Generates and validates a complete service code
+ * This is the main function to use for creating new service codes
+ * 
+ * @param serviceName - The name of the service
+ * @param category - The service category
+ * @param existingCodes - Array of existing codes to ensure uniqueness
+ * @returns Valid, unique service code
+ */
+export function generateAndValidateServiceCode(
+  serviceName: string,
+  category: string,
+  existingCodes: string[] = []
+): string {
+  // Generate code (already sanitized via extractAbbreviation)
+  const baseCode = generateServiceCode(serviceName, category);
+  
+  // Ensure uniqueness
+  const uniqueCode = ensureUniqueCode(baseCode, existingCodes);
+  
+  // Final validation
+  const validationError = validateServiceCode(uniqueCode);
+  if (validationError) {
+    throw new Error(`Generated code validation failed: ${validationError}`);
+  }
+  
+  return uniqueCode;
+}

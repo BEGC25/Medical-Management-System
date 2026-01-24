@@ -28,6 +28,7 @@ import {
   normalizeRelatedType,
   relatedTypeToDepartment,
 } from "@shared/schema";
+import { generateAndValidateServiceCode, sanitizeCode } from "@shared/service-code-utils";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -1550,7 +1551,24 @@ router.get("/api/services", async (req, res) => {
 // Only admins can create/update services (prices/catalog)
 router.post("/api/services", async (req, res) => {
   try {
-    const service = await storage.createService(req.body);
+    const serviceData = { ...req.body };
+    
+    // Auto-generate code if not provided or sanitize if provided
+    if (!serviceData.code || !serviceData.code.trim()) {
+      // Generate code from name and category
+      const existingServices = await storage.getServices();
+      const existingCodes = existingServices.map(s => s.code).filter(Boolean) as string[];
+      serviceData.code = generateAndValidateServiceCode(
+        serviceData.name,
+        serviceData.category,
+        existingCodes
+      );
+    } else {
+      // Sanitize provided code
+      serviceData.code = sanitizeCode(serviceData.code);
+    }
+    
+    const service = await storage.createService(serviceData);
     res.status(201).json(service);
   } catch (error) {
     console.error("Error creating service:", error);
@@ -1561,7 +1579,14 @@ router.post("/api/services", async (req, res) => {
 router.put("/api/services/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const service = await storage.updateService(id, req.body);
+    const serviceData = { ...req.body };
+    
+    // Sanitize code if provided
+    if (serviceData.code) {
+      serviceData.code = sanitizeCode(serviceData.code);
+    }
+    
+    const service = await storage.updateService(id, serviceData);
     res.json(service);
   } catch (error) {
     console.error("Error updating service:", error);
