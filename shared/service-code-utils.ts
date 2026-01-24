@@ -21,6 +21,11 @@ const CATEGORY_PREFIXES: Record<string, string> = {
 };
 
 /**
+ * Minimum base code length required to add numeric suffix
+ */
+const MIN_BASE_CODE_LENGTH = 3;
+
+/**
  * Stopwords to filter out when generating abbreviations
  */
 const STOPWORDS = new Set([
@@ -97,7 +102,11 @@ function extractAbbreviation(serviceName: string): string {
   // 1. Check for abbreviation in parentheses - match any content, sanitize after
   const parenMatch = serviceName.match(/\(([^)]+)\)/);
   if (parenMatch) {
-    return sanitizeCode(parenMatch[1]);
+    const sanitized = sanitizeCode(parenMatch[1]);
+    // If sanitization resulted in empty string, fall through to word generation
+    if (sanitized) {
+      return sanitized;
+    }
   }
   
   // 2. Generate from significant words
@@ -111,15 +120,17 @@ function extractAbbreviation(serviceName: string): string {
   }
   
   if (words.length === 1) {
-    // Single word: take first 8 characters
-    return sanitizeCode(words[0].substring(0, 8));
+    // Single word: take first 8 characters and sanitize
+    const sanitized = sanitizeCode(words[0].substring(0, 8));
+    return sanitized || 'SERVICE'; // Fallback if sanitization results in empty
   }
   
   if (words.length === 2) {
     // Two words: take first 4 chars of each
-    return sanitizeCode(
+    const sanitized = sanitizeCode(
       words[0].substring(0, 4) + words[1].substring(0, 4)
     );
+    return sanitized || 'SERVICE'; // Fallback if sanitization results in empty
   }
   
   // Three or more words: use first letters (up to 6 letters)
@@ -186,7 +197,7 @@ export function ensureUniqueCode(code: string, existingCodes: string[]): string 
     } else {
       // Need to shorten the base code to fit the suffix
       const maxBaseLength = MAX_CODE_LENGTH - suffixWithHyphen.length;
-      if (maxBaseLength < 3) {
+      if (maxBaseLength < MIN_BASE_CODE_LENGTH) {
         // Code is too long even for minimal suffix - should not happen in practice
         throw new Error(`Base code "${code}" is too long to add uniqueness suffix`);
       }
@@ -221,12 +232,11 @@ export function generateAndValidateServiceCode(
   category: string,
   existingCodes: string[] = []
 ): string {
-  // Generate and sanitize the base code first
+  // Generate code (already sanitized via extractAbbreviation)
   const baseCode = generateServiceCode(serviceName, category);
-  const sanitizedBase = sanitizeCode(baseCode);
   
-  // Then ensure uniqueness (after sanitization to avoid breaking uniqueness)
-  const uniqueCode = ensureUniqueCode(sanitizedBase, existingCodes);
+  // Ensure uniqueness
+  const uniqueCode = ensureUniqueCode(baseCode, existingCodes);
   
   // Final validation
   const validationError = validateServiceCode(uniqueCode);

@@ -5,7 +5,7 @@ import {
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
   DollarSign, Package, XCircle, MoreVertical, Copy,
-  CheckCircle, Trash2, AlertCircle, ArrowRight, RefreshCw
+  CheckCircle, Trash2, AlertCircle, ArrowRight, RefreshCw, Lock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1232,7 +1232,8 @@ export default function ServiceManagement() {
                     name="code"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-1">
-                        <FormLabel className="font-semibold">
+                        <FormLabel className="font-semibold flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-gray-400" />
                           Service Code {watchedCategory === "consultation" && <span className="text-red-500">*</span>}
                         </FormLabel>
                         <FormControl>
@@ -1242,11 +1243,11 @@ export default function ServiceManagement() {
                               value={field.value || ""} 
                               placeholder={getCodePlaceholder(watchedCategory)} 
                               data-testid="input-service-code"
-                              className="h-11 font-mono font-semibold bg-gray-50 dark:bg-gray-900 border-2"
+                              className="h-11 font-mono font-semibold bg-gray-50 dark:bg-gray-900 border-2 pl-3 pr-8"
                               readOnly
                               title="Code is auto-generated from service name"
                             />
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                               {field.value && validateServiceCode(field.value) === null ? (
                                 <CheckCircle className="w-4 h-4 text-green-500" />
                               ) : field.value ? (
@@ -1255,7 +1256,8 @@ export default function ServiceManagement() {
                             </div>
                           </div>
                         </FormControl>
-                        <FormDescription className="text-xs">
+                        <FormDescription className="text-xs flex items-center gap-1">
+                          <Lock className="w-3 h-3" />
                           Auto-generated from service name
                         </FormDescription>
                         <FormMessage />
