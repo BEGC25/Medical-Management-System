@@ -1,6 +1,17 @@
+// client/src/components/LabReportPrint.tsx
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { formatLongDate } from "@/lib/date-utils";
+
+/**
+ * Billion-dollar premium print layout (matches your reference)
+ * - No mixed mock logo: circle badge shows ONLY your logo
+ * - Column header "Parameter" -> "Test Name"
+ * - Removes HIGH/LOW pills entirely
+ * - Fixes "25 years years"
+ * - Fixes page blank space by allowing table to break across pages (no avoid-break on full table)
+ * - Prevents ugly wrapping in result values (nowrap)
+ */
 
 interface LabReportPrintProps {
   containerId: string;
@@ -25,13 +36,19 @@ interface LabReportPrintProps {
     gender?: string;
     phoneNumber?: string;
   } | null;
-  resultFields: Record<string, Record<string, {
-    type: "number" | "text" | "select" | "multiselect";
-    unit?: string;
-    range?: string;
-    normal?: string;
-    options?: string[];
-  }>>;
+  resultFields: Record<
+    string,
+    Record<
+      string,
+      {
+        type: "number" | "text" | "select" | "multiselect";
+        unit?: string;
+        range?: string;
+        normal?: string;
+        options?: string[];
+      }
+    >
+  >;
   includeInterpretation?: boolean;
   formValues?: {
     completedDate?: string;
@@ -49,7 +66,9 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   }
 }
 
-function fullName(p?: { firstName?: string; lastName?: string; patientId?: string } | null) {
+function fullName(
+  p?: { firstName?: string; lastName?: string; patientId?: string } | null
+) {
   if (!p) return "";
   const n = [p.firstName, p.lastName].filter(Boolean).join(" ").trim();
   return n || p.patientId || "";
@@ -57,6 +76,62 @@ function fullName(p?: { firstName?: string; lastName?: string; patientId?: strin
 
 function cx(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
+}
+
+function safeLongDate(v?: string) {
+  if (!v) return "—";
+  try {
+    return formatLongDate(v);
+  } catch {
+    return "—";
+  }
+}
+
+function normalize(v: any) {
+  return (v ?? "").toString().trim().toLowerCase();
+}
+
+function titleCase(v?: string) {
+  if (!v) return "—";
+  const s = v.trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "—";
+}
+
+function formatAge(age: any) {
+  if (age === null || age === undefined || age === "") return "—";
+  const s = String(age).trim();
+  if (/year/i.test(s)) return s; // already includes years
+  const n = Number(s);
+  if (Number.isFinite(n)) return `${n} years`;
+  return s;
+}
+
+function isCommonNormalText(v: string) {
+  const x = normalize(v);
+  return x === "negative" || x === "not seen" || x === "none" || x === "normal";
+}
+
+/**
+ * Attempts to parse a numeric range from strings like:
+ * "13.5-17.5 g/dL (Male)" or "70-110 (fasting)" or "4,000-11,000 /µL"
+ */
+function parseNumericRange(rangeText?: string) {
+  if (!rangeText) return null;
+  const cleaned = rangeText.replace(/,/g, "");
+  const nums = cleaned.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+  if (nums.length >= 2) {
+    const min = Math.min(nums[0], nums[1]);
+    const max = Math.max(nums[0], nums[1]);
+    return { min, max };
+  }
+  return null;
+}
+
+function tryParseNumber(v: string) {
+  const m = (v ?? "").toString().replace(/,/g, "").match(/-?\d+(\.\d+)?/);
+  if (!m) return null;
+  const n = Number(m[0]);
+  return Number.isFinite(n) ? n : null;
 }
 
 export function LabReportPrint({
@@ -71,188 +146,362 @@ export function LabReportPrint({
   if (!visible) return null;
 
   const tests = parseJSON<string[]>(labTest.tests, []);
-  const results = parseJSON<Record<string, Record<string, string>>>(labTest.results, {});
-  const interpretation = interpretLabResults(results);
+  const results = parseJSON<Record<string, Record<string, string>>>(
+    labTest.results,
+    {}
+  );
 
-  // Format number with commas
-  const formatNumber = (num: number | string): string => {
-    const parsed = typeof num === 'string' ? parseFloat(num) : num;
-    return isNaN(parsed) ? String(num) : new Intl.NumberFormat('en-US').format(parsed);
-  };
+  const interpretation = includeInterpretation
+    ? interpretLabResults(results)
+    : { criticalFindings: [] as string[], warnings: [] as string[] };
+
+  const completedDate = formValues?.completedDate || labTest.completedDate;
+  const resultStatus = formValues?.resultStatus || labTest.resultStatus;
+  const completedBy = formValues?.completedBy || labTest.completedBy;
+  const technicianNotes = formValues?.technicianNotes || labTest.technicianNotes;
+
+  const patientName = fullName(patient) || "—";
 
   return (
-    <div id={containerId} className="bg-white" style={{ minHeight: 'auto', height: 'auto', width: '100%', fontFamily: 'Inter, sans-serif' }}>
-      
-      {/* 1. TOP HEADER - Solid Dark Blue Block */}
-      <div className="bg-slate-900 text-white p-8 flex justify-between items-center print:bg-slate-900 print:print-color-adjust-exact">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Bahr El Ghazal Clinic</h1>
-          <p className="text-slate-300 text-sm font-medium">Aweil, South Sudan | Tel: +211 916 759 060 / +211 928 754 760</p>
-        </div>
-        <div className="bg-white rounded-full p-1 w-16 h-16 flex items-center justify-center">
-            <img src={clinicLogo} alt="Logo" className="w-full h-full object-contain rounded-full" />
-        </div>
-      </div>
+    <div id={containerId} className="prescription" style={{ minHeight: "auto", height: "auto" }}>
+      {/* Print tuning: remove gray padding/shadow and avoid blank pages */}
+      <style>{`
+        @media print {
+          @page { margin: 14mm; }
+          #${containerId} { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          #${containerId} .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+          #${containerId} .print-shell { background: #fff !important; padding: 0 !important; }
+          #${containerId} .print-page { box-shadow: none !important; }
+        }
+      `}</style>
 
-      <div className="p-8 max-w-5xl mx-auto">
-
-        {/* 2. SECTION TITLE - Styled with Blue Accent Bar */}
-        <div className="flex items-center mb-6 bg-blue-50 py-3 px-4 border-l-4 border-blue-600 print:bg-blue-50 print:print-color-adjust-exact">
-            <h2 className="text-blue-900 font-bold uppercase tracking-widest text-sm">Laboratory Test Report</h2>
-        </div>
-
-        {/* 3. PATIENT INFO CARD - Rounded White Box with Grid */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 mb-8 grid grid-cols-3 gap-y-6 gap-x-4">
-            {/* Row 1 */}
-            <div className="col-span-1">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Patient Name</p>
-                <p className="text-lg font-bold text-slate-900">{fullName(patient)}</p>
-            </div>
-            <div className="col-span-1">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Patient ID</p>
-                <p className="text-base font-semibold text-slate-900">{labTest.patientId}</p>
-            </div>
-            <div className="col-span-1">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Test ID</p>
-                <p className="text-base font-semibold text-slate-900">{labTest.testId}</p>
-            </div>
-
-            {/* Row 2 */}
-            <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Age / Gender</p>
-                <p className="text-sm font-semibold text-slate-900">
-                    {patient?.age ? `${patient.age} years` : '-'} 
-                    <span className="mx-2 text-slate-300">|</span> 
-                    {patient?.gender || '-'}
-                </p>
-            </div>
-            <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Category</p>
-                <p className="text-sm font-semibold text-slate-900 capitalize">{labTest.category}</p>
-            </div>
-            <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Priority</p>
-                <p className="text-sm font-semibold text-slate-900 capitalize">{labTest.priority}</p>
-            </div>
-
-            {/* Row 3 */}
-            <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Completed Date</p>
-                <p className="text-sm font-semibold text-slate-900">{formatLongDate(formValues?.completedDate || labTest.completedDate)}</p>
-            </div>
-        </div>
-
-        {/* 4. RESULTS SECTION */}
-        <div className="flex items-center mb-0 bg-blue-50 py-3 px-4 border-l-4 border-blue-600 print:bg-blue-50 print:print-color-adjust-exact mt-8">
-            <h2 className="text-blue-900 font-bold uppercase tracking-widest text-sm">Laboratory Results</h2>
-        </div>
-
-        {/* 5. TABLE - Dark Header + Contrast Rows */}
-        <div className="mt-4 rounded-t-lg overflow-hidden border border-slate-200">
-            {Object.entries(results).map(([testName, testData], index) => {
-                 const fields = resultFields[testName];
-                 return (
-                    <div key={testName} className="mb-0 avoid-break">
-                        {/* Table Header - Only show for first item or if you want it repeated */}
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-blue-900 text-white uppercase text-xs font-bold tracking-wider print:bg-blue-900 print:print-color-adjust-exact">
-                                <tr>
-                                    <th className="px-6 py-4 w-[40%]">Parameter</th>
-                                    <th className="px-6 py-4 w-[30%]">Result</th>
-                                    <th className="px-6 py-4 w-[30%]">Normal Range</th>
-                                </tr>
-                            </thead>
-                            
-                            {/* Sub-Header for Test Name */}
-                            <tbody>
-                                <tr className="bg-blue-50 border-b border-blue-100 print:bg-blue-50 print:print-color-adjust-exact">
-                                    <td colSpan={3} className="px-6 py-3 font-bold text-blue-800">
-                                        {testName}
-                                    </td>
-                                </tr>
-
-                                {/* Data Rows */}
-                                {Object.entries(testData).map(([fieldName, value], rowIndex) => {
-                                    const config = fields?.[fieldName];
-                                    const isNormal = config?.normal === value;
-                                    const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
-                                    
-                                    let displayValue = value;
-                                    if (config?.type === 'number' && value) {
-                                        displayValue = formatNumber(value);
-                                    }
-
-                                    return (
-                                        <tr key={fieldName} className="border-b border-slate-100 hover:bg-slate-50">
-                                            <td className="px-6 py-4 font-medium text-slate-700">{fieldName}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center">
-                                                    {isAbnormal ? (
-                                                        <>
-                                                            <span className="font-bold text-red-600 mr-2">{displayValue} {config?.unit}</span>
-                                                            <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide print:bg-red-600 print:print-color-adjust-exact">
-                                                                High/Abnormal
-                                                            </span>
-                                                        </>
-                                                    ) : isNormal ? (
-                                                        <span className="font-bold text-teal-600">{displayValue} {config?.unit}</span>
-                                                    ) : (
-                                                        <span className="font-bold text-slate-900">{displayValue} {config?.unit}</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-500 text-xs">
-                                                {config?.normal || config?.range || "—"}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                 )
-            })}
-        </div>
-
-        {/* 6. CLINICAL NOTES (If any) */}
-        {includeInterpretation && (
-             <div className="mt-8 border border-slate-200 rounded-lg p-6 bg-slate-50">
-                <h3 className="font-bold text-slate-900 mb-2 uppercase text-xs tracking-wider">Clinical Interpretation</h3>
-                <div className="text-sm text-slate-700">
-                     {/* Logic to show interpretation text */}
-                     {interpretLabResults(results).criticalFindings.length > 0 ? (
-                        <div className="space-y-1">
-                            {interpretLabResults(results).criticalFindings.map((f, i) => (
-                                <p key={i} className="text-red-700 font-medium">⚠️ {f}</p>
-                            ))}
-                        </div>
-                     ) : (
-                        <p className="text-emerald-700 font-medium">✓ Results appear within normal parameters.</p>
-                     )}
+      {/* Screen background like your reference; removed in print */}
+      <div className="bg-slate-100 py-8 print-shell">
+        <div className="mx-auto" style={{ maxWidth: 980 }}>
+          <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-slate-200 print-page">
+            {/* HEADER BAR */}
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6 text-white">
+              <div className="flex items-center justify-between gap-6">
+                <div>
+                  <h1 className="text-2xl font-semibold tracking-tight">
+                    Bahr El Ghazal Clinic
+                  </h1>
+                  <p className="mt-1 text-sm text-slate-200">
+                    Aweil, South Sudan | Tel: +211 916 759 060 / +211 928 754 760
+                  </p>
                 </div>
-             </div>
-        )}
 
-        {/* 7. SIGNATURES */}
-        <div className="mt-16 flex justify-between items-end pb-8 avoid-break">
-            <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Lab Technician</p>
-                <p className="text-sm font-bold text-slate-900">{formValues?.completedBy || labTest.completedBy || "Dr. Sarah M. Johnson"}</p>
+                {/* Circle badge: ONLY your logo (no mock "B") */}
+                <div className="w-14 h-14 rounded-full border-4 border-white/90 bg-white flex items-center justify-center overflow-hidden">
+                  <img
+                    src={clinicLogo}
+                    alt="Bahr El Ghazal Clinic"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Report Date</p>
-                <p className="text-sm font-bold text-slate-900">{formatLongDate(formValues?.completedDate || labTest.completedDate)}</p>
+
+            <div className="px-8 py-7">
+              {/* SECTION STRIP: TITLE */}
+              <div className="bg-blue-50 border-l-4 border-blue-600 px-6 py-4 rounded-lg">
+                <div className="text-blue-800 font-semibold tracking-widest text-sm uppercase">
+                  Laboratory Test Report
+                </div>
+              </div>
+
+              {/* INFO CARD */}
+              <div className="mt-6 rounded-2xl border border-slate-200 shadow-sm p-6 avoid-break">
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="col-span-1">
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Patient Name
+                    </div>
+                    <div className="text-lg font-semibold text-slate-900">
+                      {patientName}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Patient ID
+                    </div>
+                    <div className="font-semibold text-slate-900">
+                      {labTest.patientId || "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Test ID
+                    </div>
+                    <div className="font-semibold text-slate-900">
+                      {labTest.testId || "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Age
+                    </div>
+                    <div className="font-semibold text-slate-900">
+                      {formatAge(patient?.age)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Gender
+                    </div>
+                    <div className="font-semibold text-slate-900">
+                      {patient?.gender || "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Completed Date
+                    </div>
+                    <div className="font-semibold text-slate-900">
+                      {safeLongDate(completedDate)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Category
+                    </div>
+                    <div className="font-semibold text-slate-900 capitalize">
+                      {labTest.category || "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Priority
+                    </div>
+                    <div className="font-semibold text-slate-900 capitalize">
+                      {labTest.priority || "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-slate-500">
+                      Status
+                    </div>
+                    <div className="font-semibold text-slate-900">
+                      {titleCase(resultStatus)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION STRIP: RESULTS */}
+              <div className="mt-7 bg-blue-50 border-l-4 border-blue-600 px-6 py-4 rounded-lg">
+                <div className="text-blue-800 font-semibold tracking-widest text-sm uppercase">
+                  Laboratory Results
+                </div>
+              </div>
+
+              {/* RESULTS TABLE WRAPPER (NO avoid-break to prevent blank space) */}
+              <div className="mt-5 rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <table className="w-full border-collapse text-sm">
+                  {/* Table header */}
+                  <thead>
+                    <tr className="bg-blue-900 text-white">
+                      <th
+                        className="text-left px-6 py-4 font-semibold uppercase tracking-wider text-xs"
+                        style={{ width: "46%" }}
+                      >
+                        Test Name
+                      </th>
+                      <th
+                        className="text-center px-6 py-4 font-semibold uppercase tracking-wider text-xs"
+                        style={{ width: "26%" }}
+                      >
+                        Result
+                      </th>
+                      <th
+                        className="text-left px-6 py-4 font-semibold uppercase tracking-wider text-xs"
+                        style={{ width: "28%" }}
+                      >
+                        Normal Range
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {Object.entries(results).length === 0 && (
+                      <tr>
+                        <td className="px-6 py-6 text-slate-600" colSpan={3}>
+                          No results available.
+                        </td>
+                      </tr>
+                    )}
+
+                    {Object.entries(results).map(([testName, testData]) => {
+                      const fields = resultFields[testName] || {};
+
+                      return (
+                        <>
+                          {/* Group row */}
+                          <tr key={`group-${testName}`} className="bg-blue-50">
+                            <td className="px-6 py-3 font-semibold text-blue-900" colSpan={3}>
+                              {testName}
+                            </td>
+                          </tr>
+
+                          {Object.entries(testData).map(([fieldName, rawValue], rowIdx) => {
+                            const config = fields?.[fieldName];
+                            const value = rawValue ?? "";
+                            const unit = config?.unit ? ` ${config.unit}` : "";
+                            const rangeText = config?.normal || config?.range || "—";
+
+                            // Determine abnormal (used only for color; no HIGH/LOW chips)
+                            const numeric =
+                              config?.type === "number" ? tryParseNumber(value) : null;
+                            const range = parseNumericRange(rangeText);
+
+                            let isAbnormal = false;
+
+                            if (numeric !== null && range) {
+                              if (numeric < range.min || numeric > range.max) isAbnormal = true;
+                            } else if (config?.normal) {
+                              const same = normalize(value) === normalize(config.normal);
+                              if (!same && !isCommonNormalText(value) && Boolean(value)) {
+                                isAbnormal = true;
+                              }
+                            } else {
+                              // Text without explicit normal: mark abnormal only if it is clearly not normal
+                              if (value && !isCommonNormalText(value)) {
+                                // Keep it conservative: do NOT flag common neutral values
+                                isAbnormal = true;
+                              }
+                            }
+
+                            const displayValue =
+                              config?.type === "number" && numeric !== null
+                                ? new Intl.NumberFormat("en-US").format(numeric)
+                                : value;
+
+                            const stripe = rowIdx % 2 === 0 ? "bg-white" : "bg-slate-50";
+
+                            return (
+                              <tr
+                                key={`${testName}-${fieldName}`}
+                                className={cx("border-t border-slate-200", stripe)}
+                              >
+                                <td className="px-6 py-4 text-slate-700">
+                                  {fieldName}
+                                </td>
+
+                                <td className="px-6 py-4 text-center">
+                                  <span
+                                    className={cx(
+                                      "font-semibold whitespace-nowrap",
+                                      isAbnormal ? "text-red-600" : "text-slate-900"
+                                    )}
+                                  >
+                                    {displayValue}
+                                    {unit}
+                                  </span>
+                                </td>
+
+                                <td className="px-6 py-4 text-slate-500">
+                                  {rangeText}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Optional Interpretation (clean, no emojis) */}
+              {includeInterpretation && (
+                <div className="mt-6 rounded-2xl border border-slate-200 p-5 bg-white avoid-break">
+                  <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
+                    Clinical Interpretation
+                  </div>
+
+                  {(interpretation.criticalFindings.length > 0 ||
+                    interpretation.warnings.length > 0) ? (
+                    <div className="mt-3 space-y-3 text-sm text-slate-800">
+                      {interpretation.criticalFindings.length > 0 && (
+                        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                          <div className="font-semibold text-red-800">
+                            Critical Findings
+                          </div>
+                          <ul className="mt-2 list-disc ml-5 space-y-1">
+                            {interpretation.criticalFindings.map((f, i) => (
+                              <li key={i}>{f}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {interpretation.warnings.length > 0 && (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                          <div className="font-semibold text-amber-900">
+                            Notes / Warnings
+                          </div>
+                          <ul className="mt-2 list-disc ml-5 space-y-1">
+                            {interpretation.warnings.map((w, i) => (
+                              <li key={i}>{w}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 font-medium">
+                      All results appear within expected limits. No critical flags detected.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Technician notes */}
+              {technicianNotes && (
+                <div className="mt-6 rounded-2xl border border-slate-200 p-5 bg-white avoid-break">
+                  <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
+                    Technician Notes
+                  </div>
+                  <p className="mt-2 text-sm text-slate-800 leading-relaxed">
+                    {technicianNotes}
+                  </p>
+                </div>
+              )}
+
+              {/* Footer row */}
+              <div className="mt-8 pt-5 border-t border-slate-200 flex items-center justify-between text-sm avoid-break">
+                <div>
+                  <div className="text-xs text-slate-500">Lab Technician</div>
+                  <div className="font-semibold text-slate-900">
+                    {completedBy || "—"}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-slate-500">Report Date</div>
+                  <div className="font-semibold text-slate-900">
+                    {safeLongDate(completedDate)}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Bottom dark bar */}
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white text-center py-6">
+              <div className="font-semibold">Bahr El Ghazal Clinic</div>
+              <div className="text-sm text-slate-200 mt-1">
+                Accredited Medical Facility | Republic of South Sudan
+              </div>
+            </div>
+          </div>
         </div>
-
       </div>
-
-      {/* 8. FOOTER - Solid Blue Block */}
-      <div className="bg-slate-900 text-white py-6 text-center print:bg-slate-900 print:print-color-adjust-exact avoid-break">
-        <p className="font-bold text-lg mb-1">Bahr El Ghazal Clinic</p>
-        <p className="text-slate-400 text-xs uppercase tracking-wider">Accredited Medical Facility | Republic of South Sudan</p>
-      </div>
-
     </div>
   );
 }
