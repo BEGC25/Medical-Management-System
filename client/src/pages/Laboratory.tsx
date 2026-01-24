@@ -299,7 +299,7 @@ const resultFields: Record<
   "Toxoplasma Test": {
     "Toxoplasma IgG": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
     "Toxoplasma IgM": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-    "IgG Titer": { type: "text" as const, unit: "IU/mL", normal: "<4" },
+    "IgG Titer": { type: "number" as const, unit: "IU/mL", normal: "<4" },
   },
 
   "Filariasis Tests": {
