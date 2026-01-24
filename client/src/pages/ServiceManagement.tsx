@@ -551,10 +551,15 @@ export default function ServiceManagement() {
   const watchedName = form.watch("name");
   const watchedCode = form.watch("code");
 
+  // Memoize existing codes to avoid unnecessary rerenders
+  const existingCodes = useMemo(() => 
+    services.map(s => s.code).filter(Boolean) as string[], 
+    [services]
+  );
+
   // Auto-generate code based on name and category
   useEffect(() => {
     if (!editingService && watchedName && watchedCategory) {
-      const existingCodes = services.map(s => s.code).filter(Boolean) as string[];
       try {
         const generatedCode = generateAndValidateServiceCode(watchedName, watchedCategory, existingCodes);
         form.setValue("code", generatedCode);
@@ -564,7 +569,7 @@ export default function ServiceManagement() {
         form.setValue("code", "");
       }
     }
-  }, [watchedName, watchedCategory, editingService, services, form]);
+  }, [watchedName, watchedCategory, editingService, existingCodes, form]);
 
   const createMutation = useMutation({
     mutationFn: async (data: ServiceFormData) => {

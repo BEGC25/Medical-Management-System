@@ -94,8 +94,8 @@ export function validateServiceCode(code: string | null | undefined): string | n
  * 2. Generate from significant words (removing stopwords)
  */
 function extractAbbreviation(serviceName: string): string {
-  // 1. Check for abbreviation in parentheses
-  const parenMatch = serviceName.match(/\(([A-Za-z0-9-]+)\)/);
+  // 1. Check for abbreviation in parentheses - match any content, sanitize after
+  const parenMatch = serviceName.match(/\(([^)]+)\)/);
   if (parenMatch) {
     return sanitizeCode(parenMatch[1]);
   }
@@ -216,14 +216,18 @@ export function generateAndValidateServiceCode(
   category: string,
   existingCodes: string[] = []
 ): string {
-  const code = generateServiceCode(serviceName, category);
-  const uniqueCode = ensureUniqueCode(code, existingCodes);
-  const sanitized = sanitizeCode(uniqueCode);
+  // Generate and sanitize the base code first
+  const baseCode = generateServiceCode(serviceName, category);
+  const sanitizedBase = sanitizeCode(baseCode);
   
-  const validationError = validateServiceCode(sanitized);
+  // Then ensure uniqueness (after sanitization to avoid breaking uniqueness)
+  const uniqueCode = ensureUniqueCode(sanitizedBase, existingCodes);
+  
+  // Final validation
+  const validationError = validateServiceCode(uniqueCode);
   if (validationError) {
     throw new Error(`Generated code validation failed: ${validationError}`);
   }
   
-  return sanitized;
+  return uniqueCode;
 }
