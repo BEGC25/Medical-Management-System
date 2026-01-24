@@ -51,6 +51,31 @@ const DEFAULT_INFO: DrugEducationalInfo = {
 const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
   // ==================== ANALGESICS ====================
   
+  "acetylsalicylic-acid": {
+    whatItDoes: "Aspirin is a non-steroidal anti-inflammatory drug (NSAID) that reduces pain, fever, inflammation, and prevents blood clots. Low doses prevent heart attacks and strokes. Higher doses treat pain and inflammation.",
+    commonUses: [
+      "Prevention of heart attack and stroke (low dose 75-100mg daily)",
+      "Acute heart attack treatment",
+      "Pain and fever relief (higher doses)",
+      "Anti-inflammatory for arthritis",
+      "Prevention of blood clots after surgery"
+    ],
+    importantSafety: {
+      dos: ["Take with food to reduce stomach irritation", "Low-dose aspirin (75-100mg) for heart protection", "Swallow enteric-coated tablets whole", "Continue daily for cardiovascular protection as prescribed"],
+      donts: ["Do not give to children under 16 (risk of Reye's syndrome)", "Avoid if history of stomach ulcers or bleeding", "Not in late pregnancy (may cause bleeding)", "Stop 5-7 days before surgery unless instructed otherwise"]
+    },
+    howFastItWorks: {
+      onset: "Pain relief: 30 minutes, Antiplatelet effect: within hours",
+      duration: "Pain relief: 4-6 hours, Antiplatelet effect: lasts days after stopping"
+    },
+    specialGroups: {
+      pregnancy: "Avoid especially in 3rd trimester - risk of bleeding and premature closure of ductus arteriosus",
+      breastfeeding: "Use with caution - passes into milk, risk in infant",
+      children: "Contraindicated under 16 years - risk of Reye's syndrome",
+      elderly: "Use with caution - increased bleeding and stomach ulcer risk"
+    }
+  },
+
   "paracetamol": {
     whatItDoes: "Reduces pain and fever. Works by blocking pain signals in the brain and lowering body temperature. Safe for most patients including children and pregnant women.",
     commonUses: [
@@ -456,6 +481,31 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
+  "cefotaxime": {
+    whatItDoes: "Third-generation cephalosporin antibiotic effective against many gram-negative and gram-positive bacteria. Injectable antibiotic for serious infections. Excellent penetration into cerebrospinal fluid makes it ideal for meningitis.",
+    commonUses: [
+      "Bacterial meningitis",
+      "Severe pneumonia and respiratory infections",
+      "Septicemia and bloodstream infections",
+      "Complicated urinary tract infections",
+      "Intra-abdominal infections"
+    ],
+    importantSafety: {
+      dos: ["Given by intramuscular or intravenous injection", "Administer every 6-12 hours depending on severity", "Complete full prescribed course", "Monitor for hypersensitivity reactions"],
+      donts: ["Use with extreme caution if penicillin allergy (10% cross-reactivity)", "Report any rash, fever or difficulty breathing", "Avoid rapid IV injection", "Do not mix with aminoglycosides in same syringe"]
+    },
+    howFastItWorks: {
+      onset: "Peak blood levels in 30 minutes (IV) or 30-60 minutes (IM)",
+      duration: "Usually given every 6-12 hours for 7-14 days"
+    },
+    specialGroups: {
+      pregnancy: "Safe when needed - no evidence of harm",
+      breastfeeding: "Safe - small amounts in milk",
+      children: "Safe including neonates - widely used for pediatric meningitis",
+      elderly: "Safe - adjust dose if severe kidney impairment"
+    }
+  },
+
   "ceftriaxone": {
     whatItDoes: "Powerful injectable antibiotic for severe infections. Given by injection when oral antibiotics fail or patient cannot swallow.",
     commonUses: [
@@ -481,6 +531,56 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
+  "cefuroxime": {
+    whatItDoes: "Second-generation cephalosporin antibiotic effective against respiratory, skin, and urinary infections. Available in both oral and injectable forms with good activity against common community-acquired bacteria.",
+    commonUses: [
+      "Community-acquired pneumonia",
+      "Acute bacterial sinusitis and otitis media",
+      "Skin and soft tissue infections",
+      "Urinary tract infections",
+      "Perioperative surgical prophylaxis"
+    ],
+    importantSafety: {
+      dos: ["Take oral form with food for better absorption", "Complete full course even if feeling better", "Space doses evenly (every 8-12 hours)", "Store oral suspension in refrigerator"],
+      donts: ["Use with caution if penicillin allergy", "Report persistent diarrhea or abdominal pain", "Do not crush or split tablets", "Avoid alcohol during treatment"]
+    },
+    howFastItWorks: {
+      onset: "Oral: 2-3 hours for peak effect, Improvement in 48-72 hours",
+      duration: "Usually 7-10 days depending on infection type"
+    },
+    specialGroups: {
+      pregnancy: "Safe when needed - no evidence of harm",
+      breastfeeding: "Safe - minimal amounts in milk",
+      children: "Safe from 3 months - commonly prescribed",
+      elderly: "Safe - reduce dose if kidney problems"
+    }
+  },
+
+  "amikacin": {
+    whatItDoes: "Aminoglycoside antibiotic reserved for serious gram-negative bacterial infections resistant to other antibiotics. Injected medication requiring monitoring of kidney function and hearing due to potential toxicity.",
+    commonUses: [
+      "Severe hospital-acquired pneumonia",
+      "Complicated urinary tract infections",
+      "Septicemia and bacteremia",
+      "Intra-abdominal infections",
+      "Infections caused by multidrug-resistant organisms"
+    ],
+    importantSafety: {
+      dos: ["Given only by injection (IM or IV)", "Requires monitoring of kidney function and hearing", "Ensure adequate hydration during treatment", "Monitor blood levels to optimize dosing"],
+      donts: ["High risk of kidney damage and hearing loss", "Avoid concurrent use with other nephrotoxic drugs", "Report decreased urine output or hearing changes", "Not for routine infections - reserve for resistant organisms"]
+    },
+    howFastItWorks: {
+      onset: "Peak levels in 30-90 minutes after injection",
+      duration: "Usually given once daily, treatment 7-10 days"
+    },
+    specialGroups: {
+      pregnancy: "Avoid if possible - risk of fetal hearing damage",
+      breastfeeding: "Use with caution - limited data available",
+      children: "Use with extreme caution - monitor kidney and hearing closely",
+      elderly: "High risk group - use lower doses and monitor closely"
+    }
+  },
+
   "amoxicillin-clavulanate": {
     whatItDoes: "Enhanced amoxicillin that works against resistant bacteria. Clavulanate prevents bacteria from destroying amoxicillin.",
     commonUses: [
@@ -503,6 +603,56 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       breastfeeding: "Safe",
       children: "Safe, good option for resistant infections",
       elderly: "Safe, may need dose adjustment"
+    }
+  },
+
+  "benzathine-penicillin": {
+    whatItDoes: "Long-acting penicillin given as single intramuscular injection providing sustained antibiotic levels for weeks. Primarily used for streptococcal infections and syphilis treatment requiring prolonged penicillin exposure.",
+    commonUses: [
+      "Primary, secondary, and latent syphilis",
+      "Prevention of rheumatic fever recurrence",
+      "Streptococcal pharyngitis (single-dose treatment)",
+      "Prevention of post-streptococcal glomerulonephritis",
+      "Yaws and other treponemal infections"
+    ],
+    importantSafety: {
+      dos: ["Given as deep intramuscular injection only", "Ensure correct dose for syphilis stage", "Monitor for allergic reactions after injection", "Complete follow-up for syphilis treatment verification"],
+      donts: ["Never give intravenously - can cause severe reactions", "Do not use if penicillin allergy", "Injection site may be painful for several days", "Report severe injection site reactions"]
+    },
+    howFastItWorks: {
+      onset: "Peak levels in 12-24 hours, sustained for 2-4 weeks",
+      duration: "Single injection provides coverage for 2-4 weeks"
+    },
+    specialGroups: {
+      pregnancy: "Safe and preferred for syphilis treatment in pregnancy",
+      breastfeeding: "Safe",
+      children: "Safe for rheumatic fever prevention and syphilis",
+      elderly: "Safe"
+    }
+  },
+
+  "chloramphenicol": {
+    whatItDoes: "Broad-spectrum antibiotic reserved for serious infections due to bone marrow toxicity risk. Excellent for meningitis, typhoid, and serious eye infections. Inhibits bacterial protein synthesis.",
+    commonUses: [
+      "Bacterial meningitis (when other antibiotics fail)",
+      "Typhoid fever",
+      "Severe rickettsial infections",
+      "Brain abscess",
+      "Bacterial conjunctivitis (eye drops/ointment)"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach 1 hour before meals", "Complete full course for systemic infections", "Monitor blood counts regularly", "Eye preparations are safer than oral/IV forms"],
+      donts: ["Risk of serious bone marrow suppression", "Avoid prolonged or repeated use", "Do not use for minor infections", "Report unusual bruising, bleeding, or fatigue"]
+    },
+    howFastItWorks: {
+      onset: "Eye infections: 1-2 days, Systemic: 2-3 days",
+      duration: "Usually 7-10 days for eye infections, 14-21 days for systemic"
+    },
+    specialGroups: {
+      pregnancy: "Avoid especially near term - risk of gray baby syndrome",
+      breastfeeding: "Avoid - can cause bone marrow toxicity in infant",
+      children: "Avoid in neonates - risk of gray baby syndrome, use cautiously in older children",
+      elderly: "Use with caution - monitor blood counts"
     }
   },
 
@@ -579,6 +729,31 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
+  "artemether": {
+    whatItDoes: "Injectable artemisinin derivative for severe malaria treatment. Oil-based intramuscular formulation provides rapid parasite clearance. Alternative to artesunate when IV access difficult.",
+    commonUses: [
+      "Severe malaria when IV access unavailable",
+      "Cerebral malaria",
+      "Life-threatening Plasmodium falciparum infection",
+      "Severe malaria in remote settings",
+      "Complicated malaria with multi-organ dysfunction"
+    ],
+    importantSafety: {
+      dos: ["Give by deep intramuscular injection", "Initial dose: 3.2mg/kg, then 1.6mg/kg daily", "Switch to oral ACT when patient can swallow", "Continue for minimum 3 days"],
+      donts: ["Artesunate IV preferred if available", "Do not give intravenously", "Monitor for delayed hemolytic anemia", "Report dark urine days after treatment"]
+    },
+    howFastItWorks: {
+      onset: "Rapid parasite clearance within 12-24 hours",
+      duration: "Minimum 3 days then switch to oral completion"
+    },
+    specialGroups: {
+      pregnancy: "Safe for severe malaria - benefits outweigh risks",
+      breastfeeding: "Safe",
+      children: "Safe and effective in pediatric severe malaria",
+      elderly: "Safe with appropriate dosing"
+    }
+  },
+
   "artesunate": {
     whatItDoes: "EMERGENCY treatment for severe malaria. Most effective medication for severe malaria. Can save lives within hours when given promptly.",
     commonUses: [
@@ -647,6 +822,56 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       breastfeeding: "Safe",
       children: "Safe from 6 months",
       elderly: "Safe, monitor for heart effects"
+    }
+  },
+
+  "artesunate-mefloquine": {
+    whatItDoes: "Artemisinin-based combination therapy (ACT) combining fast-acting artesunate with long-acting mefloquine. Alternative first-line treatment for uncomplicated falciparum malaria in areas where it remains effective.",
+    commonUses: [
+      "Uncomplicated Plasmodium falciparum malaria",
+      "Malaria in areas with artemether-lumefantrine resistance",
+      "Mixed Plasmodium species infections",
+      "Multidrug-resistant malaria areas",
+      "Treatment failure with other ACTs"
+    ],
+    importantSafety: {
+      dos: ["Take once daily for 3 days", "Take with food or milk to improve absorption", "Complete full 3-day course", "Mefloquine component given on days 2-3 or day 2 only depending on protocol"],
+      donts: ["Avoid if history of psychiatric disorders (mefloquine can cause neuropsychiatric effects)", "Do not use if seizure disorder", "Report vivid dreams, anxiety, or mood changes", "Avoid in first trimester if possible"]
+    },
+    howFastItWorks: {
+      onset: "Fever reduction within 24-48 hours",
+      duration: "3-day treatment course, mefloquine provides weeks of post-treatment prophylaxis"
+    },
+    specialGroups: {
+      pregnancy: "Use in 2nd and 3rd trimester when benefits outweigh risks",
+      breastfeeding: "Safe - small amounts in milk",
+      children: "Safe from 5kg body weight",
+      elderly: "Use with caution - monitor for neuropsychiatric effects"
+    }
+  },
+
+  "artesunate-sp": {
+    whatItDoes: "Artemisinin-based combination therapy combining artesunate with sulfadoxine-pyrimethamine (SP). Used where SP resistance is low. Provides rapid parasite clearance plus longer-acting partner drug.",
+    commonUses: [
+      "Uncomplicated falciparum malaria",
+      "Areas with low SP resistance",
+      "Alternative ACT when others unavailable",
+      "Mixed Plasmodium infections",
+      "Combination therapy for improved cure rates"
+    ],
+    importantSafety: {
+      dos: ["Take artesunate daily for 3 days", "Take SP as single dose on day 1", "Complete full 3-day artesunate course", "Can take with or without food"],
+      donts: ["Avoid if sulfa drug allergy", "Do not use in severe malaria (needs injectable)", "Report skin rash or blistering", "Avoid in late pregnancy near delivery"]
+    },
+    howFastItWorks: {
+      onset: "Rapid fever reduction within 24-36 hours",
+      duration: "3-day treatment, SP provides extended protection"
+    },
+    specialGroups: {
+      pregnancy: "Use in 2nd and 3rd trimester, avoid near delivery",
+      breastfeeding: "Safe - avoid if infant has jaundice or G6PD deficiency",
+      children: "Safe from 6 months with appropriate dosing",
+      elderly: "Safe with normal kidney/liver function"
     }
   },
 
@@ -844,6 +1069,31 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
+  "metformin-extended-release": {
+    whatItDoes: "Extended-release formulation of metformin providing once-daily dosing with improved GI tolerance. Slowly releases metformin over 24 hours, reducing stomach upset while maintaining blood sugar control throughout the day.",
+    commonUses: [
+      "Type 2 diabetes management",
+      "Patients who cannot tolerate immediate-release metformin",
+      "Improved medication compliance with once-daily dosing",
+      "Polycystic ovary syndrome (PCOS)",
+      "Diabetes prevention in high-risk individuals"
+    ],
+    importantSafety: {
+      dos: ["Take once daily with evening meal for best tolerance", "Swallow tablets whole - do not crush, cut, or chew", "Start with low dose and increase gradually", "Continue diet and exercise program"],
+      donts: ["May see ghost tablet in stool - this is normal empty shell", "Stop 48 hours before surgery or contrast imaging", "Avoid excessive alcohol consumption", "Report severe stomach pain, unusual fatigue, or breathing difficulty"]
+    },
+    howFastItWorks: {
+      onset: "Blood sugar effects within days, full benefit in 2-4 weeks",
+      duration: "Once-daily dosing provides 24-hour coverage"
+    },
+    specialGroups: {
+      pregnancy: "Safe - often used for gestational diabetes",
+      breastfeeding: "Safe",
+      children: "Immediate-release usually preferred in children",
+      elderly: "Safe - monitor kidney function closely"
+    }
+  },
+
   "glibenclamide": {
     whatItDoes: "Sulfonylurea that stimulates pancreas to release more insulin. Lowers blood sugar effectively. Can cause low blood sugar.",
     commonUses: [
@@ -868,6 +1118,156 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
 
   // ==================== GI MEDICATIONS ====================
 
+  "aluminum-magnesium-hydroxide": {
+    whatItDoes: "Antacid combining aluminum and magnesium hydroxides to neutralize stomach acid. Aluminum causes constipation while magnesium causes diarrhea - combination balances these effects for better tolerance.",
+    commonUses: [
+      "Heartburn and acid indigestion",
+      "Gastroesophageal reflux disease (GERD)",
+      "Stomach upset and hyperacidity",
+      "Peptic ulcer disease (symptomatic relief)",
+      "Prevention of stress ulcers"
+    ],
+    importantSafety: {
+      dos: ["Take 1-3 hours after meals and at bedtime", "Shake liquid form well before use", "Can use as needed for symptom relief", "Chew tablets thoroughly before swallowing"],
+      donts: ["Do not take within 2 hours of other medications (reduces absorption)", "Avoid prolonged use without medical supervision", "May cause constipation or diarrhea", "Not recommended with kidney disease"]
+    },
+    howFastItWorks: {
+      onset: "Works within 5-15 minutes",
+      duration: "Relief lasts 20-60 minutes when taken on empty stomach, 3 hours when taken after meals"
+    },
+    specialGroups: {
+      pregnancy: "Safe for occasional use - preferred antacid in pregnancy",
+      breastfeeding: "Safe - minimal systemic absorption",
+      children: "Safe over 12 years, use caution in younger children",
+      elderly: "Use with caution if kidney impairment - risk of aluminum accumulation"
+    }
+  },
+
+  "dicyclomine": {
+    whatItDoes: "Anticholinergic antispasmodic that reduces intestinal cramping and spasm. Relaxes smooth muscle in gastrointestinal tract to relieve abdominal pain and discomfort from IBS and intestinal disorders.",
+    commonUses: [
+      "Irritable bowel syndrome (IBS) with cramping",
+      "Functional bowel disorders",
+      "Abdominal cramping and pain",
+      "Intestinal spasm",
+      "Infant colic (use with caution - not recommended under 6 months)"
+    ],
+    importantSafety: {
+      dos: ["Take 30 minutes before meals", "Start with low dose and increase gradually", "Take with water", "May take up to 4 times daily"],
+      donts: ["May cause dry mouth, blurred vision, and drowsiness", "Avoid in glaucoma or urinary retention", "Do not use in infants under 6 months", "Avoid driving if drowsy"]
+    },
+    howFastItWorks: {
+      onset: "Relief within 30-60 minutes",
+      duration: "4-6 hours per dose"
+    },
+    specialGroups: {
+      pregnancy: "Use only if clearly needed - limited safety data",
+      breastfeeding: "Use with caution - may reduce milk production",
+      children: "Contraindicated under 6 months, use caution in older children",
+      elderly: "Use low doses - increased risk of confusion and side effects"
+    }
+  },
+
+  "domperidone": {
+    whatItDoes: "Prokinetic and antiemetic medication that speeds gastric emptying and blocks dopamine receptors to reduce nausea and vomiting. Does not cross blood-brain barrier well, fewer neurological side effects than metoclopramide.",
+    commonUses: [
+      "Nausea and vomiting",
+      "Gastric emptying disorders (gastroparesis)",
+      "Functional dyspepsia",
+      "Increasing breast milk production (off-label)",
+      "GERD symptoms"
+    ],
+    importantSafety: {
+      dos: ["Take 15-30 minutes before meals", "Maximum 30mg daily (10mg three times)", "Use lowest effective dose", "Short-term use preferred"],
+      donts: ["May prolong heart rhythm (QT interval) - avoid in heart disease", "Do not exceed recommended dose", "Avoid with certain antifungals and antibiotics", "Report palpitations or fainting"]
+    },
+    howFastItWorks: {
+      onset: "30-60 minutes for nausea relief",
+      duration: "6-8 hours per dose"
+    },
+    specialGroups: {
+      pregnancy: "Limited data - use only if needed",
+      breastfeeding: "Safe - often used to increase milk supply",
+      children: "Safe - commonly used for vomiting in children",
+      elderly: "Use with caution - monitor for cardiac effects"
+    }
+  },
+
+  "esomeprazole": {
+    whatItDoes: "Proton pump inhibitor (S-isomer of omeprazole) that potently reduces stomach acid production. More effective acid suppression than omeprazole at equivalent doses. Heals erosive esophagitis and treats GERD.",
+    commonUses: [
+      "Gastroesophageal reflux disease (GERD)",
+      "Erosive esophagitis",
+      "H. pylori eradication (with antibiotics)",
+      "Prevention of NSAID-induced ulcers",
+      "Zollinger-Ellison syndrome"
+    ],
+    importantSafety: {
+      dos: ["Take 1 hour before meals for best effect", "Swallow capsules whole, do not crush", "Can open capsule and sprinkle on applesauce if swallowing difficult", "Complete full course for ulcer healing"],
+      donts: ["Long-term use may reduce magnesium and vitamin B12", "May increase risk of bone fractures with prolonged use", "Avoid with certain HIV medications", "Report persistent abdominal pain or bloody stools"]
+    },
+    howFastItWorks: {
+      onset: "Acid suppression within 1-2 hours, full effect in 5 days",
+      duration: "24 hours per dose"
+    },
+    specialGroups: {
+      pregnancy: "Probably safe - use if benefit outweighs risk",
+      breastfeeding: "Probably safe - minimal passage into milk",
+      children: "Safe from 1 month for GERD",
+      elderly: "Safe - no dose adjustment needed"
+    }
+  },
+
+  "hyoscine-butylbromide": {
+    whatItDoes: "Antispasmodic medication that relaxes smooth muscle in gastrointestinal and urinary tracts. Relieves cramping pain from IBS, menstruation, and urinary spasms. Does not cross blood-brain barrier.",
+    commonUses: [
+      "Irritable bowel syndrome cramping",
+      "Abdominal colic and spasms",
+      "Menstrual cramps",
+      "Urinary bladder spasms",
+      "Biliary and renal colic (adjunct treatment)"
+    ],
+    importantSafety: {
+      dos: ["Take as needed for spasm relief", "Can take up to 4 times daily", "Works best when taken at onset of symptoms", "Available as tablets or injection"],
+      donts: ["Avoid in glaucoma or urinary retention", "May cause dry mouth and constipation", "Do not use in intestinal obstruction", "Avoid if enlarged prostate with urinary symptoms"]
+    },
+    howFastItWorks: {
+      onset: "Oral: 30-60 minutes, Injection: 10-15 minutes",
+      duration: "4-6 hours per dose"
+    },
+    specialGroups: {
+      pregnancy: "Use with caution - limited data but widely used",
+      breastfeeding: "Probably safe - minimal systemic absorption",
+      children: "Safe over 6 years",
+      elderly: "Use with caution - watch for urinary retention and confusion"
+    }
+  },
+
+  "lansoprazole": {
+    whatItDoes: "Proton pump inhibitor that blocks acid production in stomach by inhibiting the proton pump in gastric parietal cells. Highly effective for acid-related disorders and ulcer healing.",
+    commonUses: [
+      "Gastroesophageal reflux disease (GERD)",
+      "Peptic ulcer disease",
+      "H. pylori eradication therapy",
+      "NSAID-associated ulcer prevention",
+      "Zollinger-Ellison syndrome"
+    ],
+    importantSafety: {
+      dos: ["Take in morning before breakfast for best effect", "Swallow capsules whole or open and sprinkle on soft food", "Complete full course for ulcer healing", "Can use short-term for heartburn"],
+      donts: ["Prolonged use may decrease magnesium and vitamin B12", "May mask symptoms of gastric cancer", "Increased infection risk with long-term use", "May interact with clopidogrel (Plavix)"]
+    },
+    howFastItWorks: {
+      onset: "Acid suppression within 2 hours, maximum effect in 4 days",
+      duration: "24 hours per dose"
+    },
+    specialGroups: {
+      pregnancy: "Use only if needed - limited data",
+      breastfeeding: "Use with caution - may pass into milk",
+      children: "Safe from 1 year for GERD",
+      elderly: "Safe - no dose adjustment needed"
+    }
+  },
+
   "omeprazole": {
     whatItDoes: "Proton pump inhibitor that reduces stomach acid production. Heals ulcers and treats acid reflux. Very effective for stomach protection.",
     commonUses: [
@@ -889,6 +1289,31 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       breastfeeding: "Safe, minimal passage into milk",
       children: "Safe from 1 year",
       elderly: "Safe, very commonly used"
+    }
+  },
+
+  "pantoprazole": {
+    whatItDoes: "Proton pump inhibitor that reduces gastric acid secretion by blocking the hydrogen-potassium pump in gastric parietal cells. Available in oral and IV forms for flexible treatment of acid-related disorders.",
+    commonUses: [
+      "Gastroesophageal reflux disease (GERD)",
+      "Erosive esophagitis",
+      "Zollinger-Ellison syndrome",
+      "Prevention of stress ulcers (IV form)",
+      "H. pylori eradication (combination therapy)"
+    ],
+    importantSafety: {
+      dos: ["Take 30 minutes before first meal of day", "Swallow tablets whole, do not crush or chew", "IV form for patients unable to take oral medications", "Complete prescribed course for ulcer healing"],
+      donts: ["Long-term use may reduce vitamin B12 and magnesium", "May increase fracture risk with prolonged use", "Avoid abrupt withdrawal after long-term use", "Report severe diarrhea that persists"]
+    },
+    howFastItWorks: {
+      onset: "Acid suppression within 2.5 hours, maximum effect in 5 days",
+      duration: "24 hours per dose"
+    },
+    specialGroups: {
+      pregnancy: "Use only if clearly needed - limited human data",
+      breastfeeding: "Use with caution - unknown if passes into milk",
+      children: "Safe from 5 years for GERD",
+      elderly: "Safe - no dose adjustment needed"
     }
   },
 
@@ -1014,6 +1439,81 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
+  "ascorbic-acid": {
+    whatItDoes: "Vitamin C is essential water-soluble vitamin and powerful antioxidant. Critical for immune function, collagen synthesis, iron absorption, and wound healing. Cannot be stored in body so requires daily intake.",
+    commonUses: [
+      "Vitamin C deficiency and scurvy prevention",
+      "Enhancement of iron absorption (taken with iron supplements)",
+      "Immune system support during infections",
+      "Wound healing",
+      "Antioxidant supplementation"
+    ],
+    importantSafety: {
+      dos: ["Take with food to reduce stomach upset", "Increases iron absorption when taken together", "Safe for long-term daily use", "Chewable tablets available for better compliance"],
+      donts: ["Excess vitamin C may cause diarrhea and stomach cramps", "Doses above 2000mg daily not beneficial", "May increase kidney stone risk in susceptible individuals", "Generally very safe vitamin"]
+    },
+    howFastItWorks: {
+      onset: "Immediate absorption, therapeutic effects develop over days to weeks",
+      duration: "Excreted within hours - requires daily intake"
+    },
+    specialGroups: {
+      pregnancy: "Safe and recommended - 85mg daily",
+      breastfeeding: "Safe and recommended - 120mg daily",
+      children: "Safe - age-appropriate dosing essential",
+      elderly: "Safe - may have increased requirements"
+    }
+  },
+
+  "calcium-gluconate": {
+    whatItDoes: "Calcium supplement in readily absorbable form. Treats and prevents calcium deficiency, hypocalcemia, and related conditions. Injectable form used for urgent treatment of low calcium and magnesium toxicity.",
+    commonUses: [
+      "Hypocalcemia (low blood calcium)",
+      "Calcium deficiency prevention",
+      "Eclampsia and pre-eclampsia (IV form)",
+      "Magnesium sulfate toxicity antidote",
+      "Osteoporosis prevention"
+    ],
+    importantSafety: {
+      dos: ["Oral: take with food for better absorption", "IV form must be given slowly to prevent cardiac complications", "Adequate vitamin D needed for calcium absorption", "Space from iron and certain antibiotics by 2 hours"],
+      donts: ["Rapid IV injection can cause cardiac arrest", "May cause constipation with oral form", "Do not exceed recommended dose", "Monitor calcium levels with IV therapy"]
+    },
+    howFastItWorks: {
+      onset: "IV: immediate for acute hypocalcemia, Oral: days to weeks",
+      duration: "Oral: daily supplementation, IV: hours"
+    },
+    specialGroups: {
+      pregnancy: "Safe and often needed especially for eclampsia prevention/treatment",
+      breastfeeding: "Safe - calcium needs increased during lactation",
+      children: "Safe - essential for bone development",
+      elderly: "Safe and beneficial for bone health"
+    }
+  },
+
+  "ferrous-fumarate": {
+    whatItDoes: "Iron supplement containing 33% elemental iron (higher than ferrous sulfate). Treats and prevents iron deficiency anemia by providing iron needed for hemoglobin production. May cause less GI upset than ferrous sulfate.",
+    commonUses: [
+      "Iron deficiency anemia treatment",
+      "Pregnancy iron supplementation",
+      "Chronic blood loss (heavy periods, GI bleeding)",
+      "Poor dietary iron intake",
+      "Anemia of chronic disease"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach for best absorption (1 hour before meals)", "Take with vitamin C to enhance absorption", "Black stools are normal and expected", "Continue for 3-6 months to replenish iron stores"],
+      donts: ["May cause constipation, nausea, and abdominal pain", "Take with food if GI upset occurs (reduces absorption)", "Space from tea, coffee, dairy, antacids by 2 hours", "Extremely dangerous in children if overdosed - keep locked away"]
+    },
+    howFastItWorks: {
+      onset: "Hemoglobin increases in 2-4 weeks, symptoms improve gradually",
+      duration: "Usually 3-6 months to fully replenish iron stores"
+    },
+    specialGroups: {
+      pregnancy: "Safe and essential - recommended supplementation in 2nd and 3rd trimesters",
+      breastfeeding: "Safe - needs may be increased",
+      children: "Safe with proper dosing - liquid forms available, toxic in overdose",
+      elderly: "Safe - may worsen constipation, consider with food"
+    }
+  },
+
   "folic-acid": {
     whatItDoes: "Essential vitamin for cell division and DNA formation. Critical for preventing birth defects. Treats certain types of anemia.",
     commonUses: [
@@ -1107,6 +1607,56 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       breastfeeding: "Safe, important for infant",
       children: "Safe, important for growth",
       elderly: "Safe, supports immune function"
+    }
+  },
+
+  "multivitamin": {
+    whatItDoes: "Combination supplement containing essential vitamins and minerals to prevent nutritional deficiencies. Provides broad nutritional insurance especially during illness, poor diet, pregnancy, or increased needs.",
+    commonUses: [
+      "Prevention of vitamin and mineral deficiencies",
+      "Nutritional support during illness or recovery",
+      "Pregnancy and lactation supplementation",
+      "Poor dietary intake or malabsorption",
+      "Elderly nutritional support"
+    ],
+    importantSafety: {
+      dos: ["Take once daily with food for better absorption", "Choose pregnancy-specific formulation if pregnant", "Store in cool, dry place away from children", "Consistent daily use provides best benefit"],
+      donts: ["More is not better - excess fat-soluble vitamins can be harmful", "Do not replace healthy balanced diet", "Iron in multivitamins may cause constipation", "Some may interact with medications - inform healthcare provider"]
+    },
+    howFastItWorks: {
+      onset: "Immediate absorption, therapeutic benefits develop over weeks to months",
+      duration: "Requires daily intake for sustained benefit"
+    },
+    specialGroups: {
+      pregnancy: "Recommended - use prenatal formulation with folic acid and iron",
+      breastfeeding: "Beneficial - needs are increased during lactation",
+      children: "Safe with age-appropriate formulation and dosing",
+      elderly: "Beneficial - may prevent deficiencies common in older adults"
+    }
+  },
+
+  "zinc-sulfate": {
+    whatItDoes: "Zinc supplement in sulfate form providing essential mineral for immune function, growth, and development. WHO recommended treatment for childhood diarrhea. Supports enzyme function and wound healing.",
+    commonUses: [
+      "Acute diarrhea in children (with ORS)",
+      "Zinc deficiency treatment",
+      "Growth retardation from zinc deficiency",
+      "Immune system support",
+      "Chronic diarrhea and malabsorption"
+    ],
+    importantSafety: {
+      dos: ["Give 20mg daily for 10-14 days for diarrhea in children", "Take with food or juice to reduce stomach upset", "Continue full course even when diarrhea stops", "Dispersible tablets can be dissolved in water"],
+      donts: ["May cause nausea and vomiting if taken on empty stomach", "Do not exceed recommended dose", "High doses can interfere with copper and iron absorption", "Not a substitute for oral rehydration solution (ORS) - use together"]
+    },
+    howFastItWorks: {
+      onset: "Reduces diarrhea duration by 25% when started early",
+      duration: "Give for 10-14 days regardless of diarrhea resolution"
+    },
+    specialGroups: {
+      pregnancy: "Safe - increased requirements during pregnancy",
+      breastfeeding: "Safe - passes into milk and important for infant",
+      children: "Essential for diarrhea treatment - reduces severity and duration",
+      elderly: "Safe - may have increased requirements"
     }
   },
 
@@ -1258,6 +1808,31 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
+  "theophylline": {
+    whatItDoes: "Bronchodilator that relaxes airways in asthma and COPD by inhibiting phosphodiesterase and reducing airway inflammation. Long-acting formulation for maintenance therapy with narrow therapeutic index requiring careful dosing.",
+    commonUses: [
+      "Chronic asthma maintenance therapy",
+      "COPD and chronic bronchitis",
+      "Prevention of nocturnal asthma symptoms",
+      "Apnea in premature infants",
+      "Severe asthma requiring additional controller medication"
+    ],
+    importantSafety: {
+      dos: ["Take at same time daily for steady blood levels", "Take extended-release tablets whole, do not crush", "Regular blood level monitoring essential", "Take with food if stomach upset occurs"],
+      donts: ["Avoid smoking as it increases drug clearance", "Limit caffeine intake (similar effects)", "Do not suddenly stop medication", "Report nausea, vomiting, rapid heartbeat or seizures immediately"]
+    },
+    howFastItWorks: {
+      onset: "Extended-release: 4-8 hours, Immediate-release: 1-2 hours",
+      duration: "Extended-release: 12-24 hours, Immediate-release: 6-8 hours"
+    },
+    specialGroups: {
+      pregnancy: "Use with caution - monitor levels closely as clearance increases",
+      breastfeeding: "Use with caution - passes into milk, may cause irritability in infant",
+      children: "Safe with careful weight-based dosing and monitoring",
+      elderly: "Reduce dose - slower metabolism requires lower doses and close monitoring"
+    }
+  },
+
   // ==================== ANTIPARASITICS ====================
 
   "albendazole": {
@@ -1406,6 +1981,331 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       breastfeeding: "Safe, monitor baby for sedation",
       children: "Safe, commonly used in neonates",
       elderly: "Use lower doses, risk of confusion"
+    }
+  },
+
+  "atropine": {
+    whatItDoes: "Anticholinergic medication that blocks acetylcholine receptors. Increases heart rate, dilates pupils, dries secretions. Life-saving in organophosphate poisoning and during resuscitation for bradycardia.",
+    commonUses: [
+      "Organophosphate poisoning antidote",
+      "Severe bradycardia during resuscitation",
+      "Pre-operative medication to reduce secretions",
+      "Eye dilation for examination (ophthalmologic use)",
+      "Reversal of nerve agent poisoning"
+    ],
+    importantSafety: {
+      dos: ["Give IV in emergencies - rapid onset needed", "Repeat doses may be needed for severe poisoning", "Monitor heart rate and pupil size", "Store in emergency medications"],
+      donts: ["Causes dilated pupils, blurred vision, dry mouth", "May cause confusion especially in elderly", "Avoid in glaucoma (eye drops)", "Can cause urinary retention"]
+    },
+    howFastItWorks: {
+      onset: "IV: 1-2 minutes, IM: 10-15 minutes, Eye drops: 30-40 minutes",
+      duration: "IV/IM: 4 hours, Eye dilation: 7-14 days"
+    },
+    specialGroups: {
+      pregnancy: "Safe when needed for life-threatening conditions",
+      breastfeeding: "Safe for occasional use",
+      children: "Safe - carefully dose by weight",
+      elderly: "Use with caution - increased risk of confusion and urinary retention"
+    }
+  },
+
+  "levothyroxine": {
+    whatItDoes: "Synthetic thyroid hormone (T4) used to treat hypothyroidism (underactive thyroid). Replaces missing thyroid hormone to restore normal metabolism, energy, and bodily functions. Lifelong treatment for most patients.",
+    commonUses: [
+      "Hypothyroidism (underactive thyroid)",
+      "Hashimoto's thyroiditis",
+      "Post-thyroidectomy hormone replacement",
+      "Thyroid suppression in thyroid cancer",
+      "Congenital hypothyroidism in newborns"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach 30-60 minutes before breakfast", "Take at same time daily", "Wait 4 hours before calcium, iron, or antacids", "Regular thyroid function monitoring every 6-12 months"],
+      donts: ["Do not stop suddenly", "Many medications interfere with absorption", "May take weeks to feel full effect", "Report chest pain, palpitations, or rapid weight loss"]
+    },
+    howFastItWorks: {
+      onset: "Initial effects in 3-5 days, full effect in 4-6 weeks",
+      duration: "Requires daily lifelong replacement"
+    },
+    specialGroups: {
+      pregnancy: "Essential to continue - increased dose often needed",
+      breastfeeding: "Safe and important to continue",
+      children: "Critical for normal growth and development",
+      elderly: "Start with lower doses, increase gradually"
+    }
+  },
+
+  "lidocaine-with-epinephrine": {
+    whatItDoes: "Local anesthetic lidocaine combined with epinephrine (adrenaline). Lidocaine numbs area while epinephrine constricts blood vessels to prolong anesthesia and reduce bleeding. Standard for minor surgery and dental procedures.",
+    commonUses: [
+      "Local anesthesia for minor surgical procedures",
+      "Dental procedures and tooth extractions",
+      "Wound repair and suturing",
+      "Skin lesion removal",
+      "Nerve blocks for regional anesthesia"
+    ],
+    importantSafety: {
+      dos: ["Inject slowly to reduce pain and detect intravascular injection", "Wait 5-10 minutes for full anesthetic effect", "Use appropriate concentration (typically 1% or 2% lidocaine)", "Aspirate before injecting to avoid blood vessels"],
+      donts: ["Never use on fingers, toes, penis, nose, or ears (epinephrine causes ischemia)", "Avoid if patient has cardiac arrhythmias", "Do not exceed maximum safe dose (7mg/kg with epinephrine)", "Not for IV regional anesthesia"]
+    },
+    howFastItWorks: {
+      onset: "2-5 minutes for full anesthesia",
+      duration: "1.5-3 hours (longer than plain lidocaine)"
+    },
+    specialGroups: {
+      pregnancy: "Safe for local procedures - preferred local anesthetic",
+      breastfeeding: "Safe",
+      children: "Safe - calculate maximum dose carefully by weight",
+      elderly: "Safe - may use reduced doses"
+    }
+  },
+
+  "lorazepam": {
+    whatItDoes: "Intermediate-acting benzodiazepine used for anxiety, agitation, and seizures. More potent than diazepam for seizure control. Causes sedation and amnesia. Risk of dependence with prolonged use.",
+    commonUses: [
+      "Status epilepticus (prolonged seizures)",
+      "Severe anxiety and panic attacks",
+      "Pre-operative sedation",
+      "Agitation in psychiatric emergencies",
+      "Alcohol withdrawal seizures"
+    ],
+    importantSafety: {
+      dos: ["Use lowest effective dose for shortest time", "Can give IV, IM, or orally", "Excellent for seizure control when IV access available", "Monitor breathing and consciousness"],
+      donts: ["Risk of respiratory depression especially with other sedatives", "High risk of dependence - avoid long-term use", "Causes drowsiness and impaired coordination", "Do not stop suddenly after prolonged use (taper)"]
+    },
+    howFastItWorks: {
+      onset: "IV: 1-5 minutes, IM: 15-30 minutes, Oral: 20-30 minutes",
+      duration: "6-8 hours per dose"
+    },
+    specialGroups: {
+      pregnancy: "Avoid if possible - use only for seizure emergencies",
+      breastfeeding: "Avoid - causes sedation in infant",
+      children: "Safe for seizure emergencies - careful dosing",
+      elderly: "Use very low doses - high risk of falls, confusion, and paradoxical agitation"
+    }
+  },
+
+  "magnesium-sulfate": {
+    whatItDoes: "Essential mineral used as anticonvulsant in eclampsia and pre-eclampsia. Also treats severe asthma, prevents preterm birth, and replaces magnesium deficiency. Life-saving in obstetric emergencies.",
+    commonUses: [
+      "Eclampsia and severe pre-eclampsia treatment and prevention",
+      "Tocolysis (preventing preterm labor)",
+      "Severe asthma exacerbation (IV)",
+      "Hypomagnesemia (low magnesium)",
+      "Cardiac arrhythmias from magnesium deficiency"
+    ],
+    importantSafety: {
+      dos: ["Loading dose 4-6g IV over 15-20 minutes, then 1-2g/hour infusion", "Monitor reflexes, respirations, and urine output hourly", "Have calcium gluconate available as antidote", "Continue for 24 hours after delivery or last seizure"],
+      donts: ["Overdose causes respiratory depression and cardiac arrest", "Stop if respirations <12/min or loss of reflexes", "Reduce dose if kidney impairment", "Report muscle weakness or difficulty breathing"]
+    },
+    howFastItWorks: {
+      onset: "Immediate when given IV, seizure control within minutes",
+      duration: "Therapeutic levels maintained during continuous infusion"
+    },
+    specialGroups: {
+      pregnancy: "Safe and essential for eclampsia - drug of choice",
+      breastfeeding: "Safe",
+      children: "Safe for specific indications like severe asthma",
+      elderly: "Use with caution - reduce dose if kidney problems"
+    }
+  },
+
+  "methylprednisolone": {
+    whatItDoes: "Potent corticosteroid with strong anti-inflammatory and immunosuppressive effects. Available in high-dose IV form for severe conditions. More potent than prednisolone, less than dexamethasone.",
+    commonUses: [
+      "Severe asthma exacerbations",
+      "Spinal cord injury (within 8 hours)",
+      "Severe allergic reactions",
+      "Multiple sclerosis relapses",
+      "Severe COVID-19 (alternative to dexamethasone)"
+    ],
+    importantSafety: {
+      dos: ["High-dose IV pulses for acute severe conditions", "Oral form for maintenance therapy", "Taper dose when discontinuing after prolonged use", "Monitor blood sugar and blood pressure"],
+      donts: ["Raises blood sugar significantly", "Suppresses immune system", "May cause psychiatric effects at high doses", "Long-term use causes osteoporosis and weight gain"]
+    },
+    howFastItWorks: {
+      onset: "IV: Within hours, Oral: 1-2 hours",
+      duration: "12-36 hours depending on dose"
+    },
+    specialGroups: {
+      pregnancy: "Use when benefits outweigh risks",
+      breastfeeding: "Safe for short courses - may reduce milk supply temporarily",
+      children: "Safe for acute use - monitor growth with prolonged use",
+      elderly: "Increased side effects including diabetes, osteoporosis, and infections"
+    }
+  },
+
+  "midazolam": {
+    whatItDoes: "Short-acting benzodiazepine used for sedation, seizure control, and anesthesia. Causes amnesia and sedation. Rapid onset and offset make it ideal for procedures. Buccal form excellent for seizures in children.",
+    commonUses: [
+      "Procedural sedation (endoscopy, minor surgery)",
+      "Seizure control especially in children (buccal/intranasal)",
+      "Induction and maintenance of anesthesia",
+      "ICU sedation for ventilated patients",
+      "Status epilepticus when IV access available"
+    ],
+    importantSafety: {
+      dos: ["Have reversal agent (flumazenil) and resuscitation equipment available", "Monitor oxygen saturation and breathing", "Buccal form easy for caregivers to give during seizures", "Titrate IV dose carefully to effect"],
+      donts: ["Risk of respiratory depression - ensure monitoring", "Avoid in patients with severe respiratory disease", "Do not drive or operate machinery after use", "Paradoxical agitation possible especially in children"]
+    },
+    howFastItWorks: {
+      onset: "IV: 1-3 minutes, IM: 5-15 minutes, Buccal/Intranasal: 5-10 minutes",
+      duration: "15-30 minutes (IV), 1-2 hours (IM/buccal)"
+    },
+    specialGroups: {
+      pregnancy: "Avoid if possible - use only when necessary",
+      breastfeeding: "Avoid for 4 hours after dose if possible",
+      children: "Safe and effective - buccal form excellent for seizures",
+      elderly: "Use reduced doses - increased sensitivity and risk of respiratory depression"
+    }
+  },
+
+  "dextrose-saline": {
+    whatItDoes: "Intravenous fluid combining glucose (dextrose) and sodium chloride. Provides calories, hydration, and electrolytes simultaneously. Common formulations include 5% dextrose in 0.45% saline (D5½NS) or 0.9% saline (D5NS).",
+    commonUses: [
+      "Maintenance IV fluids in hospitalized patients",
+      "Hypoglycemia prevention during IV therapy",
+      "Dehydration with low blood sugar",
+      "Post-operative fluid replacement",
+      "Fluid and electrolyte maintenance"
+    ],
+    importantSafety: {
+      dos: ["Appropriate for most general maintenance needs", "Monitor blood sugar levels in diabetics", "Adjust rate based on patient needs and losses", "More physiologic than pure saline for maintenance"],
+      donts: ["Not for resuscitation - use crystalloid or blood products", "Risk of hyperglycemia in diabetics", "May cause hyponatremia with excessive use", "Monitor for fluid overload in cardiac/renal patients"]
+    },
+    howFastItWorks: {
+      onset: "Immediate plasma expansion and glucose availability",
+      duration: "Continuous infusion as needed"
+    },
+    specialGroups: {
+      pregnancy: "Safe for IV hydration",
+      breastfeeding: "Safe",
+      children: "Safe - commonly used for pediatric maintenance fluids",
+      elderly: "Safe - monitor for fluid overload"
+    }
+  },
+
+  "potassium-chloride": {
+    whatItDoes: "Essential electrolyte supplement used to treat and prevent low potassium (hypokalemia). Critical for heart function, muscle contraction, and nerve transmission. IV form requires careful administration to avoid cardiac arrest.",
+    commonUses: [
+      "Hypokalemia (low potassium) from diuretics, vomiting, diarrhea",
+      "Prevention of low potassium in high-risk patients",
+      "Diabetic ketoacidosis treatment",
+      "Renal tubular acidosis",
+      "IV fluids supplementation"
+    ],
+    importantSafety: {
+      dos: ["Oral: take with meals and full glass of water", "IV: Must dilute and give slowly (max 10-20 mEq/hour peripheral line)", "Monitor potassium levels and EKG", "Take slow-release tablets whole - do not crush"],
+      donts: ["Never give IV potassium as bolus - causes immediate cardiac arrest", "Do not give if kidney failure without monitoring", "Oral forms may cause GI upset and ulceration", "Report muscle weakness, palpitations, or tingling"]
+    },
+    howFastItWorks: {
+      onset: "Oral: absorbed over hours, IV: immediate effect",
+      duration: "Requires ongoing supplementation if losses continue"
+    },
+    specialGroups: {
+      pregnancy: "Safe when needed for documented hypokalemia",
+      breastfeeding: "Safe",
+      children: "Safe - dose carefully by weight",
+      elderly: "Use with caution - kidney function may be reduced"
+    }
+  },
+
+  "ringer's-lactate": {
+    whatItDoes: "Crystalloid intravenous fluid solution containing sodium, potassium, calcium, chloride, and lactate. Closely resembles blood plasma electrolyte composition. Ideal for resuscitation and replacement of fluid losses.",
+    commonUses: [
+      "Hypovolemic shock and trauma resuscitation",
+      "Surgical fluid replacement",
+      "Burn resuscitation",
+      "Dehydration requiring IV fluids",
+      "Diabetic ketoacidosis (along with normal saline)"
+    ],
+    importantSafety: {
+      dos: ["Rapid infusion safe in hemorrhagic shock", "Warm fluids for massive transfusion to prevent hypothermia", "Monitor for fluid overload in cardiac/renal patients", "Excellent for most resuscitation scenarios"],
+      donts: ["Avoid in severe liver failure (cannot metabolize lactate)", "Use with caution if hyperkalemia (contains potassium)", "May cause metabolic alkalosis with large volumes", "Contains calcium - do not mix with blood products in same line"]
+    },
+    howFastItWorks: {
+      onset: "Immediate plasma expansion",
+      duration: "Redistributes to interstitial space over 30-60 minutes"
+    },
+    specialGroups: {
+      pregnancy: "Safe - commonly used in labor and delivery",
+      breastfeeding: "Safe",
+      children: "Safe and preferred for pediatric resuscitation",
+      elderly: "Safe - monitor for fluid overload"
+    }
+  },
+
+  "sodium-chloride": {
+    whatItDoes: "Normal saline (0.9% sodium chloride) is isotonic IV fluid used for hydration, resuscitation, and as medication diluent. Most commonly used IV fluid worldwide. Also available as concentrated form for severe hyponatremia.",
+    commonUses: [
+      "Hypovolemia and dehydration",
+      "Resuscitation in shock",
+      "IV medication dilution and flushing",
+      "Diabetic ketoacidosis initial fluid",
+      "Severe hyponatremia (hypertonic 3% saline)"
+    ],
+    importantSafety: {
+      dos: ["Safe for most indications", "Monitor for fluid overload", "0.9% is isotonic and safe for most uses", "3% hypertonic saline only in ICU with monitoring"],
+      donts: ["Large volumes may cause hyperchloremic acidosis", "Avoid as sole fluid in children (use balanced solutions)", "Monitor sodium levels with large volumes", "Hypertonic saline can cause rapid sodium rise - dangerous"]
+    },
+    howFastItWorks: {
+      onset: "Immediate plasma expansion",
+      duration: "Redistributes over 30-60 minutes"
+    },
+    specialGroups: {
+      pregnancy: "Safe",
+      breastfeeding: "Safe",
+      children: "Safe but balanced solutions often preferred",
+      elderly: "Safe - monitor for fluid overload"
+    }
+  },
+
+  "various": {
+    whatItDoes: "Generic cough syrup containing combination of expectorant, cough suppressant, and sometimes antihistamine. Helps relieve cough and cold symptoms. Multiple formulations available with different active ingredients.",
+    commonUses: [
+      "Dry, irritating cough",
+      "Productive cough with chest congestion",
+      "Cold and flu symptoms",
+      "Post-nasal drip cough",
+      "Temporary cough relief"
+    ],
+    importantSafety: {
+      dos: ["Check ingredients - avoid duplicating medications", "Follow age-appropriate dosing", "Take with water", "May help cough to allow sleep"],
+      donts: ["Not recommended under 2 years", "Do not combine with other cold medications", "Avoid if contains codeine in children", "Many contain sugar - caution in diabetes"]
+    },
+    howFastItWorks: {
+      onset: "30-60 minutes for cough suppression",
+      duration: "4-6 hours depending on formulation"
+    },
+    specialGroups: {
+      pregnancy: "Check specific ingredients - many are safe",
+      breastfeeding: "Check ingredients - avoid if contains sedating antihistamines",
+      children: "Not under 2 years, careful dosing 2-6 years",
+      elderly: "Safe - check for drug interactions"
+    }
+  },
+
+  "warfarin": {
+    whatItDoes: "Oral anticoagulant (blood thinner) that prevents blood clot formation by blocking vitamin K. Requires regular monitoring with INR blood tests. Used for atrial fibrillation, mechanical heart valves, and clot prevention.",
+    commonUses: [
+      "Atrial fibrillation (prevent stroke)",
+      "Mechanical heart valve anticoagulation",
+      "Deep vein thrombosis (DVT) and pulmonary embolism treatment/prevention",
+      "After heart attack in selected patients",
+      "Recurrent blood clots"
+    ],
+    importantSafety: {
+      dos: ["Take at same time daily (usually evening)", "Regular INR monitoring every 1-4 weeks", "Consistent vitamin K intake in diet", "Inform all healthcare providers and dentists"],
+      donts: ["Narrow therapeutic window - bleeding risk if too high", "Many drug and food interactions", "Avoid activities with high injury risk", "Report any unusual bleeding or bruising immediately"]
+    },
+    howFastItWorks: {
+      onset: "Full anticoagulant effect in 3-5 days",
+      duration: "Effects persist 2-5 days after stopping"
+    },
+    specialGroups: {
+      pregnancy: "Contraindicated - causes fetal abnormalities (use heparin instead)",
+      breastfeeding: "Safe - minimal passage into milk",
+      children: "Difficult to manage - requires expert monitoring",
+      elderly: "Higher bleeding risk - often use lower doses"
     }
   },
 
@@ -1634,7 +2534,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
 
   // ==================== CONTRACEPTIVES ====================
   
-  "ethinylestradiol/levonorgestrel": {
+  "ethinylestradiol-levonorgestrel": {
     whatItDoes: "Combined oral contraceptive pill containing estrogen and progestin. Prevents pregnancy by stopping ovulation. Very effective when taken correctly.",
     commonUses: [
       "Contraception",
@@ -1709,7 +2609,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
 
   // ==================== ANTIRETROVIRALS ====================
   
-  "tenofovir/lamivudine/dolutegravir": {
+  "tenofovir-lamivudine-dolutegravir": {
     whatItDoes: "First-line HIV treatment combining three powerful antiretroviral medications in one pill. Most effective HIV treatment available. Suppresses virus to undetectable levels.",
     commonUses: [
       "First-line HIV treatment",
@@ -1733,7 +2633,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "tenofovir/lamivudine/efavirenz": {
+  "tenofovir-lamivudine-efavirenz": {
     whatItDoes: "Alternative first-line HIV treatment. Three antiretroviral drugs in one pill. Effective at suppressing HIV virus.",
     commonUses: [
       "First-line HIV treatment",
@@ -1756,7 +2656,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "zidovudine/lamivudine": {
+  "zidovudine-lamivudine": {
     whatItDoes: "Antiretroviral combination used mainly for preventing mother-to-child transmission of HIV. Also part of some second-line regimens.",
     commonUses: [
       "Prevention of mother-to-child HIV transmission",
@@ -1803,7 +2703,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "lopinavir/ritonavir": {
+  "lopinavir-ritonavir": {
     whatItDoes: "Second-line HIV treatment for patients who failed first-line therapy. Powerful protease inhibitor combination. Used for drug-resistant HIV.",
     commonUses: [
       "Second-line HIV treatment",
@@ -1851,32 +2751,33 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
   },
 
   // ==================== VACCINES ====================
-  
-  "tetanus toxoid": {
-    whatItDoes: "Vaccine preventing tetanus (lockjaw). Given to pregnant women to protect mother and baby. Essential after dirty wounds.",
+
+  "bcg-vaccine": {
+    whatItDoes: "Live attenuated vaccine against tuberculosis. Given at birth as single intradermal injection in left upper arm. Provides protection against severe forms of TB especially TB meningitis in children.",
     commonUses: [
-      "Prevention of tetanus in pregnancy",
-      "Wound prophylaxis after injury",
-      "Primary immunization series",
-      "Booster doses"
+      "Prevention of tuberculosis in infants",
+      "Protection against severe TB and TB meningitis",
+      "Routine immunization in TB-endemic areas",
+      "Given at birth or first contact with health services",
+      "Part of WHO Expanded Programme on Immunization"
     ],
     importantSafety: {
-      dos: ["Give to all pregnant women (2-3 doses)", "Give after injuries with dirty wounds", "Safe in all trimesters", "Protects both mother and newborn"],
-      donts: ["Pain and swelling at injection site", "Safe vaccine with minimal side effects", "Previous severe reaction is contraindication", "Low risk of allergic reaction"]
+      dos: ["Give single intradermal injection in left upper arm", "Forms small ulcer then scar - this is normal", "No need for repeated doses", "Administer to all infants in TB-endemic areas"],
+      donts: ["Do not give to immunocompromised infants (HIV with symptoms)", "Do not massage injection site", "Local ulceration and scarring are expected", "Do not give if active TB or severe skin infection at site"]
     },
     howFastItWorks: {
-      onset: "Protection after 2-3 doses",
-      duration: "Boosters every 10 years or after injury"
+      onset: "Immunity develops over 6-8 weeks",
+      duration: "Protection lasts 10-15 years, most important in early childhood"
     },
     specialGroups: {
-      pregnancy: "Safe and essential",
-      breastfeeding: "Safe",
-      children: "Part of routine immunization",
-      elderly: "Safe, important for wound prophylaxis"
+      pregnancy: "Not applicable - infant vaccine",
+      breastfeeding: "Safe for breastfed infants",
+      children: "Recommended at birth in TB-endemic areas",
+      elderly: "Not applicable"
     }
   },
 
-  "hepatitis b vaccine": {
+  "hepatitis-b-vaccine": {
     whatItDoes: "Vaccine preventing hepatitis B virus infection. Given at birth and in series. Protects liver from chronic infection.",
     commonUses: [
       "Routine infant immunization",
@@ -1900,7 +2801,82 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "rabies vaccine": {
+  "measles-vaccine": {
+    whatItDoes: "Live attenuated vaccine preventing measles - a highly contagious viral illness causing fever, rash, and potentially fatal complications. One of most effective vaccines available with dramatic reduction in child mortality.",
+    commonUses: [
+      "Routine childhood immunization at 9 months and 18 months",
+      "Prevention of measles outbreaks",
+      "Part of MMR (measles-mumps-rubella) vaccine in some countries",
+      "Mass vaccination campaigns",
+      "Post-exposure prophylaxis within 72 hours"
+    ],
+    importantSafety: {
+      dos: ["Give first dose at 9 months in endemic areas", "Second dose at 18 months for optimal protection", "Administer subcutaneously", "Can give during minor illness"],
+      donts: ["Do not give if severely immunocompromised (symptomatic HIV)", "Temporary mild fever and rash may occur (7-10 days after)", "Do not give if severe egg allergy (rare concern)", "Postpone if moderate to severe illness"]
+    },
+    howFastItWorks: {
+      onset: "Immunity develops within 2 weeks",
+      duration: "Usually lifelong after 2 doses"
+    },
+    specialGroups: {
+      pregnancy: "Contraindicated - avoid pregnancy for 1 month after vaccination",
+      breastfeeding: "Safe for breastfed infants to receive vaccine",
+      children: "Essential childhood vaccine - prevents serious complications",
+      elderly: "Not routinely given - most already immune"
+    }
+  },
+
+  "oral-polio-vaccine": {
+    whatItDoes: "Live attenuated oral vaccine preventing poliomyelitis. Administered as drops by mouth. Provides intestinal immunity and population-level protection through virus shedding. Key to global polio eradication efforts.",
+    commonUses: [
+      "Routine childhood immunization",
+      "Polio eradication campaigns",
+      "Prevention of paralytic poliomyelitis",
+      "Mass immunization during outbreaks",
+      "Primary series and booster doses"
+    ],
+    importantSafety: {
+      dos: ["Give 2 drops by mouth at 6, 10, and 14 weeks plus birth dose", "No injection needed - oral administration", "Safe to give with other vaccines", "Additional doses during campaigns are beneficial"],
+      donts: ["Do not give to severely immunocompromised children", "Rare risk of vaccine-associated paralytic polio (extremely rare)", "If child vomits within 5-10 minutes, give another dose", "Not for adults in polio-free areas"]
+    },
+    howFastItWorks: {
+      onset: "Immunity develops after 2-3 doses",
+      duration: "Long-lasting protection, boosters enhance immunity"
+    },
+    specialGroups: {
+      pregnancy: "Generally avoid, but can give during outbreak",
+      breastfeeding: "Safe for infant to receive - breastfeeding does not interfere",
+      children: "Essential for routine immunization starting at birth",
+      elderly: "Not routinely needed in adults"
+    }
+  },
+
+  "pentavalent-vaccine": {
+    whatItDoes: "Combination vaccine protecting against five diseases: diphtheria, tetanus, pertussis (whooping cough), hepatitis B, and Haemophilus influenzae type b (Hib). Reduces number of injections needed for infant immunization.",
+    commonUses: [
+      "Routine infant immunization at 6, 10, and 14 weeks",
+      "Prevention of five major childhood diseases",
+      "Part of WHO Expanded Programme on Immunization",
+      "Reduces injection burden on infants",
+      "Primary immunization series"
+    ],
+    importantSafety: {
+      dos: ["Give intramuscularly at 6, 10, and 14 weeks of age", "Administer in anterolateral thigh in infants", "Can give simultaneously with other vaccines", "Complete all 3 doses for optimal protection"],
+      donts: ["Mild fever and irritability common after vaccination", "Local swelling and tenderness at injection site expected", "Severe allergic reaction to previous dose is contraindication", "Do not postpone for minor illness"]
+    },
+    howFastItWorks: {
+      onset: "Protection develops after 2-3 doses",
+      duration: "Requires boosters - DTP boosters at 18 months and 5 years"
+    },
+    specialGroups: {
+      pregnancy: "Not applicable - infant vaccine",
+      breastfeeding: "Safe for breastfed infants",
+      children: "Essential part of routine infant immunization",
+      elderly: "Not applicable"
+    }
+  },
+
+  "rabies-vaccine": {
     whatItDoes: "Vaccine preventing rabies after animal bites. Life-saving - rabies is 100% fatal without treatment. Give immediately after dog/bat bite.",
     commonUses: [
       "Post-exposure prophylaxis after bites",
@@ -1920,6 +2896,31 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       breastfeeding: "Safe",
       children: "Safe from birth, critical for children",
       elderly: "Safe"
+    }
+  },
+
+  "tetanus-toxoid": {
+    whatItDoes: "Vaccine preventing tetanus (lockjaw) by stimulating antibody production against tetanus toxin. Given to pregnant women to protect mother and baby from neonatal tetanus. Essential after contaminated wounds to prevent fatal muscle spasms.",
+    commonUses: [
+      "Prevention of maternal and neonatal tetanus",
+      "Wound prophylaxis after contaminated injuries",
+      "Primary immunization series in children",
+      "Booster doses every 10 years",
+      "Part of antenatal care in pregnancy"
+    ],
+    importantSafety: {
+      dos: ["Give at least 2 doses 4 weeks apart during pregnancy", "Additional dose after dirty wounds if >5 years since last dose", "Safe in all trimesters of pregnancy", "Protects newborn from neonatal tetanus"],
+      donts: ["Pain and swelling at injection site is common", "Previous severe allergic reaction is contraindication", "Low risk of side effects - very safe vaccine", "Fever and malaise may occur but uncommon"]
+    },
+    howFastItWorks: {
+      onset: "Protection after 2 doses (at least 80% protection)",
+      duration: "Boosters recommended every 10 years or after high-risk wounds"
+    },
+    specialGroups: {
+      pregnancy: "Safe and essential - recommended for all pregnant women",
+      breastfeeding: "Safe",
+      children: "Part of routine immunization (in pentavalent vaccine)",
+      elderly: "Safe and important for wound prophylaxis"
     }
   },
 
@@ -2142,7 +3143,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
 
   // ==================== ADDITIONAL INSULIN ====================
   
-  "regular insulin": {
+  "regular-insulin": {
     whatItDoes: "Short-acting insulin for diabetes. Controls blood sugar after meals. Can be given IV in emergencies. Clear solution.",
     commonUses: [
       "Type 1 diabetes mealtime coverage",
@@ -2166,7 +3167,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "nph insulin": {
+  "nph-insulin": {
     whatItDoes: "Intermediate-acting insulin providing basal coverage. Cloudy insulin that must be mixed. Lasts 12-18 hours.",
     commonUses: [
       "Basal insulin coverage for type 1 diabetes",
@@ -2189,7 +3190,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     }
   },
 
-  "mixed insulin": {
+  "mixed-insulin": {
     whatItDoes: "Pre-mixed combination of short and intermediate insulin (70/30 or 30/70). Convenient fixed combination. Cloudy appearance.",
     commonUses: [
       "Type 2 diabetes twice daily regimen",
@@ -2440,6 +3441,56 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
 
   // ==================== OTHER ANTIBIOTICS ====================
 
+  "gentian-violet": {
+    whatItDoes: "Topical antiseptic dye with antifungal and antibacterial properties. Used primarily for oral thrush in infants and superficial skin infections. Stains tissues purple but highly effective.",
+    commonUses: [
+      "Oral thrush (candidiasis) in infants",
+      "Candida diaper rash",
+      "Superficial skin infections",
+      "Minor cuts and abrasions",
+      "Fungal skin infections"
+    ],
+    importantSafety: {
+      dos: ["Apply to affected area once or twice daily", "Use 0.5-1% solution for oral thrush", "Staining is normal and temporary", "Effective and inexpensive treatment"],
+      donts: ["Will stain skin, clothing, and surfaces purple", "Do not swallow large amounts", "Avoid use on large open wounds", "Do not use near eyes"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days for thrush",
+      duration: "Usually 3-7 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Safe for external use",
+      breastfeeding: "Safe - commonly used for nipple thrush",
+      children: "Safe - widely used for infant thrush",
+      elderly: "Safe"
+    }
+  },
+
+  "meropenem": {
+    whatItDoes: "Ultra-broad-spectrum carbapenem antibiotic reserved for severe, life-threatening infections or multidrug-resistant bacteria. Injectable medication effective against nearly all bacteria including those resistant to other antibiotics.",
+    commonUses: [
+      "Complicated intra-abdominal infections",
+      "Severe hospital-acquired pneumonia",
+      "Bacterial meningitis",
+      "Septicemia from multidrug-resistant organisms",
+      "Febrile neutropenia in cancer patients"
+    ],
+    importantSafety: {
+      dos: ["Given only by intravenous infusion", "Infuse over 15-30 minutes for best tolerance", "Monitor for seizures especially with CNS infections", "Reserve for serious infections to prevent resistance"],
+      donts: ["Risk of seizures especially in CNS infections or renal impairment", "Do not use for minor infections", "Report any seizure activity immediately", "May cause severe diarrhea including C. difficile"]
+    },
+    howFastItWorks: {
+      onset: "Rapid bactericidal effect within hours",
+      duration: "Usually given every 8 hours for 7-14 days or longer"
+    },
+    specialGroups: {
+      pregnancy: "Use only if clearly needed - limited safety data",
+      breastfeeding: "Use with caution - limited data",
+      children: "Safe including neonates - dose by weight",
+      elderly: "Safe - adjust dose for kidney function"
+    }
+  },
+
   "nitrofurantoin": {
     whatItDoes: "Nitrofurantoin is a specialized antibiotic that concentrates in urine, making it highly effective for urinary tract infections. Works by damaging bacterial DNA and proteins.",
     commonUses: [
@@ -2486,6 +3537,106 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       breastfeeding: "Safe - minimal amounts in milk",
       children: "Safe - commonly used for ear and skin infections",
       elderly: "Safe - adjust dose if kidney problems"
+    }
+  },
+
+  "penicillin-g": {
+    whatItDoes: "Crystalline penicillin given by injection for serious streptococcal and other bacterial infections. Narrow spectrum antibiotic highly effective against susceptible organisms including syphilis and meningococcal disease.",
+    commonUses: [
+      "Severe streptococcal infections",
+      "Neurosyphilis and congenital syphilis",
+      "Meningococcal meningitis",
+      "Gas gangrene and clostridial infections",
+      "Severe pneumococcal infections"
+    ],
+    importantSafety: {
+      dos: ["Given only by injection (IM or IV)", "Administer every 4-6 hours for most infections", "Test for penicillin allergy before first dose", "Ensure adequate hydration"],
+      donts: ["Never give benzathine form intravenously", "Do not use if penicillin allergy", "Watch for allergic reactions during administration", "Aqueous form must be given frequently"]
+    },
+    howFastItWorks: {
+      onset: "Rapid onset within 30 minutes of injection",
+      duration: "Short duration - requires dosing every 4-6 hours"
+    },
+    specialGroups: {
+      pregnancy: "Safe - drug of choice for syphilis in pregnancy",
+      breastfeeding: "Safe",
+      children: "Safe including neonates",
+      elderly: "Safe - adjust for kidney function"
+    }
+  },
+
+  "tetracycline": {
+    whatItDoes: "Broad-spectrum antibiotic that inhibits bacterial protein synthesis. Effective against many bacteria, rickettsiae, and some parasites. Used for respiratory, skin, and sexually transmitted infections.",
+    commonUses: [
+      "Acne and rosacea",
+      "Respiratory tract infections",
+      "Chlamydia and other STIs",
+      "Rickettsial infections (typhus, Rocky Mountain spotted fever)",
+      "H. pylori eradication in ulcer treatment"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach 1 hour before or 2 hours after meals", "Take with full glass of water", "Remain upright for 30 minutes after dose", "Protect skin from sun exposure"],
+      donts: ["Do not take with dairy products, antacids, or iron supplements", "Avoid in pregnancy and children under 8 (tooth staining)", "Do not lie down immediately after taking", "May cause photosensitivity - use sunscreen"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in acne: 6-8 weeks, Infections: 2-3 days",
+      duration: "Infections: 7-14 days, Acne: several months"
+    },
+    specialGroups: {
+      pregnancy: "Contraindicated - causes permanent tooth discoloration in fetus",
+      breastfeeding: "Avoid - may affect infant bone and tooth development",
+      children: "Contraindicated under 8 years - permanent tooth staining",
+      elderly: "Safe - ensure adequate fluid intake"
+    }
+  },
+
+  "tranexamic-acid": {
+    whatItDoes: "Antifibrinolytic medication that prevents excessive bleeding by stabilizing blood clots. Reduces blood loss in surgery, trauma, heavy menstrual bleeding, and postpartum hemorrhage.",
+    commonUses: [
+      "Postpartum hemorrhage treatment and prevention",
+      "Heavy menstrual bleeding (menorrhagia)",
+      "Trauma-related bleeding",
+      "Surgical bleeding reduction",
+      "Bleeding in hemophilia patients"
+    ],
+    importantSafety: {
+      dos: ["Administer IV slowly over 10 minutes for hemorrhage", "Oral: take 3-4 times daily for menstrual bleeding", "Most effective when given within 3 hours of bleeding onset", "Safe and life-saving medication"],
+      donts: ["Do not use if history of blood clots or stroke", "Avoid in patients with kidney failure without dose adjustment", "May cause nausea if given IV too rapidly", "Not for patients with active clotting disorders"]
+    },
+    howFastItWorks: {
+      onset: "IV: within 15-30 minutes, Oral: 2-3 hours",
+      duration: "Effects last 6-8 hours per dose"
+    },
+    specialGroups: {
+      pregnancy: "Safe - WHO essential medicine for postpartum hemorrhage",
+      breastfeeding: "Safe - minimal passage into milk",
+      children: "Safe for bleeding disorders and trauma",
+      elderly: "Safe - adjust dose if kidney impairment"
+    }
+  },
+
+  "vancomycin": {
+    whatItDoes: "Reserved antibiotic for serious gram-positive infections including MRSA. Given IV for bloodstream infections or orally for severe C. difficile colitis. Last-line antibiotic requiring monitoring.",
+    commonUses: [
+      "MRSA infections (skin, bone, bloodstream)",
+      "Bacterial endocarditis",
+      "Severe C. difficile colitis (oral form)",
+      "Meningitis from resistant organisms",
+      "Sepsis from gram-positive bacteria"
+    ],
+    importantSafety: {
+      dos: ["Given by slow IV infusion over at least 60 minutes", "Monitor blood levels for optimal dosing", "Requires kidney function monitoring", "Oral form only for intestinal infections"],
+      donts: ["Rapid infusion causes red man syndrome (flushing, rash)", "May damage hearing and kidneys", "Report ringing in ears or decreased urine", "Do not use oral form for bloodstream infections"]
+    },
+    howFastItWorks: {
+      onset: "IV: Hours for bactericidal effect, Oral: 1-2 days for C. diff",
+      duration: "Usually 7-14 days or longer for severe infections"
+    },
+    specialGroups: {
+      pregnancy: "Use only if no alternative - potential hearing toxicity to fetus",
+      breastfeeding: "Probably safe - poor oral absorption in infant",
+      children: "Safe with careful monitoring - dose by weight",
+      elderly: "High risk group - monitor kidney function and levels closely"
     }
   },
 

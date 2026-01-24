@@ -480,7 +480,7 @@ export function PatientInstructionSheet({ patient, drug, prescription, date }: P
               ${drug.genericName ? `<div class="generic-name">(Generic Name: ${drug.genericName})</div>` : ''}
               
               <div class="details-box">
-                <p><strong>Form:</strong> ${drug.form}</p>
+                <p><strong>Form:</strong> ${drug.form.charAt(0).toUpperCase() + drug.form.slice(1)}</p>
                 ${drug.strength ? `<p><strong>Strength:</strong> ${drug.strength}</p>` : ''}
                 <p><strong>Quantity:</strong> ${quantityText}</p>
               </div>
