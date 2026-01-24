@@ -1,4 +1,4 @@
-import React from "react";
+import { Fragment } from "react";
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { formatLongDate } from "@/lib/date-utils";
@@ -151,7 +151,7 @@ export function LabReportPrint({
                 {Object.entries(results).map(([testName, testData], testIndex) => {
                   const fields = resultFields[testName];
                   return (
-                    <React.Fragment key={testName}>
+                    <Fragment key={testName}>
                       {/* Test Category Header Row */}
                       <tr className="bg-blue-900 text-white">
                         <td colSpan={3} className="px-2 py-1 font-bold text-xs uppercase">
@@ -171,12 +171,13 @@ export function LabReportPrint({
                         }
                         
                         // Determine status badge for abnormal values
-                        let statusBadge = "";
+                        let statusBadge = null;
                         if (isAbnormal && config?.type === 'number' && config?.normal) {
                           const numValue = typeof value === 'string' ? parseFloat(value) : value;
                           const normalValue = parseFloat(config.normal);
                           if (!isNaN(numValue) && !isNaN(normalValue)) {
-                            statusBadge = numValue > normalValue ? " H" : " L";
+                            const badgeText = numValue > normalValue ? "H" : "L";
+                            statusBadge = <span className="text-xs ml-1 px-1 bg-red-100 rounded">{badgeText}</span>;
                           }
                         }
                         
@@ -189,7 +190,7 @@ export function LabReportPrint({
                               isAbnormal && "text-red-600",
                               !isNormal && !isAbnormal && "text-gray-900"
                             )}>
-                              {displayValue} {config?.unit || ""}{isAbnormal && statusBadge && <span className="text-xs ml-1 px-1 bg-red-100 rounded">{statusBadge}</span>}
+                              {displayValue} {config?.unit || ""}{statusBadge}
                             </td>
                             <td className="px-2 py-1 text-gray-600">
                               {config?.normal || config?.range || "—"}
@@ -197,7 +198,7 @@ export function LabReportPrint({
                           </tr>
                         );
                       })}
-                    </React.Fragment>
+                    </Fragment>
                   );
                 })}
               </tbody>
