@@ -1,20 +1,11 @@
+// client/src/components/LabReportPrint.tsx
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { formatLongDate } from "@/lib/date-utils";
 
-/**
- * Reusable Lab Report Print Component
- * 
- * This component provides a unified print layout for laboratory reports.
- * It can be used for both Patient Copy (no interpretation) and Clinical Copy (with interpretation).
- */
-
 interface LabReportPrintProps {
-  /** Unique ID for the print container (e.g., "lab-report-print", "lab-clinical-print") */
   containerId: string;
-  /** Whether to show this print container */
   visible: boolean;
-  /** Lab test data */
   labTest: {
     testId: string;
     patientId: string;
@@ -27,7 +18,6 @@ interface LabReportPrintProps {
     technicianNotes?: string;
     completedBy?: string;
   };
-  /** Patient data */
   patient?: {
     firstName?: string;
     lastName?: string;
@@ -36,17 +26,20 @@ interface LabReportPrintProps {
     gender?: string;
     phoneNumber?: string;
   } | null;
-  /** Result field configurations for displaying normal ranges */
-  resultFields: Record<string, Record<string, {
-    type: "number" | "text" | "select" | "multiselect";
-    unit?: string;
-    range?: string;
-    normal?: string;
-    options?: string[];
-  }>>;
-  /** Whether to include clinical interpretation (false for patient copy, true for clinical copy) */
+  resultFields: Record<
+    string,
+    Record<
+      string,
+      {
+        type: "number" | "text" | "select" | "multiselect";
+        unit?: string;
+        range?: string;
+        normal?: string;
+        options?: string[];
+      }
+    >
+  >;
   includeInterpretation?: boolean;
-  /** Additional form values (for completedDate, resultStatus, technicianNotes, completedBy) */
   formValues?: {
     completedDate?: string;
     resultStatus?: string;
@@ -63,7 +56,9 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   }
 }
 
-function fullName(p?: { firstName?: string; lastName?: string; patientId?: string } | null) {
+function fullName(
+  p?: { firstName?: string; lastName?: string; patientId?: string } | null
+) {
   if (!p) return "";
   const n = [p.firstName, p.lastName].filter(Boolean).join(" ").trim();
   return n || p.patientId || "";
@@ -71,6 +66,24 @@ function fullName(p?: { firstName?: string; lastName?: string; patientId?: strin
 
 function cx(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
+}
+
+function safeLongDate(v?: string) {
+  if (!v) return "—";
+  try {
+    return formatLongDate(v);
+  } catch {
+    return "—";
+  }
+}
+
+function normalizeValue(v: string) {
+  return (v ?? "").toString().trim().toLowerCase();
+}
+
+function isCommonNormalText(v: string) {
+  const x = normalizeValue(v);
+  return x === "negative" || x === "not seen" || x === "none" || x === "normal";
 }
 
 export function LabReportPrint({
@@ -85,261 +98,465 @@ export function LabReportPrint({
   if (!visible) return null;
 
   const tests = parseJSON<string[]>(labTest.tests, []);
-  const results = parseJSON<Record<string, Record<string, string>>>(labTest.results, {});
-  const interpretation = interpretLabResults(results);
-  
-  // Format number with commas
+  const results = parseJSON<Record<string, Record<string, string>>>(
+    labTest.results,
+    {}
+  );
+
+  const interpretation = includeInterpretation
+    ? interpretLabResults(results)
+    : { criticalFindings: [] as string[], warnings: [] as string[] };
+
   const formatNumber = (num: number | string): string => {
-    const parsed = typeof num === 'string' ? parseFloat(num) : num;
-    return isNaN(parsed) ? String(num) : new Intl.NumberFormat('en-US').format(parsed);
+    const parsed = typeof num === "string" ? parseFloat(num) : num;
+    return isNaN(parsed)
+      ? String(num)
+      : new Intl.NumberFormat("en-US").format(parsed);
   };
 
+  const completedDate = formValues?.completedDate || labTest.completedDate;
+  const resultStatus = formValues?.resultStatus || labTest.resultStatus;
+  const completedBy = formValues?.completedBy || labTest.completedBy;
+  const technicianNotes = formValues?.technicianNotes || labTest.technicianNotes;
+
   return (
-    <div id={containerId} className="prescription" style={{ minHeight: 'auto', height: 'auto' }}>
-      {/* Premium Professional Medical Report Layout - Full Width */}
-      <div className="border-2 border-gray-300 rounded-lg">
-        <div className="p-6 bg-white" style={{ width: '100%' }}>
-          
-          {/* HEADER - Premium Professional Style */}
-          <div className="flex items-start justify-between mb-6 pb-6 border-b-2 border-slate-900">
-            <div className="flex-1">
-              <h1 className="text-5xl font-bold text-slate-900 mb-2 tracking-tight">Bahr El Ghazal Clinic</h1>
-              <p className="text-lg text-slate-700 italic font-medium tracking-wide">Excellence in Healthcare</p>
-              <div className="mt-4 space-y-1">
-                <p className="text-sm text-slate-600">Aweil, South Sudan</p>
-                <p className="text-sm text-slate-600">Tel: +211916759060 / +211928754760</p>
-                <p className="text-sm text-slate-600">Email: bahr.ghazal.clinic@gmail.com</p>
-              </div>
-            </div>
-            <div className="w-32 h-32 flex-shrink-0">
-              <img src={clinicLogo} alt="Clinic Logo" className="w-full h-full object-contain" />
-            </div>
-          </div>
+    <div id={containerId} className="prescription" style={{ minHeight: "auto", height: "auto" }}>
+      <style>{`
+        @media print {
+          @page { margin: 14mm; }
+          #${containerId} { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          #${containerId} .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+          #${containerId} .no-print { display: none !important; }
+        }
+      `}</style>
 
-          {/* TITLE WITH ACCENT BAR - Premium Style */}
-          <div className="text-center mb-6 pb-5 border-b border-slate-300">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-widest">
-              LABORATORY TEST REPORT
-              {includeInterpretation && <span className="text-xl ml-3 text-slate-600 font-normal">(Clinical Copy)</span>}
-            </h2>
-            <div className="h-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent mt-4 mx-auto" style={{ width: '50%' }} />
-          </div>
+      <div className="bg-white text-slate-900">
+        <div className="mx-auto" style={{ maxWidth: 980 }}>
+          <div className="rounded-2xl border border-slate-200 overflow-hidden">
+            {/* Top accent rule */}
+            <div className="h-1 bg-slate-900" />
 
-          {/* Patient & Test Information Cards - Premium Side by Side Layout */}
-          <div className="grid grid-cols-2 gap-4 mb-5">
-            {/* Patient Information Box */}
-            <div className="border-2 border-slate-800 rounded-lg p-5 bg-white shadow-sm">
-              <h3 className="font-bold text-sm mb-4 text-slate-900 border-b-2 border-slate-800 pb-2 tracking-widest uppercase">
-                Patient Information
-              </h3>
-              <div className="space-y-2 leading-relaxed">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Name:</span>
-                  <span className="text-sm font-bold text-slate-900">{fullName(patient)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Patient ID:</span>
-                  <span className="text-sm font-bold text-slate-900">{labTest.patientId}</span>
-                </div>
-                {patient?.age && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-slate-700">Age:</span>
-                    <span className="text-sm font-medium text-slate-900">{patient.age}</span>
-                  </div>
-                )}
-                {patient?.gender && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-slate-700">Gender:</span>
-                    <span className="text-sm font-medium text-slate-900">{patient.gender}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Phone:</span>
-                  <span className="text-sm font-medium text-slate-900">{patient?.phoneNumber || 'N/A'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Test Information Box */}
-            <div className="border border-slate-400 rounded-lg p-5 bg-slate-50 shadow-sm">
-              <h3 className="font-bold text-sm mb-4 text-slate-900 border-b-2 border-slate-800 pb-2 tracking-widest uppercase">
-                Test Details
-              </h3>
-              <div className="space-y-2 leading-relaxed">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Test ID:</span>
-                  <span className="text-sm font-bold text-slate-900">{labTest.testId}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Category:</span>
-                  <span className="text-sm font-medium capitalize text-slate-900">{labTest.category}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Priority:</span>
-                  <span className="text-sm font-medium capitalize text-slate-900">{labTest.priority}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Tests:</span>
-                  <span className="text-sm font-medium text-slate-900">{tests.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-slate-700">Date:</span>
-                  <span className="text-sm font-medium text-slate-900">{formatLongDate(formValues?.completedDate || labTest.completedDate)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tests Ordered - Premium Badge Style */}
-          <div className="mb-6 p-5 bg-slate-50 border border-slate-300 rounded-lg">
-            <h3 className="font-bold text-sm mb-3 text-slate-900 tracking-wider uppercase">Tests Ordered</h3>
-            <div className="flex flex-wrap gap-2">
-              {tests.map((test, i) => (
-                <span key={i} className="inline-block bg-white border border-slate-400 px-4 py-2 rounded-md text-sm font-medium text-slate-800">
-                  {test}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Laboratory Results - Premium Professional Table Format */}
-          <div className="mb-4">
-            <h3 className="font-bold text-base mb-4 text-slate-900 border-b border-slate-800 pb-2 uppercase tracking-widest">
-              LABORATORY RESULTS
-            </h3>
-            {Object.entries(results).map(([testName, testData], testIndex) => {
-              const fields = resultFields[testName];
-              return (
-                <div key={testName} className="mb-4 border border-slate-300 rounded-xl overflow-hidden shadow-sm avoid-break">
-                  {/* Test Name Header - Premium Style */}
-                  <div className="bg-slate-900 text-white px-5 py-3 border-b border-slate-700">
-                    <h4 className="text-sm font-bold uppercase tracking-widest">● {testName}</h4>
-                  </div>
-                  {/* Professional Table */}
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="bg-slate-100 border-b border-slate-300">
-                        <th className="text-left px-5 py-4 font-bold text-slate-900 border-r border-slate-300 tracking-wide" style={{ width: '35%' }}>Test</th>
-                        <th className="text-center px-5 py-4 font-bold text-slate-900 border-r border-slate-300 tracking-wide" style={{ width: '30%' }}>Result</th>
-                        <th className="text-left px-5 py-4 font-bold text-slate-900 tracking-wide" style={{ width: '35%' }}>Normal Range</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(testData).map(([fieldName, value], rowIndex) => {
-                        const config = fields?.[fieldName];
-                        const isNormal = config?.normal === value;
-                        const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
-                        
-                        // Format numeric values with commas
-                        let displayValue = value;
-                        if (config?.type === 'number' && value) {
-                          displayValue = formatNumber(value);
-                        }
-                        
-                        // Alternating row colors for better readability
-                        const bgColor = rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50';
-                        
-                        return (
-                          <tr key={fieldName} className={`border-b border-slate-200 ${bgColor}`}>
-                            <td className="px-5 py-4 font-semibold text-slate-700 border-r border-slate-200">{fieldName}</td>
-                            <td className={cx(
-                              "px-5 py-4 text-center font-bold text-base border-r border-slate-200",
-                              isNormal && "text-emerald-700",
-                              isAbnormal && "text-red-700",
-                              !isNormal && !isAbnormal && "text-slate-900"
-                            )}>
-                              {displayValue} {config?.unit || ""}
-                            </td>
-                            <td className="px-5 py-4 text-slate-600 text-sm">
-                              {config?.normal || config?.range || "—"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Clinical Interpretation - ONLY IF includeInterpretation is true - Premium Style */}
-          {includeInterpretation && (() => {
-            const criticalFindings = interpretation.criticalFindings;
-            const warnings = interpretation.warnings;
-            const hasCritical = criticalFindings.length > 0;
-            const hasWarnings = warnings.length > 0;
-            const hasFindings = hasCritical || hasWarnings;
-
-            return (
-              <div className={`mb-4 rounded-xl p-4 border shadow-sm avoid-break ${hasFindings ? 'bg-amber-50 border-amber-300' : 'bg-emerald-50 border-emerald-300'}`}>
-                <h3 className={`text-base font-bold mb-3 flex items-center tracking-wide ${hasFindings ? 'text-amber-900' : 'text-emerald-900'}`}>
-                  <span className="text-lg mr-2">ℹ️</span> Clinical Interpretation
-                </h3>
-                {hasCritical && (
-                  <div className="mb-3">
-                    <p className="font-bold text-red-800 mb-2 text-sm tracking-wide">⚠️ Critical Findings Requiring Immediate Attention:</p>
-                    <div className="space-y-2">
-                      {criticalFindings.map((finding, i) => (
-                        <div key={i} className="bg-red-50 border-l-4 border-red-600 p-3 text-sm font-medium text-red-900 rounded-md">
-                          ● {finding}
-                        </div>
-                      ))}
+            <div className="p-7">
+              {/* Header */}
+              <div className="grid grid-cols-[1fr_auto] gap-6 items-start pb-5 border-b border-slate-200">
+                <div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden bg-white">
+                      <img
+                        src={clinicLogo}
+                        alt="Bahr El Ghazal Clinic"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                        Bahr El Ghazal Clinic
+                      </h1>
+                      <p className="mt-1 text-sm text-slate-600 italic">
+                        Excellence in Healthcare
+                      </p>
+                      <div className="mt-3 text-xs text-slate-600 leading-relaxed">
+                        <div>Aweil, South Sudan</div>
+                        <div>Tel: +211916759060 / +211928754760</div>
+                        <div>Email: bahr.ghazal.clinic@gmail.com</div>
+                      </div>
                     </div>
                   </div>
-                )}
-                {hasWarnings && (
-                  <div className="space-y-2">
-                    {warnings.map((warning, i) => (
-                      <div key={i} className="bg-amber-50 border-l-4 border-amber-600 p-3 text-sm font-medium text-amber-900 rounded-md">
-                        ⚠️ {warning}
+                </div>
+
+                {/* Executive metadata panel */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3" style={{ minWidth: 320 }}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs font-semibold tracking-wide text-slate-700 uppercase">
+                      Report
+                    </div>
+                    <span
+                      className={cx(
+                        "text-[11px] px-2 py-1 rounded-full border font-semibold",
+                        normalizeValue(resultStatus || "") === "completed"
+                          ? "border-emerald-200 text-emerald-800 bg-emerald-50"
+                          : "border-slate-200 text-slate-700 bg-white"
+                      )}
+                    >
+                      {resultStatus ? resultStatus : "—"}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div className="text-slate-500">Test ID</div>
+                    <div className="text-slate-900 font-semibold text-right">
+                      {labTest.testId}
+                    </div>
+
+                    <div className="text-slate-500">Patient ID</div>
+                    <div className="text-slate-900 font-semibold text-right">
+                      {labTest.patientId}
+                    </div>
+
+                    <div className="text-slate-500">Category</div>
+                    <div className="text-slate-900 text-right capitalize">
+                      {labTest.category}
+                    </div>
+
+                    <div className="text-slate-500">Priority</div>
+                    <div className="text-slate-900 text-right capitalize">
+                      {labTest.priority}
+                    </div>
+
+                    <div className="text-slate-500">Issued</div>
+                    <div className="text-slate-900 text-right">
+                      {safeLongDate(completedDate)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div className="pt-6 pb-5">
+                <div className="text-center">
+                  <div className="text-[11px] tracking-[0.22em] text-slate-500 uppercase">
+                    Laboratory Department
+                  </div>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                    Laboratory Test Report
+                    {includeInterpretation && (
+                      <span className="text-base font-normal text-slate-500">
+                        {" "}
+                        — Clinical Copy
+                      </span>
+                    )}
+                  </h2>
+                </div>
+              </div>
+
+              {/* Info blocks */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="rounded-xl border border-slate-200 p-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
+                      Patient Information
+                    </h3>
+                  </div>
+
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Name</span>
+                      <span className="font-semibold text-slate-900">
+                        {fullName(patient) || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Patient ID</span>
+                      <span className="font-semibold text-slate-900">
+                        {labTest.patientId || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Age</span>
+                      <span className="text-slate-900">{patient?.age ?? "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Gender</span>
+                      <span className="text-slate-900">{patient?.gender ?? "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Phone</span>
+                      <span className="text-slate-900">
+                        {patient?.phoneNumber || "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-5 bg-slate-50">
+                  <h3 className="text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
+                    Test Details
+                  </h3>
+
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Tests</span>
+                      <span className="text-slate-900 font-semibold">
+                        {tests.length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Result Status</span>
+                      <span className="text-slate-900">
+                        {resultStatus || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Completed By</span>
+                      <span className="text-slate-900">
+                        {completedBy || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Completion Date</span>
+                      <span className="text-slate-900">
+                        {safeLongDate(completedDate)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tests ordered (no chips) */}
+              <div className="rounded-xl border border-slate-200 p-5 mb-6 avoid-break">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
+                    Tests Ordered
+                  </h3>
+                  <div className="text-xs text-slate-500">
+                    Total: <span className="font-semibold text-slate-700">{tests.length}</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  {tests.length === 0 ? (
+                    <div className="text-slate-600">—</div>
+                  ) : (
+                    tests.map((t, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="mt-[7px] inline-block w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        <span className="text-slate-900">{t}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
-                {!hasFindings && (
-                  <div className="text-sm text-emerald-800 bg-emerald-100 border-l-4 border-emerald-600 p-3 font-medium rounded-md">
-                    ✓ All test results are within normal limits. No critical findings or abnormalities detected.
-                  </div>
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            );
-          })()}
 
-          {/* Technician Notes - If Present */}
-          {(formValues?.technicianNotes || labTest.technicianNotes) && (
-            <div className="mb-4 border border-amber-300 rounded-xl p-4 bg-amber-50 shadow-sm avoid-break">
-              <h3 className="font-bold text-sm mb-2 text-amber-900 flex items-center tracking-wide">
-                <span className="mr-2">📝</span> Technician Notes:
-              </h3>
-              <p className="text-sm text-slate-700 leading-relaxed">{formValues?.technicianNotes || labTest.technicianNotes}</p>
-            </div>
-          )}
+              {/* Results */}
+              <div className="mb-6">
+                <div className="flex items-end justify-between border-b border-slate-200 pb-3 mb-4">
+                  <h3 className="text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
+                    Laboratory Results
+                  </h3>
+                  <div className="text-xs text-slate-500">
+                    Values flagged as abnormal are based on configured normals/ranges.
+                  </div>
+                </div>
 
-          {/* SIGNATURE SECTION - Premium Professional Style - Always on Last Page */}
-          <div className="grid grid-cols-2 gap-12 mt-10 mb-6 avoid-break">
-            <div>
-              <div className="border-t-2 border-slate-900 pt-3 mt-16">
-                <p className="text-base font-bold text-slate-900 tracking-wide">Lab Technician:</p>
-                <p className="text-sm text-slate-700 mt-1">{formValues?.completedBy || labTest.completedBy || "Lab Technician"}</p>
+                {Object.entries(results).map(([testName, testData]) => {
+                  const fields = resultFields[testName];
+
+                  return (
+                    <div
+                      key={testName}
+                      className="rounded-2xl border border-slate-200 overflow-hidden mb-5 avoid-break"
+                    >
+                      {/* Section header */}
+                      <div className="bg-slate-50 px-5 py-4 border-b border-slate-200">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="min-w-0">
+                            <div className="text-[11px] tracking-[0.22em] text-slate-500 uppercase">
+                              Test Panel
+                            </div>
+                            <div className="mt-1 text-base font-semibold text-slate-900 truncate">
+                              {testName}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Table */}
+                      <table className="w-full text-sm border-collapse">
+                        <thead>
+                          <tr className="bg-white border-b border-slate-200">
+                            <th className="text-left px-5 py-3 text-xs font-semibold tracking-wide text-slate-600 uppercase" style={{ width: "38%" }}>
+                              Parameter
+                            </th>
+                            <th className="text-center px-5 py-3 text-xs font-semibold tracking-wide text-slate-600 uppercase" style={{ width: "26%" }}>
+                              Result
+                            </th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold tracking-wide text-slate-600 uppercase" style={{ width: "36%" }}>
+                              Reference Range
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(testData).map(([fieldName, value], rowIndex) => {
+                            const config = fields?.[fieldName];
+
+                            let displayValue = value;
+                            if (config?.type === "number" && value) {
+                              displayValue = formatNumber(value);
+                            }
+
+                            const expected = config?.normal ?? config?.range ?? "";
+                            const hasExpectation = Boolean(expected);
+
+                            const vNorm = normalizeValue(value);
+                            const eNorm = normalizeValue(config?.normal || "");
+
+                            const isNormal =
+                              (config?.normal && vNorm === eNorm) ||
+                              (!config?.normal && isCommonNormalText(value));
+
+                            const isAbnormal =
+                              hasExpectation &&
+                              !isNormal &&
+                              Boolean(value) &&
+                              !isCommonNormalText(value) &&
+                              normalizeValue(value) !== normalizeValue(config?.normal || "");
+
+                            const bg = rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50";
+
+                            return (
+                              <tr key={fieldName} className={cx("border-b border-slate-100", bg)}>
+                                <td className="px-5 py-3 font-medium text-slate-800">
+                                  {fieldName}
+                                </td>
+
+                                <td className="px-5 py-3 text-center">
+                                  <div className="inline-flex items-center justify-center gap-2">
+                                    <span
+                                      className={cx(
+                                        "font-semibold",
+                                        isAbnormal && "text-rose-700",
+                                        isNormal && "text-emerald-700",
+                                        !isNormal && !isAbnormal && "text-slate-900"
+                                      )}
+                                    >
+                                      {displayValue} {config?.unit || ""}
+                                    </span>
+
+                                    {isAbnormal && (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 font-semibold tracking-wide">
+                                        ABNORMAL
+                                      </span>
+                                    )}
+
+                                    {isNormal && (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold tracking-wide">
+                                        NORMAL
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                <td className="px-5 py-3 text-slate-600">
+                                  {config?.normal || config?.range || "—"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-            <div>
-              <div className="border-t-2 border-slate-900 pt-3 mt-16">
-                <p className="text-base font-bold text-slate-900 tracking-wide">Date:</p>
-                <p className="text-sm text-slate-700 mt-1">{formatLongDate(formValues?.completedDate || labTest.completedDate)}</p>
+
+              {/* Clinical Interpretation */}
+              {includeInterpretation && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 mb-6 avoid-break">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
+                      Clinical Interpretation
+                    </h3>
+                  </div>
+
+                  {interpretation.criticalFindings.length > 0 && (
+                    <div className="mt-4 rounded-xl border border-rose-200 bg-white p-4">
+                      <div className="text-sm font-semibold text-rose-800">
+                        Critical findings (requires attention)
+                      </div>
+                      <div className="mt-2 space-y-2 text-sm text-slate-800">
+                        {interpretation.criticalFindings.map((f, i) => (
+                          <div key={i} className="flex gap-2">
+                            <span className="mt-[7px] inline-block w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            <span>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {interpretation.warnings.length > 0 && (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-white p-4">
+                      <div className="text-sm font-semibold text-amber-900">
+                        Notes / warnings
+                      </div>
+                      <div className="mt-2 space-y-2 text-sm text-slate-800">
+                        {interpretation.warnings.map((w, i) => (
+                          <div key={i} className="flex gap-2">
+                            <span className="mt-[7px] inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            <span>{w}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {interpretation.criticalFindings.length === 0 &&
+                    interpretation.warnings.length === 0 && (
+                      <div className="mt-4 rounded-xl border border-emerald-200 bg-white p-4 text-sm text-emerald-900 font-medium">
+                        All results appear within expected limits. No critical flags detected.
+                      </div>
+                    )}
+                </div>
+              )}
+
+              {/* Technician Notes */}
+              {technicianNotes && (
+                <div className="rounded-2xl border border-slate-200 p-5 mb-6 avoid-break">
+                  <h3 className="text-xs font-semibold tracking-[0.18em] text-slate-600 uppercase">
+                    Technician Notes
+                  </h3>
+                  <p className="mt-3 text-sm text-slate-800 leading-relaxed">
+                    {technicianNotes}
+                  </p>
+                </div>
+              )}
+
+              {/* Signatures */}
+              <div className="grid grid-cols-2 gap-10 mt-10 mb-6 avoid-break">
+                <div>
+                  <div className="border-t border-slate-300 pt-3">
+                    <div className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+                      Lab Technician
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900">
+                      {completedBy || "—"}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-t border-slate-300 pt-3">
+                    <div className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+                      Date
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900">
+                      {safeLongDate(completedDate)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="pt-5 mt-8 border-t border-slate-200 text-center">
+                <div className="text-[10px] tracking-[0.22em] text-slate-500 uppercase font-semibold">
+                  Computer-generated laboratory report
+                </div>
+                <div className="mt-2 text-base font-semibold text-slate-900">
+                  Bahr El Ghazal Clinic
+                </div>
+                <div className="mt-1 text-xs text-slate-600">
+                  Accredited Medical Facility • Republic of South Sudan
+                </div>
+                <div className="mt-3 text-xs italic text-slate-600">
+                  Your health is our priority
+                </div>
               </div>
             </div>
           </div>
 
-          {/* FOOTER - Premium Professional Style */}
-          <div className="text-center text-sm text-slate-600 border-t-2 border-slate-300 pt-5 mt-8 avoid-break">
-            <p className="font-bold text-slate-800 tracking-widest text-xs mb-3">THIS IS A COMPUTER-GENERATED LABORATORY REPORT</p>
-            <p className="font-bold text-slate-900 mt-2 text-lg tracking-wide">Bahr El Ghazal Clinic</p>
-            <p className="text-slate-600 text-sm mt-1">Accredited Medical Facility | Republic of South Sudan</p>
-            <p className="mt-3 italic text-slate-700">Your health is our priority</p>
+          {/* Small print note (hidden if you want) */}
+          <div className="no-print mt-4 text-xs text-slate-500 text-center">
+            Tip: In the print dialog, disable “Headers and footers” for a clean, official PDF.
           </div>
-          
         </div>
       </div>
     </div>
