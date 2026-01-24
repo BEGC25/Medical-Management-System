@@ -230,11 +230,29 @@ export function LabReportPrint({
                         
                         // Determine if value is HIGH or LOW compared to normal range
                         let abnormalType: "HIGH" | "LOW" | null = null;
-                        if (isAbnormal && config?.type === 'number' && config?.normal) {
+                        if (isAbnormal && config?.type === 'number' && value) {
                           const numValue = parseFloat(value);
-                          const numNormal = parseFloat(config.normal);
-                          if (!isNaN(numValue) && !isNaN(numNormal)) {
-                            abnormalType = numValue > numNormal ? "HIGH" : "LOW";
+                          if (!isNaN(numValue)) {
+                            // Check if normal is a range (e.g., "3.5-5.0" or "3.5 - 5.0")
+                            const normalStr = config.normal || config.range || "";
+                            const rangeMatch = normalStr.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)/);
+                            
+                            if (rangeMatch) {
+                              // It's a range - check if value is below min or above max
+                              const minNormal = parseFloat(rangeMatch[1]);
+                              const maxNormal = parseFloat(rangeMatch[2]);
+                              if (numValue < minNormal) {
+                                abnormalType = "LOW";
+                              } else if (numValue > maxNormal) {
+                                abnormalType = "HIGH";
+                              }
+                            } else {
+                              // It's a single value - compare directly
+                              const numNormal = parseFloat(normalStr);
+                              if (!isNaN(numNormal)) {
+                                abnormalType = numValue > numNormal ? "HIGH" : "LOW";
+                              }
+                            }
                           }
                         }
                         
@@ -308,7 +326,7 @@ export function LabReportPrint({
                     <div className="space-y-2">
                       {criticalFindings.map((finding, i) => (
                         <div key={i} className="bg-red-50 border-l-4 border-red-600 p-3 text-sm font-medium text-red-900 rounded-md">
-                          🔴 {finding}
+                          ● {finding}
                         </div>
                       ))}
                     </div>
