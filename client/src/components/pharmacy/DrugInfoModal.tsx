@@ -105,7 +105,7 @@ export function DrugInfoModal({ drug, stockInfo, open, onOpenChange }: DrugInfoM
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               <Badge variant="secondary" className="text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full px-4 py-1.5 font-semibold border border-purple-200 dark:border-purple-800">
-                {drug.form}
+                {drug.form.charAt(0).toUpperCase() + drug.form.slice(1)}
               </Badge>
               <Badge variant="secondary" className="text-sm bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full px-4 py-1.5 font-semibold border border-indigo-200 dark:border-indigo-800">
                 {drug.strength}
