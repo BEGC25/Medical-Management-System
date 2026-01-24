@@ -73,41 +73,6 @@ function cx(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
 }
 
-/**
- * Determines if a lab result is HIGH, LOW, or within normal range
- * Handles both single values and ranges (e.g., "3.5-5.0")
- */
-function determineAbnormalType(
-  value: string,
-  normalRange: string,
-  type: string
-): "HIGH" | "LOW" | null {
-  if (type !== 'number' || !value) return null;
-  
-  const numValue = parseFloat(value);
-  if (isNaN(numValue)) return null;
-  
-  // Check if normal is a range (e.g., "3.5-5.0" or "3.5 - 5.0")
-  // Supports hyphen, en-dash, and em-dash
-  const rangeMatch = normalRange.match(/(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)/);
-  
-  if (rangeMatch) {
-    // It's a range - check if value is below min or above max
-    const minNormal = parseFloat(rangeMatch[1]);
-    const maxNormal = parseFloat(rangeMatch[2]);
-    if (numValue < minNormal) return "LOW";
-    if (numValue > maxNormal) return "HIGH";
-  } else {
-    // It's a single value - compare directly
-    const numNormal = parseFloat(normalRange);
-    if (!isNaN(numNormal)) {
-      return numValue > numNormal ? "HIGH" : "LOW";
-    }
-  }
-  
-  return null;
-}
-
 export function LabReportPrint({
   containerId,
   visible,
@@ -264,10 +229,6 @@ export function LabReportPrint({
                         const config = fields?.[fieldName];
                         const isNormal = config?.normal === value;
                         const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
-                        
-                        // Determine if value is HIGH or LOW (only called if abnormal)
-                        const referenceValue = config?.normal || config?.range || "";
-                        const abnormalType = isAbnormal ? determineAbnormalType(value, referenceValue, config?.type || "") : null;
                         
                         // Format numeric values with commas
                         let displayValue = value;
