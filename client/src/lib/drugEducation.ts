@@ -188,7 +188,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       "Stomach and intestinal infections"
     ],
     importantSafety: {
-      dos: ["Take on empty stomach 1 hour before meals", "Take every 6 hours (4 times daily)", "Complete full course of treatment", "Finish all medicine even if feeling better"],
+      dos: ["Take on empty stomach 1 hour before meals", "Take every 6 hours (4 times daily)", "Complete full course of treatment", "Finish all tablets even if feeling better"],
       donts: ["Stop if allergic rash develops", "Do not use if penicillin allergy", "Do not take with food (reduces absorption)", "Report severe diarrhea immediately"]
     },
     howFastItWorks: {
@@ -214,7 +214,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       "Urinary tract infections"
     ],
     importantSafety: {
-      dos: ["Take full course even if feeling better", "Take every 8 hours (3 times daily)", "Can take with or without food", "Finish all medicine"],
+      dos: ["Take full course even if feeling better", "Take every 8 hours (3 times daily)", "Can take with or without food", "Finish all of the liquid medicine even when feeling better"],
       donts: ["Stop if allergic rash develops", "Do not use if penicillin allergy", "May reduce birth control effectiveness", "Report severe diarrhea"]
     },
     howFastItWorks: {
@@ -2415,6 +2415,23 @@ const DRUG_SUMMARIES: Record<string, string> = {
   "lidocaine": "Local anesthetic for numbing. Used before procedures and stitches. Works within minutes.",
 };
 
+// Form mappings for dosage form normalization
+const FORM_MAPPINGS: Record<string, string> = {
+  "syrup": "syrup",
+  "suspension": "syrup",
+  "injection": "injection",
+  "iv": "injection",
+  "im": "injection",
+  "drops": "drops",
+  "eye drops": "drops",
+  "ear drops": "drops",
+  "tablet": "tablet",
+  "capsule": "capsule",
+  "cream": "cream",
+  "ointment": "ointment",
+  "inhaler": "inhaler"
+};
+
 /**
  * Get comprehensive educational information for a drug
  * @param genericName - The generic name of the drug (case-insensitive, partial match supported)
@@ -2438,24 +2455,7 @@ export function getDrugEducationalInfo(genericName: string, form?: string): Drug
   // If form is provided, try form-specific lookup first
   if (form) {
     const normalizedForm = form.toLowerCase().trim();
-    // Map dosage forms to shorter keys used in database
-    const formMappings: Record<string, string> = {
-      "syrup": "syrup",
-      "suspension": "syrup",
-      "injection": "injection",
-      "iv": "injection",
-      "im": "injection",
-      "drops": "drops",
-      "eye drops": "drops",
-      "ear drops": "drops",
-      "tablet": "tablet",
-      "capsule": "capsule",
-      "cream": "cream",
-      "ointment": "ointment",
-      "inhaler": "inhaler"
-    };
-
-    const mappedForm = formMappings[normalizedForm] || normalizedForm;
+    const mappedForm = FORM_MAPPINGS[normalizedForm] || normalizedForm;
     const formSpecificKey = `${normalizedKey}-${mappedForm}`;
     
     if (DRUG_DATABASE[formSpecificKey]) {
