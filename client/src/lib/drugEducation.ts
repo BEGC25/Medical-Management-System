@@ -69,7 +69,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       duration: "Pain relief: 4-6 hours, Antiplatelet effect: lasts days after stopping"
     },
     specialGroups: {
-      pregnancy: "Avoid especially in 3rd trimester - risk of bleeding and premature closure of ductus",
+      pregnancy: "Avoid especially in 3rd trimester - risk of bleeding and premature closure of ductus arteriosus",
       breastfeeding: "Use with caution - passes into milk, risk in infant",
       children: "Contraindicated under 16 years - risk of Reye's syndrome",
       elderly: "Use with caution - increased bleeding and stomach ulcer risk"
@@ -1150,7 +1150,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       "Functional bowel disorders",
       "Abdominal cramping and pain",
       "Intestinal spasm",
-      "Infant colic (in some countries, not recommended in others)"
+      "Infant colic (use with caution - not recommended under 6 months)"
     ],
     importantSafety: {
       dos: ["Take 30 minutes before meals", "Start with low dose and increase gradually", "Take with water", "May take up to 4 times daily"],
@@ -1646,7 +1646,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     ],
     importantSafety: {
       dos: ["Give 20mg daily for 10-14 days for diarrhea in children", "Take with food or juice to reduce stomach upset", "Continue full course even when diarrhea stops", "Dispersible tablets can be dissolved in water"],
-      donts: ["May cause nausea and vomiting if taken on empty stomach", "Do not exceed recommended dose", "High doses can interfere with copper and iron absorption", "Not a substitute for ORS - use together"]
+      donts: ["May cause nausea and vomiting if taken on empty stomach", "Do not exceed recommended dose", "High doses can interfere with copper and iron absorption", "Not a substitute for oral rehydration solution (ORS) - use together"]
     },
     howFastItWorks: {
       onset: "Reduces diarrhea duration by 25% when started early",
@@ -2045,7 +2045,7 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
     ],
     importantSafety: {
       dos: ["Inject slowly to reduce pain and detect intravascular injection", "Wait 5-10 minutes for full anesthetic effect", "Use appropriate concentration (typically 1% or 2% lidocaine)", "Aspirate before injecting to avoid blood vessels"],
-      donts: ["Never use on fingers, toes, penis, nose, or ears (epinephrine causes ischemia)", "Avoid if patient has cardiac arrhythmias", "Do not exceed maximum safe dose (7mg/kg with epi)", "Not for IV regional anesthesia"]
+      donts: ["Never use on fingers, toes, penis, nose, or ears (epinephrine causes ischemia)", "Avoid if patient has cardiac arrhythmias", "Do not exceed maximum safe dose (7mg/kg with epinephrine)", "Not for IV regional anesthesia"]
     },
     howFastItWorks: {
       onset: "2-5 minutes for full anesthesia",
