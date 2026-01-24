@@ -263,9 +263,9 @@ export function LabReportPrint({
                         const isNormal = config?.normal === value;
                         const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
                         
-                        // Determine if value is HIGH or LOW
-                        const normalRange = config?.normal || config?.range || "";
-                        const abnormalType = isAbnormal ? determineAbnormalType(value, normalRange, config?.type || "") : null;
+                        // Determine if value is HIGH or LOW (only called if abnormal)
+                        const referenceValue = config?.normal || config?.range || "";
+                        const abnormalType = isAbnormal ? determineAbnormalType(value, referenceValue, config?.type || "") : null;
                         
                         // Format numeric values with commas
                         let displayValue = value;
