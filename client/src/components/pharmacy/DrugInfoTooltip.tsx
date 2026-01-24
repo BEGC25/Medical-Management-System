@@ -15,7 +15,7 @@ interface DrugInfoTooltipProps {
 
 // Generate quick summary from shared module
 const getQuickSummary = (drug: Drug): string => {
-  return getDrugQuickSummary(drug.genericName || drug.name);
+  return getDrugQuickSummary(drug.genericName || drug.name, drug.form);
 };
 
 export function DrugInfoTooltip({ drug, children }: DrugInfoTooltipProps) {

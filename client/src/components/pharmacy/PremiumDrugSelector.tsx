@@ -389,7 +389,7 @@ export function PremiumDrugSelector({ drugs, value, onChange, placeholder = "Sea
                       {categoryDrugs.map(drug => {
                         const stockStatus = getStockStatus(drug);
                         const isSelected = drug.id === value;
-                        const educationalSummary = getDrugQuickSummary(drug.genericName || drug.name);
+                        const educationalSummary = getDrugQuickSummary(drug.genericName || drug.name, drug.form);
 
                         return (
                           <button
