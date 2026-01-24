@@ -2,6 +2,7 @@ import { integer, text, sqliteTable, real, blob } from "drizzle-orm/sqlite-core"
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
+import { validateServiceCode } from "./service-code-utils";
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -381,6 +382,18 @@ export const insertServiceSchema = createInsertSchema(services).omit({
   return true;
 }, {
   message: "Service code is required for consultation services",
+  path: ["code"],
+}).refine((data) => {
+  // Validate service code format if provided
+  if (data.code) {
+    const validationError = validateServiceCode(data.code);
+    if (validationError) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Service code must only contain uppercase letters, numbers, and hyphens (no consecutive hyphens, no leading/trailing hyphens, max 24 characters)",
   path: ["code"],
 });
 
