@@ -125,10 +125,11 @@ function extractAbbreviation(serviceName: string): string {
   // Three or more words: use first letters (up to 6 letters)
   const acronym = words
     .slice(0, Math.min(6, words.length))
+    .filter(w => w.length > 0) // Ensure word is not empty
     .map(w => w[0])
     .join('');
   
-  return sanitizeCode(acronym);
+  return sanitizeCode(acronym || 'SVC'); // Fallback if no valid acronym
 }
 
 /**
@@ -175,18 +176,22 @@ export function ensureUniqueCode(code: string, existingCodes: string[]): string 
   let counter = 2;
   let uniqueCode: string;
   
-  // Calculate max suffix length that fits within MAX_CODE_LENGTH
-  const maxSuffixLength = MAX_CODE_LENGTH - code.length - 1; // -1 for hyphen
-  
   while (true) {
     const suffix = counter.toString().padStart(2, '0'); // 02, 03, etc.
+    const suffixWithHyphen = `-${suffix}`;
     
-    if (suffix.length > maxSuffixLength) {
-      // If suffix won't fit, we need to shorten the base code
-      const shortenedCode = code.substring(0, MAX_CODE_LENGTH - suffix.length - 1);
-      uniqueCode = `${shortenedCode}-${suffix}`;
+    // Check if code + suffix fits within max length
+    if ((code.length + suffixWithHyphen.length) <= MAX_CODE_LENGTH) {
+      uniqueCode = `${code}${suffixWithHyphen}`;
     } else {
-      uniqueCode = `${code}-${suffix}`;
+      // Need to shorten the base code to fit the suffix
+      const maxBaseLength = MAX_CODE_LENGTH - suffixWithHyphen.length;
+      if (maxBaseLength < 3) {
+        // Code is too long even for minimal suffix - should not happen in practice
+        throw new Error(`Base code "${code}" is too long to add uniqueness suffix`);
+      }
+      const shortenedCode = code.substring(0, maxBaseLength);
+      uniqueCode = `${shortenedCode}${suffixWithHyphen}`;
     }
     
     if (!existingSet.has(uniqueCode.toUpperCase())) {
