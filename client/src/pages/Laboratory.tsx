@@ -271,6 +271,97 @@ const resultFields: Record<
   "Gonorrhea Test": {
     "Gonorrhea": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
   },
+
+  "Reproductive Hormones": {
+    "FSH": { type: "number" as const, unit: "mIU/mL", normal: "Varies by cycle phase" },
+    "LH": { type: "number" as const, unit: "mIU/mL", normal: "Varies by cycle phase" },
+    "Estradiol": { type: "number" as const, unit: "pg/mL", normal: "Varies by cycle phase" },
+    "Progesterone": { type: "number" as const, unit: "ng/mL", normal: "Varies by cycle phase" },
+    "Testosterone": { type: "number" as const, unit: "ng/dL", normal: "Male: 300-1000, Female: 15-70" },
+    "Prolactin": { type: "number" as const, unit: "ng/mL", normal: "Male: 2-18, Female: 2-29" },
+  },
+
+  "Cardiac & Other Markers": {
+    "Troponin I": { type: "number" as const, unit: "ng/mL", normal: "<0.04" },
+    "Troponin T": { type: "number" as const, unit: "ng/mL", normal: "<0.01" },
+    "CK-MB": { type: "number" as const, unit: "U/L", normal: "<25" },
+    "BNP": { type: "number" as const, unit: "pg/mL", normal: "<100" },
+    "NT-proBNP": { type: "number" as const, unit: "pg/mL", normal: "<125" },
+    "D-Dimer": { type: "number" as const, unit: "ng/mL FEU", normal: "<500" },
+    "CRP": { type: "number" as const, unit: "mg/L", normal: "<10" },
+  },
+
+  "Chlamydia Test": {
+    "Chlamydia": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Test Method": { type: "select" as const, options: ["NAAT/PCR", "Rapid Antigen", "Culture"], normal: "NAAT/PCR" },
+  },
+
+  "Toxoplasma Test": {
+    "Toxoplasma IgG": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Toxoplasma IgM": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "IgG Titer": { type: "text" as const, unit: "IU/mL", normal: "<4" },
+  },
+
+  "Filariasis Tests": {
+    "Microfilaria": { type: "select" as const, options: ["Not Seen", "Seen"], normal: "Not Seen" },
+    "Filaria Antigen (ICT)": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Species": { type: "select" as const, options: ["Not Applicable", "W. bancrofti", "B. malayi", "L. loa", "Other"], normal: "Not Applicable" },
+  },
+
+  "Schistosomiasis Test": {
+    "Schistosoma Ova (Urine)": { type: "select" as const, options: ["Not Seen", "Seen"], normal: "Not Seen" },
+    "Schistosoma Ova (Stool)": { type: "select" as const, options: ["Not Seen", "Seen"], normal: "Not Seen" },
+    "Schistosoma Antibody": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Species": { type: "select" as const, options: ["Not Applicable", "S. haematobium", "S. mansoni", "S. japonicum"], normal: "Not Applicable" },
+  },
+
+  "Leishmaniasis Test": {
+    "rK39 Rapid Test": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Leishmania Antibody": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Bone Marrow/Splenic Aspirate": { type: "select" as const, options: ["Not Done", "Negative", "Positive"], normal: "Not Done" },
+    "Clinical Form": { type: "select" as const, options: ["Not Applicable", "Visceral (Kala-azar)", "Cutaneous", "Mucocutaneous"], normal: "Not Applicable" },
+  },
+
+  "Tuberculosis Tests": {
+    "GeneXpert MTB/RIF": { type: "select" as const, options: ["Not Detected", "MTB Detected (Rif Sensitive)", "MTB Detected (Rif Resistant)", "MTB Detected (Rif Indeterminate)", "Invalid/Error"], normal: "Not Detected" },
+    "AFB Smear (ZN Stain)": { type: "select" as const, options: ["Negative", "Scanty (1-9 AFB)", "1+ (10-99 AFB)", "2+ (1-10 AFB/field)", "3+ (>10 AFB/field)"], normal: "Negative" },
+    "Mantoux Test (TST)": { type: "number" as const, unit: "mm induration", normal: "<10" },
+    "TB Culture": { type: "select" as const, options: ["Not Done", "No Growth", "MTB Isolated", "NTM Isolated"], normal: "Not Done" },
+  },
+
+  "Meningitis Tests": {
+    "CSF Appearance": { type: "select" as const, options: ["Clear", "Turbid", "Bloody", "Xanthochromic"], normal: "Clear" },
+    "CSF WBC": { type: "number" as const, unit: "cells/µL", normal: "<5" },
+    "CSF Protein": { type: "number" as const, unit: "mg/dL", normal: "15-45" },
+    "CSF Glucose": { type: "number" as const, unit: "mg/dL", normal: "40-70" },
+    "Gram Stain": { type: "select" as const, options: ["No Organisms Seen", "Gram + Cocci", "Gram - Cocci", "Gram + Bacilli", "Gram - Bacilli"], normal: "No Organisms Seen" },
+    "Bacterial Antigen": { type: "select" as const, options: ["Negative", "S. pneumoniae", "N. meningitidis", "H. influenzae", "Group B Strep", "E. coli"], normal: "Negative" },
+    "India Ink (Cryptococcus)": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+  },
+
+  "Yellow Fever Test": {
+    "Yellow Fever IgM": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Yellow Fever IgG": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Yellow Fever PCR": { type: "select" as const, options: ["Not Done", "Not Detected", "Detected"], normal: "Not Done" },
+  },
+
+  "Typhus Test": {
+    "Weil-Felix (OX19)": { type: "select" as const, options: ["Negative", "1:80", "1:160", "1:320", ">1:320"], normal: "Negative" },
+    "Weil-Felix (OX2)": { type: "select" as const, options: ["Negative", "1:80", "1:160", "1:320", ">1:320"], normal: "Negative" },
+    "Weil-Felix (OXK)": { type: "select" as const, options: ["Negative", "1:80", "1:160", "1:320", ">1:320"], normal: "Negative" },
+    "Typhus IgM/IgG": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+  },
+
+  "Urine Microscopy": {
+    "WBC/HPF": { type: "select" as const, options: ["0-2", "3-5", "6-10", "11-20", ">20", "TNTC"], normal: "0-2" },
+    "RBC/HPF": { type: "select" as const, options: ["0-2", "3-5", "6-10", "11-20", ">20", "TNTC"], normal: "0-2" },
+    "Epithelial Cells": { type: "select" as const, options: ["Few", "Moderate", "Many"], normal: "Few" },
+    "Bacteria": { type: "select" as const, options: ["None", "Few", "Moderate", "Many"], normal: "None" },
+    "Casts": { type: "select" as const, options: ["None", "Hyaline", "Granular", "WBC Casts", "RBC Casts", "Waxy"], normal: "None" },
+    "Crystals": { type: "select" as const, options: ["None", "Calcium Oxalate", "Uric Acid", "Triple Phosphate", "Other"], normal: "None" },
+    "Yeast": { type: "select" as const, options: ["Not Seen", "Seen"], normal: "Not Seen" },
+    "Trichomonas": { type: "select" as const, options: ["Not Seen", "Seen"], normal: "Not Seen" },
+  },
 };
 
 /* ------------------------------------------------------------------ */
