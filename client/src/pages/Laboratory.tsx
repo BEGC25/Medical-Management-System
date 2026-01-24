@@ -362,6 +362,11 @@ const resultFields: Record<
     "Yeast": { type: "select" as const, options: ["Not Seen", "Seen"], normal: "Not Seen" },
     "Trichomonas": { type: "select" as const, options: ["Not Seen", "Seen"], normal: "Not Seen" },
   },
+
+  "Custom Test": {
+    "Result": { type: "text" as const, unit: "", normal: "Varies by test" },
+    "Notes": { type: "text" as const, unit: "", normal: "N/A" },
+  },
 };
 
 /* ------------------------------------------------------------------ */
