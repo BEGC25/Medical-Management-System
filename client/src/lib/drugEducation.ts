@@ -2308,6 +2308,211 @@ const DRUG_DATABASE: Record<string, DrugEducationalInfo> = {
       elderly: "Safe"
     }
   },
+
+  // ==================== FLUOROQUINOLONES ====================
+
+  "levofloxacin": {
+    whatItDoes: "Levofloxacin is a powerful fluoroquinolone antibiotic that kills bacteria by blocking their DNA replication. Effective against respiratory, urinary, skin, and sinus infections caused by susceptible bacteria.",
+    commonUses: [
+      "Pneumonia and respiratory tract infections",
+      "Urinary tract infections (UTIs)",
+      "Skin and soft tissue infections",
+      "Sinusitis and chronic bronchitis",
+      "Prostatitis in men"
+    ],
+    importantSafety: {
+      dos: ["Take once daily with plenty of water", "Can take with or without food", "Complete full course even if feeling better", "Drink extra fluids while taking"],
+      donts: ["Avoid direct sunlight - may cause severe sunburn", "Do not take antacids or vitamins with iron/zinc within 2 hours", "May cause tendon rupture - stop if joint pain occurs", "Not for children under 18 (damages growing bones)"]
+    },
+    howFastItWorks: {
+      onset: "Symptom improvement in 1-3 days",
+      duration: "Usually 5-14 days treatment depending on infection"
+    },
+    specialGroups: {
+      pregnancy: "Avoid - may harm fetal bone development",
+      breastfeeding: "Avoid - passes into breast milk",
+      children: "Not recommended under 18 - can damage growing bones and joints",
+      elderly: "Use with caution - increased risk of tendon problems"
+    }
+  },
+
+  "ofloxacin": {
+    whatItDoes: "Ofloxacin is a fluoroquinolone antibiotic effective against many types of bacteria. Works by stopping bacterial DNA replication. Used for urinary, respiratory, eye, and ear infections.",
+    commonUses: [
+      "Urinary tract infections",
+      "Respiratory infections",
+      "Sexually transmitted infections (gonorrhea, chlamydia)",
+      "Skin and soft tissue infections",
+      "Ear infections (when used as ear drops)"
+    ],
+    importantSafety: {
+      dos: ["Take twice daily 12 hours apart", "Take with full glass of water", "Finish all medicine even if feeling better", "Can take with or without food"],
+      donts: ["Avoid excessive sun exposure", "Do not take dairy products or antacids within 2 hours", "Stop if tendon pain or swelling occurs", "Not for children (damages growing cartilage)"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 1-2 days",
+      duration: "Usually 7-10 days treatment"
+    },
+    specialGroups: {
+      pregnancy: "Avoid - may harm developing baby",
+      breastfeeding: "Avoid - passes into breast milk",
+      children: "Not recommended - can damage growing bones",
+      elderly: "Use cautiously - higher risk of side effects"
+    }
+  },
+
+  "norfloxacin": {
+    whatItDoes: "Norfloxacin is a fluoroquinolone antibiotic specifically concentrated in urine, making it excellent for urinary tract infections. Also effective for gastrointestinal and prostate infections.",
+    commonUses: [
+      "Urinary tract infections (UTIs)",
+      "Bacterial gastroenteritis and travelers' diarrhea",
+      "Prostatitis",
+      "Gonorrhea (uncomplicated)",
+      "Prevention of infection in neutropenic patients"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach 1 hour before or 2 hours after meals", "Take with full glass of water", "Drink plenty of fluids throughout the day", "Complete full course"],
+      donts: ["Avoid dairy products, antacids, vitamins with minerals within 2 hours", "Avoid excessive sunlight", "Do not take if history of tendon problems", "Not for children under 18"]
+    },
+    howFastItWorks: {
+      onset: "UTI symptoms improve in 1-2 days",
+      duration: "Usually 3-7 days for UTI, longer for other infections"
+    },
+    specialGroups: {
+      pregnancy: "Avoid - may damage fetal bones",
+      breastfeeding: "Avoid - passes into milk",
+      children: "Contraindicated - damages growing cartilage",
+      elderly: "Use with caution - monitor kidney function"
+    }
+  },
+
+  // ==================== MACROLIDES ====================
+
+  "clarithromycin": {
+    whatItDoes: "Clarithromycin is a macrolide antibiotic that stops bacterial growth. Excellent for respiratory infections and often used to treat H. pylori stomach ulcers in combination therapy. Better tolerated than older macrolides.",
+    commonUses: [
+      "Pneumonia and bronchitis",
+      "Sinusitis and pharyngitis",
+      "Skin and soft tissue infections",
+      "H. pylori eradication (with other drugs for ulcers)",
+      "Mycobacterial infections in HIV patients"
+    ],
+    importantSafety: {
+      dos: ["Take twice daily with food to reduce stomach upset", "Complete full course", "Good alternative for penicillin-allergic patients", "Can take extended-release version once daily"],
+      donts: ["Do not take with certain heart medications", "May cause bitter taste", "Avoid if history of heart rhythm problems", "Do not combine with certain cholesterol drugs"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-14 days depending on infection"
+    },
+    specialGroups: {
+      pregnancy: "Use only if clearly needed - limited safety data",
+      breastfeeding: "Use with caution - small amounts in milk",
+      children: "Safe - commonly used for ear and throat infections",
+      elderly: "Safe - monitor for drug interactions"
+    }
+  },
+
+  "erythromycin": {
+    whatItDoes: "Erythromycin is a macrolide antibiotic that prevents bacterial protein synthesis. Good alternative for penicillin-allergic patients. Used for respiratory, skin infections, and as a gut motility agent.",
+    commonUses: [
+      "Respiratory tract infections (pneumonia, bronchitis)",
+      "Skin infections (acne, cellulitis)",
+      "Whooping cough (pertussis)",
+      "Chlamydia and mycoplasma infections",
+      "Gastric motility (helps stomach empty)"
+    ],
+    importantSafety: {
+      dos: ["Take on empty stomach 1 hour before or 2 hours after meals", "Take with full glass of water", "Complete full course", "Good for penicillin-allergic patients"],
+      donts: ["May cause stomach upset and nausea", "Do not crush enteric-coated tablets", "Avoid certain heart medications", "May interact with many drugs"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-14 days for infections"
+    },
+    specialGroups: {
+      pregnancy: "Generally safe - preferred macrolide in pregnancy",
+      breastfeeding: "Safe - small amounts in milk",
+      children: "Safe - commonly used",
+      elderly: "Safe but watch for drug interactions"
+    }
+  },
+
+  // ==================== OTHER ANTIBIOTICS ====================
+
+  "nitrofurantoin": {
+    whatItDoes: "Nitrofurantoin is a specialized antibiotic that concentrates in urine, making it highly effective for urinary tract infections. Works by damaging bacterial DNA and proteins.",
+    commonUses: [
+      "Uncomplicated urinary tract infections (UTIs)",
+      "Prevention of recurrent UTIs",
+      "Acute cystitis in women",
+      "Long-term UTI prevention in susceptible patients"
+    ],
+    importantSafety: {
+      dos: ["Take with food or milk to improve absorption", "Drink plenty of fluids", "Complete full course even if symptoms improve", "Urine may turn dark yellow or brown (normal)"],
+      donts: ["Do not use if kidney disease (doesn't work)", "May cause nausea - take with food", "Rare lung problems with long-term use", "Not for kidney infections (pyelonephritis)"]
+    },
+    howFastItWorks: {
+      onset: "UTI symptoms improve in 1-2 days",
+      duration: "Usually 5-7 days for treatment, months for prevention"
+    },
+    specialGroups: {
+      pregnancy: "Safe in early pregnancy, avoid near delivery (may cause infant anemia)",
+      breastfeeding: "Avoid in first month, safe after if baby healthy",
+      children: "Safe over 1 month old for UTI treatment",
+      elderly: "Use with caution - check kidney function first"
+    }
+  },
+
+  "cephalexin": {
+    whatItDoes: "Cephalexin is a first-generation cephalosporin antibiotic that kills bacteria by disrupting cell wall formation. Safe and effective for skin, bone, respiratory and urinary infections.",
+    commonUses: [
+      "Skin and soft tissue infections (cellulitis, abscesses)",
+      "Bone infections (osteomyelitis)",
+      "Respiratory tract infections",
+      "Urinary tract infections",
+      "Otitis media (ear infections)"
+    ],
+    importantSafety: {
+      dos: ["Take 4 times daily (every 6 hours) for best results", "Can take with or without food", "Complete full course", "Safe for most patients including pregnant women"],
+      donts: ["Use caution if penicillin allergy (10% cross-reaction)", "May cause diarrhea", "Rare allergic reactions possible", "Store liquid in refrigerator"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-14 days depending on infection"
+    },
+    specialGroups: {
+      pregnancy: "Safe - commonly used in pregnancy",
+      breastfeeding: "Safe - minimal amounts in milk",
+      children: "Safe - commonly used for ear and skin infections",
+      elderly: "Safe - adjust dose if kidney problems"
+    }
+  },
+
+  "clindamycin": {
+    whatItDoes: "Clindamycin is a lincosamide antibiotic effective against anaerobic bacteria and many skin bacteria. Excellent for skin, bone, dental, and abdominal infections. Good alternative for penicillin-allergic patients.",
+    commonUses: [
+      "Skin and soft tissue infections (MRSA, cellulitis)",
+      "Bone and joint infections",
+      "Dental and periodontal infections",
+      "Intra-abdominal infections (with other antibiotics)",
+      "Bacterial vaginosis"
+    ],
+    importantSafety: {
+      dos: ["Take with full glass of water", "Can take with or without food", "Complete full course", "Good for penicillin-allergic patients"],
+      donts: ["May cause severe diarrhea (C. difficile colitis) - report immediately", "Do not lie down for 30 minutes after taking", "Stop if severe diarrhea develops", "May cause metallic taste"]
+    },
+    howFastItWorks: {
+      onset: "Improvement in 2-3 days",
+      duration: "Usually 7-10 days"
+    },
+    specialGroups: {
+      pregnancy: "Generally safe - use if benefit outweighs risk",
+      breastfeeding: "Use with caution - monitor infant for diarrhea",
+      children: "Safe - commonly used for skin and bone infections",
+      elderly: "Safe but higher risk of C. difficile diarrhea"
+    }
+  },
 };
 
 // Simple drug summaries for fallback when detailed info not available in DRUG_DATABASE
