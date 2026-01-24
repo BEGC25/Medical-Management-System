@@ -95,23 +95,27 @@ export function LabReportPrint({
     return isNaN(parsed) ? String(num) : new Intl.NumberFormat('en-US').format(parsed);
   };
 
-  // Helper function for status badge styling
+  // Helper function for PREMIUM pill badge styling
   const getStatusBadge = (isHigh: boolean): React.ReactNode => {
     const badgeText = isHigh ? "HIGH" : "LOW";
-    const bgColor = isHigh ? '#dc2626' : '#f59e0b';
+    const bgGradient = isHigh 
+      ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' 
+      : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
     
     return (
       <span style={{
-        display: 'inline-block',
-        marginLeft: '8px',
-        padding: '2px 8px',
-        borderRadius: '12px',
-        background: bgColor,
-        color: 'white',
-        fontSize: '9px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        background: bgGradient,
+        color: '#ffffff',
+        fontSize: '11px',
         fontWeight: '700',
-        letterSpacing: '0.5px',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+        padding: '3px 10px',
+        borderRadius: '12px',
+        marginLeft: '8px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.3px',
+        boxShadow: isHigh ? '0 1px 3px rgba(220, 38, 38, 0.3)' : '0 1px 3px rgba(245, 158, 11, 0.3)'
       }}>
         {badgeText}
       </span>
@@ -121,229 +125,352 @@ export function LabReportPrint({
   return (
     <div id={containerId} className="prescription" style={{ minHeight: 'auto', height: 'auto' }}>
       {/* Premium Professional Medical Report Layout - Sophisticated Design */}
-      <div className="bg-white">
+      <div style={{ 
+        background: '#ffffff',
+        borderRadius: '8px',
+        overflow: 'hidden'
+      }}>
         <div style={{ width: '100%' }}>
           
-          {/* PREMIUM HEADER - Elegant Professional Style with Gradient Band */}
-          <div className="relative overflow-hidden" style={{ 
-            background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
-            borderBottom: '3px solid #3b82f6'
+          {/* PREMIUM HEADER - Dark Blue Gradient with WHITE Text */}
+          <div style={{ 
+            background: 'linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%)',
+            padding: '24px 32px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '0'
           }}>
-            <div className="px-6 py-4 flex items-center justify-between">
-              <div className="flex-1">
-                <h1 className="text-white font-bold mb-1" style={{ 
-                  fontSize: '28px',
-                  letterSpacing: '0.5px',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                }}>Bahr El Ghazal Clinic</h1>
-                <p className="text-blue-100 font-medium" style={{ 
-                  fontSize: '11px',
-                  letterSpacing: '0.3px'
-                }}>Aweil, South Sudan | Tel: +211 916 759 060 / +211 928 754 760</p>
-              </div>
-              <div className="rounded-lg overflow-hidden" style={{ 
-                width: '72px', 
-                height: '72px',
-                background: 'white',
-                padding: '4px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-              }}>
-                <img src={clinicLogo} alt="Clinic Logo" className="w-full h-full object-contain" />
-              </div>
+            <div style={{ flex: 1 }}>
+              <h1 style={{ 
+                color: '#ffffff',
+                fontSize: '28px',
+                fontWeight: '700',
+                letterSpacing: '0.5px',
+                margin: 0,
+                marginBottom: '4px'
+              }}>Bahr El Ghazal Clinic</h1>
+              <p style={{ 
+                color: 'rgba(255, 255, 255, 0.85)',
+                fontSize: '13px',
+                margin: 0
+              }}>Aweil, South Sudan | Tel: +211 916 759 060 / +211 928 754 760</p>
+            </div>
+            <div style={{ 
+              background: '#ffffff',
+              borderRadius: '50%',
+              padding: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              width: '64px',
+              height: '64px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <img src={clinicLogo} alt="Clinic Logo" style={{ 
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }} />
             </div>
           </div>
 
-          {/* TITLE - Premium Style with Accent Line */}
-          <div className="text-center px-6 py-3 bg-gradient-to-b from-gray-50 to-white" style={{
-            borderBottom: '2px solid #e5e7eb'
+          {/* DOCUMENT TITLE BAR */}
+          <div style={{
+            background: '#f0f7ff',
+            borderLeft: '4px solid #2563eb',
+            padding: '12px 20px',
+            margin: '20px 24px'
           }}>
-            <h2 className="font-bold" style={{
-              fontSize: '20px',
-              color: '#1f2937',
-              letterSpacing: '1.2px'
+            <h2 style={{
+              color: '#1e40af',
+              fontSize: '18px',
+              fontWeight: '600',
+              letterSpacing: '1.5px',
+              textTransform: 'uppercase',
+              margin: 0
             }}>
               LABORATORY TEST REPORT
               {includeInterpretation && <span style={{ 
                 fontSize: '13px',
                 marginLeft: '12px',
-                color: '#3b82f6',
                 fontWeight: '600'
               }}>(Clinical Copy)</span>}
             </h2>
           </div>
 
-          {/* PATIENT INFORMATION - Premium Card Design */}
-          <div className="mx-6 my-4 rounded-lg overflow-hidden" style={{
-            background: '#f8fafc',
-            border: '1px solid #e5e7eb',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+          {/* PATIENT INFO CARD - Elevated Design */}
+          <div style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+            padding: '20px 24px',
+            margin: '16px 24px'
           }}>
-            <div className="px-4 py-3">
-              <div className="grid grid-cols-4 gap-x-6 gap-y-2" style={{ fontSize: '12px' }}>
-                <div className="col-span-2">
-                  <span style={{ color: '#6b7280', fontWeight: '500' }}>Patient Name</span>
-                  <div style={{ 
-                    color: '#1f2937', 
-                    fontWeight: '700',
-                    fontSize: '14px',
-                    marginTop: '2px'
-                  }}>{fullName(patient)}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280', fontWeight: '500' }}>Patient ID</span>
-                  <div style={{ color: '#1f2937', fontWeight: '600', marginTop: '2px' }}>{labTest.patientId}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280', fontWeight: '500' }}>Test ID</span>
-                  <div style={{ color: '#1f2937', fontWeight: '600', marginTop: '2px' }}>{labTest.testId}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280', fontWeight: '500' }}>Age</span>
-                  <div style={{ color: '#1f2937', fontWeight: '600', marginTop: '2px' }}>{patient?.age || '—'}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280', fontWeight: '500' }}>Gender</span>
-                  <div style={{ color: '#1f2937', fontWeight: '600', marginTop: '2px' }}>{patient?.gender || '—'}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280', fontWeight: '500' }}>Category</span>
-                  <div style={{ color: '#1f2937', fontWeight: '600', marginTop: '2px' }}>{labTest.category}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280', fontWeight: '500' }}>Priority</span>
-                  <div style={{ color: '#1f2937', fontWeight: '600', marginTop: '2px' }}>{labTest.priority}</div>
-                </div>
-                <div className="col-span-2">
-                  <span style={{ color: '#6b7280', fontWeight: '500' }}>Completed Date</span>
-                  <div style={{ color: '#1f2937', fontWeight: '600', marginTop: '2px' }}>{formatLongDate(formValues?.completedDate || labTest.completedDate)}</div>
-                </div>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(4, 1fr)', 
+              gap: '16px 24px'
+            }}>
+              <div style={{ gridColumn: 'span 2' }}>
+                <div style={{ 
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: '#64748b',
+                  marginBottom: '2px'
+                }}>Patient Name</div>
+                <div style={{ 
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  color: '#0f172a'
+                }}>{fullName(patient)}</div>
+              </div>
+              <div>
+                <div style={{ 
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: '#64748b',
+                  marginBottom: '2px'
+                }}>Patient ID</div>
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>{labTest.patientId}</div>
+              </div>
+              <div>
+                <div style={{ 
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: '#64748b',
+                  marginBottom: '2px'
+                }}>Test ID</div>
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>{labTest.testId}</div>
+              </div>
+              <div>
+                <div style={{ 
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: '#64748b',
+                  marginBottom: '2px'
+                }}>Age</div>
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>{patient?.age || '—'}</div>
+              </div>
+              <div>
+                <div style={{ 
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: '#64748b',
+                  marginBottom: '2px'
+                }}>Gender</div>
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>{patient?.gender || '—'}</div>
+              </div>
+              <div>
+                <div style={{ 
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: '#64748b',
+                  marginBottom: '2px'
+                }}>Category</div>
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>{labTest.category}</div>
+              </div>
+              <div>
+                <div style={{ 
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: '#64748b',
+                  marginBottom: '2px'
+                }}>Priority</div>
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>{labTest.priority}</div>
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <div style={{ 
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: '#64748b',
+                  marginBottom: '2px'
+                }}>Completed Date</div>
+                <div style={{ 
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>{formatLongDate(formValues?.completedDate || labTest.completedDate)}</div>
               </div>
             </div>
           </div>
 
           {/* LABORATORY RESULTS - Premium Table with Sophisticated Styling */}
-          <div className="mx-6 mb-4">
-            <div className="mb-3 pb-2" style={{ 
-              borderBottom: '2px solid #1e40af'
+          <div style={{ margin: '0 24px 16px 24px' }}>
+            <div style={{ 
+              background: '#f0f7ff',
+              borderLeft: '4px solid #2563eb',
+              padding: '10px 20px',
+              margin: '0 0 12px 0'
             }}>
-              <h3 className="font-bold" style={{
+              <h3 style={{
+                color: '#1e40af',
                 fontSize: '15px',
-                color: '#1f2937',
-                letterSpacing: '0.8px'
+                fontWeight: '700',
+                letterSpacing: '0.8px',
+                margin: 0
               }}>
                 LABORATORY RESULTS
               </h3>
             </div>
             
-            {/* Premium Table with Subtle Borders and Elegant Styling */}
-            <table className="w-full" style={{ 
-              borderCollapse: 'separate',
-              borderSpacing: '0',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px'
+            {/* Premium Table - Elevated Container */}
+            <div style={{
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
             }}>
-              <thead>
-                <tr style={{ 
-                  background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-                  borderBottom: '2px solid #cbd5e1'
-                }}>
-                  <th className="text-left px-4 py-3" style={{ 
-                    fontWeight: '700',
-                    color: '#1f2937',
-                    fontSize: '12px',
-                    letterSpacing: '0.5px',
-                    width: '35%',
-                    borderRight: '1px solid #e5e7eb'
-                  }}>Parameter</th>
-                  <th className="text-center px-4 py-3" style={{ 
-                    fontWeight: '700',
-                    color: '#1f2937',
-                    fontSize: '12px',
-                    letterSpacing: '0.5px',
-                    width: '25%',
-                    borderRight: '1px solid #e5e7eb'
-                  }}>Result</th>
-                  <th className="text-left px-4 py-3" style={{ 
-                    fontWeight: '700',
-                    color: '#1f2937',
-                    fontSize: '12px',
-                    letterSpacing: '0.5px',
-                    width: '40%'
-                  }}>Normal Range</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(results).map(([testName, testData], testIndex) => {
-                  const fields = resultFields[testName];
-                  return (
-                    <Fragment key={testName}>
-                      {/* Premium Category Header with Gradient Background */}
-                      <tr>
-                        <td colSpan={3} className="px-4 py-2" style={{
-                          background: 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)',
-                          color: 'white',
-                          fontWeight: '700',
-                          fontSize: '12px',
-                          letterSpacing: '0.8px',
-                          borderTop: testIndex > 0 ? '1px solid #e5e7eb' : 'none'
-                        }}>
-                          {testName}
-                        </td>
-                      </tr>
-                      {/* Test Result Rows with Elegant Zebra Striping */}
-                      {Object.entries(testData).map(([fieldName, value], rowIndex) => {
-                        const config = fields?.[fieldName];
-                        const isNormal = config?.normal === value;
-                        const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
-                        
-                        // Format numeric values with commas
-                        let displayValue = value;
-                        if (config?.type === 'number' && value) {
-                          displayValue = formatNumber(value);
-                        }
-                        
-                        // Determine status badge for abnormal values - PREMIUM PILL BADGES
-                        let statusBadge = null;
-                        if (isAbnormal && config?.type === 'number' && config?.normal) {
-                          const numValue = typeof value === 'string' ? parseFloat(value) : value;
-                          const normalValue = parseFloat(config.normal);
-                          if (!isNaN(numValue) && !isNaN(normalValue)) {
-                            statusBadge = getStatusBadge(numValue > normalValue);
-                          }
-                        }
-                        
-                        return (
-                          <tr key={fieldName} style={{ 
-                            background: rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc',
-                            borderTop: '1px solid #f1f5f9'
+              <table style={{ 
+                width: '100%',
+                borderCollapse: 'collapse'
+              }}>
+                <thead>
+                  <tr style={{ 
+                    background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)'
+                  }}>
+                    <th style={{ 
+                      textAlign: 'left',
+                      padding: '14px 16px',
+                      color: '#ffffff',
+                      fontWeight: '600',
+                      fontSize: '12px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      width: '35%'
+                    }}>Parameter</th>
+                    <th style={{ 
+                      textAlign: 'center',
+                      padding: '14px 16px',
+                      color: '#ffffff',
+                      fontWeight: '600',
+                      fontSize: '12px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      width: '25%'
+                    }}>Result</th>
+                    <th style={{ 
+                      textAlign: 'left',
+                      padding: '14px 16px',
+                      color: '#ffffff',
+                      fontWeight: '600',
+                      fontSize: '12px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      width: '40%'
+                    }}>Normal Range</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(results).map(([testName, testData], testIndex) => {
+                    const fields = resultFields[testName];
+                    return (
+                      <Fragment key={testName}>
+                        {/* Category Header Row */}
+                        <tr>
+                          <td colSpan={3} style={{
+                            background: 'linear-gradient(90deg, #dbeafe 0%, #eff6ff 100%)',
+                            color: '#1e40af',
+                            fontWeight: '700',
+                            fontSize: '13px',
+                            padding: '10px 16px',
+                            borderBottom: '1px solid #bfdbfe'
                           }}>
-                            <td className="px-4 py-2" style={{ 
-                              color: '#4b5563',
-                              fontSize: '11px',
-                              borderRight: '1px solid #f1f5f9'
-                            }}>{fieldName}</td>
-                            <td className="text-center px-4 py-2" style={{ 
-                              fontWeight: '700',
-                              fontSize: '12px',
-                              borderRight: '1px solid #f1f5f9',
-                              color: isNormal ? '#059669' : isAbnormal ? '#dc2626' : '#1f2937'
+                            {testName}
+                          </td>
+                        </tr>
+                        {/* Test Result Rows with Zebra Striping */}
+                        {Object.entries(testData).map(([fieldName, value], rowIndex) => {
+                          const config = fields?.[fieldName];
+                          const isNormal = config?.normal === value;
+                          const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
+                          
+                          // Format numeric values with commas
+                          let displayValue = value;
+                          if (config?.type === 'number' && value) {
+                            displayValue = formatNumber(value);
+                          }
+                          
+                          // Determine status badge for abnormal values - PREMIUM PILL BADGES
+                          let statusBadge = null;
+                          if (isAbnormal && config?.type === 'number' && config?.normal) {
+                            const numValue = typeof value === 'string' ? parseFloat(value) : value;
+                            const normalValue = parseFloat(config.normal);
+                            if (!isNaN(numValue) && !isNaN(normalValue)) {
+                              statusBadge = getStatusBadge(numValue > normalValue);
+                            }
+                          }
+                          
+                          return (
+                            <tr key={fieldName} style={{ 
+                              background: rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc'
                             }}>
-                              {displayValue} {config?.unit || ""}{statusBadge}
-                            </td>
-                            <td className="px-4 py-2" style={{ 
-                              color: '#6b7280',
-                              fontSize: '11px'
-                            }}>
-                              {config?.normal || config?.range || "—"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                              <td style={{ 
+                                padding: '12px 16px',
+                                color: '#4b5563',
+                                fontSize: '11px',
+                                borderBottom: '1px solid #f1f5f9'
+                              }}>{fieldName}</td>
+                              <td style={{ 
+                                textAlign: 'center',
+                                padding: '12px 16px',
+                                fontWeight: isNormal ? '600' : '700',
+                                fontSize: '12px',
+                                borderBottom: '1px solid #f1f5f9',
+                                color: isNormal ? '#059669' : isAbnormal ? '#dc2626' : '#1f2937'
+                              }}>
+                                {displayValue} {config?.unit || ""}{statusBadge}
+                              </td>
+                              <td style={{ 
+                                padding: '12px 16px',
+                                color: '#6b7280',
+                                fontSize: '11px',
+                                borderBottom: '1px solid #f1f5f9'
+                              }}>
+                                {config?.normal || config?.range || "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Clinical Interpretation - Premium Design */}
@@ -355,153 +482,165 @@ export function LabReportPrint({
             const hasFindings = hasCritical || hasWarnings;
 
             return (
-              <div className="mx-6 mb-4 rounded-lg overflow-hidden" style={{
+              <div style={{
                 background: hasFindings ? '#fef3c7' : '#d1fae5',
                 border: hasFindings ? '1px solid #fbbf24' : '1px solid #34d399',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                borderRadius: '12px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                padding: '16px 20px',
+                margin: '0 24px 16px 24px'
               }}>
-                <div className="px-4 py-3">
-                  <h3 className="font-bold mb-2" style={{
-                    fontSize: '13px',
-                    color: hasFindings ? '#78350f' : '#065f46',
-                    letterSpacing: '0.5px'
+                <h3 style={{
+                  fontSize: '13px',
+                  color: hasFindings ? '#78350f' : '#065f46',
+                  fontWeight: '700',
+                  letterSpacing: '0.5px',
+                  margin: '0 0 8px 0'
+                }}>
+                  Clinical Interpretation
+                </h3>
+                {hasCritical && (
+                  <div style={{ marginBottom: '8px' }}>
+                    {criticalFindings.map((finding, i) => (
+                      <div key={i} style={{
+                        background: '#fee2e2',
+                        borderLeft: '3px solid #dc2626',
+                        borderRadius: '4px',
+                        padding: '6px 8px',
+                        fontSize: '11px',
+                        color: '#7f1d1d',
+                        marginBottom: '4px',
+                        fontWeight: '600'
+                      }}>
+                        {finding}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {hasWarnings && (
+                  <div>
+                    {warnings.map((warning, i) => (
+                      <div key={i} style={{
+                        background: '#fef3c7',
+                        borderLeft: '3px solid #f59e0b',
+                        borderRadius: '4px',
+                        padding: '6px 8px',
+                        fontSize: '11px',
+                        color: '#78350f',
+                        marginBottom: '4px',
+                        fontWeight: '500'
+                      }}>
+                        {warning}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!hasFindings && (
+                  <div style={{
+                    background: '#d1fae5',
+                    borderLeft: '3px solid #059669',
+                    borderRadius: '4px',
+                    padding: '6px 8px',
+                    fontSize: '11px',
+                    color: '#065f46',
+                    fontWeight: '600'
                   }}>
-                    Clinical Interpretation
-                  </h3>
-                  {hasCritical && (
-                    <div className="mb-2">
-                      {criticalFindings.map((finding, i) => (
-                        <div key={i} className="rounded" style={{
-                          background: '#fee2e2',
-                          borderLeft: '3px solid #dc2626',
-                          padding: '6px 8px',
-                          fontSize: '11px',
-                          color: '#7f1d1d',
-                          marginBottom: '4px',
-                          fontWeight: '600'
-                        }}>
-                          {finding}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {hasWarnings && (
-                    <div>
-                      {warnings.map((warning, i) => (
-                        <div key={i} className="rounded" style={{
-                          background: '#fef3c7',
-                          borderLeft: '3px solid #f59e0b',
-                          padding: '6px 8px',
-                          fontSize: '11px',
-                          color: '#78350f',
-                          marginBottom: '4px',
-                          fontWeight: '500'
-                        }}>
-                          {warning}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {!hasFindings && (
-                    <div className="rounded" style={{
-                      background: '#d1fae5',
-                      borderLeft: '3px solid #059669',
-                      padding: '6px 8px',
-                      fontSize: '11px',
-                      color: '#065f46',
-                      fontWeight: '600'
-                    }}>
-                      All test results within normal limits.
-                    </div>
-                  )}
-                </div>
+                    All test results within normal limits.
+                  </div>
+                )}
               </div>
             );
           })()}
 
           {/* Technician Notes - Premium Card Style */}
           {(formValues?.technicianNotes || labTest.technicianNotes) && (
-            <div className="mx-6 mb-4 rounded-lg overflow-hidden" style={{
+            <div style={{
               background: '#fef3c7',
               border: '1px solid #fbbf24',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+              borderRadius: '12px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              padding: '16px 20px',
+              margin: '0 24px 16px 24px'
             }}>
-              <div className="px-4 py-3">
-                <span className="font-bold" style={{ 
-                  fontSize: '12px',
-                  color: '#78350f',
-                  letterSpacing: '0.5px'
-                }}>Technician Notes:</span>
-                <div style={{ 
-                  fontSize: '11px',
-                  color: '#92400e',
-                  marginTop: '4px',
-                  lineHeight: '1.5'
-                }}>{formValues?.technicianNotes || labTest.technicianNotes}</div>
-              </div>
+              <span style={{ 
+                fontSize: '12px',
+                color: '#78350f',
+                fontWeight: '700',
+                letterSpacing: '0.5px'
+              }}>Technician Notes:</span>
+              <div style={{ 
+                fontSize: '11px',
+                color: '#92400e',
+                marginTop: '4px',
+                lineHeight: '1.5'
+              }}>{formValues?.technicianNotes || labTest.technicianNotes}</div>
             </div>
           )}
 
           {/* PREMIUM FOOTER - Elegant Professional Design */}
-          <div className="mt-6" style={{ 
-            borderTop: '2px solid #e5e7eb',
-            paddingTop: '16px'
+          <div style={{ 
+            borderTop: '2px solid #e2e8f0',
+            paddingTop: '16px',
+            marginTop: '24px',
+            padding: '16px 24px 0'
           }}>
-            <div className="mx-6">
-              {/* Signature Line */}
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <span style={{ 
-                    color: '#6b7280',
-                    fontSize: '11px',
-                    fontWeight: '500'
-                  }}>Lab Technician</span>
-                  <div style={{ 
-                    color: '#1f2937',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    marginTop: '4px'
-                  }}>{formValues?.completedBy || labTest.completedBy || "Lab Technician"}</div>
-                </div>
-                <div className="text-right">
-                  <span style={{ 
-                    color: '#6b7280',
-                    fontSize: '11px',
-                    fontWeight: '500'
-                  }}>Report Date</span>
-                  <div style={{ 
-                    color: '#1f2937',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    marginTop: '4px'
-                  }}>{formatLongDate(formValues?.completedDate || labTest.completedDate)}</div>
-                </div>
-              </div>
-              
-              {/* Clinic Branding Footer */}
-              <div className="text-center pt-4" style={{ 
-                borderTop: '1px solid #e5e7eb'
-              }}>
-                <p className="font-bold" style={{ 
-                  color: '#1e40af',
-                  fontSize: '13px',
-                  letterSpacing: '0.5px',
-                  marginBottom: '4px'
-                }}>Bahr El Ghazal Clinic</p>
-                <p style={{ 
+            {/* Signature Line */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0 0 16px 0'
+            }}>
+              <div>
+                <span style={{ 
                   color: '#6b7280',
-                  fontSize: '10px',
-                  letterSpacing: '0.3px'
-                }}>Accredited Medical Facility | Republic of South Sudan</p>
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  display: 'block'
+                }}>Lab Technician</span>
+                <div style={{ 
+                  color: '#1f2937',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  marginTop: '4px'
+                }}>{formValues?.completedBy || labTest.completedBy || "Lab Technician"}</div>
               </div>
-              
-              {/* Premium Accent Bar */}
-              <div style={{ 
-                height: '3px',
-                background: 'linear-gradient(90deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%)',
-                marginTop: '12px',
-                borderRadius: '2px'
-              }}></div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ 
+                  color: '#6b7280',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  display: 'block'
+                }}>Report Date</span>
+                <div style={{ 
+                  color: '#1f2937',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  marginTop: '4px'
+                }}>{formatLongDate(formValues?.completedDate || labTest.completedDate)}</div>
+              </div>
+            </div>
+            
+            {/* Dark Blue Footer Band */}
+            <div style={{ 
+              background: 'linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%)',
+              color: '#ffffff',
+              textAlign: 'center',
+              padding: '16px',
+              marginTop: '16px',
+              borderRadius: '0 0 8px 8px'
+            }}>
+              <p style={{ 
+                fontSize: '16px',
+                fontWeight: '600',
+                letterSpacing: '0.5px',
+                margin: '0 0 4px 0'
+              }}>Bahr El Ghazal Clinic</p>
+              <p style={{ 
+                fontSize: '12px',
+                color: 'rgba(255, 255, 255, 0.8)',
+                margin: 0
+              }}>Accredited Medical Facility | Republic of South Sudan</p>
             </div>
           </div>
           
