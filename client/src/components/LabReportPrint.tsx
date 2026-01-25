@@ -93,6 +93,21 @@ function formatAgeCompact(age: any) {
   return s;
 }
 
+function genderInitial(g?: string) {
+  const n = normalize(g);
+  if (!n) return "";
+  if (n.startsWith("m")) return "M";
+  if (n.startsWith("f")) return "F";
+  return (g ?? "").trim().charAt(0).toUpperCase();
+}
+
+function formatAgeGender(age: any, gender?: string) {
+  const a = formatAgeCompact(age);
+  if (a === "—") return "—";
+  const gi = genderInitial(gender);
+  return gi ? `${a}.${gi}` : a;
+}
+
 function isCommonNormalText(v: string) {
   const x = normalize(v);
   return x === "negative" || x === "not seen" || x === "none" || x === "normal";
@@ -147,7 +162,7 @@ export function LabReportPrint({
   const tests = parseJSON<string[]>(labTest.tests, []);
   const results = parseJSON<Record<string, Record<string, string>>>(labTest.results, {});
 
-  // still available if you want later, but we won't print category/status/overall
+  // kept (not printed) in case you want clinical copy later
   const _interpretation = includeInterpretation
     ? interpretLabResults(results)
     : { criticalFindings: [] as string[], warnings: [] as string[] };
@@ -164,43 +179,71 @@ export function LabReportPrint({
   const patientName = fullName(patient) || "—";
   const testCount = Array.isArray(tests) ? tests.length : 0;
 
+  const patientId = labTest.patientId || "—";
+  const phone = patient?.phoneNumber || "—";
+  const ageGender = formatAgeGender(patient?.age, patient?.gender);
+
   return (
     <div id={containerId} className="prescription" style={{ minHeight: "auto", height: "auto" }}>
       <style>{`
         #${containerId} .page-wrap { max-width: 1024px; margin: 0 auto; }
 
         @media print {
-          /* Use the page width fully (your #1 request) */
-          @page { margin: 8mm; }
+          /* Chrome “Margins: None” is still best, but this keeps it tight even if someone forgets */
+          @page { margin: 5mm; }
 
-          html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+          }
+
           #${containerId} { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-          /* Remove any max-width caps on print */
-          #${containerId} .page-wrap { max-width: none !important; width: 100% !important; margin: 0 !important; }
-          #${containerId} .print-shell { background: #fff !important; padding: 0 !important; }
-          #${containerId} .print-page { box-shadow: none !important; width: 100% !important; max-width: none !important; }
+          /* Remove width caps */
+          #${containerId} .page-wrap {
+            max-width: none !important;
+            width: 100% !important;
+            margin: 0 !important;
+          }
 
-          /* Tight, premium horizontal padding (no wasted white space) */
-          #${containerId} .print-tight-x { padding-left: 12px !important; padding-right: 12px !important; }
-          #${containerId} .print-header-x { padding-left: 12px !important; padding-right: 12px !important; }
+          /* Full-bleed print look (premium) */
+          #${containerId} .print-page {
+            width: 100% !important;
+            max-width: none !important;
+            box-shadow: none !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+          }
 
-          /* Keep the top blocks together; allow table to flow naturally */
-          #${containerId} .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+          /* Tight horizontal padding */
+          #${containerId} .print-tight-x { padding-left: 8px !important; padding-right: 8px !important; }
+          #${containerId} .print-header-x { padding-left: 8px !important; padding-right: 8px !important; }
 
-          /* Ensure table headers repeat on each printed page (like your screenshot) */
+          /* Make the footer a real “stationery” footer on every page */
+          #${containerId} .print-content {
+            padding-bottom: 96px !important; /* reserve space so footer never overlaps */
+          }
+
+          #${containerId} .print-footer-band {
+            position: fixed !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+          }
+
+          /* Table: repeat header and break safely */
           #${containerId} table { page-break-inside: auto; }
           #${containerId} thead { display: table-header-group; }
           #${containerId} tfoot { display: table-footer-group; }
-          #${containerId} tr { page-break-inside: avoid; break-inside: avoid; }
+          #${containerId} tr { break-inside: avoid; page-break-inside: avoid; }
 
-          /* Slightly denser table in print so it looks “premium” and fits more */
-          #${containerId} .print-table th { padding-top: 11px !important; padding-bottom: 11px !important; }
-          #${containerId} .print-table td { padding-top: 10px !important; padding-bottom: 10px !important; }
+          /* Dense premium spacing */
+          #${containerId} .print-table th { padding-top: 10px !important; padding-bottom: 10px !important; }
+          #${containerId} .print-table td { padding-top: 9px !important; padding-bottom: 9px !important; }
           #${containerId} .print-nowrap { white-space: nowrap !important; }
-
-          /* Avoid orphaning the bottom band */
-          #${containerId} .print-footer-band { break-inside: avoid; page-break-inside: avoid; }
         }
       `}</style>
 
@@ -208,7 +251,7 @@ export function LabReportPrint({
         <div className="page-wrap">
           <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-slate-200 print-page">
             {/* HEADER */}
-            <div className="bg-white px-8 py-5 avoid-break print-header-x">
+            <div className="bg-white px-6 py-5 print-header-x">
               <div className="flex items-center justify-between gap-6">
                 <div>
                   <h1 className="text-[28px] font-bold tracking-tight text-blue-900">
@@ -235,16 +278,17 @@ export function LabReportPrint({
               <div className="mt-3 h-[2px] bg-blue-700 rounded-full" />
             </div>
 
-            <div className="px-8 py-5 print-tight-x">
+            {/* CONTENT */}
+            <div className="px-6 py-5 print-tight-x print-content">
               {/* TITLE */}
-              <div className="text-center py-2 avoid-break">
+              <div className="text-center py-2">
                 <h2 className="text-[16px] font-bold tracking-[0.28em] uppercase text-slate-900">
                   LABORATORY TEST REPORT
                 </h2>
               </div>
 
-              {/* COMPACT TWO-BOX LAYOUT (no Category / Status / Overall) */}
-              <div className="mt-4 grid grid-cols-2 gap-4 avoid-break items-stretch">
+              {/* COMPACT TWO-BOX LAYOUT (aligned rows: 3 vs 3) */}
+              <div className="mt-4 grid grid-cols-2 gap-4 items-stretch">
                 {/* Patient Information */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 h-full">
                   <div className="text-[14px] font-extrabold tracking-wider text-slate-900 uppercase">
@@ -261,31 +305,17 @@ export function LabReportPrint({
                     </div>
 
                     <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-slate-600">Patient ID:</div>
-                      <div className="font-bold text-blue-800 tabular-nums">
-                        {labTest.patientId || "—"}
+                      <div className="font-semibold text-slate-600">Patient ID / Phone:</div>
+                      <div className="font-bold text-slate-900 tabular-nums text-right">
+                        <span className="text-blue-800">{patientId}</span>
+                        <span className="text-slate-400"> • </span>
+                        <span>{phone}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-slate-600">Age:</div>
-                      <div className="font-bold text-slate-900 tabular-nums">
-                        {formatAgeCompact(patient?.age)}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-slate-600">Gender:</div>
-                      <div className="font-bold text-slate-900">
-                        {patient?.gender || "—"}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-slate-600">Phone:</div>
-                      <div className="font-bold text-slate-900 tabular-nums">
-                        {patient?.phoneNumber || "—"}
-                      </div>
+                      <div className="font-semibold text-slate-600">Age/Gender:</div>
+                      <div className="font-bold text-slate-900 tabular-nums">{ageGender}</div>
                     </div>
                   </div>
                 </div>
@@ -300,30 +330,24 @@ export function LabReportPrint({
                   <div className="space-y-2.5 text-[13px]">
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-slate-600">Test ID:</div>
-                      <div className="font-bold text-blue-800 tabular-nums">
-                        {labTest.testId || "—"}
-                      </div>
+                      <div className="font-bold text-blue-800 tabular-nums">{labTest.testId || "—"}</div>
                     </div>
 
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-slate-600">Tests:</div>
-                      <div className="font-bold text-slate-900 tabular-nums">
-                        {testCount}
-                      </div>
+                      <div className="font-bold text-slate-900 tabular-nums">{testCount}</div>
                     </div>
 
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-slate-600">Date:</div>
-                      <div className="font-bold text-slate-900">
-                        {safeLongDate(reportedDate)}
-                      </div>
+                      <div className="font-bold text-slate-900">{safeLongDate(reportedDate)}</div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* TESTS ORDERED (compact chips) */}
-              <div className="mt-4 avoid-break">
+              {/* TESTS ORDERED */}
+              <div className="mt-4">
                 <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2">
                   Tests Ordered
                 </div>
@@ -340,7 +364,7 @@ export function LabReportPrint({
               </div>
 
               {/* SECTION STRIP */}
-              <div className="mt-4 bg-blue-50 border-l-4 border-blue-600 px-5 py-2.5 rounded-lg avoid-break">
+              <div className="mt-4 bg-blue-50 border-l-4 border-blue-600 px-5 py-2.5 rounded-lg">
                 <div className="text-blue-800 font-semibold tracking-[0.18em] text-[12px] uppercase">
                   Laboratory Results
                 </div>
@@ -357,13 +381,13 @@ export function LabReportPrint({
 
                   <thead>
                     <tr className="bg-blue-900 text-white">
-                      <th className="text-left px-5 py-3.5 font-semibold uppercase tracking-wider text-[11px]">
+                      <th className="text-left px-4 py-3.5 font-semibold uppercase tracking-wider text-[11px]">
                         Test Name
                       </th>
-                      <th className="text-center px-5 py-3.5 font-semibold uppercase tracking-wider text-[11px]">
+                      <th className="text-center px-4 py-3.5 font-semibold uppercase tracking-wider text-[11px]">
                         Result
                       </th>
-                      <th className="text-left px-5 py-3.5 font-semibold uppercase tracking-wider text-[11px]">
+                      <th className="text-left px-4 py-3.5 font-semibold uppercase tracking-wider text-[11px]">
                         Normal Range
                       </th>
                     </tr>
@@ -372,7 +396,7 @@ export function LabReportPrint({
                   {Object.entries(results).length === 0 ? (
                     <tbody>
                       <tr>
-                        <td className="px-5 py-5 text-slate-600" colSpan={3}>
+                        <td className="px-4 py-5 text-slate-600" colSpan={3}>
                           No results available.
                         </td>
                       </tr>
@@ -383,7 +407,7 @@ export function LabReportPrint({
                       return (
                         <tbody key={panelName}>
                           <tr className="bg-blue-50">
-                            <td className="px-5 py-2.5 font-semibold text-blue-900" colSpan={3}>
+                            <td className="px-4 py-2.5 font-semibold text-blue-900" colSpan={3}>
                               {panelName}
                             </td>
                           </tr>
@@ -394,8 +418,7 @@ export function LabReportPrint({
                             const value = raw || "—";
 
                             const unit = (config?.unit ?? "").trim();
-                            const unitAlreadyInValue =
-                              unit && normalize(value).includes(normalize(unit));
+                            const unitAlreadyInValue = unit && normalize(value).includes(normalize(unit));
                             const unitSuffix = unit && !unitAlreadyInValue ? ` ${unit}` : "";
 
                             const rangeText = config?.normal || config?.range || "—";
@@ -436,11 +459,11 @@ export function LabReportPrint({
                                 key={`${panelName}-${testItemName}`}
                                 className={cx("border-t border-slate-200", stripe)}
                               >
-                                <td className="px-5 py-3.5 text-slate-700 font-medium">
+                                <td className="px-4 py-3.5 text-slate-700 font-medium">
                                   {testItemName}
                                 </td>
 
-                                <td className="px-5 py-3.5 text-center tabular-nums">
+                                <td className="px-4 py-3.5 text-center tabular-nums">
                                   <span
                                     className={cx(
                                       isAbnormal ? "text-red-600 font-bold" : "text-slate-900 font-semibold",
@@ -452,7 +475,7 @@ export function LabReportPrint({
                                   </span>
                                 </td>
 
-                                <td className="px-5 py-3.5 text-slate-500 leading-snug break-words">
+                                <td className="px-4 py-3.5 text-slate-500 leading-snug break-words">
                                   {rangeText}
                                 </td>
                               </tr>
@@ -465,9 +488,9 @@ export function LabReportPrint({
                 </table>
               </div>
 
-              {/* Technician notes (optional) */}
+              {/* Technician notes */}
               {technicianNotes && (
-                <div className="mt-4 rounded-2xl border border-slate-200 p-4 bg-white avoid-break">
+                <div className="mt-4 rounded-2xl border border-slate-200 p-4 bg-white">
                   <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
                     Technician Notes
                   </div>
@@ -476,7 +499,7 @@ export function LabReportPrint({
               )}
 
               {/* Signature row */}
-              <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between text-[13px] avoid-break">
+              <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between text-[13px]">
                 <div>
                   <div className="text-[11px] text-slate-500">Lab Technician</div>
                   <div className="font-semibold text-slate-900">{completedBy || "—"}</div>
@@ -489,9 +512,9 @@ export function LabReportPrint({
               </div>
             </div>
 
-            {/* Bottom Footer Band */}
-            <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white text-center py-6 print-footer-band">
-              <div className="font-semibold text-lg">Bahr El Ghazal Clinic</div>
+            {/* Bottom Footer Band (fixed in print) */}
+            <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white text-center py-5 print-footer-band">
+              <div className="font-semibold text-[18px]">Bahr El Ghazal Clinic</div>
               <div className="text-sm text-blue-100 mt-1">
                 Accredited Medical Facility | Republic of South Sudan
               </div>
