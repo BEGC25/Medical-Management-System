@@ -524,6 +524,15 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// Bulk entry row type definition
+type BulkEntry = {
+  name: string;
+  price: number;
+  useCustomName: boolean;
+  search: string;
+  popoverOpen: boolean;
+};
+
 export default function ServiceManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
@@ -537,13 +546,7 @@ export default function ServiceManagement() {
   const [predefinedSearch, setPredefinedSearch] = useState("");
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [bulkEntries, setBulkEntries] = useState<Array<{ 
-    name: string; 
-    price: number; 
-    useCustomName: boolean;
-    search: string;
-    popoverOpen: boolean;
-  }>>([
+  const [bulkEntries, setBulkEntries] = useState<BulkEntry[]>([
     { name: "", price: 0, useCustomName: false, search: "", popoverOpen: false },
   ]);
   const itemsPerPage = 10;
