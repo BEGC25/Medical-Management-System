@@ -525,6 +525,10 @@ export default function ServiceManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [predefinedSearch, setPredefinedSearch] = useState("");
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [bulkEntries, setBulkEntries] = useState<Array<{ name: string; price: number }>>([
+    { name: "", price: 0 },
+  ]);
   const itemsPerPage = 10;
   
   const { toast } = useToast();
@@ -753,6 +757,29 @@ export default function ServiceManagement() {
     },
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: async (services: ServiceFormData[]) => {
+      return Promise.all(services.map(service => apiRequest("POST", "/api/services", service)));
+    },
+    onSuccess: (_, services) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      setIsDialogOpen(false);
+      setBulkEntries([{ name: "", price: 0 }]);
+      setIsBulkMode(false);
+      toast({
+        title: "✓ Success",
+        description: `Created ${services.length} service${services.length > 1 ? 's' : ''} successfully`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create services",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (data: ServiceFormData) => {
     // Validate for duplicate names in same category
     const duplicateName = services.find(
@@ -835,6 +862,54 @@ export default function ServiceManagement() {
         });
       }
     });
+  };
+
+  const handleBulkSubmit = () => {
+    // Validate all entries
+    const validEntries = bulkEntries.filter(entry => entry.name.trim() && entry.price >= 0);
+    
+    if (validEntries.length === 0) {
+      toast({
+        title: "⚠️ No Valid Entries",
+        description: "Please add at least one service with a name and price",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create service objects with auto-generated codes
+    const services: ServiceFormData[] = validEntries.map(entry => {
+      const code = generateAndValidateServiceCode(entry.name, selectedCategory, existingCodes);
+      return {
+        code,
+        name: entry.name.trim(),
+        category: selectedCategory as any,
+        description: null,
+        price: entry.price,
+        isActive: 1,
+      };
+    });
+
+    bulkCreateMutation.mutate(services);
+  };
+
+  const addBulkRow = () => {
+    setBulkEntries([...bulkEntries, { name: "", price: 0 }]);
+  };
+
+  const removeBulkRow = (index: number) => {
+    if (bulkEntries.length > 1) {
+      setBulkEntries(bulkEntries.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateBulkEntry = (index: number, field: 'name' | 'price', value: string | number) => {
+    const updated = [...bulkEntries];
+    updated[index] = {
+      ...updated[index],
+      [field]: field === 'price' ? (typeof value === 'number' ? value : parseFloat(value as string) || 0) : value,
+    };
+    setBulkEntries(updated);
   };
 
   const handleDuplicate = (service: Service) => {
@@ -1148,14 +1223,151 @@ export default function ServiceManagement() {
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">
-                {editingService ? "Edit Service" : "Add New Service"}
+                {editingService ? "Edit Service" : (isBulkMode ? "Bulk Add Services" : "Add New Service")}
               </DialogTitle>
               <DialogDescription>
                 {editingService 
                   ? "Update service information and pricing" 
-                  : "Create a new service with pricing details"}
+                  : (isBulkMode 
+                    ? "Add multiple services at once with auto-generated codes" 
+                    : "Create a new service with pricing details")}
               </DialogDescription>
+              {!editingService && (
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant={isBulkMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setIsBulkMode(!isBulkMode);
+                      if (!isBulkMode) {
+                        setBulkEntries([{ name: "", price: 0 }]);
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    {isBulkMode ? "Switch to Single Entry" : "Switch to Bulk Entry"}
+                  </Button>
+                </div>
+              )}
             </DialogHeader>
+            
+            {isBulkMode && !editingService ? (
+              // Bulk Entry Mode
+              <div className="space-y-4">
+                {/* Category Selection for Bulk */}
+                <div>
+                  <label className="font-semibold text-sm mb-2 block">Category (applies to all services) *</label>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CATEGORY_ICONS).map(([cat, Icon]) => {
+                        const categoryColor = CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS];
+                        return (
+                          <SelectItem key={cat} value={cat}>
+                            <div className="flex items-center gap-2">
+                              <Icon className={`w-4 h-4 ${categoryColor?.iconColor || 'text-gray-600'}`} />
+                              <span className="capitalize">{cat}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bulk Entry Table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b">
+                    <div className="grid grid-cols-12 gap-2 font-semibold text-xs text-gray-600 dark:text-gray-400">
+                      <div className="col-span-1">#</div>
+                      <div className="col-span-6">Service Name</div>
+                      <div className="col-span-4">Price (SSP)</div>
+                      <div className="col-span-1"></div>
+                    </div>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {bulkEntries.map((entry, index) => (
+                      <div key={index} className="px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <div className="grid grid-cols-12 gap-2 items-center">
+                          <div className="col-span-1 text-sm font-semibold text-gray-500">
+                            {index + 1}
+                          </div>
+                          <div className="col-span-6">
+                            <Input
+                              value={entry.name}
+                              onChange={(e) => updateBulkEntry(index, 'name', e.target.value)}
+                              placeholder="e.g., Complete Blood Count (CBC)"
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="col-span-4">
+                            <Input
+                              type="number"
+                              value={entry.price}
+                              onChange={(e) => updateBulkEntry(index, 'price', e.target.value)}
+                              placeholder="0"
+                              min="0"
+                              step="0.01"
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="col-span-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeBulkRow(index)}
+                              disabled={bulkEntries.length === 1}
+                              className="h-9 w-9 p-0"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Add Row Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addBulkRow}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Another Service
+                </Button>
+
+                {/* Bulk Submit Buttons */}
+                <DialogFooter className="flex justify-between sm:justify-between pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                      setBulkEntries([{ name: "", price: 0 }]);
+                      setIsBulkMode(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleBulkSubmit}
+                    disabled={bulkCreateMutation.isPending}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    {bulkCreateMutation.isPending ? "Creating..." : `Create ${bulkEntries.filter(e => e.name.trim()).length} Service(s)`}
+                  </Button>
+                </DialogFooter>
+              </div>
+            ) : (
+              // Single Entry Mode (existing form)
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                 {/* Row 1: Category & Status */}
@@ -1505,6 +1717,7 @@ export default function ServiceManagement() {
                 </DialogFooter>
               </form>
             </Form>
+            )}
           </DialogContent>
         </Dialog>
           </div>
