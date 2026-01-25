@@ -858,9 +858,61 @@ export default function Treatment() {
       .replace(/\s+/g, ' ');
   };
 
-  // Map lab test names from the catalog to their corresponding services
-  // This ensures only tests with active services can be ordered
-  // Uses fuzzy matching: strips abbreviations like (CBC), (BT), (HCT) for flexible matching
+  // Helper function to infer lab test category from service name
+  const inferLabCategory = (serviceName: string): LabTestCategory => {
+    const nameLower = serviceName.toLowerCase();
+    
+    // Blood-related tests
+    if (nameLower.includes('blood') || nameLower.includes('hemoglobin') || nameLower.includes('hb') ||
+        nameLower.includes('esr') || nameLower.includes('wbc') || nameLower.includes('rbc') ||
+        nameLower.includes('platelet') || nameLower.includes('cbc') || nameLower.includes('malaria') ||
+        nameLower.includes('widal') || nameLower.includes('brucella') || nameLower.includes('hepatitis') ||
+        nameLower.includes('h. pylori') || nameLower.includes('vdrl') || nameLower.includes('rheumatoid')) {
+      return 'blood';
+    }
+    
+    // Hormonal tests
+    if (nameLower.includes('hormone') || nameLower.includes('pregnancy') || nameLower.includes('hcg') ||
+        nameLower.includes('gonorrhea') || nameLower.includes('chlamydia') || nameLower.includes('thyroid') ||
+        nameLower.includes('estrogen') || nameLower.includes('testosterone') || nameLower.includes('progesterone') ||
+        nameLower.includes('lh') || nameLower.includes('fsh') || nameLower.includes('prolactin')) {
+      return 'hormonal';
+    }
+    
+    // Chemistry/Biochemistry tests
+    if (nameLower.includes('sugar') || nameLower.includes('glucose') || nameLower.includes('liver function') ||
+        nameLower.includes('lft') || nameLower.includes('renal') || nameLower.includes('rft') ||
+        nameLower.includes('creatinine') || nameLower.includes('urea') || nameLower.includes('bilirubin') ||
+        nameLower.includes('alkaline phosphatase') || nameLower.includes('alp') || nameLower.includes('alt') ||
+        nameLower.includes('ast') || nameLower.includes('lipid') || nameLower.includes('cholesterol') ||
+        nameLower.includes('triglyceride') || nameLower.includes('electrolyte') || nameLower.includes('fbs') ||
+        nameLower.includes('rbs')) {
+      return 'chemistry';
+    }
+    
+    // Microbiology tests
+    if (nameLower.includes('toxoplasma') || nameLower.includes('filariasis') || nameLower.includes('schistosomiasis') ||
+        nameLower.includes('leishmaniasis') || nameLower.includes('tuberculosis') || nameLower.includes('tb') ||
+        nameLower.includes('meningitis') || nameLower.includes('yellow fever') || nameLower.includes('typhus')) {
+      return 'microbiology';
+    }
+    
+    // Urine tests
+    if (nameLower.includes('urine') || nameLower.includes('urinalysis')) {
+      return 'urine';
+    }
+    
+    // Stool tests
+    if (nameLower.includes('stool') || nameLower.includes('fecal')) {
+      return 'stool';
+    }
+    
+    // Default to 'other' for unrecognized tests
+    return 'other';
+  };
+
+  // Build available lab tests directly from database services
+  // This ensures ALL active laboratory services appear, not just those in the static catalog
   const availableLabTests = useMemo(() => {
     const result: Record<LabTestCategory, string[]> = {
       blood: [],
@@ -872,21 +924,16 @@ export default function Treatment() {
       other: [],
     };
     
-    // Filter tests from catalog that have corresponding active services
-    Object.entries(commonTests).forEach(([category, tests]) => {
-      result[category as LabTestCategory] = tests.filter(testName => {
-        const normalizedTestName = normalizeForFuzzyMatch(testName);
-        // Check if any service matches (with or without abbreviation)
-        return laboratoryServices.some(service => {
-          const normalizedServiceName = normalizeForFuzzyMatch(service.name);
-          // Exact match or service name starts with test name (for cases like "Blood Group" matching "Blood Group & Rh")
-          // Only allow startsWith if the service name has the test name as a complete prefix
-          // (service name must be test name + something, not just starting with same letters)
-          return normalizedServiceName === normalizedTestName || 
-                 (normalizedServiceName.startsWith(normalizedTestName + ' ') ||
-                  normalizedServiceName.startsWith(normalizedTestName + '('));
-        });
-      });
+    // Add all laboratory services to their inferred categories
+    laboratoryServices.forEach(service => {
+      const category = inferLabCategory(service.name);
+      // Use the service name directly - this ensures the service can be found when ordering
+      result[category].push(service.name);
+    });
+    
+    // Sort tests alphabetically within each category for better UX
+    Object.keys(result).forEach(category => {
+      result[category as LabTestCategory].sort();
     });
     
     return result;
