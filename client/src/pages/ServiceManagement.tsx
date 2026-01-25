@@ -5,7 +5,8 @@ import {
   Stethoscope, FlaskConical, Activity, Radio, Pill, Syringe,
   ChevronDown, ChevronUp, TrendingUp, TrendingDown,
   DollarSign, Package, XCircle, MoreVertical, Copy,
-  CheckCircle, Trash2, AlertCircle, ArrowRight, RefreshCw, Lock
+  CheckCircle, Trash2, AlertCircle, ArrowRight, RefreshCw, Lock,
+  ChevronsUpDown
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+  Command, 
+  CommandEmpty, 
+  CommandGroup, 
+  CommandInput, 
+  CommandItem, 
+  CommandList 
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CountUp } from "@/components/CountUp";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +42,7 @@ import { type Service, type InsertService, insertServiceSchema } from "@shared/s
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import { generateAndValidateServiceCode, validateServiceCode, sanitizeCode } from "@shared/service-code-utils";
+import { cn } from "@/lib/utils";
 
 /**
  * Normalize isActive value to handle different data types from database
@@ -526,8 +537,14 @@ export default function ServiceManagement() {
   const [predefinedSearch, setPredefinedSearch] = useState("");
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [bulkEntries, setBulkEntries] = useState<Array<{ name: string; price: number }>>([
-    { name: "", price: 0 },
+  const [bulkEntries, setBulkEntries] = useState<Array<{ 
+    name: string; 
+    price: number; 
+    useCustomName: boolean;
+    search: string;
+    popoverOpen: boolean;
+  }>>([
+    { name: "", price: 0, useCustomName: false, search: "", popoverOpen: false },
   ]);
   const itemsPerPage = 10;
   
@@ -764,7 +781,7 @@ export default function ServiceManagement() {
     onSuccess: (_, services) => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       setIsDialogOpen(false);
-      setBulkEntries([{ name: "", price: 0 }]);
+      setBulkEntries([{ name: "", price: 0, useCustomName: false, search: "", popoverOpen: false }]);
       setIsBulkMode(false);
       toast({
         title: "✓ Success",
@@ -894,7 +911,7 @@ export default function ServiceManagement() {
   };
 
   const addBulkRow = () => {
-    setBulkEntries([...bulkEntries, { name: "", price: 0 }]);
+    setBulkEntries([...bulkEntries, { name: "", price: 0, useCustomName: false, search: "", popoverOpen: false }]);
   };
 
   const removeBulkRow = (index: number) => {
@@ -903,7 +920,7 @@ export default function ServiceManagement() {
     }
   };
 
-  const updateBulkEntry = (index: number, field: 'name' | 'price', value: string | number) => {
+  const updateBulkEntry = (index: number, field: 'name' | 'price' | 'useCustomName' | 'search' | 'popoverOpen', value: string | number | boolean) => {
     const updated = [...bulkEntries];
     updated[index] = {
       ...updated[index],
@@ -1110,6 +1127,13 @@ export default function ServiceManagement() {
     form.setValue('code', generatedCode);
   };
 
+  // Handle predefined service selection in bulk mode
+  const handleBulkPredefinedServiceSelect = (index: number, serviceName: string) => {
+    updateBulkEntry(index, 'name', serviceName);
+    updateBulkEntry(index, 'search', "");
+    updateBulkEntry(index, 'popoverOpen', false);
+  };
+
   // Calculate category counts
   const categoryCounts = useMemo(() => {
     return services.reduce((acc, service) => {
@@ -1173,6 +1197,26 @@ export default function ServiceManagement() {
     return filtered;
   };
 
+  // Get filtered predefined services for bulk row
+  const getBulkRowFilteredServices = (searchTerm: string) => {
+    const categoryServices = PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES];
+    if (!categoryServices || typeof categoryServices !== 'object') return {};
+    
+    if (!searchTerm) return categoryServices;
+    
+    const filtered: Record<string, string[]> = {};
+    Object.entries(categoryServices).forEach(([subcategory, services]) => {
+      const filteredServices = services.filter(s => 
+        s.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      if (filteredServices.length > 0) {
+        filtered[subcategory] = filteredServices;
+      }
+    });
+    
+    return filtered;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
       <div className="space-y-6 px-4 sm:px-6 pt-4 sm:pt-6 pb-6 sm:pb-8">
@@ -1187,16 +1231,16 @@ export default function ServiceManagement() {
         
         <div className="relative px-6 py-6">
           <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
-                  <Package className="w-6 h-6 text-white" />
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg shadow-lg">
+                  <Package className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent animate-gradient-x">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent animate-gradient-x">
                     Service Management
                   </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 font-medium mt-1">
+                  <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">
                     Enterprise-grade service catalog and pricing management
                   </p>
                 </div>
@@ -1261,7 +1305,7 @@ export default function ServiceManagement() {
                     onClick={() => {
                       setIsBulkMode(!isBulkMode);
                       if (!isBulkMode) {
-                        setBulkEntries([{ name: "", price: 0 }]);
+                        setBulkEntries([{ name: "", price: 0, useCustomName: false, search: "", popoverOpen: false }]);
                       }
                     }}
                     className={`text-sm font-semibold transition-all duration-300 ${isBulkMode ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg' : 'hover:border-blue-400 hover:text-blue-600'}`}
@@ -1316,12 +1360,92 @@ export default function ServiceManagement() {
                             {index + 1}
                           </div>
                           <div className="col-span-6">
-                            <Input
-                              value={entry.name}
-                              onChange={(e) => updateBulkEntry(index, 'name', e.target.value)}
-                              placeholder="e.g., Complete Blood Count (CBC)"
-                              className="h-10 border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
-                            />
+                            {/* Service Name with Predefined Dropdown */}
+                            {Object.keys(PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES] || {}).length > 0 && !entry.useCustomName ? (
+                              <div className="space-y-2">
+                                <Popover 
+                                  open={entry.popoverOpen} 
+                                  onOpenChange={(open) => updateBulkEntry(index, 'popoverOpen', open)}
+                                >
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      role="combobox"
+                                      aria-expanded={entry.popoverOpen}
+                                      className="w-full justify-between h-10 border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+                                    >
+                                      {entry.name || "Select predefined service..."}
+                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-[400px] p-0" align="start">
+                                    <Command>
+                                      <CommandInput 
+                                        placeholder="Search services..." 
+                                        value={entry.search}
+                                        onValueChange={(value) => updateBulkEntry(index, 'search', value)}
+                                      />
+                                      <CommandList>
+                                        <CommandEmpty>No service found.</CommandEmpty>
+                                        {Object.entries(getBulkRowFilteredServices(entry.search)).map(([subcategory, serviceList]) => (
+                                          <CommandGroup key={subcategory} heading={subcategory}>
+                                            {serviceList.map((serviceName) => (
+                                              <CommandItem
+                                                key={serviceName}
+                                                value={serviceName}
+                                                onSelect={() => handleBulkPredefinedServiceSelect(index, serviceName)}
+                                              >
+                                                <Check
+                                                  className={`mr-2 h-4 w-4 ${
+                                                    entry.name === serviceName ? "opacity-100" : "opacity-0"
+                                                  }`}
+                                                />
+                                                {serviceName}
+                                              </CommandItem>
+                                            ))}
+                                          </CommandGroup>
+                                        ))}
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  size="sm"
+                                  onClick={() => {
+                                    updateBulkEntry(index, 'useCustomName', true);
+                                    updateBulkEntry(index, 'name', "");
+                                  }}
+                                  className="text-xs p-0 h-auto"
+                                >
+                                  + Use custom service name
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <Input
+                                  value={entry.name}
+                                  onChange={(e) => updateBulkEntry(index, 'name', e.target.value)}
+                                  placeholder="e.g., Complete Blood Count (CBC)"
+                                  className="h-10 border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+                                />
+                                {Object.keys(PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES] || {}).length > 0 && (
+                                  <Button
+                                    type="button"
+                                    variant="link"
+                                    size="sm"
+                                    onClick={() => {
+                                      updateBulkEntry(index, 'useCustomName', false);
+                                      updateBulkEntry(index, 'name', "");
+                                    }}
+                                    className="text-xs p-0 h-auto"
+                                  >
+                                    ← Choose from predefined services
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="col-span-4">
                             <Input
@@ -1370,7 +1494,7 @@ export default function ServiceManagement() {
                     variant="outline"
                     onClick={() => {
                       setIsDialogOpen(false);
-                      setBulkEntries([{ name: "", price: 0 }]);
+                      setBulkEntries([{ name: "", price: 0, useCustomName: false, search: "", popoverOpen: false }]);
                       setIsBulkMode(false);
                     }}
                     className="border-2 hover:border-gray-400 transition-colors"
@@ -1753,35 +1877,35 @@ export default function ServiceManagement() {
         </div>
       </div>
 
-      {/* Premium Statistics Cards with Glassmorphism */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Premium Statistics Cards with Glassmorphism - Compact Version */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Services Card */}
         <Card 
-          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-blue-200/50 dark:border-blue-800/50 hover:border-blue-400 dark:hover:border-blue-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-blue-200/50 dark:border-blue-800/50 hover:border-blue-400 dark:hover:border-blue-600 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 cursor-pointer"
           onClick={clearFilters}
         >
           {/* Glow effect on hover */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/10 group-hover:to-indigo-500/10 transition-all duration-500"></div>
           
-          <CardContent className="relative pt-6 pb-6">
+          <CardContent className="relative pt-4 pb-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Total Services
                 </p>
-                <div className="flex items-baseline gap-3">
+                <div className="flex items-baseline gap-2">
                   <CountUp
                     end={stats.total}
                     duration={2}
-                    className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
+                    className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
                   />
-                  <span className="text-sm text-gray-500 font-medium">services</span>
+                  <span className="text-xs text-gray-500 font-medium">services</span>
                 </div>
               </div>
               <div className="relative">
-                <div className="absolute inset-0 bg-blue-500/20 dark:bg-blue-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative p-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                  <Package className="w-6 h-6 text-white" />
+                <div className="absolute inset-0 bg-blue-500/20 dark:bg-blue-400/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-500"></div>
+                <div className="relative p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <Package className="w-5 h-5 text-white" />
                 </div>
               </div>
             </div>
@@ -1790,33 +1914,33 @@ export default function ServiceManagement() {
 
         {/* Active Services Card */}
         <Card 
-          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-green-200/50 dark:border-green-800/50 hover:border-green-400 dark:hover:border-green-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-green-200/50 dark:border-green-800/50 hover:border-green-400 dark:hover:border-green-600 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 cursor-pointer"
           onClick={() => filterByStatus('active')}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-emerald-500/0 group-hover:from-green-500/10 group-hover:to-emerald-500/10 transition-all duration-500"></div>
           
-          <CardContent className="relative pt-6 pb-6">
+          <CardContent className="relative pt-4 pb-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Active Services
                 </p>
-                <div className="flex items-baseline gap-3">
+                <div className="flex items-baseline gap-2">
                   <CountUp
                     end={stats.active}
                     duration={2}
-                    className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"
+                    className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"
                   />
-                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  <TrendingUp className="w-4 h-4 text-green-500" />
                 </div>
                 <p className="text-xs text-gray-500 font-medium">
                   {stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(0) : 0}% of total
                 </p>
               </div>
               <div className="relative">
-                <div className="absolute inset-0 bg-green-500/20 dark:bg-green-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                  <CheckCircle className="w-6 h-6 text-white" />
+                <div className="absolute inset-0 bg-green-500/20 dark:bg-green-400/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-500"></div>
+                <div className="relative p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <CheckCircle className="w-5 h-5 text-white" />
                 </div>
               </div>
             </div>
@@ -1825,33 +1949,33 @@ export default function ServiceManagement() {
 
         {/* Inactive Services Card */}
         <Card 
-          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-red-200/50 dark:border-red-800/50 hover:border-red-400 dark:hover:border-red-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-red-200/50 dark:border-red-800/50 hover:border-red-400 dark:hover:border-red-600 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 cursor-pointer"
           onClick={() => filterByStatus('inactive')}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 to-pink-500/0 group-hover:from-red-500/10 group-hover:to-pink-500/10 transition-all duration-500"></div>
           
-          <CardContent className="relative pt-6 pb-6">
+          <CardContent className="relative pt-4 pb-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Inactive Services
                 </p>
-                <div className="flex items-baseline gap-3">
+                <div className="flex items-baseline gap-2">
                   <CountUp
                     end={stats.inactive}
                     duration={2}
-                    className="text-3xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent"
+                    className="text-2xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent"
                   />
-                  <TrendingDown className="w-5 h-5 text-red-500" />
+                  <TrendingDown className="w-4 h-4 text-red-500" />
                 </div>
                 <p className="text-xs text-gray-500 font-medium">
                   {stats.total > 0 ? ((stats.inactive / stats.total) * 100).toFixed(0) : 0}% of total
                 </p>
               </div>
               <div className="relative">
-                <div className="absolute inset-0 bg-red-500/20 dark:bg-red-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative p-4 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                  <XCircle className="w-6 h-6 text-white" />
+                <div className="absolute inset-0 bg-red-500/20 dark:bg-red-400/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-500"></div>
+                <div className="relative p-3 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <XCircle className="w-5 h-5 text-white" />
                 </div>
               </div>
             </div>
@@ -1859,25 +1983,25 @@ export default function ServiceManagement() {
         </Card>
 
         {/* Price Range Card */}
-        <Card className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+        <Card className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-indigo-500/0 group-hover:from-purple-500/10 group-hover:to-indigo-500/10 transition-all duration-500"></div>
           
-          <CardContent className="relative pt-6 pb-6">
+          <CardContent className="relative pt-4 pb-4">
             <div className="flex items-center justify-between">
-              <div className="flex-1 space-y-2">
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              <div className="flex-1 space-y-1">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Price Range
                 </p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div className="text-center">
-                    <div className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                    <div className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                       {stats.minPrice.toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-500 font-medium">Min</div>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-purple-400" />
+                  <ArrowRight className="w-4 h-4 text-purple-400" />
                   <div className="text-center">
-                    <div className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                    <div className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                       {stats.maxPrice.toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-500 font-medium">Max</div>
@@ -1888,9 +2012,9 @@ export default function ServiceManagement() {
                 </p>
               </div>
               <div className="relative">
-                <div className="absolute inset-0 bg-purple-500/20 dark:bg-purple-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                  <DollarSign className="w-6 h-6 text-white" />
+                <div className="absolute inset-0 bg-purple-500/20 dark:bg-purple-400/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-500"></div>
+                <div className="relative p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <DollarSign className="w-5 h-5 text-white" />
                 </div>
               </div>
             </div>
