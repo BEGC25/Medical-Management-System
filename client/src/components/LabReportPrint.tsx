@@ -101,11 +101,12 @@ function genderInitial(g?: string) {
   return (g ?? "").trim().charAt(0).toUpperCase();
 }
 
+/** ✅ requested: 30/M */
 function formatAgeGender(age: any, gender?: string) {
   const a = formatAgeCompact(age);
   if (a === "—") return "—";
   const gi = genderInitial(gender);
-  return gi ? `${a}.${gi}` : a;
+  return gi ? `${a}/${gi}` : a;
 }
 
 function isCommonNormalText(v: string) {
@@ -162,7 +163,7 @@ export function LabReportPrint({
   const tests = parseJSON<string[]>(labTest.tests, []);
   const results = parseJSON<Record<string, Record<string, string>>>(labTest.results, {});
 
-  // kept for future (not printed in this premium layout)
+  // kept for future use (not printed in this layout)
   const _interpretation = includeInterpretation
     ? interpretLabResults(results)
     : { criticalFindings: [] as string[], warnings: [] as string[] };
@@ -189,14 +190,15 @@ export function LabReportPrint({
         #${containerId} .page-wrap { max-width: 1024px; margin: 0 auto; }
 
         @media print {
-          /* Best results are still with Chrome Print -> Margins: None */
-          @page { margin: 5mm; }
+          /* ✅ most consistent with “Margins: None”, and prevents tiny overflow that creates blank page */
+          @page { margin: 0mm; }
 
-          html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-          #${containerId} { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; height: auto !important; }
+          #${containerId} { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0 !important; padding: 0 !important; min-height: 0 !important; height: auto !important; }
+          #${containerId}.prescription { min-height: 0 !important; height: auto !important; }
 
-          /* Remove the screen padding/background bars in print */
-          #${containerId} .print-shell { background: #fff !important; padding: 0 !important; }
+          /* Remove screen padding/background bars in print */
+          #${containerId} .print-shell { background: #fff !important; padding: 0 !important; margin: 0 !important; }
           #${containerId} .print-shell.py-8 { padding: 0 !important; }
           #${containerId} .print-shell.bg-slate-100 { background: #fff !important; }
 
@@ -208,13 +210,14 @@ export function LabReportPrint({
             box-shadow: none !important;
             border: 0 !important;
             border-radius: 0 !important;
+            overflow: visible !important;
           }
 
-          /* Tight horizontal padding so you actually use the page */
-          #${containerId} .print-tight-x { padding-left: 8px !important; padding-right: 8px !important; }
-          #${containerId} .print-header-x { padding-left: 8px !important; padding-right: 8px !important; }
+          /* Tight horizontal & vertical padding to avoid “extra 2px -> blank page” */
+          #${containerId} .print-header-x { padding-left: 10px !important; padding-right: 10px !important; padding-top: 10px !important; padding-bottom: 10px !important; }
+          #${containerId} .print-tight-x { padding-left: 10px !important; padding-right: 10px !important; padding-top: 10px !important; padding-bottom: 10px !important; }
 
-          /* Keep these blocks from splitting */
+          /* Keep blocks from splitting */
           #${containerId} .avoid-break { break-inside: avoid; page-break-inside: avoid; }
 
           /* Table: repeat header and break cleanly */
@@ -223,7 +226,7 @@ export function LabReportPrint({
           #${containerId} tfoot { display: table-footer-group; }
           #${containerId} tr { break-inside: avoid; page-break-inside: avoid; }
 
-          /* Slightly denser print rows */
+          /* Dense print rows */
           #${containerId} .print-table th { padding-top: 10px !important; padding-bottom: 10px !important; }
           #${containerId} .print-table td { padding-top: 9px !important; padding-bottom: 9px !important; }
 
@@ -250,7 +253,7 @@ export function LabReportPrint({
                   </div>
                 </div>
 
-                {/* Slightly larger logo (premium, but not overpowering) */}
+                {/* Logo size stays premium */}
                 <div className="w-[72px] h-[72px] flex items-center justify-center overflow-hidden">
                   <img
                     src={clinicLogo}
@@ -272,7 +275,7 @@ export function LabReportPrint({
                 </h2>
               </div>
 
-              {/* COMPACT TWO-BOX LAYOUT */}
+              {/* TWO-BOX LAYOUT */}
               <div className="mt-4 grid grid-cols-2 gap-4 items-stretch avoid-break">
                 {/* Patient Information */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 h-full">
@@ -289,15 +292,23 @@ export function LabReportPrint({
                       </div>
                     </div>
 
+                    {/* ✅ separate Patient ID */}
                     <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-slate-600">Patient ID / Phone:</div>
-                      <div className="font-bold text-slate-900 tabular-nums text-right">
-                        <span className="text-blue-800">{patientId}</span>
-                        <span className="text-slate-400"> • </span>
-                        <span>{phone}</span>
+                      <div className="font-semibold text-slate-600">Patient ID:</div>
+                      <div className="font-bold text-blue-800 tabular-nums text-right">
+                        {patientId}
                       </div>
                     </div>
 
+                    {/* ✅ separate Phone */}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="font-semibold text-slate-600">Phone:</div>
+                      <div className="font-bold text-slate-900 tabular-nums text-right">
+                        {phone}
+                      </div>
+                    </div>
+
+                    {/* ✅ 30/M */}
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-slate-600">Age/Gender:</div>
                       <div className="font-bold text-slate-900 tabular-nums">{ageGender}</div>
@@ -484,7 +495,7 @@ export function LabReportPrint({
                 </div>
               )}
 
-              {/* SIGNATURE + FOOTER kept together (prevents footer weirdness) */}
+              {/* SIGNATURE + FOOTER together */}
               <div className="avoid-break">
                 <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between text-[13px]">
                   <div>
@@ -498,7 +509,6 @@ export function LabReportPrint({
                   </div>
                 </div>
 
-                {/* Footer band (NORMAL FLOW — no fixed positioning, no duplication) */}
                 <div className="mt-4 bg-gradient-to-r from-blue-900 to-blue-800 text-white text-center py-6 rounded-b-2xl">
                   <div className="font-semibold text-[18px]">Bahr El Ghazal Clinic</div>
                   <div className="text-sm text-blue-100 mt-1">
@@ -509,8 +519,8 @@ export function LabReportPrint({
                   </div>
                 </div>
               </div>
-            </div>
 
+            </div>
           </div>
         </div>
       </div>
