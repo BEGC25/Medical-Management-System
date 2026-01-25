@@ -1884,25 +1884,9 @@ export default function ServiceManagement() {
                             />
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded border border-gray-300 dark:border-gray-600">
-                                {service.code || "-"}
-                              </span>
-                              {service.code && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(service.code || '');
-                                    toast({ title: "Code copied!", description: service.code });
-                                  }}
-                                  title={`Copy code: ${service.code}`}
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                              )}
-                            </div>
+                            <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded border border-gray-300 dark:border-gray-600">
+                              {service.code || "-"}
+                            </span>
                           </td>
                           <td className="px-4 py-4">
                             <div className="font-medium text-gray-900 dark:text-gray-100">

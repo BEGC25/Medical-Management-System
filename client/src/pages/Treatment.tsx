@@ -3130,57 +3130,6 @@ export default function Treatment() {
                                       </div>
                                     </div>
 
-                                    {/* Quick Panels Section */}
-                                    <div className="space-y-3">
-                                      <h3 className="font-semibold text-base text-gray-900 dark:text-white">Quick Panels (Common Test Bundles)</h3>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                                        {[
-                                          { 
-                                            name: 'Malaria Screen', 
-                                            icon: '🦟', 
-                                            tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)'] 
-                                          },
-                                          { 
-                                            name: 'Complete Blood Work', 
-                                            icon: '🩸', 
-                                            tests: ['Complete Blood Count (CBC)', 'Blood Group & Rh', 'ESR (Erythrocyte Sedimentation Rate)'] 
-                                          },
-                                          { 
-                                            name: 'Basic Metabolic', 
-                                            icon: '⚗️', 
-                                            tests: ['Random Blood Sugar (RBS)', 'Renal Function Test (RFT)'] 
-                                          },
-                                          { 
-                                            name: 'Fever Workup', 
-                                            icon: '🤒', 
-                                            tests: ['Blood Film for Malaria (BFFM)', 'Complete Blood Count (CBC)', 'Widal Test (Typhoid)'] 
-                                          },
-                                          { 
-                                            name: 'Antenatal Panel', 
-                                            icon: '🤰', 
-                                            tests: ['Blood Group & Rh', 'Hemoglobin (HB)', 'Hepatitis B Test (HBsAg)', 'VDRL Test (Syphilis)'] 
-                                          },
-                                        ].map((panel) => (
-                                          <button
-                                            key={panel.name}
-                                            type="button"
-                                            onClick={() => {
-                                              setSelectedLabTests(panel.tests);
-                                              toast({ title: "Quick Panel Selected", description: `${panel.name} tests added` });
-                                            }}
-                                            className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all text-left"
-                                          >
-                                            <span className="text-2xl">{panel.icon}</span>
-                                            <div className="flex-1">
-                                              <div className="font-semibold text-sm text-gray-900 dark:text-white">{panel.name}</div>
-                                              <div className="text-xs text-gray-500 dark:text-gray-400">{panel.tests.length} tests</div>
-                                            </div>
-                                            <Plus className="h-4 w-4 text-green-600" />
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-
                                     {/* Specific Tests Section */}
                                     <div>
                                       <label className="text-sm font-medium mb-2 block">Specific Tests in Category</label>
