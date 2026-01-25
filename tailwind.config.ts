@@ -184,6 +184,20 @@ export default {
             opacity: "0"
           }
         },
+        "gradient-x": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "gradient-y": {
+          "0%, 100%": { backgroundPosition: "50% 0%" },
+          "50%": { backgroundPosition: "50% 100%" },
+        },
+        "gradient-xy": {
+          "0%, 100%": { backgroundPosition: "0% 0%" },
+          "25%": { backgroundPosition: "100% 0%" },
+          "50%": { backgroundPosition: "100% 100%" },
+          "75%": { backgroundPosition: "0% 100%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -197,6 +211,12 @@ export default {
         "float-particle": "float-particle 60s ease-in-out infinite",
         "heartbeat-flow": "heartbeat-flow 5s linear infinite",
         "ekg-tick-flow": "ekg-tick-flow 6s ease-in-out infinite",
+        "gradient-x": "gradient-x 15s ease infinite",
+        "gradient-y": "gradient-y 15s ease infinite",
+        "gradient-xy": "gradient-xy 15s ease infinite",
+      },
+      backgroundSize: {
+        "200": "200% 200%",
       },
     },
   },

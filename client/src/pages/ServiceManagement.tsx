@@ -1174,32 +1174,48 @@ export default function ServiceManagement() {
   };
 
   return (
-    <div className="space-y-3 px-4 sm:px-6 pt-2 sm:pt-3 pb-4 sm:pb-6">
-      {/* Premium Header Section */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Service Management
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Manage pricing and catalog for all clinic services
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Refresh Button */}
-            <Button
-              variant="outline"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/services"] })}
-              className="hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
+      <div className="space-y-6 px-4 sm:px-6 pt-4 sm:pt-6 pb-6 sm:pb-8">
+      {/* Premium Header Section with Glassmorphism */}
+      <div className="relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-indigo-500/20 animate-gradient-xy"></div>
+        
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent animate-gradient-x">
+                    Service Management
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 font-medium mt-1">
+                    Enterprise-grade service catalog and pricing management
+                  </p>
+                </div>
+              </div>
+            </div>
             
-            {/* Add Service Button */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <div className="flex items-center gap-3">
+              {/* Refresh Button */}
+              <Button
+                variant="outline"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/services"] })}
+                className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:scale-105"
+              >
+                <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                Refresh
+              </Button>
+              
+              {/* Add Service Button */}
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button
                   onClick={() => {
@@ -1214,10 +1230,11 @@ export default function ServiceManagement() {
                     });
                     setIsDialogOpen(true);
                   }}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                  className="group relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Service
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                  <Plus className="w-4 h-4 mr-2 relative z-10" />
+                  <span className="relative z-10">Add Service</span>
                 </Button>
               </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -1722,34 +1739,39 @@ export default function ServiceManagement() {
         </Dialog>
           </div>
         </div>
+        </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+      {/* Premium Statistics Cards with Glassmorphism */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Services Card */}
         <Card 
-          className="border-2 border-blue-200 dark:border-blue-800 hover:shadow-lg hover:-translate-y-1 
-                     transition-all duration-300 cursor-pointer group"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-blue-200/50 dark:border-blue-800/50 hover:border-blue-400 dark:hover:border-blue-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
           onClick={clearFilters}
         >
-          <CardContent className="pt-3 pb-3">
+          {/* Glow effect on hover */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/10 group-hover:to-indigo-500/10 transition-all duration-500"></div>
+          
+          <CardContent className="relative pt-6 pb-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Total Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-1">
+                <div className="flex items-baseline gap-3">
                   <CountUp
                     end={stats.total}
                     duration={2}
-                    className="text-xl font-bold text-blue-600 dark:text-blue-400"
+                    className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
                   />
-                  <span className="text-xs text-gray-500">services</span>
+                  <span className="text-sm text-gray-500 font-medium">services</span>
                 </div>
               </div>
-              <div className="p-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg 
-                            shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Package className="w-4 h-4 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-500/20 dark:bg-blue-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative p-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1757,31 +1779,34 @@ export default function ServiceManagement() {
 
         {/* Active Services Card */}
         <Card 
-          className="border-2 border-green-200 dark:border-green-800 hover:shadow-lg hover:-translate-y-1 
-                     transition-all duration-300 cursor-pointer group"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-green-200/50 dark:border-green-800/50 hover:border-green-400 dark:hover:border-green-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
           onClick={() => filterByStatus('active')}
         >
-          <CardContent className="pt-3 pb-3">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-emerald-500/0 group-hover:from-green-500/10 group-hover:to-emerald-500/10 transition-all duration-500"></div>
+          
+          <CardContent className="relative pt-6 pb-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Active Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-1">
+                <div className="flex items-baseline gap-3">
                   <CountUp
                     end={stats.active}
                     duration={2}
-                    className="text-xl font-bold text-green-600 dark:text-green-400"
+                    className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"
                   />
-                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <TrendingUp className="w-5 h-5 text-green-500" />
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 font-medium">
                   {stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(0) : 0}% of total
                 </p>
               </div>
-              <div className="p-1.5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg 
-                            shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <CheckCircle className="w-4 h-4 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-500/20 dark:bg-green-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1789,65 +1814,71 @@ export default function ServiceManagement() {
 
         {/* Inactive Services Card */}
         <Card 
-          className="border-2 border-red-200 dark:border-red-800 hover:shadow-lg hover:-translate-y-1 
-                     transition-all duration-300 cursor-pointer group"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-red-200/50 dark:border-red-800/50 hover:border-red-400 dark:hover:border-red-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
           onClick={() => filterByStatus('inactive')}
         >
-          <CardContent className="pt-3 pb-3">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 to-pink-500/0 group-hover:from-red-500/10 group-hover:to-pink-500/10 transition-all duration-500"></div>
+          
+          <CardContent className="relative pt-6 pb-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Inactive Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-1">
+                <div className="flex items-baseline gap-3">
                   <CountUp
                     end={stats.inactive}
                     duration={2}
-                    className="text-xl font-bold text-red-600 dark:text-red-400"
+                    className="text-3xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent"
                   />
-                  <TrendingDown className="w-4 h-4 text-red-500" />
+                  <TrendingDown className="w-5 h-5 text-red-500" />
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 font-medium">
                   {stats.total > 0 ? ((stats.inactive / stats.total) * 100).toFixed(0) : 0}% of total
                 </p>
               </div>
-              <div className="p-1.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg 
-                            shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <XCircle className="w-4 h-4 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-red-500/20 dark:bg-red-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative p-4 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <XCircle className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Price Range Card */}
-        <Card className="border-2 border-purple-200 dark:border-purple-800 hover:shadow-lg hover:-translate-y-1 
-                       transition-all duration-300 group">
-          <CardContent className="pt-3 pb-3">
+        <Card className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-indigo-500/0 group-hover:from-purple-500/10 group-hover:to-indigo-500/10 transition-all duration-500"></div>
+          
+          <CardContent className="relative pt-6 pb-6">
             <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="flex-1 space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Price Range
                 </p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-3">
                   <div className="text-center">
-                    <div className="text-base font-bold text-purple-600 dark:text-purple-400">
+                    <div className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                       {stats.minPrice.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">Min</div>
+                    <div className="text-xs text-gray-500 font-medium">Min</div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400" />
+                  <ArrowRight className="w-5 h-5 text-purple-400" />
                   <div className="text-center">
-                    <div className="text-base font-bold text-purple-600 dark:text-purple-400">
+                    <div className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                       {stats.maxPrice.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">Max</div>
+                    <div className="text-xs text-gray-500 font-medium">Max</div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 font-medium">
                   Spread: {(stats.maxPrice - stats.minPrice).toLocaleString()} SSP
                 </p>
               </div>
-              <div className="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg 
+              <div className="relative">
+                <div className="absolute inset-0 bg-purple-500/20 dark:bg-purple-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                             shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <TrendingUp className="w-4 h-4 text-white" />
               </div>
