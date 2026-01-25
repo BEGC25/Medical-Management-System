@@ -1237,12 +1237,15 @@ export default function ServiceManagement() {
                   <span className="relative z-10">Add Service</span>
                 </Button>
               </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-gray-800/95 backdrop-blur-2xl border-2 border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
+            {/* Decorative gradient border */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600"></div>
+            
+            <DialogHeader className="space-y-3 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
+              <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                 {editingService ? "Edit Service" : (isBulkMode ? "Bulk Add Services" : "Add New Service")}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-base text-gray-600 dark:text-gray-400">
                 {editingService 
                   ? "Update service information and pricing" 
                   : (isBulkMode 
@@ -1261,7 +1264,7 @@ export default function ServiceManagement() {
                         setBulkEntries([{ name: "", price: 0 }]);
                       }
                     }}
-                    className="text-xs"
+                    className={`text-sm font-semibold transition-all duration-300 ${isBulkMode ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg' : 'hover:border-blue-400 hover:text-blue-600'}`}
                   >
                     {isBulkMode ? "Switch to Single Entry" : "Switch to Bulk Entry"}
                   </Button>
@@ -1296,20 +1299,20 @@ export default function ServiceManagement() {
                 </div>
 
                 {/* Bulk Entry Table */}
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b">
-                    <div className="grid grid-cols-12 gap-2 font-semibold text-xs text-gray-600 dark:text-gray-400">
+                <div className="border-2 border-gray-200/50 dark:border-gray-700/50 rounded-xl overflow-hidden shadow-lg">
+                  <div className="bg-gradient-to-r from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 px-4 py-3 border-b-2 border-gray-200/50 dark:border-gray-700/50">
+                    <div className="grid grid-cols-12 gap-2 font-bold text-sm text-gray-700 dark:text-gray-300">
                       <div className="col-span-1">#</div>
                       <div className="col-span-6">Service Name</div>
                       <div className="col-span-4">Price (SSP)</div>
                       <div className="col-span-1"></div>
                     </div>
                   </div>
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="max-h-96 overflow-y-auto bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
                     {bulkEntries.map((entry, index) => (
-                      <div key={index} className="px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <div key={index} className="px-4 py-4 border-b last:border-b-0 border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-50/50 dark:hover:bg-gray-800/50 transition-all duration-300">
                         <div className="grid grid-cols-12 gap-2 items-center">
-                          <div className="col-span-1 text-sm font-semibold text-gray-500">
+                          <div className="col-span-1 text-sm font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center">
                             {index + 1}
                           </div>
                           <div className="col-span-6">
@@ -1317,7 +1320,7 @@ export default function ServiceManagement() {
                               value={entry.name}
                               onChange={(e) => updateBulkEntry(index, 'name', e.target.value)}
                               placeholder="e.g., Complete Blood Count (CBC)"
-                              className="h-9"
+                              className="h-10 border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
                             />
                           </div>
                           <div className="col-span-4">
@@ -1328,7 +1331,7 @@ export default function ServiceManagement() {
                               placeholder="0"
                               min="0"
                               step="0.01"
-                              className="h-9"
+                              className="h-10 border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
                             />
                           </div>
                           <div className="col-span-1">
@@ -1338,7 +1341,7 @@ export default function ServiceManagement() {
                               size="sm"
                               onClick={() => removeBulkRow(index)}
                               disabled={bulkEntries.length === 1}
-                              className="h-9 w-9 p-0"
+                              className="h-10 w-10 p-0 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                             >
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
@@ -1354,14 +1357,14 @@ export default function ServiceManagement() {
                   type="button"
                   variant="outline"
                   onClick={addBulkRow}
-                  className="w-full"
+                  className="w-full border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-300"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Another Service
                 </Button>
 
                 {/* Bulk Submit Buttons */}
-                <DialogFooter className="flex justify-between sm:justify-between pt-4 border-t">
+                <DialogFooter className="flex justify-between sm:justify-between pt-6 border-t-2 border-gray-200/50 dark:border-gray-700/50 mt-6">
                   <Button
                     type="button"
                     variant="outline"
@@ -1370,6 +1373,7 @@ export default function ServiceManagement() {
                       setBulkEntries([{ name: "", price: 0 }]);
                       setIsBulkMode(false);
                     }}
+                    className="border-2 hover:border-gray-400 transition-colors"
                   >
                     Cancel
                   </Button>
@@ -1377,9 +1381,16 @@ export default function ServiceManagement() {
                     type="button"
                     onClick={handleBulkSubmit}
                     disabled={bulkCreateMutation.isPending}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 font-bold"
                   >
-                    {bulkCreateMutation.isPending ? "Creating..." : `Create ${bulkEntries.filter(e => e.name.trim()).length} Service(s)`}
+                    {bulkCreateMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      `Create ${bulkEntries.filter(e => e.name.trim()).length} Service(s)`
+                    )}
                   </Button>
                 </DialogFooter>
               </div>
