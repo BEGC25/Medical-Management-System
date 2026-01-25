@@ -373,14 +373,6 @@ const resultFields: Record<
     "Hemoglobin": { type: "number" as const, unit: "g/dL", normal: "12-16 (adult)" },
   },
 
-  "Stool Analysis": {
-    "Appearance": { type: "select" as const, options: ["Normal", "Bloody", "Mucoid", "Tarry", "Pale"], normal: "Normal" },
-    "Consistency": { type: "select" as const, options: ["Formed", "Loose", "Watery", "Hard"], normal: "Formed" },
-    "Color": { type: "select" as const, options: ["Brown", "Green", "Yellow", "Black", "Red"], normal: "Brown" },
-    "Ova/Parasites": { type: "select" as const, options: ["None seen", "Ascaris", "Hookworm", "E. histolytica", "G. lamblia", "Other"], normal: "None seen" },
-    "Occult Blood": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-  },
-
   "Alkaline Phosphatase (ALP)": {
     "ALP": { type: "number" as const, unit: "U/L", normal: "44-147" },
   },
@@ -392,19 +384,6 @@ const resultFields: Record<
   "Testosterone": {
     "Total Testosterone": { type: "number" as const, unit: "ng/dL", normal: "Male: 300-1000, Female: 15-70" },
     "Free Testosterone": { type: "number" as const, unit: "pg/mL", normal: "Male: 50-210, Female: 1-8.5" },
-  },
-
-  "Urinalysis": {
-    "Appearance": { type: "select" as const, options: ["Clear", "Turbid", "Bloody", "Cloudy"], normal: "Clear" },
-    "Protein": { type: "select" as const, options: ["Negative", "Trace", "+", "++", "+++"], normal: "Negative" },
-    "Glucose": { type: "select" as const, options: ["Negative", "+", "++", "+++"], normal: "Negative" },
-    "Acetone": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-    "Hb pigment": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-    "Leucocytes": { type: "select" as const, options: ["Negative", "+", "++", "+++"], normal: "Negative" },
-    "Nitrite": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
-    "PH": { type: "number" as const, unit: "", range: "5.0-8.0", normal: "6.0-7.5" },
-    "Specific Gravity": { type: "number" as const, unit: "", range: "1.003-1.030", normal: "1.010-1.025" },
-    "Bilirubin": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
   },
 
   "Lipid Profile": {
@@ -420,12 +399,13 @@ const resultFields: Record<
 
 // Mapping of test name variations to their canonical names in resultFields
 const TEST_ALIASES: Record<string, string> = {
-  "Hemoglobin (Hb)": "Hemoglobin (Hb)", // Explicit mapping for case variations
-  "Hemoglobin (HB)": "Hemoglobin (HB)", // Keep existing one too
-  "Stool Analysis": "Stool Analysis", // Now has its own config
-  "Stool Examination": "Stool Examination", // Keep original
-  "Urinalysis": "Urinalysis", // Now has its own config
-  "Urine Analysis": "Urine Analysis", // Keep original
+  "Hemoglobin (Hb)": "Hemoglobin (Hb)",
+  "hemoglobin (hb)": "Hemoglobin (Hb)", // Case variation
+  "Hemoglobin (HB)": "Hemoglobin (HB)",
+  "Stool Analysis": "Stool Examination", // Map to existing config
+  "stool analysis": "Stool Examination", // Case variation
+  "Urinalysis": "Urine Analysis", // Map to existing config
+  "urinalysis": "Urine Analysis", // Case variation
 };
 
 // Generic fallback for tests without specific configuration
@@ -437,7 +417,7 @@ const genericResultFields = {
 };
 
 // Function to find result fields with fuzzy matching and fallback
-function findResultFields(testName: string): Record<string, any> | null {
+function findResultFields(testName: string): Record<string, any> {
   // Try exact match first
   if (resultFields[testName]) {
     return resultFields[testName];
