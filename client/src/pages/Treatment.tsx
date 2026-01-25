@@ -849,18 +849,46 @@ export default function Treatment() {
       .replace(/\s+/g, ' '); // Collapse multiple spaces to single space
   };
 
-  // Helper function for fuzzy matching that strips abbreviation suffixes
-  const normalizeForFuzzyMatch = (str: string): string => {
-    return str
-      .trim()
-      .toLowerCase()
-      .replace(/\s*\([^)]*\)\s*$/, '') // Remove trailing parenthetical like (CBC), (BT), (HCT)
-      .replace(/\s+/g, ' ');
+  // Helper function to infer lab test category from service name
+  const inferLabCategory = (serviceName: string): LabTestCategory => {
+    const nameLower = serviceName.toLowerCase();
+    
+    // Define keywords for each category
+    const categoryKeywords = {
+      blood: [
+        'blood', 'hemoglobin', 'hb', 'esr', 'wbc', 'rbc', 'platelet', 'cbc',
+        'malaria', 'widal', 'brucella', 'hepatitis', 'h. pylori', 'vdrl', 'rheumatoid'
+      ],
+      hormonal: [
+        'hormone', 'pregnancy', 'hcg', 'gonorrhea', 'chlamydia', 'thyroid',
+        'estrogen', 'testosterone', 'progesterone', 'lh', 'fsh', 'prolactin'
+      ],
+      chemistry: [
+        'sugar', 'glucose', 'liver function', 'lft', 'renal', 'rft',
+        'creatinine', 'urea', 'bilirubin', 'alkaline phosphatase', ' alp ', ' alp)', '(alp)', 
+        'alt', 'ast', 'lipid', 'cholesterol', 'triglyceride', 'electrolyte', 'fbs', 'rbs'
+      ],
+      microbiology: [
+        'toxoplasma', 'filariasis', 'schistosomiasis', 'leishmaniasis',
+        'tuberculosis', 'tb', 'meningitis', 'yellow fever', 'typhus'
+      ],
+      urine: ['urine', 'urinalysis'],
+      stool: ['stool', 'fecal']
+    };
+    
+    // Check each category's keywords
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+      if (keywords.some(keyword => nameLower.includes(keyword))) {
+        return category as LabTestCategory;
+      }
+    }
+    
+    // Default to 'other' for unrecognized tests
+    return 'other';
   };
 
-  // Map lab test names from the catalog to their corresponding services
-  // This ensures only tests with active services can be ordered
-  // Uses fuzzy matching: strips abbreviations like (CBC), (BT), (HCT) for flexible matching
+  // Build available lab tests directly from database services
+  // This ensures ALL active laboratory services appear, not just those in the static catalog
   const availableLabTests = useMemo(() => {
     const result: Record<LabTestCategory, string[]> = {
       blood: [],
@@ -872,21 +900,16 @@ export default function Treatment() {
       other: [],
     };
     
-    // Filter tests from catalog that have corresponding active services
-    Object.entries(commonTests).forEach(([category, tests]) => {
-      result[category as LabTestCategory] = tests.filter(testName => {
-        const normalizedTestName = normalizeForFuzzyMatch(testName);
-        // Check if any service matches (with or without abbreviation)
-        return laboratoryServices.some(service => {
-          const normalizedServiceName = normalizeForFuzzyMatch(service.name);
-          // Exact match or service name starts with test name (for cases like "Blood Group" matching "Blood Group & Rh")
-          // Only allow startsWith if the service name has the test name as a complete prefix
-          // (service name must be test name + something, not just starting with same letters)
-          return normalizedServiceName === normalizedTestName || 
-                 (normalizedServiceName.startsWith(normalizedTestName + ' ') ||
-                  normalizedServiceName.startsWith(normalizedTestName + '('));
-        });
-      });
+    // Add all laboratory services to their inferred categories
+    laboratoryServices.forEach(service => {
+      const category = inferLabCategory(service.name);
+      // Use the service name directly - this ensures the service can be found when ordering
+      result[category].push(service.name);
+    });
+    
+    // Sort tests alphabetically within each category for better UX
+    Object.keys(result).forEach(category => {
+      result[category as LabTestCategory].sort();
     });
     
     return result;
