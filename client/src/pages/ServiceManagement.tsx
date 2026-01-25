@@ -1987,13 +1987,26 @@ export default function ServiceManagement() {
         </CardContent>
       </Card>
 
-      {/* Services Table */}
-      <Card className="shadow-xl hover:shadow-2xl transition-shadow">
-        <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
-          <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
-            <span>Services ({sortedServices.length})</span>
+      {/* Premium Services Table */}
+      <Card className="relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-gray-200/50 dark:border-gray-700/50 shadow-2xl hover:shadow-3xl transition-all duration-500">
+        {/* Decorative gradient overlay */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600"></div>
+        
+        <CardHeader className="border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-gray-50/80 via-blue-50/50 to-indigo-50/80 dark:from-gray-800/80 dark:via-gray-800/80 dark:to-gray-800/80 backdrop-blur-sm">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg shadow-lg">
+                <Package className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                  Services Catalog
+                </span>
+                <span className="ml-2 text-sm font-normal text-gray-500">({sortedServices.length} total)</span>
+              </div>
+            </div>
             {sortedServices.length > 0 && (
-              <span className="text-sm font-normal text-gray-500">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
                 Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, sortedServices.length)} of {sortedServices.length}
               </span>
             )}
@@ -2031,9 +2044,9 @@ export default function ServiceManagement() {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+                  <thead className="bg-gradient-to-r from-gray-50/80 via-blue-50/50 to-indigo-50/80 dark:from-gray-800/80 dark:via-gray-800/80 dark:to-gray-800/80 border-b-2 border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm sticky top-0 z-10">
                     <tr>
-                      <th className="px-4 py-4 w-12">
+                      <th className="px-4 py-5 w-12">
                         <Checkbox
                           checked={selectedServices.length > 0 && selectedServices.length === paginatedServices.length}
                           onCheckedChange={(checked) => {
@@ -2043,69 +2056,70 @@ export default function ServiceManagement() {
                               setSelectedServices([]);
                             }
                           }}
+                          className="border-2"
                         />
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("code")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Code
                           {sortConfig.key === "code" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("name")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Service Name
                           {sortConfig.key === "name" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("category")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Category
                           {sortConfig.key === "category" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("price")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Price (SSP)
                           {sortConfig.key === "price" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("isActive")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Status
                           {sortConfig.key === "isActive" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white/50 dark:bg-gray-900/50 divide-y divide-gray-200/50 dark:divide-gray-700/50 backdrop-blur-sm">
                     {paginatedServices.map((service) => {
                       const CategoryIcon = CATEGORY_ICONS[service.category as keyof typeof CATEGORY_ICONS] || Package;
                       const categoryColor = CATEGORY_COLORS[service.category as keyof typeof CATEGORY_COLORS] || { bg: "bg-gray-500", text: "text-gray-700", light: "bg-gray-50" };
@@ -2113,9 +2127,9 @@ export default function ServiceManagement() {
                       return (
                         <tr 
                           key={service.id} 
-                          className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-200"
+                          className="group hover:bg-gradient-to-r hover:from-blue-50/80 hover:via-purple-50/50 hover:to-indigo-50/80 dark:hover:from-gray-800/80 dark:hover:via-gray-800/80 dark:hover:to-gray-800/80 transition-all duration-300 hover:shadow-md backdrop-blur-sm"
                         >
-                          <td className="px-4 py-4 w-12">
+                          <td className="px-4 py-5 w-12">
                             <Checkbox
                               checked={selectedServices.includes(service.id)}
                               onCheckedChange={(checked) => {
@@ -2125,62 +2139,74 @@ export default function ServiceManagement() {
                                   setSelectedServices(selectedServices.filter(id => id !== service.id));
                                 }
                               }}
+                              className="border-2 group-hover:border-blue-400 transition-colors"
                             />
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded border border-gray-300 dark:border-gray-600">
+                          <td className="px-4 py-5 whitespace-nowrap">
+                            <span className="text-sm font-mono font-bold text-gray-900 dark:text-gray-100 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 px-3 py-1.5 rounded-lg border-2 border-gray-300 dark:border-gray-600 group-hover:border-blue-400 dark:group-hover:border-blue-500 transition-all duration-300 shadow-sm">
                               {service.code || "-"}
                             </span>
                           </td>
-                          <td className="px-4 py-4">
-                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                          <td className="px-4 py-5">
+                            <div className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
                               {service.name}
                             </div>
                             {service.description && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-md truncate">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md truncate">
                                 {service.description}
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <Badge className={`${categoryColor.bg} text-white capitalize font-semibold shadow-sm flex items-center gap-1 w-fit`}>
-                              <CategoryIcon className="w-3 h-3" />
+                          <td className="px-4 py-5 whitespace-nowrap">
+                            <Badge className={`${categoryColor.bg} text-white capitalize font-bold shadow-lg hover:shadow-xl transition-shadow duration-300 px-3 py-1.5 rounded-full flex items-center gap-2 w-fit`}>
+                              <CategoryIcon className="w-4 h-4" />
                               {service.category}
                             </Badge>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-gray-100">
-                                {Math.round(Number(service.price)).toLocaleString()}
-                              </span>
-                              {Number(service.price) > 1000 && <TrendingUp className="w-3 h-3 text-green-600" />}
-                              {Number(service.price) < 100 && <TrendingDown className="w-3 h-3 text-red-600" />}
+                          <td className="px-4 py-5 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <span className="text-lg font-bold tabular-nums bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                  {Math.round(Number(service.price)).toLocaleString()}
+                                </span>
+                                <div className="text-xs text-gray-500 font-medium">SSP</div>
+                              </div>
+                              {Number(service.price) > 1000 && (
+                                <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                                  <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                </div>
+                              )}
+                              {Number(service.price) < 100 && (
+                                <div className="p-1 bg-red-100 dark:bg-red-900/30 rounded-full">
+                                  <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                </div>
+                              )}
                             </div>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${isServiceActive(service) ? "bg-green-500" : "bg-red-500"} animate-pulse`} />
+                          <td className="px-4 py-5 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${isServiceActive(service) ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-red-500 shadow-lg shadow-red-500/50"} animate-pulse`} />
                               <Badge 
                                 variant={isServiceActive(service) ? "default" : "secondary"}
-                                className={`font-semibold shadow-sm ${isServiceActive(service) ? "bg-green-600" : "bg-gray-400"}`}
+                                className={`font-bold shadow-lg px-3 py-1.5 rounded-full ${isServiceActive(service) ? "bg-gradient-to-r from-green-600 to-emerald-600" : "bg-gradient-to-r from-gray-500 to-gray-600"}`}
                               >
                                 {isServiceActive(service) ? "Active" : "Inactive"}
                               </Badge>
                             </div>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <td className="px-4 py-5 whitespace-nowrap text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" className="hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
                                   <MoreVertical className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => handleEdit(service)}>
+                              <DropdownMenuContent align="end" className="w-48 backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 border-2 shadow-xl">
+                                <DropdownMenuItem onClick={() => handleEdit(service)} className="cursor-pointer">
                                   <Edit2 className="w-4 h-4 mr-2" />
                                   Edit Service
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicate(service)}>
+                                <DropdownMenuItem onClick={() => handleDuplicate(service)} className="cursor-pointer">
                                   <Copy className="w-4 h-4 mr-2" />
                                   Duplicate
                                 </DropdownMenuItem>
@@ -2293,6 +2319,7 @@ export default function ServiceManagement() {
           </Button>
         </div>
       )}
+      </div>
     </div>
   );
 }
