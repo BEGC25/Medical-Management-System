@@ -849,62 +849,38 @@ export default function Treatment() {
       .replace(/\s+/g, ' '); // Collapse multiple spaces to single space
   };
 
-  // Helper function for fuzzy matching that strips abbreviation suffixes
-  const normalizeForFuzzyMatch = (str: string): string => {
-    return str
-      .trim()
-      .toLowerCase()
-      .replace(/\s*\([^)]*\)\s*$/, '') // Remove trailing parenthetical like (CBC), (BT), (HCT)
-      .replace(/\s+/g, ' ');
-  };
-
   // Helper function to infer lab test category from service name
   const inferLabCategory = (serviceName: string): LabTestCategory => {
     const nameLower = serviceName.toLowerCase();
     
-    // Blood-related tests
-    if (nameLower.includes('blood') || nameLower.includes('hemoglobin') || nameLower.includes('hb') ||
-        nameLower.includes('esr') || nameLower.includes('wbc') || nameLower.includes('rbc') ||
-        nameLower.includes('platelet') || nameLower.includes('cbc') || nameLower.includes('malaria') ||
-        nameLower.includes('widal') || nameLower.includes('brucella') || nameLower.includes('hepatitis') ||
-        nameLower.includes('h. pylori') || nameLower.includes('vdrl') || nameLower.includes('rheumatoid')) {
-      return 'blood';
-    }
+    // Define keywords for each category
+    const categoryKeywords = {
+      blood: [
+        'blood', 'hemoglobin', 'hb', 'esr', 'wbc', 'rbc', 'platelet', 'cbc',
+        'malaria', 'widal', 'brucella', 'hepatitis', 'h. pylori', 'vdrl', 'rheumatoid'
+      ],
+      hormonal: [
+        'hormone', 'pregnancy', 'hcg', 'gonorrhea', 'chlamydia', 'thyroid',
+        'estrogen', 'testosterone', 'progesterone', 'lh', 'fsh', 'prolactin'
+      ],
+      chemistry: [
+        'sugar', 'glucose', 'liver function', 'lft', 'renal', 'rft',
+        'creatinine', 'urea', 'bilirubin', 'alkaline phosphatase', ' alp ', ' alp)', '(alp)', 
+        'alt', 'ast', 'lipid', 'cholesterol', 'triglyceride', 'electrolyte', 'fbs', 'rbs'
+      ],
+      microbiology: [
+        'toxoplasma', 'filariasis', 'schistosomiasis', 'leishmaniasis',
+        'tuberculosis', 'tb', 'meningitis', 'yellow fever', 'typhus'
+      ],
+      urine: ['urine', 'urinalysis'],
+      stool: ['stool', 'fecal']
+    };
     
-    // Hormonal tests
-    if (nameLower.includes('hormone') || nameLower.includes('pregnancy') || nameLower.includes('hcg') ||
-        nameLower.includes('gonorrhea') || nameLower.includes('chlamydia') || nameLower.includes('thyroid') ||
-        nameLower.includes('estrogen') || nameLower.includes('testosterone') || nameLower.includes('progesterone') ||
-        nameLower.includes('lh') || nameLower.includes('fsh') || nameLower.includes('prolactin')) {
-      return 'hormonal';
-    }
-    
-    // Chemistry/Biochemistry tests
-    if (nameLower.includes('sugar') || nameLower.includes('glucose') || nameLower.includes('liver function') ||
-        nameLower.includes('lft') || nameLower.includes('renal') || nameLower.includes('rft') ||
-        nameLower.includes('creatinine') || nameLower.includes('urea') || nameLower.includes('bilirubin') ||
-        nameLower.includes('alkaline phosphatase') || nameLower.includes('alp') || nameLower.includes('alt') ||
-        nameLower.includes('ast') || nameLower.includes('lipid') || nameLower.includes('cholesterol') ||
-        nameLower.includes('triglyceride') || nameLower.includes('electrolyte') || nameLower.includes('fbs') ||
-        nameLower.includes('rbs')) {
-      return 'chemistry';
-    }
-    
-    // Microbiology tests
-    if (nameLower.includes('toxoplasma') || nameLower.includes('filariasis') || nameLower.includes('schistosomiasis') ||
-        nameLower.includes('leishmaniasis') || nameLower.includes('tuberculosis') || nameLower.includes('tb') ||
-        nameLower.includes('meningitis') || nameLower.includes('yellow fever') || nameLower.includes('typhus')) {
-      return 'microbiology';
-    }
-    
-    // Urine tests
-    if (nameLower.includes('urine') || nameLower.includes('urinalysis')) {
-      return 'urine';
-    }
-    
-    // Stool tests
-    if (nameLower.includes('stool') || nameLower.includes('fecal')) {
-      return 'stool';
+    // Check each category's keywords
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+      if (keywords.some(keyword => nameLower.includes(keyword))) {
+        return category as LabTestCategory;
+      }
     }
     
     // Default to 'other' for unrecognized tests
