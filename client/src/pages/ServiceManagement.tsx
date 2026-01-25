@@ -1890,8 +1890,8 @@ export default function ServiceManagement() {
               <div className="relative">
                 <div className="absolute inset-0 bg-purple-500/20 dark:bg-purple-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
                 <div className="relative p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                            shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="w-4 h-4 text-white" />
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>
