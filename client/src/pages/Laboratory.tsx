@@ -367,7 +367,98 @@ const resultFields: Record<
     "Result": { type: "text" as const, unit: "", normal: "Varies by test" },
     "Notes": { type: "text" as const, unit: "", normal: "N/A" },
   },
+
+  // Additional test configurations for missing tests
+  "Hemoglobin (Hb)": {
+    "Hemoglobin": { type: "number" as const, unit: "g/dL", normal: "12-16 (adult)" },
+  },
+
+  "Stool Analysis": {
+    "Appearance": { type: "select" as const, options: ["Normal", "Bloody", "Mucoid", "Tarry", "Pale"], normal: "Normal" },
+    "Consistency": { type: "select" as const, options: ["Formed", "Loose", "Watery", "Hard"], normal: "Formed" },
+    "Color": { type: "select" as const, options: ["Brown", "Green", "Yellow", "Black", "Red"], normal: "Brown" },
+    "Ova/Parasites": { type: "select" as const, options: ["None seen", "Ascaris", "Hookworm", "E. histolytica", "G. lamblia", "Other"], normal: "None seen" },
+    "Occult Blood": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+  },
+
+  "Alkaline Phosphatase (ALP)": {
+    "ALP": { type: "number" as const, unit: "U/L", normal: "44-147" },
+  },
+
+  "Estrogen (E2)": {
+    "Estradiol": { type: "number" as const, unit: "pg/mL", normal: "Varies by cycle phase" },
+  },
+
+  "Testosterone": {
+    "Total Testosterone": { type: "number" as const, unit: "ng/dL", normal: "Male: 300-1000, Female: 15-70" },
+    "Free Testosterone": { type: "number" as const, unit: "pg/mL", normal: "Male: 50-210, Female: 1-8.5" },
+  },
+
+  "Urinalysis": {
+    "Appearance": { type: "select" as const, options: ["Clear", "Turbid", "Bloody", "Cloudy"], normal: "Clear" },
+    "Protein": { type: "select" as const, options: ["Negative", "Trace", "+", "++", "+++"], normal: "Negative" },
+    "Glucose": { type: "select" as const, options: ["Negative", "+", "++", "+++"], normal: "Negative" },
+    "Acetone": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Hb pigment": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "Leucocytes": { type: "select" as const, options: ["Negative", "+", "++", "+++"], normal: "Negative" },
+    "Nitrite": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+    "PH": { type: "number" as const, unit: "", range: "5.0-8.0", normal: "6.0-7.5" },
+    "Specific Gravity": { type: "number" as const, unit: "", range: "1.003-1.030", normal: "1.010-1.025" },
+    "Bilirubin": { type: "select" as const, options: ["Negative", "Positive"], normal: "Negative" },
+  },
+
+  "Lipid Profile": {
+    "Total Cholesterol": { type: "number" as const, unit: "mg/dL", normal: "<200" },
+    "Triglycerides": { type: "number" as const, unit: "mg/dL", normal: "<150" },
+    "HDL Cholesterol": { type: "number" as const, unit: "mg/dL", normal: ">40" },
+    "LDL Cholesterol": { type: "number" as const, unit: "mg/dL", normal: "<100" },
+    "VLDL Cholesterol": { type: "number" as const, unit: "mg/dL", normal: "2-30" },
+  },
 };
+
+/* ---------------------- Test name aliases and fallback ---------------------- */
+
+// Mapping of test name variations to their canonical names in resultFields
+const TEST_ALIASES: Record<string, string> = {
+  "Hemoglobin (Hb)": "Hemoglobin (Hb)", // Explicit mapping for case variations
+  "Hemoglobin (HB)": "Hemoglobin (HB)", // Keep existing one too
+  "Stool Analysis": "Stool Analysis", // Now has its own config
+  "Stool Examination": "Stool Examination", // Keep original
+  "Urinalysis": "Urinalysis", // Now has its own config
+  "Urine Analysis": "Urine Analysis", // Keep original
+};
+
+// Generic fallback for tests without specific configuration
+const genericResultFields = {
+  "Result": { type: "text" as const, unit: "", normal: "Varies" },
+  "Value": { type: "number" as const, unit: "", normal: "Varies" },
+  "Interpretation": { type: "select" as const, options: ["Normal", "Abnormal", "Critical"], normal: "Normal" },
+  "Notes": { type: "text" as const, unit: "", normal: "N/A" },
+};
+
+// Function to find result fields with fuzzy matching and fallback
+function findResultFields(testName: string): Record<string, any> | null {
+  // Try exact match first
+  if (resultFields[testName]) {
+    return resultFields[testName];
+  }
+  
+  // Try alias mapping
+  if (TEST_ALIASES[testName] && resultFields[TEST_ALIASES[testName]]) {
+    return resultFields[TEST_ALIASES[testName]];
+  }
+  
+  // Try case-insensitive match
+  const lowerTest = testName.toLowerCase();
+  for (const key of Object.keys(resultFields)) {
+    if (key.toLowerCase() === lowerTest) {
+      return resultFields[key];
+    }
+  }
+  
+  // Return generic fallback instead of null
+  return genericResultFields;
+}
 
 /* ------------------------------------------------------------------ */
 /* Data hooks                                                          */
@@ -1703,8 +1794,7 @@ return (
                   </label>
 
                   {parseJSON<string[]>(selectedLabTest.tests, []).map((orderedTest) => {
-                    const fields = resultFields[orderedTest];
-                    if (!fields) return null;
+                    const fields = findResultFields(orderedTest);
 
                     return (
                       <div
