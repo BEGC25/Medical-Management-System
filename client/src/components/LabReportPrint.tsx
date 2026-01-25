@@ -106,11 +106,18 @@ function isCommonNormalText(v: string) {
 function parseNumericRange(rangeText?: string) {
   if (!rangeText) return null;
   const cleaned = rangeText.replace(/,/g, "");
+  
+  // Check for "minimum+" type ranges like "8+ hours"
+  const minPlusMatch = cleaned.match(/(\d+)\+/);
+  if (minPlusMatch) {
+    return { min: Number(minPlusMatch[1]), max: Infinity, isMinimumOnly: true };
+  }
+  
   const nums = cleaned.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
   if (nums.length >= 2) {
     const min = Math.min(nums[0], nums[1]);
     const max = Math.max(nums[0], nums[1]);
-    return { min, max };
+    return { min, max, isMinimumOnly: false };
   }
   return null;
 }
@@ -141,9 +148,18 @@ function computeOverallFlag(
       const range = parseNumericRange(rangeText);
 
       if (numeric !== null && range) {
-        if (numeric < range.min || numeric > range.max) {
-          abnormal = true;
-          break;
+        // Handle minimum-only ranges (e.g., "8+ hours") - only flag if LESS than minimum
+        if (range.isMinimumOnly) {
+          if (numeric < range.min) {
+            abnormal = true;
+            break;
+          }
+        } else {
+          // Normal range check - flag if outside range
+          if (numeric < range.min || numeric > range.max) {
+            abnormal = true;
+            break;
+          }
         }
       } else if (config?.normal) {
         const same = normalize(value) === normalize(config.normal);
@@ -242,20 +258,26 @@ export function LabReportPrint({
       <div className="bg-slate-100 py-8 print-shell">
         <div className="mx-auto" style={{ maxWidth: 1024 }}>
           <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-slate-200 print-page">
-            {/* HEADER BAR */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6 text-white avoid-break">
+            {/* HEADER - Clean White Style */}
+            <div className="bg-white px-8 py-6 border-b-2 border-blue-700 avoid-break">
               <div className="flex items-center justify-between gap-6">
                 <div>
-                  <h1 className="text-2xl font-semibold tracking-tight">Bahr El Ghazal Clinic</h1>
-                  <p className="mt-1 text-sm text-slate-200">
+                  <h1 className="text-3xl font-bold tracking-tight text-blue-900">Bahr El Ghazal Clinic</h1>
+                  <p className="mt-1 text-base italic text-slate-600">
+                    Excellence in Healthcare
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">
                     Aweil, South Sudan | Tel: +211 916 759 060 / +211 928 754 760
+                  </p>
+                  <p className="text-sm text-slate-700">
+                    Email: info@bahrghazalclinic.ss
                   </p>
                 </div>
 
-                <div className="w-14 h-14 rounded-full border-4 border-white/90 bg-white flex items-center justify-center overflow-hidden">
+                <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
                   <img
                     src={clinicLogo}
-                    alt="Bahr El Ghazal Clinic"
+                    alt="Bahr El Ghazal Clinic Logo"
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -263,16 +285,14 @@ export function LabReportPrint({
             </div>
 
             <div className="px-8 py-7 print-tight-x">
-              {/* SECTION STRIP: TITLE */}
-              <div className="bg-blue-50 border-l-4 border-blue-600 px-6 py-4 rounded-lg avoid-break">
-                <div className="text-blue-800 font-semibold tracking-widest text-sm uppercase">
-                  Laboratory Test Report
-                  {includeInterpretation && (
-                    <span className="ml-3 text-blue-700/80 font-medium tracking-wide normal-case">
-                      (Clinical Copy)
-                    </span>
-                  )}
-                </div>
+              {/* TITLE - Professional centered */}
+              <div className="text-center py-4 avoid-break">
+                <h2 className="text-xl font-bold tracking-[0.2em] uppercase text-slate-900">
+                  LABORATORY TEST REPORT
+                </h2>
+                {includeInterpretation && (
+                  <p className="mt-1 text-sm text-slate-600">(Clinical Copy)</p>
+                )}
               </div>
 
               {/* TWO-BOX LAYOUT (LIKE YOUR SCREENSHOT) */}
@@ -368,6 +388,23 @@ export function LabReportPrint({
                 </div>
               </div>
 
+              {/* TESTS ORDERED - Pill Badge Style */}
+              <div className="mt-6 avoid-break">
+                <div className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3">
+                  Tests Ordered
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {tests.map((test, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-700 border border-slate-300"
+                    >
+                      {test}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               {/* SECTION STRIP: RESULTS */}
               <div className="mt-7 bg-blue-50 border-l-4 border-blue-600 px-6 py-4 rounded-lg avoid-break">
                 <div className="text-blue-800 font-semibold tracking-widest text-sm uppercase">
@@ -429,7 +466,13 @@ export function LabReportPrint({
 
                             let isAbnormal = false;
                             if (numeric !== null && range) {
-                              if (numeric < range.min || numeric > range.max) isAbnormal = true;
+                              // Handle minimum-only ranges (e.g., "8+ hours") - only flag if LESS than minimum
+                              if (range.isMinimumOnly) {
+                                if (numeric < range.min) isAbnormal = true;
+                              } else {
+                                // Normal range check - flag if outside range
+                                if (numeric < range.min || numeric > range.max) isAbnormal = true;
+                              }
                             } else if (config?.normal) {
                               const same = normalize(value) === normalize(config.normal);
                               if (!same && !isCommonNormalText(value) && Boolean(value)) isAbnormal = true;
@@ -457,7 +500,7 @@ export function LabReportPrint({
                                   <span
                                     className={cx(
                                       "font-semibold whitespace-nowrap",
-                                      isAbnormal ? "text-red-600" : "text-slate-900"
+                                      isAbnormal ? "text-red-600 font-bold" : "text-slate-900"
                                     )}
                                   >
                                     {displayValue}
@@ -542,11 +585,14 @@ export function LabReportPrint({
               </div>
             </div>
 
-            {/* Bottom dark bar */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white text-center py-6">
-              <div className="font-semibold">Bahr El Ghazal Clinic</div>
-              <div className="text-sm text-slate-200 mt-1">
+            {/* Bottom Footer - Dark Navy Band */}
+            <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white text-center py-6">
+              <div className="font-semibold text-lg">Bahr El Ghazal Clinic</div>
+              <div className="text-sm text-blue-100 mt-1">
                 Accredited Medical Facility | Republic of South Sudan
+              </div>
+              <div className="text-xs text-blue-200 mt-1 italic">
+                Your health is our priority
               </div>
             </div>
           </div>
