@@ -525,6 +525,10 @@ export default function ServiceManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [predefinedSearch, setPredefinedSearch] = useState("");
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [bulkEntries, setBulkEntries] = useState<Array<{ name: string; price: number }>>([
+    { name: "", price: 0 },
+  ]);
   const itemsPerPage = 10;
   
   const { toast } = useToast();
@@ -753,6 +757,29 @@ export default function ServiceManagement() {
     },
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: async (services: ServiceFormData[]) => {
+      return Promise.all(services.map(service => apiRequest("POST", "/api/services", service)));
+    },
+    onSuccess: (_, services) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      setIsDialogOpen(false);
+      setBulkEntries([{ name: "", price: 0 }]);
+      setIsBulkMode(false);
+      toast({
+        title: "✓ Success",
+        description: `Created ${services.length} service${services.length > 1 ? 's' : ''} successfully`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create services",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (data: ServiceFormData) => {
     // Validate for duplicate names in same category
     const duplicateName = services.find(
@@ -835,6 +862,54 @@ export default function ServiceManagement() {
         });
       }
     });
+  };
+
+  const handleBulkSubmit = () => {
+    // Validate all entries
+    const validEntries = bulkEntries.filter(entry => entry.name.trim() && entry.price >= 0);
+    
+    if (validEntries.length === 0) {
+      toast({
+        title: "⚠️ No Valid Entries",
+        description: "Please add at least one service with a name and price",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create service objects with auto-generated codes
+    const services: ServiceFormData[] = validEntries.map(entry => {
+      const code = generateAndValidateServiceCode(entry.name, selectedCategory, existingCodes);
+      return {
+        code,
+        name: entry.name.trim(),
+        category: selectedCategory as any,
+        description: null,
+        price: entry.price,
+        isActive: 1,
+      };
+    });
+
+    bulkCreateMutation.mutate(services);
+  };
+
+  const addBulkRow = () => {
+    setBulkEntries([...bulkEntries, { name: "", price: 0 }]);
+  };
+
+  const removeBulkRow = (index: number) => {
+    if (bulkEntries.length > 1) {
+      setBulkEntries(bulkEntries.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateBulkEntry = (index: number, field: 'name' | 'price', value: string | number) => {
+    const updated = [...bulkEntries];
+    updated[index] = {
+      ...updated[index],
+      [field]: field === 'price' ? (typeof value === 'number' ? value : parseFloat(value as string) || 0) : value,
+    };
+    setBulkEntries(updated);
   };
 
   const handleDuplicate = (service: Service) => {
@@ -1099,32 +1174,48 @@ export default function ServiceManagement() {
   };
 
   return (
-    <div className="space-y-3 px-4 sm:px-6 pt-2 sm:pt-3 pb-4 sm:pb-6">
-      {/* Premium Header Section */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Service Management
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Manage pricing and catalog for all clinic services
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Refresh Button */}
-            <Button
-              variant="outline"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/services"] })}
-              className="hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
+      <div className="space-y-6 px-4 sm:px-6 pt-4 sm:pt-6 pb-6 sm:pb-8">
+      {/* Premium Header Section with Glassmorphism */}
+      <div className="relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-indigo-500/20 animate-gradient-xy"></div>
+        
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent animate-gradient-x">
+                    Service Management
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 font-medium mt-1">
+                    Enterprise-grade service catalog and pricing management
+                  </p>
+                </div>
+              </div>
+            </div>
             
-            {/* Add Service Button */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <div className="flex items-center gap-3">
+              {/* Refresh Button */}
+              <Button
+                variant="outline"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/services"] })}
+                className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:scale-105"
+              >
+                <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                Refresh
+              </Button>
+              
+              {/* Add Service Button */}
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button
                   onClick={() => {
@@ -1139,23 +1230,172 @@ export default function ServiceManagement() {
                     });
                     setIsDialogOpen(true);
                   }}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                  className="group relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Service
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                  <Plus className="w-4 h-4 mr-2 relative z-10" />
+                  <span className="relative z-10">Add Service</span>
                 </Button>
               </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">
-                {editingService ? "Edit Service" : "Add New Service"}
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-gray-800/95 backdrop-blur-2xl border-2 border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
+            {/* Decorative gradient border */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600"></div>
+            
+            <DialogHeader className="space-y-3 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
+              <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                {editingService ? "Edit Service" : (isBulkMode ? "Bulk Add Services" : "Add New Service")}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-base text-gray-600 dark:text-gray-400">
                 {editingService 
                   ? "Update service information and pricing" 
-                  : "Create a new service with pricing details"}
+                  : (isBulkMode 
+                    ? "Add multiple services at once with auto-generated codes" 
+                    : "Create a new service with pricing details")}
               </DialogDescription>
+              {!editingService && (
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant={isBulkMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setIsBulkMode(!isBulkMode);
+                      if (!isBulkMode) {
+                        setBulkEntries([{ name: "", price: 0 }]);
+                      }
+                    }}
+                    className={`text-sm font-semibold transition-all duration-300 ${isBulkMode ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg' : 'hover:border-blue-400 hover:text-blue-600'}`}
+                  >
+                    {isBulkMode ? "Switch to Single Entry" : "Switch to Bulk Entry"}
+                  </Button>
+                </div>
+              )}
             </DialogHeader>
+            
+            {isBulkMode && !editingService ? (
+              // Bulk Entry Mode
+              <div className="space-y-4">
+                {/* Category Selection for Bulk */}
+                <div>
+                  <label className="font-semibold text-sm mb-2 block">Category (applies to all services) *</label>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CATEGORY_ICONS).map(([cat, Icon]) => {
+                        const categoryColor = CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS];
+                        return (
+                          <SelectItem key={cat} value={cat}>
+                            <div className="flex items-center gap-2">
+                              <Icon className={`w-4 h-4 ${categoryColor?.iconColor || 'text-gray-600'}`} />
+                              <span className="capitalize">{cat}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bulk Entry Table */}
+                <div className="border-2 border-gray-200/50 dark:border-gray-700/50 rounded-xl overflow-hidden shadow-lg">
+                  <div className="bg-gradient-to-r from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 px-4 py-3 border-b-2 border-gray-200/50 dark:border-gray-700/50">
+                    <div className="grid grid-cols-12 gap-2 font-bold text-sm text-gray-700 dark:text-gray-300">
+                      <div className="col-span-1">#</div>
+                      <div className="col-span-6">Service Name</div>
+                      <div className="col-span-4">Price (SSP)</div>
+                      <div className="col-span-1"></div>
+                    </div>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+                    {bulkEntries.map((entry, index) => (
+                      <div key={index} className="px-4 py-4 border-b last:border-b-0 border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-50/50 dark:hover:bg-gray-800/50 transition-all duration-300">
+                        <div className="grid grid-cols-12 gap-2 items-center">
+                          <div className="col-span-1 text-sm font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center">
+                            {index + 1}
+                          </div>
+                          <div className="col-span-6">
+                            <Input
+                              value={entry.name}
+                              onChange={(e) => updateBulkEntry(index, 'name', e.target.value)}
+                              placeholder="e.g., Complete Blood Count (CBC)"
+                              className="h-10 border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+                            />
+                          </div>
+                          <div className="col-span-4">
+                            <Input
+                              type="number"
+                              value={entry.price}
+                              onChange={(e) => updateBulkEntry(index, 'price', e.target.value)}
+                              placeholder="0"
+                              min="0"
+                              step="0.01"
+                              className="h-10 border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+                            />
+                          </div>
+                          <div className="col-span-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeBulkRow(index)}
+                              disabled={bulkEntries.length === 1}
+                              className="h-10 w-10 p-0 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Add Row Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addBulkRow}
+                  className="w-full border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-300"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Another Service
+                </Button>
+
+                {/* Bulk Submit Buttons */}
+                <DialogFooter className="flex justify-between sm:justify-between pt-6 border-t-2 border-gray-200/50 dark:border-gray-700/50 mt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                      setBulkEntries([{ name: "", price: 0 }]);
+                      setIsBulkMode(false);
+                    }}
+                    className="border-2 hover:border-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleBulkSubmit}
+                    disabled={bulkCreateMutation.isPending}
+                    className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 font-bold"
+                  >
+                    {bulkCreateMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      `Create ${bulkEntries.filter(e => e.name.trim()).length} Service(s)`
+                    )}
+                  </Button>
+                </DialogFooter>
+              </div>
+            ) : (
+              // Single Entry Mode (existing form)
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                 {/* Row 1: Category & Status */}
@@ -1505,38 +1745,44 @@ export default function ServiceManagement() {
                 </DialogFooter>
               </form>
             </Form>
+            )}
           </DialogContent>
         </Dialog>
           </div>
         </div>
+        </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+      {/* Premium Statistics Cards with Glassmorphism */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Services Card */}
         <Card 
-          className="border-2 border-blue-200 dark:border-blue-800 hover:shadow-lg hover:-translate-y-1 
-                     transition-all duration-300 cursor-pointer group"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-blue-200/50 dark:border-blue-800/50 hover:border-blue-400 dark:hover:border-blue-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
           onClick={clearFilters}
         >
-          <CardContent className="pt-3 pb-3">
+          {/* Glow effect on hover */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/10 group-hover:to-indigo-500/10 transition-all duration-500"></div>
+          
+          <CardContent className="relative pt-6 pb-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Total Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-1">
+                <div className="flex items-baseline gap-3">
                   <CountUp
                     end={stats.total}
                     duration={2}
-                    className="text-xl font-bold text-blue-600 dark:text-blue-400"
+                    className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
                   />
-                  <span className="text-xs text-gray-500">services</span>
+                  <span className="text-sm text-gray-500 font-medium">services</span>
                 </div>
               </div>
-              <div className="p-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg 
-                            shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Package className="w-4 h-4 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-500/20 dark:bg-blue-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative p-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1544,31 +1790,34 @@ export default function ServiceManagement() {
 
         {/* Active Services Card */}
         <Card 
-          className="border-2 border-green-200 dark:border-green-800 hover:shadow-lg hover:-translate-y-1 
-                     transition-all duration-300 cursor-pointer group"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-green-200/50 dark:border-green-800/50 hover:border-green-400 dark:hover:border-green-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
           onClick={() => filterByStatus('active')}
         >
-          <CardContent className="pt-3 pb-3">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-emerald-500/0 group-hover:from-green-500/10 group-hover:to-emerald-500/10 transition-all duration-500"></div>
+          
+          <CardContent className="relative pt-6 pb-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Active Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-1">
+                <div className="flex items-baseline gap-3">
                   <CountUp
                     end={stats.active}
                     duration={2}
-                    className="text-xl font-bold text-green-600 dark:text-green-400"
+                    className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"
                   />
-                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <TrendingUp className="w-5 h-5 text-green-500" />
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 font-medium">
                   {stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(0) : 0}% of total
                 </p>
               </div>
-              <div className="p-1.5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg 
-                            shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <CheckCircle className="w-4 h-4 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-500/20 dark:bg-green-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1576,67 +1825,73 @@ export default function ServiceManagement() {
 
         {/* Inactive Services Card */}
         <Card 
-          className="border-2 border-red-200 dark:border-red-800 hover:shadow-lg hover:-translate-y-1 
-                     transition-all duration-300 cursor-pointer group"
+          className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-red-200/50 dark:border-red-800/50 hover:border-red-400 dark:hover:border-red-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer"
           onClick={() => filterByStatus('inactive')}
         >
-          <CardContent className="pt-3 pb-3">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 to-pink-500/0 group-hover:from-red-500/10 group-hover:to-pink-500/10 transition-all duration-500"></div>
+          
+          <CardContent className="relative pt-6 pb-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Inactive Services
                 </p>
-                <div className="flex items-baseline gap-2 mt-1">
+                <div className="flex items-baseline gap-3">
                   <CountUp
                     end={stats.inactive}
                     duration={2}
-                    className="text-xl font-bold text-red-600 dark:text-red-400"
+                    className="text-3xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent"
                   />
-                  <TrendingDown className="w-4 h-4 text-red-500" />
+                  <TrendingDown className="w-5 h-5 text-red-500" />
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 font-medium">
                   {stats.total > 0 ? ((stats.inactive / stats.total) * 100).toFixed(0) : 0}% of total
                 </p>
               </div>
-              <div className="p-1.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg 
-                            shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <XCircle className="w-4 h-4 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-red-500/20 dark:bg-red-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative p-4 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <XCircle className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Price Range Card */}
-        <Card className="border-2 border-purple-200 dark:border-purple-800 hover:shadow-lg hover:-translate-y-1 
-                       transition-all duration-300 group">
-          <CardContent className="pt-3 pb-3">
+        <Card className="group relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-indigo-500/0 group-hover:from-purple-500/10 group-hover:to-indigo-500/10 transition-all duration-500"></div>
+          
+          <CardContent className="relative pt-6 pb-6">
             <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="flex-1 space-y-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Price Range
                 </p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-3">
                   <div className="text-center">
-                    <div className="text-base font-bold text-purple-600 dark:text-purple-400">
+                    <div className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                       {stats.minPrice.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">Min</div>
+                    <div className="text-xs text-gray-500 font-medium">Min</div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400" />
+                  <ArrowRight className="w-5 h-5 text-purple-400" />
                   <div className="text-center">
-                    <div className="text-base font-bold text-purple-600 dark:text-purple-400">
+                    <div className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                       {stats.maxPrice.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">Max</div>
+                    <div className="text-xs text-gray-500 font-medium">Max</div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 font-medium">
                   Spread: {(stats.maxPrice - stats.minPrice).toLocaleString()} SSP
                 </p>
               </div>
-              <div className="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg 
-                            shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="w-4 h-4 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-purple-500/20 dark:bg-purple-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                <div className="relative p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1743,13 +1998,26 @@ export default function ServiceManagement() {
         </CardContent>
       </Card>
 
-      {/* Services Table */}
-      <Card className="shadow-xl hover:shadow-2xl transition-shadow">
-        <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
-          <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
-            <span>Services ({sortedServices.length})</span>
+      {/* Premium Services Table */}
+      <Card className="relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-gray-200/50 dark:border-gray-700/50 shadow-2xl hover:shadow-3xl transition-all duration-500">
+        {/* Decorative gradient overlay */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600"></div>
+        
+        <CardHeader className="border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-gray-50/80 via-blue-50/50 to-indigo-50/80 dark:from-gray-800/80 dark:via-gray-800/80 dark:to-gray-800/80 backdrop-blur-sm">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg shadow-lg">
+                <Package className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                  Services Catalog
+                </span>
+                <span className="ml-2 text-sm font-normal text-gray-500">({sortedServices.length} total)</span>
+              </div>
+            </div>
             {sortedServices.length > 0 && (
-              <span className="text-sm font-normal text-gray-500">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
                 Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, sortedServices.length)} of {sortedServices.length}
               </span>
             )}
@@ -1787,9 +2055,9 @@ export default function ServiceManagement() {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+                  <thead className="bg-gradient-to-r from-gray-50/80 via-blue-50/50 to-indigo-50/80 dark:from-gray-800/80 dark:via-gray-800/80 dark:to-gray-800/80 border-b-2 border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm sticky top-0 z-10">
                     <tr>
-                      <th className="px-4 py-4 w-12">
+                      <th className="px-4 py-5 w-12">
                         <Checkbox
                           checked={selectedServices.length > 0 && selectedServices.length === paginatedServices.length}
                           onCheckedChange={(checked) => {
@@ -1799,69 +2067,70 @@ export default function ServiceManagement() {
                               setSelectedServices([]);
                             }
                           }}
+                          className="border-2"
                         />
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("code")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Code
                           {sortConfig.key === "code" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("name")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Service Name
                           {sortConfig.key === "name" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("category")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Category
                           {sortConfig.key === "category" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("price")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Price (SSP)
                           {sortConfig.key === "price" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("isActive")}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           Status
                           {sortConfig.key === "isActive" && (
-                            sortConfig.direction === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                       </th>
-                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white/50 dark:bg-gray-900/50 divide-y divide-gray-200/50 dark:divide-gray-700/50 backdrop-blur-sm">
                     {paginatedServices.map((service) => {
                       const CategoryIcon = CATEGORY_ICONS[service.category as keyof typeof CATEGORY_ICONS] || Package;
                       const categoryColor = CATEGORY_COLORS[service.category as keyof typeof CATEGORY_COLORS] || { bg: "bg-gray-500", text: "text-gray-700", light: "bg-gray-50" };
@@ -1869,9 +2138,9 @@ export default function ServiceManagement() {
                       return (
                         <tr 
                           key={service.id} 
-                          className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-200"
+                          className="group hover:bg-gradient-to-r hover:from-blue-50/80 hover:via-purple-50/50 hover:to-indigo-50/80 dark:hover:from-gray-800/80 dark:hover:via-gray-800/80 dark:hover:to-gray-800/80 transition-all duration-300 hover:shadow-md backdrop-blur-sm"
                         >
-                          <td className="px-4 py-4 w-12">
+                          <td className="px-4 py-5 w-12">
                             <Checkbox
                               checked={selectedServices.includes(service.id)}
                               onCheckedChange={(checked) => {
@@ -1881,78 +2150,74 @@ export default function ServiceManagement() {
                                   setSelectedServices(selectedServices.filter(id => id !== service.id));
                                 }
                               }}
+                              className="border-2 group-hover:border-blue-400 transition-colors"
                             />
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded border border-gray-300 dark:border-gray-600">
-                                {service.code || "-"}
-                              </span>
-                              {service.code && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(service.code || '');
-                                    toast({ title: "Code copied!", description: service.code });
-                                  }}
-                                  title={`Copy code: ${service.code}`}
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                              )}
-                            </div>
+                          <td className="px-4 py-5 whitespace-nowrap">
+                            <span className="text-sm font-mono font-bold text-gray-900 dark:text-gray-100 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 px-3 py-1.5 rounded-lg border-2 border-gray-300 dark:border-gray-600 group-hover:border-blue-400 dark:group-hover:border-blue-500 transition-all duration-300 shadow-sm">
+                              {service.code || "-"}
+                            </span>
                           </td>
-                          <td className="px-4 py-4">
-                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                          <td className="px-4 py-5">
+                            <div className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
                               {service.name}
                             </div>
                             {service.description && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-md truncate">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md truncate">
                                 {service.description}
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <Badge className={`${categoryColor.bg} text-white capitalize font-semibold shadow-sm flex items-center gap-1 w-fit`}>
-                              <CategoryIcon className="w-3 h-3" />
+                          <td className="px-4 py-5 whitespace-nowrap">
+                            <Badge className={`${categoryColor.bg} text-white capitalize font-bold shadow-lg hover:shadow-xl transition-shadow duration-300 px-3 py-1.5 rounded-full flex items-center gap-2 w-fit`}>
+                              <CategoryIcon className="w-4 h-4" />
                               {service.category}
                             </Badge>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-gray-100">
-                                {Math.round(Number(service.price)).toLocaleString()}
-                              </span>
-                              {Number(service.price) > 1000 && <TrendingUp className="w-3 h-3 text-green-600" />}
-                              {Number(service.price) < 100 && <TrendingDown className="w-3 h-3 text-red-600" />}
+                          <td className="px-4 py-5 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <span className="text-lg font-bold tabular-nums bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                  {Math.round(Number(service.price)).toLocaleString()}
+                                </span>
+                                <div className="text-xs text-gray-500 font-medium">SSP</div>
+                              </div>
+                              {Number(service.price) > 1000 && (
+                                <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                                  <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                </div>
+                              )}
+                              {Number(service.price) < 100 && (
+                                <div className="p-1 bg-red-100 dark:bg-red-900/30 rounded-full">
+                                  <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                </div>
+                              )}
                             </div>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${isServiceActive(service) ? "bg-green-500" : "bg-red-500"} animate-pulse`} />
+                          <td className="px-4 py-5 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${isServiceActive(service) ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-red-500 shadow-lg shadow-red-500/50"} animate-pulse`} />
                               <Badge 
                                 variant={isServiceActive(service) ? "default" : "secondary"}
-                                className={`font-semibold shadow-sm ${isServiceActive(service) ? "bg-green-600" : "bg-gray-400"}`}
+                                className={`font-bold shadow-lg px-3 py-1.5 rounded-full ${isServiceActive(service) ? "bg-gradient-to-r from-green-600 to-emerald-600" : "bg-gradient-to-r from-gray-500 to-gray-600"}`}
                               >
                                 {isServiceActive(service) ? "Active" : "Inactive"}
                               </Badge>
                             </div>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <td className="px-4 py-5 whitespace-nowrap text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" className="hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
                                   <MoreVertical className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => handleEdit(service)}>
+                              <DropdownMenuContent align="end" className="w-48 backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 border-2 shadow-xl">
+                                <DropdownMenuItem onClick={() => handleEdit(service)} className="cursor-pointer">
                                   <Edit2 className="w-4 h-4 mr-2" />
                                   Edit Service
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicate(service)}>
+                                <DropdownMenuItem onClick={() => handleDuplicate(service)} className="cursor-pointer">
                                   <Copy className="w-4 h-4 mr-2" />
                                   Duplicate
                                 </DropdownMenuItem>
@@ -2065,6 +2330,7 @@ export default function ServiceManagement() {
           </Button>
         </div>
       )}
+      </div>
     </div>
   );
 }
