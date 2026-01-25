@@ -2150,6 +2150,8 @@ export default function Treatment() {
         queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] }),
+        activeEncounterId && queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] }),
       ]);
       toast({
         title: "Refreshed",
@@ -3913,7 +3915,7 @@ export default function Treatment() {
                           if (pendingOrders.length === 0) return null;
 
                           return (
-                            <div className="mb-8 p-5 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950 dark:via-yellow-950 dark:to-orange-950 border-l-4 border-amber-500 rounded-xl shadow-md animate-in fade-in slide-in-from-top-2 duration-500">
+                            <div className="mb-8 p-5 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950 dark:via-yellow-950 dark:to-orange-950 border-l-4 border-amber-500 rounded-xl shadow-md animate-in fade-in slide-in-from-top-2 duration-500 overflow-hidden">
                               <div className="flex items-center justify-between mb-5">
                                 <h3 className="font-bold text-lg text-amber-800 dark:text-amber-300 flex items-center gap-2">
                                   <Clock className="h-5 w-5 animate-pulse" />
@@ -3941,7 +3943,7 @@ export default function Treatment() {
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between gap-3 mb-2">
                                           <div className="flex-1">
-                                            <p className="font-semibold text-base text-gray-900 dark:text-white truncate">
+                                            <p className="font-semibold text-base text-gray-900 dark:text-white break-words line-clamp-2">
                                               {(() => {
                                                 // Use display helper functions for consistent labeling
                                                 if (order.type === 'xray' && order.examType && order.bodyPart) {
@@ -4069,7 +4071,7 @@ export default function Treatment() {
                         })()}
 
                         {/* --- Existing Results (Filtered + Enhanced Lab View) --- */}
-                        <div className="space-y-4 mt-8 p-5 bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 dark:from-green-950 dark:via-emerald-950 dark:to-blue-950 border-l-4 border-green-600 rounded-xl shadow-md">
+                        <div className="space-y-4 mt-8 p-5 bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 dark:from-green-950 dark:via-emerald-950 dark:to-blue-950 border-l-4 border-green-600 rounded-xl shadow-md overflow-hidden">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bold text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
                               <FileText className="h-5 w-5" />
