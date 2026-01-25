@@ -302,10 +302,10 @@ export function LabReportPrint({
               </div>
 
               {/* TWO-BOX LAYOUT (LIKE YOUR SCREENSHOT) */}
-              <div className="mt-5 grid grid-cols-2 gap-5 avoid-break">
+              <div className="mt-5 grid grid-cols-2 gap-5 avoid-break items-stretch">
                 {/* Patient Information */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <div className="text-xl font-extrabold tracking-wide text-slate-900 uppercase">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 h-full">
+                  <div className="text-lg font-extrabold tracking-wide text-slate-900 uppercase whitespace-nowrap">
                     Patient Information
                   </div>
                   <div className="h-[3px] bg-blue-900 mt-3 mb-5 rounded-full" />
@@ -339,8 +339,8 @@ export function LabReportPrint({
                 </div>
 
                 {/* Test Details */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <div className="text-xl font-extrabold tracking-wide text-slate-900 uppercase">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 h-full">
+                  <div className="text-lg font-extrabold tracking-wide text-slate-900 uppercase whitespace-nowrap">
                     Test Details
                   </div>
                   <div className="h-[3px] bg-blue-900 mt-3 mb-5 rounded-full" />
@@ -467,7 +467,12 @@ export function LabReportPrint({
                             const unit = config?.unit ? ` ${config.unit}` : "";
                             const rangeText = config?.normal || config?.range || "—";
 
-                            const numeric = config?.type === "number" ? tryParseNumber(value) : null;
+                            // Try to parse as number if type is number, or if value/range contain "X+" pattern
+                            const valueHasPlus = /\d+\+/.test(value);
+                            const rangeHasPlus = /\d+\+/.test(rangeText);
+                            const shouldTryNumeric = config?.type === "number" || (valueHasPlus && rangeHasPlus);
+                            
+                            const numeric = shouldTryNumeric ? tryParseNumber(value) : null;
                             const range = parseNumericRange(rangeText);
 
                             let isAbnormal = false;
@@ -514,8 +519,8 @@ export function LabReportPrint({
                                   </span>
                                 </td>
 
-                                {/* Give Normal Range room + keep it on one line (premium look) */}
-                                <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                                {/* Give Normal Range room + allow wrapping if needed */}
+                                <td className="px-6 py-4 text-slate-500">
                                   {rangeText}
                                 </td>
                               </tr>
