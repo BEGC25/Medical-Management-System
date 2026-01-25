@@ -4110,9 +4110,8 @@ export default function Treatment() {
                                     }
                                     const count = testsOrdered.length;
                                     const testLabel = count === 1 ? "Lab Test" : "Lab Tests";
-                                    const preview = testsOrdered.slice(0, 2).join(", ");
-                                    const hasMore = testsOrdered.length > 2;
-                                    return `${count} ${testLabel} (${preview}${hasMore ? "..." : ""})`;
+                                    // Show count instead of truncated preview - full list shown below in badges
+                                    return `Laboratory Tests (${count})`;
                                   };
                                   
                                   return (
