@@ -2150,8 +2150,8 @@ export default function Treatment() {
         queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] }),
-        activeEncounterId && queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] }),
+        ...(activeEncounterId ? [queryClient.invalidateQueries({ queryKey: ["/api/visits", activeEncounterId, "orders"] })] : []),
       ]);
       toast({
         title: "Refreshed",
@@ -3943,7 +3943,7 @@ export default function Treatment() {
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between gap-3 mb-2">
                                           <div className="flex-1">
-                                            <p className="font-semibold text-base text-gray-900 dark:text-white break-words line-clamp-2">
+                                            <p className="font-semibold text-base text-gray-900 dark:text-white line-clamp-2">
                                               {(() => {
                                                 // Use display helper functions for consistent labeling
                                                 if (order.type === 'xray' && order.examType && order.bodyPart) {
