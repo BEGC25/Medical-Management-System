@@ -467,22 +467,16 @@ export function LabReportPrint({
                             const unit = config?.unit ? ` ${config.unit}` : "";
                             const rangeText = config?.normal || config?.range || "—";
 
-                            const numeric = config?.type === "number" ? tryParseNumber(value) : null;
-                            const range = parseNumericRange(rangeText);
-
-                            // Special handling for "X+ hours" type values (like fasting duration)
+                            // Try to parse as number if type is number, or if value/range contain "X+" pattern
                             const valueHasPlus = /\d+\+/.test(value);
                             const rangeHasPlus = /\d+\+/.test(rangeText);
+                            const shouldTryNumeric = config?.type === "number" || (valueHasPlus && rangeHasPlus);
+                            
+                            const numeric = shouldTryNumeric ? tryParseNumber(value) : null;
+                            const range = parseNumericRange(rangeText);
 
                             let isAbnormal = false;
-                            if (valueHasPlus && rangeHasPlus) {
-                              // Both value and range are "minimum+" type - extract numbers and compare
-                              const valueNum = tryParseNumber(value);
-                              const rangeMin = parseNumericRange(rangeText)?.min;
-                              if (valueNum !== null && rangeMin !== null) {
-                                isAbnormal = valueNum < rangeMin;  // Only abnormal if LESS than minimum
-                              }
-                            } else if (numeric !== null && range) {
+                            if (numeric !== null && range) {
                               // Handle minimum-only ranges (e.g., "8+ hours") - only flag if LESS than minimum
                               if (range.isMinimumOnly) {
                                 if (numeric < range.min) isAbnormal = true;
