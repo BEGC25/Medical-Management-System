@@ -162,7 +162,7 @@ export function LabReportPrint({
   const tests = parseJSON<string[]>(labTest.tests, []);
   const results = parseJSON<Record<string, Record<string, string>>>(labTest.results, {});
 
-  // kept (not printed) in case you want clinical copy later
+  // kept for future (not printed in this premium layout)
   const _interpretation = includeInterpretation
     ? interpretLabResults(results)
     : { criticalFindings: [] as string[], warnings: [] as string[] };
@@ -189,25 +189,19 @@ export function LabReportPrint({
         #${containerId} .page-wrap { max-width: 1024px; margin: 0 auto; }
 
         @media print {
-          /* Chrome “Margins: None” is still best, but this keeps it tight even if someone forgets */
+          /* Best results are still with Chrome Print -> Margins: None */
           @page { margin: 5mm; }
 
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            background: #fff !important;
-          }
-
+          html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
           #${containerId} { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-          /* Remove width caps */
-          #${containerId} .page-wrap {
-            max-width: none !important;
-            width: 100% !important;
-            margin: 0 !important;
-          }
+          /* Remove the screen padding/background bars in print */
+          #${containerId} .print-shell { background: #fff !important; padding: 0 !important; }
+          #${containerId} .print-shell.py-8 { padding: 0 !important; }
+          #${containerId} .print-shell.bg-slate-100 { background: #fff !important; }
 
-          /* Full-bleed print look (premium) */
+          /* Full width in print */
+          #${containerId} .page-wrap { max-width: none !important; width: 100% !important; margin: 0 !important; }
           #${containerId} .print-page {
             width: 100% !important;
             max-width: none !important;
@@ -216,33 +210,23 @@ export function LabReportPrint({
             border-radius: 0 !important;
           }
 
-          /* Tight horizontal padding */
+          /* Tight horizontal padding so you actually use the page */
           #${containerId} .print-tight-x { padding-left: 8px !important; padding-right: 8px !important; }
           #${containerId} .print-header-x { padding-left: 8px !important; padding-right: 8px !important; }
 
-          /* Make the footer a real “stationery” footer on every page */
-          #${containerId} .print-content {
-            padding-bottom: 96px !important; /* reserve space so footer never overlaps */
-          }
+          /* Keep these blocks from splitting */
+          #${containerId} .avoid-break { break-inside: avoid; page-break-inside: avoid; }
 
-          #${containerId} .print-footer-band {
-            position: fixed !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-          }
-
-          /* Table: repeat header and break safely */
+          /* Table: repeat header and break cleanly */
           #${containerId} table { page-break-inside: auto; }
           #${containerId} thead { display: table-header-group; }
           #${containerId} tfoot { display: table-footer-group; }
           #${containerId} tr { break-inside: avoid; page-break-inside: avoid; }
 
-          /* Dense premium spacing */
+          /* Slightly denser print rows */
           #${containerId} .print-table th { padding-top: 10px !important; padding-bottom: 10px !important; }
           #${containerId} .print-table td { padding-top: 9px !important; padding-bottom: 9px !important; }
+
           #${containerId} .print-nowrap { white-space: nowrap !important; }
         }
       `}</style>
@@ -251,7 +235,7 @@ export function LabReportPrint({
         <div className="page-wrap">
           <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-slate-200 print-page">
             {/* HEADER */}
-            <div className="bg-white px-6 py-5 print-header-x">
+            <div className="bg-white px-6 py-5 print-header-x avoid-break">
               <div className="flex items-center justify-between gap-6">
                 <div>
                   <h1 className="text-[28px] font-bold tracking-tight text-blue-900">
@@ -266,7 +250,8 @@ export function LabReportPrint({
                   </div>
                 </div>
 
-                <div className="w-16 h-16 flex items-center justify-center overflow-hidden">
+                {/* Slightly larger logo (premium, but not overpowering) */}
+                <div className="w-[72px] h-[72px] flex items-center justify-center overflow-hidden">
                   <img
                     src={clinicLogo}
                     alt="Bahr El Ghazal Clinic Logo"
@@ -279,16 +264,16 @@ export function LabReportPrint({
             </div>
 
             {/* CONTENT */}
-            <div className="px-6 py-5 print-tight-x print-content">
+            <div className="px-6 py-5 print-tight-x">
               {/* TITLE */}
-              <div className="text-center py-2">
+              <div className="text-center py-2 avoid-break">
                 <h2 className="text-[16px] font-bold tracking-[0.28em] uppercase text-slate-900">
                   LABORATORY TEST REPORT
                 </h2>
               </div>
 
-              {/* COMPACT TWO-BOX LAYOUT (aligned rows: 3 vs 3) */}
-              <div className="mt-4 grid grid-cols-2 gap-4 items-stretch">
+              {/* COMPACT TWO-BOX LAYOUT */}
+              <div className="mt-4 grid grid-cols-2 gap-4 items-stretch avoid-break">
                 {/* Patient Information */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 h-full">
                   <div className="text-[14px] font-extrabold tracking-wider text-slate-900 uppercase">
@@ -347,7 +332,7 @@ export function LabReportPrint({
               </div>
 
               {/* TESTS ORDERED */}
-              <div className="mt-4">
+              <div className="mt-4 avoid-break">
                 <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2">
                   Tests Ordered
                 </div>
@@ -364,7 +349,7 @@ export function LabReportPrint({
               </div>
 
               {/* SECTION STRIP */}
-              <div className="mt-4 bg-blue-50 border-l-4 border-blue-600 px-5 py-2.5 rounded-lg">
+              <div className="mt-4 bg-blue-50 border-l-4 border-blue-600 px-5 py-2.5 rounded-lg avoid-break">
                 <div className="text-blue-800 font-semibold tracking-[0.18em] text-[12px] uppercase">
                   Laboratory Results
                 </div>
@@ -418,7 +403,8 @@ export function LabReportPrint({
                             const value = raw || "—";
 
                             const unit = (config?.unit ?? "").trim();
-                            const unitAlreadyInValue = unit && normalize(value).includes(normalize(unit));
+                            const unitAlreadyInValue =
+                              unit && normalize(value).includes(normalize(unit));
                             const unitSuffix = unit && !unitAlreadyInValue ? ` ${unit}` : "";
 
                             const rangeText = config?.normal || config?.range || "—";
@@ -490,7 +476,7 @@ export function LabReportPrint({
 
               {/* Technician notes */}
               {technicianNotes && (
-                <div className="mt-4 rounded-2xl border border-slate-200 p-4 bg-white">
+                <div className="mt-4 rounded-2xl border border-slate-200 p-4 bg-white avoid-break">
                   <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
                     Technician Notes
                   </div>
@@ -498,30 +484,33 @@ export function LabReportPrint({
                 </div>
               )}
 
-              {/* Signature row */}
-              <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between text-[13px]">
-                <div>
-                  <div className="text-[11px] text-slate-500">Lab Technician</div>
-                  <div className="font-semibold text-slate-900">{completedBy || "—"}</div>
+              {/* SIGNATURE + FOOTER kept together (prevents footer weirdness) */}
+              <div className="avoid-break">
+                <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between text-[13px]">
+                  <div>
+                    <div className="text-[11px] text-slate-500">Lab Technician</div>
+                    <div className="font-semibold text-slate-900">{completedBy || "—"}</div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-[11px] text-slate-500">Report Date</div>
+                    <div className="font-semibold text-slate-900">{safeLongDate(reportedDate)}</div>
+                  </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-[11px] text-slate-500">Report Date</div>
-                  <div className="font-semibold text-slate-900">{safeLongDate(reportedDate)}</div>
+                {/* Footer band (NORMAL FLOW — no fixed positioning, no duplication) */}
+                <div className="mt-4 bg-gradient-to-r from-blue-900 to-blue-800 text-white text-center py-6 rounded-b-2xl">
+                  <div className="font-semibold text-[18px]">Bahr El Ghazal Clinic</div>
+                  <div className="text-sm text-blue-100 mt-1">
+                    Accredited Medical Facility | Republic of South Sudan
+                  </div>
+                  <div className="text-xs text-blue-200 mt-1 italic">
+                    Your health is our priority
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Footer Band (fixed in print) */}
-            <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white text-center py-5 print-footer-band">
-              <div className="font-semibold text-[18px]">Bahr El Ghazal Clinic</div>
-              <div className="text-sm text-blue-100 mt-1">
-                Accredited Medical Facility | Republic of South Sudan
-              </div>
-              <div className="text-xs text-blue-200 mt-1 italic">
-                Your health is our priority
-              </div>
-            </div>
           </div>
         </div>
       </div>
