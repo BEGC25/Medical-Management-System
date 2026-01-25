@@ -103,14 +103,20 @@ function isCommonNormalText(v: string) {
   return x === "negative" || x === "not seen" || x === "none" || x === "normal";
 }
 
-function parseNumericRange(rangeText?: string) {
+interface NumericRange {
+  min: number;
+  max: number;
+  isMinimumOnly: boolean;
+}
+
+function parseNumericRange(rangeText?: string): NumericRange | null {
   if (!rangeText) return null;
   const cleaned = rangeText.replace(/,/g, "");
   
   // Check for "minimum+" type ranges like "8+ hours"
   const minPlusMatch = cleaned.match(/(\d+)\+/);
   if (minPlusMatch) {
-    return { min: Number(minPlusMatch[1]), max: Infinity, isMinimumOnly: true };
+    return { min: Number(minPlusMatch[1]), max: Number.MAX_SAFE_INTEGER, isMinimumOnly: true };
   }
   
   const nums = cleaned.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
@@ -499,8 +505,8 @@ export function LabReportPrint({
                                 <td className="px-6 py-4 text-center">
                                   <span
                                     className={cx(
-                                      "font-semibold whitespace-nowrap",
-                                      isAbnormal ? "text-red-600 font-bold" : "text-slate-900"
+                                      isAbnormal ? "text-red-600 font-bold" : "text-slate-900 font-semibold",
+                                      "whitespace-nowrap"
                                     )}
                                   >
                                     {displayValue}
