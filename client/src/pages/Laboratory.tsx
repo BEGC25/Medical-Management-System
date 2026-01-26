@@ -1793,6 +1793,7 @@ return (
                               {/* Results */}
                               <div className="space-y-2">
                                 {Object.entries(testData).map(([fieldName, value]) => {
+                                  const fields = findResultFields(testName);
                                   const config = fields?.[fieldName];
                                   const colorClass = getValueColorClass(value, config?.range, config?.normal);
                                   const arrow = getArrowIndicator(value, config?.range);
