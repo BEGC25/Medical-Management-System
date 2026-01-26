@@ -1364,8 +1364,8 @@ export default function ServiceManagement() {
                   <div className="bg-gradient-to-r from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 px-4 py-3 border-b-2 border-gray-200/50 dark:border-gray-700/50">
                     <div className="grid grid-cols-12 gap-2 font-bold text-sm text-gray-700 dark:text-gray-300">
                       <div className="col-span-1">#</div>
-                      <div className="col-span-6">Service Name</div>
-                      <div className="col-span-4">Price (SSP)</div>
+                      <div className="col-span-6 sm:text-left">Service Name</div>
+                      <div className="col-span-4 sm:text-center">Price (SSP)</div>
                       <div className="col-span-1"></div>
                     </div>
                   </div>
@@ -1771,7 +1771,7 @@ export default function ServiceManagement() {
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold">Price (SSP) *</FormLabel>
+                         <FormLabel className="font-semibold flex items-center gap-2">Price (SSP) *</FormLabel>
                       
                       {/* Quick Price Buttons */}
                       <div className="flex flex-wrap gap-2 mb-2">
