@@ -6,7 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
 import { LabReportPrint } from "@/components/LabReportPrint";
 import { interpretLabResults } from "@/lib/lab-interpretation";
-import { Printer, AlertTriangle, CheckCircle } from "lucide-react";
+import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
+import { Printer, AlertTriangle, CheckCircle, User, Beaker, Calendar } from "lucide-react";
 
 type Patient = {
   firstName?: string;
@@ -28,21 +29,25 @@ function parseJSON<T = any>(v: any, fallback: T): T {
   try { return typeof v === "string" ? JSON.parse(v) : (v ?? fallback); } catch { return fallback; }
 }
 
-function isAbnormal(val: string, cfg?: { normal?: string }) {
-  if (!cfg?.normal) return false;
-  return cfg.normal !== val && val !== "Negative" && val !== "Not seen";
+// Helper function to get initials from names
+function getInitials(firstName?: string, lastName?: string): string {
+  const first = firstName?.charAt(0)?.toUpperCase() || "";
+  const last = lastName?.charAt(0)?.toUpperCase() || "";
+  return first + last || "??";
 }
 
-// Helper to check if any values in a test panel are abnormal
-function hasAbnormalValues(
-  testResults: Record<string, string>,
-  resultFields?: Record<string, { normal?: string }>
-): boolean {
-  if (!resultFields) return false;
-  return Object.entries(testResults).some(([fieldName, value]) => {
-    const cfg = resultFields[fieldName];
-    return isAbnormal(value, cfg);
-  });
+// Helper function to format date
+function formatDate(date?: string): string {
+  if (!date) return "—";
+  try {
+    return new Date(date).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch {
+    return "—";
+  }
 }
 
 // Test type icon mapping
@@ -143,45 +148,118 @@ export default function ResultDrawer(props: {
 
         <Separator className="my-3 shrink-0" />
 
-        <div className="px-6 pb-4 shrink-0">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <div className="font-medium">Patient:</div>
-              <div>{patient?.firstName} {patient?.lastName} <span className="text-xs text-muted-foreground">({patient?.patientId})</span></div>
+        {/* Premium Patient Header - Only for Lab Tests */}
+        {kind === "lab" && (
+          <div className="px-6 pb-4 shrink-0">
+            <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-200 p-6">
+              <div className="flex items-start justify-between">
+                {/* Left: Patient Info */}
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                    {getInitials(patient?.firstName, patient?.lastName)}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {patient?.firstName} {patient?.lastName}
+                    </h2>
+                    <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
+                      <span className="flex items-center gap-1">
+                        <User className="w-4 h-4" />
+                        ID: {patient?.patientId}
+                      </span>
+                      <span>•</span>
+                      <span>{patient?.age}/{patient?.gender?.charAt(0).toUpperCase()}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Right: Status Badges */}
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    {paid && (
+                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4" /> Paid
+                      </span>
+                    )}
+                    {completed && (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4" /> Completed
+                      </span>
+                    )}
+                  </div>
+                  {data?.priority && (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
+                      {data.priority.charAt(0).toUpperCase() + data.priority.slice(1)} Priority
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              {/* Test Info */}
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <div className="flex items-center gap-6 text-sm text-gray-600">
+                  <span className="flex items-center gap-2">
+                    <Beaker className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium">Lab Test:</span> {data?.testId}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-green-600" />
+                    <span className="font-medium">Requested:</span> {formatDate(data?.requestedDate)}
+                  </span>
+                  {data?.completedDate && (
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="font-medium">Completed:</span> {formatDate(data?.completedDate)}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={paid ? "default" : "secondary"}>{paid ? "paid" : "unpaid"}</Badge>
-              <Badge variant={completed ? "default" : "secondary"}>{completed ? "completed" : (data?.status ?? "—")}</Badge>
-              {data?.priority && <Badge variant="outline">{data.priority}</Badge>}
+            
+            {/* Action Buttons */}
+            {completed && (userRole === "doctor" || userRole === "admin") && (
+              <div className="mt-3 flex justify-end gap-2">
+                {props.onCopyToNotes && (
+                  <Button size="sm" variant="outline" onClick={copySummary}>
+                    Copy to Notes
+                  </Button>
+                )}
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowClinicalPrint(true);
+                    setTimeout(() => {
+                      const done = () => setShowClinicalPrint(false);
+                      window.addEventListener("afterprint", done, { once: true });
+                      window.print();
+                    }, 100);
+                  }}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Clinical Copy
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Standard Header for X-Ray and Ultrasound */}
+        {(kind === "xray" || kind === "ultrasound") && (
+          <div className="px-6 pb-4 shrink-0">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <div className="font-medium">Patient:</div>
+                <div>{patient?.firstName} {patient?.lastName} <span className="text-xs text-muted-foreground">({patient?.patientId})</span></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={paid ? "default" : "secondary"}>{paid ? "paid" : "unpaid"}</Badge>
+                <Badge variant={completed ? "default" : "secondary"}>{completed ? "completed" : (data?.status ?? "—")}</Badge>
+                {data?.priority && <Badge variant="outline">{data.priority}</Badge>}
+              </div>
             </div>
           </div>
-          
-          {/* Action Buttons */}
-          {kind === "lab" && completed && (userRole === "doctor" || userRole === "admin") && (
-            <div className="mt-3 flex justify-end gap-2">
-              {props.onCopyToNotes && (
-                <Button size="sm" variant="outline" onClick={copySummary}>
-                  Copy to Notes
-                </Button>
-              )}
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  setShowClinicalPrint(true);
-                  setTimeout(() => {
-                    const done = () => setShowClinicalPrint(false);
-                    window.addEventListener("afterprint", done, { once: true });
-                    window.print();
-                  }, 100);
-                }}
-              >
-                <Printer className="w-4 h-4 mr-2" />
-                Print Clinical Copy
-              </Button>
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="px-6 pb-6 flex-1 min-h-0 h-[80vh] overflow-y-auto">
           {/* LAB CONTENT */}
@@ -191,7 +269,7 @@ export default function ResultDrawer(props: {
               <ResultHeaderCard
                 modality="lab"
                 title="Lab Test"
-                subtitle={`${data?.testId ?? ""} • ${data?.category ?? "Blood Film for Malaria & CBC"}`}
+                subtitle={`${data?.testId ?? ""} • ${getTestCategoryLabel(tests)}`}
                 requestedAt={data?.requestedDate}
                 completedAt={data?.completedAt}
                 reportedAt={data?.reportDate}
@@ -212,24 +290,32 @@ export default function ResultDrawer(props: {
               {/* Laboratory Results - PREMIUM UI WITH SUMMARY */}
               {results && Object.keys(results).length > 0 && (
                 <div className="space-y-5">
-                  {/* Summary Header with Abnormal/Normal Counts */}
+                  {/* Summary Header with Abnormal/Normal Counts - Using Centralized Detection */}
                   {(() => {
+                    let criticalCount = 0;
                     let abnormalCount = 0;
                     let normalCount = 0;
                     
-                    Object.entries(results).forEach(([panel, fields]) => {
-                      const cfg = resultFields?.[panel] || {};
-                      const isAbnormalPanel = hasAbnormalValues(fields, cfg);
-                      if (isAbnormalPanel) {
+                    Object.entries(results).forEach(([testName, testResults]) => {
+                      const abnormalityResult = isTestAbnormal(testName, testResults);
+                      if (abnormalityResult.isCritical) {
+                        criticalCount++;
+                        abnormalCount++;
+                      } else if (abnormalityResult.isAbnormal) {
                         abnormalCount++;
                       } else {
                         normalCount++;
                       }
                     });
 
-                    if (abnormalCount > 0 || normalCount > 0) {
+                    if (criticalCount > 0 || abnormalCount > 0 || normalCount > 0) {
                       return (
                         <div className="flex items-center gap-3 mb-6 p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border">
+                          {criticalCount > 0 && (
+                            <span className="flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-full text-sm font-semibold">
+                              <AlertTriangle className="w-4 h-4" /> {criticalCount} Critical
+                            </span>
+                          )}
                           {abnormalCount > 0 && (
                             <span className="flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">
                               <AlertTriangle className="w-4 h-4" /> {abnormalCount} Abnormal
@@ -248,16 +334,19 @@ export default function ResultDrawer(props: {
 
                   <div className="font-semibold">Laboratory Results</div>
                   
-                  {/* Premium Color-Coded Result Cards */}
-                  {Object.entries(results).map(([panel, fields]) => {
-                    const cfg = resultFields?.[panel] || {};
-                    const isAbnormalPanel = hasAbnormalValues(fields, cfg);
+                  {/* Premium Color-Coded Result Cards - Using Centralized Detection */}
+                  {Object.entries(results).map(([testName, testResults]) => {
+                    const abnormalityResult = isTestAbnormal(testName, testResults);
+                    const isAbnormalPanel = abnormalityResult.isAbnormal;
+                    const isCriticalPanel = abnormalityResult.isCritical;
                     
                     return (
                       <div 
-                        key={panel}
+                        key={testName}
                         className={`relative rounded-xl border-l-4 ${
-                          isAbnormalPanel 
+                          isCriticalPanel 
+                            ? 'border-l-red-500 border-red-200 bg-gradient-to-r from-red-50 to-white'
+                            : isAbnormalPanel 
                             ? 'border-l-amber-500 border-amber-200 bg-gradient-to-r from-amber-50 to-white' 
                             : 'border-l-green-500 border-green-200 bg-gradient-to-r from-green-50 to-white'
                         } shadow-sm hover:shadow-md transition-shadow p-5`}
@@ -265,13 +354,17 @@ export default function ResultDrawer(props: {
                         {/* Header with Icon and Status Badge */}
                         <div className="flex items-start justify-between gap-3 mb-4">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-2xl flex-shrink-0">{getTestTypeIcon(panel)}</span>
-                            <h4 className="font-bold text-gray-900 text-lg">{panel}</h4>
+                            <span className="text-2xl flex-shrink-0">{getTestTypeIcon(testName)}</span>
+                            <h4 className="font-bold text-gray-900 text-lg">{testName}</h4>
                           </div>
                           <span className={`flex-shrink-0 px-2.5 py-1 text-white text-xs font-bold rounded-full flex items-center gap-1 ${
-                            isAbnormalPanel ? 'bg-amber-500' : 'bg-green-500'
+                            isCriticalPanel ? 'bg-red-600' : isAbnormalPanel ? 'bg-amber-500' : 'bg-green-500'
                           }`}>
-                            {isAbnormalPanel ? (
+                            {isCriticalPanel ? (
+                              <>
+                                <AlertTriangle className="w-3.5 h-3.5" /> CRITICAL
+                              </>
+                            ) : isAbnormalPanel ? (
                               <>
                                 <AlertTriangle className="w-3.5 h-3.5" /> ABNORMAL
                               </>
@@ -283,21 +376,23 @@ export default function ResultDrawer(props: {
                           </span>
                         </div>
                         
-                        {/* Results with Reference Ranges */}
+                        {/* Results with Reference Ranges - Using Centralized Detection */}
                         <div className="space-y-2">
-                          {Object.entries(fields).map(([name, value]) => {
-                            const c = cfg[name];
-                            const abnormal = isAbnormal(value, c);
+                          {Object.entries(testResults).map(([fieldName, value]) => {
+                            const abnormal = isFieldAbnormal(testName, fieldName, value);
+                            const unit = getUnit(testName, fieldName);
+                            const refRange = getReferenceRange(testName, fieldName);
+                            
                             return (
-                              <div key={name} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
-                                <span className="text-sm text-gray-600 font-medium">{name}:</span>
+                              <div key={fieldName} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
+                                <span className="text-sm text-gray-600 font-medium">{fieldName}:</span>
                                 <div className="flex items-center gap-3">
                                   <span className={`font-bold text-lg ${abnormal ? 'text-red-600' : 'text-green-600'}`}>
-                                    {value} {c?.unit ? c.unit : ""}
+                                    {value} {unit}
                                   </span>
-                                  {c?.normal && (
+                                  {refRange && (
                                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                                      Normal: {c.normal}
+                                      Ref: {refRange}
                                     </span>
                                   )}
                                 </div>
@@ -306,11 +401,9 @@ export default function ResultDrawer(props: {
                           })}
                         </div>
                         
-                        {cfg && Object.keys(cfg).length > 0 && (
-                          <div className="mt-3 text-xs text-gray-500 italic">
-                            Normal ranges may vary by age, gender, and laboratory standards
-                          </div>
-                        )}
+                        <div className="mt-3 text-xs text-gray-500 italic">
+                          Normal ranges may vary by age, gender, and laboratory standards
+                        </div>
                       </div>
                     );
                   })}
