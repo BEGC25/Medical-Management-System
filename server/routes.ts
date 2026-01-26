@@ -2462,6 +2462,45 @@ router.get("/api/encounters/:encounterId", async (req, res) => {
   }
 });
 
+// Get payment totals for an encounter
+router.get("/api/encounters/:encounterId/payments", async (req, res) => {
+  try {
+    const { encounterId } = req.params;
+    
+    // Get all order lines for this encounter
+    const orderLines = await storage.getOrderLinesByEncounter(encounterId);
+    
+    if (orderLines.length === 0) {
+      return res.json({ totalPaid: 0, payments: [] });
+    }
+    
+    // Get all payment items for these order lines
+    const orderLineIds = orderLines.map(ol => ol.id);
+    const { paymentItems } = await import("@shared/schema");
+    const { inArray } = await import("drizzle-orm");
+    
+    const paymentItemsForEncounter = await db.select()
+      .from(paymentItems)
+      .where(inArray(paymentItems.orderLineId, orderLineIds));
+    
+    // Calculate total paid
+    const totalPaid = paymentItemsForEncounter.reduce((sum, item) => sum + item.amount, 0);
+    
+    // Get unique payment IDs and fetch all payments once
+    const uniquePaymentIds = [...new Set(paymentItemsForEncounter.map(pi => pi.paymentId))];
+    const allPayments = await storage.getPayments();
+    const paymentsData = allPayments.filter(p => uniquePaymentIds.includes(p.paymentId));
+    
+    res.json({ 
+      totalPaid,
+      payments: paymentsData
+    });
+  } catch (error) {
+    console.error("Error fetching encounter payments:", error);
+    res.status(500).json({ error: "Failed to fetch encounter payments" });
+  }
+});
+
 router.post("/api/encounters", async (req, res) => {
   try {
     const result = insertEncounterSchema.safeParse(req.body);
