@@ -1927,10 +1927,30 @@ router.get("/api/payments/:paymentId", async (req, res) => {
     const servicesMap = new Map();
     services.forEach(s => servicesMap.set(s.id, s));
 
-    const itemsWithDetails = items.map(item => ({
-      ...item,
-      serviceName: servicesMap.get(item.serviceId)?.name || 'Unknown Service',
-    }));
+    // Get pharmacy orders for pharmacy item names
+    const pharmacyOrders = await storage.getPharmacyOrders();
+    const pharmacyOrdersMap = new Map();
+    pharmacyOrders.forEach(order => pharmacyOrdersMap.set(order.orderId, order));
+
+    const itemsWithDetails = items.map(item => {
+      let serviceName = 'Unknown Service';
+      
+      if (item.relatedType === 'pharmacy_order' && item.relatedId) {
+        // For pharmacy orders, look up the drug name
+        const pharmacyOrder = pharmacyOrdersMap.get(item.relatedId);
+        if (pharmacyOrder && pharmacyOrder.drugName) {
+          serviceName = `Pharmacy: ${pharmacyOrder.drugName}`;
+        }
+      } else {
+        // For other services, use the service name
+        serviceName = servicesMap.get(item.serviceId)?.name || 'Unknown Service';
+      }
+      
+      return {
+        ...item,
+        serviceName,
+      };
+    });
 
     res.json({
       ...payment,

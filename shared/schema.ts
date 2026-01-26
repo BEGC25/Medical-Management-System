@@ -229,8 +229,8 @@ export const paymentItems = sqliteTable("payment_items", {
   paymentId: text("payment_id").notNull(),
   orderLineId: integer("order_line_id"), // Link to order line for new payment system
   serviceId: integer("service_id").notNull(),
-  relatedId: text("related_id"), // ID of lab test, x-ray, or ultrasound
-  relatedType: text("related_type").$type<"consultation" | "lab_test" | "lab_test_item" | "xray_exam" | "ultrasound_exam">(),
+  relatedId: text("related_id"), // ID of lab test, x-ray, ultrasound, or pharmacy order
+  relatedType: text("related_type").$type<"consultation" | "lab_test" | "lab_test_item" | "xray_exam" | "ultrasound_exam" | "pharmacy_order">(),
   quantity: integer("quantity").notNull().default(1),
   unitPrice: real("unit_price").notNull(),
   totalPrice: real("total_price").notNull(),
