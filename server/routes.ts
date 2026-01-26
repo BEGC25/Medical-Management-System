@@ -43,6 +43,7 @@ import {
 } from "./auth-service";
 import { parseDateFilter } from "./utils/date";
 import { parseClinicRangeParams, rangeToISOStrings, rangeToDayKeys } from "./utils/clinic-range";
+import { recalculateLabTestPrices } from "./utils/labTestPricing";
 
 // Extend express-session types to include our user
 declare module "express-session" {
@@ -2454,8 +2455,13 @@ router.get("/api/encounters/:encounterId", async (req, res) => {
     }
 
     const orderLines = await storage.getOrderLinesByEncounter(encounterId);
+    
+    // Recalculate lab_test order line prices from service catalog
+    const services = await storage.getServices();
+    const laboratoryServices = services.filter(s => s.category === 'laboratory' && s.isActive);
+    const correctedOrderLines = await recalculateLabTestPrices(orderLines, laboratoryServices);
 
-    res.json({ encounter, orderLines });
+    res.json({ encounter, orderLines: correctedOrderLines });
   } catch (error) {
     console.error("Error fetching encounter:", error);
     res.status(500).json({ error: "Failed to fetch encounter" });
@@ -3092,7 +3098,13 @@ router.get("/api/encounters/:encounterId/order-lines", async (req, res) => {
   try {
     const { encounterId } = req.params;
     const orderLines = await storage.getOrderLinesByEncounter(encounterId);
-    res.json(orderLines);
+    
+    // Recalculate lab_test order line prices from service catalog
+    const services = await storage.getServices();
+    const laboratoryServices = services.filter(s => s.category === 'laboratory' && s.isActive);
+    const correctedOrderLines = await recalculateLabTestPrices(orderLines, laboratoryServices);
+    
+    res.json(correctedOrderLines);
   } catch (error) {
     console.error("Error fetching order lines:", error);
     res.status(500).json({ error: "Failed to fetch order lines" });

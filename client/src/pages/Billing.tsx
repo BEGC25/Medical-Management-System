@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
 import type { Encounter, Patient, OrderLine } from "@shared/schema";
-import { getClinicDayKey, getClinicNow } from "@/lib/date-utils";
+import { getClinicDayKey, getClinicNow, formatClinicDay, formatClinicDateTime } from "@/lib/date-utils";
 import { PrintableInvoice } from "@/components/PrintableInvoice";
 import { formatCurrency, calculateOrderLinesTotal } from "@/lib/utils";
 import { format } from "date-fns";
@@ -122,11 +122,7 @@ function EncounterCard({
               </p>
               <p className="flex items-center gap-1">
                 <CalendarDays className="h-3.5 w-3.5" />
-                {new Date(encounter.visitDate).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'short', 
-                  day: 'numeric' 
-                })}
+                {formatClinicDay(encounter.visitDate, 'MMM d, yyyy')}
               </p>
               {encounter.attendingClinician && (
                 <p className="flex items-center gap-1">
@@ -137,10 +133,7 @@ function EncounterCard({
               {encounter.createdAt && (
                 <p className="flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
-                  {new Date(encounter.createdAt).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  })}
+                  {formatClinicDateTime(encounter.createdAt, 'hh:mm a')}
                 </p>
               )}
             </div>
@@ -599,16 +592,9 @@ export default function Billing() {
                   </CardHeader>
                   <CardContent className="space-y-1">
                     <p className="text-sm"><span className="font-medium">Visit ID:</span> {selectedEncounter.encounterId}</p>
-                    <p className="text-sm"><span className="font-medium">Date:</span> {new Date(selectedEncounter.visitDate).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}</p>
+                    <p className="text-sm"><span className="font-medium">Date:</span> {formatClinicDay(selectedEncounter.visitDate, 'MMMM d, yyyy')}</p>
                     {selectedEncounter.createdAt && (
-                      <p className="text-sm"><span className="font-medium">Time:</span> {new Date(selectedEncounter.createdAt).toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}</p>
+                      <p className="text-sm"><span className="font-medium">Time:</span> {formatClinicDateTime(selectedEncounter.createdAt, 'hh:mm a')}</p>
                     )}
                     <p className="text-sm"><span className="font-medium">Status:</span> <Badge className="ml-1">{selectedEncounter.status}</Badge></p>
                   </CardContent>

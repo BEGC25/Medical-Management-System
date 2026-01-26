@@ -8,6 +8,7 @@ import { today } from "./utils/date";
 import { getClinicDayKey } from "@shared/clinic-date";
 import { generateTransactionId } from "./utils/transactionId";
 import { generateAndValidateServiceCode } from "@shared/service-code-utils";
+import { recalculateLabTestPrices } from "./utils/labTestPricing";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
@@ -2998,8 +2999,13 @@ export class MemStorage implements IStorage {
       throw new Error("Cannot generate invoice: This visit has no services. Please add services before generating an invoice.");
     }
 
-    // Calculate totals with validation
-    const subtotal = orderLinesData.reduce((sum, line) => {
+    // Recalculate lab_test order line prices from service catalog
+    const services = await this.getServices();
+    const laboratoryServices = services.filter(s => s.category === 'laboratory' && s.isActive);
+    const correctedOrderLines = await recalculateLabTestPrices(orderLinesData, laboratoryServices);
+
+    // Calculate totals with validation using corrected order lines
+    const subtotal = correctedOrderLines.reduce((sum, line) => {
       const price = Number(line.totalPrice);
       if (isNaN(price)) {
         console.warn(`[Invoice] Invalid price for order line ${line.id}: ${line.totalPrice}`);
@@ -3023,8 +3029,8 @@ export class MemStorage implements IStorage {
       generatedBy,
     });
 
-    // Create invoice lines
-    for (const orderLine of orderLinesData) {
+    // Create invoice lines using corrected order lines
+    for (const orderLine of correctedOrderLines) {
       await this.createInvoiceLine({
         invoiceId: invoice.invoiceId,
         orderLineId: orderLine.id,
