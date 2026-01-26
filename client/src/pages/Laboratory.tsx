@@ -25,6 +25,7 @@ import {
   CheckCircle,
   Activity,
   Info,
+  AlertCircle,
 } from "lucide-react";
 
 import { ObjectUploader } from "@/components/ObjectUploader";
@@ -100,6 +101,130 @@ function fullName(p?: Patient | null) {
   if (!p) return "";
   const n = [p.firstName, p.lastName].filter(Boolean).join(" ").trim();
   return n || p.patientId || "";
+}
+
+// Premium UI Helper Functions
+
+// Severity thresholds for lab result interpretation
+// These thresholds follow standard clinical practice:
+// - Values 50% below minimum are critically low (e.g., hemoglobin < 6 when normal is 12-16)
+// - Values 2x above maximum are critically high (e.g., glucose > 400 when normal is < 200)
+// - Values 1.5x above maximum get double arrow indicator (significantly elevated)
+const SEVERITY_THRESHOLDS = {
+  CRITICAL_LOW_MULTIPLIER: 0.5,    // Value < min * 0.5 is critically low
+  CRITICAL_HIGH_MULTIPLIER: 2,     // Value > max * 2 is critically high
+  ABNORMAL_HIGH_ARROW: 1.5,        // Value > max * 1.5 gets double up arrow (↑↑)
+} as const;
+
+const TEST_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
+  "Blood Film for Malaria": { icon: "🩸", color: "text-red-600" },
+  "Blood Film for Malaria (BFFM)": { icon: "🩸", color: "text-red-600" },
+  "Hemoglobin": { icon: "🩸", color: "text-red-600" },
+  "Complete Blood Count (CBC)": { icon: "🩸", color: "text-red-600" },
+  "ESR": { icon: "🩸", color: "text-red-600" },
+  "Fasting Blood Sugar": { icon: "🩸", color: "text-red-600" },
+  "Random Blood Sugar (RBS)": { icon: "🩸", color: "text-red-600" },
+  "Fasting Blood Sugar (FBS)": { icon: "🩸", color: "text-red-600" },
+  "Widal Test (Typhoid)": { icon: "🩸", color: "text-red-600" },
+  "Blood Group & Rh": { icon: "🩸", color: "text-red-600" },
+  "Liver Function Test (LFT)": { icon: "⚗️", color: "text-purple-600" },
+  "Renal Function Test (RFT)": { icon: "⚗️", color: "text-purple-600" },
+  "Alkaline Phosphatase": { icon: "⚗️", color: "text-purple-600" },
+  "Stool Examination": { icon: "💩", color: "text-amber-600" },
+  "Stool Analysis": { icon: "💩", color: "text-amber-600" },
+  "Urine Analysis": { icon: "💧", color: "text-blue-600" },
+  "Testosterone": { icon: "💉", color: "text-pink-600" },
+  "Thyroid Hormones": { icon: "💉", color: "text-pink-600" },
+  "Hepatitis B Test (HBsAg)": { icon: "💉", color: "text-pink-600" },
+  "Hepatitis C Test (HCV)": { icon: "💉", color: "text-pink-600" },
+  "HIV Test": { icon: "💉", color: "text-pink-600" },
+  "H. Pylori Test": { icon: "💉", color: "text-pink-600" },
+};
+
+function getTestIcon(testName: string): string {
+  return TEST_TYPE_ICONS[testName]?.icon || "🧪";
+}
+
+function parseRange(range: string): { min: number; max: number } {
+  const match = range.match(/(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)/);
+  if (match) {
+    return { min: parseFloat(match[1]), max: parseFloat(match[2]) };
+  }
+  return { min: 0, max: 0 };
+}
+
+function getArrowIndicator(value: string, range?: string): string {
+  if (!range) return "";
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) return "";
+  
+  const { min, max } = parseRange(range);
+  if (min === 0 && max === 0) return "";
+  
+  if (numValue < min * SEVERITY_THRESHOLDS.CRITICAL_LOW_MULTIPLIER) return " ↓↓"; // Very low
+  if (numValue < min) return " ↓"; // Low
+  if (numValue > max * SEVERITY_THRESHOLDS.ABNORMAL_HIGH_ARROW) return " ↑↑"; // Very high
+  if (numValue > max) return " ↑"; // High
+  return ""; // Normal
+}
+
+function getValueColorClass(value: string, range?: string, normalValue?: string): string {
+  // For select/text fields with normal values
+  if (normalValue && !range) {
+    if (value === normalValue || value === "Not seen" || value === "Negative") {
+      return "text-green-600 dark:text-green-400";
+    }
+    return "text-red-600 dark:text-red-400";
+  }
+  
+  // For numeric fields with ranges
+  if (!range) return "text-gray-900 dark:text-gray-100";
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) return "text-gray-900 dark:text-gray-100";
+  
+  const { min, max } = parseRange(range);
+  if (min === 0 && max === 0) return "text-gray-900 dark:text-gray-100";
+  
+  if (numValue < min * SEVERITY_THRESHOLDS.CRITICAL_LOW_MULTIPLIER || numValue > max * SEVERITY_THRESHOLDS.CRITICAL_HIGH_MULTIPLIER) {
+    return "text-purple-600 dark:text-purple-400"; // Critical
+  }
+  if (numValue < min || numValue > max) return "text-red-600 dark:text-red-400"; // Abnormal
+  return "text-green-600 dark:text-green-400"; // Normal
+}
+
+function getTestSeverity(testData: Record<string, string>, fields?: Record<string, any>): "critical" | "abnormal" | "normal" {
+  if (!fields) return "normal";
+  
+  let hasCritical = false;
+  let hasAbnormal = false;
+  
+  for (const [fieldName, value] of Object.entries(testData)) {
+    const config = fields[fieldName];
+    if (!config) continue;
+    
+    const numValue = parseFloat(value);
+    
+    // Check for critical values
+    if (config.range && !isNaN(numValue)) {
+      const { min, max } = parseRange(config.range);
+      if (min > 0 && max > 0) {
+        if (numValue < min * SEVERITY_THRESHOLDS.CRITICAL_LOW_MULTIPLIER || numValue > max * SEVERITY_THRESHOLDS.CRITICAL_HIGH_MULTIPLIER) {
+          hasCritical = true;
+        } else if (numValue < min || numValue > max) {
+          hasAbnormal = true;
+        }
+      }
+    }
+    
+    // Check for abnormal select/text values
+    if (config.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative") {
+      hasAbnormal = true;
+    }
+  }
+  
+  if (hasCritical) return "critical";
+  if (hasAbnormal) return "abnormal";
+  return "normal";
 }
 
 // Note: todayRange() removed - now using shared timezone-aware date utilities
@@ -1603,50 +1728,141 @@ return (
 
               {/* Laboratory Results Section */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Laboratory Results</h3>
-                <div className="space-y-3">
-                  {(() => {
-                    const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
-                    return Object.entries(results).map(([testName, testData]) => {
-                      const fields = resultFields[testName];
-                      return (
-                        <ResultSectionCard
-                          key={testName}
-                          title={testName}
-                          tone="neutral"
-                        >
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                            {Object.entries(testData).map(([fieldName, value]) => {
-                              const config = fields?.[fieldName];
-                              const isNormal = config?.normal === value;
-                              const isAbnormal = config?.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative";
-                              
-                              return (
-                                <div key={fieldName} className="flex justify-between items-center text-sm border-b border-gray-100 dark:border-gray-800 py-2">
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">{fieldName}:</span>
-                                  <span className={cx(
-                                    "font-semibold",
-                                    isNormal && "text-green-600 dark:text-green-400",
-                                    isAbnormal && "text-red-600 dark:text-red-400"
-                                  )}>
-                                    {value} {config?.unit || ""}
-                                  </span>
-                                </div>
-                              );
-                            })}
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Laboratory Results</h3>
+                
+                {(() => {
+                  const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
+                  const entries = Object.entries(results);
+                  
+                  // Calculate summary counts
+                  let criticalCount = 0;
+                  let abnormalCount = 0;
+                  let normalCount = 0;
+                  
+                  entries.forEach(([testName, testData]) => {
+                    const fields = resultFields[testName];
+                    const severity = getTestSeverity(testData, fields);
+                    if (severity === "critical") criticalCount++;
+                    else if (severity === "abnormal") abnormalCount++;
+                    else normalCount++;
+                  });
+                  
+                  return (
+                    <>
+                      {/* Summary Header */}
+                      {entries.length > 0 && (
+                        <div className="flex items-center gap-3 mb-6 p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <div className="flex items-center flex-wrap gap-2">
+                            {criticalCount > 0 && (
+                              <span className="flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-sm font-semibold">
+                                <AlertCircle className="w-4 h-4" /> {criticalCount} Critical
+                              </span>
+                            )}
+                            {abnormalCount > 0 && (
+                              <span className="flex items-center gap-1 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-semibold">
+                                <AlertTriangle className="w-4 h-4" /> {abnormalCount} Abnormal
+                              </span>
+                            )}
+                            {normalCount > 0 && (
+                              <span className="flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-semibold">
+                                <CheckCircle className="w-4 h-4" /> {normalCount} Normal
+                              </span>
+                            )}
                           </div>
-                        </ResultSectionCard>
-                      );
-                    });
-                  })()}
-                </div>
+                        </div>
+                      )}
+                      
+                      {/* Premium Test Cards */}
+                      <div className="space-y-4">
+                        {entries.map(([testName, testData]) => {
+                          const fields = resultFields[testName];
+                          const severity = getTestSeverity(testData, fields);
+                          
+                          // Card styling based on severity
+                          const borderColor = severity === "critical" ? "border-l-red-500 border-red-200 dark:border-red-800" :
+                                             severity === "abnormal" ? "border-l-amber-500 border-amber-200 dark:border-amber-800" :
+                                             "border-l-green-500 border-green-200 dark:border-green-800";
+                          
+                          const bgGradient = severity === "critical" ? "from-red-50 to-white dark:from-red-950/20 dark:to-transparent" :
+                                            severity === "abnormal" ? "from-amber-50 to-white dark:from-amber-950/20 dark:to-transparent" :
+                                            "from-green-50 to-white dark:from-green-950/20 dark:to-transparent";
+                          
+                          const badgeBg = severity === "critical" ? "bg-red-500 dark:bg-red-600" :
+                                         severity === "abnormal" ? "bg-amber-500 dark:bg-amber-600" :
+                                         "bg-green-500 dark:bg-green-600";
+                          
+                          const badgeIcon = severity === "critical" ? <AlertCircle className="w-3.5 h-3.5" /> :
+                                           severity === "abnormal" ? <AlertTriangle className="w-3.5 h-3.5" /> :
+                                           <CheckCircle className="w-3.5 h-3.5" />;
+                          
+                          const badgeText = severity === "critical" ? "CRITICAL" :
+                                           severity === "abnormal" ? "ABNORMAL" :
+                                           "NORMAL";
+                          
+                          return (
+                            <div 
+                              key={testName}
+                              className={`relative rounded-xl border-l-4 border ${borderColor} bg-gradient-to-r ${bgGradient} shadow-sm hover:shadow-md transition-all duration-200 p-5`}
+                            >
+                              {/* Status Badge */}
+                              <div className="absolute top-3 right-3">
+                                <span className={`px-2.5 py-1 ${badgeBg} text-white text-xs font-bold rounded-full flex items-center gap-1 shadow-sm`}>
+                                  {badgeIcon} {badgeText}
+                                </span>
+                              </div>
+                              
+                              {/* Header */}
+                              <div className="flex items-center gap-2 mb-4 pr-24">
+                                <span className="text-2xl">{getTestIcon(testName)}</span>
+                                <h4 className="font-bold text-gray-900 dark:text-gray-100 text-lg">{testName}</h4>
+                              </div>
+                              
+                              {/* Results */}
+                              <div className="space-y-2">
+                                {Object.entries(testData).map(([fieldName, value]) => {
+                                  const config = fields?.[fieldName];
+                                  const colorClass = getValueColorClass(value, config?.range, config?.normal);
+                                  const arrow = getArrowIndicator(value, config?.range);
+                                  
+                                  return (
+                                    <div 
+                                      key={fieldName} 
+                                      className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                                    >
+                                      <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">{fieldName}:</span>
+                                      <div className="flex items-center gap-3">
+                                        <span className={`font-bold text-lg ${colorClass}`}>
+                                          {value} {config?.unit || ""}{arrow}
+                                        </span>
+                                        {config?.range && (
+                                          <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full whitespace-nowrap">
+                                            Ref: {config.range} {config.unit || ""}
+                                          </span>
+                                        )}
+                                        {config?.normal && !config?.range && (
+                                          <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full whitespace-nowrap">
+                                            Normal: {config.normal}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Clinical Interpretation with KeyFindingCard */}
               {(() => {
                 const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
                 // Use shared interpretation utility for consistent results between view and print
-                const interpretation = interpretLabResults(results);
+                const interpretation = interpretLabResults(results, reportPatient);
                 const { criticalFindings, warnings } = interpretation;
 
                 // Render appropriate KeyFindingCard based on findings
