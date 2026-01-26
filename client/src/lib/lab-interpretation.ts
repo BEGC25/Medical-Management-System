@@ -9,6 +9,11 @@
  * apply to both the UI and printed reports.
  */
 
+import { 
+  getPatientReferenceRange, 
+  calculateAgeInYears 
+} from "./lab-reference-ranges";
+
 export interface LabInterpretation {
   criticalFindings: string[];
   warnings: string[];
@@ -28,9 +33,13 @@ function getTiterValue(titer: string): number {
  * Interpret Complete Blood Count (CBC) results
  * 
  * @param testData Object containing CBC field values
+ * @param patient Patient information for age-specific ranges
  * @returns Array of interpretation messages
  */
-function interpretCBC(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+function interpretCBC(
+  testData: Record<string, string>,
+  patient?: { gender?: string; age?: number; dateOfBirth?: string }
+): { critical: string[]; warnings: string[] } {
   const critical: string[] = [];
   const warnings: string[] = [];
   
@@ -38,32 +47,48 @@ function interpretCBC(testData: Record<string, string>): { critical: string[]; w
   const wbc = parseFloat(testData["WBC Count"] || testData["WBC"]);
   const platelets = parseFloat(testData["Platelets"]);
   
-  // Severe anemia
+  // Calculate patient age
+  const patientAge = patient?.dateOfBirth 
+    ? calculateAgeInYears(patient.dateOfBirth)
+    : patient?.age || 30;
+  const patientGender = patient?.gender || "unknown";
+  
+  // Get age-appropriate hemoglobin range
+  const hbRange = getPatientReferenceRange("Complete Blood Count (CBC)", "Hemoglobin", patientAge, patientGender);
+  
+  // Severe anemia (always critical regardless of age)
   if (!isNaN(hb) && hb < 7) {
     critical.push(`SEVERE anemia (Hb: ${hb} g/dL) - Requires urgent blood transfusion consideration`);
-  } else if (!isNaN(hb) && hb < 10) {
-    warnings.push(`Moderate anemia (Hb: ${hb} g/dL) - Requires treatment`);
+  } else if (!isNaN(hb) && hbRange && hbRange.min !== undefined && hb < hbRange.min) {
+    const severity = hb < 10 ? "Moderate" : "Mild";
+    warnings.push(`${severity} anemia (Hb: ${hb} g/dL) for ${hbRange.label} - Expected: ${hbRange.min}-${hbRange.max} ${hbRange.unit}`);
+  } else if (!isNaN(hb) && hbRange && hbRange.max !== undefined && hb > hbRange.max) {
+    warnings.push(`Elevated hemoglobin (Hb: ${hb} g/dL) for ${hbRange.label} - Expected: ${hbRange.min}-${hbRange.max} ${hbRange.unit}. Consider polycythemia.`);
   }
+  
+  // Get age-appropriate WBC range
+  const wbcRange = getPatientReferenceRange("Complete Blood Count (CBC)", "WBC Count", patientAge, patientGender);
   
   // WBC interpretation
   // NOTE: WBC values are stored in x10³/µL units
-  // Normal range: 4.0-11.0 x10³/µL
   if (!isNaN(wbc) && wbc > 15) {
-    warnings.push(`Elevated WBC (${wbc} x10³/µL) - Possible severe infection or leukemia`);
-  } else if (!isNaN(wbc) && wbc > 11) {
-    warnings.push(`Elevated WBC (${wbc} x10³/µL) - Possible infection`);
+    warnings.push(`Elevated WBC (${wbc} ×10³/µL) - Possible severe infection or leukemia`);
+  } else if (!isNaN(wbc) && wbcRange && wbcRange.max !== undefined && wbc > wbcRange.max) {
+    warnings.push(`Elevated WBC (${wbc} ×10³/µL) for ${wbcRange.label} - Possible infection`);
   }
   
   // Low WBC
   if (!isNaN(wbc) && wbc < 4) {
-    warnings.push(`Low WBC (${wbc} x10³/µL) - Immunosuppression, needs evaluation`);
+    warnings.push(`Low WBC (${wbc} ×10³/µL) - Immunosuppression, needs evaluation`);
+  } else if (!isNaN(wbc) && wbcRange && wbcRange.min !== undefined && wbc < wbcRange.min) {
+    warnings.push(`Low WBC (${wbc} ×10³/µL) for ${wbcRange.label} - Monitor for infection risk`);
   }
   
   // Thrombocytopenia
   if (!isNaN(platelets) && platelets < 50) {
-    critical.push(`Severe thrombocytopenia (Platelets: ${platelets} x10³/µL) - Bleeding risk, urgent care needed`);
+    critical.push(`Severe thrombocytopenia (Platelets: ${platelets} ×10³/µL) - Bleeding risk, urgent care needed`);
   } else if (!isNaN(platelets) && platelets < 150) {
-    warnings.push(`Low platelets (${platelets} x10³/µL) - Monitor for bleeding`);
+    warnings.push(`Low platelets (${platelets} ×10³/µL) - Monitor for bleeding`);
   }
   
   return { critical, warnings };
@@ -865,18 +890,24 @@ function interpretStoolAnalysis(testData: Record<string, string>): { critical: s
  */
 export function interpretLabResults(
   results: Record<string, Record<string, string>>,
-  patient?: { gender?: string; age?: string }
+  patient?: { gender?: string; age?: number | string; dateOfBirth?: string }
 ): LabInterpretation {
   const allCritical: string[] = [];
   const allWarnings: string[] = [];
   const unknownPanels: string[] = [];
+  
+  // Convert age to number if it's a string
+  const patientWithAge = patient ? {
+    ...patient,
+    age: typeof patient.age === 'string' ? parseFloat(patient.age) : patient.age
+  } : undefined;
   
   Object.entries(results).forEach(([testName, testData]) => {
     let interpretation: { critical: string[]; warnings: string[] } | null = null;
     
     // Match test name and call appropriate interpreter
     if (testName === "Complete Blood Count (CBC)") {
-      interpretation = interpretCBC(testData);
+      interpretation = interpretCBC(testData, patientWithAge);
     } else if (testName === "Blood Film for Malaria (BFFM)") {
       interpretation = interpretMalaria(testData);
     } else if (testName === "Widal Test (Typhoid)") {
