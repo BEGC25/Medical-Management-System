@@ -2998,8 +2998,51 @@ export class MemStorage implements IStorage {
       throw new Error("Cannot generate invoice: This visit has no services. Please add services before generating an invoice.");
     }
 
-    // Calculate totals with validation
-    const subtotal = orderLinesData.reduce((sum, line) => {
+    // Recalculate lab_test order line prices from service catalog
+    const services = await this.getServices();
+    const laboratoryServices = services.filter(s => s.category === 'laboratory' && s.isActive);
+    
+    const correctedOrderLines = await Promise.all(orderLinesData.map(async (line) => {
+      if (line.relatedType === 'lab_test' && line.relatedId) {
+        try {
+          // Get the lab test record to access the tests array
+          const [labTest] = await db.select().from(labTests).where(eq(labTests.testId, line.relatedId));
+          
+          if (labTest && labTest.tests) {
+            // Parse test names from the JSON array
+            const testNames = JSON.parse(labTest.tests);
+            let calculatedTotal = 0;
+            
+            testNames.forEach((testName: string) => {
+              const service = laboratoryServices.find(s => 
+                s.name.toLowerCase() === testName.toLowerCase() ||
+                s.name.toLowerCase().includes(testName.toLowerCase()) ||
+                testName.toLowerCase().includes(s.name.toLowerCase())
+              );
+              if (service) {
+                calculatedTotal += service.price || 0;
+              }
+            });
+            
+            // If we found prices, use the calculated total
+            if (calculatedTotal > 0) {
+              return {
+                ...line,
+                unitPriceSnapshot: calculatedTotal,
+                totalPrice: calculatedTotal,
+              };
+            }
+          }
+        } catch (err) {
+          // If there's an error recalculating, just return the original line
+          console.error(`Error recalculating lab test price for order line ${line.id}:`, err);
+        }
+      }
+      return line;
+    }));
+
+    // Calculate totals with validation using corrected order lines
+    const subtotal = correctedOrderLines.reduce((sum, line) => {
       const price = Number(line.totalPrice);
       if (isNaN(price)) {
         console.warn(`[Invoice] Invalid price for order line ${line.id}: ${line.totalPrice}`);
@@ -3023,8 +3066,8 @@ export class MemStorage implements IStorage {
       generatedBy,
     });
 
-    // Create invoice lines
-    for (const orderLine of orderLinesData) {
+    // Create invoice lines using corrected order lines
+    for (const orderLine of correctedOrderLines) {
       await this.createInvoiceLine({
         invoiceId: invoice.invoiceId,
         orderLineId: orderLine.id,
