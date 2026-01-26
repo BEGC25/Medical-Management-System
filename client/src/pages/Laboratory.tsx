@@ -106,10 +106,14 @@ function fullName(p?: Patient | null) {
 // Premium UI Helper Functions
 
 // Severity thresholds for lab result interpretation
+// These thresholds follow standard clinical practice:
+// - Values 50% below minimum are critically low (e.g., hemoglobin < 6 when normal is 12-16)
+// - Values 2x above maximum are critically high (e.g., glucose > 400 when normal is < 200)
+// - Values 1.5x above maximum get double arrow indicator (significantly elevated)
 const SEVERITY_THRESHOLDS = {
   CRITICAL_LOW_MULTIPLIER: 0.5,    // Value < min * 0.5 is critically low
   CRITICAL_HIGH_MULTIPLIER: 2,     // Value > max * 2 is critically high
-  ABNORMAL_HIGH_ARROW: 1.5,        // Value > max * 1.5 gets double up arrow
+  ABNORMAL_HIGH_ARROW: 1.5,        // Value > max * 1.5 gets double up arrow (↑↑)
 } as const;
 
 const TEST_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
@@ -1858,7 +1862,7 @@ return (
               {(() => {
                 const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
                 // Use shared interpretation utility for consistent results between view and print
-                const interpretation = interpretLabResults(results, reportPatient || undefined);
+                const interpretation = interpretLabResults(results, reportPatient);
                 const { criticalFindings, warnings } = interpretation;
 
                 // Render appropriate KeyFindingCard based on findings
