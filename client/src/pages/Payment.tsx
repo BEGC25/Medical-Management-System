@@ -1757,7 +1757,7 @@ export default function Payment() {
 
       {/* Receipt View Dialog */}
       <Dialog open={isReceiptViewOpen} onOpenChange={setIsReceiptViewOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="h-5 w-5 text-green-600" />
@@ -1768,7 +1768,7 @@ export default function Payment() {
           {paymentDetails && (
             <div className="space-y-6">
               {/* Formatted Receipt */}
-              <div className="border-2 border-gray-200 rounded-lg p-6 bg-white dark:bg-gray-950">
+              <div id="payment-receipt-print" className="border-2 border-gray-200 rounded-lg p-6 bg-white dark:bg-gray-950">
                 <div className="text-center mb-6 pb-4 border-b-2 border-dashed">
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Bahr El Ghazal Clinic</h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Payment Receipt</p>

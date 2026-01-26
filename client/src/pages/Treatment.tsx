@@ -1289,6 +1289,12 @@ export default function Treatment() {
         );
       }
       
+      // Calculate total price by summing all selected test prices
+      const totalLabPrice = selectedLabTests.reduce((total, testName) => {
+        const service = testServiceMap.get(testName);
+        return total + (service?.price || 0);
+      }, 0);
+      
       // For simplicity, use the first test's service for the order
       // In a more complex system, you might create separate order lines for each test
       const firstService = testServiceMap.get(selectedLabTests[0])!;
@@ -1301,8 +1307,8 @@ export default function Treatment() {
         relatedType: "lab_test",
         description: `Lab Tests: ${currentLabCategory} - ${selectedLabTests.join(", ")}`,
         quantity: 1,
-        unitPriceSnapshot: firstService.price || 0,
-        totalPrice: firstService.price || 0,
+        unitPriceSnapshot: totalLabPrice,
+        totalPrice: totalLabPrice,
         department: "laboratory",
         orderedBy: user?.username || "Dr. System",
         // Diagnostic data for server-side auto-creation
