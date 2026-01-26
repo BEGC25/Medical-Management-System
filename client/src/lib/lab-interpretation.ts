@@ -735,9 +735,18 @@ function interpretTestosterone(testData: Record<string, string>, patient?: { gen
   const total = parseFloat(testData["Total Testosterone"] || testData["Testosterone"] || "0");
   const free = parseFloat(testData["Free Testosterone"] || "0");
   
-  if (total === 0 && free === 0) return { critical, warnings };
+  // Return early if no valid testosterone values
+  if ((total === 0 || isNaN(total)) && (free === 0 || isNaN(free))) {
+    return { critical, warnings };
+  }
   
-  const isMale = patient?.gender?.toLowerCase().startsWith('m') ?? true; // Default to male if not specified
+  // Check if gender is specified for proper interpretation
+  if (!patient?.gender) {
+    warnings.push(`Testosterone level recorded (${total} ng/dL) - Gender-specific interpretation requires patient gender information`);
+    return { critical, warnings };
+  }
+  
+  const isMale = patient.gender.toLowerCase().startsWith('m');
   
   if (isMale) {
     // Male reference: 300-1000 ng/dL
