@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
 import { LabReportPrint } from "@/components/LabReportPrint";
 import { interpretLabResults } from "@/lib/lab-interpretation";
-import { Printer } from "lucide-react";
+import { Printer, AlertTriangle, CheckCircle } from "lucide-react";
 
 type Patient = {
   firstName?: string;
@@ -31,6 +31,49 @@ function parseJSON<T = any>(v: any, fallback: T): T {
 function isAbnormal(val: string, cfg?: { normal?: string }) {
   if (!cfg?.normal) return false;
   return cfg.normal !== val && val !== "Negative" && val !== "Not seen";
+}
+
+// Helper to check if any values in a test panel are abnormal
+function hasAbnormalValues(
+  testResults: Record<string, string>,
+  resultFields?: Record<string, { normal?: string }>
+): boolean {
+  if (!resultFields) return false;
+  return Object.entries(testResults).some(([fieldName, value]) => {
+    const cfg = resultFields[fieldName];
+    return isAbnormal(value, cfg);
+  });
+}
+
+// Test type icon mapping
+const TEST_TYPE_ICONS: Record<string, string> = {
+  "Blood Film for Malaria": "🩸",
+  "Hemoglobin": "🩸",
+  "ESR": "🩸",  // Erythrocyte Sedimentation Rate - blood test
+  "Fasting Blood Sugar": "🩸",
+  "Widal Test": "🩸",
+  "Liver Function Test": "⚗️",
+  "Alkaline Phosphatase": "⚗️",
+  "Stool Analysis": "💩",
+  "Stool Examination": "💩",
+  "Urine Analysis": "💧",
+  "Testosterone": "💉",
+  "Estrogen": "💉",
+  "Thyroid": "💉",
+};
+
+// Cached lowercased keys for efficient lookup
+const TEST_TYPE_KEYS_LOWER = Object.keys(TEST_TYPE_ICONS).map(k => k.toLowerCase());
+
+function getTestTypeIcon(testName: string): string {
+  const testNameLower = testName.toLowerCase();
+  for (let i = 0; i < TEST_TYPE_KEYS_LOWER.length; i++) {
+    if (testNameLower.includes(TEST_TYPE_KEYS_LOWER[i])) {
+      const originalKey = Object.keys(TEST_TYPE_ICONS)[i];
+      return TEST_TYPE_ICONS[originalKey];
+    }
+  }
+  return "🔬"; // Default lab icon
 }
 
 export default function ResultDrawer(props: {
@@ -166,38 +209,109 @@ export default function ResultDrawer(props: {
                 </div>
               )}
 
-              {/* Laboratory Results - SHOW DATA FIRST */}
+              {/* Laboratory Results - PREMIUM UI WITH SUMMARY */}
               {results && Object.keys(results).length > 0 && (
                 <div className="space-y-5">
+                  {/* Summary Header with Abnormal/Normal Counts */}
+                  {(() => {
+                    let abnormalCount = 0;
+                    let normalCount = 0;
+                    
+                    Object.entries(results).forEach(([panel, fields]) => {
+                      const cfg = resultFields?.[panel] || {};
+                      const isAbnormalPanel = hasAbnormalValues(fields, cfg);
+                      if (isAbnormalPanel) {
+                        abnormalCount++;
+                      } else {
+                        normalCount++;
+                      }
+                    });
+
+                    if (abnormalCount > 0 || normalCount > 0) {
+                      return (
+                        <div className="flex items-center gap-3 mb-6 p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border">
+                          {abnormalCount > 0 && (
+                            <span className="flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">
+                              <AlertTriangle className="w-4 h-4" /> {abnormalCount} Abnormal
+                            </span>
+                          )}
+                          {normalCount > 0 && (
+                            <span className="flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                              <CheckCircle className="w-4 h-4" /> {normalCount} Normal
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   <div className="font-semibold">Laboratory Results</div>
+                  
+                  {/* Premium Color-Coded Result Cards */}
                   {Object.entries(results).map(([panel, fields]) => {
                     const cfg = resultFields?.[panel] || {};
+                    const isAbnormalPanel = hasAbnormalValues(fields, cfg);
+                    
                     return (
-                      <ResultSectionCard 
-                        key={panel} 
-                        title={panel}
-                        tone="neutral"
+                      <div 
+                        key={panel}
+                        className={`relative rounded-xl border-l-4 ${
+                          isAbnormalPanel 
+                            ? 'border-l-amber-500 border-amber-200 bg-gradient-to-r from-amber-50 to-white' 
+                            : 'border-l-green-500 border-green-200 bg-gradient-to-r from-green-50 to-white'
+                        } shadow-sm hover:shadow-md transition-shadow p-5`}
                       >
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                        {/* Header with Icon and Status Badge */}
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-2xl flex-shrink-0">{getTestTypeIcon(panel)}</span>
+                            <h4 className="font-bold text-gray-900 text-lg">{panel}</h4>
+                          </div>
+                          <span className={`flex-shrink-0 px-2.5 py-1 text-white text-xs font-bold rounded-full flex items-center gap-1 ${
+                            isAbnormalPanel ? 'bg-amber-500' : 'bg-green-500'
+                          }`}>
+                            {isAbnormalPanel ? (
+                              <>
+                                <AlertTriangle className="w-3.5 h-3.5" /> ABNORMAL
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-3.5 h-3.5" /> NORMAL
+                              </>
+                            )}
+                          </span>
+                        </div>
+                        
+                        {/* Results with Reference Ranges */}
+                        <div className="space-y-2">
                           {Object.entries(fields).map(([name, value]) => {
                             const c = cfg[name];
                             const abnormal = isAbnormal(value, c);
                             return (
-                              <div key={name} className="flex items-center justify-between border-b py-1">
-                                <span className="text-muted-foreground">{name}</span>
-                                <span className={abnormal ? "font-semibold text-red-600" : "font-semibold"}>
-                                  {value} {c?.unit ? c.unit : ""}
-                                </span>
+                              <div key={name} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
+                                <span className="text-sm text-gray-600 font-medium">{name}:</span>
+                                <div className="flex items-center gap-3">
+                                  <span className={`font-bold text-lg ${abnormal ? 'text-red-600' : 'text-green-600'}`}>
+                                    {value} {c?.unit ? c.unit : ""}
+                                  </span>
+                                  {c?.normal && (
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                      Normal: {c.normal}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}
                         </div>
+                        
                         {cfg && Object.keys(cfg).length > 0 && (
-                          <div className="mt-2 text-xs text-muted-foreground">
+                          <div className="mt-3 text-xs text-gray-500 italic">
                             Normal ranges may vary by age, gender, and laboratory standards
                           </div>
                         )}
-                      </ResultSectionCard>
+                      </div>
                     );
                   })}
                 </div>
