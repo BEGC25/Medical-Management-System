@@ -104,6 +104,14 @@ function fullName(p?: Patient | null) {
 }
 
 // Premium UI Helper Functions
+
+// Severity thresholds for lab result interpretation
+const SEVERITY_THRESHOLDS = {
+  CRITICAL_LOW_MULTIPLIER: 0.5,    // Value < min * 0.5 is critically low
+  CRITICAL_HIGH_MULTIPLIER: 2,     // Value > max * 2 is critically high
+  ABNORMAL_HIGH_ARROW: 1.5,        // Value > max * 1.5 gets double up arrow
+} as const;
+
 const TEST_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   "Blood Film for Malaria": { icon: "🩸", color: "text-red-600" },
   "Blood Film for Malaria (BFFM)": { icon: "🩸", color: "text-red-600" },
@@ -149,9 +157,9 @@ function getArrowIndicator(value: string, range?: string): string {
   const { min, max } = parseRange(range);
   if (min === 0 && max === 0) return "";
   
-  if (numValue < min * 0.5) return " ↓↓"; // Very low
+  if (numValue < min * SEVERITY_THRESHOLDS.CRITICAL_LOW_MULTIPLIER) return " ↓↓"; // Very low
   if (numValue < min) return " ↓"; // Low
-  if (numValue > max * 1.5) return " ↑↑"; // Very high
+  if (numValue > max * SEVERITY_THRESHOLDS.ABNORMAL_HIGH_ARROW) return " ↑↑"; // Very high
   if (numValue > max) return " ↑"; // High
   return ""; // Normal
 }
@@ -173,7 +181,9 @@ function getValueColorClass(value: string, range?: string, normalValue?: string)
   const { min, max } = parseRange(range);
   if (min === 0 && max === 0) return "text-gray-900 dark:text-gray-100";
   
-  if (numValue < min * 0.5 || numValue > max * 2) return "text-purple-600 dark:text-purple-400"; // Critical
+  if (numValue < min * SEVERITY_THRESHOLDS.CRITICAL_LOW_MULTIPLIER || numValue > max * SEVERITY_THRESHOLDS.CRITICAL_HIGH_MULTIPLIER) {
+    return "text-purple-600 dark:text-purple-400"; // Critical
+  }
   if (numValue < min || numValue > max) return "text-red-600 dark:text-red-400"; // Abnormal
   return "text-green-600 dark:text-green-400"; // Normal
 }
@@ -194,7 +204,7 @@ function getTestSeverity(testData: Record<string, string>, fields?: Record<strin
     if (config.range && !isNaN(numValue)) {
       const { min, max } = parseRange(config.range);
       if (min > 0 && max > 0) {
-        if (numValue < min * 0.5 || numValue > max * 2) {
+        if (numValue < min * SEVERITY_THRESHOLDS.CRITICAL_LOW_MULTIPLIER || numValue > max * SEVERITY_THRESHOLDS.CRITICAL_HIGH_MULTIPLIER) {
           hasCritical = true;
         } else if (numValue < min || numValue > max) {
           hasAbnormal = true;

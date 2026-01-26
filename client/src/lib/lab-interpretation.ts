@@ -578,7 +578,7 @@ function interpretTuberculosisTests(testData: Record<string, string>): { critica
   
   const result = testData["TB GeneXpert"] || testData["Mantoux Test"] || testData["TB Antibody"];
   if (result === "Positive" || result === "Detected") {
-    critical.push(`Tuberculosis test POSITIVE - Mycobacterial infection detected; treatment per national guidelines required and ensure infection control measures`);
+    critical.push(`Tuberculosis test POSITIVE - Mycobacterial infection detected; treatment per national guidelines is required and ensure infection control measures`);
   }
   
   return { critical, warnings };
