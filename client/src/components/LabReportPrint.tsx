@@ -419,10 +419,10 @@ export function LabReportPrint({
                               unit && normalize(value).includes(normalize(unit));
                             const unitSuffix = unit && !unitAlreadyInValue ? ` ${unit}` : "";
 
-                            const rangeText = getReferenceRange(panelName, testItemName) || config?.normal || config?.range || "—";
+                            const rangeText = getReferenceRange(panelName, testItemName, patient || undefined) || config?.normal || config?.range || "—";
 
                             // Use centralized abnormality detection
-                            const isAbnormal = isFieldAbnormal(panelName, testItemName, value);
+                            const isAbnormal = isFieldAbnormal(panelName, testItemName, value, patient || undefined);
 
                             const displayValue = value;
 
