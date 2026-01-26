@@ -1222,7 +1222,7 @@ export default function ServiceManagement() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
-      <div className="space-y-6 px-4 sm:px-6 pt-4 sm:pt-6 pb-6 sm:pb-8">
+      <div className="space-y-6 px-4 sm:px-6 pt-2 sm:pt-3 pb-6 sm:pb-8">
       {/* Premium Header Section with Glassmorphism */}
       <div className="relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl">
         {/* Animated background gradient */}
@@ -1301,20 +1301,33 @@ export default function ServiceManagement() {
               </DialogDescription>
               {!editingService && (
                 <div className="flex items-center gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant={isBulkMode ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setIsBulkMode(!isBulkMode);
-                      if (!isBulkMode) {
+                  <div className="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkMode(false)}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        !isBulkMode 
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      Single Entry
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsBulkMode(true);
                         setBulkEntries([{ name: "", price: 0, useCustomName: false, search: "", popoverOpen: false }]);
-                      }
-                    }}
-                    className={`text-sm font-semibold transition-all duration-300 ${isBulkMode ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg' : 'hover:border-blue-400 hover:text-blue-600'}`}
-                  >
-                    {isBulkMode ? "Switch to Single Entry" : "Switch to Bulk Entry"}
-                  </Button>
+                      }}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        isBulkMode 
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      Bulk Entry
+                    </button>
+                  </div>
                 </div>
               )}
             </DialogHeader>
@@ -1644,27 +1657,37 @@ export default function ServiceManagement() {
                             placeholder="Search predefined services..."
                             value={predefinedSearch}
                             onChange={(e) => setPredefinedSearch(e.target.value)}
-                            className="mb-2"
+                            className="mb-2 shadow-inner focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                           />
-                          <div className="max-h-64 overflow-y-auto border rounded-md">
+                          <div className="max-h-64 overflow-y-auto border-2 rounded-xl shadow-lg">
                             {Object.entries(getFilteredPredefinedServices()).map(([subcategory, serviceList]) => (
-                              <div key={subcategory} className="p-2">
-                                <h4 className="font-semibold text-xs text-gray-500 uppercase mb-2">{subcategory}</h4>
-                                {serviceList.map((serviceName) => (
-                                  <button
-                                    key={serviceName}
-                                    type="button"
-                                    onClick={() => {
-                                      handlePredefinedServiceSelect(serviceName);
-                                      setPredefinedSearch("");
-                                    }}
-                                    className={`w-full text-left px-3 py-2 rounded hover:bg-blue-50 transition-colors text-sm ${
-                                      field.value === serviceName ? "bg-blue-100 font-medium" : ""
-                                    }`}
-                                  >
-                                    {serviceName}
-                                  </button>
-                                ))}
+                              <div key={subcategory} className="border-b last:border-b-0 border-gray-200/50 dark:border-gray-700/50">
+                                <h4 className="sticky top-0 z-10 font-bold text-xs uppercase mb-0 px-4 py-2.5 bg-gradient-to-r from-gray-100 via-blue-50 to-indigo-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 text-gray-700 dark:text-gray-300 border-b border-gray-200/50 dark:border-gray-700/50 flex items-center gap-2">
+                                  {CATEGORY_ICONS[selectedCategory as keyof typeof CATEGORY_ICONS] && 
+                                    <span className="inline-block">{(() => {
+                                      const Icon = CATEGORY_ICONS[selectedCategory as keyof typeof CATEGORY_ICONS];
+                                      return Icon ? <Icon className="w-3.5 h-3.5" /> : null;
+                                    })()}</span>
+                                  }
+                                  {subcategory}
+                                </h4>
+                                <div className="p-2">
+                                  {serviceList.map((serviceName) => (
+                                    <button
+                                      key={serviceName}
+                                      type="button"
+                                      onClick={() => {
+                                        handlePredefinedServiceSelect(serviceName);
+                                        setPredefinedSearch("");
+                                      }}
+                                      className={`w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all duration-200 text-sm hover:shadow-md hover:scale-[1.01] ${
+                                        field.value === serviceName ? "bg-blue-100 dark:bg-blue-900/50 font-semibold shadow-md" : ""
+                                      }`}
+                                    >
+                                      {serviceName}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1689,7 +1712,7 @@ export default function ServiceManagement() {
                               value={field.value || ""} 
                               placeholder="e.g., Complete Blood Count (CBC)" 
                               data-testid="input-service-name"
-                              className="h-11"
+                              className="h-11 shadow-inner focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
                           </FormControl>
                           {!editingService && Object.keys(PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES] || {}).length > 0 && (
@@ -1727,7 +1750,7 @@ export default function ServiceManagement() {
                           placeholder="Brief description of the service"
                           rows={3}
                           data-testid="input-service-description"
-                          className="resize-none"
+                          className="resize-none shadow-inner focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                         />
                       </FormControl>
                       <FormMessage />
@@ -1765,7 +1788,7 @@ export default function ServiceManagement() {
                             value={field.value || ''}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             data-testid="input-service-price"
-                            className="h-8"
+                            className="h-8 shadow-inner focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                           />
                         </div>
                       </div>
@@ -2152,9 +2175,48 @@ export default function ServiceManagement() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading services...</p>
+            <div className="overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-gray-50/80 via-blue-50/50 to-indigo-50/80 dark:from-gray-800/80 dark:via-gray-800/80 dark:to-gray-800/80 border-b-2 border-gray-200/50 dark:border-gray-700/50">
+                  <tr>
+                    <th className="px-4 py-4 w-12"></th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Code</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Service Name</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Category</th>
+                    <th className="px-4 py-4 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Price (SSP)</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white/50 dark:bg-gray-900/50 divide-y divide-gray-200/50 dark:divide-gray-700/50">
+                  {[...Array(6)].map((_, index) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white/50 dark:bg-gray-900/50' : 'bg-gray-50/50 dark:bg-gray-800/30'}>
+                      <td className="px-4 py-4 w-12">
+                        <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+                        <div className="h-3 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-7 w-28 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-7 w-20 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : sortedServices.length === 0 ? (
             <div className="text-center py-12 px-4">
@@ -2184,7 +2246,7 @@ export default function ServiceManagement() {
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-gray-50/80 via-blue-50/50 to-indigo-50/80 dark:from-gray-800/80 dark:via-gray-800/80 dark:to-gray-800/80 border-b-2 border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm sticky top-0 z-10">
                     <tr>
-                      <th className="px-4 py-5 w-12">
+                      <th className="px-4 py-4 w-12">
                         <Checkbox
                           checked={selectedServices.length > 0 && selectedServices.length === paginatedServices.length}
                           onCheckedChange={(checked) => {
@@ -2198,7 +2260,7 @@ export default function ServiceManagement() {
                         />
                       </th>
                       <th 
-                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
+                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("code")}
                       >
                         <div className="flex items-center gap-2">
@@ -2209,7 +2271,7 @@ export default function ServiceManagement() {
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
+                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("name")}
                       >
                         <div className="flex items-center gap-2">
@@ -2220,7 +2282,7 @@ export default function ServiceManagement() {
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
+                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("category")}
                       >
                         <div className="flex items-center gap-2">
@@ -2231,10 +2293,10 @@ export default function ServiceManagement() {
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
+                        className="px-4 py-4 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("price")}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-end gap-2">
                           Price (SSP)
                           {sortConfig.key === "price" && (
                             sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />
@@ -2242,7 +2304,7 @@ export default function ServiceManagement() {
                         </div>
                       </th>
                       <th 
-                        className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
+                        className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-blue-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group"
                         onClick={() => handleSort("isActive")}
                       >
                         <div className="flex items-center gap-2">
@@ -2252,22 +2314,26 @@ export default function ServiceManagement() {
                           )}
                         </div>
                       </th>
-                      <th className="px-4 py-5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white/50 dark:bg-gray-900/50 divide-y divide-gray-200/50 dark:divide-gray-700/50 backdrop-blur-sm">
-                    {paginatedServices.map((service) => {
+                    {paginatedServices.map((service, index) => {
                       const CategoryIcon = CATEGORY_ICONS[service.category as keyof typeof CATEGORY_ICONS] || Package;
                       const categoryColor = CATEGORY_COLORS[service.category as keyof typeof CATEGORY_COLORS] || { bg: "bg-gray-500", text: "text-gray-700", light: "bg-gray-50" };
                       
                       return (
                         <tr 
                           key={service.id} 
-                          className="group hover:bg-gradient-to-r hover:from-blue-50/80 hover:via-purple-50/50 hover:to-indigo-50/80 dark:hover:from-gray-800/80 dark:hover:via-gray-800/80 dark:hover:to-gray-800/80 transition-all duration-300 hover:shadow-md backdrop-blur-sm"
+                          className={`group transition-all duration-300 hover:shadow-md backdrop-blur-sm hover:border-l-4 hover:border-l-blue-500 ${
+                            index % 2 === 0 
+                              ? 'bg-white/50 dark:bg-gray-900/50' 
+                              : 'bg-gray-50/50 dark:bg-gray-800/30'
+                          } hover:bg-gradient-to-r hover:from-blue-50/80 hover:via-purple-50/50 hover:to-indigo-50/80 dark:hover:from-gray-800/80 dark:hover:via-gray-800/80 dark:hover:to-gray-800/80`}
                         >
-                          <td className="px-4 py-5 w-12">
+                          <td className="px-4 py-4 w-12">
                             <Checkbox
                               checked={selectedServices.includes(service.id)}
                               onCheckedChange={(checked) => {
@@ -2280,12 +2346,12 @@ export default function ServiceManagement() {
                               className="border-2 group-hover:border-blue-400 transition-colors"
                             />
                           </td>
-                          <td className="px-4 py-5 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <span className="text-sm font-mono font-bold text-gray-900 dark:text-gray-100 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 px-3 py-1.5 rounded-lg border-2 border-gray-300 dark:border-gray-600 group-hover:border-blue-400 dark:group-hover:border-blue-500 transition-all duration-300 shadow-sm">
                               {service.code || "-"}
                             </span>
                           </td>
-                          <td className="px-4 py-5">
+                          <td className="px-4 py-4">
                             <div className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
                               {service.name}
                             </div>
@@ -2295,14 +2361,14 @@ export default function ServiceManagement() {
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-5 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <Badge className={`${categoryColor.bg} text-white capitalize font-bold shadow-lg hover:shadow-xl transition-shadow duration-300 px-3 py-1.5 rounded-full flex items-center gap-2 w-fit`}>
                               <CategoryIcon className="w-4 h-4" />
                               {service.category}
                             </Badge>
                           </td>
-                          <td className="px-4 py-5 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
+                          <td className="px-4 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-3">
                               <div className="text-right">
                                 <span className="text-lg font-bold tabular-nums bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                   {Math.round(Number(service.price)).toLocaleString()}
@@ -2321,7 +2387,7 @@ export default function ServiceManagement() {
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-5 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-3">
                               <div className={`w-3 h-3 rounded-full ${isServiceActive(service) ? "bg-green-500 shadow-lg shadow-green-500/50" : "bg-red-500 shadow-lg shadow-red-500/50"} animate-pulse`} />
                               <Badge 
@@ -2332,7 +2398,7 @@ export default function ServiceManagement() {
                               </Badge>
                             </div>
                           </td>
-                          <td className="px-4 py-5 whitespace-nowrap text-right">
+                          <td className="px-4 py-4 whitespace-nowrap text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
