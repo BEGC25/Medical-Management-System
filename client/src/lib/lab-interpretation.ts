@@ -310,7 +310,7 @@ function interpretHPylori(testData: Record<string, string>): { critical: string[
   
   const result = testData["H. Pylori Antigen"];
   if (result === "Positive") {
-    warnings.push(`H. Pylori POSITIVE - Active infection; eradication therapy recommended per guidelines`);
+    warnings.push(`H. Pylori POSITIVE - Active infection; treatment indicated per guidelines`);
   }
   
   return { critical, warnings };
@@ -433,7 +433,7 @@ function interpretGonorrheaTest(testData: Record<string, string>): { critical: s
   
   const result = testData["Gonorrhea"];
   if (result === "Positive") {
-    critical.push(`Gonorrhea test POSITIVE - Sexually transmitted infection detected; initiate appropriate antibiotic therapy and partner notification`);
+    critical.push(`Gonorrhea test POSITIVE - Sexually transmitted infection detected; treatment indicated and partner notification required`);
   }
   
   return { critical, warnings };
@@ -448,7 +448,7 @@ function interpretChlamydiaTest(testData: Record<string, string>): { critical: s
   
   const result = testData["Chlamydia"];
   if (result === "Positive") {
-    critical.push(`Chlamydia test POSITIVE - Sexually transmitted infection detected; initiate antibiotic therapy and partner notification`);
+    critical.push(`Chlamydia test POSITIVE - Sexually transmitted infection detected; treatment indicated and partner notification required`);
   }
   
   return { critical, warnings };
@@ -533,7 +533,7 @@ function interpretFilariasisTests(testData: Record<string, string>): { critical:
   
   const result = testData["Filaria Antigen"] || testData["Microfilaria"];
   if (result === "Positive" || result === "Seen") {
-    warnings.push(`Filariasis test POSITIVE - Parasitic infection detected; initiate anti-filarial therapy per guidelines`);
+    warnings.push(`Filariasis test POSITIVE - Parasitic infection detected; treatment indicated per guidelines`);
   }
   
   return { critical, warnings };
@@ -548,7 +548,7 @@ function interpretSchistosomiasisTest(testData: Record<string, string>): { criti
   
   const result = testData["Schistosoma Antibody"] || testData["Schistosoma Ova"];
   if (result === "Positive" || result === "Seen") {
-    warnings.push(`Schistosomiasis test POSITIVE - Parasitic infection detected; initiate praziquantel therapy and monitor for complications`);
+    warnings.push(`Schistosomiasis test POSITIVE - Parasitic infection detected; treatment indicated and monitor for complications`);
   }
   
   return { critical, warnings };
@@ -563,7 +563,7 @@ function interpretLeishmaniasisTest(testData: Record<string, string>): { critica
   
   const result = testData["Leishmania Antibody"] || testData["Leishmania"];
   if (result === "Positive") {
-    critical.push(`Leishmaniasis test POSITIVE - Parasitic infection detected; specialist consultation for appropriate therapy (amphotericin B or antimonials)`);
+    critical.push(`Leishmaniasis test POSITIVE - Parasitic infection detected; specialist consultation for appropriate treatment required`);
   }
   
   return { critical, warnings };
@@ -578,7 +578,7 @@ function interpretTuberculosisTests(testData: Record<string, string>): { critica
   
   const result = testData["TB GeneXpert"] || testData["Mantoux Test"] || testData["TB Antibody"];
   if (result === "Positive" || result === "Detected") {
-    critical.push(`Tuberculosis test POSITIVE - Mycobacterial infection detected; initiate DOTS therapy per national guidelines and ensure infection control measures`);
+    critical.push(`Tuberculosis test POSITIVE - Mycobacterial infection detected; treatment per national guidelines required and ensure infection control measures`);
   }
   
   return { critical, warnings };
@@ -593,7 +593,7 @@ function interpretMeningitisTests(testData: Record<string, string>): { critical:
   
   const result = testData["CSF Analysis"] || testData["Meningitis PCR"];
   if (result && result.toLowerCase().includes("positive")) {
-    critical.push(`Meningitis test suggests infection - URGENT: Initiate empiric antibiotic/antiviral therapy immediately pending culture results; specialist consultation required`);
+    critical.push(`Meningitis test suggests infection - URGENT: Immediate treatment required pending culture results; specialist consultation required`);
   } else {
     warnings.push(`Meningitis panel completed - Interpret CSF findings (WBC, protein, glucose) in clinical context; consider repeat lumbar puncture if high clinical suspicion`);
   }
@@ -625,7 +625,7 @@ function interpretTyphusTest(testData: Record<string, string>): { critical: stri
   
   const result = testData["Typhus Antibody"] || testData["Rickettsia"];
   if (result === "Positive") {
-    warnings.push(`Typhus test POSITIVE - Rickettsial infection detected; initiate doxycycline therapy promptly`);
+    warnings.push(`Typhus test POSITIVE - Rickettsial infection detected; treatment indicated promptly`);
   }
   
   return { critical, warnings };
@@ -644,7 +644,7 @@ function interpretUrineMicroscopy(testData: Record<string, string>): { critical:
   const casts = testData["Casts"];
   
   if (wbc && wbc !== "0-2" && wbc !== "Negative" && wbc !== "None") {
-    warnings.push(`Pyuria detected (${wbc}) - Suggestive of urinary tract infection; consider urine culture and antibiotic therapy`);
+    warnings.push(`Pyuria detected (${wbc}) - Suggestive of urinary tract infection; consider urine culture and treatment`);
   }
   
   if (rbc && rbc !== "0-2" && rbc !== "Negative" && rbc !== "None") {
@@ -678,7 +678,7 @@ function interpretStoolExamination(testData: Record<string, string>): { critical
   }
   
   if (ova && ova !== "None seen" && ova !== "Negative") {
-    warnings.push(`Intestinal parasites detected (${ova}) - Initiate appropriate antiparasitic therapy per guidelines`);
+    warnings.push(`Intestinal parasites detected (${ova}) - Treatment indicated per guidelines`);
   }
   
   if (occultBlood === "Positive") {
@@ -781,7 +781,7 @@ function interpretStoolAnalysis(testData: Record<string, string>): { critical: s
   // Parasites
   const parasites = testData["Ova/Parasites"] || testData["Parasites"];
   if (parasites && parasites !== "None seen" && parasites !== "Negative") {
-    warnings.push(`Intestinal parasite detected: ${parasites} - Antiparasitic treatment required (e.g., Metronidazole for E. histolytica)`);
+    warnings.push(`Intestinal parasite detected: ${parasites} - Treatment indicated`);
   }
   
   // Occult blood
