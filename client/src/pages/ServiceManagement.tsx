@@ -539,7 +539,7 @@ export default function ServiceManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>("laboratory");
+  const [selectedCategory, setSelectedCategory] = useState<string>("consultation");
   const [useCustomName, setUseCustomName] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Service | null; direction: "asc" | "desc" }>({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
@@ -1222,7 +1222,7 @@ export default function ServiceManagement() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
-      <div className="space-y-6 px-4 sm:px-6 pt-2 sm:pt-3 pb-6 sm:pb-8">
+      <div className="space-y-2 sm:space-y-3 px-4 sm:px-6 pt-0 pb-6 sm:pb-8">
       {/* Premium Header Section with Glassmorphism */}
       <div className="relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl">
         {/* Animated background gradient */}
@@ -1267,6 +1267,7 @@ export default function ServiceManagement() {
                 <Button
                   onClick={() => {
                     setEditingService(null);
+                    setSelectedCategory("consultation");
                     form.reset({
                       name: "",
                       code: "",
@@ -1394,14 +1395,14 @@ export default function ServiceManagement() {
                                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-[400px] p-0" align="start">
+                                  <PopoverContent className="w-[400px] p-0 max-h-[300px]" align="start">
                                     <Command>
                                       <CommandInput 
                                         placeholder="Search services..." 
                                         value={entry.search}
                                         onValueChange={(value) => updateBulkEntry(index, 'search', value)}
                                       />
-                                      <CommandList>
+                                      <CommandList className="max-h-[250px] overflow-y-auto">
                                         <CommandEmpty>No service found.</CommandEmpty>
                                         {Object.entries(getBulkRowFilteredServices(entry.search)).map(([subcategory, serviceList]) => (
                                           <CommandGroup key={subcategory} heading={subcategory}>
@@ -2188,9 +2189,9 @@ export default function ServiceManagement() {
                     <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white/50 dark:bg-gray-900/50 divide-y divide-gray-200/50 dark:divide-gray-700/50">
+                <tbody className="bg-white/60 dark:bg-gray-900/60 divide-y divide-gray-200/50 dark:divide-gray-700/50">
                   {[...Array(6)].map((_, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-white/50 dark:bg-gray-900/50' : 'bg-gray-50/50 dark:bg-gray-800/30'}>
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white/60 dark:bg-gray-900/60' : 'bg-gray-50/60 dark:bg-gray-800/40'}>
                       <td className="px-4 py-4 w-12">
                         <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                       </td>
@@ -2327,11 +2328,14 @@ export default function ServiceManagement() {
                       return (
                         <tr 
                           key={service.id} 
-                          className={`group transition-all duration-300 hover:shadow-md backdrop-blur-sm hover:border-l-4 hover:border-l-blue-500 ${
-                            index % 2 === 0 
-                              ? 'bg-white/50 dark:bg-gray-900/50' 
-                              : 'bg-gray-50/50 dark:bg-gray-800/30'
-                          } hover:bg-gradient-to-r hover:from-blue-50/80 hover:via-purple-50/50 hover:to-indigo-50/80 dark:hover:from-gray-800/80 dark:hover:via-gray-800/80 dark:hover:to-gray-800/80`}
+                          className={`group transition-all duration-300 hover:shadow-md backdrop-blur-sm
+                            ${index % 2 === 0 
+                              ? 'bg-white/60 dark:bg-gray-900/60' 
+                              : 'bg-gray-50/60 dark:bg-gray-800/40'}
+                            hover:bg-gradient-to-r hover:from-blue-50/80 hover:via-purple-50/50 hover:to-indigo-50/80 
+                            dark:hover:from-gray-800/80 dark:hover:via-gray-800/80 dark:hover:to-gray-800/80
+                            border-l-4 border-l-transparent hover:border-l-blue-500
+                          `}
                         >
                           <td className="px-4 py-4 w-12">
                             <Checkbox
