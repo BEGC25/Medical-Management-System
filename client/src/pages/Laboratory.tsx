@@ -79,6 +79,7 @@ import { timeAgo } from "@/lib/time-utils";
 import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
+import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -192,38 +193,12 @@ function getValueColorClass(value: string, range?: string, normalValue?: string)
   return "text-green-600 dark:text-green-400"; // Normal
 }
 
-function getTestSeverity(testData: Record<string, string>, fields?: Record<string, any>): "critical" | "abnormal" | "normal" {
-  if (!fields) return "normal";
+function getTestSeverity(testName: string, testData: Record<string, string>): "critical" | "abnormal" | "normal" {
+  // Use centralized abnormality detection
+  const result = isTestAbnormal(testName, testData);
   
-  let hasCritical = false;
-  let hasAbnormal = false;
-  
-  for (const [fieldName, value] of Object.entries(testData)) {
-    const config = fields[fieldName];
-    if (!config) continue;
-    
-    const numValue = parseFloat(value);
-    
-    // Check for critical values
-    if (config.range && !isNaN(numValue)) {
-      const { min, max } = parseRange(config.range);
-      if (min > 0 && max > 0) {
-        if (numValue < min * SEVERITY_THRESHOLDS.CRITICAL_LOW_MULTIPLIER || numValue > max * SEVERITY_THRESHOLDS.CRITICAL_HIGH_MULTIPLIER) {
-          hasCritical = true;
-        } else if (numValue < min || numValue > max) {
-          hasAbnormal = true;
-        }
-      }
-    }
-    
-    // Check for abnormal select/text values
-    if (config.normal && config.normal !== value && value && value !== "Not seen" && value !== "Negative") {
-      hasAbnormal = true;
-    }
-  }
-  
-  if (hasCritical) return "critical";
-  if (hasAbnormal) return "abnormal";
+  if (result.isCritical) return "critical";
+  if (result.isAbnormal) return "abnormal";
   return "normal";
 }
 
@@ -1740,8 +1715,7 @@ return (
                   let normalCount = 0;
                   
                   entries.forEach(([testName, testData]) => {
-                    const fields = resultFields[testName];
-                    const severity = getTestSeverity(testData, fields);
+                    const severity = getTestSeverity(testName, testData);
                     if (severity === "critical") criticalCount++;
                     else if (severity === "abnormal") abnormalCount++;
                     else normalCount++;
@@ -1775,8 +1749,7 @@ return (
                       {/* Premium Test Cards */}
                       <div className="space-y-4">
                         {entries.map(([testName, testData]) => {
-                          const fields = resultFields[testName];
-                          const severity = getTestSeverity(testData, fields);
+                          const severity = getTestSeverity(testName, testData);
                           
                           // Card styling based on severity
                           const borderColor = severity === "critical" ? "border-l-red-500 border-red-200 dark:border-red-800" :

@@ -772,6 +772,55 @@ function interpretTestosterone(testData: Record<string, string>, patient?: { gen
 }
 
 /**
+ * Interpret Estrogen (E2) results
+ */
+function interpretEstrogen(testData: Record<string, string>, patient?: { gender?: string; age?: string }): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const estradiol = parseFloat(testData["Estradiol"] || testData["E2"] || "0");
+  
+  if (!estradiol || isNaN(estradiol)) {
+    return { critical, warnings };
+  }
+  
+  const isFemale = patient?.gender?.toLowerCase().startsWith('f');
+  const isMale = patient?.gender?.toLowerCase().startsWith('m');
+  const age = patient?.age ? parseInt(String(patient.age)) : undefined;
+  
+  if (isFemale) {
+    // Female reference ranges (vary by cycle phase)
+    // Follicular: 20-150 pg/mL
+    // Ovulatory: 150-750 pg/mL
+    // Luteal: 30-450 pg/mL
+    // Postmenopausal: <20 pg/mL
+    if (estradiol > 750) {
+      critical.push(`Markedly elevated estradiol (${estradiol} pg/mL) - Consider ovarian hyperstimulation, estrogen-producing tumor, or pregnancy`);
+    } else if (estradiol < 20 && age && age < 45) {
+      warnings.push(`Low estradiol (${estradiol} pg/mL) - Consider premature ovarian insufficiency, hypopituitarism, or hypothalamic amenorrhea`);
+    } else if (estradiol < 20 && age && age >= 45) {
+      warnings.push(`Low estradiol (${estradiol} pg/mL) - Consistent with postmenopausal state or ovarian failure`);
+    } else {
+      warnings.push(`Estradiol level: ${estradiol} pg/mL - Normal range varies by menstrual cycle phase (Follicular: 20-150, Ovulatory: 150-750, Luteal: 30-450 pg/mL)`);
+    }
+  } else if (isMale) {
+    // Male reference: 10-40 pg/mL
+    if (estradiol > 60) {
+      warnings.push(`Elevated estradiol in male (${estradiol} pg/mL) - Consider obesity, liver disease, testicular tumor, or exogenous estrogen`);
+    } else if (estradiol > 40) {
+      warnings.push(`Mildly elevated estradiol in male (${estradiol} pg/mL) - Monitor; may be related to obesity or medications`);
+    } else {
+      warnings.push(`Estradiol level: ${estradiol} pg/mL - Within normal male range (10-40 pg/mL)`);
+    }
+  } else {
+    // Gender unknown
+    warnings.push(`Estradiol level: ${estradiol} pg/mL - Female reference varies by cycle (20-750 pg/mL), Male reference: 10-40 pg/mL`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
  * Interpret Stool Analysis results (alias for Stool Examination)
  */
 function interpretStoolAnalysis(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
@@ -904,6 +953,8 @@ export function interpretLabResults(
       interpretation = interpretALP(testData);
     } else if (testName === "Testosterone") {
       interpretation = interpretTestosterone(testData, patient);
+    } else if (testName === "Estrogen (E2)") {
+      interpretation = interpretEstrogen(testData, patient);
     } else if (testName === "Custom Test") {
       interpretation = interpretCustomTest(testData);
     } else {

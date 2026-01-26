@@ -2,6 +2,7 @@
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { formatLongDate } from "@/lib/date-utils";
+import { isFieldAbnormal, getReferenceRange, getUnit } from "@/lib/lab-abnormality";
 
 interface LabReportPrintProps {
   containerId: string;
@@ -413,41 +414,17 @@ export function LabReportPrint({
                             const raw = normalizeSpaces((rawValue ?? "").toString());
                             const value = raw || "—";
 
-                            const unit = (config?.unit ?? "").trim();
+                            const unit = getUnit(panelName, testItemName) || (config?.unit ?? "").trim();
                             const unitAlreadyInValue =
                               unit && normalize(value).includes(normalize(unit));
                             const unitSuffix = unit && !unitAlreadyInValue ? ` ${unit}` : "";
 
-                            const rangeText = config?.normal || config?.range || "—";
+                            const rangeText = getReferenceRange(panelName, testItemName) || config?.normal || config?.range || "—";
 
-                            const valueHasPlus = /\d+\+/.test(value);
-                            const rangeHasPlus = /\d+\+/.test(rangeText);
-                            const shouldTryNumeric =
-                              config?.type === "number" || (valueHasPlus && rangeHasPlus);
+                            // Use centralized abnormality detection
+                            const isAbnormal = isFieldAbnormal(panelName, testItemName, value);
 
-                            const numeric = shouldTryNumeric ? tryParseNumber(value) : null;
-                            const range = parseNumericRange(rangeText);
-
-                            let isAbnormal = false;
-                            if (numeric !== null && range) {
-                              if (range.isMinimumOnly) {
-                                if (numeric < range.min) isAbnormal = true;
-                              } else {
-                                if (numeric < range.min || numeric > range.max) isAbnormal = true;
-                              }
-                            } else if (config?.normal) {
-                              const same = normalize(value) === normalize(config.normal);
-                              if (!same && !isCommonNormalText(value) && value !== "—") isAbnormal = true;
-                            } else {
-                              if (value !== "—" && !isCommonNormalText(value)) isAbnormal = true;
-                            }
-
-                            const displayValue =
-                              config?.type === "number" &&
-                              numeric !== null &&
-                              !shouldPreserveOriginalDisplay(value)
-                                ? new Intl.NumberFormat("en-US").format(numeric)
-                                : value;
+                            const displayValue = value;
 
                             const stripe = rowIdx % 2 === 0 ? "bg-white" : "bg-slate-50";
 
