@@ -3943,27 +3943,48 @@ export default function Treatment() {
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between gap-3 mb-2">
                                           <div className="flex-1">
-                                            <p className="font-semibold text-base text-gray-900 dark:text-white line-clamp-2">
-                                              {(() => {
-                                                // Use display helper functions for consistent labeling
-                                                if (order.type === 'xray' && order.examType && order.bodyPart) {
-                                                  const xrayData: XrayDisplayData = {
-                                                    examType: order.examType,
-                                                    bodyPart: order.bodyPart
-                                                  };
-                                                  return getXrayDisplayName(xrayData);
-                                                }
-                                                if (order.type === 'ultrasound' && order.examType) {
-                                                  const ultrasoundData: UltrasoundDisplayData = {
-                                                    examType: order.examType,
-                                                    specificExam: order.specificExam
-                                                  };
-                                                  return getUltrasoundDisplayName(ultrasoundData);
-                                                }
-                                                // Fallback to name/description for other types
-                                                return order.name || order.description;
-                                              })()}
-                                            </p>
+                                            {/* Title - show differently for lab vs other types */}
+                                            {order.type === 'lab' ? (
+                                              <>
+                                                <p className="font-semibold text-base text-gray-900 dark:text-white">
+                                                  {order.category || 'Lab Tests'}
+                                                </p>
+                                                {/* Display all tests as badges */}
+                                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                                  {parseJSON<string[]>(order.tests, []).map((test, i) => (
+                                                    <Badge 
+                                                      key={i} 
+                                                      variant="outline" 
+                                                      className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
+                                                    >
+                                                      {test}
+                                                    </Badge>
+                                                  ))}
+                                                </div>
+                                              </>
+                                            ) : (
+                                              <p className="font-semibold text-base text-gray-900 dark:text-white">
+                                                {(() => {
+                                                  // Use display helper functions for consistent labeling
+                                                  if (order.type === 'xray' && order.examType && order.bodyPart) {
+                                                    const xrayData: XrayDisplayData = {
+                                                      examType: order.examType,
+                                                      bodyPart: order.bodyPart
+                                                    };
+                                                    return getXrayDisplayName(xrayData);
+                                                  }
+                                                  if (order.type === 'ultrasound' && order.examType) {
+                                                    const ultrasoundData: UltrasoundDisplayData = {
+                                                      examType: order.examType,
+                                                      specificExam: order.specificExam
+                                                    };
+                                                    return getUltrasoundDisplayName(ultrasoundData);
+                                                  }
+                                                  // Fallback to name/description for other types
+                                                  return order.name || order.description;
+                                                })()}
+                                              </p>
+                                            )}
                                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                               Ordered {timeAgo(order.createdAt)} • <span className="font-medium text-gray-700 dark:text-gray-300">{formatDepartmentName(order.department || order.type)}</span>
                                             </p>
