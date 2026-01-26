@@ -57,7 +57,7 @@ async function generateTreatmentId(): Promise<string> {
   return treatmentIdMutex.runExclusive(async () => {
     // Query MAX treatment ID from database
     const result = await db.select({ 
-      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(treatment_id, 8) AS INTEGER)), 0)` 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(treatment_id, 7) AS INTEGER)), 0)` 
     }).from(treatments);
     const nextId = (result[0]?.maxNum || 0) + 1;
     return `BGC-RX${nextId}`;
@@ -68,7 +68,7 @@ async function generateLabId(): Promise<string> {
   return labIdMutex.runExclusive(async () => {
     // Query MAX lab test ID from database
     const result = await db.select({ 
-      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(test_id, 9) AS INTEGER)), 0)` 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(test_id, 8) AS INTEGER)), 0)` 
     }).from(labTests);
     const nextId = (result[0]?.maxNum || 0) + 1;
     return `BGC-LAB${nextId}`;
@@ -79,7 +79,7 @@ async function generateXrayId(): Promise<string> {
   return xrayIdMutex.runExclusive(async () => {
     // Query MAX X-ray exam ID from database
     const result = await db.select({ 
-      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(exam_id, 8) AS INTEGER)), 0)` 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(exam_id, 7) AS INTEGER)), 0)` 
     }).from(xrayExams);
     const nextId = (result[0]?.maxNum || 0) + 1;
     return `BGC-XR${nextId}`;
@@ -90,7 +90,7 @@ async function generateUltrasoundId(): Promise<string> {
   return ultrasoundIdMutex.runExclusive(async () => {
     // Query MAX ultrasound exam ID from database
     const result = await db.select({ 
-      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(exam_id, 8) AS INTEGER)), 0)` 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(exam_id, 7) AS INTEGER)), 0)` 
     }).from(ultrasoundExams);
     const nextId = (result[0]?.maxNum || 0) + 1;
     return `BGC-US${nextId}`;
@@ -101,7 +101,7 @@ async function generatePharmacyId(): Promise<string> {
   return pharmacyIdMutex.runExclusive(async () => {
     // Query MAX pharmacy order ID from database
     const result = await db.select({ 
-      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(order_id, 11) AS INTEGER)), 0)` 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(order_id, 10) AS INTEGER)), 0)` 
     }).from(pharmacyOrders);
     const nextId = (result[0]?.maxNum || 0) + 1;
     return `BGC-PHARM${nextId}`;
@@ -112,7 +112,7 @@ async function generatePaymentId(): Promise<string> {
   return paymentIdMutex.runExclusive(async () => {
     // Query MAX payment ID from database
     const result = await db.select({ 
-      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(payment_id, 9) AS INTEGER)), 0)` 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(payment_id, 8) AS INTEGER)), 0)` 
     }).from(payments);
     const nextId = (result[0]?.maxNum || 0) + 1;
     return `BGC-PAY${nextId}`;
@@ -125,7 +125,7 @@ async function generateEncounterId(): Promise<string> {
       console.log('[generateEncounterId] Acquiring mutex lock for encounter ID generation');
       // Query MAX encounter ID from database
       const result = await db.select({ 
-        maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(encounter_id, 9) AS INTEGER)), 0)` 
+        maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(encounter_id, 8) AS INTEGER)), 0)` 
       }).from(encounters);
       const nextId = (result[0]?.maxNum || 0) + 1;
       const newId = `BGC-ENC${nextId}`;
@@ -143,7 +143,7 @@ async function generateInvoiceId(): Promise<string> {
   return invoiceIdMutex.runExclusive(async () => {
     // Query MAX invoice ID from database
     const result = await db.select({ 
-      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(invoice_id, 9) AS INTEGER)), 0)` 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(invoice_id, 8) AS INTEGER)), 0)` 
     }).from(invoices);
     const nextId = (result[0]?.maxNum || 0) + 1;
     return `BGC-INV${nextId}`;
