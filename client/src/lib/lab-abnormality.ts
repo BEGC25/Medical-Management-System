@@ -16,6 +16,10 @@ export const LAB_REFERENCE_RANGES: Record<string, Record<string, {
   unit?: string;
   min?: number;
   max?: number;
+  maleMin?: number;
+  maleMax?: number;
+  femaleMin?: number;
+  femaleMax?: number;
   abnormalValues?: string[];
   normalValues?: string[];
 }>> = {
@@ -25,7 +29,16 @@ export const LAB_REFERENCE_RANGES: Record<string, Record<string, {
     "Gametocytes": { normal: "Not seen", abnormalValues: ["Seen"] },
   },
   "ESR (Erythrocyte Sedimentation Rate)": {
-    "ESR (1 hour)": { normal: "0-20", unit: "mm/hr", min: 0, max: 20 },
+    "ESR (1 hour)": { 
+      normal: "M: 0-15, F: 0-20", 
+      unit: "mm/hr", 
+      min: 0, 
+      max: 20,
+      maleMin: 0,
+      maleMax: 15,
+      femaleMin: 0,
+      femaleMax: 20,
+    },
   },
   "Fasting Blood Sugar (FBS)": {
     "Blood Glucose": { normal: "70-110", unit: "mg/dL", min: 70, max: 110 },
@@ -34,10 +47,28 @@ export const LAB_REFERENCE_RANGES: Record<string, Record<string, {
     "Blood Glucose": { normal: "<200", unit: "mg/dL", max: 200 },
   },
   "Hemoglobin (Hb)": {
-    "Hemoglobin": { normal: "12-16", unit: "g/dL", min: 12, max: 16 },
+    "Hemoglobin": { 
+      normal: "M: 13.5-17.5, F: 12-16", 
+      unit: "g/dL", 
+      min: 12, 
+      max: 17.5,
+      maleMin: 13.5,
+      maleMax: 17.5,
+      femaleMin: 12,
+      femaleMax: 16,
+    },
   },
   "Hemoglobin (HB)": {
-    "Hemoglobin": { normal: "12-16", unit: "g/dL", min: 12, max: 16 },
+    "Hemoglobin": { 
+      normal: "M: 13.5-17.5, F: 12-16", 
+      unit: "g/dL", 
+      min: 12, 
+      max: 17.5,
+      maleMin: 13.5,
+      maleMax: 17.5,
+      femaleMin: 12,
+      femaleMax: 16,
+    },
   },
   "Widal Test (Typhoid)": {
     "S. Typhi (O)Ag": { normal: "<1:80", normalValues: ["Negative", "<1:20", "1:20", "1:40", "1:80"], abnormalValues: ["1:160", "1:320", "1:640", "1:1280"] },
@@ -87,7 +118,16 @@ export const LAB_REFERENCE_RANGES: Record<string, Record<string, {
     "Leucocytes": { normal: "Negative", normalValues: ["Negative"], abnormalValues: ["+", "++", "+++"] },
   },
   "Complete Blood Count (CBC)": {
-    "Hemoglobin": { normal: "12-16", unit: "g/dL", min: 12, max: 16 },
+    "Hemoglobin": { 
+      normal: "M: 13.5-17.5, F: 12-16", 
+      unit: "g/dL", 
+      min: 12, 
+      max: 17.5,
+      maleMin: 13.5,
+      maleMax: 17.5,
+      femaleMin: 12,
+      femaleMax: 16,
+    },
     "WBC Count": { normal: "4.0-11.0", unit: "x10³/µL", min: 4.0, max: 11.0 },
     "WBC": { normal: "4.0-11.0", unit: "x10³/µL", min: 4.0, max: 11.0 },
     "Platelets": { normal: "150-450", unit: "x10³/µL", min: 150, max: 450 },
@@ -95,16 +135,54 @@ export const LAB_REFERENCE_RANGES: Record<string, Record<string, {
     "Hematocrit": { normal: "37-47", unit: "%", min: 37, max: 47 },
   },
   "Renal Function Test (RFT)": {
-    "Creatinine": { normal: "0.6-1.2", unit: "mg/dL", min: 0.6, max: 1.2 },
+    "Creatinine": { 
+      normal: "M: 0.7-1.3, F: 0.6-1.1", 
+      unit: "mg/dL", 
+      min: 0.6, 
+      max: 1.3,
+      maleMin: 0.7,
+      maleMax: 1.3,
+      femaleMin: 0.6,
+      femaleMax: 1.1,
+    },
     "Blood Urea Nitrogen": { normal: "7-20", unit: "mg/dL", min: 7, max: 20 },
     "BUN": { normal: "7-20", unit: "mg/dL", min: 7, max: 20 },
+  },
+  "Uric Acid": {
+    "Uric Acid": { 
+      normal: "M: 3.4-7.0, F: 2.4-6.0", 
+      unit: "mg/dL",
+      min: 2.4,
+      max: 7.0,
+      maleMin: 3.4,
+      maleMax: 7.0,
+      femaleMin: 2.4,
+      femaleMax: 6.0,
+    },
+  },
+  "Ferritin": {
+    "Ferritin": { 
+      normal: "M: 20-500, F: 20-200", 
+      unit: "ng/mL",
+      min: 20,
+      max: 500,
+      maleMin: 20,
+      maleMax: 500,
+      femaleMin: 20,
+      femaleMax: 200,
+    },
   },
 };
 
 /**
  * Check if a single field value is abnormal
  */
-export function isFieldAbnormal(testName: string, fieldName: string, value: string | number): boolean {
+export function isFieldAbnormal(
+  testName: string, 
+  fieldName: string, 
+  value: string | number,
+  patient?: { gender?: string }
+): boolean {
   const testConfig = LAB_REFERENCE_RANGES[testName];
   if (!testConfig) return false;
   
@@ -128,12 +206,23 @@ export function isFieldAbnormal(testName: string, fieldName: string, value: stri
   }
   
   // Check numeric ranges
-  if (fieldConfig.min !== undefined || fieldConfig.max !== undefined) {
-    const numValue = parseFloat(strValue);
-    if (!isNaN(numValue)) {
-      if (fieldConfig.min !== undefined && numValue < fieldConfig.min) return true;
-      if (fieldConfig.max !== undefined && numValue > fieldConfig.max) return true;
+  const numValue = parseFloat(strValue);
+  if (!isNaN(numValue)) {
+    // Gender-specific ranges take priority
+    const isMale = patient?.gender?.toLowerCase().startsWith('m');
+    const isFemale = patient?.gender?.toLowerCase().startsWith('f');
+    
+    if (isMale && fieldConfig.maleMin !== undefined && fieldConfig.maleMax !== undefined) {
+      return numValue < fieldConfig.maleMin || numValue > fieldConfig.maleMax;
     }
+    
+    if (isFemale && fieldConfig.femaleMin !== undefined && fieldConfig.femaleMax !== undefined) {
+      return numValue < fieldConfig.femaleMin || numValue > fieldConfig.femaleMax;
+    }
+    
+    // Fallback to generic ranges
+    if (fieldConfig.min !== undefined && numValue < fieldConfig.min) return true;
+    if (fieldConfig.max !== undefined && numValue > fieldConfig.max) return true;
   }
   
   return false;
@@ -143,7 +232,11 @@ export function isFieldAbnormal(testName: string, fieldName: string, value: stri
  * Check if an entire test panel has any abnormal results
  * This is the SINGLE function that ALL pages must use
  */
-export function isTestAbnormal(testName: string, results: Record<string, string>): AbnormalityResult {
+export function isTestAbnormal(
+  testName: string, 
+  results: Record<string, string>,
+  patient?: { gender?: string }
+): AbnormalityResult {
   let hasAbnormal = false;
   let hasCritical = false;
   const reasons: string[] = [];
@@ -152,7 +245,7 @@ export function isTestAbnormal(testName: string, results: Record<string, string>
   const normalizedTestName = normalizeTestName(testName);
   
   for (const [fieldName, value] of Object.entries(results)) {
-    if (isFieldAbnormal(normalizedTestName, fieldName, value)) {
+    if (isFieldAbnormal(normalizedTestName, fieldName, value, patient)) {
       hasAbnormal = true;
       reasons.push(`${fieldName}: ${value}`);
       
@@ -220,7 +313,11 @@ function normalizeTestName(testName: string): string {
 /**
  * Get reference range for display
  */
-export function getReferenceRange(testName: string, fieldName: string): string | null {
+export function getReferenceRange(
+  testName: string, 
+  fieldName: string,
+  patient?: { gender?: string }
+): string | null {
   const normalizedTestName = normalizeTestName(testName);
   const testConfig = LAB_REFERENCE_RANGES[normalizedTestName] || LAB_REFERENCE_RANGES[testName];
   if (!testConfig) return null;
@@ -228,6 +325,19 @@ export function getReferenceRange(testName: string, fieldName: string): string |
   const fieldConfig = testConfig[fieldName];
   if (!fieldConfig) return null;
   
+  const isMale = patient?.gender?.toLowerCase().startsWith('m');
+  const isFemale = patient?.gender?.toLowerCase().startsWith('f');
+  
+  // Return gender-specific range if available and gender is known
+  if (isMale && fieldConfig.maleMin !== undefined && fieldConfig.maleMax !== undefined) {
+    return `${fieldConfig.maleMin}-${fieldConfig.maleMax} ${fieldConfig.unit || ""}`.trim();
+  }
+  
+  if (isFemale && fieldConfig.femaleMin !== undefined && fieldConfig.femaleMax !== undefined) {
+    return `${fieldConfig.femaleMin}-${fieldConfig.femaleMax} ${fieldConfig.unit || ""}`.trim();
+  }
+  
+  // Fallback to normal field
   if (fieldConfig.unit) {
     return `${fieldConfig.normal} ${fieldConfig.unit}`;
   }
@@ -250,13 +360,16 @@ export function getUnit(testName: string, fieldName: string): string {
  * Count abnormal and normal tests in a results set
  * Note: Critical tests are counted separately and NOT included in the abnormal count
  */
-export function countAbnormalNormal(results: Record<string, Record<string, string>>): { abnormal: number; normal: number; critical: number } {
+export function countAbnormalNormal(
+  results: Record<string, Record<string, string>>,
+  patient?: { gender?: string }
+): { abnormal: number; normal: number; critical: number } {
   let abnormal = 0;
   let normal = 0;
   let critical = 0;
   
   for (const [testName, testResults] of Object.entries(results)) {
-    const result = isTestAbnormal(testName, testResults);
+    const result = isTestAbnormal(testName, testResults, patient);
     if (result.isCritical) {
       critical++;
       // Critical tests are NOT counted as abnormal
