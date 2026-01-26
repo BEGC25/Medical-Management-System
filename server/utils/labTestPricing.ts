@@ -16,6 +16,11 @@ export async function recalculateLabTestPrices(
   orderLines: OrderLine[],
   laboratoryServices: Service[]
 ): Promise<OrderLine[]> {
+  // Cache lowercased service names for performance
+  const serviceMap = new Map(
+    laboratoryServices.map(s => [s.name.toLowerCase(), s])
+  );
+
   return Promise.all(orderLines.map(async (line) => {
     if (line.relatedType === 'lab_test' && line.relatedId) {
       try {
@@ -23,16 +28,31 @@ export async function recalculateLabTestPrices(
         const [labTest] = await db.select().from(labTests).where(eq(labTests.testId, line.relatedId));
         
         if (labTest && labTest.tests) {
-          // Parse test names from the JSON array
-          const testNames = JSON.parse(labTest.tests);
+          let testNames: string[];
+          try {
+            // Parse test names from the JSON array
+            testNames = JSON.parse(labTest.tests);
+          } catch (parseError) {
+            console.error(`Error parsing tests JSON for lab test ${line.relatedId}:`, parseError);
+            return line; // Return original line if JSON is invalid
+          }
+
           let calculatedTotal = 0;
           
           testNames.forEach((testName: string) => {
-            const service = laboratoryServices.find(s => 
-              s.name.toLowerCase() === testName.toLowerCase() ||
-              s.name.toLowerCase().includes(testName.toLowerCase()) ||
-              testName.toLowerCase().includes(s.name.toLowerCase())
-            );
+            const testNameLower = testName.toLowerCase();
+            
+            // Try exact match first
+            let service = serviceMap.get(testNameLower);
+            
+            // If no exact match, try fuzzy matching
+            if (!service) {
+              service = laboratoryServices.find(s => 
+                s.name.toLowerCase().includes(testNameLower) ||
+                testNameLower.includes(s.name.toLowerCase())
+              );
+            }
+            
             if (service) {
               calculatedTotal += service.price || 0;
             }
