@@ -2486,18 +2486,14 @@ router.get("/api/encounters/:encounterId/payments", async (req, res) => {
     // Calculate total paid
     const totalPaid = paymentItemsForEncounter.reduce((sum, item) => sum + item.amount, 0);
     
-    // Get unique payment IDs and fetch full payment details
+    // Get unique payment IDs and fetch all payments once
     const uniquePaymentIds = [...new Set(paymentItemsForEncounter.map(pi => pi.paymentId))];
-    const paymentsData = await Promise.all(
-      uniquePaymentIds.map(async (paymentId) => {
-        const allPayments = await storage.getPayments();
-        return allPayments.find(p => p.paymentId === paymentId);
-      })
-    );
+    const allPayments = await storage.getPayments();
+    const paymentsData = allPayments.filter(p => uniquePaymentIds.includes(p.paymentId));
     
     res.json({ 
       totalPaid,
-      payments: paymentsData.filter(p => p !== undefined)
+      payments: paymentsData
     });
   } catch (error) {
     console.error("Error fetching encounter payments:", error);
