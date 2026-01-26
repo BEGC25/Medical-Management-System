@@ -1132,6 +1132,9 @@ export default function ServiceManagement() {
 
   // Handle predefined service selection in bulk mode
   const handleBulkPredefinedServiceSelect = (index: number, selectedValue: string) => {
+    // Validate index bounds
+    if (index < 0 || index >= bulkEntries.length) return;
+    
     // Find the original service name from predefined services (cmdk lowercases the value)
     const categoryServices = PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES];
     if (!categoryServices) return;
