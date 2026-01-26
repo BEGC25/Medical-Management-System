@@ -4,6 +4,13 @@
  * to ensure 100% consistency across Lab Department, Consultation, and Print views
  */
 
+import { 
+  isValueAbnormalForPatient, 
+  formatReferenceRange as formatAgeBasedReferenceRange,
+  calculateAgeInYears,
+  LAB_REFERENCE_RANGES as AGE_BASED_RANGES
+} from "./lab-reference-ranges";
+
 export interface AbnormalityResult {
   isAbnormal: boolean;
   isCritical: boolean;
@@ -181,8 +188,22 @@ export function isFieldAbnormal(
   testName: string, 
   fieldName: string, 
   value: string | number,
-  patient?: { gender?: string }
+  patient?: { gender?: string; age?: number; dateOfBirth?: string }
 ): boolean {
+  // Try age-based ranges first if patient age/DOB is available
+  if (patient && (patient.age !== undefined || patient.dateOfBirth)) {
+    const patientAge = patient.dateOfBirth 
+      ? calculateAgeInYears(patient.dateOfBirth)
+      : patient.age || 30;
+    const patientGender = patient.gender || "unknown";
+    
+    const ageBasedResult = isValueAbnormalForPatient(testName, fieldName, value, patientAge, patientGender);
+    if (ageBasedResult.isAbnormal !== undefined && AGE_BASED_RANGES[testName]?.[fieldName]) {
+      return ageBasedResult.isAbnormal;
+    }
+  }
+  
+  // Fallback to legacy gender-only ranges
   const testConfig = LAB_REFERENCE_RANGES[testName];
   if (!testConfig) return false;
   
@@ -235,7 +256,7 @@ export function isFieldAbnormal(
 export function isTestAbnormal(
   testName: string, 
   results: Record<string, string>,
-  patient?: { gender?: string }
+  patient?: { gender?: string; age?: number; dateOfBirth?: string }
 ): AbnormalityResult {
   let hasAbnormal = false;
   let hasCritical = false;
@@ -244,22 +265,43 @@ export function isTestAbnormal(
   // Normalize test name (handle aliases)
   const normalizedTestName = normalizeTestName(testName);
   
+  // Calculate patient age for age-based ranges
+  const patientAge = patient?.dateOfBirth 
+    ? calculateAgeInYears(patient.dateOfBirth)
+    : patient?.age || 30;
+  const patientGender = patient?.gender || "unknown";
+  
   for (const [fieldName, value] of Object.entries(results)) {
-    if (isFieldAbnormal(normalizedTestName, fieldName, value, patient)) {
+    // Try age-based abnormality detection first
+    let isAbnormal = false;
+    let isCritical = false;
+    let reason = "";
+    
+    if (AGE_BASED_RANGES[normalizedTestName]?.[fieldName]) {
+      const ageBasedResult = isValueAbnormalForPatient(normalizedTestName, fieldName, value, patientAge, patientGender);
+      isAbnormal = ageBasedResult.isAbnormal;
+      isCritical = ageBasedResult.isCritical;
+      reason = ageBasedResult.reason || "";
+    } else {
+      // Fallback to legacy detection
+      isAbnormal = isFieldAbnormal(normalizedTestName, fieldName, value, patient);
+      isCritical = isCriticalValue(normalizedTestName, fieldName, value);
+    }
+    
+    if (isCritical) {
+      hasCritical = true;
       hasAbnormal = true;
-      reasons.push(`${fieldName}: ${value}`);
-      
-      // Check for critical values
-      if (isCriticalValue(normalizedTestName, fieldName, value)) {
-        hasCritical = true;
-      }
+      reasons.push(`${fieldName}: ${value}${reason ? ` (CRITICAL - ${reason})` : " (CRITICAL)"}`);
+    } else if (isAbnormal) {
+      hasAbnormal = true;
+      reasons.push(`${fieldName}: ${value}${reason ? ` (${reason})` : ""}`);
     }
   }
   
   return {
     isAbnormal: hasAbnormal,
     isCritical: hasCritical,
-    reason: reasons.join(", "),
+    reason: reasons.join("; "),
   };
 }
 
@@ -316,8 +358,21 @@ function normalizeTestName(testName: string): string {
 export function getReferenceRange(
   testName: string, 
   fieldName: string,
-  patient?: { gender?: string }
+  patient?: { gender?: string; age?: number; dateOfBirth?: string }
 ): string | null {
+  // Try age-based ranges first if patient info is available
+  if (patient && (patient.age !== undefined || patient.dateOfBirth)) {
+    const patientAge = patient.dateOfBirth 
+      ? calculateAgeInYears(patient.dateOfBirth)
+      : patient.age || 30;
+    const patientGender = patient.gender || "unknown";
+    
+    if (AGE_BASED_RANGES[testName]?.[fieldName]) {
+      return formatAgeBasedReferenceRange(testName, fieldName, patientAge, patientGender);
+    }
+  }
+  
+  // Fallback to legacy gender-only ranges
   const normalizedTestName = normalizeTestName(testName);
   const testConfig = LAB_REFERENCE_RANGES[normalizedTestName] || LAB_REFERENCE_RANGES[testName];
   if (!testConfig) return null;
@@ -362,7 +417,7 @@ export function getUnit(testName: string, fieldName: string): string {
  */
 export function countAbnormalNormal(
   results: Record<string, Record<string, string>>,
-  patient?: { gender?: string }
+  patient?: { gender?: string; age?: number; dateOfBirth?: string }
 ): { abnormal: number; normal: number; critical: number } {
   let abnormal = 0;
   let normal = 0;
