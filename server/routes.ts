@@ -43,6 +43,7 @@ import {
 } from "./auth-service";
 import { parseDateFilter } from "./utils/date";
 import { parseClinicRangeParams, rangeToISOStrings, rangeToDayKeys } from "./utils/clinic-range";
+import { recalculateLabTestPrices } from "./utils/labTestPricing";
 
 // Extend express-session types to include our user
 declare module "express-session" {
@@ -2458,45 +2459,7 @@ router.get("/api/encounters/:encounterId", async (req, res) => {
     // Recalculate lab_test order line prices from service catalog
     const services = await storage.getServices();
     const laboratoryServices = services.filter(s => s.category === 'laboratory' && s.isActive);
-    
-    const correctedOrderLines = await Promise.all(orderLines.map(async (line) => {
-      if (line.relatedType === 'lab_test' && line.relatedId) {
-        try {
-          // Get the lab test record to access the tests array
-          const [labTest] = await db.select().from(labTests).where(eq(labTests.testId, line.relatedId));
-          
-          if (labTest && labTest.tests) {
-            // Parse test names from the JSON array
-            const testNames = JSON.parse(labTest.tests);
-            let calculatedTotal = 0;
-            
-            testNames.forEach((testName: string) => {
-              const service = laboratoryServices.find(s => 
-                s.name.toLowerCase() === testName.toLowerCase() ||
-                s.name.toLowerCase().includes(testName.toLowerCase()) ||
-                testName.toLowerCase().includes(s.name.toLowerCase())
-              );
-              if (service) {
-                calculatedTotal += service.price || 0;
-              }
-            });
-            
-            // If we found prices, use the calculated total
-            if (calculatedTotal > 0) {
-              return {
-                ...line,
-                unitPriceSnapshot: calculatedTotal,
-                totalPrice: calculatedTotal,
-              };
-            }
-          }
-        } catch (err) {
-          // If there's an error recalculating, just return the original line
-          console.error(`Error recalculating lab test price for order line ${line.id}:`, err);
-        }
-      }
-      return line;
-    }));
+    const correctedOrderLines = await recalculateLabTestPrices(orderLines, laboratoryServices);
 
     res.json({ encounter, orderLines: correctedOrderLines });
   } catch (error) {
@@ -3139,45 +3102,7 @@ router.get("/api/encounters/:encounterId/order-lines", async (req, res) => {
     // Recalculate lab_test order line prices from service catalog
     const services = await storage.getServices();
     const laboratoryServices = services.filter(s => s.category === 'laboratory' && s.isActive);
-    
-    const correctedOrderLines = await Promise.all(orderLines.map(async (line) => {
-      if (line.relatedType === 'lab_test' && line.relatedId) {
-        try {
-          // Get the lab test record to access the tests array
-          const [labTest] = await db.select().from(labTests).where(eq(labTests.testId, line.relatedId));
-          
-          if (labTest && labTest.tests) {
-            // Parse test names from the JSON array
-            const testNames = JSON.parse(labTest.tests);
-            let calculatedTotal = 0;
-            
-            testNames.forEach((testName: string) => {
-              const service = laboratoryServices.find(s => 
-                s.name.toLowerCase() === testName.toLowerCase() ||
-                s.name.toLowerCase().includes(testName.toLowerCase()) ||
-                testName.toLowerCase().includes(s.name.toLowerCase())
-              );
-              if (service) {
-                calculatedTotal += service.price || 0;
-              }
-            });
-            
-            // If we found prices, use the calculated total
-            if (calculatedTotal > 0) {
-              return {
-                ...line,
-                unitPriceSnapshot: calculatedTotal,
-                totalPrice: calculatedTotal,
-              };
-            }
-          }
-        } catch (err) {
-          // If there's an error recalculating, just return the original line
-          console.error(`Error recalculating lab test price for order line ${line.id}:`, err);
-        }
-      }
-      return line;
-    }));
+    const correctedOrderLines = await recalculateLabTestPrices(orderLines, laboratoryServices);
     
     res.json(correctedOrderLines);
   } catch (error) {

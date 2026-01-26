@@ -8,6 +8,7 @@ import { today } from "./utils/date";
 import { getClinicDayKey } from "@shared/clinic-date";
 import { generateTransactionId } from "./utils/transactionId";
 import { generateAndValidateServiceCode } from "@shared/service-code-utils";
+import { recalculateLabTestPrices } from "./utils/labTestPricing";
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
@@ -3001,45 +3002,7 @@ export class MemStorage implements IStorage {
     // Recalculate lab_test order line prices from service catalog
     const services = await this.getServices();
     const laboratoryServices = services.filter(s => s.category === 'laboratory' && s.isActive);
-    
-    const correctedOrderLines = await Promise.all(orderLinesData.map(async (line) => {
-      if (line.relatedType === 'lab_test' && line.relatedId) {
-        try {
-          // Get the lab test record to access the tests array
-          const [labTest] = await db.select().from(labTests).where(eq(labTests.testId, line.relatedId));
-          
-          if (labTest && labTest.tests) {
-            // Parse test names from the JSON array
-            const testNames = JSON.parse(labTest.tests);
-            let calculatedTotal = 0;
-            
-            testNames.forEach((testName: string) => {
-              const service = laboratoryServices.find(s => 
-                s.name.toLowerCase() === testName.toLowerCase() ||
-                s.name.toLowerCase().includes(testName.toLowerCase()) ||
-                testName.toLowerCase().includes(s.name.toLowerCase())
-              );
-              if (service) {
-                calculatedTotal += service.price || 0;
-              }
-            });
-            
-            // If we found prices, use the calculated total
-            if (calculatedTotal > 0) {
-              return {
-                ...line,
-                unitPriceSnapshot: calculatedTotal,
-                totalPrice: calculatedTotal,
-              };
-            }
-          }
-        } catch (err) {
-          // If there's an error recalculating, just return the original line
-          console.error(`Error recalculating lab test price for order line ${line.id}:`, err);
-        }
-      }
-      return line;
-    }));
+    const correctedOrderLines = await recalculateLabTestPrices(orderLinesData, laboratoryServices);
 
     // Calculate totals with validation using corrected order lines
     const subtotal = correctedOrderLines.reduce((sum, line) => {
