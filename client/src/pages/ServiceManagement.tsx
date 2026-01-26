@@ -1395,14 +1395,21 @@ export default function ServiceManagement() {
                                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-[400px] p-0 max-h-[400px]" align="start">
-                                    <Command className="max-h-[400px]">
+                                  <PopoverContent 
+                                    className="w-[400px] p-0" 
+                                    align="start"
+                                    side="bottom"
+                                    avoidCollisions={true}
+                                    collisionPadding={10}
+                                    style={{ maxHeight: '350px', overflowY: 'auto' }}
+                                  >
+                                    <Command className="w-full">
                                       <CommandInput 
                                         placeholder="Search services..." 
                                         value={entry.search}
                                         onValueChange={(value) => updateBulkEntry(index, 'search', value)}
                                       />
-                                      <CommandList className="max-h-[300px] overflow-y-auto">
+                                      <CommandList className="max-h-[280px] overflow-y-auto overflow-x-hidden">
                                         <CommandEmpty>No service found.</CommandEmpty>
                                         {Object.entries(getBulkRowFilteredServices(entry.search)).map(([subcategory, serviceList]) => (
                                           <CommandGroup key={subcategory} heading={subcategory}>
