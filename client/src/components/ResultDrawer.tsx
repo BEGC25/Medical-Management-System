@@ -12,6 +12,8 @@ type Patient = {
   firstName?: string;
   lastName?: string;
   patientId?: string;
+  gender?: string;
+  age?: string;
 };
 
 type ResultFields = Record<string, Record<string, {
@@ -204,7 +206,7 @@ export default function ResultDrawer(props: {
               {/* Clinical Interpretation - SHOW AT END AS REFERENCE */}
               {(() => {
                 // Use shared interpretation utility for consistent results between UI and print
-                const interpretation = interpretLabResults(results);
+                const interpretation = interpretLabResults(results, patient);
                 const { criticalFindings, warnings } = interpretation;
 
                 // Use KeyFindingCard for clinical interpretation
