@@ -1131,10 +1131,30 @@ export default function ServiceManagement() {
   };
 
   // Handle predefined service selection in bulk mode
-  const handleBulkPredefinedServiceSelect = (index: number, serviceName: string) => {
-    updateBulkEntry(index, 'name', serviceName);
-    updateBulkEntry(index, 'search', "");
-    updateBulkEntry(index, 'popoverOpen', false);
+  const handleBulkPredefinedServiceSelect = (index: number, selectedValue: string) => {
+    // Find the original service name from predefined services (cmdk lowercases the value)
+    const categoryServices = PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES];
+    if (!categoryServices) return;
+    
+    // Search through all subcategories to find the original name
+    let originalName = selectedValue;
+    for (const [_, serviceList] of Object.entries(categoryServices)) {
+      const found = serviceList.find(s => s.toLowerCase() === selectedValue.toLowerCase());
+      if (found) {
+        originalName = found;
+        break;
+      }
+    }
+    
+    // Update all fields atomically to avoid race conditions
+    const updated = [...bulkEntries];
+    updated[index] = {
+      ...updated[index],
+      name: originalName,
+      search: "",
+      popoverOpen: false,
+    };
+    setBulkEntries(updated);
   };
 
   // Calculate category counts
